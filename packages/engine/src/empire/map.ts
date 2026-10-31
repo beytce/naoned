@@ -1,6 +1,6 @@
 import { DENIERS_PER_DUCAT, type Deniers, applyBpsFloor } from "../money.js";
 import type { EmpireHouse, PlayerId } from "../state.js";
-import { type Tx, fail } from "../tx.js";
+import { type Tx, fail, nextId } from "../tx.js";
 import { levelCost } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { counterCostOf, empireSettings, openSite, ownHouse } from "./house.js";
@@ -41,6 +41,88 @@ export function cellsWithin(cell: string, radius: number): string[] {
   return out;
 }
 
+/** A cell's centre on the chart (pointy-top hexes of `hexSize`, as the screen draws them). */
+export function cellCentreOf(key: string, s: EmpireSettings): [number, number] {
+  const [q, r] = parseCell(key);
+  const size = s.map.hexSize;
+  return [Math.sqrt(3) * size * (q + r / 2), 1.5 * size * r];
+}
+
+/** The cell under a point of the chart. */
+export function cellAtPoint(x: number, y: number, s: EmpireSettings): string {
+  const size = s.map.hexSize;
+  const qf = ((Math.sqrt(3) / 3) * x - y / 3) / size;
+  const rf = ((2 / 3) * y) / size;
+  let q = Math.round(qf);
+  let r = Math.round(rf);
+  const z = Math.round(-qf - rf);
+  const dq = Math.abs(q - qf);
+  const dr = Math.abs(r - rf);
+  const dz = Math.abs(z + qf + rf);
+  if (dq > dr && dq > dz) q = -r - z;
+  else if (dr > dz) r = -q - z;
+  return cellKey(q + 0, r + 0);
+}
+
+/** A point of the chart, rounded to its units. */
+const pointOf = (key: string, s: EmpireSettings): [number, number] => {
+  const [x, y] = cellCentreOf(key, s);
+  return [Math.round(x), Math.round(y)];
+};
+
+/** Where a city stands on the chart: its own point, else its cell's centre. */
+export function citySpot(
+  c: { cell: string; x?: number; y?: number },
+  s: EmpireSettings,
+): [number, number] {
+  return c.x !== undefined && c.y !== undefined ? [c.x, c.y] : pointOf(c.cell, s);
+}
+
+/** A counter's reach at a level, in the chart's units (none without a reach set). */
+export function reachOf(level: number, s: EmpireSettings): number {
+  const r = s.map.reach;
+  return r ? r.base + r.perLevel * (Math.max(1, level) - 1) : 0;
+}
+
+/** Venice's own counter: at Venice's place, with its level. */
+export function homePost(h: EmpireHouse, s: EmpireSettings) {
+  const venice = s.map.cities.find((c) => c.region === HOME);
+  const [x, y] = venice ? citySpot(venice, s) : pointOf(regionCells(s, HOME)[0] ?? "0,0", s);
+  return { id: "home", cell: venice?.cell ?? "", region: HOME, x, y, level: h.homeLevel ?? 1 };
+}
+
+/** Every counter that stands, Venice's first, each with its point and its level. */
+export function standingPosts(h: EmpireHouse, s: EmpireSettings) {
+  return [
+    homePost(h, s),
+    ...(h.posts ?? []).map((p, i) => {
+      const [cx, cy] = pointOf(p.cell, s);
+      return {
+        id: p.id ?? `p${i + 1}`,
+        cell: p.cell,
+        region: p.region,
+        x: p.x ?? cx,
+        y: p.y ?? cy,
+        level: p.level ?? 1,
+      };
+    }),
+  ];
+}
+
+const within = (a: [number, number], b: [number, number], r: number) =>
+  (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 <= r * r;
+
+/** The cities the house serves: those within reach of one of its counters (the map that grows). */
+export function citiesCovered(h: EmpireHouse, s: EmpireSettings): Set<string> {
+  const posts = standingPosts(h, s);
+  const out = new Set<string>();
+  for (const c of s.map.cities) {
+    const at = citySpot(c, s);
+    if (posts.some((p) => within([p.x, p.y], at, reachOf(p.level, s)))) out.add(c.code);
+  }
+  return out;
+}
+
 /** Has the world a map: without one, the regions open as before (charters, whole books). */
 export const hasMap = (s: EmpireSettings) => Object.keys(s.map.cells).length > 0;
 
@@ -78,6 +160,18 @@ export function regionSeat(s: EmpireSettings, region: string): string | null {
   return indexOf(s).seats.get(region) ?? regionCells(s, region)[0] ?? null;
 }
 
+/** Venice's cell: Venetia's seat. */
+const homeCell = (s: EmpireSettings) => regionSeat(s, HOME) ?? regionCells(s, HOME)[0];
+
+/**
+ * What a house sees at its founding: Venetia's cells, or on a map with a reach (the map that
+ * grows) Venice's cell alone, the rest of Venetia found by the counters put down.
+ */
+export function startCells(s: EmpireSettings): string[] {
+  const home = homeCell(s);
+  return s.map.reach && home ? [home] : regionCells(s, HOME);
+}
+
 /** A region's cities. */
 export function regionCities(s: EmpireSettings, region: string): { code: string; cell: string }[] {
   return indexOf(s).cities.get(region) ?? [];
@@ -89,7 +183,7 @@ export function regionCities(s: EmpireSettings, region: string): { code: string;
  * put there reveals the rest.
  */
 export function revealedOf(h: EmpireHouse, s: EmpireSettings): Set<string> {
-  const seen = new Set(h.revealed ?? regionCells(s, HOME));
+  const seen = new Set(h.revealed ?? startCells(s));
   // A region the Casa reaches shows its sector nearest to what is known (step 4): never one far
   // off on its own, which a finger would not find.
   for (const r of s.regions) {
@@ -124,9 +218,38 @@ export function citiesFound(
  * it in a region without cities, or a world without a map).
  */
 export function bookShareBps(h: EmpireHouse, region: string, s: EmpireSettings): number {
+  // With a reach: the cities within reach of a counter, not merely those found.
+  if (s.map.reach) {
+    // Each city weighs its share (Venice, the capital, more than a market town).
+    const all = s.map.cities.filter((c) => c.region === region);
+    if (all.length === 0) return 10_000;
+    const covered = citiesCovered(h, s);
+    const total = all.reduce((n, c) => n + c.weight, 0);
+    const reached = all.filter((c) => covered.has(c.code)).reduce((n, c) => n + c.weight, 0);
+    return Math.floor((reached * 10_000) / total);
+  }
   const { found, all } = citiesFound(h, region, s);
   if (all === 0) return 10_000;
   return Math.floor((found.length * 10_000) / all);
+}
+
+/** A counter of before: its name, its point at its cell's centre, its region's level. */
+function namePosts(h: EmpireHouse, s: EmpireSettings): void {
+  if (h.posts?.some((p) => p.id === undefined || p.x === undefined || p.level === undefined)) {
+    const named = new Set<string>();
+    h.posts = h.posts.map((p, i) => {
+      const [x, y] = pointOf(p.cell, s);
+      const first = !named.has(p.region);
+      named.add(p.region);
+      return {
+        ...p,
+        id: p.id ?? `p${i + 1}`,
+        x: p.x ?? x,
+        y: p.y ?? y,
+        level: p.level ?? (first ? (h.counters?.[p.region] ?? 1) : 1),
+      };
+    });
+  }
 }
 
 /**
@@ -138,19 +261,20 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   if (!hasMap(s)) return;
   // A house that already played the Terraferma keeps its door: its Campo in Venetia.
   if ((h.terraBest || h.terraSeals) && !h.camp) {
-    const home = regionCells(s, HOME)[0];
+    const home = homeCell(s);
     if (home) h.camp = home;
   }
   // A house that already bought a land vehicle keeps its Remise: in Venetia.
   if (s.map.depot && !h.depot) {
     const land = (h.vehicles ?? []).filter((v) => !s.vehicles[v.type]?.build).length;
-    const home = regionCells(s, HOME)[0];
+    const home = homeCell(s);
     if (home && (land > s.start.vehicles.length || h.vehicleLevels)) h.depot = home;
   }
+  namePosts(h, s);
   // Taken up once per drawing of the map: a house of an older grid has its cells drawn again.
   if (h.revealed && h.mapVersion === s.map.version) return;
   const moved = h.revealed !== undefined;
-  const seen = new Set(regionCells(s, HOME));
+  const seen = new Set(startCells(s));
   const posts: { cell: string; region: string }[] = [];
   for (const region of Object.keys(h.counters ?? {})) {
     const seat = regionSeat(s, region);
@@ -161,11 +285,12 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   h.revealed = [...seen].sort();
   h.mapVersion = s.map.version;
   if (moved || !h.posts) h.posts = posts.length > 0 ? posts : undefined;
-  const coast = regionCells(s, HOME).find((c) => s.map.cells[c]?.coast);
+  namePosts(h, s);
+  const coast = [homeCell(s), ...regionCells(s, HOME)].find((c) => c && s.map.cells[c]?.coast);
   const ships = (h.vehicles ?? []).some((v) => s.vehicles[v.type]?.build);
   if ((ships || h.arsenal) && (moved || !h.arsenal) && coast) h.arsenal = coast;
-  if (h.camp && moved) h.camp = regionCells(s, HOME)[0] ?? h.camp;
-  if (h.depot && moved) h.depot = regionCells(s, HOME)[0] ?? h.depot;
+  if (h.camp && moved) h.camp = homeCell(s) ?? h.camp;
+  if (h.depot && moved) h.depot = homeCell(s) ?? h.depot;
   // The sites under way on the cells of before end where they now stand.
   if (moved)
     for (const b of h.builds)
@@ -202,14 +327,33 @@ export function revealedBy(cell: string, s: EmpireSettings): string[] {
  * the hours of the opening voyage and one more. Done, it reveals the cells around it, and the
  * first counter of a region opens the region.
  */
-export function placeCounter(tx: Tx, playerId: PlayerId, cell: string): void {
+export function placeCounter(
+  tx: Tx,
+  playerId: PlayerId,
+  cell: string,
+  x?: number,
+  y?: number,
+): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   ensureMap(h, s);
   const c = s.map.cells[cell];
   if (!c) fail("unknown_cell");
   if (!revealedOf(h, s).has(cell)) fail("hidden_cell");
-  if (
+  // Its point (the map that grows): anywhere in the cell, its centre when none is given.
+  const [cx, cy] = pointOf(cell, s);
+  const at: [number, number] = [x ?? cx, y ?? cy];
+  if (!Number.isInteger(at[0]) || !Number.isInteger(at[1])) fail("unknown_cell");
+  if (cellAtPoint(at[0], at[1], s) !== cell) fail("unknown_cell");
+  if (s.map.postSpacing > 0) {
+    const others: [number, number][] = [
+      ...standingPosts(h, s).map((p): [number, number] => [p.x, p.y]),
+      ...h.builds
+        .filter((b) => b.kind === "post" && b.x !== undefined && b.y !== undefined)
+        .map((b): [number, number] => [b.x ?? 0, b.y ?? 0]),
+    ];
+    if (others.some((o) => within(o, at, s.map.postSpacing - 1))) fail("post_too_close");
+  } else if (
     (h.posts ?? []).some((p) => p.cell === cell) ||
     h.builds.some((b) => b.kind === "post" && b.cell === cell)
   )
@@ -231,6 +375,9 @@ export function placeCounter(tx: Tx, playerId: PlayerId, cell: string): void {
     level: 1,
     region: r.code,
     cell,
+    x: at[0],
+    y: at[1],
+    post: nextId(tx, "c"),
     reveal: revealedBy(cell, s),
     ...site,
   });
@@ -316,8 +463,15 @@ export function checkArsenal(h: EmpireHouse, s: EmpireSettings): void {
  * its region if none stood there. Called by `settleBuilds`, which knows no settings: the build
  * carries the cells it reveals.
  */
-export function settlePost(h: EmpireHouse, cell: string, region: string, reveal: string[]): void {
-  h.posts = [...(h.posts ?? []), { cell, region }];
+export function settlePost(
+  h: EmpireHouse,
+  cell: string,
+  region: string,
+  reveal: string[],
+  at?: { id?: string; x?: number; y?: number },
+): void {
+  const id = at?.id ?? `p${(h.posts ?? []).length + 1}`;
+  h.posts = [...(h.posts ?? []), { id, cell, region, x: at?.x, y: at?.y, level: 1 }];
   h.revealed = [...new Set([...(h.revealed ?? []), ...reveal])].sort();
   if (region !== HOME && !h.counters?.[region]) h.counters = { ...(h.counters ?? {}), [region]: 1 };
 }

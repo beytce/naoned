@@ -3,7 +3,7 @@ import { fr } from "../../i18n.js";
 import { Slab } from "../../ui.js";
 import { affordable } from "../logic.js";
 import type { EmpirePayload } from "../types.js";
-import { type Placing, placeable, placingCost } from "./logic.js";
+import { type Placing, placeable, placingCost, pointCheck } from "./logic.js";
 
 const t = fr.empire.placing;
 
@@ -21,12 +21,13 @@ export function PlacingBar({
 }: {
   p: EmpirePayload;
   placing: Placing;
-  picked: string | null;
+  picked: { cell: string; x: number; y: number } | null;
   busy: boolean;
   onPlace: () => void;
   onCancel: () => void;
 }) {
-  const cost = picked ? placingCost(p, placing, picked) : null;
+  const cost = picked ? placingCost(p, placing, picked.cell) : null;
+  const check = picked && placing.kind === "post" ? pointCheck(p, picked) : null;
   const none = placeable(p, placing).length === 0;
   return (
     <section
@@ -53,6 +54,15 @@ export function PlacingBar({
                 ? t.hintDepot
                 : t.hintPost}
       </p>
+      {check && (
+        <p className="mt-1 text-xs font-semibold text-gold" data-point-check>
+          {check.tooClose
+            ? t.tooClose
+            : check.serves.length > 0
+              ? t.serves(check.serves.map((c) => fr.empire.cityNames[c] ?? c).join(", "))
+              : t.servesNone}
+        </p>
+      )}
       <div className="mt-3 flex gap-2">
         <Slab size="md" tone="ghost" onClick={onCancel}>
           {t.cancel}
@@ -62,7 +72,7 @@ export function PlacingBar({
           tone="gold"
           className="flex-1"
           busy={busy}
-          disabled={!picked || !cost || !affordable(p.cash, cost)}
+          disabled={!picked || !cost || !affordable(p.cash, cost) || check?.tooClose === true}
           onClick={onPlace}
         >
           {cost ? t.here(d(cost)) : t.post}

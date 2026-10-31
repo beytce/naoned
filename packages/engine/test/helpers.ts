@@ -66,6 +66,27 @@ export class World {
     return res;
   }
 
+  /**
+   * Puts stock at a player's first counter of a region (the map that grows): Venice's for
+   * Venetia, else the counter put down there (test fixture only).
+   */
+  giveIn(playerId: string, region: string, resource: string, quantity: number): this {
+    this.give(playerId, resource, quantity);
+    const h = this.state.empire?.houses[playerId];
+    if (!h || region === "veneto") return this;
+    const post = h.posts?.find((p) => p.region === region)?.id ?? `@${region}`;
+    const at = { ...(h.stores?.[post] ?? {}) };
+    at[resource] = (at[resource] ?? 0) + quantity;
+    const empire = this.state.empire;
+    if (!empire) return this;
+    const house = { ...h, stores: { ...(h.stores ?? {}), [post]: at } };
+    this.state = {
+      ...this.state,
+      empire: { ...empire, houses: { ...empire.houses, [playerId]: house } },
+    };
+    return this;
+  }
+
   /** Puts stock in a player's inventory through the journal (test fixture only). */
   give(playerId: string, resource: string, quantity: number): this {
     const fx: Effects = {

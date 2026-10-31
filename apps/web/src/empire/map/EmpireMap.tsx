@@ -10,7 +10,6 @@ import {
   useState,
 } from "react";
 import { artSource } from "../../art/Illustration.js";
-import { CITY_SPOTS } from "../../art/citySpots.js";
 import { GoodsMark } from "../../art/goods.js";
 import { HEX_SIZE, cellCentre, hexPath, neighbours } from "../../art/hexmap.js";
 import {
@@ -38,6 +37,7 @@ import {
   centredOn,
   farCamera,
   placeable,
+  postPoint,
 } from "./logic.js";
 import { useCamera } from "./useCamera.js";
 
@@ -59,9 +59,22 @@ const sectorOn = (v: Viewport) =>
     Math.min((v.w * 0.95) / (Math.sqrt(3) * HEX_SIZE), (v.h * 0.62) / (2 * HEX_SIZE)),
     v,
   );
-/** Up close on a counter, its workshops in orbit around it. */
-const orbitOn = (at: [number, number]) => (v: Viewport) =>
-  centredOn(at, (Math.min(v.w, v.h) * 0.86) / ORBIT_UNITS, v);
+/**
+ * Up close on a counter, its workshops in orbit around it (the map that grows): the camera zooms
+ * around the bubble, which stays where it was on the screen, unless its orbit would leave it.
+ */
+const orbitOn = (at: [number, number], from: Camera) => (v: Viewport) => {
+  const s = (Math.min(v.w, v.h) * 0.86) / ORBIT_UNITS;
+  const sx = at[0] * from.s + from.tx;
+  const sy = at[1] * from.s + from.ty;
+  const half = (ORBIT_UNITS / 2) * s;
+  // The HUD above, the round buttons below: the orbit stays between them.
+  const keep = (p: number, lo: number, hi: number) =>
+    hi - lo < 2 * half ? (lo + hi) / 2 : Math.min(hi - half, Math.max(lo + half, p));
+  const px = keep(sx, 8, v.w - 8);
+  const py = keep(sy, 96, v.h - 104);
+  return { s, tx: px - at[0] * s, ty: py - at[1] * s };
+};
 
 /** The chart is never drawn larger than this across (px): a phone's GPU keeps up with it. */
 const MAX_RASTER = 4_096;
@@ -86,8 +99,8 @@ export const EmpireMap = forwardRef<
     onTarget: (target: Target | null) => void;
     /** Placing a counter or the Arsenal: the cells it may go on light up, a touch picks one. */
     placing?: Placing | null;
-    picked?: string | null;
-    onPick?: (cell: string) => void;
+    picked?: Picked | null;
+    onPick?: (at: Picked) => void;
   }
 >(function EmpireMap({ p, now, busy, act, onTarget, placing = null, picked = null, onPick }, ref) {
   const root = useRef<HTMLDivElement>(null);
@@ -99,6 +112,8 @@ export const EmpireMap = forwardRef<
   const [opened, setOpened] = useState<string | null>(null);
   const openedNow = useRef<string | null>(null);
   openedNow.current = opened;
+  const openedRegion = useRef("veneto");
+  const openedAt = useRef<[number, number]>([0, 0]);
   const view = p.view;
   const casa = view?.house.casa ?? 1;
   const farOn = (v: Viewport) => farCamera(p, v);
@@ -145,17 +160,19 @@ export const EmpireMap = forwardRef<
       if (Math.abs(want / drawn.current - 1) > 0.12) setBase(want);
     },
   });
-  /** A counter touched: the camera comes to it and its workshops deploy around it. */
-  const deploy = (region: string, at: [number, number]) => {
-    setOpened(region);
-    camera.easeTo(orbitOn(at));
+  /** A counter touched: its workshops deploy around its bubble, the camera zooming around it. */
+  const deploy = (region: string, at: [number, number], id = region) => {
+    setOpened(id);
+    openedRegion.current = region;
+    openedAt.current = at;
+    camera.easeTo(orbitOn(at, camera.cam()));
   };
   useImperativeHandle(ref, () => ({
     toggle: () => {
       if (openedNow.current) setOpened(null);
       camera.easeTo(openedNow.current ? sectorOn : farOn);
     },
-    home: () => deploy("veneto", seatOf("veneto")),
+    home: () => deploy("veneto", homeAt(p), "home"),
     far: () => {
       setOpened(null);
       camera.easeTo(farOn);
@@ -191,12 +208,9 @@ export const EmpireMap = forwardRef<
   if (!view) return null;
   const map = view.map;
   // The cities under the workshops deployed give way to them.
-  const centre = opened ? orbitAt(p, opened) : null;
-  const underOrbit = (code: string, cell: string) => {
-    if (!centre) return false;
-    const [x, y] = CITY_SPOTS[code] ?? cellCentre(cell);
-    return Math.hypot(x - centre[0], y - centre[1]) < ORBIT_UNITS / 2;
-  };
+  const centre = opened ? openedAt.current : null;
+  const underOrbit = (x: number, y: number) =>
+    centre !== null && Math.hypot(x - centre[0], y - centre[1]) < ORBIT_UNITS / 2;
 
   return (
     <div
@@ -247,31 +261,35 @@ export const EmpireMap = forwardRef<
         {/* The workshops of the counter touched, deployed around it (the map's own size). */}
         {opened &&
           (() => {
-            const [ox, oy] = orbitAt(p, opened);
+            const [ox, oy] = openedAt.current;
+            const region = openedRegion.current;
             return (
               <div
                 key={opened}
-                className="orbit-in absolute -translate-x-1/2 -translate-y-1/2"
+                className="absolute -translate-x-1/2 -translate-y-1/2"
                 style={{ left: ox * base, top: oy * base, width: ORBIT_UNITS * base }}
                 data-orbit-open={opened}
               >
-                <div className="pointer-events-auto">
+                {/* Centred by the frame above, grown by the one inside: the animation's own
+                    transform never moves the ring off its bubble. */}
+                <div className="orbit-in pointer-events-auto">
                   <EmpireOrbit
                     p={p}
                     now={now}
                     busy={busy}
                     act={act}
-                    region={opened}
+                    region={region}
+                    bare
                     onWorkshop={(id) => onTarget({ kind: "workshop", id })}
                     onCasa={() =>
                       onTarget(
-                        opened === "veneto" ? { kind: "casa" } : { kind: "region", code: opened },
+                        region === "veneto" ? { kind: "casa" } : { kind: "region", code: region },
                       )
                     }
                     onFree={() =>
-                      opened === "veneto"
+                      region === "veneto"
                         ? onTarget({ kind: "free" })
-                        : onTarget({ kind: "region", code: opened })
+                        : onTarget({ kind: "region", code: region })
                     }
                   />
                 </div>
@@ -279,10 +297,12 @@ export const EmpireMap = forwardRef<
             );
           })()}
         <Names p={p} />
+        {/* Venice's bubble stays itself when its workshops deploy: touched again, its Casa. */}
         <HomeMark
           p={p}
-          hidden={opened === "veneto"}
-          onClick={() => deploy("veneto", seatOf("veneto"))}
+          onClick={() =>
+            opened === "home" ? onTarget({ kind: "casa" }) : deploy("veneto", homeAt(p), "home")
+          }
         />
         {map.cities
           .filter((c) => c.code !== "venezia")
@@ -291,20 +311,24 @@ export const EmpireMap = forwardRef<
               key={c.code}
               p={p}
               code={c.code}
-              cell={c.cell}
+              at={[c.x, c.y]}
               region={c.region}
-              hidden={underOrbit(c.code, c.cell)}
+              hidden={underOrbit(c.x, c.y)}
               onClick={() => onTarget({ kind: "city", code: c.code })}
             />
           ))}
         {map.posts.map((x) => {
-          const [px, py] = postSpot(x.cell);
+          const [px, py] = [x.x, x.y];
           return (
-            <div key={`p${x.cell}`} data-at={`${px},${py}`} className="map-pin" data-post={x.cell}>
-              {/* A counter touched: its region's workshops deploy around it. */}
+            <div key={x.id} data-at={`${px},${py}`} className="map-pin" data-post={x.cell}>
+              {/* A counter touched: its workshops deploy around it; touched again, its panel. */}
               <button
                 type="button"
-                onClick={() => deploy(x.region, [px, py])}
+                onClick={() =>
+                  opened === x.id
+                    ? onTarget({ kind: "region", code: x.region })
+                    : deploy(x.region, [px, py], x.id)
+                }
                 aria-label={t.placing.postCard}
                 className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-lg bg-night-3 text-gold ring-2 ring-gold/70 shadow-md shadow-black/50 active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
               >
@@ -321,6 +345,63 @@ export const EmpireMap = forwardRef<
                 {clock(x.endsAt - now)}
               </span>
             </div>
+          );
+        })}
+        {/* The vehicles around the bubble of the counter they stand at (the map that grows). */}
+        {[{ id: "home", x: map.home.x, y: map.home.y }, ...map.posts].map((x) => {
+          const here = view.vehicles.mine.filter(
+            (v) =>
+              v.at === x.id &&
+              v.busyUntil <= now &&
+              !view.vehicles.shop.find((q) => q.type === v.type)?.build,
+          );
+          if (here.length === 0) return null;
+          const r = x.id === "home" ? 46 : 34;
+          return (
+            <div
+              key={`f${x.id}`}
+              data-at={`${x.x},${x.y}`}
+              className="map-pin pointer-events-none"
+              data-fleet-at={x.id}
+            >
+              {here.slice(0, 8).map((v, i) => {
+                const a = ((-60 + i * 30) * Math.PI) / 180;
+                return (
+                  <span
+                    key={v.id}
+                    data-vehicle={v.id}
+                    className="absolute flex h-6 w-6 items-center justify-center rounded-full bg-night-3 text-cream ring-1 ring-lagoon/70 shadow-md shadow-black/50 [&_svg]:h-3.5 [&_svg]:w-3.5"
+                    style={{
+                      transform: `translate(${r * Math.cos(a) - 12}px, ${r * Math.sin(a) - 12}px)`,
+                    }}
+                  >
+                    {Icon.cart()}
+                  </span>
+                );
+              })}
+            </div>
+          );
+        })}
+        {/* The goods on the road between two counters: a cart gliding along the way. */}
+        {view.transfers.map((tr) => {
+          const a = postPoint(p, tr.from);
+          const b = postPoint(p, tr.to);
+          if (!a || !b) return null;
+          const k = Math.min(
+            1,
+            Math.max(0, (now - tr.leftAt) / Math.max(1, tr.arrivesAt - tr.leftAt)),
+          );
+          const x = a[0] + (b[0] - a[0]) * k;
+          const y = a[1] + (b[1] - a[1]) * k;
+          return (
+            <span
+              key={tr.id}
+              data-transfer={tr.id}
+              className="absolute left-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-ink ring-2 ring-night transition-transform duration-1000 ease-linear [&_svg]:h-3 [&_svg]:w-3"
+              style={{ transform: `translate(${x * base - 10}px, ${y * base - 10}px)` }}
+            >
+              {Icon.cart()}
+            </span>
           );
         })}
         {/* The convoys on their way: a point along their road, gliding from second to second. */}
@@ -414,8 +495,8 @@ const Chart = memo(function Chart({
   base: number;
   texture?: string;
   placing: Placing | null;
-  picked: string | null;
-  onPick?: (cell: string) => void;
+  picked: Picked | null;
+  onPick?: (at: Picked) => void;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -423,7 +504,20 @@ const Chart = memo(function Chart({
   const seen = new Set(map.revealed);
   const lands = Object.entries(map.cells);
   const allowed = placing ? placeable(p, placing) : null;
-  const preview = picked && placing?.kind === "post" ? cellsWithin(picked, map.radius) : [];
+  const preview = picked && placing?.kind === "post" ? cellsWithin(picked.cell, map.radius) : [];
+  // A touch on a lit cell: its point on the chart, where the counter goes (the map that grows).
+  const pick = (cell: string, e: { clientX: number; clientY: number; currentTarget: Element }) => {
+    const svg = (e.currentTarget as SVGGraphicsElement).ownerSVGElement;
+    const m = svg?.getScreenCTM()?.inverse();
+    if (!svg || !m || e.clientX === 0) {
+      const [x, y] = cellCentre(cell);
+      onPick?.({ cell, x: Math.round(x), y: Math.round(y) });
+      return;
+    }
+    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(m);
+    onPick?.({ cell, x: Math.round(pt.x), y: Math.round(pt.y) });
+  };
+  const reachBase = map.reach?.base ?? 0;
   const seatSeen = (code: string) => seen.has(seatCellOf(p, code));
   const frontier = [
     ...new Set(map.revealed.flatMap((c) => neighbours(c)).filter((c) => !seen.has(c))),
@@ -561,15 +655,56 @@ const Chart = memo(function Chart({
             <path
               key={cell}
               d={hexPath(cell, 1)}
-              fill={cell === picked ? P.gold : P.info}
-              fillOpacity={cell === picked ? 0.35 : 0.14}
-              stroke={cell === picked ? P.gold : P.info}
-              strokeWidth={cell === picked ? 2.4 : 1.4}
+              fill={cell === picked?.cell ? P.gold : P.info}
+              fillOpacity={cell === picked?.cell ? 0.25 : 0.14}
+              stroke={cell === picked?.cell ? P.gold : P.info}
+              strokeWidth={cell === picked?.cell ? 2.4 : 1.4}
               vectorEffect="non-scaling-stroke"
               style={{ pointerEvents: "all", cursor: "pointer" }}
               data-cell={cell}
-              onClick={() => onPick?.(cell)}
-              onKeyDown={(e) => e.key === "Enter" && onPick?.(cell)}
+              onClick={(e) => pick(cell, e)}
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                pick(cell, { clientX: 0, clientY: 0, currentTarget: e.currentTarget })
+              }
+            />
+          ))}
+          {/* The point picked, and the reach the counter would have there. */}
+          {picked && placing?.kind === "post" && reachBase > 0 && (
+            <g data-picked-reach style={{ pointerEvents: "none" }}>
+              <circle
+                cx={picked.x}
+                cy={picked.y}
+                r={reachBase}
+                fill={P.gold}
+                fillOpacity="0.1"
+                stroke={P.gold}
+                strokeWidth="1.6"
+                strokeDasharray="4 3"
+                vectorEffect="non-scaling-stroke"
+              />
+              <circle cx={picked.x} cy={picked.y} r="1.6" fill={P.gold} />
+            </g>
+          )}
+        </g>
+      )}
+      {/* Each counter's reach (the map that grows): the cities inside are its to serve. */}
+      {reachBase > 0 && (
+        <g data-reach style={{ pointerEvents: "none" }}>
+          {[{ id: "home", ...map.home }, ...map.posts].map((x) => (
+            <circle
+              key={x.id}
+              cx={x.x}
+              cy={x.y}
+              r={x.reach}
+              fill={P.gold}
+              fillOpacity="0.05"
+              stroke={P.gold}
+              strokeOpacity="0.55"
+              strokeWidth="1.2"
+              strokeDasharray="3 3"
+              vectorEffect="non-scaling-stroke"
+              data-reach-of={x.id}
             />
           ))}
         </g>
@@ -626,36 +761,20 @@ const REGION_TINT: Record<string, string> = {
 };
 const tintOf = (region: string) => REGION_TINT[region] ?? "#BFE3FF";
 
-/** Where a counter stands in its sector: below its middle, clear of the cities. */
-function postSpot(cell: string): [number, number] {
-  const [x, y] = cellCentre(cell);
-  return [x + HEX_SIZE * 0.25, y + HEX_SIZE * 0.5];
-}
+/** A point picked to put something on: its cell, and where on the chart. */
+export type Picked = { cell: string; x: number; y: number };
 
-/** Where a counter's workshops deploy: Venice's Casa, or the region's first counter. */
-function orbitAt(p: EmpirePayload, region: string): [number, number] {
-  if (region === "veneto") return seatOf("veneto");
-  const post = p.view?.map.posts.find((x) => x.region === region);
-  return post ? postSpot(post.cell) : seatOf(region);
+/** Venice's own counter on the chart. */
+function homeAt(p: EmpirePayload): [number, number] {
+  const h = p.view?.map.home;
+  return h ? [h.x, h.y] : seatOf("veneto");
 }
 
 /** Venice on the map: the house's gold sun, its Casa written in it; touched, its workshops deploy. */
-function HomeMark({
-  p,
-  hidden,
-  onClick,
-}: {
-  p: EmpirePayload;
-  hidden: boolean;
-  onClick: () => void;
-}) {
-  const [x, y] = seatOf("veneto");
+function HomeMark({ p, onClick }: { p: EmpirePayload; onClick: () => void }) {
+  const [x, y] = homeAt(p);
   return (
-    <div
-      data-at={`${x},${y}`}
-      data-home
-      className={`map-pin transition-opacity duration-[var(--t-base)] ${hidden ? "pointer-events-none opacity-0" : ""}`}
-    >
+    <div data-at={`${x},${y}`} data-home className="map-pin">
       <button
         type="button"
         onClick={onClick}
@@ -680,22 +799,24 @@ function HomeMark({
 function CityMark({
   p,
   code,
-  cell,
+  at,
   region,
   hidden,
   onClick,
 }: {
   p: EmpirePayload;
   code: string;
-  cell: string;
+  at: [number, number];
   region: string;
   hidden: boolean;
   onClick: () => void;
 }) {
+  const map = p.view?.map;
   const r = p.view?.regions.find((x) => x.code === region);
-  const open = (r?.counter ?? 0) > 0;
+  // Served when a counter has it in reach (the map that grows), else where the region is open.
+  const open = map?.reach ? map.covered.includes(code) : (r?.counter ?? 0) > 0;
   const best = open ? bestQuote(p, region) : null;
-  const [x, y] = CITY_SPOTS[code] ?? cellCentre(cell);
+  const [x, y] = at;
   const tint = tintOf(region);
   return (
     <div

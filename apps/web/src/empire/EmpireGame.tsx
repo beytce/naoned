@@ -33,7 +33,7 @@ import {
 } from "./logic.js";
 import { ActionPanel } from "./map/ActionPanel.js";
 import { BottomSlot } from "./map/BottomSlot.js";
-import { EmpireMap, type EmpireMapHandle } from "./map/EmpireMap.js";
+import { EmpireMap, type EmpireMapHandle, type Picked } from "./map/EmpireMap.js";
 import { Hud } from "./map/Hud.js";
 import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
@@ -79,7 +79,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [target, setTarget] = useState<Target | null>(null);
   // Putting a counter or the Arsenal down: the map lights the cells, a touch picks one.
   const [placing, setPlacing] = useState<Placing | null>(null);
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<Picked | null>(null);
   const map = useRef<EmpireMapHandle>(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -171,12 +171,12 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     if (!placing || !picked) return;
     await act(
       placing.kind === "arsenal"
-        ? { type: "empireBuildArsenal", cell: picked }
+        ? { type: "empireBuildArsenal", cell: picked.cell }
         : placing.kind === "camp"
-          ? { type: "empireBuildCamp", cell: picked }
+          ? { type: "empireBuildCamp", cell: picked.cell }
           : placing.kind === "depot"
-            ? { type: "empireBuildDepot", cell: picked }
-            : { type: "empirePlaceCounter", cell: picked },
+            ? { type: "empireBuildDepot", cell: picked.cell }
+            : { type: "empirePlaceCounter", ...picked },
     );
     setPlacing(null);
     setPicked(null);

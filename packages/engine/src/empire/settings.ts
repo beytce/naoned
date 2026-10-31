@@ -422,8 +422,30 @@ export const empireSettingsSchema = z.object({
         .record(z.string(), z.object({ region: z.string(), coast: z.boolean().prefault(false) }))
         .prefault({}),
       cities: z
-        .array(z.object({ code: z.string(), cell: z.string(), region: z.string() }))
+        .array(
+          z.object({
+            code: z.string(),
+            cell: z.string(),
+            region: z.string(),
+            /** Its place on the chart, in its units: its cell's centre when absent. */
+            x: z.number().int().optional(),
+            y: z.number().int().optional(),
+            /** Its weight in its region's book, against its region's other cities. */
+            weight: positive.prefault(1),
+          }),
+        )
         .prefault([]),
+      /** The hexes' size across their corners, in the chart's units (pointy-top, axial cells). */
+      hexSize: positive.prefault(24),
+      /**
+       * A counter's reach (the map that grows, 31 October 2026): the cities within `base` units,
+       * and `perLevel` more a level beyond the first, are served by it. None: every city found is.
+       */
+      reach: z.object({ base: positive, perLevel: qty }).nullable().prefault(null),
+      /** No counter closer than this to another, in the chart's units. */
+      postSpacing: qty.prefault(0),
+      /** A land vehicle between two counters: so many of the chart's units an hour. */
+      transferUnitsPerHour: positive.prefault(20),
       revealRadius: positive.prefault(2),
       /** The drawing of the grid: a house of another drawing is taken up again on it. */
       version: positive.prefault(1),

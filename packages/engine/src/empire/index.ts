@@ -29,3 +29,5 @@ export * from "./mudaSail.js";
 export * from "./colleganzaSail.js";
 export * from "./map.js";
 export * from "./fleet.js";
+export * from "./stores.js";
+export * from "./transfers.js";

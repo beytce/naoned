@@ -18,9 +18,10 @@ import { catchupCut } from "./catchup.js";
 import { buildMinutesOf, casaLevelOf, casaRequirementMet, levelCost } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { settleLearning } from "./knowledge.js";
-import { settlePost } from "./map.js";
+import { ensureMap, settlePost } from "./map.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
+import { HOME_POST, putAt, storeOf, takeAt, wherePut } from "./stores.js";
 
 /** The empire's settings, or a refusal in a world of the monthly seasons. */
 export function empireSettings(ctx: WorldContext): EmpireSettings {
@@ -82,14 +83,23 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
       // A ship of the Arsenal, launched.
       h.vehicles = [...(h.vehicles ?? []), { id: b.vehicleId, type: b.vehicleType, busyUntil: 0 }];
     } else if (b.kind === "post" && b.cell && b.region) {
-      settlePost(h, b.cell, b.region, b.reveal ?? [b.cell]);
+      settlePost(h, b.cell, b.region, b.reveal ?? [b.cell], { id: b.post, x: b.x, y: b.y });
     } else if (b.kind === "arsenal" && b.cell) {
       h.arsenal = b.cell;
     } else if (b.kind === "camp" && b.cell) {
       h.camp = b.cell;
     } else if (b.kind === "depot" && b.cell) {
       h.depot = b.cell;
+    } else if (b.kind === "counter" && b.post === "home") {
+      h.homeLevel = Math.max(h.homeLevel ?? 1, b.level);
     } else if (b.kind === "counter" && b.region) {
+      // A counter of the map raised, and its region's level with it (its best counter's).
+      const post = b.post ? h.posts?.find((p) => p.id === b.post) : undefined;
+      if (post) post.level = Math.max(post.level ?? 1, b.level);
+      else {
+        const first = h.posts?.find((p) => p.region === b.region);
+        if (first) first.level = Math.max(first.level ?? 1, b.level);
+      }
       h.counters = {
         ...(h.counters ?? {}),
         [b.region]: Math.max(h.counters?.[b.region] ?? 0, b.level),
@@ -186,8 +196,9 @@ export function openSite(
   if (h.builds.length >= casaLevelOf(h.casa, s).buildSlots) fail("no_build_slot");
   const cut = catchupCut(shareBps, s);
   const price = applyBpsFloor(cost, 10_000 - cut.costCutBps);
+  // The materials come from Venice's stock, where the house builds.
   for (const [good, qty] of Object.entries(materials))
-    removeStock(tx, playerId, good, qty, "empire_build");
+    takeAt(tx, h, playerId, HOME_POST, good, qty, "empire_build");
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, price, "empire_build");
   const quicker = Math.min(9_000, cut.timeCutBps + houseEffect(h, "buildTime", s));
   const ms = Math.round((minutes * MINUTE_MS * (10_000 - quicker)) / 10_000);
@@ -285,10 +296,30 @@ function farRegion(tx: Tx, code: string) {
   return r;
 }
 
-/** Raises a counter one level: its private book grows with it. */
+/**
+ * Raises a counter one level: its private book grows with it, and on a map with a reach, its
+ * reach. `code` names a region (its first counter), a counter put down, or « home », Venice's.
+ */
 export function upgradeCounter(tx: Tx, playerId: PlayerId, code: string): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
+  ensureMap(h, s);
+  const post = code === "home" ? null : (h.posts ?? []).find((p) => p.id === code);
+  if (code === "home" || post) {
+    if (h.builds.some((b) => b.kind === "counter" && b.post === code)) fail("building_busy");
+    const level = code === "home" ? (h.homeLevel ?? 1) : (post?.level ?? 1);
+    if (level >= s.counters.maxLevel) fail("max_level");
+    const cost = counterCostOf(h, levelCost(level + 1, s) * BigInt(s.counters.costTimes), s);
+    const site = openSite(tx, playerId, h, cost, {}, buildMinutesOf(level + 2, s), 0);
+    h.builds.push({
+      kind: "counter",
+      level: level + 1,
+      region: post?.region ?? "veneto",
+      post: code,
+      ...site,
+    });
+    return;
+  }
   farRegion(tx, code);
   const level = h.counters?.[code];
   if (!level) fail("unknown_region");
