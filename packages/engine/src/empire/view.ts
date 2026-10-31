@@ -23,7 +23,6 @@ import {
 import { houseEffect } from "./effects.js";
 import { extractionTeams as teamsOf } from "./extraction.js";
 import {
-  charterFavourOf,
   counterCostOf,
   empireHouseAt,
   isAsleep,
@@ -32,6 +31,7 @@ import {
   workshopTop,
 } from "./house.js";
 import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
+import { arsenalCost, citiesFound, ensureMap, hasMap, postCost, revealedOf } from "./map.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import { mudaDepartureAfter } from "./mudaSail.js";
 import { bandOf } from "./power.js";
@@ -86,6 +86,7 @@ export interface EmpireView {
   };
   /** The regions (CADRAGE-v3 § 3.4): Venetia, then the others with their charter and counter. */
   regions: EmpireRegionView[];
+  map: EmpireMapView;
   /** The vehicles one may buy, those of the house, and its voyages under way. */
   vehicles: {
     shop: {
@@ -246,7 +247,6 @@ export interface EmpireRegionView {
   casa: number;
   /** The corsairs' risk on the way there (bps), shown before any departure. */
   corsairRiskBps: number;
-  charterFavour: number;
   hoursFromVenice: number;
   workshopSlots: number;
   /** The goods it makes cheaply (a workshop makes no other raw good there) and those it asks. */
@@ -254,10 +254,32 @@ export interface EmpireRegionView {
   demands: string[];
   /** Its counter's level (Venetia: one, the Casa's), 0 without. */
   counter: number;
-  /** A counter's site under way there: its end. */
+  /** A counter's site under way there (its opening voyage, or its next level): its end. */
   buildingUntil: number | null;
-  /** The next level of its counter, or its charter's counter: null when none may be built now. */
-  next: (EmpireSite & { charter: boolean }) | null;
+  /** The next level of its counter: null without one, or when none may be built now. */
+  next: EmpireSite | null;
+  /** A counter put down there next, once its Casa is reached: its ducats. */
+  postCost: Deniers | null;
+  /** Its cities the house has found, and all of them (none: a region without cities). */
+  cities: { found: number; all: number };
+}
+
+/** The map as the house sees it (the map at the centre, step 2): never what it has not seen. */
+export interface EmpireMapView {
+  /** The land cells seen, each with its region and whether the sea touches it. */
+  cells: Record<string, { region: string; coast: boolean }>;
+  /** Every cell seen, land or sea. */
+  revealed: string[];
+  posts: { cell: string; region: string }[];
+  /** The counters and the Arsenal under way, on their cell. */
+  sites: { kind: "post" | "arsenal"; cell: string; endsAt: number }[];
+  arsenal: string | null;
+  /** The cities found, on their cell. */
+  cities: { code: string; cell: string; region: string }[];
+  /** How far a counter reveals. */
+  radius: number;
+  /** The Arsenal to build: its ducats, its minutes, its Casa; null once it stands or without one. */
+  arsenalSite: { cost: Deniers; minutes: number; casa: number } | null;
 }
 
 /** What a house finds after an absence of half a day or more. */
@@ -321,6 +343,7 @@ export function empireView(
   const s = ctx.settings.empire;
   const house = empireHouseAt(ctx, state, playerId, now);
   if (!s || !house) return null;
+  ensureMap(house, s);
   const share = sharesOf(ctx, state, now, s);
   const power = powerOfHouse(house, s);
   const line = casaLevelOf(house.casa, s);
@@ -383,6 +406,7 @@ export function empireView(
     carnet: carnetPreview(ctx, playerId, house, now, s),
     away: awayOf(ctx, state.empire?.houses[playerId], house, now, s),
     regions: regionsOf(house, s),
+    map: mapOf(house, s),
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
     deposits: (state.empire?.deposits ?? [])
@@ -604,31 +628,22 @@ function identityOf(house: EmpireHouse, s: EmpireSettings): EmpireIdentity {
 function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
   return s.regions.map((r) => {
     const counter = counterLevel(house, r.code);
-    const site = house.builds.find((b) => b.kind === "counter" && b.region === r.code);
+    const site = house.builds.find(
+      (b) => (b.kind === "counter" || b.kind === "post") && b.region === r.code,
+    );
     const far = r.hoursFromVenice > 0;
-    let next: EmpireRegionView["next"] = null;
-    if (far && !site && counter === 0 && house.casa >= r.casa)
-      next = {
-        ...plainSite(
-          counterCostOf(house, levelCost(r.casa, s) * BigInt(s.counters.costTimes), s),
-          r.hoursFromVenice * 60 + 60,
-          1,
-        ),
-        charter: true,
-      };
-    else if (far && !site && counter > 0 && counter < s.counters.maxLevel)
-      next = {
-        ...plainSite(
-          counterCostOf(house, levelCost(counter + 1, s) * BigInt(s.counters.costTimes), s),
-          buildMinutesOf(counter + 2, s),
-          counter + 1,
-        ),
-        charter: false,
-      };
+    const next: EmpireRegionView["next"] =
+      far && !site && counter > 0 && counter < s.counters.maxLevel
+        ? plainSite(
+            counterCostOf(house, levelCost(counter + 1, s) * BigInt(s.counters.costTimes), s),
+            buildMinutesOf(counter + 2, s),
+            counter + 1,
+          )
+        : null;
+    const { found, all } = citiesFound(house, r.code, s);
     return {
       code: r.code,
       casa: r.casa,
-      charterFavour: charterFavourOf(house, r.charterFavour, s),
       corsairRiskBps: corsairRiskBps(r.code, 0, s),
       hoursFromVenice: r.hoursFromVenice,
       workshopSlots: workshopPlaces(house, r.code, s) || r.workshopSlots,
@@ -637,8 +652,36 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
       counter,
       buildingUntil: site?.endsAt ?? null,
       next,
+      postCost: hasMap(s) && house.casa >= r.casa ? postCost(house, r.code, s) : null,
+      cities: { found: found.length, all },
     };
   });
+}
+
+/** The map as the house sees it: its cells, its counters, its Arsenal, the cities it found. */
+function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
+  const seen = revealedOf(house, s);
+  const a = s.map.arsenal;
+  const building = house.builds.some((b) => b.kind === "arsenal");
+  return {
+    cells: Object.fromEntries(
+      Object.entries(s.map.cells)
+        .filter(([k]) => seen.has(k))
+        .map(([k, c]) => [k, { region: c.region, coast: c.coast }]),
+    ),
+    revealed: [...seen].sort(),
+    posts: house.posts ?? [],
+    sites: house.builds
+      .filter((b) => (b.kind === "post" || b.kind === "arsenal") && b.cell)
+      .map((b) => ({ kind: b.kind as "post" | "arsenal", cell: b.cell ?? "", endsAt: b.endsAt })),
+    arsenal: house.arsenal ?? null,
+    cities: s.map.cities.filter((c) => seen.has(c.cell)),
+    radius: s.map.revealRadius,
+    arsenalSite:
+      a && !house.arsenal && !building
+        ? { cost: arsenalCost(s), minutes: a.minutes, casa: a.casa }
+        : null,
+  };
 }
 
 const plainSite = (cost: Deniers, minutes: number, level: number): EmpireSite => ({

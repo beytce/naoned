@@ -9,10 +9,11 @@ import {
   detailOf,
   farCamera,
   fleetOf,
-  fogOf,
   hudOf,
   nearScale,
   nearness,
+  placeable,
+  placingCost,
   scaleBounds,
 } from "../src/empire/map/logic.js";
 import type { EmpirePayload, EmpireRegion, EmpireWorkshop } from "../src/empire/types.js";
@@ -26,9 +27,11 @@ const region = (code: string, casa: number, counter = 0): EmpireRegion =>
     code,
     casa,
     counter,
-    charterFavour: 40,
     buildingUntil: null,
-    next: counter === 0 ? { level: 1, cost: "50000", minutes: 60, charter: true } : null,
+    demands: ["bread"],
+    next: null,
+    postCost: "50000",
+    cities: { found: counter > 0 ? 1 : 0, all: 2 },
   }) as unknown as EmpireRegion;
 
 const job = { recipe: "grow_wheat", startedAt: 0, batches: 24, level: 1, batchMs: HOUR / 2 };
@@ -77,6 +80,24 @@ function payload(over: Partial<NonNullable<EmpirePayload["view"]>> = {}, cash = 
         region("friuli", 8),
         region("levante", 14),
       ],
+      map: {
+        cells: {
+          "4,9": { region: "veneto", coast: true },
+          "4,8": { region: "veneto", coast: false },
+          "5,8": { region: "veneto", coast: true },
+          "2,8": { region: "lombardia", coast: false },
+        },
+        revealed: ["4,9", "4,8", "5,8", "2,8"],
+        posts: [{ cell: "4,8", region: "veneto" }],
+        sites: [],
+        arsenal: null,
+        cities: [
+          { code: "venezia", cell: "4,9", region: "veneto" },
+          { code: "milano", cell: "2,8", region: "lombardia" },
+        ],
+        radius: 2,
+        arsenalSite: { cost: "300000", minutes: 480, casa: 9 },
+      },
       vehicles: {
         shop: [],
         mine: [
@@ -152,18 +173,20 @@ describe("the corners", () => {
   });
 });
 
-describe("the fog", () => {
-  it("hides the regions ahead, shows the house's own and the next on the way", () => {
-    expect(fogOf(payload())).toEqual({
-      veneto: "open",
-      lombardia: "edge",
-      friuli: "hidden",
-      levante: "hidden",
-    });
+describe("putting down on the map (step 2)", () => {
+  it("lights the cells a counter may go on: seen, of a region reached, free", () => {
+    expect(placeable(payload(), { kind: "post" })).toEqual(["4,9", "5,8"]);
     const casa6 = payload({
       house: { casa: 6, favour: 0, seals: 0, workshops: [], builds: [] },
     } as never);
-    expect(fogOf(casa6)).toMatchObject({ lombardia: "edge", friuli: "edge", levante: "hidden" });
+    expect(placeable(casa6, { kind: "post" })).toEqual(["2,8", "4,9", "5,8"]);
+    expect(placeable(casa6, { kind: "post", region: "lombardia" })).toEqual(["2,8"]);
+    expect(placingCost(casa6, { kind: "post" }, "2,8")).toBe("50000");
+  });
+
+  it("lights the coasts for the Arsenal, its price from the view", () => {
+    expect(placeable(payload(), { kind: "arsenal" })).toEqual(["4,9", "5,8"]);
+    expect(placingCost(payload(), { kind: "arsenal" }, "4,9")).toBe("300000");
   });
 });
 
@@ -197,18 +220,26 @@ describe("the action panel", () => {
     expect(actionsOf(payload({}, "10"), { kind: "casa" }, 0)[0]?.disabled).toBe(true);
   });
 
-  it("keeps a region the Casa has not reached locked, and charters one it has", () => {
+  it("keeps a region the Casa has not reached locked, and puts a counter down in one it has", () => {
     expect(actionsOf(payload(), { kind: "region", code: "lombardia" }, 0)).toEqual([
       { id: "closed", icon: "lock", words: { key: "closed", n: 6 }, disabled: true },
     ]);
     const casa6 = payload({
-      house: { casa: 6, favour: 50, seals: 0, workshops: [], builds: [] },
+      house: { casa: 6, favour: 0, seals: 0, workshops: [], builds: [] },
     } as never);
-    const open = actionsOf(casa6, { kind: "region", code: "lombardia" }, 0);
-    expect(open[0]).toMatchObject({ id: "charter", action: { type: "empireCharter" } });
-    expect(actionsOf(payload(), { kind: "region", code: "veneto" }, 0).map((a) => a.id)).toEqual([
-      "convoy",
-      "details",
-    ]);
+    const open = actionsOf(casa6, { kind: "city", code: "milano" }, 0);
+    expect(open[0]).toMatchObject({ id: "post", cost: "50000", open: "place:post:lombardia" });
+    expect(open.at(-1)).toMatchObject({ id: "details", open: "region:lombardia" });
+  });
+
+  it("delivers to a city of an open region what the house holds of its demands", () => {
+    const p = payload();
+    p.stock = { bread: 12 };
+    const city = actionsOf(p, { kind: "city", code: "venezia" }, 0);
+    expect(city[0]).toMatchObject({
+      id: "deliver:bread",
+      good: "bread",
+      action: { type: "empireDeliver", good: "bread", qty: 12, city: "venezia" },
+    });
   });
 });

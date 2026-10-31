@@ -28,6 +28,8 @@ const empire: EmpireSettingsInput = {
       build: { minutes: 60, materials: {} },
     },
   },
+  // No Arsenal to put down first: the galleys are built at once.
+  map: { ...testEmpire.map, arsenal: null },
   muda: {
     vehicles: ["galea"],
     departuresPerWeek: 1,

@@ -141,3 +141,8 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 - Production automatisée payante : achète du pouvoir économique.
 - Prix de référence du PNJ qui suit automatiquement les prix des joueurs : manipulable.
 - **Autres usages de l'Influence, gardés pour plus tard** : pièces de blason, façades du palais, monument de la Maison sur la carte (il faut leurs dessins) ; proposer un décret à sa famille ; baptiser une nouvelle de la gazette.
+
+## La carte au centre (31 octobre 2026), hors du chemin
+- Des comptoirs rivaux sur une même case, entre joueurs d'une bande (un comptoir y prend une part du carnet de l'autre).
+- Des villes qui grandissent quand on les livre souvent (leur carnet monte).
+- Des cases de mer à explorer (épaves, routes plus courtes), par les navires.

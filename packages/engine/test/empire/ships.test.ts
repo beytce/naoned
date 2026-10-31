@@ -39,6 +39,9 @@ function world() {
   for (let i = 1; i < 3; i++) w.do({ type: "empireBuildCasa", playerId: "a" });
   w.give("a", "planks", 10);
   w.give("a", "wheat", 300);
+  // The Arsenal, on Venice's coast (the fixture's map).
+  w.do({ type: "empireBuildArsenal", playerId: "a", cell: "0,0" });
+  w.advance(HOUR);
   return w;
 }
 const house = (w: World) => {
@@ -61,6 +64,31 @@ const sail = (w: World, vehicleId: string, qty: number) =>
   });
 
 describe("the private Arsenal", () => {
+  it("stands on a coast the house sees, and the ships wait for it", () => {
+    const w = new World(makeContext({ empire }));
+    w.do({ type: "empireJoin", playerId: "a" });
+    w.give("a", "planks", 10);
+    expect(error(w.try({ type: "empireBuildShip", playerId: "a", vehicleType: "cocca" }))).toBe(
+      "no_arsenal",
+    );
+    // Its Casa first (the fixture's: 2).
+    expect(error(w.try({ type: "empireBuildArsenal", playerId: "a", cell: "0,0" }))).toBe(
+      "requirement_unmet",
+    );
+    w.do({ type: "empireBuildCasa", playerId: "a" });
+    // Not inland, not where the house does not see.
+    expect(error(w.try({ type: "empireBuildArsenal", playerId: "a", cell: "1,0" }))).toBe(
+      "unknown_cell",
+    );
+    expect(error(w.try({ type: "empireBuildArsenal", playerId: "a", cell: "9,0" }))).toBe(
+      "hidden_cell",
+    );
+    w.do({ type: "empireBuildArsenal", playerId: "a", cell: "0,0" });
+    w.advance(HOUR);
+    expect(empireHouseAt(w.ctx, w.state, "a", w.now)?.arsenal).toBe("0,0");
+    expect(error(w.try({ type: "empireBuildArsenal", playerId: "a", cell: "0,0" }))).toBe("built");
+  });
+
   it("builds a ship on a site, never sells one", () => {
     const w = world();
     expect(error(w.try({ type: "empireBuyVehicle", playerId: "a", vehicleType: "cocca" }))).toBe(

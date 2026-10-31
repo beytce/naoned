@@ -33,9 +33,10 @@ import {
 import { ActionPanel } from "./map/ActionPanel.js";
 import { EmpireMap, type EmpireMapHandle } from "./map/EmpireMap.js";
 import { Hud } from "./map/Hud.js";
+import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
 import { RoundButtons } from "./map/RoundButtons.js";
-import { type Target, canCasa } from "./map/logic.js";
+import { type Placing, type Target, canCasa } from "./map/logic.js";
 import { nextStep } from "./next.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
@@ -73,6 +74,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [sheet, setSheet] = useState<SheetId | null>(first.view?.away ? "away" : null);
   // The place of the map touched, its panel open at the foot of the screen.
   const [target, setTarget] = useState<Target | null>(null);
+  // Putting a counter or the Arsenal down: the map lights the cells, a touch picks one.
+  const [placing, setPlacing] = useState<Placing | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
   const map = useRef<EmpireMapHandle>(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -147,13 +151,41 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // A panel's action that opens a sheet: the panel gives way to it.
   const open = (id: string) => {
     setTarget(null);
+    if (id.startsWith("place:")) {
+      const [, kind = "post", region] = id.split(":");
+      setSheet(null);
+      setPicked(null);
+      setPlacing({ kind: kind === "arsenal" ? "arsenal" : "post", ...(region ? { region } : {}) });
+      map.current?.far();
+      return;
+    }
     setSheet(id as SheetId);
+  };
+  const place = async () => {
+    if (!placing || !picked) return;
+    await act(
+      placing.kind === "arsenal"
+        ? { type: "empireBuildArsenal", cell: picked }
+        : { type: "empirePlaceCounter", cell: picked },
+    );
+    setPlacing(null);
+    setPicked(null);
   };
   const step = nextStep(p, now);
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-night">
-      <EmpireMap ref={map} p={p} now={now} busy={busy} act={act} onTarget={setTarget} />
+      <EmpireMap
+        ref={map}
+        p={p}
+        now={now}
+        busy={busy}
+        act={act}
+        onTarget={(x) => !placing && setTarget(x)}
+        placing={placing}
+        picked={picked}
+        onPick={setPicked}
+      />
 
       <Hud
         p={p}
@@ -163,7 +195,19 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onProduction={() => setSheet("production")}
       />
 
-      {target ? (
+      {placing ? (
+        <PlacingBar
+          p={p}
+          placing={placing}
+          picked={picked}
+          busy={busy}
+          onPlace={() => void place()}
+          onCancel={() => {
+            setPlacing(null);
+            setPicked(null);
+          }}
+        />
+      ) : target ? (
         <ActionPanel
           p={p}
           target={target}
@@ -233,6 +277,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         open={sheet?.startsWith("production") === true}
         pane={sheet === "production:vehicles" ? "vehicles" : "buildings"}
         highlight={highlight}
+        onPlace={(kind) => open(`place:${kind}`)}
         busy={busy}
         onClose={close}
         act={act}
@@ -257,6 +302,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             act={act}
             onBuild={() => setSheet(`new:${sheet.slice(7)}`)}
             onConvoy={() => setSheet(`voyage:${sheet.slice(7)}`)}
+            onPlace={() => open(`place:post:${sheet.slice(7)}`)}
           />
         </Sheet>
       )}

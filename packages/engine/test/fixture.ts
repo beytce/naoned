@@ -382,6 +382,32 @@ export const testEmpire: EmpireSettingsInput = {
   },
   catchup: { fromShareBps: 5_000, maxCostCutBps: 5_000, maxTimeCutBps: 6_000 },
   prices: { floorBps: 6_000, ceilBps: 15_000, impactBps: 2_000, halfLifeHours: 24 },
+  // A small map: Venetia's four cells, Lombardy two to four cells off, the Levant far east.
+  map: {
+    cells: {
+      "0,0": { region: "veneto", coast: true },
+      "1,0": { region: "veneto" },
+      "0,1": { region: "veneto" },
+      "1,1": { region: "veneto" },
+      "3,0": { region: "lombardia" },
+      "4,0": { region: "lombardia" },
+      "3,1": { region: "lombardia" },
+      "6,0": { region: "lombardia" },
+      "9,0": { region: "levante", coast: true },
+      "10,0": { region: "levante" },
+    },
+    cities: [
+      { code: "venezia", cell: "0,0", region: "veneto" },
+      { code: "padova", cell: "0,1", region: "veneto" },
+      { code: "milano", cell: "4,0", region: "lombardia" },
+      { code: "verona", cell: "3,1", region: "lombardia" },
+      { code: "brescia", cell: "6,0", region: "lombardia" },
+      { code: "acri", cell: "9,0", region: "levante" },
+    ],
+    revealRadius: 2,
+    costStepBps: 2_500,
+    arsenal: { costDucats: 500, casa: 2, minutes: 60 },
+  },
   regions: [
     {
       code: "veneto",

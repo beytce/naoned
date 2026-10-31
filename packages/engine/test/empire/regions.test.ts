@@ -6,7 +6,7 @@ import {
   empireQuotes,
 } from "../../src/index.js";
 import { testEmpire } from "../fixture.js";
-import { DAY, HOUR, World, makeContext } from "../helpers.js";
+import { DAY, HOUR, World, makeContext, openLombardy } from "../helpers.js";
 
 // Lombardy here makes flour (at 500) and asks bread (at 1 500), 30 units of private book a level.
 const empire: EmpireSettingsInput = {
@@ -36,8 +36,7 @@ function world() {
     w.do({ type: "empireJoin", playerId: id, favour: 50 });
     for (let i = 1; i < 4; i++) w.do({ type: "empireBuildCasa", playerId: id });
   }
-  w.do({ type: "empireCharter", playerId: "a", region: "lombardia" });
-  w.advance(7 * HOUR);
+  openLombardy(w);
   w.do({
     type: "empireBuildWorkshop",
     playerId: "a",

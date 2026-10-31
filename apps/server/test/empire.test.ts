@@ -198,6 +198,40 @@ describe("the empire beyond Venetia", () => {
   });
 });
 
+describe("the map (the map at the centre, step 2)", () => {
+  it("shows Venetia and its cities alone, puts a counter down, refuses the unknown", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/empire/join");
+    const map = (await get(cookie)).json().view.map;
+    expect(map.cities.map((c: { code: string }) => c.code).sort()).toEqual([
+      "padova",
+      "treviso",
+      "venezia",
+    ]);
+    expect(
+      Object.values(map.cells as Record<string, { region: string }>).every(
+        (c) => c.region === "veneto",
+      ),
+    ).toBe(true);
+    // Milan's cell, far in the unknown at the Casa 1.
+    const far = await act(cookie, { type: "empirePlaceCounter", cell: "-3,9" });
+    expect(far.json().error).toMatch(/hidden_cell|unknown_cell/);
+    const cell = Object.keys(map.cells).find(
+      (k) => !map.cities.some((c: { cell: string }) => c.cell === k),
+    );
+    const put = await act(cookie, { type: "empirePlaceCounter", cell });
+    expect(put.json().error).toBeUndefined();
+    expect(put.json().view.map.sites).toEqual([expect.objectContaining({ kind: "post", cell })]);
+    const city = await act(cookie, {
+      type: "empireDeliver",
+      good: "bread",
+      qty: 1,
+      city: "milano",
+    });
+    expect(city.json().error).toBe("hidden_cell");
+  });
+});
+
 describe("the sea", () => {
   it("answers the Arsenal, the Muda and the colleganza through the route, and shows the risk", async () => {
     const cookie = await login("ada@example.org");

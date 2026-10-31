@@ -394,6 +394,29 @@ export const empireSettingsSchema = z.object({
       costTimes: positive.prefault(4),
     })
     .prefault({ maxLevel: 10, bookStepBps: 10_000, costTimes: 4 }),
+  /**
+   * The map at the centre of the game (step 2): the land cells of a hex grid (« q,r », axial),
+   * each with its region and whether the sea touches it; the cities hidden in them; how far a
+   * counter put down reveals, how much dearer each one makes the next; the Arsenal, put on a
+   * coast. Without cells, the regions open as before, and their books are whole.
+   */
+  map: z
+    .object({
+      cells: z
+        .record(z.string(), z.object({ region: z.string(), coast: z.boolean().prefault(false) }))
+        .prefault({}),
+      cities: z
+        .array(z.object({ code: z.string(), cell: z.string(), region: z.string() }))
+        .prefault([]),
+      revealRadius: positive.prefault(2),
+      /** Each counter already put down makes the next this much dearer. */
+      costStepBps: bps.prefault(2_500),
+      arsenal: z
+        .object({ costDucats: qty, casa: positive, minutes: qty })
+        .nullable()
+        .prefault(null),
+    })
+    .prefault({}),
   /** The young houses' raw goods sell this much dearer, up to a Casa (CADRAGE-v3 § 6). */
   newcomers: z
     .object({ rawBonusBps: bps, untilCasa: qty })

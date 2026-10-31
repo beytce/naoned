@@ -1926,6 +1926,31 @@ Le simulateur lit désormais les navires du jeu :
 
 Sur la graine 3, l'assurance a coûté 15,0 millions de ducats de primes pour 8,8 millions remboursés : c'est un puits, comme voulu. Le négociant de la graine 1 frôle la cible (24,9 % pour 25 %) : l'assurance et les chantiers des navires prennent sur sa marge. C'est le point à surveiller avec l'escorte des galères armées (7b), qui réduira le risque.
 
+### La carte au centre, étape 2 au simulateur : comptoirs posés, villes cachées, Arsenal (31 octobre 2026)
+
+Le simulateur suit les règles de la carte (CADRAGE-v3 § 3.4, § 12 ter) :
+- **une région s'ouvre** par un comptoir posé sur son siège, en vue dès que la Casa l'atteint. Il coûte l'ancienne charte en ducats (`levelCost(Casa de la région) × 4`), un quart plus cher pour chaque comptoir déjà posé (`map.costStepBps` 2 500). Il n'y a plus de Faveur ;
+- **des comptoirs de plus** se posent là où leur rayon (2 cases) trouve des villes encore cachées, s'ils se remboursent en `paybackDays` par la part de carnet gagnée ;
+- **le carnet d'une région** est réduit à la part de ses villes trouvées ;
+- **l'Arsenal** (3 000 ducats, 8 h, Casa 9) précède le premier navire.
+
+**Retenu sans réglage** : les valeurs proposées. **Résultat** (graines 1, 2 et 3, quatre cohortes de 200) : **9, 9 et 8 cibles sur 12**, le même total qu'à l'étape 7a. Les cibles manquées sont les mêmes qu'avant la carte.
+
+| Mesure | Étape 7a | Carte, étape 2 |
+| --- | --- | --- |
+| Nouveau hors de la première bande | 5,2 à 5,7 mois | 4,3 à 5,6 mois ✓ |
+| Prochain palier de Casa, en jours de revenu | 3,8 à 9,5 | 4,3 à 9,2 |
+| Puits ÷ sources, jeunes puis anciennes | 0,82–0,87 puis 0,98–1,00 | 0,85–0,87 puis 0,96–0,99 |
+| Bruts des jeunes vendus à Venise | 5,4 à 6,8 % | 6,1 à 6,5 % |
+| Part du négoce chez le négociant | 24,9 à 29,5 % | 26,9 à 30,2 % ✓ |
+| Part des gisements chez l'exploitant | 25,8 à 25,9 % | 24,6 % (graine 3) à 27,0 % |
+| Marge d'un voyage, part des commandes | 1 010 à 1 070 d, 31 à 33 % | 1 040 à 1 120 d, 31 à 33 % |
+| Convois de la Muda en colleganza | 29 à 32 % | 26 à 38 % |
+
+La carte ne déplace presque rien : la charte est remplacée à prix égal, et le carnet partiel d'une région nouvelle se comble vite par un deuxième comptoir.
+
+Le nouveau sort un peu plus tôt de la première bande, car il ne paie plus de Faveur et ouvre la Lombardie dès sa Casa. Le négociant passe au-dessus de 25 % sur les trois graines. L'exploitant de la graine 3 frôle la cible (24,6 % pour 25 %), comme le négociant de la graine 1 à l'étape 7a : ce sont des écarts de graine, à surveiller.
+
 ### Refaire le calibrage
 
 ```

@@ -3,10 +3,12 @@ import {
   type Deniers,
   type Rng,
   applyBpsFloor,
+  arsenalCost,
   buildMinutesOf,
   casaLevelOf,
   casaRequirementMet,
   catchupCut,
+  cellsWithin,
   corsairRiskBps,
   effectOf,
   expeditionSuccessBps,
@@ -20,9 +22,13 @@ import {
   mudaReserve,
   newsDelayMs,
   plansFor,
+  regionCells,
+  regionCities,
+  regionSeat,
   relicsOf,
   researchCost,
   researchMinutesOf,
+  revealedOf,
   routeHours,
   settleColleganza,
   teamRate,
@@ -50,6 +56,7 @@ import {
 } from "./model.js";
 import {
   addStock,
+  bookOf,
   buyFromMarket,
   create,
   d,
@@ -60,6 +67,7 @@ import {
   market,
   priceOf,
   receive,
+  seen,
   sellToMarket,
   takeStock,
   transfer,
@@ -84,6 +92,9 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     casaAt: [w.now],
     workshops: w.m.startWorkshops.map((x) => ({ ...x, level: 1 })),
     counters: new Map([["veneto", 1]]),
+    revealed: new Set(regionCells(w.s, "veneto")),
+    posts: 0,
+    arsenal: false,
     vehicles: w.m.startVehicles.map((type) => ({ type, busyUntil: 0 })),
     galleys: 0,
     modules: {},
@@ -125,7 +136,7 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
   joinCompany(w, h);
   w.houses.push(h);
   create(w, h, d(w.m.startCapitalDucats), "start");
-  h.bookLeft.set("veneto", w.s.regions[0]?.localOrdersPerCounter ?? 0);
+  h.bookLeft.set("veneto", bookOf(w, h, "veneto", 1));
   return h;
 }
 
@@ -855,21 +866,64 @@ function counterPaysBack(w: World, h: House, region: string, cost: Deniers): boo
   return perDay > 0n && cost <= perDay * BigInt(w.m.paybackDays);
 }
 
+/** A counter put down (step 2): its region's charter of before, dearer for each one down. */
+function postCostOf(w: World, h: House, region: string): Deniers {
+  const r = w.s.regions.find((x) => x.code === region);
+  const base = levelCost(r?.casa ?? 1, w.s) * BigInt(w.s.counters.costTimes);
+  return applyBpsFloor(base, 10_000 + w.s.map.costStepBps * h.posts);
+}
+
+/** The cities of a region a counter on `cell` would find, not seen yet. */
+function newCities(w: World, sees: Set<string>, region: string, cell: string): number {
+  const around = cellsWithin(cell, w.s.map.revealRadius);
+  const hidden = regionCities(w.s, region).filter((c) => !sees.has(c.cell));
+  return hidden.filter((c) => around.includes(c.cell)).length;
+}
+
 function tryCounter(w: World, h: House): boolean {
-  if (busy(h, "counter")) return false;
-  const region = w.s.regions.find(
-    (r) => !h.counters.has(r.code) && r.casa <= h.casa && h.favour >= r.charterFavour,
-  );
-  const cost = region ? levelCost(region.casa, w.s) * BigInt(w.s.counters.costTimes) : 0n;
+  if (busy(h, "counter") || busy(h, "post")) return false;
+  // A new region, its seat in sight from its Casa (no Favour now): a counter put down there.
+  const region = w.s.regions.find((r) => !h.counters.has(r.code) && r.casa <= h.casa);
+  const seat = region ? regionSeat(w.s, region.code) : null;
+  const cost = region ? postCostOf(w, h, region.code) : 0n;
   // A new region is the house's growth: it is opened before saving, as soon as it pays back.
-  if (region && (regionPaysBack(w, region.code, cost) ? h.cash : spendable(w, h)) >= cost) {
-    h.favour -= region.charterFavour;
+  if (region && seat && (regionPaysBack(w, region.code, cost) ? h.cash : spendable(w, h)) >= cost) {
     destroy(w, h, cost, "counters");
     startBuild(
       w,
       h,
-      { kind: "counter", target: region.code },
+      { kind: "post", target: `${region.code}@${seat}` },
       region.hoursFromVenice * MINUTES_PER_HOUR + 60,
+    );
+    return true;
+  }
+  // Else a counter more where it finds cities still hidden, when their book pays it back.
+  const sees = revealedOf(seen(h), w.s);
+  for (const code of h.counters.keys()) {
+    // A region whose cities are all found asks no more counters.
+    if (regionCities(w.s, code).every((c) => sees.has(c.cell))) continue;
+    const best = regionCells(w.s, code)
+      .filter((c) => sees.has(c))
+      .map((c) => ({ c, n: newCities(w, sees, code, c) }))
+      .sort((a, b) => b.n - a.n)[0];
+    if (!best || best.n === 0) continue;
+    const r = w.s.regions.find((x) => x.code === code);
+    const all = regionCities(w.s, code).length;
+    if (!r || all === 0) continue;
+    const up = postCostOf(w, h, code);
+    const goods = Object.keys(r.demands);
+    if (goods.length === 0) continue;
+    const avg = goods.reduce((a, g) => a + market(w, code, g).ref, 0n) / BigInt(goods.length);
+    const gain =
+      (avg * BigInt(localBookOf(code, h.counters.get(code) ?? 1, w.s)) * BigInt(best.n)) /
+      BigInt(all);
+    if (up > gain * BigInt(w.m.paybackDays) || spendable(w, h) < up) continue;
+    destroy(w, h, up, "counters");
+    startBuild(
+      w,
+      h,
+      { kind: "post", target: `${code}@${best.c}` },
+      r.hoursFromVenice * MINUTES_PER_HOUR + 60,
     );
     return true;
   }
@@ -902,6 +956,16 @@ function tryVehicle(w: World, h: House): boolean {
   // A ship is built at the Arsenal (step 7a): its site's hours, its materials from the stock, or
   // their worth at the reference when the house lacks them (the model buys them for it).
   const build = w.s.vehicles[pick[0]]?.build;
+  // On the map (step 2), the Arsenal is put down on a coast first.
+  const yard = w.s.map.arsenal;
+  if (build && yard && !h.arsenal) {
+    if (busy(h, "arsenal") || h.casa < yard.casa) return false;
+    const price = arsenalCost(w.s);
+    if (spendable(w, h) < price) return false;
+    destroy(w, h, price, "vehicles");
+    startBuild(w, h, { kind: "arsenal", target: "arsenal" }, yard.minutes);
+    return true;
+  }
   let cost = d(pick[1].costDucats);
   const lacking: [string, number][] = [];
   for (const [g, n] of Object.entries(build?.materials ?? {})) {
@@ -974,6 +1038,14 @@ export function finishBuild(w: World, h: House, b: Build) {
     h.workshops.push({ region, good, level: 1 });
   } else if (b.kind === "counter") {
     h.counters.set(b.target, (h.counters.get(b.target) ?? 0) + 1);
+  } else if (b.kind === "post") {
+    // A counter put down: the cells around it seen, its region opened if none stood there.
+    const [region = "veneto", cell = ""] = b.target.split("@");
+    h.posts++;
+    for (const c of cellsWithin(cell, w.s.map.revealRadius)) h.revealed.add(c);
+    if (!h.counters.has(region)) h.counters.set(region, 1);
+  } else if (b.kind === "arsenal") {
+    h.arsenal = true;
   } else if (b.kind === "vehicle") {
     h.vehicles.push({ type: b.target, busyUntil: 0 });
   } else if (b.kind === "galley") {

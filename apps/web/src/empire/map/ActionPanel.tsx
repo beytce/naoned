@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { GoodsMark } from "../../art/goods.js";
 import { Coin } from "../../art/icons.js";
 import { d } from "../../game/format.js";
 import { Icon } from "../../game/map/icons.js";
@@ -6,7 +7,7 @@ import { fr } from "../../i18n.js";
 import { regionName } from "../World.js";
 import { buildingName } from "../logic.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
-import { type ActionIcon, type Target, actionsOf, fogOf } from "./logic.js";
+import { type ActionIcon, type Target, actionsOf } from "./logic.js";
 
 const t = fr.empire;
 
@@ -37,12 +38,19 @@ function headOf(p: EmpirePayload, target: Target): { title: string; sub: string 
     case "free":
       return { title: s.free, sub: s.owner };
     case "region": {
-      const known = (fogOf(p)[target.code] ?? "hidden") === "open";
       const r = view?.regions.find((x) => x.code === target.code);
-      const reached = known || (r ? (view?.house.casa ?? 0) >= r.casa : false);
+      const reached = r ? r.counter > 0 || (view?.house.casa ?? 0) >= r.casa : false;
       return {
         title: reached ? regionName(target.code) : s.unknown,
         sub: r && r.counter > 0 ? t.world.counter(r.counter) : t.world.closed(r?.casa ?? 0),
+      };
+    }
+    case "city": {
+      const c = view?.map.cities.find((x) => x.code === target.code);
+      const r = view?.regions.find((x) => x.code === c?.region);
+      return {
+        title: t.cityNames[target.code] ?? target.code,
+        sub: `${regionName(c?.region ?? "")} · ${r && r.counter > 0 ? t.world.counter(r.counter) : t.world.toOpen}`,
       };
     }
     case "arsenal":
@@ -112,7 +120,7 @@ export function ActionPanel({
             <span
               className={`flex h-12 w-12 items-center justify-center rounded-lg border [&_svg]:h-6 [&_svg]:w-6 ${a.action && !a.disabled ? "border-info text-info" : "border-line text-cream"}`}
             >
-              {ICONS[a.icon]()}
+              {a.good ? <GoodsMark code={a.good} size={26} /> : ICONS[a.icon]()}
             </span>
             <span className="max-w-[5.5rem] truncate text-[0.6875rem] font-semibold">
               {(t.scene.actions[a.words.key] ?? (() => a.words.key))(a.words.n ?? 0)}
