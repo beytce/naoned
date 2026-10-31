@@ -35,7 +35,10 @@ function portaOf(h: EmpireHouse): EmpirePorta {
   return h.porta;
 }
 
-/** Puts the Porta down on a land cell the house sees with no other building, from its Casa. */
+/**
+ * Puts the Porta down on a land cell the house sees, from its Casa: a sector holds several
+ * buildings, as the Remise and the Campo share theirs.
+ */
 export function buildPorta(tx: Tx, playerId: PlayerId, cell: string): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
@@ -45,8 +48,6 @@ export function buildPorta(tx: Tx, playerId: PlayerId, cell: string): void {
   if (!c) fail("unknown_cell");
   if (!revealedOf(h, s).has(cell)) fail("hidden_cell");
   if (h.porta || h.builds.some((x) => x.kind === "porta")) fail("built");
-  const taken = [h.depot, h.camp, h.arsenal, ...(h.posts ?? []).map((p) => p.cell)];
-  if (taken.includes(cell) || h.builds.some((x) => x.cell === cell)) fail("built");
   if (h.casa < b.casa) fail("requirement_unmet");
   const site = openSite(tx, playerId, h, ducats(b.costDucats), {}, b.minutes, 0);
   h.builds.push({ kind: "porta", level: 1, region: c.region, cell, ...site });

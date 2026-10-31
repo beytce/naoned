@@ -86,6 +86,8 @@ import { levelsOf } from "./level.js";
 import { LiveHub } from "./live.js";
 import { acceptChallenge, challenge, sfidaRival, sfidaView } from "./lustre.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
+import type { PortaHub } from "./porta.js";
+import { registerPortaRoutes } from "./portaRoutes.js";
 import { priceHistory, profile } from "./profile.js";
 import { activePeopleByRegion, recommendedRegion } from "./recommend.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
@@ -280,6 +282,8 @@ export interface GameRouteDeps {
   skirmishes: SkirmishHub;
   /** The Condotta's matches (E2-5). */
   condottas: CondottaHub;
+  /** The Porta's live battles (docs/plan-porta.md); none outside the empire. */
+  porta?: PortaHub;
   adminEmails: string[];
   /** The players' community (null: none). */
   communityUrl?: string | null;
@@ -324,6 +328,16 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   }
 
   registerEmpireRoutes(app, { db, world, requireAccount, perMerchant });
+  if (deps.porta)
+    registerPortaRoutes(app, {
+      db,
+      world,
+      auth,
+      sessionCookie: deps.sessionCookie,
+      requireAccount,
+      perMerchant,
+      porta: deps.porta,
+    });
 
   async function tutorialOf(accountId: string): Promise<string[]> {
     const [row] = await db

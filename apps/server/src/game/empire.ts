@@ -100,6 +100,32 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("empireBuildArsenal"), cell: z.string().max(12) }),
   z.object({ type: z.literal("empireBuildCamp"), cell: z.string().max(12) }),
   z.object({ type: z.literal("empireBuildDepot"), cell: z.string().max(12) }),
+  // The Porta (docs/plan-porta.md): its arms at the Remise, the building, the way, the antiquarian.
+  z.object({ type: z.literal("empireBuyArm"), model: z.string().max(40) }),
+  z.object({ type: z.literal("empireUpgradeArm"), model: z.string().max(40) }),
+  z.object({ type: z.literal("empireBuyComponent"), code: z.string().max(40) }),
+  z.object({ type: z.literal("empireUpgradeComponent"), componentId: z.string().max(32) }),
+  z.object({
+    type: z.literal("empireFitArm"),
+    vehicleId: z.string().max(32),
+    slot: z.number().int().min(0).max(8),
+    componentId: z.string().max(32).nullable(),
+  }),
+  z.object({ type: z.literal("empireBuildPorta"), cell: z.string().max(12) }),
+  z.object({ type: z.literal("empireUpgradePorta") }),
+  z.object({
+    type: z.literal("empireSendToPorta"),
+    vehicleIds: z.array(z.string().max(32)).min(1).max(10),
+  }),
+  z.object({
+    type: z.literal("empireRecallFromPorta"),
+    vehicleIds: z.array(z.string().max(32)).min(1).max(10),
+  }),
+  z.object({
+    type: z.literal("empireSellRelics"),
+    rarity: z.enum(["common", "rare", "precious", "legendary"]),
+    qty: z.number().int().min(1).max(10_000),
+  }),
   z.object({ type: z.literal("empireUpgradeVehicle"), vehicleType: z.string().max(40) }),
   z.object({ type: z.literal("empireUpgradeCounter"), region: z.string().max(40) }),
   z.object({ type: z.literal("empireBuyVehicle"), vehicleType: z.string().max(40) }),

@@ -27,7 +27,7 @@ Ce qu'on change :
 ## 2. Le parcours du joueur
 
 1. **À la Remise**, il achète un véhicule de combat (dès la Casa 9) et des composants, et les pose sur le véhicule.
-2. **Il pose la Porta** (dès la Casa 10) sur une case de terre vue et libre de sa carte, comme la Remise ou le Campo.
+2. **Il pose la Porta** (dès la Casa 10) sur une case de terre vue de sa carte, comme la Remise ou le Campo (un grand secteur porte plusieurs bâtiments).
 3. **Il envoie** un véhicule de combat et un transport de la Remise à la Porta. Le trajet dure selon la distance en cases.
 4. **À la Porta**, il choisit un palier ouvert, puis entre dans la file, invite un associé, ou part seul tout de suite. L'entrée se paie en pain.
 5. **La bataille** : il mène son transport de ville en ville, sous la garde de son véhicule de combat, charge des reliques, et rentre à la porte avant la fermeture.
@@ -208,7 +208,7 @@ Au lot 6, le simulateur doit tenir l'indice des prix entre 80 et 130 sur 24 mois
   - les batailles en mémoire, avancées à 4 Hz ;
   - un canal WebSocket pour les participants (instantanés, ordres) ;
   - les routes `/api/empire/porta/*` ;
-  - une table `porta_scores` (world_id, semaine, joueur, bande, points).
+  - le classement lu sur les points de la semaine des Maisons (sans table).
 - **Écran** : `apps/web/src/empire/porta/` :
   - la Remise des armes ;
   - la feuille de la Porta (paliers, quai, salon, antiquaire, classement) ;
@@ -221,7 +221,7 @@ Au lot 6, le simulateur doit tenir l'indice des prix entre 80 et 130 sur 24 mois
 1. Le moteur des armes : véhicules de combat, composants, achat, pose, amélioration. *Fait le 31 octobre 2026* (`empire/porta/arms.ts`, `empire/porta/settings.ts`, réglages de Venise ; la Puissance compte les véhicules de combat, les niveaux de modèle et ceux des composants).
 2. Le moteur de bataille : carte, simulation, IA de Rome, ordres, reliques, fermeture. *Fait le 31 octobre 2026* (`empire/porta/battle/` : `map.ts` tire la carte, `ai.ts` l'esprit de Rome, `sim.ts` le pas, les ordres et l'issue ; réglages `porta.battle`, `porta.rome`, `porta.tiers`, `porta.relics` ; un palier 1 se gagne seul avec un cavalier aux lances qui nettoie la ville la plus proche avant d'y mener son transport).
 3. La Porta et l'antiquaire : bâtiment, envoi, entrée, sortie, vente, points. *Fait le 31 octobre 2026* (`empire/porta/porta.ts` : `empireBuildPorta`, `empireUpgradePorta`, `empireSendToPorta`, `empireRecallFromPorta`, `empirePortaEnter`, `empirePortaSettle`, `empirePortaCancel`, `empireSellRelics` ; `portaEntrant` donne au serveur ce que la Maison engage ; un transport à la Porta n'est jamais libre pour les livraisons ; l'antiquaire paie comme toute recette, salaires compris).
-4. Le serveur en direct : salon, file, invitation, départ seul, boucle, WebSocket, classement.
+4. Le serveur en direct : salon, file, invitation, départ seul, boucle, WebSocket, classement. *Fait le 31 octobre 2026* (`apps/server/src/game/porta.ts`, le hub ; `portaRoutes.ts` : `GET /api/empire/porta` (salon, bataille, classement de la bande), `POST …/queue` (seul, public, invitation), `…/join` (par le code à six chiffres), `…/launch` (« Partir maintenant »), `…/leave`, `…/order`, et le socket `…/live` qui pousse un instantané par battement. Le classement se lit sur l'état des Maisons (les points de la semaine), sans table : la table `porta_scores` du plan n'a pas été nécessaire. Un joueur sorti par la porte est réglé aussitôt, sans attendre la fin de la bataille.)
 5. L'écran : la Remise des armes, la Porta sur la carte, la bataille, l'antiquaire, le classement.
 6. Le simulateur de 24 mois : un bot joue la vraie bataille ; calibration documentée dans `docs/calibration.md` ; parcours `e2e:empire` étendu.
 

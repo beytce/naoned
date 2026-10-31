@@ -71,9 +71,11 @@ const enter = (w: World, rider: string, cart: string, tier = 1, battleId = "b1")
   });
 
 describe("the Porta", () => {
-  it("is put down on a free land cell the house sees, from its Casa, and stands after its site", () => {
+  it("is put down on a land cell the house sees, from its Casa, and stands after its site", () => {
     const w = world();
-    expect(error(w.try({ type: "empireBuildPorta", playerId: "a", cell: "1,0" }))).toBe("built");
+    expect(error(w.try({ type: "empireBuildPorta", playerId: "a", cell: "9,9" }))).toBe(
+      "unknown_cell",
+    );
     expect(error(w.try({ type: "empireBuildPorta", playerId: "a", cell: "3,1" }))).toBe(
       "hidden_cell",
     );
