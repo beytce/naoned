@@ -6,6 +6,7 @@ import {
   ensureMap,
   parseEmpireSettings,
   powerOfHouse,
+  upgradeCost,
 } from "../../src/index.js";
 import type { EmpireHouse } from "../../src/state.js";
 import { testEmpire } from "../fixture.js";
@@ -18,7 +19,7 @@ const empire: EmpireSettingsInput = {
   casa: testEmpire.casa.map((c) => ({ ...c, materials: {}, buildMinutes: 0, costDucats: 0 })),
   start: { capitalDucats: 100_000, workshops: [], vehicles: ["cart"] },
   map: { ...testEmpire.map, depot: { costDucats: 200, casa: 2, minutes: 60 } },
-  vehicleLevels: { max: 5, stepBps: 1_000, costTimes: 1 },
+  vehicleLevels: { max: 5, stepBps: 1_000, costTimes: 1, minCostDucats: 0 },
   vehicles: {
     cart: { casa: 1, capacity: 30, costDucats: 100, regions: ["veneto"], speedBps: 0 },
     cocca: {
@@ -119,6 +120,16 @@ describe("a model's level", () => {
     const again = cash(d);
     d.do({ type: "empireUpgradeVehicle", playerId: "a", vehicleType: "cart" });
     expect(again - cash(d)).toBe(price * 4n);
+  });
+
+  it("reckons a cheap model's level from its floor price", () => {
+    const s = parseEmpireSettings({
+      ...empire,
+      vehicleLevels: { max: 5, stepBps: 1_000, costTimes: 1, minCostDucats: 500 },
+    });
+    const h = { casa: 2, workshops: [], builds: [] } as unknown as EmpireHouse;
+    expect(upgradeCost(h, "cart", s)).toBe(500n * 2n * 100n);
+    expect(upgradeCost(h, "cocca", s)).toBe(1_000n * 2n * 100n);
   });
 
   it("raises the hold of every vehicle of the model by a tenth a level, up to the fifth", () => {

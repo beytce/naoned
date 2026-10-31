@@ -100,14 +100,16 @@ export const empireSettingsSchema = z.object({
     .prefault({}),
   /**
    * A model's level (decision of the owner, 31 October 2026): up to `max`, each level beyond the
-   * first holds `stepBps` more for every vehicle of the model, and costs the model's price times
-   * `costTimes`, doubled at each level.
+   * first holds `stepBps` more for every vehicle of the model, and costs the model's price (at
+   * least `minCostDucats`) times `costTimes`, doubled at each level.
    */
   vehicleLevels: z
     .object({
       max: positive.prefault(5),
       stepBps: bps.prefault(1_000),
       costTimes: positive.prefault(1),
+      /** The price a level is reckoned from, at the least: a cheap model is not raised for nothing. */
+      minCostDucats: qty.prefault(0),
     })
     .prefault({}),
   /** A land vehicle's round trips a day for the cities' orders. */

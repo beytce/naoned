@@ -122,6 +122,8 @@ Les dix régions, dans l'ordre d'ouverture :
   Le premier comptoir d'une région l'ouvre. Les suivants y découvrent ses autres cases.
 - **Les villes cachées.** Chaque région a de deux à quatre villes, sur leurs cases. Une ville trouvée reçoit des livraisons, et porte **sa part du carnet de la région**. Toutes les villes trouvées font le carnet entier.
 - **L'Arsenal** se pose une fois, sur une côte qu'on voit, dès la Casa de la première marciliana. Les navires s'y construisent.
+- **La Remise** se pose une fois, sur un secteur qu'on voit, dès la Casa 2. On y **achète les véhicules de terre** (les deux mules du départ restent données). Une Maison qui en avait déjà acheté la reçoit à Venise.
+- **Le niveau d'un modèle**, de 1 à 5, se monte à la Remise pour la terre et à l'Arsenal pour la mer. Chaque niveau donne **+10 % de capacité à tous les véhicules du modèle**. Il coûte le prix du modèle, doublé à chaque niveau. À la Puissance, un niveau de modèle compte comme un niveau de module.
 - **Le Campo** se pose une fois, sur un secteur qu'on voit, dès la Casa 4. Il **ouvre la Terraferme** : sans lui, on n'entre ni dans un théâtre ni dans la Contesa.
 
 **Stato da Mar ou Stato da Terra** ; Frioul et Istrie | Mois 1 |
@@ -600,7 +602,7 @@ La charte en Faveur disparaît (§ 3.4). Les effets qui l'allégeaient (lettres,
 - **les ateliers s'ouvrent au toucher du comptoir**, plus au zoom, avec leur animation de déploiement ; toucher la mer les referme ;
 - **de la texture** dans les secteurs développés ;
 - **plus de cases à l'écart** : la région atteinte apparaît au bord du connu (§ 3.4) ;
-- **la Remise** (terre) et **l'Arsenal** (mer) achètent et améliorent les véhicules : un niveau de modèle de 1 à 5, +10 % de capacité par niveau, pour tous les véhicules du type (étape suivante).
+- **la Remise** (terre) et **l'Arsenal** (mer) achètent et améliorent les véhicules : un niveau de modèle de 1 à 5, +10 % de capacité par niveau, pour tous les véhicules du type (§ 3.4).
 
 ## 13. Le chemin
 

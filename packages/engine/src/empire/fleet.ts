@@ -25,7 +25,7 @@ export function upgradeCost(h: EmpireHouse, type: string, s: EmpireSettings): De
   const level = vehicleLevelOf(h, type);
   if (!spec || level >= s.vehicleLevels.max) return null;
   return (
-    BigInt(spec.costDucats) *
+    BigInt(Math.max(spec.costDucats, s.vehicleLevels.minCostDucats)) *
     BigInt(s.vehicleLevels.costTimes) *
     2n ** BigInt(level) *
     DENIERS_PER_DUCAT

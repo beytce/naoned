@@ -1981,6 +1981,30 @@ Le nouveau sort un peu plus tôt de la première bande, car il ne paie plus de F
 | Marge d'un voyage, part des commandes | — | 971 à 1 065 d, 31 à 32 % ✓ |
 | Convois de la Muda en colleganza | — | 25 à 28,5 % ✓ |
 
+### La Remise et le niveau des modèles (31 octobre 2026, le soir) — à arbitrer
+
+- **La Remise** (Casa 2, 200 ducats, 2 h) précède tout achat de véhicule de terre ; les deux mules du départ restent données.
+- **Le niveau d'un modèle** (1 à 5, +10 % de capacité par niveau, à la Remise ou à l'Arsenal) coûte le prix du modèle, 500 ducats au moins, doublé à chaque niveau (`vehicleLevels`).
+- **Le simulateur** bâtit la Remise quand il veut une charrette, et monte un modèle quand le gain de capacité se rembourse en `paybackDays`. Pour un navire, la cale doit déjà partir pleine : un port saturé ne paie pas une cale plus grande. L'exploitant monte ses modèles en dernier.
+
+**Résultat** : **8, 8 et 9 cibles sur 12**, contre 9, 9 et 9 sans les niveaux. Les trois cibles manquées d'avant restent manquées. La nouvelle perte est la part du métier, juste sous 25 % : l'exploitant à 23,6 % (graine 1), le négociant à 24,5 % (graine 2).
+
+| Essai, graine 1 | Négociant | Exploitant | Armateur |
+| --- | --- | --- | --- |
+| Sans niveaux de modèle | 29,6 % | 25,7 % | 43,3 % |
+| Niveaux au prix du modèle | 27,1 % | 23,2 % | 44,6 % |
+| Prix triplé | 27,1 % | 22,8 % | 47,0 % |
+| Sans niveau pour les galées de la Muda | 29,9 % | 23,4 % | 45,4 % |
+| Retenu (plancher 500 d, cale pleine) | 31,5 % | 23,6 % | 46,6 % |
+
+Ce sont les niveaux des **navires** qui déplacent l'équilibre : sans eux, on revient à 25,7 %. Les mules ne se montent presque jamais, et le prix n'y change rien, car les marges des voyages remboursent vite un niveau. Les galées de la Muda ne sont pas seules en cause.
+
+**Leviers proposés au porteur** :
+1. un pas plus petit pour les navires (+5 % par niveau) ;
+2. un plafond plus bas pour les navires (niveau 3) ;
+3. les niveaux réservés aux véhicules de terre, la mer gardant ses modules ;
+4. accepter l'écart et rehausser plus tard la part des gisements.
+
 ### Refaire le calibrage
 
 ```

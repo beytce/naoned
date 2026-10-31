@@ -1022,7 +1022,8 @@ function tryModel(w: World, h: House): boolean {
     if (!spec || level >= lv.max) continue;
     const ship = Boolean(w.s.vehicles[type]?.build);
     if (ship ? w.s.map.arsenal && !h.arsenal : w.s.map.depot && !h.depot) continue;
-    const cost = d(spec.costDucats) * BigInt(lv.costTimes) * 2n ** BigInt(level);
+    const cost =
+      d(Math.max(spec.costDucats, lv.minCostDucats)) * BigInt(lv.costTimes) * 2n ** BigInt(level);
     const more = Math.floor((spec.capacity * lv.stepBps) / 10_000) * count;
     let perDay = 0n;
     if (spec.regions.length === 1) {
@@ -1036,6 +1037,9 @@ function tryModel(w: World, h: House): boolean {
     } else {
       const best = bestRoute(w, h, type);
       if (!best || best.qty <= 0 || best.margin <= 0) continue;
+      // A hold larger than the port takes earns nothing: only a full hold is worth raising.
+      const hold = effectOf(h.modules, "capacity", w.s);
+      if (best.qty < Math.floor((holdOf(w, h, type) * (10_000 + hold)) / 10_000)) continue;
       const perUnit = best.margin / best.qty;
       perDay = BigInt(Math.floor((perUnit * more * DAY) / (2 * Math.max(1, best.hours))));
     }
@@ -1085,9 +1089,10 @@ const PRIORITY: Record<Bent, ((w: World, h: House) => boolean)[]> = {
     tryNewWorkshop,
     tryWorkshop,
     tryVehicle,
-    tryModel,
     tryCamp,
     tryWorks,
+    // The miner raises its models last: its ducats go to its deposits first.
+    tryModel,
   ],
   armourer: [
     tryCasa,
