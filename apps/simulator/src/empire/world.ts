@@ -284,7 +284,13 @@ export function newRng(seed: number, salt: number) {
 export const days = (hours: number) => hours / DAY;
 
 /** The house as the engine's map reads it: what it sees, its Casa. */
-export const seen = (h: House) => ({ revealed: [...h.revealed], casa: h.casa }) as EmpireHouse;
+export const seen = (h: House) =>
+  ({
+    revealed: [...h.revealed],
+    casa: h.casa,
+    homeLevel: h.homeLevel,
+    posts: h.spots.map((p, i) => ({ id: `p${i + 1}`, ...p })),
+  }) as EmpireHouse;
 
 /** A region's daily book for the house: its counter's, for the share of its cities found. */
 export function bookOf(w: World, h: House, region: string, level: number): number {

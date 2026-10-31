@@ -93,6 +93,10 @@ export interface House {
   /** The map (step 2): the cells it sees, the counters it put down, its Arsenal. */
   revealed: Set<string>;
   posts: number;
+  /** Its counters on the map, at their point, with their level (the map that grows). */
+  spots: { region: string; cell: string; x: number; y: number; level: number }[];
+  /** Venice's own counter's level: its reach. */
+  homeLevel: number;
   arsenal: boolean;
   /** Its Campo: the door of the Terraferma. */
   camp: boolean;
