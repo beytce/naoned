@@ -14,7 +14,6 @@ import {
   citySpot,
   corsairRiskBps,
   effectOf,
-  expeditionSuccessBps,
   extract,
   highRecipeRaw,
   levelCost,
@@ -28,7 +27,6 @@ import {
   regionCells,
   regionCities,
   regionSeat,
-  relicsOf,
   researchCost,
   researchMinutesOf,
   revealedOf,
@@ -59,6 +57,7 @@ import {
   type Workshop,
   type World,
 } from "./model.js";
+import { portaDay } from "./porta.js";
 import {
   addStock,
   bookOf,
@@ -1277,34 +1276,36 @@ function buyPlans(w: World, h: House, qty: number): boolean {
   return need === 0;
 }
 
-// ——— Expeditions (profondeur.md § C) ———
+// ——— The Porta (docs/plan-porta.md), in place of the expeditions of profondeur.md § C ———
 
 function expedition(w: World, h: House, rng: Rng) {
-  const strength = strengthOf(w, h);
-  if (strength === 0 || h.casa < 10) return;
-  const today = Math.floor(w.now / DAY);
-  if (h.expeditionDay === today) return;
-  h.expeditionDay = today;
-  let tier = 0;
-  w.s.expeditions.tiers.forEach((_, i) => {
-    if (expeditionSuccessBps(i + 1, strength, w.s) >= 5_000) tier = i + 1;
-  });
-  if (tier === 0) return;
-  const victuals = d(w.m.victualsPerTierDucats * tier);
-  if (h.cash < victuals) return;
-  destroy(w, h, victuals, "victuals");
-  h.expeditionsTried++;
-  if (rng.next() * 10_000 >= expeditionSuccessBps(tier, strength, w.s)) return;
-  h.expeditionsWon++;
-  h.seals += tier;
-  const plans = relicsOf(tier, w.s) * w.m.plansPerRelic;
-  h.plans += plans;
-  // Booty taken from the corsairs, and the plans one has no use for put up for sale.
-  create(w, h, d(w.m.bootyPerTierDucats * tier * tier), "booty", "expeditions");
-  const spare = Math.max(0, h.plans - 6);
-  if (spare > 0) {
-    h.plans -= spare;
-    w.planPool.push({ house: w.houses.indexOf(h), qty: spare });
+  const s = w.s;
+  // The transport: its best free land vehicle, a relic for every `holdPerRelic` of its hold.
+  const land = h.vehicles
+    .filter((v) => w.m.vehicles[v.type]?.regions.length === 1 && v.busyUntil <= w.now)
+    .sort((a, b) => holdOf(w, h, b.type) - holdOf(w, h, a.type))[0];
+  const holdRelics = () =>
+    land
+      ? Math.max(1, Math.floor(holdOf(w, h, land.type) / s.porta.battle.transport.holdPerRelic))
+      : 0;
+  const loseTransport = () => {
+    if (land) h.vehicles = h.vehicles.filter((v) => v !== land);
+  };
+  const bread = w.markets.get("veneto:bread")?.ref ?? d(1);
+  const before = h.porta?.battles ?? 0;
+  const relics = portaDay(w, h, rng, () => spendable(w, h), holdRelics, loseTransport, bread);
+  if (!h.porta || h.porta.battles === before) return;
+  h.expeditionsTried = h.porta.battles;
+  h.expeditionsWon = h.porta.won;
+  // Relics deciphered into plans, when the model says so (an open question: plan-porta.md § 13).
+  const plans = relics * w.m.plansPerRelic;
+  if (plans > 0) {
+    h.plans += plans;
+    const spare = Math.max(0, h.plans - 6);
+    if (spare > 0) {
+      h.plans -= spare;
+      w.planPool.push({ house: w.houses.indexOf(h), qty: spare });
+    }
   }
 }
 

@@ -87,7 +87,8 @@ export const DEFAULT_MODEL: SimModel = {
   galleyStrength: 10,
   youngCasa: 8,
   planPriceDucats: 80,
-  plansPerRelic: 2,
+  // The antiquarian buys the relics (docs/plan-porta.md): none deciphered into plans.
+  plansPerRelic: 0,
   victualsPerTierDucats: 40,
   terra: {
     playBps: { assidu: 8_000, median: 5_000, occasional: 2_000, absent: 3_000 },

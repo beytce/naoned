@@ -69,17 +69,18 @@ const at = (u: { x: number; y: number }, x: number, y: number) => {
 };
 
 describe("the drawing of a battle", () => {
-  it("is the same for the same seed, and puts each player's rarest relics the farthest", () => {
+  it("is the same for the same seed, and keeps the tier's rarest relic in the farthest city", () => {
     const one = battle(2, [entrant("a")], 11);
     expect(battle(2, [entrant("a")], 11)).toEqual(one);
     expect(battle(2, [entrant("a")], 12)).not.toEqual(one);
     expect(one.cities).toHaveLength(5);
-    const ranks = one.cities.map((c) =>
-      Math.max(
-        ...(c.relics.a ?? []).map((r) => ["common", "rare", "precious", "legendary"].indexOf(r)),
-      ),
-    );
-    expect([...ranks].sort((x, y) => x - y)).toEqual(ranks);
+    // The fixture's tier 2 holds legendary relics: the farthest city keeps one.
+    expect(one.cities.at(-1)?.relics.a).toContain("legendary");
+    for (const c of one.cities.slice(0, -1)) {
+      const n = c.relics.a?.length ?? 0;
+      expect(n).toBeGreaterThanOrEqual(2);
+      expect(n).toBeLessThanOrEqual(3);
+    }
   });
 
   it("sets the vehicles at the gate, the Gonfalonier in the farthest city, more Rome with more players", () => {
@@ -94,6 +95,12 @@ describe("the drawing of a battle", () => {
     expect(romeOf(duo)).toBeGreaterThan(romeOf(solo));
     // A transport carries a relic for every 25 of hold.
     expect(unit(solo, "p0t").capacity).toBe(2);
+  });
+
+  it("gives each vehicle its own cargo", () => {
+    const b = battle();
+    unit(b, "p0t").cargo.push("rare");
+    expect(unit(b, "p0c").cargo).toEqual([]);
   });
 
   it("refuses a tier its players are too few for", () => {

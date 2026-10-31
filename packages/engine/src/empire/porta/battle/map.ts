@@ -105,7 +105,7 @@ const ring = (c: Vec, r: number, i: number, n: number, turn = 0): Vec => ({
 
 /**
  * Draws a battle from its seed (plan-porta.md § 6.1): the gate at the west, the cities, each
- * player's own relics in them (the rarest the farthest from the gate), Rome's garrisons, its
+ * player's own relics in them (the farthest keeping one of the rarest), Rome's garrisons, its
  * roamers, its Gonfaloniers in the farthest city, the players' vehicles at the gate.
  */
 export function createBattle(input: BattleInput, s: EmpireSettings): Battle {
@@ -120,21 +120,16 @@ export function createBattle(input: BattleInput, s: EmpireSettings): Battle {
   );
   const cities: City[] = spots.map((p, i) => ({ id: `c${i}`, x: p.x, y: p.y, relics: {} }));
 
-  // Each player's relics: so many a city, the rarest put the farthest.
-  for (const pl of input.players) {
-    const perCity = cities.map(() => rng.int(line.relicsPerCity.min, line.relicsPerCity.max));
-    const all = perCity
-      .flatMap((k) => Array.from({ length: k }, () => drawRarity(rng, line.rarityWeights)))
-      .sort((x, y) => RARITIES.indexOf(x) - RARITIES.indexOf(y));
-    let at = 0;
+  // Each player's relics: so many a city, each drawn by the tier's odds; the farthest city (the
+  // Gonfalonier's) keeps one more, of the rarest kind the tier holds.
+  const top = [...RARITIES].reverse().find((r) => line.rarityWeights[r] > 0) ?? "common";
+  for (const pl of input.players)
     cities.forEach((c, i) => {
-      const k = perCity[i] ?? 0;
-      c.relics[pl.id] = all
-        .slice(at, at + k)
-        .sort((x, y) => RARITIES.indexOf(y) - RARITIES.indexOf(x));
-      at += k;
+      const k = rng.int(line.relicsPerCity.min, line.relicsPerCity.max);
+      const drawn = Array.from({ length: k }, () => drawRarity(rng, line.rarityWeights));
+      if (i === cities.length - 1) drawn.push(top);
+      c.relics[pl.id] = drawn.sort((x, y) => RARITIES.indexOf(y) - RARITIES.indexOf(x));
     });
-  }
 
   const units: Battle["units"] = [];
   let next = 0;
@@ -172,7 +167,6 @@ export function createBattle(input: BattleInput, s: EmpireSettings): Battle {
       shield: 0,
       shieldUntil: 0,
       hiddenUntil: 0,
-      cargo: [],
       loading: null,
       outcome: "in" as const,
     };
@@ -190,6 +184,7 @@ export function createBattle(input: BattleInput, s: EmpireSettings): Battle {
       weapons: st.weapons.map((w) => ({ ...w, targetId: null, since: 0, nextShotAt: 0 })),
       actives: st.actives.map((a) => ({ ...a, readyAt: 0, until: 0 })),
       damageCutBps: st.damageCutBps,
+      cargo: [],
       capacity: 0,
     };
     const transport: PlayerUnit = {
@@ -205,6 +200,8 @@ export function createBattle(input: BattleInput, s: EmpireSettings): Battle {
       weapons: [],
       actives: [],
       damageCutBps: 0,
+      // Its own cargo: never an array shared with the combat vehicle.
+      cargo: [],
       capacity: Math.max(1, Math.floor(pl.transport.hold / b.transport.holdPerRelic)),
     };
     units.push(combat, transport);

@@ -1,4 +1,5 @@
 import type { Deniers, EmpireHouse, EmpireSettings } from "@comptoirs/engine";
+import type { SimPorta } from "./porta.js";
 
 /**
  * The 24-month model simulator (CADRAGE-v3 § 13): houses aggregated hour by hour, living the
@@ -143,6 +144,8 @@ export interface House {
   /** What the cities paid it for orders, by mules or by voyages. */
   ordersValue: Deniers;
   voyageMargin: Deniers;
+  /** The Porta (docs/plan-porta.md): its level, its arms, its battles and relics. */
+  porta?: SimPorta;
   expeditionsWon: number;
   expeditionsTried: number;
   terraValue: Deniers;
