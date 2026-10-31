@@ -235,7 +235,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     revealRadius: 1,
     costStepBps: 2_500,
     arsenal: { costDucats: 3_000, casa: 9, minutes: 480 },
-    // The Campo, the door of the Terraferma, from the Casa 4.
+    // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
+    // fell short of their share, calibration.md).
     camp: { costDucats: 600, casa: 4, minutes: 240 },
   },
   // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the
