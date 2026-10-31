@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   casaReached,
   daysOfIncome,
-  workshopStatus,
   lotProgress,
   queueEnd,
   readyLots,
   wantsRelaunch,
+  workshopStatus,
 } from "../src/empire/logic.js";
 import type { EmpirePayload, EmpireWorkshop } from "../src/empire/types.js";
 
@@ -85,7 +85,13 @@ describe("the empire's queue, read in the browser", () => {
 
 describe("a workshop's star", () => {
   const job = { recipe: "grow_wheat", startedAt: 0, batches: 24, level: 1, batchMs: HOUR / 2 };
-  const mill: EmpireWorkshop = { id: "w2", type: "mill", recipe: "mill_flour", level: 1, job: null };
+  const mill: EmpireWorkshop = {
+    id: "w2",
+    type: "mill",
+    recipe: "mill_flour",
+    level: 1,
+    job: null,
+  };
 
   it("reads ready, running, at rest or waiting for an input", () => {
     expect(workshopStatus(payload([ws(job)]), ws(job), HOUR)).toEqual({
