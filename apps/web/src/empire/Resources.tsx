@@ -13,40 +13,6 @@ const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
 
 /**
- * The goods held, in a line under the header (lot A of the UX audit): each with its mark and its
- * quantity, the target the gains fly to; a touch opens what it fetches and how to sell it.
- */
-export function ResourceBar({ p, onGood }: { p: EmpirePayload; onGood: (good: string) => void }) {
-  const goods = Object.entries(p.stock).filter(([g, n]) => n > 0 && !g.includes(":"));
-  return (
-    <div className="mx-auto mt-2 w-full max-w-md" data-resources>
-      {goods.length === 0 ? (
-        <p className="text-xs text-cream-dim" data-goods-to="store">
-          {t.empty}
-        </p>
-      ) : (
-        <ul className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" data-goods-to="store">
-          {goods.map(([good, qty]) => (
-            <li key={good}>
-              <button
-                type="button"
-                data-goods-to={good}
-                onClick={() => onGood(good)}
-                className="flex min-h-9 items-center gap-1.5 rounded-full bg-night-2 py-1 pl-1.5 pr-3 text-sm tabular-nums text-cream ring-1 ring-inset ring-line active:scale-95"
-                aria-label={`${qty} ${goodName(p, good)}`}
-              >
-                <GoodsMark code={good} size={22} />
-                {qty}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/**
  * A good up close: what it fetches in Venice, what it serves (the Casa, a workshop), and the sale
  * in one gesture, keeping what the house needs.
  */

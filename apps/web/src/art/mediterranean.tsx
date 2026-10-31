@@ -481,7 +481,14 @@ export const MediterraneanGround = memo(function MediterraneanGround({
         <g key={d}>
           <path d={d} fill="url(#wm-sea)" />
           <path d={d} fill="url(#wm-waves)" />
-          <path d={d} fill="none" stroke={INK} strokeOpacity="0.45" strokeWidth="0.7" />
+          <path
+            d={d}
+            fill="none"
+            stroke={INK}
+            strokeOpacity="0.45"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
         </g>
       ))}
       {ISLANDS.map((isle) => (

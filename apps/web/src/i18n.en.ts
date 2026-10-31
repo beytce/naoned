@@ -245,6 +245,39 @@ export const en: Dictionary = {
       text: "A counter in Venice, three workshops and five hundred ducats. Nothing you build will ever be reset.",
       action: "Found the House",
     },
+    /** The map at the centre of the game (step 1): its corners, its places, its panel. */
+    scene: {
+      unknown: "Unknown land",
+      arsenal: "The Arsenal",
+      free: "A free place",
+      recenter: "Recentre",
+      production: "Production",
+      buildings: "Buildings",
+      vehicles: "Vehicles",
+      fleet: (free: number, total: number) => `Fleet: ${free} free of ${total}`,
+      ducats: "Ducats",
+      favour: "Favour",
+      seals: "Seals",
+      fleetShort: "Free vehicles",
+      level: (n: number) => `Level ${n}`,
+      owner: "Your House",
+      actions: {
+        collect: (n: number) => `Collect ${n}`,
+        relaunch: () => "Relaunch",
+        upgrade: (n: number) => `Level ${n}`,
+        building: () => "Building",
+        details: () => "Details",
+        casa: (n: number) => `Casa ${n}`,
+        workshops: () => "Workshops",
+        build: () => "Build",
+        charter: () => "Open",
+        counter: (n: number) => `Counter ${n}`,
+        convoy: () => "Convoy",
+        closed: (n: number) => `Casa ${n}`,
+        maxed: () => "Top level",
+        ship: () => "Ships",
+      } as Record<string, (n: number) => string>,
+    },
     /** The five tabs of the empire (lot C of the UX audit): the loop, from the house to the family. */
     nav: {
       home: "House",
@@ -781,11 +814,6 @@ export const en: Dictionary = {
       plans: (n: number) => `${n} plans needed (the relics)`,
       running: (at: string) => `Being researched, done at ${at}`,
     },
-    /** On the world map, where room is short. */
-    mapNames: {
-      friuli: "Friuli",
-      romagna: "Romagna",
-    } as Record<string, string>,
     regionNames: {
       veneto: "Venetia",
       lombardia: "Lombardy",

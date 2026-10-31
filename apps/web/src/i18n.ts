@@ -162,6 +162,39 @@ const frDict = {
       text: "Un comptoir à Venise, trois ateliers et cinq cents ducats. Rien de ce que vous bâtirez ne sera jamais remis à zéro.",
       action: "Fonder la Maison",
     },
+    /** The map at the centre of the game (step 1): its corners, its places, its panel. */
+    scene: {
+      unknown: "Terre inconnue",
+      arsenal: "L'Arsenal",
+      free: "Une place libre",
+      recenter: "Recentrer",
+      production: "Production",
+      buildings: "Bâtiments",
+      vehicles: "Véhicules",
+      fleet: (free: number, total: number) => `Flotte : ${free} libres sur ${total}`,
+      ducats: "Ducats",
+      favour: "Faveur",
+      seals: "Sceaux",
+      fleetShort: "Véhicules libres",
+      level: (n: number) => `Niveau ${n}`,
+      owner: "Votre Maison",
+      actions: {
+        collect: (n: number) => `Ramasser ${n}`,
+        relaunch: () => "Relancer",
+        upgrade: (n: number) => `Niveau ${n}`,
+        building: () => "En chantier",
+        details: () => "Détails",
+        casa: (n: number) => `Casa ${n}`,
+        workshops: () => "Ateliers",
+        build: () => "Bâtir",
+        charter: () => "Ouvrir",
+        counter: (n: number) => `Comptoir ${n}`,
+        convoy: () => "Convoi",
+        closed: (n: number) => `Casa ${n}`,
+        maxed: () => "Niveau max",
+        ship: () => "Navires",
+      } as Record<string, (n: number) => string>,
+    },
     /** The five tabs of the empire (lot C of the UX audit): the loop, from the house to the family. */
     nav: {
       home: "Maison",
@@ -705,11 +738,6 @@ const frDict = {
       plans: (n: number) => `${n} plans requis (les reliques)`,
       running: (at: string) => `En recherche, fini à ${at}`,
     },
-    /** On the world map, where room is short. */
-    mapNames: {
-      friuli: "Frioul",
-      romagna: "Romagne",
-    } as Record<string, string>,
     regionNames: {
       veneto: "Vénétie",
       lombardia: "Lombardie",

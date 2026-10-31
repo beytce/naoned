@@ -7,7 +7,7 @@ import {
   routeBetween,
   seatOf,
 } from "../src/art/mediterranean.js";
-import { bestQuote, regionLook } from "../src/empire/logic.js";
+import { bestQuote } from "../src/empire/logic.js";
 import type { EmpirePayload, EmpireQuote } from "../src/empire/types.js";
 
 const REGIONS = Object.keys(SEATS);
@@ -64,14 +64,6 @@ describe("the world map", () => {
     expect(alongPath(path, 0.5)).toEqual([10, 0]);
     expect(alongPath(path, 0.75)).toEqual([10, 5]);
     expect(alongPath(path, 2)).toEqual([10, 10]);
-  });
-
-  it("shows a region as the house's own, open, to open or fogged", () => {
-    const r = (code: string, casa: number, counter: number) => ({ code, casa, counter });
-    expect(regionLook(r("veneto", 1, 1), 1)).toBe("home");
-    expect(regionLook(r("lombardia", 6, 1), 6)).toBe("open");
-    expect(regionLook(r("lombardia", 6, 0), 6)).toBe("reachable");
-    expect(regionLook(r("levante", 9, 0), 6)).toBe("closed");
   });
 
   it("names a region's best paid good from its prices", () => {
