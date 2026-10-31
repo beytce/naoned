@@ -82,18 +82,18 @@ function payload(over: Partial<NonNullable<EmpirePayload["view"]>> = {}, cash = 
       ],
       map: {
         cells: {
-          "4,9": { region: "veneto", coast: true },
-          "4,8": { region: "veneto", coast: false },
-          "5,8": { region: "veneto", coast: true },
-          "2,8": { region: "lombardia", coast: false },
+          "2,4": { region: "veneto", coast: true },
+          "2,3": { region: "veneto", coast: false },
+          "3,3": { region: "veneto", coast: true },
+          "1,4": { region: "lombardia", coast: false },
         },
-        revealed: ["4,9", "4,8", "5,8", "2,8"],
-        posts: [{ cell: "4,8", region: "veneto" }],
+        revealed: ["2,4", "2,3", "3,3", "1,4"],
+        posts: [{ cell: "2,3", region: "veneto" }],
         sites: [],
         arsenal: null,
         cities: [
-          { code: "venezia", cell: "4,9", region: "veneto" },
-          { code: "milano", cell: "2,8", region: "lombardia" },
+          { code: "venezia", cell: "2,4", region: "veneto" },
+          { code: "milano", cell: "1,4", region: "lombardia" },
         ],
         radius: 2,
         arsenalSite: { cost: "300000", minutes: 480, casa: 9 },
@@ -175,18 +175,18 @@ describe("the corners", () => {
 
 describe("putting down on the map (step 2)", () => {
   it("lights the cells a counter may go on: seen, of a region reached, free", () => {
-    expect(placeable(payload(), { kind: "post" })).toEqual(["4,9", "5,8"]);
+    expect(placeable(payload(), { kind: "post" })).toEqual(["2,4", "3,3"]);
     const casa6 = payload({
       house: { casa: 6, favour: 0, seals: 0, workshops: [], builds: [] },
     } as never);
-    expect(placeable(casa6, { kind: "post" })).toEqual(["2,8", "4,9", "5,8"]);
-    expect(placeable(casa6, { kind: "post", region: "lombardia" })).toEqual(["2,8"]);
-    expect(placingCost(casa6, { kind: "post" }, "2,8")).toBe("50000");
+    expect(placeable(casa6, { kind: "post" })).toEqual(["1,4", "2,4", "3,3"]);
+    expect(placeable(casa6, { kind: "post", region: "lombardia" })).toEqual(["1,4"]);
+    expect(placingCost(casa6, { kind: "post" }, "1,4")).toBe("50000");
   });
 
   it("lights the coasts for the Arsenal, its price from the view", () => {
-    expect(placeable(payload(), { kind: "arsenal" })).toEqual(["4,9", "5,8"]);
-    expect(placingCost(payload(), { kind: "arsenal" }, "4,9")).toBe("300000");
+    expect(placeable(payload(), { kind: "arsenal" })).toEqual(["2,4", "3,3"]);
+    expect(placingCost(payload(), { kind: "arsenal" }, "2,4")).toBe("300000");
   });
 });
 
