@@ -110,9 +110,10 @@ Les dix régions, dans l'ordre d'ouverture :
 
 **Quatre sont ouvertes au lancement** : la Vénétie, la Lombardie, le Frioul et Istrie, la Romagne et les Marches. Les autres s'ouvrent au fil des ères (§ 4.3).
 
-**La carte** (décision du porteur du 31 octobre 2026, « la carte au centre du jeu ») est une grille de **grands secteurs** hexagonaux sur la Méditerranée : 63 secteurs de terre, chacun dans une région. Chaque secteur porte au plus une ville. Un secteur que la mer touche est une côte.
+**La carte** (décision du porteur du 31 octobre 2026, « la carte au centre du jeu ») est une grille de **grands secteurs** hexagonaux sur la Méditerranée : une trentaine de secteurs de terre, chacun dans une région. **Un secteur porte plusieurs villes** : celui de Venise compte d'emblée Venise, Padoue, Trévise, Vicence, Brescia, Mantoue et Ravenne. Un secteur que la mer touche est une côte.
 
-- **Ce qu'on voit.** Au départ, les cases de la Vénétie et leurs villes. Le reste est dans le brouillard, sauf le **siège de chaque région que la Casa a atteinte** : la nouvelle en vient à Venise, par terre ou par mer.
+- **Ce qu'on voit.** Au départ, le secteur de Venise et ses villes. Le reste est dans le brouillard, sauf, pour **chaque région que la Casa a atteinte**, **son secteur le plus proche de ce qu'on connaît déjà** : la nouvelle en vient à Venise, et la région apparaît au bord du connu, jamais isolée au loin.
+- **La grille porte une version.** Quand elle est redessinée, chaque Maison est reprise : ses secteurs vus recalculés, ses comptoirs, son Arsenal et son Campo reposés sur une case valide. Rien de bâti ne se perd.
 - **Ouvrir une région**, c'est **poser un comptoir** sur une case qu'on voit, d'une région dont la Casa est atteinte :
   1. on le paie en ducats : l'ancien prix de la charte de la région, **plus cher d'un quart pour chaque comptoir déjà posé** ;
   2. on fait le voyage d'ouverture, qu'on regarde avancer sur la carte ;
@@ -593,6 +594,13 @@ La charte en Faveur disparaît (§ 3.4). Les effets qui l'allégeaient (lettres,
 - **La carte en grands secteurs**, comme l'exemple : une tuile par secteur vu, et les secteurs voisins inconnus en silhouettes.
 - **La Terraferme devient un bâtiment** à poser sur la carte, le Campo, dès la Casa 4.
 - **Un passage d'expert UX** sur tout l'écran : la fluidité de la carte, les feuilles jusqu'en bas, les transitions.
+
+**Le soir**, sur une nouvelle vidéo de l'exemple :
+- **des villes dès le premier secteur** : plusieurs villes par secteur, chacune à sa vraie place ; des secteurs plus grands, une trentaine en tout ;
+- **les ateliers s'ouvrent au toucher du comptoir**, plus au zoom, avec leur animation de déploiement ; toucher la mer les referme ;
+- **de la texture** dans les secteurs développés ;
+- **plus de cases à l'écart** : la région atteinte apparaît au bord du connu (§ 3.4) ;
+- **la Remise** (terre) et **l'Arsenal** (mer) achètent et améliorent les véhicules : un niveau de modèle de 1 à 5, +10 % de capacité par niveau, pour tous les véhicules du type (étape suivante).
 
 ## 13. Le chemin
 
