@@ -353,6 +353,18 @@ export interface EmpireBuild {
   endsAt: number;
 }
 
+/** Goods carried from a counter to another (the map that grows): in the stock again at arrival. */
+export interface EmpireTransfer {
+  id: string;
+  vehicleId: string;
+  from: string;
+  to: string;
+  good: string;
+  qty: number;
+  leftAt: number;
+  arrivesAt: number;
+}
+
 /** A house of the persistent empire: what it has built, never reset. */
 export interface EmpireHouse {
   casa: number;
@@ -389,7 +401,16 @@ export interface EmpireHouse {
   favour: number;
   seals: number;
   /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */
-  vehicles?: { id: string; type: string; busyUntil: number; fitted?: string[] }[];
+  vehicles?: {
+    id: string;
+    type: string;
+    busyUntil: number;
+    fitted?: string[];
+    /** The counter it stands at (the map that grows): Venice's when absent. */
+    at?: string;
+  }[];
+  /** Goods on the road between two counters, carried by a land vehicle. */
+  transfers?: EmpireTransfer[];
   /** The deposits its teams work, by id. */
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
@@ -432,7 +453,7 @@ export interface EmpireHouse {
   /** What is left today of the court's book for its fine and exquisite goods. */
   court?: { day: number; left: number };
   /** What its land vehicles carried to the cities today. */
-  hauled?: { day: number; units: number };
+  hauled?: { day: number; units: number; at?: Record<string, number> };
   /** What is left today of its private book of orders, by region. */
   books?: Record<string, { day: number; left: number }>;
   carnet?: EmpireCarnet;

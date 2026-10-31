@@ -4,6 +4,7 @@ import {
   DAY_MS,
   type EmpireHouse,
   type EmpireStaff,
+  type EmpireTransfer,
   type EmpireVoyage,
   HOUR_MS,
   type PlayerId,
@@ -103,6 +104,8 @@ export interface EmpireView {
   map: EmpireMapView;
   /** Each counter's stock, Venice's first (the map that grows). */
   stores: { post: string; region: string; goods: Record<string, number> }[];
+  /** The goods on the road between two counters. */
+  transfers: EmpireTransfer[];
   /** The vehicles one may buy, those of the house, and its voyages under way. */
   vehicles: {
     shop: {
@@ -126,6 +129,8 @@ export interface EmpireView {
       busyUntil: number;
       capacity: number;
       fitted?: string[];
+      /** The counter it stands at, or is bound for. */
+      at: string;
     }[];
     voyages: EmpireVoyage[];
     haulPerDay: number;
@@ -452,6 +457,7 @@ export function empireView(
     regions: regionsOf(house, s),
     map: mapOf(house, s),
     stores: storesOf(state.inventories[playerId], house, s),
+    transfers: house.transfers ?? [],
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
     deposits: (state.empire?.deposits ?? [])
@@ -783,6 +789,7 @@ function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s
   // A ship's hold counts its own fitted modules only.
   const mine = (house.vehicles ?? []).map((v) => ({
     ...v,
+    at: v.at ?? "home",
     capacity: Number(
       applyBpsFloor(
         BigInt(capacityOf(house, v.type, s)),

@@ -305,7 +305,11 @@ function deliver(w: World, h: House, sinceHours: number) {
   }
 }
 
-/** Where a house holds a good: the regions of the workshops that make it, and Venice. */
+/**
+ * Where a house holds a good: the regions of the workshops that make it, and Venice. Each counter
+ * keeps its own stock (the map that grows), but a land vehicle carries it between two counters in
+ * a few hours: the model counts the goods made away as within reach of Venice too.
+ */
 function homesOf(h: House, good: string): Set<string> {
   const homes = new Set(["veneto"]);
   for (const ws of h.workshops) if (ws.good === good) homes.add(ws.region);

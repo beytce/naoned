@@ -327,19 +327,28 @@ export function buyAt(
   return n;
 }
 
-/** What the house's land vehicles still carry today to the cities (no vehicles set: no bound). */
-function haulLeft(tx: Tx, h: EmpireHouse): number {
+/**
+ * What the land vehicles of the delivering counters still carry today to the cities (no vehicles
+ * set: no bound): each counter's carts serve its own cities (the map that grows).
+ */
+function haulLeft(tx: Tx, h: EmpireHouse, posts: string[]): number {
   const s = empireSettings(tx.ctx);
   if (Object.keys(s.vehicles).length === 0) return Number.POSITIVE_INFINITY;
   const base = (h.vehicles ?? [])
     .filter((v) => s.vehicles[v.type]?.regions.length === 1)
+    .filter((v) => posts.includes(v.at ?? HOME_POST))
     .reduce((n, v) => n + capacityOf(h, v.type, s), 0);
   const capacity = Number(
     applyBpsFloor(BigInt(base), 10_000 + houseEffect(h, "capacity", s) + houseEffect(h, "haul", s)),
   );
   const trips = s.localTripsPerDay + houseEffect(h, "tripsExtra", s);
   const day = dayOf(tx.now);
-  const used = h.hauled?.day === day ? h.hauled.units : 0;
+  const today = h.hauled?.day === day ? h.hauled : null;
+  // The day's deliveries of these counters (a house of before counted them all in Venice's).
+  const used = posts.reduce(
+    (n, p) => n + (today?.at ? (today.at[p] ?? 0) : p === HOME_POST ? (today?.units ?? 0) : 0),
+    0,
+  );
   return Math.max(0, capacity * trips - used);
 }
 
@@ -371,10 +380,14 @@ export function deliverOrders(
   const s = empireSettings(tx.ctx);
   const from = city !== undefined && s.map.reach ? postsServing(h, s, city) : postsIn(h, s, region);
   checkPlace(tx, playerId, h, region, good, from);
-  const n = fillOrders(tx, playerId, good, Math.min(qty, haulLeft(tx, h)), region, from);
+  const n = fillOrders(tx, playerId, good, Math.min(qty, haulLeft(tx, h, from)), region, from);
   if (n <= 0) fail("no_liquidity");
   const day = dayOf(tx.now);
-  h.hauled = { day, units: (h.hauled?.day === day ? h.hauled.units : 0) + n };
+  const today = h.hauled?.day === day ? h.hauled : { day, units: 0, at: {} };
+  const by = { ...(today.at ?? { [HOME_POST]: today.units }) };
+  const first = from[0] ?? HOME_POST;
+  by[first] = (by[first] ?? 0) + n;
+  h.hauled = { day, units: today.units + n, at: by };
   return n;
 }
 

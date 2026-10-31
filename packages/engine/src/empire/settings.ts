@@ -444,6 +444,8 @@ export const empireSettingsSchema = z.object({
       reach: z.object({ base: positive, perLevel: qty }).nullable().prefault(null),
       /** No counter closer than this to another, in the chart's units. */
       postSpacing: qty.prefault(0),
+      /** A land vehicle between two counters: so many of the chart's units an hour. */
+      transferUnitsPerHour: positive.prefault(20),
       revealRadius: positive.prefault(2),
       /** The drawing of the grid: a house of another drawing is taken up again on it. */
       version: positive.prefault(1),
