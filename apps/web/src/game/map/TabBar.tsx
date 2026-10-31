@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { fr } from "../../i18n.js";
 import { TABS, type TabId } from "./actions.js";
 import { Icon } from "./icons.js";
@@ -63,6 +63,8 @@ export type TabItem = {
   /** A closed tab that may be opened early: touched again while it says why. */
   onForce?: () => void;
   coach?: string;
+  /** Another screen's icon for the same place (the empire's Maison, Marché, Compagnie). */
+  icon?: () => ReactNode;
 };
 
 export function TabBar({
@@ -130,7 +132,7 @@ function Tab({ item, on, label }: { item: TabItem; on: boolean; label?: string }
         data-goods-to={item.id === "workshops" ? "workshops" : undefined}
         className={`relative ${locked ? "opacity-60" : ""}`}
       >
-        {tab.icon()}
+        {(item.icon ?? tab.icon)()}
         {item.dot && !locked && (
           <span className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full bg-vermilion ring-2 ring-night" />
         )}

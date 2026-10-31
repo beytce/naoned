@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Lorenzo } from "../art/scenes.js";
+import { PalettePicker } from "../game/Profil.js";
 import { d, hourOf } from "../game/format.js";
 import { fr } from "../i18n.js";
 import { LorenzoCard, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
@@ -183,6 +184,10 @@ export function HouseSheet({
         <Stat label={<Term code="favour">{h.favour}</Term>} value={view.house.favour} />
         <Stat label={h.seals} value={view.house.seals} />
         <Stat label={<Term code="income">{h.income}</Term>} value={d(view.incomePerDay)} />
+      </div>
+      <div className="mt-6">
+        {/* The palettes of the monthly profile; the Pass's own stays out of the empire. */}
+        <PalettePicker pass={false} offered={false} />
       </div>
     </Sheet>
   );

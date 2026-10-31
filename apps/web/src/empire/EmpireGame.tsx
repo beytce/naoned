@@ -6,23 +6,25 @@ import { d, hourOf, minutesLabel } from "../game/format.js";
 import { FxLayer, flyCoins, flyGoods } from "../game/fx.js";
 import { connectLive } from "../game/live.js";
 import { TabBar } from "../game/map/TabBar.js";
-import type { TabId } from "../game/map/actions.js";
+import { Icon } from "../game/map/icons.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { sound } from "../sound.js";
 import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
-import { CompanySection, suppliable } from "./Company.js";
+import { suppliable } from "./Company.js";
+import { CompanySheet } from "./CompanyTab.js";
 import { HouseSheet, Intro, NextStepCard } from "./Guide.js";
-import { ArteSection, Court, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
+import { ArteSection, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
+import { MarketSheet } from "./Market.js";
 import { CasaMoment } from "./Moment.js";
 import { EmpireOrbit } from "./Orbit.js";
 import { GoodSheet, ResourceBar } from "./Resources.js";
-import { Arsenal, Colleganze } from "./Sea.js";
+import { Arsenal } from "./Sea.js";
 import { Term } from "./Term.js";
-import { TerraSheet } from "./Terra.js";
-import { Charroi, RegionPlace, Scuola, VoyageSheet, WorldMap, regionName } from "./World.js";
+import { RegionPlace, Scuola, VoyageSheet, WorldMap, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import {
+  activeEmpireTab,
   affordable,
   buildingName,
   casaReached,
@@ -39,11 +41,11 @@ import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 type SheetId =
   | "workshops"
   | "casa"
-  | "carnet"
+  | "market"
+  | "company"
   | "new"
   | "away"
   | "family"
-  | "terra"
   | "house"
   | `workshop:${string}`
   | `new:${string}`
@@ -135,18 +137,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   if (!p.joined || !p.view)
     return <Founding busy={busy} onJoin={join} name={account.pseudo ?? ""} />;
   const view = p.view;
-  const tab: TabId =
-    sheet === "casa"
-      ? "venice"
-      : sheet === "carnet"
-        ? "ranking"
-        : sheet === "terra"
-          ? "conquest"
-          : sheet === "family"
-            ? "venice"
-            : sheet === "workshops" || sheet?.startsWith("new") || sheet?.startsWith("workshop:")
-              ? "workshops"
-              : "map";
+  const tab = activeEmpireTab(sheet, place);
   const close = () => setSheet(null);
 
   // The one gold action: what the house needs most now.
@@ -190,7 +181,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         </header>
 
         <ResourceBar p={p} onGood={setGood} />
-        {(place === null || place === "veneto") && (
+        {place === "veneto" && (
           <NextStepCard
             p={p}
             now={now}
@@ -223,6 +214,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           <section className="mx-auto mt-4 w-full max-w-md">
             <Label>{t.world.map}</Label>
             <WorldMap p={p} now={now} onPlace={setPlace} />
+            <Arsenal p={p} now={now} busy={busy} act={act} />
           </section>
         ) : place === "veneto" ? (
           <section className="mx-auto mt-2 w-full max-w-md">
@@ -237,11 +229,16 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             />
           </section>
         ) : null}
-        {place === null || place === "veneto" ? (
+        {place === "veneto" && (
           <>
             <Sites p={p} now={now} />
+            <div className="mx-auto mt-3 w-full max-w-md">
+              <Slab size="sm" tone="ghost" className="w-full" onClick={() => setSheet("workshops")}>
+                {t.nav.allWorkshops}
+              </Slab>
+            </div>
           </>
-        ) : null}
+        )}
         {place !== null && (
           <RegionPlace
             p={p}
@@ -295,19 +292,35 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         busy={busy}
         canCasa={canCasa}
         onClose={close}
-        onFamily={() => setSheet("family")}
         act={act}
       />
-      <CarnetSheet
+      <MarketSheet
         p={p}
         now={now}
-        open={sheet === "carnet"}
+        open={sheet === "market"}
         busy={busy}
+        onClose={close}
+        onGood={setGood}
+        act={act}
+      />
+      <CompanySheet
+        p={p}
+        now={now}
+        open={sheet === "company"}
+        busy={busy}
+        calls={{
+          carnet: claimable(p),
+          company: suppliable(p, account.id) > 0,
+          terra: terraCalls(p, now),
+        }}
         onClose={close}
         act={act}
       />
-      <FamilySheet p={p} open={sheet === "family"} busy={busy} onClose={close} act={act} />
-      <TerraSheet p={p} now={now} open={sheet === "terra"} busy={busy} onClose={close} act={act} />
+      <FamilySheet p={p} open={sheet === "family"} busy={busy} onClose={close} act={act}>
+        <ArteSection p={p} busy={busy} act={act} />
+        <Scuola p={p} busy={busy} act={act} />
+        <Knowledge p={p} busy={busy} act={act} />
+      </FamilySheet>
       <GoodSheet p={p} good={good} busy={busy} onClose={() => setGood(null)} act={act} />
       <HouseSheet p={p} open={sheet === "house"} onClose={close} />
       <Intro p={p} />
@@ -324,26 +337,44 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       <TabBar
         active={tab}
         labels={{
-          map: t.tabs.map,
-          workshops: t.tabs.workshops,
-          venice: t.tabs.casa,
-          ranking: t.tabs.carnet,
-          conquest: t.terra.tab,
+          workshops: t.nav.home,
+          venice: t.nav.market,
+          map: t.nav.world,
+          ranking: t.nav.company,
+          conquest: t.nav.family,
         }}
         items={[
           {
-            id: "map",
-            // The map: a sheet closes; else the map zooms out, and in again on Venice.
-            onClick: () => (sheet ? close() : setPlace(place === null ? "veneto" : null)),
+            id: "workshops",
+            icon: Icon.home,
+            // The house: a sheet closes, and the Venetia comes back up close.
+            onClick: () => {
+              close();
+              setPlace("veneto");
+            },
+            dot: relaunch || canCasa,
           },
-          { id: "workshops", onClick: () => setSheet("workshops"), dot: relaunch },
-          { id: "venice", onClick: () => setSheet("casa"), dot: canCasa || familyCalls(p) },
+          { id: "venice", icon: Icon.rialto, onClick: () => setSheet("market") },
+          {
+            id: "map",
+            icon: Icon.map,
+            onClick: () => {
+              close();
+              setPlace(null);
+            },
+          },
           {
             id: "ranking",
-            onClick: () => setSheet("carnet"),
-            dot: claimable(p) || suppliable(p, account.id) > 0,
+            icon: Icon.banner,
+            onClick: () => setSheet("company"),
+            dot: claimable(p) || suppliable(p, account.id) > 0 || terraCalls(p, now),
           },
-          { id: "conquest", onClick: () => setSheet("terra"), dot: terraCalls(p, now) },
+          {
+            id: "conquest",
+            icon: Icon.family,
+            onClick: () => setSheet("family"),
+            dot: familyCalls(p),
+          },
         ]}
       />
     </div>
@@ -568,10 +599,6 @@ function WorkshopsSheet({
           );
         })}
       </ul>
-      {!focus && <Court p={p} busy={busy} act={act} />}
-      {!focus && <Charroi p={p} now={now} busy={busy} act={act} />}
-      {!focus && <Arsenal p={p} now={now} busy={busy} act={act} />}
-      {!focus && <Colleganze p={p} busy={busy} act={act} />}
     </Sheet>
   );
 }
@@ -671,9 +698,8 @@ function CasaSheet({
   busy,
   canCasa,
   onClose,
-  onFamily,
   act,
-}: SheetProps & { open: boolean; canCasa: boolean; onFamily: () => void }) {
+}: SheetProps & { open: boolean; canCasa: boolean }) {
   const view = p.view;
   if (!view) return null;
   const next = view.nextCasa;
@@ -744,85 +770,6 @@ function CasaSheet({
           )}
         </div>
       )}
-      <Slab size="sm" tone="ghost" className="mt-5 w-full" onClick={onFamily}>
-        {t.identity.family} →
-      </Slab>
-      <ArteSection p={p} busy={busy} act={act} />
-      <Scuola p={p} busy={busy} act={act} />
-      <Knowledge p={p} busy={busy} act={act} />
-    </Sheet>
-  );
-}
-
-/** The Carnet tab: the week's objectives, those carried from the last, the Power and its band. */
-function CarnetSheet({
-  p,
-  now,
-  open,
-  busy,
-  onClose,
-  act,
-}: SheetProps & { now: number; open: boolean }) {
-  const view = p.view;
-  if (!view) return null;
-  const c = view.carnet;
-  const all = [...c.objectives, ...c.carried];
-  const row = (o: (typeof all)[number], i: number) => (
-    <li key={i} className="flex items-center gap-3 border-b border-line/60 py-2">
-      <div className="min-w-0 flex-1">
-        <p className={`text-sm ${o.claimed ? "text-cream-dim line-through" : "text-cream"}`}>
-          {(t.carnet.kinds[o.kind] ?? (() => o.kind))(o.target)}
-        </p>
-        <Ribbon
-          value={o.progress / o.target}
-          tone={o.progress >= o.target ? "lagoon" : "gold"}
-          label={`${o.progress}/${o.target}`}
-        />
-      </div>
-      {o.claimed ? (
-        <Badge>{t.carnet.claimed}</Badge>
-      ) : (
-        <Slab
-          size="sm"
-          tone="ghost"
-          busy={busy}
-          disabled={o.progress < o.target}
-          onClick={() => void act({ type: "empireClaim", index: i })}
-        >
-          {t.carnet.claim}
-        </Slab>
-      )}
-    </li>
-  );
-  return (
-    <Sheet
-      open={open}
-      onClose={onClose}
-      docked
-      kicker={t.carnet.kicker}
-      title={t.carnet.title}
-      summary={t.carnet.summary}
-    >
-      {c.windUntil && c.windUntil > now && (
-        <Badge tone="lagoon">{t.carnet.wind(hourOf(c.windUntil))}</Badge>
-      )}
-      <ul className="mt-2">{c.objectives.map((o, i) => row(o, i))}</ul>
-      {c.carried.length > 0 && (
-        <>
-          <Label className="mt-4">{t.carnet.carried}</Label>
-          <ul>{c.carried.map((o, i) => row(o, c.objectives.length + i))}</ul>
-        </>
-      )}
-      <section className="mt-5">
-        <Label>{t.carnet.power}</Label>
-        <div className="mt-1 grid grid-cols-3 gap-2">
-          <Stat label={t.hud.power} value={view.power} />
-          <Stat label={t.hud.band(view.band)} value={view.band + 1} />
-          <Stat label={t.hud.seals} value={view.house.seals} />
-        </div>
-        <p className="mt-2 text-xs text-cream-dim">{t.carnet.powerText}</p>
-      </section>
-      {open && <CompanySection p={p} now={now} busy={busy} act={act} />}
     </Sheet>
   );
 }

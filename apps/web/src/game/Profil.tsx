@@ -220,7 +220,7 @@ function TextSizeSetting() {
   );
 }
 
-function PalettePicker({ pass, offered }: { pass: boolean; offered: boolean }) {
+export function PalettePicker({ pass, offered }: { pass: boolean; offered: boolean }) {
   const [chosen, setChosen] = useState<PaletteId>(currentPalette());
   return (
     <section className="space-y-3">
