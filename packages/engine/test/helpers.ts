@@ -98,3 +98,14 @@ export class World {
     return Object.values(this.state.buildings).filter((b) => b.playerId === playerId);
   }
 }
+
+/**
+ * Opens Lombardy on the fixture's map (test/fixture.ts, `map`): a counter put down in Venetia sees
+ * its edge, a counter put there opens it after its voyage. The house's Casa must be reached.
+ */
+export function openLombardy(w: World, playerId = "a"): void {
+  w.do({ type: "empirePlaceCounter", playerId, cell: "1,0" });
+  w.advance(HOUR);
+  w.do({ type: "empirePlaceCounter", playerId, cell: "3,0" });
+  w.advance(7 * HOUR);
+}

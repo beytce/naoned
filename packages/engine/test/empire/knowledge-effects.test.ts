@@ -68,14 +68,15 @@ describe("the knowledge at work", () => {
     expect(cash(w) - before).toBe(26_400n);
   });
 
-  it("builds quicker, and charters for less Favour", () => {
+  it("builds quicker, and puts its counters down for less", () => {
+    const plain = knowing(["cantiere"]);
     const w = knowing(["cantiere", "lettere"]);
-    w.do({ type: "empireBuildCasa", playerId: "a" });
+    for (const x of [plain, w]) x.do({ type: "empireBuildCasa", playerId: "a" });
     expect(empireHouseAt(w.ctx, w.state, "a", w.now)?.builds[0]?.endsAt).toBe(w.now + 60_000);
-    const lombardy = empireView(w.ctx, w.state, "a", w.now)?.regions.find(
-      (r) => r.code === "lombardia",
-    );
-    expect(lombardy?.charterFavour).toBe(25);
+    const cost = (x: World) =>
+      empireView(x.ctx, x.state, "a", x.now)?.regions.find((r) => r.code === "veneto")?.postCost ??
+      0n;
+    expect(cost(w) < cost(plain)).toBe(true);
   });
 
   it("brings the news live from everywhere, and a goal more to the Carnet", () => {

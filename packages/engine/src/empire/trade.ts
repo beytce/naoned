@@ -15,6 +15,7 @@ import { type Tx, addStock, fail, inventoryLine, removeStock, transfer } from ".
 import { advanceCarnet } from "./carnet.js";
 import { houseEffect } from "./effects.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
+import { bookShareBps, revealedOf } from "./map.js";
 import { powerOf } from "./power.js";
 import {
   localBookOf,
@@ -204,10 +205,20 @@ export function sellToDogana(
   playerId: PlayerId,
   good: string,
   qty: number,
-  region = HOME,
+  at = HOME,
+  city?: string,
 ): number {
   const h = ownHouse(tx, playerId);
   if (!Number.isInteger(qty) || qty <= 0) fail("invalid_quantity");
+  // To a city of the map: one the house has found; its region is the city's.
+  let region = at;
+  if (city !== undefined) {
+    const s = empireSettings(tx.ctx);
+    const c = s.map.cities.find((x) => x.code === city);
+    if (!c) fail("unknown_city");
+    if (!revealedOf(h, s).has(c.cell)) fail("hidden_cell");
+    region = c.region;
+  }
   checkPlace(tx, h, region, good);
   if (inventoryLine(tx, playerId, good).available <= 0) fail("insufficient_stock");
   const n = sellAt(tx, playerId, good, qty, region);
@@ -311,10 +322,20 @@ export function deliverOrders(
   playerId: PlayerId,
   good: string,
   qty: number,
-  region = HOME,
+  at = HOME,
+  city?: string,
 ): number {
   const h = ownHouse(tx, playerId);
   if (!Number.isInteger(qty) || qty <= 0) fail("invalid_quantity");
+  // To a city of the map: one the house has found; its region is the city's.
+  let region = at;
+  if (city !== undefined) {
+    const s = empireSettings(tx.ctx);
+    const c = s.map.cities.find((x) => x.code === city);
+    if (!c) fail("unknown_city");
+    if (!revealedOf(h, s).has(c.cell)) fail("hidden_cell");
+    region = c.region;
+  }
   checkPlace(tx, h, region, good);
   if (inventoryLine(tx, playerId, good).available <= 0) fail("insufficient_stock");
   const n = fillOrders(tx, playerId, good, Math.min(qty, haulLeft(tx, h)), region);
@@ -350,9 +371,13 @@ export function fillOrders(
       ? (books[region] as { day: number; left: number })
       : {
           day,
+          // The cities found in the region carry their share of its book.
           left: Number(
             applyBpsFloor(
-              BigInt(localBookOf(region, counterLevel(h, region), s)),
+              applyBpsFloor(
+                BigInt(localBookOf(region, counterLevel(h, region), s)),
+                bookShareBps(h, region, s),
+              ),
               10_000 + houseEffect(h, "book", s, { region }),
             ),
           ),

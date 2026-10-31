@@ -318,7 +318,11 @@ export interface EmpireWorkshop {
 
 /** A building site: it ends at `endsAt`, settled at the next read. */
 export interface EmpireBuild {
-  kind: "casa" | "newWorkshop" | "upgrade" | "counter" | "ship";
+  kind: "casa" | "newWorkshop" | "upgrade" | "counter" | "ship" | "post" | "arsenal";
+  /** A counter put down on the map, or the Arsenal: its cell (« q,r »). */
+  cell?: string;
+  /** The cells a counter put down reveals when it stands. */
+  reveal?: string[];
   /** A ship of the Arsenal: its type and the id it will bear. */
   vehicleType?: string;
   vehicleId?: string;
@@ -343,6 +347,12 @@ export interface EmpireHouse {
   builds: EmpireBuild[];
   /** Its counters beyond Venetia, by region: their level (CADRAGE-v3 § 3.4). */
   counters?: Record<string, number>;
+  /** The map's cells the house sees (« q,r »): Venetia's, and what its counters revealed. */
+  revealed?: string[];
+  /** The counters put down on the map, each on its cell, in its region. */
+  posts?: { cell: string; region: string }[];
+  /** The Arsenal's cell, on a coast. */
+  arsenal?: string;
   favour: number;
   seals: number;
   /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */

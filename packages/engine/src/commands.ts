@@ -47,9 +47,9 @@ import { rewardCondotta } from "./empire/condotta.js";
 import { sendTeam, settleDeposits } from "./empire/extraction.js";
 import { chooseLineage, passGenerations } from "./empire/family.js";
 import {
-  charterRegion,
   chooseArte,
   empireJoin,
+  empireSettings,
   ownHouse,
   settleBuilds,
   startCasa,
@@ -59,6 +59,7 @@ import {
   upgradeCounter,
 } from "./empire/house.js";
 import { startLearning } from "./empire/knowledge.js";
+import { buildArsenal, ensureMap, placeCounter } from "./empire/map.js";
 import { bidMuda, settleMuda } from "./empire/mudaSail.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
@@ -308,9 +309,18 @@ type EmpireCommandOf =
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll"; playerId: PlayerId }
   | { type: "empireSell"; playerId: PlayerId; good: string; qty: number; region?: string }
-  | { type: "empireDeliver"; playerId: PlayerId; good: string; qty: number; region?: string }
+  | {
+      type: "empireDeliver";
+      playerId: PlayerId;
+      good: string;
+      qty: number;
+      region?: string;
+      /** On the map: a city found, of a region where the house has a counter. */
+      city?: string;
+    }
   | { type: "empireClaim"; playerId: PlayerId; index: number }
-  | { type: "empireCharter"; playerId: PlayerId; region: string }
+  | { type: "empirePlaceCounter"; playerId: PlayerId; cell: string }
+  | { type: "empireBuildArsenal"; playerId: PlayerId; cell: string }
   | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string }
   | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "empireResearch"; playerId: PlayerId; module: string }
@@ -486,6 +496,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     const h = ownHouse(tx, cmd.playerId);
     h.favour += Math.max(0, Math.floor(cmd.favour ?? 0));
     ensureCarnet(tx, cmd.playerId, h);
+    ensureMap(h, empireSettings(tx.ctx));
     passGenerations(tx, cmd.playerId);
     return;
   }
@@ -493,6 +504,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   if (cmd.company !== undefined) syncCompany(tx, cmd.playerId, cmd.company);
   settleBuilds(h, tx.now);
   ensureCarnet(tx, cmd.playerId, h);
+  ensureMap(h, empireSettings(tx.ctx));
   // The generations passed, then the factors' work while the house was away, before its own.
   passGenerations(tx, cmd.playerId);
   runFactors(tx, cmd.playerId);
@@ -521,8 +533,11 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     case "empireClaim":
       claimObjective(tx, cmd.playerId, cmd.index);
       break;
-    case "empireCharter":
-      charterRegion(tx, cmd.playerId, cmd.region);
+    case "empirePlaceCounter":
+      placeCounter(tx, cmd.playerId, cmd.cell);
+      break;
+    case "empireBuildArsenal":
+      buildArsenal(tx, cmd.playerId, cmd.cell);
       break;
     case "empireUpgradeCounter":
       upgradeCounter(tx, cmd.playerId, cmd.region);
@@ -628,7 +643,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);
       break;
     case "empireDeliver":
-      deliverOrders(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);
+      deliverOrders(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region, cmd.city);
       break;
   }
 }

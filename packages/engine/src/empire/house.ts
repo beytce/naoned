@@ -18,6 +18,7 @@ import { catchupCut } from "./catchup.js";
 import { buildMinutesOf, casaLevelOf, casaRequirementMet, levelCost } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { settleLearning } from "./knowledge.js";
+import { settlePost } from "./map.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
 
@@ -80,6 +81,10 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
     } else if (b.kind === "ship" && b.vehicleType && b.vehicleId) {
       // A ship of the Arsenal, launched.
       h.vehicles = [...(h.vehicles ?? []), { id: b.vehicleId, type: b.vehicleType, busyUntil: 0 }];
+    } else if (b.kind === "post" && b.cell && b.region) {
+      settlePost(h, b.cell, b.region, b.reveal ?? [b.cell]);
+    } else if (b.kind === "arsenal" && b.cell) {
+      h.arsenal = b.cell;
     } else if (b.kind === "counter" && b.region) {
       h.counters = {
         ...(h.counters ?? {}),
@@ -274,26 +279,6 @@ function farRegion(tx: Tx, code: string) {
   const r = empireSettings(tx.ctx).regions.find((x) => x.code === code);
   if (!r || r.hoursFromVenice === 0) fail("unknown_region");
   return r;
-}
-
-/**
- * Buys a region's charter with Favour (CADRAGE-v3 § 3.4) and opens the site of its counter: the
- * opening voyage and the building, the hours from Venice and one more. Favour is no money: it only
- * leaves the house.
- */
-export function charterRegion(tx: Tx, playerId: PlayerId, code: string): void {
-  const s = empireSettings(tx.ctx);
-  const h = ownHouse(tx, playerId);
-  const r = farRegion(tx, code);
-  if (h.counters?.[code] || h.builds.some((b) => b.kind === "counter" && b.region === code))
-    fail("built");
-  if (h.casa < r.casa) fail("requirement_unmet");
-  const favour = charterFavourOf(h, r.charterFavour, s);
-  if (h.favour < favour) fail("insufficient_favour");
-  const cost = counterCostOf(h, levelCost(r.casa, s) * BigInt(s.counters.costTimes), s);
-  const site = openSite(tx, playerId, h, cost, {}, r.hoursFromVenice * 60 + 60, 0);
-  h.favour -= favour;
-  h.builds.push({ kind: "counter", level: 1, region: code, ...site });
 }
 
 /** Raises a counter one level: its private book grows with it. */

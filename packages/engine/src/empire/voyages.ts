@@ -22,6 +22,7 @@ import { returnSeaColleganza } from "./colleganzaSail.js";
 import { corsairRiskBps } from "./corsairs.js";
 import { houseEffect } from "./effects.js";
 import { empireSettings, openSite, ownHouse } from "./house.js";
+import { checkArsenal } from "./map.js";
 import { mudaDeparture } from "./mudaSail.js";
 import { priceAt, routeHours } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
@@ -50,6 +51,8 @@ export function buildShip(tx: Tx, playerId: PlayerId, type: string): void {
   const spec = s.vehicles[type];
   if (!spec?.build) fail("unknown_building_type");
   if (h.casa < spec.casa) fail("requirement_unmet");
+  // On the map, the ships are built at the house's Arsenal.
+  checkArsenal(h, s);
   const site = openSite(
     tx,
     playerId,
