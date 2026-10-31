@@ -110,12 +110,80 @@ Les dix régions, dans l'ordre d'ouverture :
 
 **Quatre sont ouvertes au lancement** : la Vénétie, la Lombardie, le Frioul et Istrie, la Romagne et les Marches. Les autres s'ouvrent au fil des ères (§ 4.3).
 
+**La carte** (décision du porteur du 31 octobre 2026, « la carte au centre du jeu ») est une grille d'hexagones sur la Méditerranée. Chaque case de terre appartient à une région ; une case que la mer touche est une côte.
+
+- **Ce qu'on voit.** Au départ, les cases de la Vénétie et leurs villes. Le reste est dans le brouillard, sauf le **siège de chaque région que la Casa a atteinte** : la nouvelle en vient à Venise, par terre ou par mer.
+- **Ouvrir une région**, c'est **poser un comptoir** sur une case qu'on voit, d'une région dont la Casa est atteinte :
+  1. on le paie en ducats : l'ancien prix de la charte de la région, **plus cher d'un quart pour chaque comptoir déjà posé** ;
+  2. on fait le voyage d'ouverture, qu'on regarde avancer sur la carte ;
+  3. il se dresse et **révèle les cases à deux pas autour**.
+
+  Le premier comptoir d'une région l'ouvre. Les suivants y découvrent ses autres cases.
+- **Les villes cachées.** Chaque région a de deux à quatre villes, sur leurs cases. Une ville trouvée reçoit des livraisons, et porte **sa part du carnet de la région**. Toutes les villes trouvées font le carnet entier.
+- **L'Arsenal** se pose une fois, sur une côte qu'on voit, dès la Casa de la première marciliana. Les navires s'y construisent.
+
+**Stato da Mar ou Stato da Terra** ; Frioul et Istrie | Mois 1 |
+| 9–10 | 12 à 18 h | Marciliana, Romagne et Marches ; l'Arsenal privé et la Dalmatie | Mois 1,5 à 2,5 |
+| 11–13 | 1 à 2 j | Cocca ; Allemagne ou Grèce selon le Stato ; Arte mineure | Mois 3 à 5 |
+| 14–16 | 2,5 à 3,5 j | Galea grossa, le Levant ; **3e chantier** ; Constantinople et la mer Noire | Mois 7 à 12 |
+| 17–19 | 4 à 6 j | Charges de Procuratie ; galère de Flandre, Bruges et Londres ; **4e chantier** | An 1,3 à 2 |
+| 20 | 7 j | Couronne de la façade ; Maestria (niveaux infinis) | An 2,5 |
+
+À partir du niveau 8, chaque palier demande un matériau d'une autre région : chêne de Dalmatie, fer, marbre d'Istrie, soie, alun. **La Casa oblige à commercer avec les joueurs des autres routes.**
+
+**À partir de la Casa 9, l'empire doit suivre** (ajout du calibrage, 30 octobre 2026). Bâtir la Casa n demande n − 3 ateliers au niveau n − 1, douze au plus, comme le niveau maître d'Hades' Star. Sans cette exigence, si chaque palier ne coûte que 2 à 7 jours de revenu, les vingt paliers se font en quelques mois. Le vrai frein du milieu et du haut de partie est donc d'élever ses ateliers, dont les chantiers s'allongent jusqu'à 12 jours.
+
+**Coûts calibrés** (ducats, plus les matériaux), au simulateur de 24 mois (`docs/calibration.md`, § Empire ; réglages : `venice1450.empire.ts`) :
+
+| Casa | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Ducats | 50 | 100 | 150 | 400 | 1 000 | 1 600 | 2 500 | 3 800 | 5 500 | 7 500 | 10 000 | 13 500 | 17 000 | 22 000 | 27 000 | 34 000 | 41 000 | 49 000 | 64 000 |
+
+### 3.2 Les ateliers
+
+- **Places** : 4 en Vénétie au départ, +1 aux niveaux 2, 5, 8 et 12 de la Casa. Chaque comptoir de région en ajoute 2 à 4, avec le bonus des matières locales.
+- **Niveau maximum** : le niveau de la Casa.
+- **Production d'un lot** : Y(n) = n × (1 + 0,15 × (n − 1)) fois la base. Un niveau 20 produit environ 77 fois la base : **des chiffres qui se sentent**.
+- **Coût d'un niveau** : base × 1,3^(n − 1), base calibrée à 120 ducats. Le coût croît plus vite que la production : le temps de remboursement passe de moins d'un jour (niveaux 1 à 5) à 3 à 5 semaines (niveaux 16 à 20).
+- **Chantier d'un niveau** : de 1 minute (niveau 1) à 12 jours (niveaux 20 et plus).
+
+### 3.3 Le charroi et la flotte
+
+| Véhicule | Ouvert à (Casa) | Capacité | Trajets | Modules | Fabriqué par |
+| --- | --- | --- | --- | --- | --- |
+| Mule | 1 | 25 | Vénétie, 1 à 3 h | 0 | On l'achète |
+| Charrette | 3 | 40 | Vénétie | 1 | On l'achète |
+| Burchio | 5 | 90 | Brenta et Pô, 2 à 5 h | 2 | Un atelier |
+| Chariot bâché | 6 | 70 | Lombardie, 4 à 6 h | 1 | Un atelier |
+| Marciliana | 9 | 150 | Adriatique, 8 à 16 h | 2 | L'Arsenal privé |
+| Cocca | 11 | 300 | Dalmatie, Grèce, 1 à 2 j | 3 | L'Arsenal privé |
+| Galea grossa | 14 | 500 | Levant, 3 à 5 j | 4 | L'Arsenal privé |
+| Galère de Flandre | 18 | 800 | Bruges, 10 à 14 j | 4 | L'Arsenal privé |
+
+**Les galères partent avec la Muda d'État**, à date fixe. Le risque d'un voyage (tempête, corsaires) reste faible et affiché. Il porte sur 3 à 8 % de la cargaison, jamais sur le navire, et il est assurable.
+
+### 3.4 Les comptoirs et les dix régions
+
+Les dix régions, dans l'ordre d'ouverture :
+1. Vénétie ;
+2. Lombardie ;
+3. Frioul et Istrie ;
+4. Romagne et Marches ;
+5. Dalmatie ;
+6. Allemagne (Stato da Terra d'abord) ;
+7. Grèce (Stato da Mar d'abord) ;
+8. Levant ;
+9. Constantinople et la mer Noire ;
+10. Flandre et Angleterre.
+
+**Quatre sont ouvertes au lancement** : la Vénétie, la Lombardie, le Frioul et Istrie, la Romagne et les Marches. Les autres s'ouvrent au fil des ères (§ 4.3).
+
 **Ouvrir une région** se fait en trois moments :
 1. on achète la charte, en Faveur ;
 2. on fait le voyage d'ouverture, qu'on regarde avancer sur la carte ;
 3. on bâtit le comptoir.
 
-**Le comptoir** donne des places d'atelier, un **carnet de commandes local**, et un poste pour un membre de la famille.
+**Le comptoir** de la région (son niveau, de 1 à 10) donne des places d'atelier, un **carnet de commandes local**, et un poste pour un membre de la famille.
 
 **Stato da Mar ou Stato da Terra** (Casa 8) est le premier grand choix exclusif. L'autre branche s'ouvre à la Casa 15, avec des chartes deux fois plus chères.
 
@@ -505,6 +573,20 @@ Un rapport public dit ce qui a été vendu.
 - le plan 6b (la Contesa et les théâtres) est lancé ;
 - **la bascule est décidée** : `EMPIRE_FROM` à la fin de la saison d'octobre (le 1er novembre 2026 à 0 h, heure de Paris), pour que le mois se clôture avec son classement.
 
+## 12 ter. Arbitrages du 31 octobre 2026 : la carte au centre du jeu
+
+Le porteur, après avoir joué : « le jeu est devenu vraiment nul », il faut une carte qui soit l'élément central, plein écran et en profondeur. Il a pris l'interface de Hades' Star pour modèle de principe, pas d'apparence.
+
+**Ses décisions** :
+- **la carte en plein écran**, sur mobile comme sur PC, avec les monnaies et les véhicules en haut à droite ;
+- **les zones non débloquées sont cachées**, et des villes s'y cachent pour de nouvelles livraisons ;
+- **on débloque en posant un bâtiment** où l'on veut sur la carte. Il se paie en ducats, de plus en plus cher, et chaque anneau plus lointain demande sa Casa ;
+- **la grille** est en hexagones ;
+- **le constructeur de navires** (l'Arsenal) se pose sur la carte ;
+- **l'ordre** : l'écran d'abord, le moteur ensuite.
+
+La charte en Faveur disparaît (§ 3.4). Les effets qui l'allégeaient (lettres, ambassade) allègent désormais le prix du comptoir.
+
 ## 13. Le chemin
 
 Chaque étape fait l'objet d'un plan, validé avant le code.
@@ -593,3 +675,7 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
    - **les bandes de Puissance** passent à 0, 4 000, 6 500, 9 000 et 11 500 : les navires et leurs matériaux ralentissaient le nouveau.
 8. **Les ères et les Annales**, la politique étendue, le Grand Canal en immobilier, le Levant.
 9. **La refonte visuelle et des interactions**, qui suit chaque étape : la carte qui s'étend, la façade qui monte, les trois flottes et leurs emplacements de modules, les convois, la carte d'expédition.
+
+   **La carte au centre** (§ 12 ter, décisions du porteur du 31 octobre 2026) :
+   - *Étape 1, l'écran, faite le 31 octobre* (PR #73) : la carte en plein écran, avec la caméra (doigt, pincement, molette) et trois plans de profondeur. Venise s'ouvre en orbite quand on s'approche. Les monnaies et la flotte sont en haut à droite, le « + » ouvre la Production. Un lieu touché ouvre son panneau d'actions, et des boutons ronds remplacent la barre d'onglets.
+   - *Étape 2, le moteur, faite le 31 octobre* : la grille d'hexagones tirée de la carte (`apps/web/scripts/hexmap.ts`, qui écrit `venice1450.map.ts`). Les comptoirs se posent sur la carte (`empirePlaceCounter`) et révèlent deux cases autour. Les villes cachées portent chacune leur part du carnet de la région (`empireDeliver` vers une ville). L'Arsenal se pose sur une côte (`empireBuildArsenal`), et les navires le demandent. La charte en Faveur est retirée.
