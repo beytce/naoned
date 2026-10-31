@@ -6,6 +6,7 @@ import { depositStock, extract, teamRate } from "./deposits.js";
 import { houseEffect } from "./effects.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
 import type { EmpireSettings } from "./settings.js";
+import { HOME_POST, putAt, storeOf, takeAt, wherePut } from "./stores.js";
 import { counterLevel } from "./trade.js";
 
 const dayOf = (now: number) => Math.floor(now / DAY_MS);
@@ -91,7 +92,8 @@ function settleExtraction(tx: Tx): void {
       const h = empire.houses[id];
       const qty = r.taken[i] ?? 0;
       if (!h || qty <= 0) return;
-      addStock(tx, id, dep.good, qty, "empire_extract", dep.id);
+      // Into the house's counter in the deposit's region (the map that grows).
+      putAt(tx, h, id, wherePut(h, s, dep.region), dep.good, qty, "empire_extract", dep.id);
       const found = h.found?.[dep.good] ?? [];
       if (!found.includes(dep.region))
         h.found = { ...(h.found ?? {}), [dep.good]: [...found, dep.region] };

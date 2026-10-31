@@ -307,6 +307,8 @@ export interface EmpireWorkshop {
   id: string;
   /** Its region: Venetia when absent. */
   region?: string;
+  /** Its counter (the map that grows): its region's first when absent. */
+  post?: string;
   type: BuildingType;
   recipe: string;
   level: number;
@@ -371,6 +373,11 @@ export interface EmpireHouse {
   posts?: { id?: string; cell: string; region: string; x?: number; y?: number; level?: number }[];
   /** Venice's own counter's level: its reach on the map (1 when unset). */
   homeLevel?: number;
+  /**
+   * The stock of each counter beyond Venice, by counter, by good (the map that grows): Venice
+   * holds the rest of the house's inventory.
+   */
+  stores?: Record<string, Record<string, number>>;
   /** The Arsenal's cell, on a coast. */
   arsenal?: string;
   /** The Campo's cell: the door of the Terraferma. */

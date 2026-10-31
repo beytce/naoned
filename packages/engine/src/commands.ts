@@ -64,7 +64,7 @@ import { buildArsenal, buildCamp, buildDepot, ensureMap, placeCounter } from "./
 import { bidMuda, settleMuda } from "./empire/mudaSail.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
-import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
+import { buyGoods, deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
 import {
   buildShip,
   buyEmpireVehicle,
@@ -310,6 +310,7 @@ type EmpireCommandOf =
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll"; playerId: PlayerId }
   | { type: "empireSell"; playerId: PlayerId; good: string; qty: number; region?: string }
+  | { type: "empireBuy"; playerId: PlayerId; good: string; qty: number; post?: string }
   | {
       type: "empireDeliver";
       playerId: PlayerId;
@@ -651,6 +652,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
         cmd.qty,
         cmd.insured === true,
       );
+      break;
+    case "empireBuy":
+      buyGoods(tx, cmd.playerId, cmd.good, cmd.qty, cmd.post);
       break;
     case "empireSell":
       sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);

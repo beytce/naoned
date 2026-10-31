@@ -51,6 +51,7 @@ import { bandOf } from "./power.js";
 import { regionOf } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
 import { staffHireCost, staffSlots } from "./staff.js";
+import { storesOf } from "./stores.js";
 import { isContesaWeek, terraWeekStart } from "./terra.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
 import { moduleSlotsOf, neighbourBonus } from "./workshops.js";
@@ -100,6 +101,8 @@ export interface EmpireView {
   /** The regions (CADRAGE-v3 § 3.4): Venetia, then the others with their charter and counter. */
   regions: EmpireRegionView[];
   map: EmpireMapView;
+  /** Each counter's stock, Venice's first (the map that grows). */
+  stores: { post: string; region: string; goods: Record<string, number> }[];
   /** The vehicles one may buy, those of the house, and its voyages under way. */
   vehicles: {
     shop: {
@@ -448,6 +451,7 @@ export function empireView(
     away: awayOf(ctx, state.empire?.houses[playerId], house, now, s),
     regions: regionsOf(house, s),
     map: mapOf(house, s),
+    stores: storesOf(state.inventories[playerId], house, s),
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
     deposits: (state.empire?.deposits ?? [])

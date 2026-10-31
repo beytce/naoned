@@ -28,7 +28,8 @@ import { mudaDeparture } from "./mudaSail.js";
 import { priceAt, routeHours } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
 import { gainXp } from "./staff.js";
-import { buyAt, counterLevel, fillOrders, homesOf, sellAt } from "./trade.js";
+import { heldAt, postsIn, putAt, takeAt, takeFrom, wherePut } from "./stores.js";
+import { buyAt, counterLevel, fillOrders, sellAt } from "./trade.js";
 
 /** Buys a vehicle at its Casa (CADRAGE-v3 § 3.3): its price is destroyed. */
 export function buyEmpireVehicle(tx: Tx, playerId: PlayerId, type: string): void {
@@ -135,13 +136,15 @@ export function startVoyage(
     fail("unknown_resource");
   const r = s.regions.find((x) => x.code === from);
   const ref = r?.produces[good] ?? r?.demands[good];
-  const held = homesOf(tx, h, good).has(from) ? inventoryLine(tx, playerId, good).available : 0;
+  // Its own goods held at the counters of the port of departure (the map that grows).
+  const posts = postsIn(h, s, from);
+  const held = heldAt(tx, h, playerId, posts, good);
   const own = Math.min(qty, held);
   const before = tx.s.accounts[cashAccount(playerId)] ?? 0n;
   const bought = own < qty && ref !== undefined ? buyAt(tx, playerId, good, qty - own, from) : 0;
   const carried = own + bought;
   if (carried <= 0) fail("insufficient_stock");
-  removeStock(tx, playerId, good, carried, "empire_voyage");
+  takeFrom(tx, h, playerId, posts, good, carried, "empire_voyage");
   const paid = before - (tx.s.accounts[cashAccount(playerId)] ?? 0n);
   const ownValue = ref !== undefined ? priceAt(ref, 10_000, s) * BigInt(own) : 0n;
   const hours = routeHours(from, to, spec.speedBps + houseEffect(h, "speed", s, { vehicleId }), s);
@@ -177,18 +180,21 @@ export function settleVoyages(tx: Tx): void {
   if (due.length === 0 || !tx.s.empire) return;
   tx.s.empire.voyages = all.filter((v) => v.arrivesAt > tx.now);
   for (const v of due) {
-    if (!tx.s.empire.houses[v.house]) continue;
-    addStock(tx, v.house, v.good, v.qty, "empire_voyage", v.id);
+    const owner = tx.s.empire.houses[v.house];
+    if (!owner) continue;
+    // Unloaded at the port's first counter: what neither the orders nor the Dogana take stays there.
+    const s = empireSettings(tx.ctx);
+    const post = wherePut(owner, s, v.to);
+    putAt(tx, owner, v.house, post, v.good, v.qty, "empire_voyage", v.id);
     // A colleganza's return: what the traveller's purse gains at the arrival.
     const purse = tx.s.accounts[cashAccount(v.house)] ?? 0n;
     const lost = corsairsTake(tx, v);
     // Its captain grows with each voyage.
-    const s = empireSettings(tx.ctx);
     for (const m of tx.s.empire.houses[v.house]?.staff ?? [])
       if (m.placedAt === v.vehicleId) gainXp(m, s.staff.xpPerLevel, s);
     const left = v.qty - lost;
-    const delivered = fillOrders(tx, v.house, v.good, left, v.to);
-    sellAt(tx, v.house, v.good, left - delivered, v.to);
+    const delivered = fillOrders(tx, v.house, v.good, left, v.to, [post]);
+    sellAt(tx, v.house, v.good, left - delivered, v.to, [post]);
     if (v.colleganza)
       returnSeaColleganza(tx, v, (tx.s.accounts[cashAccount(v.house)] ?? 0n) - purse);
   }
@@ -212,7 +218,9 @@ function corsairsTake(tx: Tx, v: EmpireVoyage): number {
   if (risk <= 0 || draw(tx.ctx, `corsairs:${v.id}`) % 10_000 >= risk) return 0;
   const lost = Math.floor((v.qty * s.corsairs.lossShareBps) / 10_000);
   if (lost <= 0) return 0;
-  removeStock(tx, v.house, v.good, lost, "empire_corsairs", v.id);
+  const owner = tx.s.empire?.houses[v.house];
+  if (owner)
+    takeAt(tx, owner, v.house, wherePut(owner, s, v.to), v.good, lost, "empire_corsairs", v.id);
   if (v.insured) {
     const r = s.regions.find((x) => x.code === v.to);
     const ref = r?.demands[v.good] ?? r?.produces[v.good] ?? 0n;

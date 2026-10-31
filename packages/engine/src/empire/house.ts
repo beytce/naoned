@@ -21,6 +21,7 @@ import { settleLearning } from "./knowledge.js";
 import { ensureMap, settlePost } from "./map.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
+import { HOME_POST, putAt, storeOf, takeAt, wherePut } from "./stores.js";
 
 /** The empire's settings, or a refusal in a world of the monthly seasons. */
 export function empireSettings(ctx: WorldContext): EmpireSettings {
@@ -195,8 +196,9 @@ export function openSite(
   if (h.builds.length >= casaLevelOf(h.casa, s).buildSlots) fail("no_build_slot");
   const cut = catchupCut(shareBps, s);
   const price = applyBpsFloor(cost, 10_000 - cut.costCutBps);
+  // The materials come from Venice's stock, where the house builds.
   for (const [good, qty] of Object.entries(materials))
-    removeStock(tx, playerId, good, qty, "empire_build");
+    takeAt(tx, h, playerId, HOME_POST, good, qty, "empire_build");
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, price, "empire_build");
   const quicker = Math.min(9_000, cut.timeCutBps + houseEffect(h, "buildTime", s));
   const ms = Math.round((minutes * MINUTE_MS * (10_000 - quicker)) / 10_000);

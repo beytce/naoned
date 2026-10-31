@@ -16,7 +16,7 @@ import { advanceCarnet } from "./carnet.js";
 import { houseEffect } from "./effects.js";
 import { capacityOf } from "./fleet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
-import { bookShareBps, citiesCovered, revealedOf } from "./map.js";
+import { bookShareBps, citiesCovered, revealedOf, standingPosts } from "./map.js";
 import { powerOf } from "./power.js";
 import {
   localBookOf,
@@ -29,6 +29,16 @@ import {
 } from "./prices.js";
 import { wagesOn } from "./salaries.js";
 import type { EmpireSettings } from "./settings.js";
+import {
+  HOME_POST,
+  heldAt,
+  postsIn,
+  postsServing,
+  putAt,
+  takeAt,
+  takeFrom,
+  wherePut,
+} from "./stores.js";
 
 /** The socle plays in Venetia only (CADRAGE-v3 § 13, step 3): the counters come at step 4. */
 const HOME = "veneto";
@@ -151,12 +161,22 @@ export function homesOf(tx: Tx, h: EmpireHouse, good: string): Set<string> {
   return homes;
 }
 
-/** The region of a sale: one the house is present in, where it holds the good. */
-function checkPlace(tx: Tx, h: EmpireHouse, region: string, good: string) {
+/**
+ * The region of a sale: one the house is present in, where its counters hold the good (the map
+ * that grows: each counter sells from its own stock).
+ */
+function checkPlace(
+  tx: Tx,
+  playerId: PlayerId,
+  h: EmpireHouse,
+  region: string,
+  good: string,
+  from: string[],
+) {
   const s = empireSettings(tx.ctx);
   const r = s.regions.find((x) => x.code === region);
   if (!r || counterLevel(h, region) <= 0) fail("unknown_region");
-  if (!homesOf(tx, h, good).has(region)) fail("not_here");
+  if (heldAt(tx, h, playerId, from, good) <= 0) fail("not_here");
   return r;
 }
 
@@ -226,9 +246,9 @@ export function sellToDogana(
     if (s.map.reach && !citiesCovered(h, s).has(city)) fail("out_of_reach");
     region = c.region;
   }
-  checkPlace(tx, h, region, good);
-  if (inventoryLine(tx, playerId, good).available <= 0) fail("insufficient_stock");
-  const n = sellAt(tx, playerId, good, qty, region);
+  const from = postsIn(h, empireSettings(tx.ctx), region);
+  checkPlace(tx, playerId, h, region, good, from);
+  const n = sellAt(tx, playerId, good, qty, region, from);
   if (n <= 0) fail("no_liquidity");
   return n;
 }
@@ -240,6 +260,7 @@ export function sellAt(
   good: string,
   qty: number,
   region: string,
+  from?: string[],
 ): number {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
@@ -248,9 +269,10 @@ export function sellAt(
   if (ref === undefined) fail("unknown_resource");
   const mk = marketNow(tx, region, good);
   const { depth } = marketSize(tx.s.empire?.houses ?? {}, region, tx.now, s);
-  const n = Math.min(qty, depth - mk.soldToday, inventoryLine(tx, playerId, good).available);
+  const posts = from ?? postsIn(h, s, region);
+  const n = Math.min(qty, depth - mk.soldToday, heldAt(tx, h, playerId, posts, good));
   if (n <= 0) return 0;
-  removeStock(tx, playerId, good, n, "empire_sale");
+  takeFrom(tx, h, playerId, posts, good, n, "empire_sale");
   const bonus = isRaw(tx, good) ? rawBonusBps(h.casa, s) : 0;
   const gross = applyBpsFloor(priceAt(ref, mk.pressureBps, s) * BigInt(n), 10_000 + bonus);
   receive(tx, playerId, gross, `dogana:${region}:${good}`);
@@ -278,6 +300,7 @@ export function buyAt(
   good: string,
   qty: number,
   region: string,
+  into?: string,
 ): number {
   const s = empireSettings(tx.ctx);
   const r = regionOf(region, s);
@@ -296,7 +319,8 @@ export function buyAt(
     "empire_purchase",
     `${region}:${good}`,
   );
-  addStock(tx, playerId, good, n, "empire_purchase");
+  const h = ownHouse(tx, playerId);
+  putAt(tx, h, playerId, into ?? wherePut(h, s, region), good, n, "empire_purchase");
   const { depth } = marketSize(tx.s.empire?.houses ?? {}, region, tx.now, s);
   mk.pressureBps = pressureAfterTrade(mk.pressureBps, n, Math.max(1, depth), "buy", s);
   remember(mk, tx.now);
@@ -343,9 +367,11 @@ export function deliverOrders(
     if (s.map.reach && !citiesCovered(h, s).has(city)) fail("out_of_reach");
     region = c.region;
   }
-  checkPlace(tx, h, region, good);
-  if (inventoryLine(tx, playerId, good).available <= 0) fail("insufficient_stock");
-  const n = fillOrders(tx, playerId, good, Math.min(qty, haulLeft(tx, h)), region);
+  // From the counters that serve the city (those that have it in reach), else the region's.
+  const s = empireSettings(tx.ctx);
+  const from = city !== undefined && s.map.reach ? postsServing(h, s, city) : postsIn(h, s, region);
+  checkPlace(tx, playerId, h, region, good, from);
+  const n = fillOrders(tx, playerId, good, Math.min(qty, haulLeft(tx, h)), region, from);
   if (n <= 0) fail("no_liquidity");
   const day = dayOf(tx.now);
   h.hauled = { day, units: (h.hauled?.day === day ? h.hauled.units : 0) + n };
@@ -363,13 +389,15 @@ export function fillOrders(
   good: string,
   qty: number,
   region: string,
+  from?: string[],
 ): number {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   const ref = regionOf(region, s).demands[good];
   if (ref === undefined) return 0;
   const day = dayOf(tx.now);
-  let left = Math.min(qty, inventoryLine(tx, playerId, good).available);
+  const posts = from ?? postsIn(h, s, region);
+  let left = Math.min(qty, heldAt(tx, h, playerId, posts, good));
   if (left <= 0) return 0;
   const books = h.books ?? {};
   h.books = books;
@@ -410,7 +438,7 @@ export function fillOrders(
   if (board > 0) value += priceAt(ref, marketNow(tx, region, good).pressureBps, s) * BigInt(board);
   const delivered = book + board;
   if (delivered <= 0) return 0;
-  removeStock(tx, playerId, good, delivered, "empire_sale");
+  takeFrom(tx, h, playerId, posts, good, delivered, "empire_sale");
   // The convoy's premium on the orders, with the market's.
   const convoy = houseEffect(h, "orderBonus", s, { region });
   receive(
@@ -510,12 +538,37 @@ export function sellToCourt(tx: Tx, playerId: PlayerId, code: string, qty: numbe
   if (mult === 0 || ref === undefined) fail("unknown_resource");
   const day = dayOf(tx.now);
   const book = h.court?.day === day ? h.court : { day, left: s.qualities.courtPerCasa * h.casa };
-  const n = Math.min(qty, book.left, inventoryLine(tx, playerId, code).available);
-  if (inventoryLine(tx, playerId, code).available <= 0) fail("insufficient_stock");
+  // The court is in Venice: Venice's own stock.
+  const held = heldAt(tx, h, playerId, [HOME_POST], code);
+  const n = Math.min(qty, book.left, held);
+  if (held <= 0) fail("insufficient_stock");
   if (n <= 0) fail("no_liquidity");
-  removeStock(tx, playerId, code, n, "empire_sale");
+  takeAt(tx, h, playerId, HOME_POST, code, n, "empire_sale");
   receive(tx, playerId, applyBpsFloor(ref * BigInt(n), mult), `court:${code}`);
   h.court = { day, left: book.left - n };
   advanceCarnet(h, "sell", n);
+  return n;
+}
+
+/**
+ * Buys at the market of a counter's region, into the counter's stock (the map that grows): the
+ * price rises as it buys, as much as the house can pay. Returns what was bought.
+ */
+export function buyGoods(
+  tx: Tx,
+  playerId: PlayerId,
+  good: string,
+  qty: number,
+  post = HOME_POST,
+): number {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  if (!Number.isInteger(qty) || qty <= 0) fail("invalid_quantity");
+  const at = standingPosts(h, s).find((p) => p.id === post);
+  if (!at) fail("unknown_target");
+  const r = regionOf(at.region, s);
+  if (r.produces[good] === undefined && r.demands[good] === undefined) fail("unknown_resource");
+  const n = buyAt(tx, playerId, good, qty, at.region, post);
+  if (n <= 0) fail("insufficient_funds");
   return n;
 }
