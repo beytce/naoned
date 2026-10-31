@@ -91,10 +91,10 @@ Chaque texte suit la bible ; il dit seulement le sujet.
 | --- | --- |
 | `lorenzo.png` | Bust portrait of Lorenzo, a friendly middle-aged Venetian merchant mentor with a short grey beard, a red berretta cap and a dark blue robe with gold trim, looking at the viewer, warm smile |
 
-## `world/` — le fond de la carte du monde (16:10, 2560 × 1600, fond plein)
+## `world/` — la texture de la carte du monde (16:10, 2560 × 1600, fond plein)
+
+La carte du monde trace elle-même ses côtes, ses régions, ses routes et ses noms (`art/mediterranean.tsx`), sur une projection qui grossit la Vénétie : une carte générée ne s'y superposerait pas. On ne commande donc qu'une **texture** de vieux portulan, posée en transparence sur les terres.
 
 | Fichier | Texte |
 | --- | --- |
-| `map.png` | Top-down portolan chart of Europe and the Mediterranean, from Flanders to Constantinople and the Levant, deep night blue sea #16263E, slate blue land, faint gold rhumb lines and a compass rose in a corner, no text, no city names, no borders |
-
-Le jeu trace lui-même les régions, les routes et les noms par-dessus : la carte doit rester sobre, sans villes dessinées. Son cadrage : à gauche la Manche (Flandre), à droite le Levant, en haut l'Allemagne du Sud, en bas l'Afrique du Nord.
+| `map.png` | Texture of an old nautical portolan chart, aged parchment grain in deep night blue #16263E and slate blue, faint gold rhumb lines radiating from two compass roses, very subtle, no coastlines, no land shapes, no text, no letters, seamless and even |

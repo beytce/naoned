@@ -196,7 +196,10 @@ try {
     // The map zoomed out: Venice and the regions, Lombardy fogged until the Casa 6.
     await page.locator("[data-tab=map]").click();
     await page.waitForSelector("[data-map=empire]");
-    if ((await page.locator("[data-region]").count()) < 4) faults.push(`${label}: regions missing`);
+    if ((await page.locator("[data-region]").count()) !== 10)
+      faults.push(`${label}: the ten regions not all on the map`);
+    if ((await page.locator("[data-fog=lombardia]").count()) !== 1)
+      faults.push(`${label}: Lombardy not in the fog at the Casa 1`);
     await shot("9-carte");
     await page.locator("[data-region=lombardia]").click();
     await page.getByRole("heading", { name: /lombardie/i }).waitFor();

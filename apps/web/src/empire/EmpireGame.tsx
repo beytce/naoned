@@ -20,7 +20,7 @@ import { GoodSheet, ResourceBar } from "./Resources.js";
 import { Arsenal, Colleganze } from "./Sea.js";
 import { Term } from "./Term.js";
 import { TerraSheet } from "./Terra.js";
-import { Charroi, Constellation, RegionPlace, Scuola, VoyageSheet, regionName } from "./World.js";
+import { Charroi, RegionPlace, Scuola, VoyageSheet, WorldMap, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import {
   affordable,
@@ -222,7 +222,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         {place === null ? (
           <section className="mx-auto mt-4 w-full max-w-md">
             <Label>{t.world.map}</Label>
-            <Constellation p={p} now={now} onPlace={setPlace} />
+            <WorldMap p={p} now={now} onPlace={setPlace} />
           </section>
         ) : place === "veneto" ? (
           <section className="mx-auto mt-2 w-full max-w-md">

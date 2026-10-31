@@ -753,6 +753,11 @@ export const en: Dictionary = {
       plans: (n: number) => `${n} plans needed (the relics)`,
       running: (at: string) => `Being researched, done at ${at}`,
     },
+    /** On the world map, where room is short. */
+    mapNames: {
+      friuli: "Friuli",
+      romagna: "Romagna",
+    } as Record<string, string>,
     regionNames: {
       veneto: "Venetia",
       lombardia: "Lombardy",
