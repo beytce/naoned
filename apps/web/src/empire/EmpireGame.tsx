@@ -158,7 +158,10 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       const [, kind = "post", region] = id.split(":");
       setSheet(null);
       setPicked(null);
-      setPlacing({ kind: kind === "arsenal" ? "arsenal" : "post", ...(region ? { region } : {}) });
+      setPlacing({
+        kind: kind === "arsenal" || kind === "camp" ? kind : "post",
+        ...(region ? { region } : {}),
+      });
       map.current?.far();
       return;
     }
@@ -169,7 +172,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     await act(
       placing.kind === "arsenal"
         ? { type: "empireBuildArsenal", cell: picked }
-        : { type: "empirePlaceCounter", cell: picked },
+        : placing.kind === "camp"
+          ? { type: "empireBuildCamp", cell: picked }
+          : { type: "empirePlaceCounter", cell: picked },
     );
     setPlacing(null);
     setPicked(null);
@@ -348,6 +353,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         }}
         onClose={close}
         act={act}
+        onPlaceCamp={() => open("place:camp")}
       />
       <FamilySheet p={p} open={sheet === "family"} busy={busy} onClose={close} act={act}>
         <ArteSection p={p} busy={busy} act={act} />

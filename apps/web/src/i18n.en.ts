@@ -280,6 +280,12 @@ export const en: Dictionary = {
       londra: "London",
     } as Record<string, string>,
     placing: {
+      camp: "Put the Campo down",
+      hintCamp: "Touch a lit cell: the Campo will open the Terraferma there.",
+      campCard: "Campo",
+      campText: (casa: number) => `Put on a cell. It opens the Terraferma, from Casa ${casa}.`,
+      noCamp: (casa: number) =>
+        `The Terraferma opens with your Campo, put on the map from Casa ${casa}.`,
       post: "Put a counter down",
       arsenal: "Put the Arsenal down",
       hintPost: "Touch a lit cell: the counter will reveal the cells around it.",
@@ -921,6 +927,7 @@ export const en: Dictionary = {
       unknown_region: "Region out of reach.",
       unknown_cell: "This cell will not do.",
       hidden_cell: "This cell is still in the fog.",
+      no_camp: "Put the Campo on the map first.",
       no_arsenal: "Put the Arsenal on a coast first.",
       built: "Already open.",
       invalid_quantity: "Impossible quantity.",

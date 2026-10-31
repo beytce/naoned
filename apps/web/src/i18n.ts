@@ -197,6 +197,13 @@ const frDict = {
       londra: "Londres",
     } as Record<string, string>,
     placing: {
+      camp: "Poser le Campo",
+      hintCamp: "Touchez une case éclairée : le Campo y ouvrira la Terraferme.",
+      campCard: "Campo",
+      campText: (casa: number) =>
+        `Se pose sur une case. Il ouvre la Terraferme, dès la Casa ${casa}.`,
+      noCamp: (casa: number) =>
+        `La Terraferme s'ouvre avec votre Campo, à poser sur la carte dès la Casa ${casa}.`,
       post: "Poser un comptoir",
       arsenal: "Poser l'Arsenal",
       hintPost: "Touchez une case éclairée : le comptoir révèlera les cases autour.",
@@ -848,6 +855,7 @@ const frDict = {
       unknown_region: "Région hors d'atteinte.",
       unknown_cell: "Cette case ne s'y prête pas.",
       hidden_cell: "Cette case est encore dans le brouillard.",
+      no_camp: "Posez d'abord le Campo sur la carte.",
       no_arsenal: "Posez d'abord l'Arsenal sur une côte.",
       built: "Déjà ouvert.",
       invalid_quantity: "Quantité impossible.",

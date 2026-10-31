@@ -11,7 +11,7 @@ import {
 } from "react";
 import { artSource } from "../../art/Illustration.js";
 import { GoodsMark } from "../../art/goods.js";
-import { cellCentre, hexPath } from "../../art/hexmap.js";
+import { cellCentre, hexPath, neighbours } from "../../art/hexmap.js";
 import {
   MediterraneanGround,
   ROUTES,
@@ -301,6 +301,21 @@ export const EmpireMap = forwardRef<
             />
           );
         })}
+        {map.camp &&
+          (() => {
+            const [px, py] = cellCentre(map.camp);
+            return (
+              <div data-at={`${px},${py + 7}`} className="map-pin">
+                <span
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-night-3 text-vermilion ring-2 ring-vermilion/70 shadow-md shadow-black/50 [&_svg]:h-4 [&_svg]:w-4"
+                  data-camp-mark
+                  title={t.placing.campCard}
+                >
+                  {Icon.troops()}
+                </span>
+              </div>
+            );
+          })()}
         {map.arsenal &&
           (() => {
             const [px, py] = cellCentre(map.arsenal);
@@ -353,6 +368,9 @@ const Chart = memo(function Chart({
   const allowed = placing ? placeable(p, placing) : null;
   const preview = picked && placing?.kind === "post" ? cellsWithin(picked, map.radius) : [];
   const seatSeen = (code: string) => seen.has(seatCellOf(p, code));
+  const frontier = [
+    ...new Set(map.revealed.flatMap((c) => neighbours(c)).filter((c) => !seen.has(c))),
+  ];
   return (
     <svg
       viewBox={`0 0 ${CHART.w} ${CHART.h}`}
@@ -363,11 +381,11 @@ const Chart = memo(function Chart({
     >
       <MediterraneanGround texture={texture} />
       <defs>
-        {/* The dark, all but the cells the house sees. */}
+        {/* The dark, all but the sectors the house sees, a thin gap of night between them. */}
         <mask id="fog-mask" maskUnits="userSpaceOnUse">
           <rect x="-50" y="-50" width={CHART.w + 100} height={CHART.h + 100} fill="#fff" />
           {map.revealed.map((cell) => (
-            <path key={cell} d={hexPath(cell, -0.6)} fill="#000" />
+            <path key={cell} d={hexPath(cell, 1.2)} fill="#000" />
           ))}
         </mask>
       </defs>
@@ -377,21 +395,35 @@ const Chart = memo(function Chart({
         width={CHART.w + 100}
         height={CHART.h + 100}
         fill="#060C17"
-        opacity="0.94"
+        opacity="0.96"
         mask="url(#fog-mask)"
         data-fog-layer
       />
-      {/* The land cells seen, in the faint grid of the chart. */}
+      {/* The edge of the known: the sectors next to those seen, dark shapes outlined. */}
+      <g data-frontier>
+        {frontier.map((cell) => (
+          <path
+            key={cell}
+            d={hexPath(cell, 1.2)}
+            fill="#0C1729"
+            stroke="#BFE3FF"
+            strokeOpacity="0.14"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+      </g>
+      {/* The sectors seen: a tile each, outlined. */}
       <g data-cells>
         {lands.map(([cell]) => (
           <path
             key={cell}
-            d={hexPath(cell, 0.4)}
+            d={hexPath(cell, 1.2)}
             fill="#BFE3FF"
-            fillOpacity="0.04"
+            fillOpacity="0.05"
             stroke="#BFE3FF"
-            strokeOpacity="0.16"
-            strokeWidth="0.8"
+            strokeOpacity="0.3"
+            strokeWidth="1.2"
             vectorEffect="non-scaling-stroke"
           />
         ))}

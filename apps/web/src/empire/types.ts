@@ -248,11 +248,13 @@ export interface EmpireMapView {
   cells: Record<string, { region: string; coast: boolean }>;
   revealed: string[];
   posts: { cell: string; region: string }[];
-  sites: { kind: "post" | "arsenal"; cell: string; endsAt: number }[];
+  sites: { kind: "post" | "arsenal" | "camp"; cell: string; endsAt: number }[];
   arsenal: string | null;
+  camp: string | null;
   cities: { code: string; cell: string; region: string }[];
   radius: number;
   arsenalSite: { cost: string; minutes: number; casa: number } | null;
+  campSite: { cost: string; minutes: number; casa: number } | null;
 }
 
 export interface EmpireVoyage {
@@ -310,6 +312,7 @@ export type EmpireAction =
   | { type: "empireClaim"; index: number }
   | { type: "empirePlaceCounter"; cell: string }
   | { type: "empireBuildArsenal"; cell: string }
+  | { type: "empireBuildCamp"; cell: string }
   | { type: "empireUpgradeCounter"; region: string }
   | { type: "empireBuyVehicle"; vehicleType: string }
   | {

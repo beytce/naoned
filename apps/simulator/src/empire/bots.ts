@@ -95,6 +95,7 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     revealed: new Set(regionCells(w.s, "veneto")),
     posts: 0,
     arsenal: false,
+    camp: false,
     vehicles: w.m.startVehicles.map((type) => ({ type, busyUntil: 0 })),
     galleys: 0,
     modules: {},
@@ -987,6 +988,17 @@ function tryVehicle(w: World, h: House): boolean {
   return true;
 }
 
+/** The Campo, the door of the Terraferma (31 October 2026): built once its Casa is reached. */
+function tryCamp(w: World, h: House): boolean {
+  const camp = w.s.map.camp;
+  if (!camp || h.camp || h.casa < camp.casa || busy(h, "camp")) return false;
+  const cost = BigInt(camp.costDucats) * DENIERS_PER_DUCAT;
+  if (spendable(w, h) < cost) return false;
+  destroy(w, h, cost, "camp");
+  startBuild(w, h, { kind: "camp", target: "camp" }, camp.minutes);
+  return true;
+}
+
 function tryGalley(w: World, h: House): boolean {
   if (h.casa < 9 || busy(h, "galley")) return false;
   if (h.galleys >= 1 + Math.floor(h.casa / 4)) return false;
@@ -998,10 +1010,28 @@ function tryGalley(w: World, h: House): boolean {
 }
 
 const PRIORITY: Record<Bent, ((w: World, h: House) => boolean)[]> = {
-  trader: [tryCasa, tryCounter, tryVehicle, tryNewWorkshop, tryWorkshop, tryWorks],
-  miner: [tryCasa, tryCounter, tryNewWorkshop, tryWorkshop, tryVehicle, tryWorks],
-  armourer: [tryCasa, tryCounter, tryGalley, tryNewWorkshop, tryWorkshop, tryVehicle, tryWorks],
-  mixed: [tryCasa, tryCounter, tryNewWorkshop, tryWorkshop, tryVehicle, tryGalley, tryWorks],
+  trader: [tryCasa, tryCounter, tryVehicle, tryNewWorkshop, tryWorkshop, tryCamp, tryWorks],
+  miner: [tryCasa, tryCounter, tryNewWorkshop, tryWorkshop, tryVehicle, tryCamp, tryWorks],
+  armourer: [
+    tryCasa,
+    tryCounter,
+    tryCamp,
+    tryGalley,
+    tryNewWorkshop,
+    tryWorkshop,
+    tryVehicle,
+    tryWorks,
+  ],
+  mixed: [
+    tryCasa,
+    tryCounter,
+    tryNewWorkshop,
+    tryWorkshop,
+    tryVehicle,
+    tryGalley,
+    tryCamp,
+    tryWorks,
+  ],
 };
 
 /**
@@ -1046,6 +1076,8 @@ export function finishBuild(w: World, h: House, b: Build) {
     if (!h.counters.has(region)) h.counters.set(region, 1);
   } else if (b.kind === "arsenal") {
     h.arsenal = true;
+  } else if (b.kind === "camp") {
+    h.camp = true;
   } else if (b.kind === "vehicle") {
     h.vehicles.push({ type: b.target, busyUntil: 0 });
   } else if (b.kind === "galley") {

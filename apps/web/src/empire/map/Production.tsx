@@ -38,7 +38,7 @@ export function ProductionSheet({
   onClose: () => void;
   act: (a: EmpireAction) => Promise<void>;
   /** Puts a counter or the Arsenal down: the map in its mode of placing. */
-  onPlace: (kind: "post" | "arsenal") => void;
+  onPlace: (kind: "post" | "arsenal" | "camp") => void;
 }) {
   const [pane, setPane] = useState<ProductionPane>(first);
   useEffect(() => {
@@ -97,7 +97,7 @@ function Buildings({
   onPlace,
 }: {
   p: EmpirePayload;
-  onPlace: (kind: "post" | "arsenal") => void;
+  onPlace: (kind: "post" | "arsenal" | "camp") => void;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -105,8 +105,9 @@ function Buildings({
   const costs = view.regions.flatMap((r) => (r.postCost ? [BigInt(r.postCost)] : []));
   const cheapest = costs.length > 0 ? costs.reduce((a, b) => (b < a ? b : a)) : null;
   const yard = view.map.arsenalSite;
+  const camp = view.map.campSite;
   const card = (
-    kind: "post" | "arsenal",
+    kind: "post" | "arsenal" | "camp",
     title: string,
     text: string,
     price: string | null,
@@ -114,7 +115,7 @@ function Buildings({
   ) => (
     <li key={kind} className="flex items-center gap-3 border-b border-line/60 pb-3">
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-night-3 text-gold ring-1 ring-gold/60 [&_svg]:h-6 [&_svg]:w-6">
-        {kind === "post" ? Icon.banner() : Icon.anchor()}
+        {kind === "post" ? Icon.banner() : kind === "camp" ? Icon.troops() : Icon.anchor()}
       </span>
       <span className="min-w-0 flex-1 text-sm text-cream">
         {title}
@@ -139,6 +140,15 @@ function Buildings({
           pl.arsenalText(yard.casa),
           d(yard.cost),
           view.house.casa >= yard.casa,
+        )}
+      {camp &&
+        shownAt(view.house.casa, camp.casa) &&
+        card(
+          "camp",
+          pl.campCard,
+          pl.campText(camp.casa),
+          d(camp.cost),
+          view.house.casa >= camp.casa,
         )}
     </ul>
   );

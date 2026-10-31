@@ -32,8 +32,10 @@ function gain(w: World, h: House, favour: number, seals: number) {
 
 export function terraWeek(w: World, rng: Rng, week: number) {
   const s = w.s.terra;
+  // Without its Campo (31 October 2026), a house stays out of the Terraferma.
+  const door = (h: House) => !w.s.map.camp || h.camp;
   const plays = (h: House) =>
-    h.awayUntil <= w.now && rng.next() * 10_000 < w.m.terra.playBps[h.activity];
+    door(h) && h.awayUntil <= w.now && rng.next() * 10_000 < w.m.terra.playBps[h.activity];
   if (week % 2 === 0) {
     // The Contesa: each company's roster, the largest size its players fill.
     for (const c of w.companies) {

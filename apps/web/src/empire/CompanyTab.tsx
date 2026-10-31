@@ -24,6 +24,7 @@ export function CompanySheet({
   calls,
   onClose,
   act,
+  onPlaceCamp,
 }: {
   p: EmpirePayload;
   now: number;
@@ -33,6 +34,8 @@ export function CompanySheet({
   calls: Record<CompanyPane, boolean>;
   onClose: () => void;
   act: Act;
+  /** The Campo to put on the map: the door of the Terraferma. */
+  onPlaceCamp: () => void;
 }) {
   const [pane, setPane] = useState<CompanyPane>("carnet");
   // biome-ignore lint/correctness/useExhaustiveDependencies: chosen once, as the sheet opens
@@ -62,9 +65,24 @@ export function CompanySheet({
       </div>
       {pane === "carnet" && <CarnetBody p={p} now={now} busy={busy} act={act} />}
       {pane === "company" && open && <CompanySection p={p} now={now} busy={busy} act={act} />}
-      {pane === "terra" && (
-        <TerraBody p={p} now={now} open={open && pane === "terra"} busy={busy} act={act} />
-      )}
+      {pane === "terra" &&
+        (p.view.map.camp === null && p.view.map.campSite ? (
+          // Without its Campo, the Terraferma stays shut (decision of 31 October 2026).
+          <div className="space-y-3" data-no-camp>
+            <p className="text-sm text-cream-dim">{t.placing.noCamp(p.view.map.campSite.casa)}</p>
+            <Slab
+              tone="gold"
+              size="lg"
+              className="w-full"
+              disabled={p.view.house.casa < p.view.map.campSite.casa}
+              onClick={onPlaceCamp}
+            >
+              {t.placing.camp}
+            </Slab>
+          </div>
+        ) : (
+          <TerraBody p={p} now={now} open={open && pane === "terra"} busy={busy} act={act} />
+        ))}
     </Sheet>
   );
 }
