@@ -211,21 +211,32 @@ try {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
 
-    // Out to the map: the next region on the edge of the dark, nameless; the others hidden.
+    // Out to the map (step 2): Venetia's cities in sight, Lombardy's still in the dark.
     await page.locator("[data-round=recenter]").click();
     await page.locator("[data-map=empire]:not([data-near])").waitFor();
     await page.waitForTimeout(300);
-    if ((await page.locator("[data-region=lombardia]").count()) !== 1)
-      faults.push(`${label}: Lombardy not on the edge of the dark`);
-    if ((await page.locator("[data-region=friuli], [data-region=levante]").count()) > 0)
-      faults.push(`${label}: a region ahead shown through the dark`);
-    if ((await page.getByText(/lombardie/i).count()) > 0)
-      faults.push(`${label}: Lombardy named before the Casa reaches it`);
+    if ((await page.locator("[data-city=padova]").count()) !== 1)
+      faults.push(`${label}: Padua not on the map`);
+    if ((await page.locator("[data-city=milano], [data-region=lombardia]").count()) > 0)
+      faults.push(`${label}: Lombardy seen through the dark at the Casa 1`);
     await shot("9-carte");
-    await page.locator("[data-region=lombardia]").click();
-    await page.locator("[data-map-action=closed]").waitFor();
-    await shot("10-lombardie");
+    // A city touched: its panel.
+    await page.locator("[data-city=padova]").click();
+    await page.locator("[data-action-panel=city]").waitFor();
+    await shot("10-padoue");
     await page.getByRole("button", { name: "Fermer" }).first().click();
+    // A counter put down from the Production: the cells light up, one is picked, it is put.
+    await page.locator("[data-production]").click();
+    await page.locator("[data-place=post] button").click();
+    await page.locator("[data-placing-bar=post]").waitFor();
+    await page.waitForTimeout(700);
+    await shot("10b-poser");
+    await page.locator("[data-cell]").first().dispatchEvent("click");
+    await page.getByRole("button", { name: /poser ici/i }).waitFor();
+    await shot("10c-comptoir");
+    // Not now: the brickworks of the Casa 2 first (a counter here costs most of the purse).
+    await page.getByRole("button", { name: /annuler/i }).click();
+    await page.locator("[data-placing-bar]").waitFor({ state: "detached" });
     // The wheel brings Venice near again: its house opens where it stands.
     const venice = await page.locator("[data-region=veneto]").boundingBox();
     if (venice) {
