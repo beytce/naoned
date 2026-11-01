@@ -15,6 +15,7 @@ import {
   placeable,
   placingCost,
   scaleBounds,
+  zoomBounds,
 } from "../src/empire/map/logic.js";
 import type { EmpirePayload, EmpireRegion, EmpireWorkshop } from "../src/empire/types.js";
 
@@ -113,6 +114,16 @@ function payload(over: Partial<NonNullable<EmpirePayload["view"]>> = {}, cash = 
 }
 
 describe("the map's camera (the map at the centre, step 1)", () => {
+  it("never goes farther than the house's whole map (1 November: the zoom crashed far out)", () => {
+    for (const view of [PHONE, PC]) {
+      const p = payload();
+      const { min, max } = zoomBounds(p, view);
+      expect(min).toBeGreaterThanOrEqual(scaleBounds(view).min);
+      expect(min).toBeGreaterThanOrEqual(farCamera(p, view).s * 0.9 - 1e-9);
+      expect(max).toBe(scaleBounds(view).max);
+    }
+  });
+
   it("always covers the screen, on a phone as on a computer", () => {
     for (const view of [PHONE, PC]) {
       const s = coverScale(view);

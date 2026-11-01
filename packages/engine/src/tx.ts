@@ -161,6 +161,7 @@ export type EngineErrorCode =
   | "max_vehicles"
   | "vehicle_busy"
   | "wrong_place"
+  | "not_ordered"
   | "vehicle_not_for_sale"
   | "no_patent"
   | "unknown_patent"

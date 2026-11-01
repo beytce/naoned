@@ -379,6 +379,16 @@ try {
       await shot("18-arrivee");
       await page.keyboard.press("Escape");
     }
+    // Far out, the zoom stops at the house's whole map, the page alive (1 November: it crashed).
+    await page.mouse.move(width / 2, height / 2);
+    for (let i = 0; i < 10; i++) await page.mouse.wheel(0, 2_000);
+    await page.waitForTimeout(500);
+    const farthest =
+      (await page.locator("button[data-city=padova]").first().boundingBox())?.width ?? 0;
+    if (!(farthest > 4)) faults.push(`${label}: Padua lost far out (${farthest})`);
+    await shot("19b-au-plus-loin");
+    for (let i = 0; i < 10; i++) await page.mouse.wheel(0, -2_000);
+    await page.waitForTimeout(400);
     // Far, the towns shrink with the map (after Hades' Star: a planet is small when far).
     const near = (await page.locator("button[data-city=padova]").first().boundingBox())?.width ?? 0;
     await page.mouse.move(width / 2, height / 2);

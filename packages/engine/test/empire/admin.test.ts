@@ -12,6 +12,7 @@ import { MIN, World, makeContext } from "../helpers.js";
 const empire: EmpireSettingsInput = {
   ...testEmpire,
   start: { capitalDucats: 10_000, workshops: [{ type: "farm", recipe: "grow_wheat" }] },
+  vehicles: { cart: { casa: 1, capacity: 30, costDucats: 100, regions: ["veneto"], speedBps: 0 } },
 };
 
 function world() {
@@ -36,6 +37,21 @@ describe("the admin's hand", () => {
     expect(edit(w, { kind: "cash", deniers: "100" }).ok).toBe(true);
     expect(cash(w)).toBe(100n);
     expect(edit(w, { kind: "cash", deniers: "-1" }).ok).toBe(false);
+  });
+
+  it("takes a delivery vehicle away, its cargo back in the stock", () => {
+    const w = world();
+    edit(w, { kind: "vehicle", vehicleType: "cart" });
+    edit(w, { kind: "vehicle", vehicleType: "cart" });
+    const [a, b] = house(w).vehicles ?? [];
+    // A cargo aboard, loaded out of Venice's stock.
+    w.give("a", "bread", 4);
+    w.do({ type: "empireLoad", playerId: "a", vehicleId: a?.id ?? "", good: "bread", qty: 4 });
+    expect(w.state.inventories.a?.bread?.available).toBe(0);
+    expect(edit(w, { kind: "removeVehicle", vehicleId: a?.id ?? "" }).ok).toBe(true);
+    expect(house(w).vehicles?.map((x) => x.id)).toEqual([b?.id]);
+    expect(w.state.inventories.a?.bread?.available).toBe(4);
+    expect(edit(w, { kind: "removeVehicle", vehicleId: "nope" }).ok).toBe(false);
   });
 
   it("does not count as net sales", () => {

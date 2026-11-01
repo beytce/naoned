@@ -98,33 +98,47 @@ describe("a hop", () => {
 });
 
 describe("the cargo", () => {
-  it("is loaded and unloaded by hand at a counter, no more than the hold", () => {
+  it("is loaded by hand only with what the cities order, and unloaded freely", () => {
     const w = world();
-    w.give("a", "salt", 50);
-    const load = (qty: number, type: "empireLoad" | "empireUnload" = "empireLoad") =>
-      w.try({ type, playerId: "a", vehicleId: id(w), good: "salt", qty });
-    expect(error(load(31))).toBe("invalid_quantity");
-    expect(error(load(20))).toBe("");
-    expect(stock(w, "salt")).toBe(30);
-    expect(error(load(25, "empireUnload"))).toBe("insufficient_stock");
-    expect(error(load(5, "empireUnload"))).toBe("");
-    expect(cart(w)?.cargo?.salt?.qty).toBe(15);
-    expect(stock(w, "salt")).toBe(35);
+    const all = view(w)?.orders.flatMap((c) => c.orders) ?? [];
+    const good = all[0]?.good ?? "";
+    const asked = all.filter((o) => o.good === good).reduce((n, o) => n + o.qty - o.filled, 0);
+    const other = w.ctx.theme.resources
+      .map((r) => r.code)
+      .find((g) => !all.some((o) => o.good === g));
+    w.give("a", good, 100);
+    if (other) w.give("a", other, 10);
+    const load = (qty: number, g = good, type: "empireLoad" | "empireUnload" = "empireLoad") =>
+      w.try({ type, playerId: "a", vehicleId: id(w), good: g, qty });
+    // A good no city orders: refused (1 November).
+    if (other) expect(error(load(1, other))).toBe("not_ordered");
+    // No more than the orders ask, nor than the hold.
+    expect(error(load(asked + 1))).toBe("invalid_quantity");
+    const n = Math.min(asked, 30, 5);
+    expect(error(load(n))).toBe("");
+    expect(stock(w, good)).toBe(100 - n);
+    expect(error(load(n + 1, good, "empireUnload"))).toBe("insufficient_stock");
+    expect(error(load(n, good, "empireUnload"))).toBe("");
+    expect(cart(w)?.cargo).toBeUndefined();
+    expect(stock(w, good)).toBe(100);
   });
 
   it("stays aboard at a city that does not ask it, and is not loaded there", () => {
     const w = world();
-    w.give("a", "salt", 10);
-    w.do({ type: "empireLoad", playerId: "a", vehicleId: id(w), good: "salt", qty: 10 });
-    const asks = view(w)
-      ?.orders.find((x) => x.city === "padova")
-      ?.orders.some((o) => o.good === "salt");
+    const of = (code: string) =>
+      view(w)
+        ?.orders.find((x) => x.city === code)
+        ?.orders.map((o) => o.good) ?? [];
+    const good = of("venezia").find((g) => !of("padova").includes(g)) ?? of("venezia")[0] ?? "";
+    const asks = of("padova").includes(good);
+    w.give("a", good, 10);
+    w.do({ type: "empireLoad", playerId: "a", vehicleId: id(w), good, qty: 1 });
     move(w, "city:padova");
     w.advance(HOUR);
     settle(w);
-    if (!asks) expect(cart(w)?.cargo?.salt?.qty).toBe(10);
+    if (!asks) expect(cart(w)?.cargo?.[good]?.qty).toBe(1);
     expect(
-      error(w.try({ type: "empireLoad", playerId: "a", vehicleId: id(w), good: "salt", qty: 1 })),
+      error(w.try({ type: "empireLoad", playerId: "a", vehicleId: id(w), good, qty: 1 })),
     ).toBe("unknown_target");
   });
 });
@@ -132,9 +146,10 @@ describe("the cargo", () => {
 describe("the rounds of before", () => {
   it("are settled once: the goods still on the road come back to their counter", () => {
     const w = world();
-    w.give("a", "salt", 10);
+    const salt = view(w)?.orders[0]?.orders[0]?.good ?? "";
+    w.give("a", salt, 10);
     // A round of before, its goods taken out of the stock (the ledger of stocks kept whole).
-    w.do({ type: "empireLoad", playerId: "a", vehicleId: id(w), good: "salt", qty: 10 });
+    w.do({ type: "empireLoad", playerId: "a", vehicleId: id(w), good: salt, qty: 10 });
     const state = structuredClone(w.state) as WorldState;
     const h = state.empire?.houses.a as EmpireHouse;
     const v = h.vehicles?.[0];
@@ -148,14 +163,14 @@ describe("the rounds of before", () => {
         post: "home",
         period: 0,
         leftAt: w.now,
-        stops: [{ city: "padova", order: 0, good: "salt", qty: 10, at: w.now + HOUR }],
+        stops: [{ city: "padova", order: 0, good: salt, qty: 10, at: w.now + HOUR }],
         backAt: w.now + HOUR,
       },
     ];
     h.filled = { period: 0, cities: {} };
     w.state = state;
     settle(w);
-    expect(stock(w, "salt")).toBe(10);
+    expect(stock(w, salt)).toBe(10);
     expect(house(w).tours).toBeUndefined();
     expect(house(w).filled).toBeUndefined();
     expect(cart(w)?.busyUntil).toBeLessThanOrEqual(w.now);

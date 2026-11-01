@@ -317,6 +317,8 @@ const frDict = {
       next: "Véhicule suivant",
       none: "Aucun véhicule : achetez-en à la Remise.",
       atCounter: (n: number) => `${n} au comptoir`,
+      askedBy: (cities: string) => `demandé par ${cities}`,
+      nothingOrdered: "Rien à ce comptoir que les villes commandent.",
       modules: "Modules",
       slot: (i: number) => `Place ${i}`,
       emptySlot: "Place libre",
