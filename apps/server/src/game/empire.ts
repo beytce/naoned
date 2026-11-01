@@ -91,23 +91,21 @@ const action = z.discriminatedUnion("type", [
     city: z.string().max(40).optional(),
   }),
   z.object({
-    type: z.literal("empireTour"),
+    type: z.literal("empireMove"),
     vehicleId: z.string().max(40),
-    stops: z
-      .array(
-        z.object({
-          city: z.string().max(40),
-          order: z.number().int().min(0).max(10),
-          qty: z.number().int().min(1).max(100_000),
-        }),
-      )
-      .min(1)
-      .max(8),
+    to: z.string().max(60),
+  }),
+  z.object({ type: z.literal("empireDepartNow"), vehicleId: z.string().max(40) }),
+  z.object({ type: z.literal("empireCancelStop"), vehicleId: z.string().max(40) }),
+  z.object({
+    type: z.literal("empireLoad"),
+    vehicleId: z.string().max(40),
+    good: z.string().max(40),
+    qty: z.number().int().min(1).max(100_000),
   }),
   z.object({
-    type: z.literal("empireTransfer"),
+    type: z.literal("empireUnload"),
     vehicleId: z.string().max(40),
-    to: z.string().max(40),
     good: z.string().max(40),
     qty: z.number().int().min(1).max(100_000),
   }),
