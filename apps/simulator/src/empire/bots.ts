@@ -5,6 +5,7 @@ import {
   applyBpsFloor,
   arsenalCost,
   buildMinutesOf,
+  buyableOf,
   casaLevelOf,
   casaRequirementMet,
   catchupCut,
@@ -33,6 +34,7 @@ import {
   researchMinutesOf,
   revealedOf,
   routeHours,
+  sectorCost,
   settleColleganza,
   standingPosts,
   startCells,
@@ -936,11 +938,44 @@ function bestPoint(
   return best;
 }
 
+/** The weight of a sector's towns: their sizes. */
+const townsIn = (w: World, cell: string) =>
+  w.s.map.cities.filter((c) => c.cell === cell).reduce((n, c) => n + c.size, 0);
+
+/**
+ * A sector bought next to its own (1 November): the one with the greatest towns, of a region its
+ * Casa has reached, when it can pay it.
+ */
+function tryUnlock(w: World, h: House): boolean {
+  if (!w.s.map.unlock) return false;
+  const best = buyableOf(seen(h), w.s)
+    .filter((c) => {
+      const r = w.s.regions.find((x) => x.code === w.s.map.cells[c]?.region);
+      return r !== undefined && r.casa <= h.casa;
+    })
+    .map((c) => ({ c, n: townsIn(w, c) }))
+    .filter((x) => x.n > 0)
+    .sort((a, b) => b.n - a.n)[0];
+  if (!best) return false;
+  const cost = sectorCost(seen(h), w.s);
+  if (spendable(w, h) < cost) return false;
+  destroy(w, h, cost, "counters");
+  h.revealed.add(best.c);
+  return true;
+}
+
 function tryCounter(w: World, h: House): boolean {
   if (busy(h, "counter") || busy(h, "post")) return false;
   // A new region, its seat in sight from its Casa (no Favour now): a counter put down there.
   const region = w.s.regions.find((r) => !h.counters.has(r.code) && r.casa <= h.casa);
-  const seat = region ? regionSeat(w.s, region.code) : null;
+  // On a map bought sector by sector, the region's sector it owns with the most towns.
+  const seat = region
+    ? w.s.map.unlock
+      ? (regionCells(w.s, region.code)
+          .filter((c) => h.revealed.has(c))
+          .sort((a, b) => townsIn(w, b) - townsIn(w, a))[0] ?? null)
+      : regionSeat(w.s, region.code)
+    : null;
   const cost = region ? postCostOf(w, h, region.code) : 0n;
   // A new region is the house's growth: it is opened before saving, as soon as it pays back.
   if (region && seat && (regionPaysBack(w, region.code, cost) ? h.cash : spendable(w, h)) >= cost) {
@@ -1015,6 +1050,16 @@ function tryVehicle(w: World, h: House): boolean {
   // A ship is built at the Arsenal (step 7a): its site's hours, its materials from the stock, or
   // their worth at the reference when the house lacks them (the model buys them for it).
   const build = w.s.vehicles[pick[0]]?.build;
+  // A land vehicle, or a ship in a world without an Arsenal, is bought at the Remise.
+  const remise = w.s.map.depot;
+  if (remise && !h.depot && (!build || !w.s.map.arsenal)) {
+    if (busy(h, "depot") || h.casa < remise.casa) return false;
+    const price = BigInt(remise.costDucats) * DENIERS_PER_DUCAT;
+    if (spendable(w, h) < price) return false;
+    destroy(w, h, price, "vehicles");
+    startBuild(w, h, { kind: "depot", target: "depot" }, remise.minutes);
+    return true;
+  }
   // On the map (step 2), the Arsenal is put down on a coast first.
   const yard = w.s.map.arsenal;
   if (build && yard && !h.arsenal) {
@@ -1071,7 +1116,8 @@ function tryModel(w: World, h: House): boolean {
     const level = h.levels[type] ?? 1;
     if (!spec || level >= lv.max) continue;
     const ship = Boolean(w.s.vehicles[type]?.build);
-    if (ship ? w.s.map.arsenal && !h.arsenal : w.s.map.depot && !h.depot) continue;
+    const yard = ship && w.s.map.arsenal ? !h.arsenal : w.s.map.depot && !h.depot;
+    if (yard) continue;
     const cost =
       d(Math.max(spec.costDucats, lv.minCostDucats)) * BigInt(lv.costTimes) * 2n ** BigInt(level);
     const per = ship ? (lv.shipStepBps ?? lv.stepBps) : lv.stepBps;
@@ -1127,6 +1173,7 @@ const PRIORITY: Record<Bent, ((w: World, h: House) => boolean)[]> = {
   trader: [
     tryCasa,
     tryCounter,
+    tryUnlock,
     tryVehicle,
     tryModel,
     tryNewWorkshop,
@@ -1137,6 +1184,7 @@ const PRIORITY: Record<Bent, ((w: World, h: House) => boolean)[]> = {
   miner: [
     tryCasa,
     tryCounter,
+    tryUnlock,
     tryNewWorkshop,
     tryWorkshop,
     tryVehicle,
@@ -1148,6 +1196,7 @@ const PRIORITY: Record<Bent, ((w: World, h: House) => boolean)[]> = {
   armourer: [
     tryCasa,
     tryCounter,
+    tryUnlock,
     tryCamp,
     tryGalley,
     tryNewWorkshop,
@@ -1159,6 +1208,7 @@ const PRIORITY: Record<Bent, ((w: World, h: House) => boolean)[]> = {
   mixed: [
     tryCasa,
     tryCounter,
+    tryUnlock,
     tryNewWorkshop,
     tryWorkshop,
     tryVehicle,
@@ -1220,7 +1270,7 @@ export function finishBuild(w: World, h: House, b: Build) {
       y: y === "" ? Math.round(cy) : Number(y),
       level: 1,
     });
-    for (const c of cellsWithin(cell, w.s.map.revealRadius)) h.revealed.add(c);
+    if (!w.s.map.unlock) for (const c of cellsWithin(cell, w.s.map.revealRadius)) h.revealed.add(c);
     if (!h.counters.has(region)) h.counters.set(region, 1);
   } else if (b.kind === "arsenal") {
     h.arsenal = true;
