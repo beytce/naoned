@@ -1,5 +1,7 @@
 # Le système de livraison de Hades' Star, et sa transposition dans Fondaco
 
+> **Mis à jour le 1er novembre au soir** : la recherche complète et la livraison saut par saut sont dans `docs/hades-star/` (commencer par `00-synthese.md`). Ce qui suit sur les tournées planifiées n'a plus cours.
+
 *Recherche du 1er novembre 2026, à la demande du porteur. On garde les principes de Hades' Star, pas son apparence : la direction artistique reste « Lagune » (`docs/design.md`).*
 
 ## 1. Ce que fait Hades' Star

@@ -114,8 +114,8 @@ Les dix régions, dans l'ordre d'ouverture :
 
 - **Les cases s'achètent de proche en proche** (décision du porteur du 1er novembre 2026) : une case voisine d'une case à soi, ou une côte à une ou deux cases de mer d'une côte à soi, de plus en plus chère, et dans une région que la Casa a atteinte. **Chaque case a une ville au moins, deux au plus** ; une quarantaine de cases et 68 villes, de la bourgade (taille 1) à la capitale (taille 5).
 - **Les commandes des villes**, à la manière des cargaisons de Hades' Star (`docs/hades-star-livraisons.md`), remplacent le carnet :
-  - chaque ville qu'un comptoir sert passe de 1 à 5 commandes selon sa taille, **renouvelées toutes les 2 h** ;
-  - on les remplit par **des tournées** : un véhicule charge au comptoir, visite les villes dans l'ordre en quelques minutes, puis rentre ;
+  - chaque ville qu'un comptoir sert passe de 1 à 5 commandes selon sa taille, **une vague toutes les 2 h, qui s'accumule jusqu'à 6 vagues** ; au plafond, rien de neuf tant qu'on ne livre pas, et l'absence ne coûte rien ;
+  - on les remplit **saut par saut** (décision du 1er novembre, d'après Hades' Star) : on glisse un véhicule vers une ville ou un comptoir de ses cases ; il part 10 s plus tard (✓ pour partir tout de suite, ✕ pour annuler le dernier arrêt), en quelques secondes, et on peut enchaîner 15 arrêts ; au comptoir de départ, il charge ce que demandent les villes de ses arrêts ; à la ville, il livre et il est payé ;
   - chaque unité est payée à l'arrivée, avec une prime pour la taille de la ville et la distance ;
   - ce qui n'est pas livré disparaît, sans coût. La Dogana reste, plus bas, pour vendre en gros.
 - **L'Arsenal disparaît** : les navires se construisent à la Remise, seul bâtiment des véhicules.
@@ -164,7 +164,7 @@ Les dix régions, dans l'ordre d'ouverture :
 
 ### 3.3 Le charroi et la flotte
 
-> **Décision du porteur du 1er novembre 2026 — un seul métier, livrer.** Les gisements, les expéditions et la mer (navires, convois, Muda, colleganza, corsaires, assurance) sont retirés de l'empire ; l'Arsenal aussi. Il ne reste que les charrettes, achetées et améliorées à la Remise, qui livrent les commandes des villes en tournées et portent le stock d'un comptoir à l'autre. Ce qu'une Maison y avait engagé lui a été rendu une fois (cargaisons, mises, enchères, navires et Arsenal à leur prix, recherches des modules retirés). Les hauts niveaux de recherche ne demandent plus de plans. Ce qui suit dans cette section sur la mer n'a plus cours.
+> **Décision du porteur du 1er novembre 2026 — un seul métier, livrer.** Les gisements, les expéditions et la mer (navires, convois, Muda, colleganza, corsaires, assurance) sont retirés de l'empire ; l'Arsenal aussi. Il ne reste que les charrettes, achetées et améliorées à la Remise, qui livrent les commandes des villes saut par saut et portent le stock d'un comptoir à l'autre. Ce qu'une Maison y avait engagé lui a été rendu une fois (cargaisons, mises, enchères, navires et Arsenal à leur prix, recherches des modules retirés). Les hauts niveaux de recherche ne demandent plus de plans. Ce qui suit dans cette section sur la mer n'a plus cours.
 
 | Véhicule | Ouvert à (Casa) | Capacité | Trajets | Modules | Fabriqué par |
 | --- | --- | --- | --- | --- | --- |
