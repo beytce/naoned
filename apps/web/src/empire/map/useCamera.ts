@@ -37,7 +37,7 @@ export function useCamera({
   const frame = useRef(0);
   const live = useRef({ onPaint, onDoubleTap, onTap, onRest, initial, bounds });
   live.current = { onPaint, onDoubleTap, onTap, onRest, initial, bounds };
-  const rangeOf = (v: Viewport) => live.current.bounds?.(v) ?? scaleBounds(v);
+  const rangeOf = useCallback((v: Viewport) => live.current.bounds?.(v) ?? scaleBounds(v), []);
   // The screen's size, read when it changes (never in a frame), and one paint per frame.
   const size = useRef<Viewport | null>(null);
   const painting = useRef(0);
@@ -81,7 +81,7 @@ export function useCamera({
       cam.current = coverClamp(kept, v);
       paintSoon();
     },
-    [view, paintSoon],
+    [view, paintSoon, rangeOf],
   );
 
   const current = useCallback((): Camera => {
@@ -256,7 +256,7 @@ export function useCamera({
       el.removeEventListener("click", click, true);
       el.removeEventListener("wheel", wheel);
     };
-  }, [root, set, current, run, view]);
+  }, [root, set, current, run, view, rangeOf]);
 
   return { cam: current, easeTo, view, repaint: () => set(current()) };
 }
