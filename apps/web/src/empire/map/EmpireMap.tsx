@@ -31,17 +31,17 @@ import { regionName } from "../World.js";
 import { bestQuote } from "../logic.js";
 import { pt } from "../porta/texts.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
+import { Fleet } from "./Fleet.js";
 import {
   CHART,
   ORBIT_UNITS,
   type Placing,
   type Target,
-  type TourDraft,
   centredOn,
   farCamera,
+  nearestPlace,
   placeable,
-  postPoint,
-  tourCities,
+  placesOf,
 } from "./logic.js";
 import { useCamera } from "./useCamera.js";
 
@@ -91,7 +91,9 @@ const MAX_RASTER = 4_096;
  *
  * Smooth (step 3): the chart is drawn once at a scale (`base`) and only moved and scaled by the
  * GPU during a gesture, then drawn again sharp when the camera rests; the places sit in one layer
- * moved with it, kept at their size by a counter-scale (`--inv`); one paint per frame.
+ * moved with it and grow and shrink with the chart (after Hades' Star, 1 November 2026: a city is
+ * small when far), their names hidden when far; only the region names and the timers keep their
+ * size (`--inv`); one paint per frame.
  */
 export const EmpireMap = forwardRef<
   EmpireMapHandle,
@@ -107,11 +109,30 @@ export const EmpireMap = forwardRef<
     onPick?: (at: Picked) => void;
     /** The Campo touched: the Terraferma. */
     onCamp?: () => void;
-    /** The round being made: the cities within its vehicle's reach are lit. */
-    tour?: TourDraft | null;
+    /** The vehicle chosen (its halo), and picking where to send it (a touch on a place). */
+    selected?: string | null;
+    aiming?: boolean;
+    /** A vehicle sent to a place (a drag, a touch while picking, a right click). */
+    onMove?: (vehicleId: string, place: string) => void;
+    /** A hop arrived by the clock: the house's state to settle. */
+    onArrive?: () => void;
   }
 >(function EmpireMap(
-  { p, now, busy, act, onTarget, placing = null, picked = null, onPick, onCamp, tour = null },
+  {
+    p,
+    now,
+    busy,
+    act,
+    onTarget,
+    placing = null,
+    picked = null,
+    onPick,
+    onCamp,
+    selected = null,
+    aiming = false,
+    onMove,
+    onArrive,
+  },
   ref,
 ) {
   const root = useRef<HTMLDivElement>(null);
@@ -135,6 +156,9 @@ export const EmpireMap = forwardRef<
   });
   const drawn = useRef(base);
   drawn.current = base;
+  // The scale the places are drawn for (Venice's sector across the screen): nearer, they grow;
+  // farther, they shrink, as the chart does.
+  const ref0 = useRef(sectorOn({ w: window.innerWidth, h: window.innerHeight }).s);
 
   const paint = useCallback((cam: Camera, v: Viewport) => {
     const { s, tx, ty } = cam;
@@ -148,8 +172,15 @@ export const EmpireMap = forwardRef<
     const layer = pins.current;
     if (layer) {
       layer.style.transform = moved;
-      // The places keep their size on screen.
+      // The names of regions and the timers keep their size; the places follow the chart.
       layer.style.setProperty("--inv", String(1 / k));
+      layer.style.setProperty("--chartk", String(drawn.current / ref0.current));
+    }
+    // Far, the places' names give way (after Hades' Star: a planet's name shows near).
+    const far = s / ref0.current < 0.62;
+    if (root.current && (root.current.dataset.far === "1") !== far) {
+      if (far) root.current.dataset.far = "1";
+      else delete root.current.dataset.far;
     }
     void v;
   }, []);
@@ -159,7 +190,11 @@ export const EmpireMap = forwardRef<
     root,
     initial: sectorOn,
     onPaint: paint,
-    onDoubleTap: () => camera.easeTo(farOn),
+    // A double touch on the sea: near (Venice's sector) and far (the whole map) in turn.
+    onDoubleTap: () => {
+      const v = camera.view();
+      camera.easeTo(camera.cam().s < sectorOn(v).s * 0.8 ? sectorOn : farOn);
+    },
     // The sea touched: the panel and the deployed workshops fold away.
     onTap: () => {
       onTarget(null);
@@ -220,29 +255,29 @@ export const EmpireMap = forwardRef<
   if (!view) return null;
   const map = view.map;
   // The cities under the workshops deployed give way to them.
-  // A round begun: the workshops fold away, the towns come back in sight.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: only when a round begins or ends
-  useEffect(() => {
-    if (tour) setOpened(null);
-  }, [tour !== null]);
   const centre = opened ? openedAt.current : null;
-  const lit = new Set(tour ? tourCities(p, tour.vehicleId) : []);
-  /** A vehicle dragged from its counter onto a city: the round, and that city's orders. */
-  const dragVehicle = (id: string) => (e: React.PointerEvent) => {
-    e.stopPropagation();
-    const x0 = e.clientX;
-    const y0 = e.clientY;
-    const up = (ev: PointerEvent) => {
-      window.removeEventListener("pointerup", up);
-      const moved = Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8;
-      onTarget({ kind: "vehicle", id });
-      if (!moved) return;
-      const city = (document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null)
-        ?.closest("[data-city]")
-        ?.getAttribute("data-city");
-      if (city) onTarget({ kind: "city", code: city });
-    };
-    window.addEventListener("pointerup", up);
+  // Picking where to send the vehicle chosen: the places it may go to are lit, a touch sends it.
+  const targets = aiming && selected ? new Set(placesOf(p).map((x) => x.place)) : null;
+  const lit = new Set(
+    [...(targets ?? [])].filter((x) => x.startsWith("city:")).map((x) => x.slice(5)),
+  );
+  const sendTo = (place: string) => {
+    if (!targets?.has(place) || !selected) return false;
+    onMove?.(selected, place);
+    return true;
+  };
+  /** A point of the screen on the chart. */
+  const toChart = (cx: number, cy: number): [number, number] => {
+    const r = root.current?.getBoundingClientRect();
+    const c = camera.cam();
+    return [(cx - (r?.left ?? 0) - c.tx) / c.s, (cy - (r?.top ?? 0) - c.ty) / c.s];
+  };
+  /** A right click with a vehicle chosen: it goes to the place nearest (the computer's gesture). */
+  const rightClick = (e: React.MouseEvent) => {
+    if (!selected) return;
+    e.preventDefault();
+    const near = nearestPlace(p, toChart(e.clientX, e.clientY), 30 / camera.cam().s);
+    if (near) onMove?.(selected, near.place);
   };
   const underOrbit = (x: number, y: number) =>
     centre !== null && Math.hypot(x - centre[0], y - centre[1]) < ORBIT_UNITS / 2;
@@ -254,6 +289,8 @@ export const EmpireMap = forwardRef<
       data-map="empire"
       data-orbit={opened ?? undefined}
       data-placing={placing?.kind}
+      data-aiming={targets ? "" : undefined}
+      onContextMenu={rightClick}
     >
       {/* The night, far behind: a glow over the lagoon and its scattered lights. */}
       <div ref={back} className="pointer-events-none absolute -inset-[40%]" aria-hidden="true">
@@ -336,9 +373,10 @@ export const EmpireMap = forwardRef<
         <HomeMark
           p={p}
           lit={lit.has("venezia")}
-          onOrders={() => onTarget({ kind: "city", code: "venezia" })}
+          onOrders={() => sendTo("city:venezia") || onTarget({ kind: "city", code: "venezia" })}
           onClick={() =>
-            opened === "home" ? onTarget({ kind: "casa" }) : deploy("veneto", homeAt(p), "home")
+            sendTo("home") ||
+            (opened === "home" ? onTarget({ kind: "casa" }) : deploy("veneto", homeAt(p), "home"))
           }
         />
         {map.cities
@@ -353,20 +391,21 @@ export const EmpireMap = forwardRef<
               size={c.size ?? 1}
               lit={lit.has(c.code)}
               hidden={underOrbit(c.x, c.y)}
-              onClick={() => onTarget({ kind: "city", code: c.code })}
+              onClick={() => sendTo(`city:${c.code}`) || onTarget({ kind: "city", code: c.code })}
             />
           ))}
         {map.posts.map((x) => {
           const [px, py] = [x.x, x.y];
           return (
-            <div key={x.id} data-at={`${px},${py}`} className="map-pin" data-post={x.cell}>
+            <div key={x.id} data-at={`${px},${py}`} className="map-place" data-post={x.cell}>
               {/* A counter touched: its workshops deploy around it; touched again, its panel. */}
               <button
                 type="button"
                 onClick={() =>
-                  opened === x.id
+                  sendTo(x.id) ||
+                  (opened === x.id
                     ? onTarget({ kind: "region", code: x.region })
-                    : deploy(x.region, [px, py], x.id)
+                    : deploy(x.region, [px, py], x.id))
                 }
                 aria-label={t.placing.postCard}
                 className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-lg bg-night-3 text-gold ring-2 ring-gold/70 shadow-md shadow-black/50 active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
@@ -386,99 +425,23 @@ export const EmpireMap = forwardRef<
             </div>
           );
         })}
-        {/* The vehicles around the bubble of the counter they stand at (the map that grows). */}
-        {[{ id: "home", x: map.home.x, y: map.home.y }, ...map.posts].map((x) => {
-          const here = view.vehicles.mine.filter((v) => v.at === x.id && v.busyUntil <= now);
-          if (here.length === 0) return null;
-          const r = x.id === "home" ? 46 : 34;
-          return (
-            <div
-              key={`f${x.id}`}
-              data-at={`${x.x},${x.y}`}
-              className="map-pin"
-              data-fleet-at={x.id}
-            >
-              {here.slice(0, 8).map((v, i) => {
-                const a = ((-60 + i * 30) * Math.PI) / 180;
-                const chosen = tour?.vehicleId === v.id;
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    data-vehicle={v.id}
-                    aria-label={t.vehicleNames[v.type] ?? v.type}
-                    aria-pressed={chosen}
-                    onPointerDown={dragVehicle(v.id)}
-                    className={`pointer-events-auto absolute flex h-8 w-8 touch-none items-center justify-center rounded-full bg-night-3 text-cream shadow-md shadow-black/50 active:scale-95 [&_svg]:h-4 [&_svg]:w-4 ${chosen ? "ring-2 ring-gold" : "ring-1 ring-lagoon/70"}`}
-                    style={{
-                      transform: `translate(${r * Math.cos(a) - 16}px, ${r * Math.sin(a) - 16}px)`,
-                    }}
-                  >
-                    {Icon.cart()}
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
-        {/* The rounds to the cities' orders: a cart from stop to stop, and home. */}
-        {view.tours.map((tr) => {
-          const home = postPoint(p, tr.post);
-          if (!home) return null;
-          const pts: { at: [number, number]; t: number }[] = [{ at: home, t: tr.leftAt }];
-          for (const s of tr.stops) {
-            const c = map.cities.find((x) => x.code === s.city);
-            if (c) pts.push({ at: [c.x, c.y], t: s.at });
-          }
-          pts.push({ at: home, t: tr.backAt });
-          let [x, y] = home;
-          for (let i = 1; i < pts.length; i++) {
-            const a = pts[i - 1];
-            const b = pts[i];
-            if (!a || !b || now > b.t) continue;
-            const k = Math.min(1, Math.max(0, (now - a.t) / Math.max(1, b.t - a.t)));
-            x = a.at[0] + (b.at[0] - a.at[0]) * k;
-            y = a.at[1] + (b.at[1] - a.at[1]) * k;
-            break;
-          }
-          return (
-            <span
-              key={tr.id}
-              data-tour={tr.id}
-              className="absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-gold text-ink ring-2 ring-night transition-transform duration-1000 ease-linear [&_svg]:h-3.5 [&_svg]:w-3.5"
-              style={{ transform: `translate(${x * base - 12}px, ${y * base - 12}px)` }}
-            >
-              {Icon.cart()}
-            </span>
-          );
-        })}
-        {/* The goods on the road between two counters: a cart gliding along the way. */}
-        {view.transfers.map((tr) => {
-          const a = postPoint(p, tr.from);
-          const b = postPoint(p, tr.to);
-          if (!a || !b) return null;
-          const k = Math.min(
-            1,
-            Math.max(0, (now - tr.leftAt) / Math.max(1, tr.arrivesAt - tr.leftAt)),
-          );
-          const x = a[0] + (b[0] - a[0]) * k;
-          const y = a[1] + (b[1] - a[1]) * k;
-          return (
-            <span
-              key={tr.id}
-              data-transfer={tr.id}
-              className="absolute left-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-ink ring-2 ring-night transition-transform duration-1000 ease-linear [&_svg]:h-3 [&_svg]:w-3"
-              style={{ transform: `translate(${x * base - 10}px, ${y * base - 10}px)` }}
-            >
-              {Icon.cart()}
-            </span>
-          );
-        })}
+        {/* The vehicles, standing in orbit or gliding from place to place (the hops). */}
+        <Fleet
+          p={p}
+          now={now}
+          base={base}
+          selected={selected}
+          onSelect={(id) => onTarget({ kind: "vehicle", id })}
+          onMove={(id, place) => onMove?.(id, place)}
+          onArrive={() => onArrive?.()}
+          toChart={toChart}
+          unitsPerPx={() => 1 / camera.cam().s}
+        />
         {map.camp &&
           (() => {
             const [px, py] = cellCentre(map.camp);
             return (
-              <div data-at={`${px},${py + 7}`} className="map-pin">
+              <div data-at={`${px},${py + 7}`} className="map-place">
                 {/* The Campo touched: the Terraferma opens (1 November: it did nothing before). */}
                 <button
                   type="button"
@@ -499,7 +462,7 @@ export const EmpireMap = forwardRef<
           (() => {
             const [px, py] = cellCentre(map.depot);
             return (
-              <div data-at={`${px - 9},${py + 9}`} className="map-pin">
+              <div data-at={`${px - 9},${py + 9}`} className="map-place">
                 <button
                   type="button"
                   onClick={() => onTarget({ kind: "depot" })}
@@ -519,7 +482,7 @@ export const EmpireMap = forwardRef<
             // The Porta: the gate to the lands of Rome (docs/plan-porta.md § 3).
             const [px, py] = cellCentre(p.view.porta.cell);
             return (
-              <div data-at={`${px + 9},${py - 9}`} className="map-pin">
+              <div data-at={`${px + 9},${py - 9}`} className="map-place">
                 <button
                   type="button"
                   onClick={() => onTarget({ kind: "porta" })}
@@ -890,9 +853,9 @@ function HomeMark({
 }) {
   const [x, y] = homeAt(p);
   const orders = p.view?.orders.find((o) => o.city === "venezia");
-  const waiting = orders ? orders.orders.filter((o) => o.filled < o.qty).length : 0;
+  const waiting = orders?.waves ?? 0;
   return (
-    <div data-at={`${x},${y}`} data-home className="map-pin">
+    <div data-at={`${x},${y}`} data-home className="map-place">
       {orders && (
         // Venice's orders, beside its bubble (the bubble itself opens its workshops).
         <button
@@ -962,18 +925,18 @@ function CityMark({
   const best = open && !orders ? bestQuote(p, region) : null;
   const [x, y] = at;
   const tint = tintOf(region);
-  // The bubble grows with the town (after Hades' Star's planets); its ring, how far its orders
-  // are filled.
+  // The bubble grows with the town (after Hades' Star's planets); its ring, how full it is of
+  // waves of orders (full: no new wave until something is brought); its badge, the waves.
   const px = 30 + 6 * Math.min(5, Math.max(1, size));
   const ring = px + 10;
   const r0 = ring / 2 - 2.5;
   const round = 2 * Math.PI * r0;
   const fill = orders ? orders.fillBps / 10_000 : 0;
-  const waiting = orders ? orders.orders.filter((o) => o.filled < o.qty).length : 0;
+  const waiting = orders?.waves ?? 0;
   return (
     <div
       data-at={`${x},${y}`}
-      className={`map-pin transition-opacity duration-[var(--t-base)] ${hidden ? "pointer-events-none opacity-0" : ""}`}
+      className={`map-place transition-opacity duration-[var(--t-base)] ${hidden ? "pointer-events-none opacity-0" : ""}`}
     >
       <button
         type="button"
@@ -1013,7 +976,7 @@ function CityMark({
                 cy={ring / 2}
                 r={r0}
                 fill="none"
-                stroke={fill >= 1 ? "#7DB596" : "#E8B24C"}
+                stroke={fill >= 1 ? "#E36A4A" : "#E8B24C"}
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeDasharray={`${round * fill} ${round}`}
