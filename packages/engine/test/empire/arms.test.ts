@@ -125,10 +125,12 @@ describe("a component", () => {
     expect(error(fit(rider?.id ?? "", 0, "nope"))).toBe("unknown_arm");
     fit(rider?.id ?? "", 0, lances);
     expect(house(w).arms?.vehicles[0]?.slots).toEqual([lances]);
+    // A typed place (1 November): the wagon's second is a defense's.
+    expect(error(fit(wagon?.id ?? "", 1, lances))).toBe("wrong_place");
     // Fitted elsewhere, it leaves its first place.
-    fit(wagon?.id ?? "", 1, lances);
-    expect(house(w).arms?.vehicles.map((v) => v.slots)).toEqual([[null], [null, lances]]);
-    fit(wagon?.id ?? "", 1, null);
+    fit(wagon?.id ?? "", 0, lances);
+    expect(house(w).arms?.vehicles.map((v) => v.slots)).toEqual([[null], [lances, null]]);
+    fit(wagon?.id ?? "", 0, null);
     expect(house(w).arms?.vehicles[1]?.slots).toEqual([null, null]);
   });
 
@@ -185,12 +187,35 @@ describe("a combat vehicle's strength", () => {
     w.do({ type: "empireBuyComponent", playerId: "a", code: "smoke" });
     const v = house(w).arms?.vehicles[0]?.id ?? "";
     const c = house(w).arms?.components[0]?.id ?? "";
-    w.do({ type: "empireFitArm", playerId: "a", vehicleId: v, slot: 0, componentId: c });
+    // A support needs a support place: the rider gains one at its model's level 3.
+    expect(
+      error(w.try({ type: "empireFitArm", playerId: "a", vehicleId: v, slot: 0, componentId: c })),
+    ).toBe("wrong_place");
+    w.do({ type: "empireUpgradeArm", playerId: "a", model: "rider" });
+    expect(house(w).arms?.vehicles[0]?.slots).toHaveLength(1);
+    w.do({ type: "empireUpgradeArm", playerId: "a", model: "rider" });
+    expect(house(w).arms?.vehicles[0]?.slots).toEqual([null, null]);
+    w.do({ type: "empireFitArm", playerId: "a", vehicleId: v, slot: 1, componentId: c });
     w.do({ type: "empireUpgradeComponent", playerId: "a", componentId: c });
     expect(armStats(house(w), v, s).actives).toEqual([
       expect.objectContaining({ componentId: c, effect: "smoke", durationS: 10, cooldownS: 60 }),
     ]);
     expect(armStats(house(w), v, s).damageCutBps).toBe(0);
+  });
+
+  it("sends back to the Remise a component of before on a place of another kind", () => {
+    const w = world();
+    w.do({ type: "empireBuyArm", playerId: "a", model: "rider" });
+    w.do({ type: "empireBuyComponent", playerId: "a", code: "smoke" });
+    // A house of before: the smoke fitted on the rider's only place, untyped then.
+    const state = structuredClone(w.state);
+    const arms = state.empire?.houses.a?.arms;
+    if (!arms?.vehicles[0] || !arms.components[0]) throw new Error("no arms");
+    arms.vehicles[0].slots = [arms.components[0].id];
+    w.state = state;
+    w.do({ type: "empireRelaunchAll", playerId: "a" });
+    expect(house(w).arms?.vehicles[0]?.slots).toEqual([null]);
+    expect(house(w).arms?.components).toHaveLength(1);
   });
 
   it("counts in the Power, as what is built", () => {

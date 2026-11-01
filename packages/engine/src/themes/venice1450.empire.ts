@@ -445,9 +445,23 @@ export const venice1450Empire: EmpireSettingsInput = {
       travelMinutesPerCell: 10,
     },
     models: {
-      cavaliere: { casa: 9, costDucats: 1_500, hp: 1_200, speedCenti: 600, slots: 1 },
-      carro: { casa: 11, costDucats: 4_000, hp: 3_000, speedCenti: 400, slots: 2 },
-      carro_grande: { casa: 14, costDucats: 10_000, hp: 6_500, speedCenti: 300, slots: 3 },
+      cavaliere: { casa: 9, costDucats: 1_500, hp: 1_200, speedCenti: 600, places: ["weapon"] },
+      carro: {
+        casa: 11,
+        costDucats: 4_000,
+        hp: 3_000,
+        speedCenti: 400,
+        places: ["weapon", "defense"],
+      },
+      // Typed places (1 November, after Hades' Star's battleships): a weapon, a defense, then
+      // supports, a support more at the model's levels 3 and 5.
+      carro_grande: {
+        casa: 14,
+        costDucats: 10_000,
+        hp: 6_500,
+        speedCenti: 300,
+        places: ["weapon", "defense", "support"],
+      },
     },
     modelLevels: { max: 5, stepBps: 1_000, costTimes: 1 },
     components: {

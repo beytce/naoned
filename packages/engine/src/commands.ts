@@ -64,7 +64,14 @@ import {
   settleMoves,
 } from "./empire/moves.js";
 import { trackOrders } from "./empire/orders.js";
-import { buyArm, buyComponent, fitArm, upgradeArm, upgradeComponent } from "./empire/porta/arms.js";
+import {
+  buyArm,
+  buyComponent,
+  ensureArmPlaces,
+  fitArm,
+  upgradeArm,
+  upgradeComponent,
+} from "./empire/porta/arms.js";
 import type { BattleOutcome } from "./empire/porta/battle/sim.js";
 import {
   buildPorta,
@@ -541,6 +548,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   ensureMap(h, empireSettings(tx.ctx));
   trackOrders(h, empireSettings(tx.ctx), tx.now);
   ensureFitted(h, empireSettings(tx.ctx));
+  ensureArmPlaces(h, empireSettings(tx.ctx));
   // The generations passed, then the factors' work while the house was away, before its own.
   passGenerations(tx, cmd.playerId);
   runFactors(tx, cmd.playerId);
