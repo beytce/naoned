@@ -118,4 +118,32 @@ describe("the admin's desk on the merchants", () => {
     expect(sheet.account.condottaLevel).toBe(12);
     expect(sheet.account.terraRating).toBe(1500);
   });
+
+  it("resets a merchant to zero, the company kept and the Capo's place handed over", async () => {
+    const ada = await login("ada@example.org");
+    await post(ada, "/api/empire/join");
+    const bob = await login("bob@example.org");
+    await post(bob, "/api/empire/join");
+    const founded = (await post(ada, "/api/company", { name: "Ca' d'Oro" })).json();
+    expect((await post(bob, "/api/company/join", { code: founded.company.code })).statusCode).toBe(
+      200,
+    );
+    const boss = await login("boss@example.org");
+    const id = (await get(boss, "/api/admin/players?q=ada")).json().players[0].id;
+    const edit = (e: unknown) => post(boss, `/api/admin/players/${id}/edit`, { edit: e });
+    await edit({ kind: "cash", deniers: "99900000" });
+    await edit({ kind: "casa", level: 6 });
+    await edit({ kind: "stock", good: "bricks", qty: 500 });
+    await post(boss, `/api/admin/players/${id}/account`, { condottaLevel: 9, lustre: 40 });
+
+    expect((await edit({ kind: "reset" })).statusCode).toBe(200);
+    const sheet = (await get(boss, `/api/admin/players/${id}`)).json();
+    expect(sheet.empire.house.casa).toBe(1);
+    expect(sheet.stock.bricks).toBeUndefined();
+    expect([sheet.account.condottaLevel, sheet.account.lustre]).toEqual([1, 0]);
+    // Ada stays in the company without her vocation; Bob takes the Capo's place.
+    expect((await get(ada, "/api/company")).json().company.myRole).toBeNull();
+    expect((await get(bob, "/api/company")).json().company.myRole).toBe("capo");
+    expect((await post(boss, "/api/admin/invariants")).json().ok).toBe(true);
+  });
 });

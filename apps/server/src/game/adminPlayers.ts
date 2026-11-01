@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts, players } from "../db/schema.js";
+import { stepDown } from "./company.js";
 import { levelsOf } from "./level.js";
 import { passUntil } from "./pass.js";
 import { toJson } from "./serialize.js";
@@ -39,6 +40,7 @@ const editSchema: z.ZodType<AdminEdit> = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("finish") }),
   z.object({ kind: z.literal("revealMap") }),
   z.object({ kind: z.literal("site"), site: z.enum(["camp", "depot"]) }),
+  z.object({ kind: z.literal("reset") }),
 ]);
 
 const accountPatch = z.object({
@@ -264,6 +266,14 @@ export function registerAdminPlayerRoutes(app: FastifyInstance, deps: Deps): voi
       edit: parsed.data.edit,
     });
     if (!res.ok) return reply.code(422).send({ error: res.error });
+    if (parsed.data.edit.kind === "reset") {
+      // The account's marks back to a newcomer's (its name and its Pass kept), its vocation left.
+      await db
+        .update(accounts)
+        .set({ condottaLevel: 1, condottaBest: 0, terraRating: 1_000, lustre: 0 })
+        .where(eq(accounts.id, id.data));
+      await stepDown(db, id.data);
+    }
     return { ok: true };
   });
 
