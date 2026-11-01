@@ -209,7 +209,9 @@ export const venice1450Empire: EmpireSettingsInput = {
     maxLevel: 25,
     neighbourBps: 1_000,
   },
-  counters: { maxLevel: 10, bookStepBps: 4_000 },
+  // A counter's level, a city's orders 25 % greater each (1 November, the hops and the waves: at
+  // 40 %, the end of the game came a year early; calibration.md).
+  counters: { maxLevel: 10, bookStepBps: 2_500 },
   // The map at the centre of the game: the large sectors drawn from the chart (step 3), a city at
   // most in each; a counter reveals the six sectors around, each one a quarter dearer than the
   // last; the Arsenal on a coast, from the Casa of the first ship (calibrated at the simulator).
