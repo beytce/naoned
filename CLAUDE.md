@@ -18,11 +18,18 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage qui fait
 - Production calculée paresseusement à la lecture, pas par le tick.
 - Toute opération de marché = une transaction SQL unique, sérialisée par un verrou transactionnel par (world_id, resource).
 - Paramètres d'équilibrage dans worlds.settings (JSON), jamais en dur.
-- Les règles d'or (CADRAGE-v3 § 2, version Hades' Star du 1er novembre 2026) font foi pour toute mécanique.
-- Le temps s'achète, la puissance jamais : les perle (monnaie précieuse, achetée ou gagnée en jouant) n'accélèrent que les chantiers et les recherches. On ne vend jamais ni ducats, ni marchandises, ni modules, ni plans, ni reliques, ni Sceaux, ni chantier ou place en plus ; la Terraferme et la Contesa restent à armes égales.
-- Le commerce est persistant, sans remise à zéro : personne ne pille ni ne prend ce qui est bâti. Seule perte : à la Porta, un véhicule encore dans les terres de Rome à la fermeture, ou tombé à la Porta noire choisie (hors de la Porta noire, un véhicule détruit au combat rentre abîmé). L'absence ne coûte rien, mais stocks, production et commandes plafonnent. Seule la Terraferme a des saisons courtes, d'une semaine ; `worlds.ends_at` ne borne plus le commerce.
-- Toute compétition se joue par bande de Puissance (calculée sur ce qui est bâti, jamais sur la caisse).
-- Tout se voit : toute fonctionnalité ou mode de jeu est d'abord visuel (sur la carte, objets qu'on touche, mouvements, animations). Ni tableur ni jeu de texte : chiffres et listes accompagnent l'image, jamais ne la remplacent.
+- Le commerce est persistant, sans remise à zéro : seule la Terraferme a des saisons courtes, d'une semaine ; `worlds.ends_at` ne borne plus le commerce.
+
+## Règles d'or (CADRAGE-v3 § 2, version Hades' Star du 1er novembre 2026)
+Elles font foi pour toute mécanique, toute fonctionnalité et tout mode de jeu ; en cas de conflit, elles priment.
+1. **Ton empire t'appartient.** Personne ne peut piller ni prendre ce que tu as bâti.
+2. **Le risque vient des terres de Rome, jamais d'un autre joueur.** Un véhicule détruit au combat de la Porta rentre abîmé ; un véhicule encore à la Porta à sa fermeture est perdu ; la perte définitive à chaque combat n'existe qu'à la Porta noire, que le joueur choisit.
+3. **L'absence ne coûte rien, mais rien ne s'accumule sans fin.** Stocks, production et commandes ont un plafond : une fois plein, ça s'arrête, sans rien perdre.
+4. **Le temps s'achète, la puissance jamais.** Les perle (monnaie précieuse, achetée ou gagnée en jouant) accélèrent les chantiers et les recherches. On ne vend jamais ni ducats, ni marchandises, ni modules, ni plans, ni reliques, ni Sceaux, ni chantier ou place en plus ; la Terraferme et la Contesa restent à armes égales.
+5. **Les hauts niveaux se gagnent en jouant.** Au-delà d'un certain niveau, les modules demandent des plans, qui viennent des reliques de la Porta.
+6. **On affronte des joueurs de son niveau.** Combats, classements et appariements se font par bande de Puissance, calculée sur ce qui est bâti, jamais sur la caisse.
+7. **Le jeu se joue en quelques minutes, plusieurs fois par jour, et la compagnie aide sans obliger.** Les modes en direct sont courts (une dizaine de minutes) ; aucun mode n'exige d'être présent pendant des jours.
+8. **Tout se voit.** Toute fonctionnalité, tout mode de jeu est d'abord visuel : sur la carte, par des objets qu'on touche, des mouvements et des animations. Ni tableur ni jeu de texte : un chiffre ou une liste accompagnent l'image, jamais ne la remplacent.
 
 ## Façon de travailler
 - Chaque système absorbe les anciens au lieu de s'y ajouter : une douzaine de systèmes visibles, pas trente.
