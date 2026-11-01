@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { GoodsMark } from "../../art/goods.js";
+import { d } from "../../game/format.js";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
 import { CloseButton, Slab } from "../../ui.js";
 import { regionName } from "../World.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
-import { loadable, placeName } from "./logic.js";
+import { type OrderSort, dockOrders, placeName } from "./logic.js";
 
 const t = fr.empire.hops;
 const goodName = (p: EmpirePayload, code: string) =>
@@ -13,9 +14,10 @@ const goodName = (p: EmpirePayload, code: string) =>
 
 /**
  * The vehicle chosen (after Hades' Star's ship panel, 1 November 2026), at the foot of the map: its
- * model and hold, where it stands or goes with the seconds left, and its gestures — the cargo, to
- * move (drag it to a place, or touch one), to load at a counter; while it waits to leave, « Partir »
- * in gold and « Annuler »; the arrows go to the vehicle before or after.
+ * model and hold (in orders), where it stands or goes with the seconds left, and its gestures — the
+ * orders aboard, to move (drag it to a place, or touch one), to load at a counter (the list of the
+ * orders of the cities the counter serves, sorted, a touch loads one); while it waits to leave,
+ * « Partir » in gold and « Annuler »; the arrows go to the vehicle before or after.
  */
 export function VehiclePanel({
   p,
@@ -40,15 +42,15 @@ export function VehiclePanel({
   onClose: () => void;
 }) {
   const [pane, setPane] = useState<"cargo" | "load" | "modules" | null>(null);
+  const [sort, setSort] = useState<OrderSort>("dear");
   const view = p.view;
   const v = view?.vehicles.mine.find((x) => x.id === vehicleId);
   if (!view || !v) return null;
   const name = (place: string) => placeName(p, place, regionName);
-  const carried = Object.values(v.cargo).reduce((n, c) => n + c.qty, 0);
+  const carried = v.loads.length;
   const leg = v.legs.find((l) => l.departAt <= now && l.arrivesAt > now);
   const waiting = !leg && v.legs[0] && v.legs[0].departAt > now ? v.legs[0] : null;
   const atPost = !v.at.startsWith("city:") && !leg && !v.legs.some((l) => l.departAt <= now);
-  const store = view.stores.find((x) => x.post === v.at)?.goods ?? {};
   // The state, and its bar: the seconds before leaving, or left on the way.
   const state = leg
     ? {
@@ -198,11 +200,16 @@ export function VehiclePanel({
       {pane === "cargo" && (
         <ul className="mt-2 space-y-1" data-cargo>
           {carried === 0 && <li className="text-xs text-cream-dim">{t.empty}</li>}
-          {Object.entries(v.cargo).map(([good, c]) => (
-            <li key={good} className="flex items-center gap-2 text-sm text-cream">
-              <GoodsMark code={good} size={20} />
-              <span className="flex-1">
-                {goodName(p, good)} × {c.qty}
+          {v.loads.map((o) => (
+            <li key={o.id} className="flex items-center gap-2 text-sm text-cream" data-load={o.id}>
+              <GoodsMark code={o.good} size={20} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">
+                  {goodName(p, o.good)} × {o.qty}
+                </span>
+                <span className="block truncate text-xs text-cream-dim">
+                  {name(`city:${o.city}`)} · {d(o.pay)}
+                </span>
               </span>
               {atPost && (
                 <Slab
@@ -210,7 +217,7 @@ export function VehiclePanel({
                   tone="ghost"
                   busy={busy}
                   onClick={() =>
-                    void act({ type: "empireUnload", vehicleId: v.id, good, qty: c.qty })
+                    void act({ type: "empireUnloadOrder", vehicleId: v.id, orderId: o.id })
                   }
                 >
                   {t.unload}
@@ -221,41 +228,98 @@ export function VehiclePanel({
         </ul>
       )}
       {pane === "load" && atPost && (
-        <ul className="mt-2 space-y-1" data-load>
-          {/* Only what the cities order (1 November), with who asks it. */}
-          {Object.entries(store)
-            .filter(([good, n]) => n > 0 && loadable(p, v, good).left > 0)
-            .map(([good, n]) => {
-              const { left, cities } = loadable(p, v, good);
-              const qty = Math.min(n, v.capacity - carried, left);
-              return (
-                <li key={good} className="flex items-center gap-2 text-sm text-cream">
-                  <GoodsMark code={good} size={20} />
-                  <span className="min-w-0 flex-1">
-                    {goodName(p, good)}
-                    <span className="block truncate text-xs text-cream-dim">
-                      {t.atCounter(n)} ·{" "}
-                      {t.askedBy(cities.map((c) => fr.empire.cityNames[c] ?? c).join(", "))}
-                    </span>
-                  </span>
-                  <Slab
-                    size="sm"
-                    tone="ghost"
-                    busy={busy}
-                    disabled={qty <= 0}
-                    onClick={() => void act({ type: "empireLoad", vehicleId: v.id, good, qty })}
-                  >
-                    {`${t.load} ${qty}`}
-                  </Slab>
-                </li>
-              );
-            })}
-          {!Object.entries(store).some(([good, n]) => n > 0 && loadable(p, v, good).left > 0) && (
-            <li className="text-xs text-cream-dim">{t.nothingOrdered}</li>
-          )}
-        </ul>
+        <LoadPane p={p} busy={busy} act={act} v={v} sort={sort} onSort={setSort} />
       )}
     </section>
+  );
+}
+
+type Mine = NonNullable<EmpirePayload["view"]>["vehicles"]["mine"][number];
+
+/**
+ * The orders a docked vehicle may load (after Hades' Star's shipment list): those of the cities
+ * its counter serves, one line each, sorted as chosen; a touch loads one (a place of its hold, its
+ * lot out of the counter's stock); greyed while the stock lacks its lot, or the hold is full.
+ */
+function LoadPane({
+  p,
+  busy,
+  act,
+  v,
+  sort,
+  onSort,
+}: {
+  p: EmpirePayload;
+  busy: boolean;
+  act: (a: EmpireAction) => Promise<void>;
+  v: Mine;
+  sort: OrderSort;
+  onSort: (s: OrderSort) => void;
+}) {
+  const list = dockOrders(p, v, sort);
+  const full = v.loads.length >= v.capacity;
+  return (
+    <div className="mt-2" data-load-pane>
+      <fieldset className="flex items-center gap-1 overflow-x-auto border-0 p-0 pb-1">
+        <legend className="sr-only">{t.sort}</legend>
+        {(["dear", "cheap", "near", "far"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            aria-pressed={sort === k}
+            data-sort={k}
+            onClick={() => onSort(k)}
+            className={`shrink-0 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold ring-1 transition active:scale-95 ${
+              sort === k ? "bg-gold/15 text-gold ring-gold" : "text-cream-dim ring-lagoon/50"
+            }`}
+          >
+            {t.sorts[k]}
+          </button>
+        ))}
+      </fieldset>
+      <p className="mt-1 text-[0.6875rem] text-cream-dim">{full ? t.holdFull : t.tapToLoad}</p>
+      <ul className="mt-1 max-h-64 space-y-1 overflow-y-auto" data-load>
+        {list.length === 0 && <li className="text-xs text-cream-dim">{t.nothingOrdered}</li>}
+        {list.map((o) => {
+          const off = full || !o.ready;
+          return (
+            <li key={o.id}>
+              <button
+                type="button"
+                disabled={busy || off}
+                data-order={o.id}
+                data-ready={o.ready}
+                onClick={() =>
+                  void act({
+                    type: "empireLoadOrder",
+                    vehicleId: v.id,
+                    city: o.city,
+                    orderId: o.id,
+                  })
+                }
+                className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm ring-1 ring-lagoon/40 transition active:scale-[0.98] ${
+                  off ? "opacity-45" : "bg-night-3 text-cream hover:ring-gold"
+                }`}
+              >
+                <GoodsMark code={o.good} size={22} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-cream">
+                    {goodName(p, o.good)} × {o.qty}
+                  </span>
+                  <span className="block truncate text-xs text-cream-dim">
+                    {t.forCity(fr.empire.cityNames[o.city] ?? o.city, o.leagues)}
+                    {!o.ready && ` · ${t.stock(o.held, o.qty)}`}
+                  </span>
+                </span>
+                <span className="font-display text-sm font-bold tabular-nums text-gold">
+                  {d(o.pay)}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

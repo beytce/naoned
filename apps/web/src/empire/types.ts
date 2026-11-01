@@ -3,6 +3,15 @@ import type { PortaAction, PortaView } from "./porta/types.js";
 
 /** The empire's view as `/api/empire` sends it (amounts in deniers, as strings). */
 
+/** A city's order (after Hades' Star's shipments): a fixed lot of a good, its pay in deniers. */
+export interface EmpireOrderView {
+  id: string;
+  city: string;
+  good: string;
+  qty: number;
+  pay: string;
+}
+
 export interface EmpireJob {
   recipe: string;
   startedAt: number;
@@ -94,13 +103,13 @@ export interface EmpireView {
     city: string;
     region: string;
     size: number;
-    /** By good, its open waves together. */
-    orders: { good: string; qty: number; filled: number; unit: string }[];
-    /** Its open waves, and how full it is of them (the ring around it), in bps of the cap. */
-    waves: number;
+    /** Its orders waiting: each a fixed lot, one place of a hold. */
+    orders: EmpireOrderView[];
+    /** How many it keeps at most, and how full it is (the ring around it), in bps of that. */
+    cap: number;
     fillBps: number;
-    /** When the next wave comes. */
-    renewsAt: number;
+    /** When the next order comes; null while the city is full. */
+    nextAt: number | null;
   }[];
   /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
   moves: { departSeconds: number; unitsPerSecond: number; maxStops: number };
@@ -124,8 +133,8 @@ export interface EmpireView {
       fitted?: string[];
       /** Where it stands: a counter's id, or `city:<code>`. */
       at: string;
-      /** What it carries, by good, and the counter it was loaded at. */
-      cargo: Record<string, { qty: number; from: string }>;
+      /** The orders aboard, each a place of its hold, and the counter they were loaded at. */
+      loads: (EmpireOrderView & { from: string })[];
       /** Its stops to come, hop by hop: each leaves when the one before arrives. */
       legs: { from: string; to: string; departAt: number; arrivesAt: number }[];
       /** Its places for trade modules (a level of its model), and what is fitted there. */
@@ -334,8 +343,8 @@ export type EmpireAction =
   | { type: "empireSettle" }
   | { type: "empireCancelStop"; vehicleId: string }
   | { type: "empireFitVehicle"; vehicleId: string; slot: number; module: string | null }
-  | { type: "empireLoad"; vehicleId: string; good: string; qty: number }
-  | { type: "empireUnload"; vehicleId: string; good: string; qty: number }
+  | { type: "empireLoadOrder"; vehicleId: string; city: string; orderId: string }
+  | { type: "empireUnloadOrder"; vehicleId: string; orderId: string }
   | { type: "empireDeliver"; good: string; qty: number; region?: string; city?: string }
   | { type: "empireClaim"; index: number }
   | { type: "empirePlaceCounter"; cell: string }

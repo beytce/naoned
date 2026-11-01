@@ -285,14 +285,12 @@ const frDict = {
     },
     /** The cities' orders and the rounds (1 November, after Hades' Star). */
     orders: {
-      cityLine: (region: string, size: number, waves: number, max: number) =>
-        `${region} · ville de taille ${size} · ${waves} vague${waves > 1 ? "s" : ""} de commandes sur ${max}`,
+      cityLine: (region: string, size: number, n: number, max: number) =>
+        `${region} · ville de taille ${size} · ${n} commande${n > 1 ? "s" : ""} sur ${max}`,
       outOfReach: "Hors du champ de vos comptoirs : posez-en un plus près.",
-      filled: (n: number, of: number) => `${n} / ${of}`,
-      unit: (cost: string) => `${cost} l'unité`,
       none: "Aucune commande en attente.",
-      renews: (at: string) => `Prochaine vague à ${at}`,
-      full: "Pleine : plus de nouvelle vague tant que rien n'est livré.",
+      renews: (at: string) => `Prochaine commande à ${at}`,
+      full: "Pleine : plus de nouvelle commande tant qu'aucune n'est chargée.",
       send: "Y envoyer un véhicule",
     },
     hops: {
@@ -316,9 +314,18 @@ const frDict = {
       prev: "Véhicule précédent",
       next: "Véhicule suivant",
       none: "Aucun véhicule : achetez-en à la Remise.",
-      atCounter: (n: number) => `${n} au comptoir`,
-      askedBy: (cities: string) => `demandé par ${cities}`,
-      nothingOrdered: "Rien à ce comptoir que les villes commandent.",
+      forCity: (city: string, leagues: number) => `pour ${city} · ${leagues} lieues`,
+      stock: (n: number, of: number) => `stock ${n}/${of}`,
+      nothingOrdered: "Aucune commande des villes que ce comptoir dessert.",
+      tapToLoad: "Touchez une commande pour la charger.",
+      holdFull: "Cale pleine.",
+      sort: "Trier",
+      sorts: {
+        dear: "Plus chères",
+        cheap: "Moins chères",
+        near: "Plus proches",
+        far: "Plus lointaines",
+      } as Record<string, string>,
       modules: "Modules",
       slot: (i: number) => `Place ${i}`,
       emptySlot: "Place libre",

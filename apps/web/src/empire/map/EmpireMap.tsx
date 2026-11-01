@@ -270,7 +270,8 @@ export const EmpireMap = forwardRef<
   // The vehicle chosen: the cities it would serve light up, with what it would bring them (after
   // Hades' Star: a ship's destinations shine); the others step back.
   const chosen = selected ? view.vehicles.mine.find((v) => v.id === selected) : undefined;
-  const wanted = chosen ? wantedBy(p, chosen) : null;
+  // The cities of the orders aboard light up (an empty hold lights none, dims none).
+  const wanted = chosen && chosen.loads.length > 0 ? wantedBy(p, chosen) : null;
   const sendTo = (place: string) => {
     if (!targets?.has(place) || !selected) return false;
     onMove?.(selected, place);
@@ -864,12 +865,12 @@ function HomeMark({
   /** Venice's own orders: its badge touched. */
   onOrders?: () => void;
   lit?: boolean;
-  /** The units the vehicle chosen would bring Venice: its badge shines. */
+  /** The orders the vehicle chosen carries for Venice: its badge shines. */
   wanted?: number;
 }) {
   const [x, y] = homeAt(p);
   const orders = p.view?.orders.find((o) => o.city === "venezia");
-  const waiting = orders?.waves ?? 0;
+  const waiting = orders?.orders.length ?? 0;
   return (
     <div data-at={`${x},${y}`} data-home className="map-place">
       {orders && (
@@ -949,13 +950,13 @@ function CityMark({
   const [x, y] = at;
   const tint = tintOf(region);
   // The bubble grows with the town (after Hades' Star's planets); its ring, how full it is of
-  // waves of orders (full: no new wave until something is brought); its badge, the waves.
+  // orders (full: none new until one is loaded); its badge, the orders waiting.
   const px = 30 + 6 * Math.min(5, Math.max(1, size));
   const ring = px + 10;
   const r0 = ring / 2 - 2.5;
   const round = 2 * Math.PI * r0;
   const fill = orders ? orders.fillBps / 10_000 : 0;
-  const waiting = orders?.waves ?? 0;
+  const waiting = orders?.orders.length ?? 0;
   return (
     <div
       data-at={`${x},${y}`}

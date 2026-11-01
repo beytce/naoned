@@ -585,59 +585,84 @@ export function nearestPlace(
   return best;
 }
 
-/**
- * What a vehicle would bring to a city: its cargo (or, still at its counter, what that counter
- * holds) against what the city's orders ask, and the pay before the way's premium.
- */
+/** What a vehicle would bring to a city: the orders of that city aboard, with their pay. */
 export function bringsTo(
   p: EmpirePayload,
   v: Mine,
   city: string,
 ): { good: string; n: number; pay: bigint }[] {
-  const o = p.view?.orders.find((x) => x.city === city);
-  if (!o) return [];
-  const atPost = !v.at.startsWith("city:") && v.legs.length === 0;
-  const store = p.view?.stores.find((x) => x.post === v.at)?.goods ?? {};
-  let room = v.capacity - Object.values(v.cargo).reduce((n, c) => n + c.qty, 0);
-  return o.orders
-    .map((x) => {
-      const left = x.qty - x.filled;
-      const aboard = v.cargo[x.good]?.qty ?? 0;
-      const more = atPost ? Math.max(0, Math.min(room, store[x.good] ?? 0, left - aboard)) : 0;
-      room -= more;
-      const n = Math.min(left, aboard + more);
-      return { good: x.good, n, pay: BigInt(x.unit) * BigInt(n) };
-    })
-    .filter((x) => x.n > 0);
+  if (!p.view?.orders.some((x) => x.city === city)) return [];
+  return v.loads
+    .filter((o) => o.city === city)
+    .map((o) => ({ good: o.good, n: o.qty, pay: BigInt(o.pay) }));
 }
 
 /**
  * The cities a vehicle chosen would serve (after Hades' Star: the destinations of a ship's cargo
- * light up): those whose open orders ask what it carries or, at its counter, what it could load
- * there; with the units it would bring each.
+ * light up): those of the orders aboard, with how many orders it carries for each.
  */
-export function wantedBy(p: EmpirePayload, v: Mine): Map<string, number> {
+export function wantedBy(_p: EmpirePayload, v: Mine): Map<string, number> {
   const out = new Map<string, number>();
-  for (const o of p.view?.orders ?? []) {
-    const n = bringsTo(p, v, o.city).reduce((k, x) => k + x.n, 0);
-    if (n > 0) out.set(o.city, n);
-  }
+  for (const o of v.loads) out.set(o.city, (out.get(o.city) ?? 0) + 1);
   return out;
 }
 
-/** What may be loaded by hand of a good: what the cities' open orders still ask, less aboard. */
-export function loadable(
-  p: EmpirePayload,
-  v: Mine,
-  good: string,
-): { left: number; cities: string[] } {
-  let left = 0;
-  const cities: string[] = [];
-  for (const c of p.view?.orders ?? [])
-    for (const o of c.orders)
-      if (o.good === good && o.qty > o.filled) {
-        left += o.qty - o.filled;
-        if (!cities.includes(c.city)) cities.push(c.city);
-      }
-  return { left: Math.max(0, left - (v.cargo[good]?.qty ?? 0)), cities };
+/** The cities a counter serves: those within its reach (as the engine's `postsServing`). */
+export function citiesServedBy(p: EmpirePayload, post: string): string[] {
+  const map = p.view?.map;
+  if (!map) return [];
+  const at = post === "home" ? map.home : map.posts.find((x) => x.id === post);
+  if (!at) return [];
+  const covered = new Set(map.covered);
+  return map.cities
+    .filter((c) => covered.has(c.code) && (c.x - at.x) ** 2 + (c.y - at.y) ** 2 <= at.reach ** 2)
+    .map((c) => c.code);
+}
+
+/** How the orders a vehicle may load are listed (after Hades' Star's shipment list). */
+export type OrderSort = "dear" | "cheap" | "near" | "far";
+
+/** An order a docked vehicle may load: its city's distance, and what the counter holds of it. */
+export interface DockOrder {
+  id: string;
+  city: string;
+  good: string;
+  qty: number;
+  pay: bigint;
+  /** In leagues from the counter. */
+  leagues: number;
+  held: number;
+  /** The counter holds its lot. */
+  ready: boolean;
+}
+
+/**
+ * The orders a vehicle docked at a counter may load: those of the cities the counter serves,
+ * greyed while its stock lacks their lot; sorted as asked, the ready ones first.
+ */
+export function dockOrders(p: EmpirePayload, v: Mine, sort: OrderSort = "dear"): DockOrder[] {
+  if (v.at.startsWith("city:") || v.legs.length > 0) return [];
+  const from = postPoint(p, v.at);
+  const store = p.view?.stores.find((x) => x.post === v.at)?.goods ?? {};
+  const served = new Set(citiesServedBy(p, v.at));
+  const out: DockOrder[] = [];
+  for (const c of p.view?.orders ?? []) {
+    if (!served.has(c.city)) continue;
+    const to = placePoint(p, `city:${c.city}`);
+    const leagues = from && to ? leaguesOf(from, to) : 0;
+    for (const o of c.orders) {
+      const held = store[o.good] ?? 0;
+      out.push({ ...o, pay: BigInt(o.pay), leagues, held, ready: held >= o.qty });
+    }
+  }
+  const by = (a: DockOrder, b: DockOrder) => {
+    if (sort === "near" || sort === "far") {
+      const d = sort === "near" ? a.leagues - b.leagues : b.leagues - a.leagues;
+      if (d !== 0) return d;
+    }
+    const cheap = sort === "cheap";
+    if (a.pay !== b.pay) return a.pay < b.pay === cheap ? -1 : 1;
+    return a.id.localeCompare(b.id);
+  };
+  return out.sort((a, b) => Number(b.ready) - Number(a.ready) || by(a, b));
 }
