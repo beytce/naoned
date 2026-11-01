@@ -2328,3 +2328,8 @@ La Remise ne ralentit donc pas la fin de partie. Ce qui la ralentissait, c'étai
   - Ces trois cibles tiennent au modèle des commandes plutôt qu'aux prix. Elles sont à arbitrer par le porteur.
 
 **À annoncer** dans les notes du chapitre, avant de s'appliquer (règle CLAUDE.md) : le nouveau prix des Casa, et les commandes de produits finis qui paient davantage.
+
+**Revalidé après la fusion de la flotte bornée par la Remise et du fondaco posé librement** (3 graines, cohortes de 200) : **6, 5 et 5 cibles sur 9**.
+- **Le calendrier** tient sur la graine 1, avec la Casa 20 à 500 jours. Il manque d'un palier sur les deux autres : la Casa 19 n'est pas atteinte en 24 mois sur la graine 2, et la Casa 20 est tout juste hors bornes sur la graine 3.
+- **Puits ÷ sources** des jeunes Maisons tient désormais sur les 3 graines (0,71–0,72, puis 1,00).
+- **Restent à arbitrer** les mêmes trois cibles : le prochain palier, la première bande et les bruts des jeunes.
