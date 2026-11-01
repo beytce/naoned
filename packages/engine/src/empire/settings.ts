@@ -135,6 +135,19 @@ export const empireSettingsSchema = z.object({
       minCostDucats: qty.prefault(0),
     })
     .prefault({}),
+  /**
+   * The Remise's levels (decision of the owner, 1 November 2026, after Hades' Star's shipyard):
+   * each caps the transport vehicles a house may hold; the first is the Remise put down, the next
+   * are sites. None: no cap.
+   */
+  fleet: z
+    .object({
+      levels: z
+        .array(z.object({ vehicles: positive, costDucats: qty, casa: positive, minutes: qty }))
+        .min(1),
+    })
+    .nullable()
+    .prefault(null),
   /** A land vehicle's round trips a day for the cities' orders. */
   localTripsPerDay: positive.prefault(4),
   /** The night queue: a workshop is relaunched for this many hours at most, for everyone. */

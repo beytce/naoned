@@ -39,7 +39,7 @@ import { type EmpireCompanyTag, askAid, settleAid, supplyAid, syncCompany } from
 import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
 import { rewardCondotta } from "./empire/condotta.js";
 import { chooseLineage, passGenerations } from "./empire/family.js";
-import { upgradeModel } from "./empire/fleet.js";
+import { upgradeDepot, upgradeModel } from "./empire/fleet.js";
 import {
   chooseArte,
   empireJoin,
@@ -365,6 +365,7 @@ type EmpireCommandOf =
   | { type: "empireBuildCamp"; playerId: PlayerId; cell: string }
   | { type: "empireUnlockCell"; playerId: PlayerId; cell: string }
   | { type: "empireBuildDepot"; playerId: PlayerId; cell: string }
+  | { type: "empireUpgradeDepot"; playerId: PlayerId }
   | { type: "empireUpgradeVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string }
   | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
@@ -588,6 +589,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireBuildDepot":
       buildDepot(tx, cmd.playerId, cmd.cell);
+      break;
+    case "empireUpgradeDepot":
+      upgradeDepot(tx, cmd.playerId);
       break;
     case "empireUpgradeVehicle":
       upgradeModel(tx, cmd.playerId, cmd.vehicleType);

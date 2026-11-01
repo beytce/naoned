@@ -21,7 +21,14 @@ import {
   lotYieldBps,
 } from "./curves.js";
 import { houseEffect } from "./effects.js";
-import { capacityOf, upgradeCost, vehicleLevelOf } from "./fleet.js";
+import {
+  capacityOf,
+  depotLevelOf,
+  fleetCapOf,
+  nextDepotLevel,
+  upgradeCost,
+  vehicleLevelOf,
+} from "./fleet.js";
 import {
   counterCostOf,
   empireHouseAt,
@@ -72,6 +79,13 @@ export interface EmpireView {
   house: EmpireHouse;
   /** The Porta and its arms (docs/plan-porta.md). */
   porta: PortaView;
+  /** The fleet capped by the Remise's level (null without the fleet's levels). */
+  fleet: {
+    level: number;
+    vehicles: number;
+    cap: number;
+    next: { level: number; vehicles: number; casa: number; cost: Deniers; minutes: number } | null;
+  } | null;
   power: number;
   band: number;
   /** Receipts a day (the last full days), in deniers. */
@@ -429,6 +443,14 @@ export function empireView(
     regions: regionsOf(house, s),
     map: mapOf(house, s),
     porta: portaViewOf(house, s, now),
+    fleet: s.fleet
+      ? {
+          level: depotLevelOf(house),
+          vehicles: (house.vehicles ?? []).length,
+          cap: fleetCapOf(house, s),
+          next: nextDepotLevel(house, s),
+        }
+      : null,
     stores: storesOf(state.inventories[playerId], house, s),
     orders: ordersOf(ctx, house, playerId, s, now),
     moves: s.moves,
