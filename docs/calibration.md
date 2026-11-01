@@ -2222,3 +2222,33 @@ pnpm --filter @comptoirs/simulator empire --cohort 30     # rapide (≈ 30 s), p
   - la sortie de la première bande de Puissance, à 3,0–3,1 mois (pour 4 à 6) ;
   - la fin de partie, un peu rapide (graine 3).
 - **La suite** : la recalibration de la fin de partie, par le coût des Casa 15 à 20.
+
+### La fin de partie recalibrée (1er novembre 2026, le soir)
+
+**Le constat** : depuis les sauts et les vagues, la Casa 20 de la première cohorte tombait vers 352–492 jours, pour environ deux ans voulus.
+
+**Essais** :
+- les quatre premiers sur la graine 1, cohortes de 50 ;
+- les suivants sur 3 graines, cohortes de 200 ;
+- la rampe s'applique aux Casa 13 à 20, ducats et matériaux.
+
+| Essai | Casa 20 | Cibles | Remarque |
+| --- | --- | --- | --- |
+| Rampe ×1,1 à ×1,8 | 687 j | 7 sur 9 | cohortes de 50 |
+| Rampe ×1,2 à ×2,5 | 691 j | 7 sur 9 | cohortes de 50 |
+| Rampe ×1,3 à ×3,2 | non atteinte | 7 sur 9 | cohortes de 50 |
+| Rampe ×1,3 à ×3,2, cohortes de 200 | 371–468 j | 7, 7, 6 | **les coûts ne freinent pas** : les Maisons de la fin y sont trop riches |
+| Rampe ×6, puis ×9 (graine 3) | 409–420 j | 6, 7 | de même |
+| Rampe ×3,2 et gain du comptoir à 25 % | 635 j à la Casa 18 (graine 1) | 5, 7, 7 | trop lent : la Casa 19 n'est pas atteinte |
+| **Gain du comptoir à 25 %, coûts d'avant** | **614–660 j** | **8, 8, 8** | **retenu** |
+
+**Le levier** : le gain des commandes par niveau de comptoir (`counters.bookStepBps`), ramené de 40 % à 25 %. C'est lui qui nourrissait la fin de partie : chaque niveau de comptoir grossissait toutes les vagues des villes qu'il sert.
+
+**Retenu, sur 3 graines (cohortes de 200)** : **8, 8 et 8 cibles sur 9**.
+- **La Casa 20** de la première cohorte arrive à 614, 628 et 660 jours, soit 1 an et 8 à 10 mois.
+- **Le prochain palier** prend 2,1 à 6,8 jours de revenu ✓.
+- **La cohorte du mois 12** sort de la première bande en 4,4 à 4,8 mois ✓.
+- **Les commandes** font 74 à 75 % des recettes ✓.
+- **La seule cible manquée** : puits ÷ sources des jeunes Maisons, à 0,89–0,90 pour une cible de 0,6–0,8. Elle l'était déjà avant les sauts.
+
+**À annoncer** dans les notes du chapitre, avant de s'appliquer (règle CLAUDE.md) : « un niveau de comptoir grossit désormais les commandes de ses villes de 25 %, au lieu de 40 % ».
