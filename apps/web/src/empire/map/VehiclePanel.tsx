@@ -5,7 +5,7 @@ import { fr } from "../../i18n.js";
 import { CloseButton, Slab } from "../../ui.js";
 import { regionName } from "../World.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
-import { placeName } from "./logic.js";
+import { loadable, placeName } from "./logic.js";
 
 const t = fr.empire.hops;
 const goodName = (p: EmpirePayload, code: string) =>
@@ -222,16 +222,21 @@ export function VehiclePanel({
       )}
       {pane === "load" && atPost && (
         <ul className="mt-2 space-y-1" data-load>
+          {/* Only what the cities order (1 November), with who asks it. */}
           {Object.entries(store)
-            .filter(([, n]) => n > 0)
+            .filter(([good, n]) => n > 0 && loadable(p, v, good).left > 0)
             .map(([good, n]) => {
-              const qty = Math.min(n, v.capacity - carried);
+              const { left, cities } = loadable(p, v, good);
+              const qty = Math.min(n, v.capacity - carried, left);
               return (
                 <li key={good} className="flex items-center gap-2 text-sm text-cream">
                   <GoodsMark code={good} size={20} />
-                  <span className="flex-1">
+                  <span className="min-w-0 flex-1">
                     {goodName(p, good)}
-                    <span className="block text-xs text-cream-dim">{t.atCounter(n)}</span>
+                    <span className="block truncate text-xs text-cream-dim">
+                      {t.atCounter(n)} ·{" "}
+                      {t.askedBy(cities.map((c) => fr.empire.cityNames[c] ?? c).join(", "))}
+                    </span>
                   </span>
                   <Slab
                     size="sm"
@@ -245,6 +250,9 @@ export function VehiclePanel({
                 </li>
               );
             })}
+          {!Object.entries(store).some(([good, n]) => n > 0 && loadable(p, v, good).left > 0) && (
+            <li className="text-xs text-cream-dim">{t.nothingOrdered}</li>
+          )}
         </ul>
       )}
     </section>

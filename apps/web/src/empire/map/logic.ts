@@ -610,3 +610,34 @@ export function bringsTo(
     })
     .filter((x) => x.n > 0);
 }
+
+/**
+ * The cities a vehicle chosen would serve (after Hades' Star: the destinations of a ship's cargo
+ * light up): those whose open orders ask what it carries or, at its counter, what it could load
+ * there; with the units it would bring each.
+ */
+export function wantedBy(p: EmpirePayload, v: Mine): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const o of p.view?.orders ?? []) {
+    const n = bringsTo(p, v, o.city).reduce((k, x) => k + x.n, 0);
+    if (n > 0) out.set(o.city, n);
+  }
+  return out;
+}
+
+/** What may be loaded by hand of a good: what the cities' open orders still ask, less aboard. */
+export function loadable(
+  p: EmpirePayload,
+  v: Mine,
+  good: string,
+): { left: number; cities: string[] } {
+  let left = 0;
+  const cities: string[] = [];
+  for (const c of p.view?.orders ?? [])
+    for (const o of c.orders)
+      if (o.good === good && o.qty > o.filled) {
+        left += o.qty - o.filled;
+        if (!cities.includes(c.city)) cities.push(c.city);
+      }
+  return { left: Math.max(0, left - (v.cargo[good]?.qty ?? 0)), cities };
+}

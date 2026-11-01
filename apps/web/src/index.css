@@ -1267,6 +1267,27 @@ button.map-place {
   opacity: 0;
   transition: opacity var(--t-quick, 150ms);
 }
+/* A city the vehicle chosen would serve: its gold halo breathes (after Hades' Star). */
+.city-wanted {
+  animation: city-wanted 1400ms ease-in-out infinite;
+  box-shadow: 0 0 18px rgb(var(--gold) / 0.55);
+}
+@keyframes city-wanted {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .city-wanted {
+    animation: none;
+  }
+}
 /* A vehicle reaching a city: a ring spreads, what it brought rises and fades. */
 .hop-ring {
   animation: hop-ring 900ms var(--ease-out, ease-out) both;

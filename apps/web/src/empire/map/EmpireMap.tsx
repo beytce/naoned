@@ -42,6 +42,7 @@ import {
   nearestPlace,
   placeable,
   placesOf,
+  wantedBy,
   zoomBounds,
 } from "./logic.js";
 import { useCamera } from "./useCamera.js";
@@ -266,6 +267,10 @@ export const EmpireMap = forwardRef<
   const lit = new Set(
     [...(targets ?? [])].filter((x) => x.startsWith("city:")).map((x) => x.slice(5)),
   );
+  // The vehicle chosen: the cities it would serve light up, with what it would bring them (after
+  // Hades' Star: a ship's destinations shine); the others step back.
+  const chosen = selected ? view.vehicles.mine.find((v) => v.id === selected) : undefined;
+  const wanted = chosen ? wantedBy(p, chosen) : null;
   const sendTo = (place: string) => {
     if (!targets?.has(place) || !selected) return false;
     onMove?.(selected, place);
@@ -378,6 +383,7 @@ export const EmpireMap = forwardRef<
         <HomeMark
           p={p}
           lit={lit.has("venezia")}
+          wanted={wanted?.get("venezia")}
           onOrders={() => sendTo("city:venezia") || onTarget({ kind: "city", code: "venezia" })}
           onClick={() =>
             sendTo("home") ||
@@ -395,6 +401,8 @@ export const EmpireMap = forwardRef<
               region={c.region}
               size={c.size ?? 1}
               lit={lit.has(c.code)}
+              wanted={wanted?.get(c.code)}
+              dim={wanted !== null && !wanted.has(c.code)}
               hidden={underOrbit(c.x, c.y)}
               onClick={() => sendTo(`city:${c.code}`) || onTarget({ kind: "city", code: c.code })}
             />
@@ -849,12 +857,15 @@ function HomeMark({
   onClick,
   onOrders,
   lit = false,
+  wanted,
 }: {
   p: EmpirePayload;
   onClick: () => void;
   /** Venice's own orders: its badge touched. */
   onOrders?: () => void;
   lit?: boolean;
+  /** The units the vehicle chosen would bring Venice: its badge shines. */
+  wanted?: number;
 }) {
   const [x, y] = homeAt(p);
   const orders = p.view?.orders.find((o) => o.city === "venezia");
@@ -878,6 +889,7 @@ function HomeMark({
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night-3">
             {waiting}
           </span>
+          {wanted !== undefined && <WantedHalo n={wanted} />}
         </button>
       )}
       <button
@@ -909,6 +921,8 @@ function CityMark({
   size,
   hidden,
   lit,
+  wanted,
+  dim = false,
   onClick,
 }: {
   p: EmpirePayload;
@@ -920,6 +934,10 @@ function CityMark({
   hidden: boolean;
   /** Within the reach of the vehicle making a round: lit to be loaded. */
   lit: boolean;
+  /** The units the vehicle chosen would bring it: its bubble shines (after Hades' Star). */
+  wanted?: number;
+  /** A vehicle is chosen and would bring it nothing: it steps back. */
+  dim?: boolean;
   onClick: () => void;
 }) {
   const map = p.view?.map;
@@ -941,7 +959,8 @@ function CityMark({
   return (
     <div
       data-at={`${x},${y}`}
-      className={`map-place transition-opacity duration-[var(--t-base)] ${hidden ? "pointer-events-none opacity-0" : ""}`}
+      className={`map-place transition-opacity duration-[var(--t-base)] ${hidden ? "pointer-events-none opacity-0" : dim ? "opacity-50" : ""}`}
+      data-wanted={wanted ?? undefined}
     >
       <button
         type="button"
@@ -991,13 +1010,14 @@ function CityMark({
             </svg>
           )}
           <span
-            className={`relative flex items-center justify-center rounded-full shadow-lg shadow-black/60 ${lit ? "ring-4 ring-gold" : open ? "ring-2 ring-lagoon" : "ring-2 ring-gold/60"}`}
+            className={`relative flex items-center justify-center rounded-full shadow-lg shadow-black/60 ${lit || wanted !== undefined ? "ring-4 ring-gold" : open ? "ring-2 ring-lagoon" : "ring-2 ring-gold/60"}`}
             style={{
               width: px,
               height: px,
               background: `radial-gradient(circle at 34% 30%, #F6E8CC 0%, ${tint} 38%, #16263E 100%)`,
             }}
           >
+            {wanted !== undefined && <WantedHalo n={wanted} />}
             {best && (
               <span className="rounded-full bg-night/70 p-0.5">
                 <GoodsMark code={best} size={18} />
@@ -1013,5 +1033,26 @@ function CityMark({
         <span className="map-name">{t.cityNames[code] ?? code}</span>
       </button>
     </div>
+  );
+}
+
+/**
+ * A city the vehicle chosen would serve (after Hades' Star: the destinations of a ship's cargo
+ * shine): a gold halo that breathes around its bubble, and what it would bring there.
+ */
+function WantedHalo({ n }: { n: number }) {
+  return (
+    <>
+      <span
+        className="city-wanted pointer-events-none absolute -inset-2 rounded-full ring-2 ring-gold"
+        aria-hidden="true"
+      />
+      <span
+        className="pointer-events-none absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gold px-1.5 font-display text-[0.625rem] font-bold leading-4 text-ink ring-2 ring-night"
+        data-wanted-badge
+      >
+        +{n}
+      </span>
+    </>
   );
 }

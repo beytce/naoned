@@ -397,6 +397,8 @@ export const en: Dictionary = {
       next: "Next vehicle",
       none: "No vehicle: buy one at the Remise.",
       atCounter: (n: number) => `${n} at the counter`,
+      askedBy: (cities: string) => `asked by ${cities}`,
+      nothingOrdered: "Nothing at this counter that the cities order.",
       modules: "Modules",
       slot: (i: number) => `Place ${i}`,
       emptySlot: "Free place",
