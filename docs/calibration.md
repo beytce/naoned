@@ -2040,6 +2040,72 @@ Ce sont les niveaux des **navires** qui déplacent l'équilibre : sans eux, on r
 
 **Ce que le simulateur ne modélise pas** : le délai d'un transfert (quelques heures), et le charroi propre à chaque comptoir (il compte toujours un charroi pour toute la Maison). Les deux avantagent un peu le modèle sur le joueur ; à surveiller sur les premières semaines de jeu.
 
+### La Porta au simulateur (1er novembre 2026, lot 6 de docs/plan-porta.md)
+
+La Porta remplace l'expédition en boîte noire (un succès tiré au sort et un butin de 250 d × palier²). Au simulateur, un bot joue **la vraie bataille du moteur** (`apps/simulator/src/empire/porta.ts`, `playBattle`). Une bataille de dix minutes est trop longue pour chaque Maison chaque jour : chaque combinaison (palier, modèle de combat, niveau, reliques que porte le transport) est jouée six fois une fois pour toutes, et les Maisons tirent leur issue parmi ces six.
+
+**Le bot de bataille** :
+- le véhicule de combat va à la ville la plus proche qui a encore ses reliques ;
+- le transport le suit quand plus aucune unité de Rome n'est à moins de 2,2 cases ;
+- le transport charge, puis on passe à la ville suivante ;
+- tous deux rentrent à temps : cale pleine, ou véhicule de combat sous 40 % de ses PV.
+
+**Les Maisons** (armurières et mixtes) :
+- elles posent la Porta, achètent le meilleur modèle que leur Casa ouvre et son équipement (lances ; lances et cuirasse ; lances, arbalètes et cuirasse) ;
+- elles s'achètent le véhicule de terre à la plus grande cale ;
+- elles jouent jusqu'à 3, 2 ou 1 batailles par jour selon leur assiduité, seules (paliers 1 à 4), au palier qui vaut le plus une fois les pertes comptées. Un palier neuf n'est tenté que si elles y gagnent une fois sur deux ;
+- l'armurier y engage la moitié de sa caisse, en premier ;
+- l'antiquaire paie comme toute recette, salaires compris ;
+- les reliques ne donnent pas de plans (`plansPerRelic` à 0 : la question reste ouverte, plan-porta.md § 13).
+
+**Le banc** (`pnpm --filter @comptoirs/simulator porta-bench`), 12 batailles par case, avant les prix finaux. Le banc compte les ducats aux prix de l'antiquaire du moment (150, 500, 1 500 et 5 000) et un transport de 3 reliques ; avec les prix finaux, une bataille vaut davantage aux paliers hauts.
+
+| Palier | Visée | Mesuré |
+| --- | --- | --- |
+| 1 | Le cavalier au niveau 1 | 100 % de victoires, environ 480 d par bataille |
+| 2 | Le chariot (Casa 11) | Chariot au niveau 3 : 75 % de victoires, environ 500 d |
+| 3 | Le chariot monté, ou le grand chariot | Chariot au niveau 3 : 75 %, environ 1 070 d ; grand chariot au niveau 1 : 58 % |
+| 4 | Très dur seul | Grand chariot au niveau 3 : 25 % ; au niveau 5 : 75 %, environ 1 750 d |
+
+Pour y arriver, Rome a été allégée :
+- l'arbalétrier frappe à 20, le hallebardier a 2 000 PV et frappe à 25, le chevau-léger frappe à 40 ;
+- la force des paliers passe à 1 ; 1,1 ; 1,3 ; 2,4 ; puis 2,8 et 3,6 pour les paliers de groupe (non mesurés : le bot joue seul) ;
+- le palier 2 a 1 arbalétrier et 1 hallebardier par ville, et 1 chevau-léger sur la carte.
+
+Deux défauts du premier jet ont été corrigés :
+- dans le moteur, le véhicule de combat et le transport partageaient la même cale ;
+- le tirage « les plus rares au plus loin » laissait aux villes proches des reliques communes à tous les paliers. Désormais, chaque ville tire ses reliques au palier, et la plus lointaine en garde une de la plus haute rareté.
+
+**Les prix** se sont réglés à la simulation complète (cohortes de 30, une graine, puis 200 et trois graines) :
+
+| Essai | Part des expéditions dans les recettes de l'armurier |
+| --- | --- |
+| Reliques à 150, 500, 1 500, 5 000 ; une bataille par jour ; transport libre requis | 0,5 % (presque aucune bataille) |
+| Transport à quai, 3/2/1 batailles par jour, l'armurier en premier, reliques à 200, 700, 2 000, 7 000 | 8 à 11 % (les bots restent aux paliers 1-2) |
+| Choix du palier par l'espérance, retour avant la chute, plus grand transport | 1 % (le grand chariot n'ose plus rien : sa perte coûte plus qu'une bataille de palier 1 ne rapporte) |
+| **Reliques à 150, 1 000, 4 000, 15 000**, une relique par 25 de cale, la perte comptée au prix du véhicule | **28,5 %** (cohortes de 30) |
+| Reliques à 150, 800, 3 000, 10 000 | 16,8 % |
+
+**Retenu** : reliques à **150, 1 000, 4 000 et 15 000 ducats** (1, 3, 8 et 20 points), une relique par **25** de cale, entrée de **4, 8, 15, 25, 40 et 60 pains** par véhicule.
+
+**Trois graines, cohortes de 200** : **6, 8 et 7 cibles sur 12**, contre **9, 9 et 8** sans la Porta (même code, l'expédition en boîte noire).
+
+| Cible | Sans la Porta | Avec la Porta |
+| --- | --- | --- |
+| Calendrier de la Casa (cohorte 0) | ✓ ✓ ✓ | ✗ ✓ ✗ (la Casa 19 trop tôt) |
+| Nouveau hors de la première bande | ✓ 6,0 · 5,2 · 5,5 mois | ✗ 6,2 · ✓ 5,5 · 5,1 mois |
+| Indice des prix | ✓ 86 à 101 | ✓ 86 à 101 |
+| Part de son métier | ✓ ✓ ✗ (armurier 44 à 48 %) | ✗ ✗ ✗ (négociant 19 à 22 %, exploitant 21 %, armurier 25 à 29 %) |
+| Prochain palier, puits ÷ sources, bruts des jeunes | ✗ (déjà manqués) | ✗ (de même) |
+
+**Ce que cela dit** :
+- L'antiquaire crée **642 M** de ducats sur 24 mois (graine 1), contre **1 074 M** pour le butin de l'ancienne expédition. Les armes, la Porta et les vivres en détruisent 133 M. La Porta crée donc *moins* de monnaie qu'avant, et l'indice des prix ne bouge pas.
+- L'ancienne expédition rendait l'armurier **trois fois plus riche** que les autres : 7,3 M de recettes médianes, contre 2,3 M pour le négociant. La Porta **équilibre les métiers** : armurier 2,65 M, exploitant 2,56 M, négociant 1,87 M.
+- Ces armuriers très riches finançaient les convois de la Muda en colleganza. Sans eux, la Muda tombe de 16 292 à environ 10 000 convois, et la marge d'un voyage de 1 000 à 500 d. C'est ce qui fait passer le négociant (et l'exploitant) sous 25 %.
+- Les bots jouent mal : beaucoup restent au palier 1, faute de monter leurs armes. Un joueur ferait mieux, et la Porta lui rapporterait davantage.
+
+**À trancher par le porteur** : accepter cet équilibre (des métiers égaux, une Muda moins financée), ou rendre aux négociants ce qu'ils perdent ailleurs (la Muda, les voyages), plutôt que de regonfler l'armurier.
+
 ### Refaire le calibrage
 
 ```

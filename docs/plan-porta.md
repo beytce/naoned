@@ -105,21 +105,23 @@ Un composant est un objet de l'inventaire de la Maison (`{ id, code, level }`). 
 | Rareté | Chargement | Antiquaire | Points |
 | --- | --- | --- | --- |
 | Commune | 10 s | 150 ducats | 1 |
-| Rare | 20 s | 500 ducats | 3 |
-| Précieuse | 35 s | 1 500 ducats | 8 |
-| Légendaire | 60 s | 5 000 ducats | 20 |
+| Rare | 20 s | 1 000 ducats | 3 |
+| Précieuse | 35 s | 4 000 ducats | 8 |
+| Légendaire | 60 s | 15 000 ducats | 20 |
+
+*Prix calibrés au simulateur (lot 6) : une bataille vaut environ une demi-journée de revenu à la Casa où son palier se joue.*
 
 - Un transport charge **une relique à la fois**, en restant dans le rayon d'une ville. **Bouger interrompt** le chargement, qui reprend de zéro.
-- Un transport porte **2 reliques par tranche de 25 de cale** (une mule : 2 ; un chariot : 5), arrondi en dessous, au moins une.
+- Un transport porte **une relique par tranche de 25 de cale** (une mule ou une charrette : 1 ; un chariot : 2 ; un burchio : 3), arrondi en dessous, au moins une.
 - Un transport détruit ou laissé dans la zone perd sa cargaison.
 
 ### 6.4 Rome pontificale
 
 | Unité | Équivalent | PV | Dégâts/s | Portée | Vision | Vitesse | Rôle |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| **Arbalétrier** | Sentinelle | 600 | 25 | 2 | 3 | 0 | Fixe à sa ville |
-| **Hallebardier** (Garde) | Gardien | 3 500 | 30 | 1,2 | 2,5 | 3 | Solide, reste dans le secteur de sa ville ; se met entre l'ennemi et les arbalétriers |
-| **Chevau-léger** | Intercepteur | 900 | 45 | 1 | 4 | 8 | Patrouille entre les villes ; **préfère les transports** |
+| **Arbalétrier** | Sentinelle | 600 | 20 | 2 | 3 | 0 | Fixe à sa ville |
+| **Hallebardier** (Garde) | Gardien | 2 000 | 25 | 1,2 | 2,5 | 3 | Solide, reste dans le secteur de sa ville ; se met entre l'ennemi et les arbalétriers |
+| **Chevau-léger** | Intercepteur | 900 | 40 | 1 | 4 | 8 | Patrouille entre les villes ; **préfère les transports** |
 | **Bombarde** | Bombardier | 1 500 | 120 par coup toutes les 4 s, sur une case de rayon | 3 | 3 | 1,5 | Lente, dégâts de zone |
 | **Gonfalonier de l'Église** | Colosse | 25 000 | 150, qui monte sur la même cible comme les lances | 2 | 3 | 2 | Boss des paliers 4 à 6 |
 
@@ -144,21 +146,23 @@ Une machine à états pure, par unité, évaluée à chaque pas. Les changements
   - plus un bonus de proximité (moins la distance, en cases × 10).
 
   Un transport a une menace nulle : seul le **chevau-léger** le préfère, avec un bonus fixe de 1 000. Les autres ne le visent que s'il est le seul visible.
-- **La bombarde** vise le point où les véhicules visibles sont les plus nombreux.
+- **La bombarde** frappe le point où se tient sa cible, et tous les véhicules à une case de lui.
 
 ### 6.6 Les paliers
 
 | Palier | Joueurs | Villes | Unités par ville (en moyenne) | PV et dégâts de Rome | Reliques par joueur (communes / rares / précieuses / légendaires, en part) | Entrée (pain par véhicule) |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 1–4 | 4 | 2 arbalétriers, 1 hallebardier | × 1 | 90 / 10 / 0 / 0 | 10 |
-| 2 | 1–4 | 5 | + 1 chevau-léger sur la carte | × 1,4 | 70 / 25 / 5 / 0 | 20 |
-| 3 | 1–4 | 5 | + chevau-légers par paires | × 2 | 50 / 35 / 15 / 0 | 40 |
-| 4 | 1–4 (très dur seul) | 6 | + bombardes, un Gonfalonier | × 2,8 | 35 / 40 / 22 / 3 | 70 |
-| 5 | 2–4 | 7 | + un Gonfalonier par 2 joueurs | × 4 | 20 / 40 / 32 / 8 | 110 |
-| 6 | 2–4 | 8 | Tout, en nombre | × 5,5 | 10 / 35 / 40 / 15 | 160 |
+| 1 | 1–4 | 4 | 1 arbalétrier | × 1 | 90 / 10 / 0 / 0 | 4 |
+| 2 | 1–4 | 5 | 1 arbalétrier, 1 hallebardier ; 1 chevau-léger sur la carte | × 1,1 | 70 / 25 / 5 / 0 | 8 |
+| 3 | 1–4 | 5 | 2 arbalétriers, 1 hallebardier ; 1 chevau-léger | × 1,3 | 50 / 35 / 15 / 0 | 15 |
+| 4 | 1–4 (très dur seul) | 6 | 2 arbalétriers, 1 hallebardier ; 2 chevau-légers ; un Gonfalonier | × 2,4 | 35 / 40 / 22 / 3 | 25 |
+| 5 | 2–4 | 7 | 2 arbalétriers, 2 hallebardiers, 1 bombarde ; 3 chevau-légers ; un Gonfalonier | × 2,8 | 20 / 40 / 32 / 8 | 40 |
+| 6 | 2–4 | 8 | 3 arbalétriers, 2 hallebardiers, 1 bombarde ; 4 chevau-légers ; deux Gonfaloniers | × 3,6 | 10 / 35 / 40 / 15 | 60 |
+
+*Paliers 1 à 4 calibrés au banc (lot 6) ; les paliers de groupe 5 et 6 ne sont pas mesurés : le bot joue seul.*
 
 - Le nombre d'unités croît avec le nombre de joueurs : + 50 % par joueur au-delà du premier.
-- Les reliques par joueur et par ville sont tirées de la graine selon la répartition du palier, de façon que la ville la mieux gardée tienne les plus rares.
+- Les reliques par joueur et par ville sont tirées de la graine selon la répartition du palier ; la ville la plus lointaine, celle du Gonfalonier, en garde une de plus, de la plus haute rareté du palier.
 
 ## 7. Le groupe
 
@@ -223,7 +227,7 @@ Au lot 6, le simulateur doit tenir l'indice des prix entre 80 et 130 sur 24 mois
 3. La Porta et l'antiquaire : bâtiment, envoi, entrée, sortie, vente, points. *Fait le 31 octobre 2026* (`empire/porta/porta.ts` : `empireBuildPorta`, `empireUpgradePorta`, `empireSendToPorta`, `empireRecallFromPorta`, `empirePortaEnter`, `empirePortaSettle`, `empirePortaCancel`, `empireSellRelics` ; `portaEntrant` donne au serveur ce que la Maison engage ; un transport à la Porta n'est jamais libre pour les livraisons ; l'antiquaire paie comme toute recette, salaires compris).
 4. Le serveur en direct : salon, file, invitation, départ seul, boucle, WebSocket, classement. *Fait le 31 octobre 2026* (`apps/server/src/game/porta.ts`, le hub ; `portaRoutes.ts` : `GET /api/empire/porta` (salon, bataille, classement de la bande), `POST …/queue` (seul, public, invitation), `…/join` (par le code à six chiffres), `…/launch` (« Partir maintenant »), `…/leave`, `…/order`, et le socket `…/live` qui pousse un instantané par battement. Le classement se lit sur l'état des Maisons (les points de la semaine), sans table : la table `porta_scores` du plan n'a pas été nécessaire. Un joueur sorti par la porte est réglé aussitôt, sans attendre la fin de la bataille.)
 5. L'écran : la Remise des armes, la Porta sur la carte, la bataille, l'antiquaire, le classement. *Fait le 31 octobre 2026* (`apps/web/src/empire/porta/` : `ArmsSheet`, `PortaSheet`, `Battle`, le socket et les textes ; la Porta se pose depuis la Production et a son repère sur la carte ; la vue de l'empire porte `porta`, tirée de `empire/porta/view.ts` ; design au § La Porta de `docs/design.md` ; parcours `apps/web/e2e/porta.mjs`).
-6. Le simulateur de 24 mois : un bot joue la vraie bataille ; calibration documentée dans `docs/calibration.md` ; parcours `e2e:empire` étendu.
+6. Le simulateur de 24 mois : un bot joue la vraie bataille ; calibration documentée dans `docs/calibration.md` ; parcours `e2e:empire` étendu. *Fait le 1er novembre 2026* (`apps/simulator/src/empire/porta.ts`, banc `porta-bench` ; Rome allégée, reliques à 150, 1 000, 4 000 et 15 000 ducats, une relique par 25 de cale, entrée de 4 à 60 pains par véhicule ; 6, 8 et 7 cibles sur 12 contre 9, 9 et 8 sans la Porta : voir `docs/calibration.md`, § La Porta au simulateur. Le parcours est `apps/web/e2e/porta.mjs`, à part de `e2e:empire`.)
 
 ## 13. Ce qui reste ouvert
 
