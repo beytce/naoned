@@ -75,6 +75,15 @@ Ce que prévoyait la feuille de route :
   - d'autres candidats sont décrits dans 02, § 5, et 01, § 4.
 - **La règle de combat « recharge fixe, effet qui monte »** pour les composants de la Porta (02, § 1).
 
+## Les commandes comme des cargaisons (fait, 1er novembre au soir)
+
+Le plan est dans [05 — les commandes](05-commandes.md), et il remplace les vagues ainsi que le chargement automatique :
+- **les villes** se remplissent de commandes au fil de l'eau, jusqu'à un plafond fixé par leur taille ;
+- **une commande** est un lot fixe d'une marchandise que font les ateliers de la maison, et elle prend une place de soute ;
+- **le chargement** : le véhicule, à quai, liste les commandes des villes que dessert son comptoir, et on les touche une à une pour les charger ;
+- **la livraison** : le véhicule les livre saut par saut, puis reste sur place ;
+- **les modules** : le Livre de route, le Fouet et l'Estafette sont retirés.
+
 ## Chantier 3 — la Porta (à planifier)
 
 - **La perte** : un véhicule détruit rentre abîmé et se répare ; un véhicule pris quand Rome ferme est perdu.
