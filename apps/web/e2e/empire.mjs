@@ -340,15 +340,51 @@ try {
     if ((await page.locator("[data-city=padova] [data-fill-ring]").count()) === 0)
       faults.push(`${label}: no ring of orders around Padua`);
     await shot("14-commandes");
-    await page.locator("[data-vehicle]").first().dispatchEvent("pointerdown");
-    await page.locator("[data-vehicle]").first().dispatchEvent("pointerup");
-    await page.mouse.up();
-    await page.locator("[data-touring]").waitFor();
-    if ((await page.locator("[data-tour-target]").count()) === 0)
-      faults.push(`${label}: no town lit for the round`);
-    await shot("15-tournee");
-    await page.locator("[data-touring] button[aria-label]").first().click();
-    await page.locator("[data-touring]").waitFor({ state: "detached" });
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(300);
+    // A vehicle dragged to Padua (after Hades' Star): a dotted line follows, the dark label tells
+    // where and how long; let go, it waits ten seconds to leave, « Partir » sends it at once.
+    const cartBox = await page.locator("[data-vehicle]").first().boundingBox();
+    const paduaBox = await page.locator("button[data-city=padova]").first().boundingBox();
+    if (!cartBox || !paduaBox) faults.push(`${label}: no vehicle or no Padua on the map`);
+    else {
+      const cx = cartBox.x + cartBox.width / 2;
+      const cy = cartBox.y + cartBox.height / 2;
+      const px = paduaBox.x + paduaBox.width / 2;
+      const py = paduaBox.y + paduaBox.height / 2;
+      await page.mouse.move(cx, cy);
+      await page.mouse.down();
+      await page.mouse.move((cx + px) / 2, (cy + py) / 2, { steps: 6 });
+      await page.mouse.move(px, py, { steps: 6 });
+      if ((await page.locator("[data-drag-label]").count()) === 0)
+        faults.push(`${label}: no label while dragging a vehicle`);
+      if ((await page.locator("[data-snap]").count()) === 0)
+        faults.push(`${label}: the drag does not snap to Padua`);
+      await shot("15-glisser");
+      await page.mouse.up();
+      await page.locator("[data-vehicle-panel] [data-hop-action=go]").waitFor();
+      await shot("16-depart");
+      await page.locator("[data-vehicle-panel] [data-hop-action=go]").click();
+      await page.locator("[data-vehicle][data-moving]").first().waitFor({ timeout: 5_000 });
+      await shot("17-en-route");
+      await page
+        .locator("[data-vehicle-panel] [data-hop-state]")
+        .getByText(/À quai/)
+        .waitFor({ timeout: 20_000 });
+      await shot("18-arrivee");
+      await page.keyboard.press("Escape");
+    }
+    // Far, the towns shrink with the map (after Hades' Star: a planet is small when far).
+    const near = (await page.locator("button[data-city=padova]").first().boundingBox())?.width ?? 0;
+    await page.mouse.move(width / 2, height / 2);
+    await page.mouse.wheel(0, 900);
+    await page.waitForTimeout(600);
+    const far = (await page.locator("button[data-city=padova]").first().boundingBox())?.width ?? 0;
+    if (!(far < near))
+      faults.push(`${label}: Padua does not shrink when zooming out (${near} → ${far})`);
+    await shot("19-dezoom");
+    await page.mouse.wheel(0, -900);
+    await page.waitForTimeout(400);
     // A sector next to Venice's to buy (1 November): its edge touched, its panel.
     await page.locator("[data-round=recenter]").click();
     await page.waitForTimeout(500);

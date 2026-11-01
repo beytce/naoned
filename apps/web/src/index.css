@@ -1240,6 +1240,69 @@ body[data-coach-top] [data-toast] {
   position: absolute;
   transform: translate(-50%, -50%) scale(var(--inv, 1));
 }
+/* The places (cities, counters, vehicles) grow and shrink with the chart (after Hades' Star,
+   1 November 2026); touched at 44 px at the least however far; their names hidden when far. */
+.map-place {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(var(--chartk, 1));
+}
+.map-place button:not(.absolute),
+button.map-place {
+  position: relative;
+}
+.map-place button:not(.absolute)::after,
+button.map-place::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, calc(44px * var(--inv, 1) / var(--chartk, 1)));
+  height: max(100%, calc(44px * var(--inv, 1) / var(--chartk, 1)));
+  transform: translate(-50%, -50%);
+}
+button.map-place {
+  position: absolute;
+}
+[data-far] .map-place .map-name {
+  opacity: 0;
+  transition: opacity var(--t-quick, 150ms);
+}
+/* A vehicle reaching a city: a ring spreads, what it brought rises and fades. */
+.hop-ring {
+  animation: hop-ring 900ms var(--ease-out, ease-out) both;
+}
+@keyframes hop-ring {
+  from {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0.9;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(2.2);
+    opacity: 0;
+  }
+}
+.hop-rise {
+  animation: hop-rise 1600ms var(--ease-out, ease-out) both;
+}
+@keyframes hop-rise {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, -28px, 0);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hop-ring,
+  .hop-rise {
+    animation: none;
+  }
+}
 .map-home {
   opacity: var(--home, 1);
 }

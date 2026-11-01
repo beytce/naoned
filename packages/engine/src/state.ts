@@ -366,7 +366,25 @@ export interface EmpireTransfer {
   arrivesAt: number;
 }
 
-/** A vehicle's round from its counter to the cities' orders, and back (after Hades' Star). */
+/** A hop of a vehicle (after Hades' Star): from a place to another, at the given times. */
+export interface EmpireLeg {
+  from: string;
+  to: string;
+  departAt: number;
+  arrivesAt: number;
+}
+
+/**
+ * A city's orders for a house: a wave each period while fewer than the cap are open; each wave
+ * its quantities (drawn at its period) and what was brought of them.
+ */
+export interface EmpireCityWaves {
+  /** The next period whose wave is still to come. */
+  next: number;
+  waves: { period: number; qty: number[]; filled: number[] }[];
+}
+
+/** Of before: a vehicle's planned round from its counter to the cities' orders, and back. */
 export interface EmpireTour {
   id: string;
   vehicleId: string;
@@ -429,18 +447,24 @@ export interface EmpireHouse {
     fitted?: string[];
     /** A land vehicle at the Porta (`busyUntil` then holds it there). */
     porta?: PortaPlace;
-    /** The counter it stands at (the map that grows): Venice's when absent. */
+    /** Where it stands (the map that grows): a counter's id, or `city:<code>`; Venice's when absent. */
     at?: string;
+    /** What it carries, by good, with the counter it was loaded at (the way's premium). */
+    cargo?: Record<string, { qty: number; from: string }>;
+    /** Its stops to come, hop by hop (after Hades' Star): each leaves when the one before arrives. */
+    legs?: EmpireLeg[];
   }[];
   /** The Porta's arms (docs/plan-porta.md): its combat vehicles, its components, their models. */
   arms?: EmpireArms;
   porta?: EmpirePorta;
-  /** Goods on the road between two counters, carried by a land vehicle. */
+  /** Of before (goods between two counters): settled once at the first command after the hops. */
   transfers?: EmpireTransfer[];
-  /** What it brought of each city's orders in the period (by order, in their order). */
+  /** Of before (the orders of a single period): dropped at the first command after the waves. */
   filled?: { period: number; cities: Record<string, number[]> };
-  /** Its vehicles' rounds to the cities, stop by stop. */
+  /** Of before (the planned rounds): settled once at the first command after the hops. */
   tours?: EmpireTour[];
+  /** The cities' orders, wave by wave (after Hades' Star): those still open, by city. */
+  orders?: Record<string, EmpireCityWaves>;
   /** The deposits its teams work, by id. */
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */

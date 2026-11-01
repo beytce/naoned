@@ -241,6 +241,31 @@ describe("the map (the map at the centre, step 2)", () => {
   });
 });
 
+describe("a vehicle's hops (after Hades' Star)", () => {
+  it("is sent to a city, ten seconds to leave, then taken back before it leaves", async () => {
+    const cookie = await login("hop@example.org");
+    await post(cookie, "/api/empire/join");
+    const vehicle = (await get(cookie)).json().view.vehicles.mine[0];
+    const sent = await act(cookie, {
+      type: "empireMove",
+      vehicleId: vehicle.id,
+      to: "city:padova",
+    });
+    expect(sent.json().error).toBeUndefined();
+    const legs = sent.json().view.vehicles.mine[0].legs;
+    expect(legs).toHaveLength(1);
+    expect(legs[0].to).toBe("city:padova");
+    const back = await act(cookie, { type: "empireCancelStop", vehicleId: vehicle.id });
+    expect(back.json().view.vehicles.mine[0].legs).toEqual([]);
+    const bad = await act(cookie, {
+      type: "empireMove",
+      vehicleId: vehicle.id,
+      to: "x".repeat(61),
+    });
+    expect(bad.statusCode).toBe(400);
+  });
+});
+
 describe("the house's identity", () => {
   it("hires a master, places it, and reads its identity", async () => {
     const cookie = await login("ada@example.org");

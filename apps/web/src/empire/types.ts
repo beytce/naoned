@@ -94,31 +94,16 @@ export interface EmpireView {
     city: string;
     region: string;
     size: number;
+    /** By good, its open waves together. */
     orders: { good: string; qty: number; filled: number; unit: string }[];
+    /** Its open waves, and how full it is of them (the ring around it), in bps of the cap. */
+    waves: number;
     fillBps: number;
+    /** When the next wave comes. */
     renewsAt: number;
   }[];
-  /** Its vehicles' rounds to the cities, stop by stop. */
-  tours: {
-    id: string;
-    vehicleId: string;
-    post: string;
-    period: number;
-    leftAt: number;
-    stops: { city: string; order: number; good: string; qty: number; at: number; done?: boolean }[];
-    backAt: number;
-  }[];
-  /** The goods on the road between two counters. */
-  transfers: {
-    id: string;
-    vehicleId: string;
-    from: string;
-    to: string;
-    good: string;
-    qty: number;
-    leftAt: number;
-    arrivesAt: number;
-  }[];
+  /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
+  moves: { departSeconds: number; unitsPerSecond: number; maxStops: number };
   vehicles: {
     shop: {
       type: string;
@@ -137,8 +122,12 @@ export interface EmpireView {
       busyUntil: number;
       capacity: number;
       fitted?: string[];
-      /** The counter it stands at, or is bound for. */
+      /** Where it stands: a counter's id, or `city:<code>`. */
       at: string;
+      /** What it carries, by good, and the counter it was loaded at. */
+      cargo: Record<string, { qty: number; from: string }>;
+      /** Its stops to come, hop by hop: each leaves when the one before arrives. */
+      legs: { from: string; to: string; departAt: number; arrivesAt: number }[];
     }[];
     haulPerDay: number;
   };
@@ -271,13 +260,13 @@ export interface EmpireMapView {
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
   transferUnitsPerHour: number;
-  /** A vehicle on a round to the cities' orders: units a minute (none: no orders). */
-  tourUnitsPerMinute: number | null;
   /** The sectors it may buy next, and the price of the next. */
   buyable: { cell: string; region: string; coast: boolean; casa: number }[];
   sectorCost: string;
   /** The cities the house's counters serve. */
   covered: string[];
+  /** The sectors the house owns: its vehicles go anywhere there (the hops). */
+  unlocked: string[];
   sites: { kind: "post" | "camp" | "depot"; cell: string; endsAt: number }[];
   arsenal: string | null;
   camp: string | null;
@@ -338,12 +327,12 @@ export type EmpireAction =
   | { type: "empireRelaunchAll" }
   | { type: "empireSell"; good: string; qty: number; region?: string }
   | { type: "empireBuy"; good: string; qty: number; post?: string }
-  | { type: "empireTransfer"; vehicleId: string; to: string; good: string; qty: number }
-  | {
-      type: "empireTour";
-      vehicleId: string;
-      stops: { city: string; order: number; qty: number }[];
-    }
+  | { type: "empireMove"; vehicleId: string; to: string }
+  | { type: "empireDepartNow"; vehicleId: string }
+  | { type: "empireSettle" }
+  | { type: "empireCancelStop"; vehicleId: string }
+  | { type: "empireLoad"; vehicleId: string; good: string; qty: number }
+  | { type: "empireUnload"; vehicleId: string; good: string; qty: number }
   | { type: "empireDeliver"; good: string; qty: number; region?: string; city?: string }
   | { type: "empireClaim"; index: number }
   | { type: "empirePlaceCounter"; cell: string }

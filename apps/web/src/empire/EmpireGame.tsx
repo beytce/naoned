@@ -38,7 +38,8 @@ import { OrdersPanel } from "./map/OrdersPanel.js";
 import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
 import { RoundButtons } from "./map/RoundButtons.js";
-import { type Placing, type Target, type TourDraft, canCasa } from "./map/logic.js";
+import { VehiclePanel } from "./map/VehiclePanel.js";
+import { type Placing, type Target, canCasa } from "./map/logic.js";
 import { inTutorial, nextStep } from "./next.js";
 import { ArmsSheet } from "./porta/ArmsSheet.js";
 import { BattleScreen } from "./porta/Battle.js";
@@ -89,8 +90,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // Putting a counter or the Arsenal down: the map lights the cells, a touch picks one.
   const [placing, setPlacing] = useState<Placing | null>(null);
   const [picked, setPicked] = useState<Picked | null>(null);
-  // The round being made (after Hades' Star): a vehicle, its stops, the city shown.
-  const [tour, setTour] = useState<TourDraft | null>(null);
+  // The vehicle chosen (after Hades' Star), and picking where to send it.
+  const [vehicle, setVehicle] = useState<string | null>(null);
+  const [aiming, setAiming] = useState(false);
   const map = useRef<EmpireMapHandle>(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -146,6 +148,66 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     } finally {
       setBusy(false);
     }
+  };
+  // A hop arrived by the clock: the house's state settled, quietly (no wait, no error told).
+  const settling = useRef(false);
+  const settle = useCallback(() => {
+    if (settling.current) return;
+    settling.current = true;
+    window.setTimeout(() => {
+      empireApi
+        .act({ type: "empireSettle" })
+        .then((answer) => {
+          if (!answer.error) take(answer);
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          settling.current = false;
+        });
+    }, 400);
+  }, [take]);
+  /** The vehicle before or after the one chosen. */
+  const cycle = (step: 1 | -1) => {
+    const mine = p.view?.vehicles.mine ?? [];
+    if (mine.length === 0) return;
+    const i = mine.findIndex((v) => v.id === vehicle);
+    const next = mine[(i + step + mine.length) % mine.length];
+    if (!next) return;
+    setVehicle(next.id);
+    setAiming(false);
+    setTarget({ kind: "vehicle", id: next.id });
+  };
+  // On a computer (after Hades' Star's keys): Échap lets go, the comma and the period go from a
+  // vehicle to the one before or after.
+  const keys = useRef({ cycle, aiming });
+  keys.current = { cycle, aiming };
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === "Escape") {
+        if (keys.current.aiming) setAiming(false);
+        else {
+          setTarget(null);
+          setVehicle(null);
+        }
+      } else if (e.key === ",") keys.current.cycle(-1);
+      else if (e.key === ".") keys.current.cycle(1);
+    };
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, []);
+  /** « Y envoyer un véhicule »: the one chosen, else the first standing free at a counter. */
+  const sendable = (city: string) => {
+    const mine = p.view?.vehicles.mine ?? [];
+    const free = (v: (typeof mine)[number]) => v.legs.length === 0 && !v.at.startsWith("city:");
+    const v = mine.find((x) => x.id === vehicle) ?? mine.find(free);
+    if (!v) return undefined;
+    return () => {
+      setVehicle(v.id);
+      setTarget({ kind: "vehicle", id: v.id });
+      void act({ type: "empireMove", vehicleId: v.id, to: `city:${city}` });
+    };
   };
   const join = async () => {
     setBusy(true);
@@ -205,15 +267,23 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         act={act}
         onTarget={(x) => {
           if (placing) return;
-          // A vehicle chosen: a round begins; a city touched during a round: its orders to load.
-          if (x?.kind === "vehicle") {
-            setTarget(null);
-            setTour({ vehicleId: x.id, stops: [], focus: null });
-          } else if (x?.kind === "city" && tour) setTour({ ...tour, focus: x.code });
-          else if (!x && tour) setTour(tour.stops.length > 0 ? tour : null);
-          else setTarget(x);
+          // A vehicle chosen: its panel; anything else: the vehicle stays chosen behind it.
+          if (x?.kind === "vehicle") setVehicle(x.id);
+          if (!x) {
+            setVehicle(null);
+            setAiming(false);
+          }
+          setTarget(x);
         }}
-        tour={tour}
+        selected={vehicle}
+        aiming={aiming}
+        onMove={(vehicleId, to) => {
+          setAiming(false);
+          setVehicle(vehicleId);
+          setTarget({ kind: "vehicle", id: vehicleId });
+          void act({ type: "empireMove", vehicleId, to });
+        }}
+        onArrive={settle}
         placing={placing}
         picked={picked}
         onPick={setPicked}
@@ -230,7 +300,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
 
       {/* The foot of the map: the round buttons, a place's panel, or the bar of placing. */}
       <BottomSlot
-        id={placing ? "placing" : tour ? "tour" : target ? "panel" : "idle"}
+        id={placing ? "placing" : target ? `panel:${target.kind}` : "idle"}
         hidden={sheet !== null || good !== null}
       >
         {placing ? (
@@ -245,18 +315,28 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               setPicked(null);
             }}
           />
-        ) : tour || (target?.kind === "city" && p.view?.map.tourUnitsPerMinute) ? (
-          <OrdersPanel
+        ) : target?.kind === "vehicle" ? (
+          <VehiclePanel
             p={p}
             now={now}
             busy={busy}
             act={act}
-            city={tour ? tour.focus : target?.kind === "city" ? target.code : null}
-            tour={tour}
-            onTour={(next) => {
-              setTour(next);
-              if (next) setTarget(null);
+            vehicleId={target.id}
+            aiming={aiming}
+            onAim={setAiming}
+            onCycle={cycle}
+            onClose={() => {
+              setTarget(null);
+              setVehicle(null);
+              setAiming(false);
             }}
+          />
+        ) : target?.kind === "city" && p.view?.orders.some((o) => o.city === target.code) ? (
+          <OrdersPanel
+            p={p}
+            busy={busy}
+            city={target.code}
+            onSend={sendable(target.code)}
             onClose={() => setTarget(null)}
           />
         ) : target ? (

@@ -157,3 +157,9 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 ## Un seul métier (1er novembre 2026), à repenser plus tard
 - **Le classement** ne se fera plus sur les ventes, mais sur d'autres éléments, à définir (décision du porteur : « on y réfléchira plus tard »).
 - La mer, les gisements et les expéditions, retirés : à revoir seulement s'ils servent les commandes des villes.
+
+## La livraison saut par saut (1er novembre 2026), hors du chantier 1
+
+- **Les bonus de livraison** à la Hades' Star : une commande entière payée 10 % de plus, un « Jour de foire » après 10 livraisons, la vitesse vers l'arrêt suivant. Écartés du chantier 1 par le porteur ; à revoir avec les modules (chantier 2).
+- **Le relais automatique** (un commis qui livre seul, un peu moins bien qu'à la main) : jamais vendu. À rediscuter : CLAUDE.md interdit de vendre le confort qui donne de la puissance.
+- **La montée d'une ville nouvellement servie**, sur trois jours (docs/hades-star/01, § 4).

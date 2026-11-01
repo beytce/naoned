@@ -1,26 +1,29 @@
 import { draw } from "../draw.js";
 import { type Deniers, applyBpsFloor } from "../money.js";
-import { type EmpireHouse, MINUTE_MS, type PlayerId, type WorldContext } from "../state.js";
-import { type Tx, fail, nextId } from "../tx.js";
-import { advanceCarnet } from "./carnet.js";
-import { houseEffect } from "./effects.js";
-import { capacityOf } from "./fleet.js";
-import { empireSettings, ownHouse } from "./house.js";
-import { citiesCovered, citySpot, standingPosts } from "./map.js";
+import {
+  type EmpireCityWaves,
+  type EmpireHouse,
+  MINUTE_MS,
+  type PlayerId,
+  type WorldContext,
+} from "../state.js";
+import type { Tx } from "../tx.js";
+import { empireSettings } from "./house.js";
+import { citiesCovered, standingPosts } from "./map.js";
 import type { EmpireSettings } from "./settings.js";
-import { HOME_POST, postsServing, putAt, takeAt } from "./stores.js";
-import { receive } from "./trade.js";
+import { postsServing } from "./stores.js";
 
 /**
  * The cities' orders (decision of the owner, 1 November 2026), after Hades' Star's shipments: each
- * city a counter of the house serves asks a few goods of its region every period (two hours),
- * as many orders as its size; a vehicle of the counter brings them on a round, each unit paid at
- * its arrival. The orders are drawn from the world's seed, the house, the city and the period:
- * nothing is kept until something is brought, and what is not brought is simply no longer asked.
+ * city a counter of the house serves asks a few goods of its region, a wave every period (two
+ * hours), as many orders a wave as its size. The waves pile up to a cap (six, twelve hours): beyond,
+ * no new wave comes until something is brought; nothing is lost by the absence. A vehicle brings
+ * them hop by hop (moves.ts), each unit paid at its arrival.
  */
 
 export interface CityOrder {
   good: string;
+  /** Asked by the open waves, what was brought included. */
   qty: number;
   filled: number;
   /** A unit's pay, before the way's premium. */
@@ -31,9 +34,12 @@ export interface CityOrders {
   city: string;
   region: string;
   size: number;
+  /** By good, the open waves together. */
   orders: CityOrder[];
-  /** How far its orders are filled, in bps. */
+  /** The open waves, and how full the city is of them (the ring around it), in bps of the cap. */
+  waves: number;
   fillBps: number;
+  /** When the next wave comes (if the cap leaves room). */
   renewsAt: number;
 }
 
@@ -42,7 +48,7 @@ const periodMs = (s: EmpireSettings) => (s.orders?.periodMinutes ?? 120) * MINUT
 /** The period of the orders at a time. */
 export const periodOf = (now: number, s: EmpireSettings) => Math.floor(now / periodMs(s));
 
-/** A city's orders of a period, for a house, before what it brought. */
+/** A city's orders of a period's wave, for a house: their goods, quantities and unit pay. */
 export function cityOrders(
   ctx: WorldContext,
   s: EmpireSettings,
@@ -85,9 +91,35 @@ export function orderBoostBps(h: EmpireHouse, s: EmpireSettings, code: string): 
   return s.counters.bookStepBps * (level - 1);
 }
 
-/** What the house brought of a city's orders in the period. */
-function filledOf(h: EmpireHouse, code: string, period: number): number[] {
-  return h.filled?.period === period ? (h.filled.cities[code] ?? []) : [];
+const isOpen = (w: EmpireCityWaves["waves"][number]) =>
+  w.qty.some((q, i) => (w.filled[i] ?? 0) < q);
+
+/**
+ * A city's waves at a time, from what the house keeps of them: the periods come since, each its
+ * wave while fewer than the cap are open; at the cap, the periods pass without a wave.
+ */
+export function wavesAt(
+  ctx: WorldContext,
+  h: EmpireHouse,
+  playerId: PlayerId,
+  s: EmpireSettings,
+  code: string,
+  now: number,
+): EmpireCityWaves {
+  const period = periodOf(now, s);
+  const kept = h.orders?.[code];
+  const waves = (kept?.waves ?? []).filter(isOpen).map((w) => ({ ...w, filled: [...w.filled] }));
+  const max = s.orders?.maxWaves ?? 6;
+  // The oldest periods first: what the house sees stays as it was until something is brought.
+  const start = kept?.next ?? period;
+  const boost = orderBoostBps(h, s, code);
+  let next = start;
+  for (; next <= period && waves.length < max; next++) {
+    const qty = cityOrders(ctx, s, playerId, code, next, boost).map((x) => x.qty);
+    waves.push({ period: next, qty, filled: qty.map(() => 0) });
+  }
+  // At the cap, the periods go by without a wave: none owed for later.
+  return { next: Math.max(next, period + 1), waves };
 }
 
 /** The orders of every city the house's counters serve, at a time. */
@@ -99,208 +131,95 @@ export function ordersOf(
   now: number,
 ): CityOrders[] {
   if (!s.orders) return [];
-  const period = periodOf(now, s);
+  const max = s.orders.maxWaves;
   const covered = citiesCovered(h, s);
   return s.map.cities
     .filter((c) => covered.has(c.code))
     .map((c) => {
-      const done = filledOf(h, c.code, period);
-      const boost = orderBoostBps(h, s, c.code);
-      const orders = cityOrders(ctx, s, playerId, c.code, period, boost).map((x, i) => ({
-        ...x,
-        filled: Math.min(x.qty, done[i] ?? 0),
-      }));
-      const asked = orders.reduce((n, x) => n + x.qty, 0);
-      const brought = orders.reduce((n, x) => n + x.filled, 0);
+      const { waves } = wavesAt(ctx, h, playerId, s, c.code, now);
+      const byGood = new Map<string, CityOrder>();
+      for (const w of waves) {
+        cityOrders(ctx, s, playerId, c.code, w.period).forEach((x, i) => {
+          const o = byGood.get(x.good) ?? { good: x.good, qty: 0, filled: 0, unit: x.unit };
+          o.qty += w.qty[i] ?? 0;
+          o.filled += Math.min(w.qty[i] ?? 0, w.filled[i] ?? 0);
+          byGood.set(x.good, o);
+        });
+      }
       return {
         city: c.code,
         region: c.region,
         size: c.size,
-        orders,
-        fillBps: asked > 0 ? Math.floor((brought * 10_000) / asked) : 0,
-        renewsAt: (period + 1) * periodMs(s),
+        orders: [...byGood.values()].sort((a, b) => a.good.localeCompare(b.good)),
+        waves: waves.length,
+        fillBps: Math.min(10_000, Math.floor((waves.length * 10_000) / max)),
+        renewsAt: (periodOf(now, s) + 1) * periodMs(s),
       };
     });
 }
 
-/**
- * Sends a land vehicle of a counter on a round to the cities' orders (after Hades' Star): its
- * load taken from the counter's stock, no more than it holds; each stop a city within the
- * counter's reach, in the order given; it comes back to its counter after the last.
- */
-export function startTour(
-  tx: Tx,
+/** What a city's open orders still ask of a good, for a house, at a time. */
+export function askedOf(
+  ctx: WorldContext,
+  h: EmpireHouse,
   playerId: PlayerId,
-  vehicleId: string,
-  stops: { city: string; order: number; qty: number }[],
-): void {
-  const s = empireSettings(tx.ctx);
-  const o = s.orders;
-  if (!o) fail("unknown_building_type");
-  const h = ownHouse(tx, playerId);
-  const v = h.vehicles?.find((x) => x.id === vehicleId);
-  if (!v) fail("unknown_building");
-  const spec = s.vehicles[v.type];
-  if (!spec) fail("unknown_building_type");
-  if (v.busyUntil > tx.now) fail("building_busy");
-  if (!Array.isArray(stops) || stops.length === 0 || stops.length > 8) fail("invalid_quantity");
-  const post = standingPosts(h, s).find((p) => p.id === (v.at ?? HOME_POST));
-  if (!post) fail("unknown_target");
-  const period = periodOf(tx.now, s);
-  const hold = Math.floor(
-    (capacityOf(h, v.type, s) * (10_000 + houseEffect(h, "capacity", s, { vehicleId }))) / 10_000,
-  );
-  const planned: { city: string; order: number; good: string; qty: number }[] = [];
-  for (const stop of stops) {
-    if (!postsServing(h, s, stop.city).includes(post.id)) fail("out_of_reach");
-    const asked = cityOrders(
-      tx.ctx,
-      s,
-      playerId,
-      stop.city,
-      period,
-      orderBoostBps(h, s, stop.city),
-    )[stop.order];
-    if (!asked) fail("unknown_target");
-    const done = filledOf(h, stop.city, period)[stop.order] ?? 0;
-    const already = planned
-      .filter((p) => p.city === stop.city && p.order === stop.order)
-      .reduce((n, p) => n + p.qty, 0);
-    if (!Number.isInteger(stop.qty) || stop.qty <= 0 || stop.qty > asked.qty - done - already)
-      fail("invalid_quantity");
-    planned.push({ city: stop.city, order: stop.order, good: asked.good, qty: stop.qty });
-  }
-  if (planned.reduce((n, p) => n + p.qty, 0) > hold) fail("invalid_quantity");
-  for (const p of planned) takeAt(tx, h, playerId, post.id, p.good, p.qty, "empire_voyage");
-  // The way: from the counter through each city in turn, then home.
-  const msBetween = (a: [number, number], b: [number, number]) =>
-    Math.round((Math.hypot(b[0] - a[0], b[1] - a[1]) / o.unitsPerMinute) * MINUTE_MS);
-  let at = tx.now;
-  let from: [number, number] = [post.x, post.y];
-  const timed = planned.map((p) => {
-    const c = s.map.cities.find((x) => x.code === p.city);
-    const to = c ? citySpot(c, s) : from;
-    at += msBetween(from, to);
-    from = to;
-    return { ...p, at };
-  });
-  const backAt = at + msBetween(from, [post.x, post.y]);
-  v.busyUntil = backAt;
-  h.tours = [
-    ...(h.tours ?? []),
-    {
-      id: nextId(tx, "r"),
-      vehicleId,
-      post: post.id,
-      period,
-      leftAt: tx.now,
-      stops: timed,
-      backAt,
-    },
-  ];
+  s: EmpireSettings,
+  code: string,
+  good: string,
+  now: number,
+): number {
+  if (!s.orders || !citiesCovered(h, s).has(code)) return 0;
+  let left = 0;
+  for (const w of wavesAt(ctx, h, playerId, s, code, now).waves)
+    cityOrders(ctx, s, playerId, code, w.period).forEach((x, i) => {
+      if (x.good === good) left += Math.max(0, (w.qty[i] ?? 0) - (w.filled[i] ?? 0));
+    });
+  return left;
 }
 
 /**
- * The rounds' stops reached by now, every house's: each unit an order still asks is paid (the
- * way from the counter adds its premium), the rest goes back to the counter's stock; a round
- * whose vehicle is home is over.
+ * Brings up to `qty` of a good to a city's open orders at a time, the oldest wave first: keeps the
+ * waves, and returns what was taken and its pay before the way's premium.
  */
-export function settleTours(tx: Tx): void {
-  const s = empireSettings(tx.ctx);
-  const o = s.orders;
-  if (!o) return;
-  for (const [id, h] of Object.entries(tx.s.empire?.houses ?? {})) {
-    if (!h.tours?.length) continue;
-    for (const tour of h.tours) {
-      const post = standingPosts(h, s).find((p) => p.id === tour.post);
-      for (const stop of tour.stops) {
-        if (stop.done || stop.at > tx.now) continue;
-        stop.done = true;
-        let paid = 0;
-        // An order of a period gone is no longer asked: its goods come back.
-        if (periodOf(stop.at, s) === tour.period) {
-          const asked = cityOrders(
-            tx.ctx,
-            s,
-            id,
-            stop.city,
-            tour.period,
-            orderBoostBps(h, s, stop.city),
-          )[stop.order];
-          const done = filledOf(h, stop.city, tour.period);
-          const left = Math.max(0, (asked?.qty ?? 0) - (done[stop.order] ?? 0));
-          paid = Math.min(stop.qty, left);
-          if (asked && paid > 0) {
-            const c = s.map.cities.find((x) => x.code === stop.city);
-            const [cx, cy] = c ? citySpot(c, s) : [0, 0];
-            const sectors = post ? Math.hypot(cx - post.x, cy - post.y) / s.map.hexSize : 0;
-            const way = Math.floor(o.distanceBps * sectors);
-            const bonus = houseEffect(h, "orderBonus", s, { region: c?.region ?? "" });
-            receive(
-              tx,
-              id,
-              applyBpsFloor(asked.unit * BigInt(paid), 10_000 + way + bonus),
-              `orders:${stop.city}:${stop.good}`,
-            );
-            const cities = h.filled?.period === tour.period ? { ...h.filled.cities } : {};
-            const row = [...(cities[stop.city] ?? [])];
-            row[stop.order] = (row[stop.order] ?? 0) + paid;
-            cities[stop.city] = row;
-            h.filled = { period: tour.period, cities };
-            advanceCarnet(h, "deliver", paid);
-          }
-        }
-        if (stop.qty > paid)
-          putAt(tx, h, id, tour.post, stop.good, stop.qty - paid, "empire_voyage", tour.id);
-      }
-    }
-    const left = h.tours.filter((t) => t.backAt > tx.now || t.stops.some((x) => !x.done));
-    h.tours = left.length > 0 ? left : undefined;
-  }
-}
-
-/**
- * A delivery of before (`empireDeliver`) on a world of orders: a round made for the player, of a
- * free land vehicle of a counter serving the city (or the region's cities), loaded with what the
- * orders of that good still ask, no more than it holds. Returns the units sent.
- */
-export function autoTour(
+export function fillCity(
   tx: Tx,
+  h: EmpireHouse,
   playerId: PlayerId,
+  code: string,
   good: string,
   qty: number,
-  region: string,
-  city?: string,
-): number {
+  at: number,
+): { n: number; gross: Deniers } {
   const s = empireSettings(tx.ctx);
-  const h = ownHouse(tx, playerId);
-  const period = periodOf(tx.now, s);
-  const cities = city
-    ? [city]
-    : ordersOf(tx.ctx, h, playerId, s, tx.now)
-        .filter((c) => c.region === region)
-        .map((c) => c.city);
-  for (const v of h.vehicles ?? []) {
-    const spec = s.vehicles[v.type];
-    if (!spec || v.busyUntil > tx.now) continue;
-    const at = v.at ?? HOME_POST;
-    let room = Math.min(qty, capacityOf(h, v.type, s));
-    const stops: { city: string; order: number; qty: number }[] = [];
-    for (const code of cities) {
-      if (!postsServing(h, s, code).includes(at)) continue;
-      const done = filledOf(h, code, period);
-      cityOrders(tx.ctx, s, playerId, code, period, orderBoostBps(h, s, code)).forEach((x, i) => {
-        if (room <= 0 || x.good !== good) return;
-        const n = Math.min(room, x.qty - (done[i] ?? 0));
-        if (n <= 0) return;
-        stops.push({ city: code, order: i, qty: n });
-        room -= n;
-      });
-    }
-    const held = stops.length > 0 ? stops.reduce((n, x) => n + x.qty, 0) : 0;
-    if (held === 0) continue;
-    startTour(tx, playerId, v.id, stops);
-    return held;
+  if (!s.orders || !citiesCovered(h, s).has(code)) return { n: 0, gross: 0n };
+  const rec = wavesAt(tx.ctx, h, playerId, s, code, at);
+  let left = qty;
+  let gross = 0n;
+  for (const w of rec.waves) {
+    cityOrders(tx.ctx, s, playerId, code, w.period).forEach((x, i) => {
+      if (left <= 0 || x.good !== good) return;
+      const n = Math.min(left, Math.max(0, (w.qty[i] ?? 0) - (w.filled[i] ?? 0)));
+      if (n <= 0) return;
+      w.filled[i] = (w.filled[i] ?? 0) + n;
+      left -= n;
+      gross += x.unit * BigInt(n);
+    });
   }
-  fail("no_liquidity");
+  h.orders = { ...(h.orders ?? {}), [code]: { next: rec.next, waves: rec.waves.filter(isOpen) } };
+  return { n: qty - left, gross };
+}
+
+/**
+ * The cities newly served by the house's counters begin their waves now (the waves come from the
+ * period a city is first served, never from before).
+ */
+export function trackOrders(h: EmpireHouse, s: EmpireSettings, now: number): void {
+  if (!s.orders) return;
+  const period = periodOf(now, s);
+  const missing = [...citiesCovered(h, s)].filter((c) => !h.orders?.[c]);
+  if (missing.length === 0) return;
+  h.orders = {
+    ...(h.orders ?? {}),
+    ...Object.fromEntries(missing.map((c) => [c, { next: period, waves: [] }])),
+  };
 }

@@ -156,6 +156,8 @@ export function useCamera({
     const bounds = () => scaleBounds(view());
     const down = (e: PointerEvent) => {
       if (e.button !== 0 && e.pointerType === "mouse") return;
+      // A vehicle dragged to a place: its own gesture, the camera stays (the hops).
+      if ((e.target as HTMLElement | null)?.closest?.("[data-drag-handle]")) return;
       if (pointers.size === 0) rect = el.getBoundingClientRect();
       pointers.set(e.pointerId, local(e));
       anim.current = null;

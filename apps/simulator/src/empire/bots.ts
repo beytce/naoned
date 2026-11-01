@@ -253,10 +253,10 @@ function landCapacity(w: World, h: House): number {
 }
 
 /**
- * The cities' orders (1 November, after Hades' Star's shipments): in a session, the orders of the
- * period of the cities its counters serve, as many as each town's size, of its region's goods;
- * brought on a few rounds of its carts, from what it holds there. A period it does not play is
- * simply missed.
+ * The cities' orders (1 November, after Hades' Star's shipments): in a session, the waves piled up
+ * since the last one (one each period, `maxWaves` at most) of the cities its counters serve, as
+ * many orders a wave as each town's size, of its region's goods; brought hop by hop by its carts
+ * (a hop is a few seconds: `roundsPerSession` loads in a session), from what it holds there.
  */
 /** How much greater a city's orders are for its counter's level (Venice's own for Venetia). */
 function boostOf(w: World, h: House, region: string): number {
@@ -264,23 +264,34 @@ function boostOf(w: World, h: House, region: string): number {
   return 10_000 + w.s.counters.bookStepBps * (Math.max(1, level) - 1);
 }
 
-/** The units the orders of a period ask in the cities its counters serve (their expectation). */
+/** The waves a session finds piled up, after so long away. */
+function wavesSince(w: World, sinceMs: number): number {
+  const o = w.s.orders;
+  if (!o) return 0;
+  const period = o.periodMinutes * 60_000;
+  return Math.min(o.maxWaves, Math.max(1, Math.floor(sinceMs / period)));
+}
+
+/** The units the waves of a session ask in the cities its counters serve (their expectation). */
 function ordersPerSession(w: World, h: House): number {
   const o = w.s.orders;
   if (!o) return Number.POSITIVE_INFINITY;
+  // Two sessions a day: half a day of waves.
+  const waves = wavesSince(w, 12 * 3_600_000);
   const covered = citiesCovered(seen(h), w.s);
   return w.s.map.cities
     .filter((c) => covered.has(c.code))
     .reduce((n, c) => {
       const size = Math.min(5, Math.max(1, c.size));
       const asked = ((o.perSize[size - 1] ?? 1) * o.qtyPerSize * size * 3) / 2;
-      return n + (asked * boostOf(w, h, c.region)) / 10_000;
+      return n + (waves * asked * boostOf(w, h, c.region)) / 10_000;
     }, 0);
 }
 
-function deliverOrders(w: World, h: House) {
+function deliverOrders(w: World, h: House, sinceMs: number) {
   const o = w.s.orders;
   if (!o) return;
+  const waves = wavesSince(w, sinceMs);
   let cap = landCapacity(w, h) * w.m.roundsPerSession;
   const covered = citiesCovered(seen(h), w.s);
   const convoy = effectOf(h.modules, "orderBonus", w.s) + identityEffect(w, h, "orderBonus");
@@ -292,9 +303,9 @@ function deliverOrders(w: World, h: House) {
     const goods = Object.keys(r.demands);
     if (goods.length === 0) continue;
     const size = Math.min(5, Math.max(1, c.size));
-    // The expected orders of a period: so many of each good of the region.
+    // The expected orders of the waves: so many of each good of the region.
     const asked =
-      ((((o.perSize[size - 1] ?? 1) * o.qtyPerSize * size * 3) / 2 / goods.length) *
+      (((waves * (o.perSize[size - 1] ?? 1) * o.qtyPerSize * size * 3) / 2 / goods.length) *
         boostOf(w, h, c.region)) /
       10_000;
     for (const good of goods) {
@@ -316,7 +327,7 @@ function deliverOrders(w: World, h: House) {
 
 function deliver(w: World, h: House, sinceHours: number) {
   if (w.s.orders) {
-    deliverOrders(w, h);
+    deliverOrders(w, h, sinceHours);
     return;
   }
   let cap = Math.floor(

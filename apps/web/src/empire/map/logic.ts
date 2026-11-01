@@ -450,99 +450,154 @@ export function postPoint(p: EmpirePayload, post: string): [number, number] | nu
   return x ? [x.x, x.y] : null;
 }
 
-/** A round being made (after Hades' Star): the vehicle, its stops in order. */
-export interface TourDraft {
-  vehicleId: string;
-  stops: { city: string; order: number; qty: number }[];
-  /** The city whose orders are shown to load. */
-  focus: string | null;
+// ——— The hops (after Hades' Star, 1 November 2026): a vehicle sent from place to place ———
+
+/** A place a vehicle may go to: a counter, or a city of the house's sectors or of its reach. */
+export interface MapPlace {
+  place: string;
+  kind: "post" | "city";
+  x: number;
+  y: number;
 }
 
-/** The counter a vehicle stands at, with its point and its reach. */
-export function vehiclePost(
-  p: EmpirePayload,
-  vehicleId: string,
-): { id: string; x: number; y: number; reach: number } | null {
+/** The places of the map a vehicle may be sent to, counters first. */
+export function placesOf(p: EmpirePayload): MapPlace[] {
   const map = p.view?.map;
-  const v = p.view?.vehicles.mine.find((x) => x.id === vehicleId);
-  if (!map || !v) return null;
-  if (v.at === "home") return { id: "home", ...map.home };
-  const post = map.posts.find((x) => x.id === v.at);
-  return post ? { id: post.id, x: post.x, y: post.y, reach: post.reach } : null;
+  if (!map) return [];
+  const owned = new Set(map.unlocked ?? []);
+  const covered = new Set(map.covered);
+  return [
+    { place: "home", kind: "post" as const, x: map.home.x, y: map.home.y },
+    ...map.posts.map((x) => ({ place: x.id, kind: "post" as const, x: x.x, y: x.y })),
+    ...map.cities
+      .filter((c) => owned.has(c.cell) || covered.has(c.code))
+      .map((c) => ({ place: `city:${c.code}`, kind: "city" as const, x: c.x, y: c.y })),
+  ];
 }
 
-/** The cities a vehicle may bring orders to: those within its counter's reach. */
-export function tourCities(p: EmpirePayload, vehicleId: string): string[] {
-  const at = vehiclePost(p, vehicleId);
-  if (!at) return [];
-  return (p.view?.map.cities ?? [])
-    .filter((c) => (c.x - at.x) ** 2 + (c.y - at.y) ** 2 <= at.reach * at.reach)
-    .map((c) => c.code);
-}
-
-/** What an order still asks, less what the round being made already carries to it. */
-export function orderLeft(
-  p: EmpirePayload,
-  tour: TourDraft | null,
-  city: string,
-  i: number,
-): number {
-  const o = p.view?.orders.find((x) => x.city === city)?.orders[i];
-  if (!o) return 0;
-  const planned = (tour?.stops ?? [])
-    .filter((s) => s.city === city && s.order === i)
-    .reduce((n, s) => n + s.qty, 0);
-  return Math.max(0, o.qty - o.filled - planned);
-}
-
-/** The round's load against the vehicle's hold. */
-export function tourLoad(p: EmpirePayload, tour: TourDraft): { load: number; hold: number } {
-  const v = p.view?.vehicles.mine.find((x) => x.id === tour.vehicleId);
-  return { load: tour.stops.reduce((n, s) => n + s.qty, 0), hold: v?.capacity ?? 0 };
-}
-
-/** What the vehicle's counter holds of a good, less what the round already takes of it. */
-export function tourStock(p: EmpirePayload, tour: TourDraft, good: string): number {
-  const v = p.view?.vehicles.mine.find((x) => x.id === tour.vehicleId);
-  const held = p.view?.stores.find((x) => x.post === v?.at)?.goods[good] ?? 0;
-  const orders = p.view?.orders ?? [];
-  const taken = tour.stops
-    .filter((s) => orders.find((o) => o.city === s.city)?.orders[s.order]?.good === good)
-    .reduce((n, s) => n + s.qty, 0);
-  return Math.max(0, held - taken);
-}
-
-/** The round's minutes: from the counter through each city, and back. */
-export function tourMinutes(p: EmpirePayload, tour: TourDraft): number {
-  const at = vehiclePost(p, tour.vehicleId);
-  const speed = p.view?.map.tourUnitsPerMinute ?? 0;
-  if (!at || speed <= 0) return 0;
-  let from: [number, number] = [at.x, at.y];
-  let units = 0;
-  for (const s of tour.stops) {
-    const c = p.view?.map.cities.find((x) => x.code === s.city);
-    if (!c) continue;
-    units += Math.hypot(c.x - from[0], c.y - from[1]);
-    from = [c.x, c.y];
+/** A place's point on the chart (a counter's, or a city's). */
+export function placePoint(p: EmpirePayload, place: string): [number, number] | null {
+  if (place.startsWith("city:")) {
+    const c = p.view?.map.cities.find((x) => x.code === place.slice(5));
+    return c ? [c.x, c.y] : null;
   }
-  units += Math.hypot(at.x - from[0], at.y - from[1]);
-  return units / speed;
+  return postPoint(p, place);
 }
 
-/** A free land vehicle of a counter that serves the city, the one holding most of a good first. */
-export function vehicleFor(
+/** A place's name: a city's, or a counter's. */
+export function placeName(p: EmpirePayload, place: string, regionName: (r: string) => string) {
+  return place.startsWith("city:")
+    ? (fr.empire.cityNames[place.slice(5)] ?? place.slice(5))
+    : postLabel(p, place, regionName);
+}
+
+/** A hop's seconds between two points, as the engine reckons them (a second at the least). */
+export function hopSeconds(p: EmpirePayload, a: [number, number], b: [number, number]): number {
+  const speed = p.view?.moves.unitsPerSecond ?? 8;
+  return Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / speed));
+}
+
+/** A distance on the chart in leagues (a sector across: about ten). */
+export const leaguesOf = (a: [number, number], b: [number, number]) =>
+  Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / 2.4);
+
+type Mine = NonNullable<EmpirePayload["view"]>["vehicles"]["mine"][number];
+
+/** Where a vehicle's hops leave from next: its last stop to come, else where it stands. */
+export const lastPlace = (v: Mine) => v.legs.at(-1)?.to ?? v.at;
+
+/**
+ * A vehicle's pose at a time: standing (at its place, its stops to come perhaps waiting to leave),
+ * or on a hop, its point between the two places and its heading (radians, 0 to the east).
+ */
+export function vehiclePose(
   p: EmpirePayload,
-  city: string,
-  now: number,
-  good?: string,
-): string | null {
-  const view = p.view;
-  if (!view) return null;
-  const land = view.vehicles.mine.filter((v) => v.busyUntil <= now);
-  const ok = land.filter((v) => tourCities(p, v.id).includes(city));
-  const held = (id: string) => {
-    const at = view.vehicles.mine.find((v) => v.id === id)?.at;
-    return good ? (view.stores.find((x) => x.post === at)?.goods[good] ?? 0) : 0;
+  v: Mine,
+  t: number,
+): {
+  x: number;
+  y: number;
+  angle: number;
+  /** The hop under way, and how far along it (0 to 1). */
+  hop: { from: [number, number]; to: [number, number]; k: number; endsAt: number } | null;
+  /** Its place, while standing. */
+  place: string | null;
+  /** Waiting to leave: when. */
+  leavesAt: number | null;
+} {
+  const leg = v.legs.find((l) => l.departAt <= t && l.arrivesAt > t);
+  if (leg) {
+    const a = placePoint(p, leg.from) ?? [0, 0];
+    const b = placePoint(p, leg.to) ?? a;
+    const k = Math.min(
+      1,
+      Math.max(0, (t - leg.departAt) / Math.max(1, leg.arrivesAt - leg.departAt)),
+    );
+    return {
+      x: a[0] + (b[0] - a[0]) * k,
+      y: a[1] + (b[1] - a[1]) * k,
+      angle: Math.atan2(b[1] - a[1], b[0] - a[0]),
+      hop: { from: a, to: b, k, endsAt: leg.arrivesAt },
+      place: null,
+      leavesAt: null,
+    };
+  }
+  // Standing: where its last hop arrived (by now), else where it stood.
+  const done = [...v.legs].reverse().find((l) => l.arrivesAt <= t);
+  const place = done?.to ?? v.at;
+  const [x, y] = placePoint(p, place) ?? [0, 0];
+  const next = v.legs.find((l) => l.departAt > t);
+  const to = next ? placePoint(p, next.to) : null;
+  return {
+    x,
+    y,
+    angle: to ? Math.atan2(to[1] - y, to[0] - x) : -Math.PI / 2,
+    hop: null,
+    place,
+    leavesAt: next && !done ? next.departAt : null,
   };
-  return [...ok].sort((a, b) => held(b.id) - held(a.id))[0]?.id ?? null;
+}
+
+/** The place nearest a point of the chart, within `radius` chart units. */
+export function nearestPlace(
+  p: EmpirePayload,
+  at: [number, number],
+  radius: number,
+): MapPlace | null {
+  let best: MapPlace | null = null;
+  let bestD = radius;
+  for (const x of placesOf(p)) {
+    const dist = Math.hypot(x.x - at[0], x.y - at[1]);
+    if (dist <= bestD) {
+      best = x;
+      bestD = dist;
+    }
+  }
+  return best;
+}
+
+/**
+ * What a vehicle would bring to a city: its cargo (or, still at its counter, what that counter
+ * holds) against what the city's orders ask, and the pay before the way's premium.
+ */
+export function bringsTo(
+  p: EmpirePayload,
+  v: Mine,
+  city: string,
+): { good: string; n: number; pay: bigint }[] {
+  const o = p.view?.orders.find((x) => x.city === city);
+  if (!o) return [];
+  const atPost = !v.at.startsWith("city:") && v.legs.length === 0;
+  const store = p.view?.stores.find((x) => x.post === v.at)?.goods ?? {};
+  let room = v.capacity - Object.values(v.cargo).reduce((n, c) => n + c.qty, 0);
+  return o.orders
+    .map((x) => {
+      const left = x.qty - x.filled;
+      const aboard = v.cargo[x.good]?.qty ?? 0;
+      const more = atPost ? Math.max(0, Math.min(room, store[x.good] ?? 0, left - aboard)) : 0;
+      room -= more;
+      const n = Math.min(left, aboard + more);
+      return { good: x.good, n, pay: BigInt(x.unit) * BigInt(n) };
+    })
+    .filter((x) => x.n > 0);
 }
