@@ -10,6 +10,15 @@ export const vehicleLevelOf = (h: EmpireHouse, type: string): number =>
   h.vehicleLevels?.[type] ?? 1;
 
 /**
+ * A vehicle's places of hold for the cities' orders (after Hades' Star's transport): its model's,
+ * and `placesPerLevel` a level beyond the first.
+ */
+export function holdPlacesOf(h: EmpireHouse, type: string, s: EmpireSettings): number {
+  const base = s.vehicles[type]?.places ?? 0;
+  return base + s.vehicleLevels.placesPerLevel * (vehicleLevelOf(h, type) - 1);
+}
+
+/**
  * The hold of a vehicle of the model, at the house's level of it (before the modules and the
  * knowledge): a tenth more a level beyond the first, by default.
  */

@@ -3,21 +3,22 @@ import type { EmpireHouse, EmpireLeg, PlayerId } from "../state.js";
 import { type Tx, fail } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
 import { houseEffect } from "./effects.js";
-import { capacityOf } from "./fleet.js";
+import { holdPlacesOf } from "./fleet.js";
 import { empireSettings, ownHouse } from "./house.js";
 import { citiesCovered, citySpot, standingPosts, unlockedOf } from "./map.js";
-import { askedOf, fillCity, ordersOf } from "./orders.js";
+import { cityOrdersAt, returnOrder, takeOrder } from "./orders.js";
 import type { EmpireSettings } from "./settings.js";
-import { HOME_POST, putAt, storeOf, takeAt } from "./stores.js";
+import { HOME_POST, postsServing, putAt, storeOf, takeAt } from "./stores.js";
 import { receive } from "./trade.js";
 
 /**
  * The vehicles' hops (decision of the owner, 1 November 2026, after Hades' Star): a vehicle is
  * sent from where it stands to a place of the house's sectors (a city, a counter), one stop after
  * another; the first leaves after a few seconds (left at once, or the last stop taken back, until
- * then), each next when the one before arrives, and a hop begun is not stopped. Leaving a counter
- * for cities, it loads what their orders ask of the counter's stock; at a city it brings what its
- * orders ask of its cargo, paid at the arrival; at a counter its cargo stays aboard, to unload.
+ * then), each next when the one before arrives, and a hop begun is not stopped. At a counter it
+ * is loaded by hand with the orders of the cities the counter serves, one place each, out of the
+ * counter's stock; at a city it brings the orders of that city it carries, paid at the arrival,
+ * and stays there.
  */
 
 type Vehicle = NonNullable<EmpireHouse["vehicles"]>[number];
@@ -55,15 +56,12 @@ export function hopMs(s: EmpireSettings, a: [number, number], b: [number, number
   );
 }
 
-/** A vehicle's hold, its model's level and the house's effects counted. */
+/** A vehicle's places of hold, its model's level and the house's effects counted. */
 export function holdOf(h: EmpireHouse, v: Vehicle, s: EmpireSettings): number {
-  return Math.floor(
-    (capacityOf(h, v.type, s) * (10_000 + houseEffect(h, "capacity", s, { vehicleId: v.id }))) /
-      10_000,
-  );
+  const places = holdPlacesOf(h, v.type, s);
+  const bps = houseEffect(h, "capacity", s, { vehicleId: v.id });
+  return places + Math.floor((places * bps) / 10_000);
 }
-
-const carried = (v: Vehicle) => Object.values(v.cargo ?? {}).reduce((n, c) => n + c.qty, 0);
 
 /** Has the vehicle left yet: a hop begun. */
 const underWay = (v: Vehicle, now: number) =>
@@ -77,58 +75,13 @@ function vehicleOf(h: EmpireHouse, s: EmpireSettings, vehicleId: string): Vehicl
   return v;
 }
 
-/**
- * Loads at the counter it stands at what the orders of its stops to come ask (those it does not
- * carry already), no more than it holds nor than the counter has.
- */
-function loadFor(
-  tx: Tx,
-  h: EmpireHouse,
-  playerId: PlayerId,
-  v: Vehicle,
-  at = tx.now,
-  legs: EmpireLeg[] = v.legs ?? [],
-  routed = false,
-): void {
-  const s = empireSettings(tx.ctx);
+/** The counter a vehicle stands at, not under way: its id (it may be loaded or unloaded there). */
+function dockedAt(h: EmpireHouse, s: EmpireSettings, v: Vehicle, now: number): string {
   const post = v.at ?? HOME_POST;
-  if (placeCity(post) !== null) return;
-  let room = holdOf(h, v, s) - carried(v);
-  const cities = [...new Set(legs.map((l) => placeCity(l.to)).filter((c) => c !== null))];
-  const want = new Map<string, number>();
-  const orders = ordersOf(tx.ctx, h, playerId, s, at);
-  for (const code of cities)
-    for (const o of orders.find((x) => x.city === code)?.orders ?? [])
-      want.set(o.good, (want.get(o.good) ?? 0) + o.qty - o.filled);
-  for (const [good, asked] of want) {
-    if (room <= 0) break;
-    const have = v.cargo?.[good]?.qty ?? 0;
-    const n = Math.min(room, asked - have, storeOf(tx, h, playerId, post, good));
-    if (n <= 0) continue;
-    takeAt(tx, h, playerId, post, good, n, "empire_voyage");
-    // Loaded on the way by the Livre de route: its premium on these units.
-    const before = v.cargo?.[good]?.routed ?? 0;
-    v.cargo = {
-      ...(v.cargo ?? {}),
-      [good]: {
-        qty: have + n,
-        from: post,
-        ...(routed || before ? { routed: before + (routed ? n : 0) } : {}),
-      },
-    };
-    room -= n;
-  }
-}
-
-/** Does a city's open orders ask a good the vehicle carries (the Fouet's hop)? */
-function carriesFor(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle, place: string) {
-  const code = placeCity(place);
-  if (code === null) return false;
-  const s = empireSettings(tx.ctx);
-  const goods = new Set(Object.keys(v.cargo ?? {}));
-  return (ordersOf(tx.ctx, h, playerId, s, tx.now).find((x) => x.city === code)?.orders ?? []).some(
-    (o) => o.qty > o.filled && goods.has(o.good),
-  );
+  if (placeCity(post) !== null || !standingPosts(h, s).some((p) => p.id === post))
+    fail("unknown_target");
+  if (underWay(v, now)) fail("building_busy");
+  return post;
 }
 
 /** Sends a vehicle to a place: a stop more at the end of its queue. */
@@ -143,26 +96,9 @@ export function moveVehicle(tx: Tx, playerId: PlayerId, vehicleId: string, to: s
   const b = placePoint(h, s, to);
   if (!a || !b) fail("unknown_target");
   const last = v.legs?.at(-1);
-  const place = { vehicleId: v.id };
-  // The Estafette: no wait before leaving, a first hop shorter.
-  const courier = houseEffect(h, "courier", s, place);
-  const departAt = last
-    ? last.arrivesAt
-    : tx.now + (courier > 0 ? 0 : s.moves.departSeconds * 1_000);
+  const departAt = last ? last.arrivesAt : tx.now + s.moves.departSeconds * 1_000;
   const leg: EmpireLeg = { from, to, departAt, arrivesAt: departAt + hopMs(s, a, b) };
-  // The first hop leaves from where it stands: loaded now (below), never again on its way.
-  if (!last) leg.loaded = true;
   v.legs = [...(v.legs ?? []), leg];
-  // Still at its counter: it loads for its stops to come.
-  if (!underWay(v, tx.now)) loadFor(tx, h, playerId, v);
-  // The Fouet: quicker when its cargo goes to this stop.
-  let ms = hopMs(s, a, b);
-  const whip = houseEffect(h, "whipSpeed", s, place);
-  if (whip > 0 && carriesFor(tx, h, playerId, v, to))
-    ms = Math.max(1_000, Math.round((ms * 10_000) / (10_000 + whip)));
-  if (!last && courier > 0)
-    ms = Math.max(1_000, Math.round((ms * (10_000 - Math.min(9_000, courier))) / 10_000));
-  leg.arrivesAt = departAt + ms;
   v.busyUntil = leg.arrivesAt;
 }
 
@@ -192,114 +128,75 @@ export function cancelStop(tx: Tx, playerId: PlayerId, vehicleId: string): void 
   v.busyUntil = legs.at(-1)?.arrivesAt ?? tx.now;
 }
 
-/** Loads (qty > 0) or unloads (qty < 0) by hand, the vehicle at a counter and not under way. */
-export function loadVehicle(
+/**
+ * Loads an order of a city the counter serves (the vehicle docked there): a place of its hold,
+ * the lot taken out of the counter's stock; the order leaves its city.
+ */
+export function loadOrder(
   tx: Tx,
   playerId: PlayerId,
   vehicleId: string,
-  good: string,
-  qty: number,
+  city: string,
+  orderId: string,
 ): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   const v = vehicleOf(h, s, vehicleId);
-  const post = v.at ?? HOME_POST;
-  if (placeCity(post) !== null || !standingPosts(h, s).some((p) => p.id === post))
-    fail("unknown_target");
-  if (underWay(v, tx.now)) fail("building_busy");
-  if (!Number.isInteger(qty) || qty === 0) fail("invalid_quantity");
-  const have = v.cargo?.[good]?.qty ?? 0;
-  if (qty > 0) {
-    // Only what the cities' open orders ask, less what it carries already (1 November).
-    const asked = s.orders
-      ? ordersOf(tx.ctx, h, playerId, s, tx.now)
-          .flatMap((c) => c.orders)
-          .filter((o) => o.good === good)
-          .reduce((n, o) => n + o.qty - o.filled, 0)
-      : Number.POSITIVE_INFINITY;
-    if (asked <= 0) fail("not_ordered");
-    if (have + qty > asked) fail("invalid_quantity");
-    if (carried(v) + qty > holdOf(h, v, s)) fail("invalid_quantity");
-    takeAt(tx, h, playerId, post, good, qty, "empire_voyage");
-    v.cargo = { ...(v.cargo ?? {}), [good]: { qty: have + qty, from: post } };
-  } else {
-    if (-qty > have) fail("insufficient_stock");
-    putAt(tx, h, playerId, post, good, -qty, "empire_voyage", v.id);
-    setCargo(v, good, have + qty, post);
-  }
+  const post = dockedAt(h, s, v, tx.now);
+  if (!s.orders || !postsServing(h, s, city).includes(post)) fail("unknown_target");
+  if ((v.loads?.length ?? 0) >= holdOf(h, v, s)) fail("no_room");
+  const o = cityOrdersAt(tx.ctx, h, playerId, s, city, tx.now).list.find((x) => x.id === orderId);
+  if (!o) fail("not_ordered");
+  if (storeOf(tx, h, playerId, post, o.good) < o.qty) fail("insufficient_stock");
+  takeOrder(tx.ctx, h, playerId, s, city, orderId, tx.now);
+  takeAt(tx, h, playerId, post, o.good, o.qty, "empire_voyage");
+  v.loads = [...(v.loads ?? []), { ...o, from: post }];
 }
 
-function setCargo(v: Vehicle, good: string, qty: number, from: string): void {
-  const { [good]: _, ...rest } = v.cargo ?? {};
-  const next = qty > 0 ? { ...rest, [good]: { qty, from: v.cargo?.[good]?.from ?? from } } : rest;
-  v.cargo = Object.keys(next).length > 0 ? next : undefined;
+/**
+ * Unloads an order aboard at the counter the vehicle is docked at: the lot into that counter's
+ * stock, the order back to its city.
+ */
+export function unloadOrder(tx: Tx, playerId: PlayerId, vehicleId: string, orderId: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const v = vehicleOf(h, s, vehicleId);
+  const post = dockedAt(h, s, v, tx.now);
+  const o = v.loads?.find((x) => x.id === orderId);
+  if (!o) fail("not_ordered");
+  putAt(tx, h, playerId, post, o.good, o.qty, "empire_voyage", v.id);
+  returnOrder(tx.ctx, h, playerId, s, o, tx.now);
+  const rest = (v.loads ?? []).filter((x) => x !== o);
+  v.loads = rest.length > 0 ? rest : undefined;
 }
 
-/** A vehicle arrived at a city: what its orders ask of the cargo, brought and paid. */
+/** A vehicle arrived at a place: at a city, the orders of that city aboard, brought and paid. */
 function arrive(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle, leg: EmpireLeg): void {
   const s = empireSettings(tx.ctx);
   v.at = leg.to;
   const code = placeCity(leg.to);
-  if (code === null || !s.orders) return;
+  if (code === null) return;
   const c = s.map.cities.find((x) => x.code === code);
-  if (!c) return;
-  const [cx, cy] = citySpot(c, s);
-  for (const [good, load] of Object.entries(v.cargo ?? {})) {
-    const { n, gross } = fillCity(tx, h, playerId, code, good, load.qty, leg.arrivesAt);
-    if (n <= 0) continue;
-    // The way's premium: the sectors from the counter it was loaded at.
-    const post = standingPosts(h, s).find((p) => p.id === load.from);
-    const sectors = post ? Math.hypot(cx - post.x, cy - post.y) / s.map.hexSize : 0;
-    const way = Math.floor(s.orders.distanceBps * sectors);
-    const bonus = houseEffect(h, "orderBonus", s, { region: c.region, vehicleId: v.id });
-    // The Livre de route's premium on the units it loaded on the way.
-    const routed = Math.min(n, load.routed ?? 0);
-    const ledger =
-      routed > 0
-        ? applyBpsFloor(
-            (gross * BigInt(routed)) / BigInt(n),
-            houseEffect(h, "ledger", s, { vehicleId: v.id }),
-          )
-        : 0n;
-    receive(
-      tx,
-      playerId,
-      applyBpsFloor(gross, 10_000 + way + bonus) + ledger,
-      `orders:${code}:${good}`,
-    );
-    advanceCarnet(h, "deliver", n);
-    setCargo(v, good, load.qty - n, load.from);
-    if (routed > 0 && v.cargo?.[good])
-      v.cargo[good] = { ...v.cargo[good], routed: (load.routed ?? 0) - routed };
+  const here = (v.loads ?? []).filter((o) => o.city === code);
+  if (!c || here.length === 0) return;
+  const bonus = houseEffect(h, "orderBonus", s, { region: c.region, vehicleId: v.id });
+  for (const o of here) {
+    receive(tx, playerId, applyBpsFloor(o.pay, 10_000 + bonus), `orders:${code}:${o.good}`);
+    advanceCarnet(h, "deliver", o.qty);
   }
+  const rest = (v.loads ?? []).filter((o) => o.city !== code);
+  v.loads = rest.length > 0 ? rest : undefined;
 }
 
-/**
- * The hops arrived by now, every house's, in the order of their times: each arrival, and each
- * departure from a counter on the way of a vehicle carrying the Livre de route (it loads there
- * what its stops to come ask).
- */
+/** The hops arrived by now, every house's, in the order of their times. */
 export function settleMoves(tx: Tx): void {
-  const s = empireSettings(tx.ctx);
   for (const [id, h] of Object.entries(tx.s.empire?.houses ?? {})) {
-    const due: { v: Vehicle; leg: EmpireLeg; at: number; kind: "load" | "arrive" }[] = [];
-    for (const v of h.vehicles ?? []) {
-      const ledger = houseEffect(h, "ledger", s, { vehicleId: v.id }) > 0;
-      for (const leg of v.legs ?? []) {
-        if (ledger && !leg.loaded && leg.departAt <= tx.now && placeCity(leg.from) === null)
-          due.push({ v, leg, at: leg.departAt, kind: "load" });
-        if (leg.arrivesAt <= tx.now) due.push({ v, leg, at: leg.arrivesAt, kind: "arrive" });
-      }
-    }
+    const due: { v: Vehicle; leg: EmpireLeg }[] = [];
+    for (const v of h.vehicles ?? [])
+      for (const leg of v.legs ?? []) if (leg.arrivesAt <= tx.now) due.push({ v, leg });
     if (due.length === 0) continue;
-    due.sort((a, b) => a.at - b.at || (a.kind === "arrive" ? -1 : 1));
-    for (const { v, leg, at, kind } of due) {
-      if (kind === "load") {
-        leg.loaded = true;
-        const rest = (v.legs ?? []).filter((l) => l.departAt >= leg.departAt);
-        loadFor(tx, h, id, v, at, rest, true);
-        continue;
-      }
+    due.sort((a, b) => a.leg.arrivesAt - b.leg.arrivesAt);
+    for (const { v, leg } of due) {
       arrive(tx, h, id, v, leg);
       const legs = (v.legs ?? []).filter((l) => l !== leg);
       v.legs = legs.length > 0 ? legs : undefined;
@@ -308,9 +205,10 @@ export function settleMoves(tx: Tx): void {
 }
 
 /**
- * A delivery of before (`empireDeliver`) on a world of orders: a free vehicle at a counter that
- * holds the good, sent at once to the cities whose orders ask it (the given one, or the region's),
- * loaded with what they ask, no more than it holds, then back to its counter. Returns the units.
+ * A delivery of before (`empireDeliver`) on a world of orders: a free vehicle docked at a counter
+ * that holds the good, loaded with the orders of it of the cities asked (the given one, or the
+ * region's) the counter serves, no more than its places nor its stock, and sent to them at once.
+ * Returns the units.
  */
 export function autoDeliver(
   tx: Tx,
@@ -329,40 +227,25 @@ export function autoDeliver(
   for (const v of h.vehicles ?? []) {
     if (!s.vehicles[v.type] || v.porta || v.legs?.length || v.busyUntil > tx.now) continue;
     const post = v.at ?? HOME_POST;
-    if (placeCity(post) !== null) continue;
-    let room = Math.min(qty, holdOf(h, v, s) - carried(v));
-    const stops: { code: string; n: number }[] = [];
+    if (placeCity(post) !== null || !standingPosts(h, s).some((p) => p.id === post)) continue;
+    let room = holdOf(h, v, s) - (v.loads?.length ?? 0);
+    let stock = Math.min(qty, storeOf(tx, h, playerId, post, good));
+    let total = 0;
+    const stops: string[] = [];
     for (const code of cities) {
-      if (room <= 0) break;
-      if (!placePoint(h, s, cityPlace(code))) continue;
-      const n = Math.min(room, askedOf(tx.ctx, h, playerId, s, code, good, tx.now));
-      if (n <= 0) continue;
-      stops.push({ code, n });
-      room -= n;
+      if (!postsServing(h, s, code).includes(post) || !placePoint(h, s, cityPlace(code))) continue;
+      for (const o of cityOrdersAt(tx.ctx, h, playerId, s, code, tx.now).list) {
+        if (room <= 0 || o.good !== good || o.qty > stock) continue;
+        loadOrder(tx, playerId, v.id, code, o.id);
+        room--;
+        stock -= o.qty;
+        total += o.qty;
+        if (!stops.includes(code)) stops.push(code);
+      }
     }
-    const total = stops.reduce((n, x) => n + x.n, 0);
     if (total === 0) continue;
-    try {
-      takeAt(tx, h, playerId, post, good, total, "empire_voyage");
-    } catch {
-      continue;
-    }
-    const have = v.cargo?.[good]?.qty ?? 0;
-    v.cargo = { ...(v.cargo ?? {}), [good]: { qty: have + total, from: post } };
-    let at = tx.now;
-    let from = post;
-    const legs: EmpireLeg[] = [];
-    for (const place of [...stops.map((x) => cityPlace(x.code)), post]) {
-      const a = placePoint(h, s, from);
-      const b = placePoint(h, s, place);
-      if (!a || !b) continue;
-      const arrivesAt = at + hopMs(s, a, b);
-      legs.push({ from, to: place, departAt: at, arrivesAt });
-      at = arrivesAt;
-      from = place;
-    }
-    v.legs = legs;
-    v.busyUntil = at;
+    for (const code of stops) moveVehicle(tx, playerId, v.id, cityPlace(code));
+    departNow(tx, playerId, v.id);
     return total;
   }
   fail("no_liquidity");
@@ -397,4 +280,23 @@ export function retireRounds(tx: Tx): void {
     h.transfers = undefined;
     h.filled = undefined;
   }
+}
+
+/**
+ * The goods in bulk of before (the orders by good, 1 November): put back once into the counter
+ * they were loaded at (or the one the vehicle stands at, else Venice's).
+ */
+export function retireCargo(tx: Tx): void {
+  const s = empireSettings(tx.ctx);
+  for (const [id, h] of Object.entries(tx.s.empire?.houses ?? {}))
+    for (const v of h.vehicles ?? []) {
+      if (!v.cargo) continue;
+      const posts = new Set(standingPosts(h, s).map((p) => p.id));
+      for (const [good, c] of Object.entries(v.cargo)) {
+        if (c.qty <= 0) continue;
+        const post = posts.has(c.from) ? c.from : posts.has(v.at ?? "") ? (v.at ?? "") : HOME_POST;
+        putAt(tx, h, id, post, good, c.qty, "empire_voyage", v.id);
+      }
+      v.cargo = undefined;
+    }
 }

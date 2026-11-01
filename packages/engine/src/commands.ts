@@ -58,12 +58,14 @@ import {
   autoDeliver,
   cancelStop,
   departNow,
-  loadVehicle,
+  loadOrder,
   moveVehicle,
+  retireCargo,
   retireRounds,
   settleMoves,
+  unloadOrder,
 } from "./empire/moves.js";
-import { trackOrders } from "./empire/orders.js";
+import { settleOrders } from "./empire/orders.js";
 import {
   buyArm,
   buyComponent,
@@ -349,8 +351,16 @@ type EmpireCommandOf =
       slot: number;
       module: string | null;
     }
-  | { type: "empireLoad"; playerId: PlayerId; vehicleId: string; good: string; qty: number }
-  | { type: "empireUnload"; playerId: PlayerId; vehicleId: string; good: string; qty: number }
+  /** An order of a city loaded at the counter the vehicle is docked at (one place of its hold). */
+  | {
+      type: "empireLoadOrder";
+      playerId: PlayerId;
+      vehicleId: string;
+      city: string;
+      orderId: string;
+    }
+  /** An order aboard unloaded at the counter: its lot into the stock, the order back to its city. */
+  | { type: "empireUnloadOrder"; playerId: PlayerId; vehicleId: string; orderId: string }
   | {
       type: "empireDeliver";
       playerId: PlayerId;
@@ -525,6 +535,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     // The sea, the deposits and the expeditions gone: what was engaged in them, given back once.
     retireSea(tx);
     retireRounds(tx);
+    retireCargo(tx);
     settleMoves(tx);
     settleAid(tx);
     // The week's Terraferma: last week's theatres closed and paid when the week turns.
@@ -537,7 +548,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     h.favour += Math.max(0, Math.floor(cmd.favour ?? 0));
     ensureCarnet(tx, cmd.playerId, h);
     ensureMap(h, empireSettings(tx.ctx));
-    trackOrders(h, empireSettings(tx.ctx), tx.now);
+    settleOrders(tx.ctx, h, cmd.playerId, empireSettings(tx.ctx), tx.now);
     passGenerations(tx, cmd.playerId);
     return;
   }
@@ -546,7 +557,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   settleBuilds(h, tx.now);
   ensureCarnet(tx, cmd.playerId, h);
   ensureMap(h, empireSettings(tx.ctx));
-  trackOrders(h, empireSettings(tx.ctx), tx.now);
+  settleOrders(tx.ctx, h, cmd.playerId, empireSettings(tx.ctx), tx.now);
   ensureFitted(h, empireSettings(tx.ctx));
   ensureArmPlaces(h, empireSettings(tx.ctx));
   // The generations passed, then the factors' work while the house was away, before its own.
@@ -699,11 +710,11 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     case "empireCancelStop":
       cancelStop(tx, cmd.playerId, cmd.vehicleId);
       break;
-    case "empireLoad":
-      loadVehicle(tx, cmd.playerId, cmd.vehicleId, cmd.good, cmd.qty);
+    case "empireLoadOrder":
+      loadOrder(tx, cmd.playerId, cmd.vehicleId, cmd.city, cmd.orderId);
       break;
-    case "empireUnload":
-      loadVehicle(tx, cmd.playerId, cmd.vehicleId, cmd.good, -cmd.qty);
+    case "empireUnloadOrder":
+      unloadOrder(tx, cmd.playerId, cmd.vehicleId, cmd.orderId);
       break;
     case "empireBuy":
       buyGoods(tx, cmd.playerId, cmd.good, cmd.qty, cmd.post);

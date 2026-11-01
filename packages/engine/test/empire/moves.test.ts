@@ -4,9 +4,10 @@ import type { EmpireHouse, WorldState } from "../../src/state.js";
 import { HOUR, World, makeContext } from "../helpers.js";
 import { ordersEmpire as empire } from "./ordersFixture.js";
 
-// The vehicles' hops (decision of the owner, 1 November 2026, after Hades' Star): sent to a place
-// one stop after another, the first leaving ten seconds later (at once, or taken back, until then);
-// leaving a counter it loads what its cities' orders ask; at a city it brings and is paid.
+// The vehicles and the cities' orders (decision of the owner, 1 November 2026, after Hades'
+// Star): docked at a counter, a vehicle is loaded by hand with the orders of the cities the
+// counter serves, one place each, out of the counter's stock; sent hop by hop, the first leaving
+// ten seconds later; at a city it brings that city's orders, paid, and stays there.
 const SECOND = 1_000;
 
 function world() {
@@ -23,25 +24,87 @@ const stock = (w: World, good: string) => w.state.inventories.a?.[good]?.availab
 const error = (res: { ok: boolean; error?: string }) => (res.ok ? "" : res.error);
 const move = (w: World, to: string, vehicleId = id(w)) =>
   w.try({ type: "empireMove", playerId: "a", vehicleId, to });
-const settle = (w: World) => w.do({ type: "empireRelaunchAll", playerId: "a" });
-const order = (w: World, code: string) =>
-  view(w)?.orders.find((x) => x.city === code)?.orders[0] ?? {
-    good: "",
-    qty: 0,
-    filled: 0,
-    unit: 0n,
-  };
+const settle = (w: World) => w.do({ type: "empireSettle", playerId: "a" });
+const orders = (w: World, code: string) =>
+  view(w)?.orders.find((x) => x.city === code)?.orders ?? [];
+const load = (w: World, city: string, orderId: string) =>
+  w.try({ type: "empireLoadOrder", playerId: "a", vehicleId: id(w), city, orderId });
+const unload = (w: World, orderId: string) =>
+  w.try({ type: "empireUnloadOrder", playerId: "a", vehicleId: id(w), orderId });
+
+describe("loading an order", () => {
+  it("takes its lot out of the counter's stock, and the order out of its city", () => {
+    const w = world();
+    const o = orders(w, "padova")[0];
+    if (!o) throw new Error("no order");
+    w.give("a", o.good, o.qty + 5);
+    expect(error(load(w, "padova", o.id))).toBe("");
+    expect(stock(w, o.good)).toBe(5);
+    expect(orders(w, "padova")).toHaveLength(0);
+    expect(cart(w)?.loads?.map((x) => x.id)).toEqual([o.id]);
+    expect(view(w)?.vehicles.mine[0]?.loads).toHaveLength(1);
+    // Taken: no longer there to load.
+    expect(error(load(w, "padova", o.id))).toBe("not_ordered");
+  });
+
+  it("is refused while the counter lacks its lot", () => {
+    const w = world();
+    const o = orders(w, "padova")[0];
+    w.give("a", o?.good ?? "", (o?.qty ?? 1) - 1);
+    expect(error(load(w, "padova", o?.id ?? ""))).toBe("insufficient_stock");
+    expect(orders(w, "padova")).toHaveLength(1);
+  });
+
+  it("takes a place of the hold each, three on the cart", () => {
+    const w = world();
+    w.advance(48 * HOUR);
+    w.give("a", "wheat", 1_000);
+    w.give("a", "bread", 1_000);
+    const all = [...orders(w, "venezia"), ...orders(w, "padova")];
+    expect(all.length).toBeGreaterThan(3);
+    for (const o of all.slice(0, 3)) expect(error(load(w, o.city, o.id))).toBe("");
+    const fourth = all[3];
+    expect(error(load(w, fourth?.city ?? "", fourth?.id ?? ""))).toBe("no_room");
+    expect(view(w)?.vehicles.mine[0]?.capacity).toBe(3);
+  });
+
+  it("is only at a counter serving the city, the vehicle docked", () => {
+    const w = world();
+    const o = orders(w, "padova")[0];
+    w.give("a", o?.good ?? "", 100);
+    move(w, "city:padova");
+    w.advance(HOUR);
+    settle(w);
+    expect(error(load(w, "padova", o?.id ?? ""))).toBe("unknown_target");
+  });
+});
+
+describe("unloading an order", () => {
+  it("puts its lot back into the stock, and the order back in its city", () => {
+    const w = world();
+    const o = orders(w, "padova")[0];
+    w.give("a", o?.good ?? "", o?.qty ?? 0);
+    load(w, "padova", o?.id ?? "");
+    expect(error(unload(w, o?.id ?? ""))).toBe("");
+    expect(stock(w, o?.good ?? "")).toBe(o?.qty);
+    expect(orders(w, "padova").map((x) => x.id)).toEqual([o?.id]);
+    expect(cart(w)?.loads).toBeUndefined();
+    expect(error(unload(w, o?.id ?? ""))).toBe("not_ordered");
+  });
+});
 
 describe("a hop", () => {
-  it("leaves ten seconds after, loaded at its counter, and is paid at the city", () => {
+  it("leaves ten seconds after; at the city its orders are paid, and it stays", () => {
     const w = world();
-    const o = order(w, "padova");
-    w.give("a", o.good, o.qty + 5);
+    const o = orders(w, "padova")[0];
+    const other = orders(w, "venezia")[0];
+    if (!o || !other) throw new Error("no order");
+    w.give("a", o.good, 100);
+    w.give("a", other.good, 100);
+    load(w, "padova", o.id);
+    load(w, "venezia", other.id);
     const before = cash(w);
     expect(error(move(w, "city:padova"))).toBe("");
-    // Loaded at once (still at its counter): what Padua asks, out of Venice's stock.
-    expect(cart(w)?.cargo?.[o.good]?.qty).toBe(o.qty);
-    expect(stock(w, o.good)).toBe(5);
     const leg = cart(w)?.legs?.[0];
     expect(leg?.departAt).toBe(w.now + 10 * SECOND);
     // Padua stands some 42 units off: about five seconds at eight a second.
@@ -50,11 +113,12 @@ describe("a hop", () => {
     settle(w);
     expect(cart(w)?.at).toBe("city:padova");
     expect(cart(w)?.legs).toBeUndefined();
-    expect(cart(w)?.cargo).toBeUndefined();
-    // Its only order brought whole: the wave is closed.
-    expect(view(w)?.orders.find((x) => x.city === "padova")?.waves).toBe(0);
-    // Paid the unit, the way's premium on top (Padua is 1,75 sectors from Venice's counter).
-    expect(cash(w) - before).toBeGreaterThan(o.unit * BigInt(o.qty) - 1n);
+    // Padua's order paid (its pay, less what the house owes on its income); Venice's stays aboard.
+    expect(cash(w) - before).toBeGreaterThan((o.pay * 9n) / 10n);
+    expect(cash(w) - before).toBeLessThanOrEqual(o.pay);
+    expect(cart(w)?.loads?.map((x) => x.id)).toEqual([other.id]);
+    // At a city, nothing is unloaded.
+    expect(error(unload(w, other.id))).toBe("unknown_target");
   });
 
   it("leaves at once when asked, and a stop not begun is taken back", () => {
@@ -66,7 +130,7 @@ describe("a hop", () => {
     expect(cart(w)?.legs).toHaveLength(1);
     w.do({ type: "empireDepartNow", playerId: "a", vehicleId: id(w) });
     expect(cart(w)?.legs?.[0]?.departAt).toBe(w.now);
-    // Under way: the hop begun is not taken back, nor left again.
+    // Under way: the hop begun is not taken back, nor left again, nor loaded.
     w.advance(SECOND);
     expect(error(w.try({ type: "empireCancelStop", playerId: "a", vehicleId: id(w) }))).toBe(
       "building_busy",
@@ -74,6 +138,9 @@ describe("a hop", () => {
     expect(error(w.try({ type: "empireDepartNow", playerId: "a", vehicleId: id(w) }))).toBe(
       "building_busy",
     );
+    const o = orders(w, "venezia")[0];
+    w.give("a", o?.good ?? "", 100);
+    expect(error(load(w, "venezia", o?.id ?? ""))).toBe("building_busy");
   });
 
   it("queues fifteen stops at most, each leaving when the one before arrives", () => {
@@ -97,82 +164,25 @@ describe("a hop", () => {
   });
 });
 
-describe("the cargo", () => {
-  it("is loaded by hand only with what the cities order, and unloaded freely", () => {
+describe("what was carried before", () => {
+  it("goes back once into its counter: the goods in bulk, then the rounds", () => {
     const w = world();
-    const all = view(w)?.orders.flatMap((c) => c.orders) ?? [];
-    const good = all[0]?.good ?? "";
-    const asked = all.filter((o) => o.good === good).reduce((n, o) => n + o.qty - o.filled, 0);
-    const other = w.ctx.theme.resources
-      .map((r) => r.code)
-      .find((g) => !all.some((o) => o.good === g));
-    w.give("a", good, 100);
-    if (other) w.give("a", other, 10);
-    const load = (qty: number, g = good, type: "empireLoad" | "empireUnload" = "empireLoad") =>
-      w.try({ type, playerId: "a", vehicleId: id(w), good: g, qty });
-    // A good no city orders: refused (1 November).
-    if (other) expect(error(load(1, other))).toBe("not_ordered");
-    // No more than the orders ask, nor than the hold.
-    expect(error(load(asked + 1))).toBe("invalid_quantity");
-    const n = Math.min(asked, 30, 5);
-    expect(error(load(n))).toBe("");
-    expect(stock(w, good)).toBe(100 - n);
-    expect(error(load(n + 1, good, "empireUnload"))).toBe("insufficient_stock");
-    expect(error(load(n, good, "empireUnload"))).toBe("");
-    expect(cart(w)?.cargo).toBeUndefined();
-    expect(stock(w, good)).toBe(100);
-  });
-
-  it("stays aboard at a city that does not ask it, and is not loaded there", () => {
-    const w = world();
-    const of = (code: string) =>
-      view(w)
-        ?.orders.find((x) => x.city === code)
-        ?.orders.map((o) => o.good) ?? [];
-    const good = of("venezia").find((g) => !of("padova").includes(g)) ?? of("venezia")[0] ?? "";
-    const asks = of("padova").includes(good);
-    w.give("a", good, 10);
-    w.do({ type: "empireLoad", playerId: "a", vehicleId: id(w), good, qty: 1 });
-    move(w, "city:padova");
-    w.advance(HOUR);
-    settle(w);
-    if (!asks) expect(cart(w)?.cargo?.[good]?.qty).toBe(1);
-    expect(
-      error(w.try({ type: "empireLoad", playerId: "a", vehicleId: id(w), good, qty: 1 })),
-    ).toBe("unknown_target");
-  });
-});
-
-describe("the rounds of before", () => {
-  it("are settled once: the goods still on the road come back to their counter", () => {
-    const w = world();
-    const salt = view(w)?.orders[0]?.orders[0]?.good ?? "";
-    w.give("a", salt, 10);
-    // A round of before, its goods taken out of the stock (the ledger of stocks kept whole).
-    w.do({ type: "empireLoad", playerId: "a", vehicleId: id(w), good: salt, qty: 10 });
+    const o = orders(w, "venezia")[0];
+    if (!o) throw new Error("no order");
+    w.give("a", o.good, o.qty);
+    // Its lot aboard in bulk, as before (taken out of the stock through the movements).
+    load(w, "venezia", o.id);
     const state = structuredClone(w.state) as WorldState;
     const h = state.empire?.houses.a as EmpireHouse;
     const v = h.vehicles?.[0];
     if (!v) throw new Error("no cart");
-    v.cargo = undefined;
-    v.busyUntil = w.now + HOUR;
-    h.tours = [
-      {
-        id: "r1",
-        vehicleId: v.id,
-        post: "home",
-        period: 0,
-        leftAt: w.now,
-        stops: [{ city: "padova", order: 0, good: salt, qty: 10, at: w.now + HOUR }],
-        backAt: w.now + HOUR,
-      },
-    ];
-    h.filled = { period: 0, cities: {} };
+    v.loads = undefined;
+    v.cargo = { [o.good]: { qty: o.qty, from: "home" } };
+    h.orders = { venezia: { next: 0, seq: 0, list: [], waves: [] } };
     w.state = state;
     settle(w);
-    expect(stock(w, salt)).toBe(10);
-    expect(house(w).tours).toBeUndefined();
-    expect(house(w).filled).toBeUndefined();
-    expect(cart(w)?.busyUntil).toBeLessThanOrEqual(w.now);
+    expect(stock(w, o.good)).toBe(o.qty);
+    expect(cart(w)?.cargo).toBeUndefined();
+    expect(orders(w, "venezia").length).toBeGreaterThan(0);
   });
 });

@@ -124,13 +124,13 @@ describe("a model's level", () => {
     expect(upgradeCost(h, "cart", s)).toBe(500n * 2n * 100n);
   });
 
-  it("raises the hold of every vehicle of the model by a tenth a level, up to the fifth", () => {
+  it("raises the hold of every vehicle of the model by a place a level, up to the fifth", () => {
     const d = withDepot();
     const hold = () => empireView(d.ctx, d.state, "a", d.now)?.vehicles.mine[0]?.capacity ?? 0;
     const base = hold();
     for (let i = 0; i < 4; i++)
       d.do({ type: "empireUpgradeVehicle", playerId: "a", vehicleType: "cart" });
-    expect(hold()).toBe(Math.floor((base * 14_000) / 10_000));
+    expect(hold()).toBe(base + 4);
     const view = empireView(d.ctx, d.state, "a", d.now)?.vehicles.shop.find(
       (v) => v.type === "cart",
     );

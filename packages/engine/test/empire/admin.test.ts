@@ -5,6 +5,7 @@ import {
   type Player,
   cashAccount,
   empireHouseAt,
+  empireView,
 } from "../../src/index.js";
 import { testEmpire } from "../fixture.js";
 import { MIN, World, makeContext } from "../helpers.js";
@@ -13,6 +14,8 @@ const empire: EmpireSettingsInput = {
   ...testEmpire,
   start: { capitalDucats: 10_000, workshops: [{ type: "farm", recipe: "grow_wheat" }] },
   vehicles: { cart: { casa: 1, capacity: 30, costDucats: 100, regions: ["veneto"], speedBps: 0 } },
+  // The cities' orders at their defaults: the farm's wheat.
+  orders: {},
 };
 
 function world() {
@@ -44,13 +47,27 @@ describe("the admin's hand", () => {
     edit(w, { kind: "vehicle", vehicleType: "cart" });
     edit(w, { kind: "vehicle", vehicleType: "cart" });
     const [a, b] = house(w).vehicles ?? [];
-    // A cargo aboard, loaded out of Venice's stock.
-    w.give("a", "bread", 4);
-    w.do({ type: "empireLoad", playerId: "a", vehicleId: a?.id ?? "", good: "bread", qty: 4 });
-    expect(w.state.inventories.a?.bread?.available).toBe(0);
+    // An order aboard, its lot loaded out of Venice's stock.
+    const o = empireView(w.ctx, w.state, "a", w.now)?.orders[0]?.orders[0];
+    if (!o) throw new Error("no order");
+    w.give("a", o.good, o.qty);
+    w.do({
+      type: "empireLoadOrder",
+      playerId: "a",
+      vehicleId: a?.id ?? "",
+      city: o.city,
+      orderId: o.id,
+    });
+    expect(w.state.inventories.a?.[o.good]?.available).toBe(0);
     expect(edit(w, { kind: "removeVehicle", vehicleId: a?.id ?? "" }).ok).toBe(true);
     expect(house(w).vehicles?.map((x) => x.id)).toEqual([b?.id]);
-    expect(w.state.inventories.a?.bread?.available).toBe(4);
+    expect(w.state.inventories.a?.[o.good]?.available).toBe(o.qty);
+    // The order back in its city.
+    expect(
+      empireView(w.ctx, w.state, "a", w.now)
+        ?.orders.find((c) => c.city === o.city)
+        ?.orders.map((x) => x.id),
+    ).toContain(o.id);
     expect(edit(w, { kind: "removeVehicle", vehicleId: "nope" }).ok).toBe(false);
   });
 

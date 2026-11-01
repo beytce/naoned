@@ -1,5 +1,6 @@
 import { empireJoin, empireSettings, ownHouse, settleBuilds } from "./empire/house.js";
 import { regionSeat, revealedBy, settlePost, standingPosts } from "./empire/map.js";
+import { returnOrder } from "./empire/orders.js";
 import { HOME_POST, putAt } from "./empire/stores.js";
 import { cancelAllOrders } from "./market.js";
 import type { Deniers } from "./money.js";
@@ -188,6 +189,11 @@ function editHouse(tx: Tx, playerId: PlayerId, edit: AdminEdit): void {
       const into = v.at && posts.includes(v.at) && !(v.legs ?? []).length ? v.at : HOME_POST;
       for (const [good, c] of Object.entries(v.cargo ?? {}))
         putAt(tx, h, playerId, into, good, c.qty, "empire_voyage", v.id);
+      // Its orders aboard: their lots into that stock, the orders back to their cities.
+      for (const o of v.loads ?? []) {
+        putAt(tx, h, playerId, into, o.good, o.qty, "empire_voyage", v.id);
+        returnOrder(tx.ctx, h, playerId, s, o, tx.now);
+      }
       h.vehicles = (h.vehicles ?? []).filter((x) => x.id !== v.id);
       for (const m of h.staff ?? []) if (m.placedAt === v.id) m.placedAt = undefined;
       break;

@@ -376,14 +376,27 @@ export interface EmpireLeg {
   loaded?: boolean;
 }
 
+/** An order of a city (after Hades' Star's shipments): a fixed lot, one place of a hold. */
+export interface EmpireOrder {
+  id: string;
+  city: string;
+  good: string;
+  qty: number;
+  /** Its pay at the delivery, before the house's premiums. */
+  pay: Deniers;
+}
+
 /**
- * A city's orders for a house: a wave each period while fewer than the cap are open; each wave
- * its quantities (drawn at its period) and what was brought of them.
+ * A city's orders for a house: those waiting, and when the next comes (one every interval of the
+ * city's size, while fewer than its cap wait). Of before: `waves`, dropped once.
  */
-export interface EmpireCityWaves {
-  /** The next period whose wave is still to come. */
+export interface EmpireCityOrders {
   next: number;
-  waves: { period: number; qty: number[]; filled: number[] }[];
+  /** The orders drawn so far: the next one's number. */
+  seq: number;
+  list: EmpireOrder[];
+  /** Of before (the waves): dropped at the first command after the orders. */
+  waves?: unknown;
 }
 
 /** Of before: a vehicle's planned round from its counter to the cities' orders, and back. */
@@ -451,8 +464,10 @@ export interface EmpireHouse {
     porta?: PortaPlace;
     /** Where it stands (the map that grows): a counter's id, or `city:<code>`; Venice's when absent. */
     at?: string;
-    /** What it carries, by good, with the counter it was loaded at (the way's premium). */
+    /** Of before (goods in bulk): put back into their counter once. */
     cargo?: Record<string, { qty: number; from: string; routed?: number }>;
+    /** The orders aboard, each a place of its hold, delivered at their city. */
+    loads?: (EmpireOrder & { from: string })[];
     /** Its stops to come, hop by hop (after Hades' Star): each leaves when the one before arrives. */
     legs?: EmpireLeg[];
   }[];
@@ -465,8 +480,8 @@ export interface EmpireHouse {
   filled?: { period: number; cities: Record<string, number[]> };
   /** Of before (the planned rounds): settled once at the first command after the hops. */
   tours?: EmpireTour[];
-  /** The cities' orders, wave by wave (after Hades' Star): those still open, by city. */
-  orders?: Record<string, EmpireCityWaves>;
+  /** The cities' orders (after Hades' Star): those waiting, by city. */
+  orders?: Record<string, EmpireCityOrders>;
   /** The deposits its teams work, by id. */
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */

@@ -2,11 +2,20 @@ import type { EmpireSettingsInput } from "../../src/index.js";
 import { testEmpire } from "../fixture.js";
 
 // The cities' orders and the vehicles' hops on the fixture (1 November 2026, after Hades' Star):
-// Venice (size 3) at (0, 0), Padua (size 1) at (≈ 21, 36), both within Venice's reach (50).
+// Venice (size 3) at (0, 0), Padua (size 1) at (≈ 21, 36), both within Venice's reach (50). The
+// house starts with a farm (wheat, 4 ducats in Venetia) and a bakery (bread, 12 ducats): lots of
+// 10 wheat and 3 bread for 40 ducats.
 export const ordersEmpire: EmpireSettingsInput = {
   ...testEmpire,
   casa: testEmpire.casa.map((c) => ({ ...c, materials: {}, buildMinutes: 0, costDucats: 0 })),
-  start: { capitalDucats: 10_000, workshops: [], vehicles: ["cart"] },
+  start: {
+    capitalDucats: 10_000,
+    workshops: [
+      { type: "farm", recipe: "grow_wheat" },
+      { type: "bakery", recipe: "bake_bread" },
+    ],
+    vehicles: ["cart"],
+  },
   map: {
     ...testEmpire.map,
     cities: (testEmpire.map?.cities ?? []).map((c) =>
@@ -14,15 +23,15 @@ export const ordersEmpire: EmpireSettingsInput = {
     ),
     reach: { base: 50, perLevel: 10 },
   },
-  vehicles: { cart: { casa: 1, capacity: 30, costDucats: 100, regions: ["veneto"], speedBps: 0 } },
+  vehicles: {
+    cart: { casa: 1, capacity: 30, places: 3, costDucats: 100, regions: ["veneto"], speedBps: 0 },
+  },
   orders: {
-    periodMinutes: 120,
-    perSize: [1, 2, 3, 4, 5],
-    qtyPerSize: 4,
+    cap: [2, 3, 4, 5, 6],
+    everyMinutes: [120, 100, 60, 50, 40],
+    lotDucats: 40,
+    lots: {},
     premiumBps: 2_000,
-    sizeBps: 500,
-    distanceBps: 1_000,
-    maxWaves: 6,
   },
   moves: { departSeconds: 10, unitsPerSecond: 8, maxStops: 15 },
 };

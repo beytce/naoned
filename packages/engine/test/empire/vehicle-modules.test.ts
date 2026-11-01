@@ -17,6 +17,10 @@ const empire = {
   ...ordersEmpire,
   start: { capitalDucats: 1_000_000, workshops: [], vehicles: ["cart", "cart"] },
   vehicleLevels: { max: 5, stepBps: 1_000, costTimes: 1, minCostDucats: 0 },
+  // A hold of ten places: the Agrandissement's tenth is a place.
+  vehicles: {
+    cart: { casa: 1, capacity: 30, places: 10, costDucats: 100, regions: ["veneto"], speedBps: 0 },
+  },
   map: { ...ordersEmpire.map, depot: { costDucats: 200, casa: 1, minutes: 60 } },
 };
 const s = parseEmpireSettings(empire);
@@ -78,6 +82,6 @@ describe("a trade module", () => {
   it("raises a vehicle's hold as the view shows it", () => {
     const w = world({ hold: 1 });
     const mine = empireView(w.ctx, w.state, "a", w.now)?.vehicles.mine ?? [];
-    expect(mine[0]?.capacity).toBe(33);
+    expect(mine[0]?.capacity).toBe(11);
   });
 });
