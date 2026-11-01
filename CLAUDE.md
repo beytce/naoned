@@ -18,11 +18,14 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage qui fait
 - Production calculée paresseusement à la lecture, pas par le tick.
 - Toute opération de marché = une transaction SQL unique, sérialisée par un verrou transactionnel par (world_id, resource).
 - Paramètres d'équilibrage dans worlds.settings (JSON), jamais en dur.
-- On ne vend jamais de temps ni de puissance : ni ducats, ni ressources, ni Sceaux, ni accélération, ni chantier ou file en plus, ni avantage dans les bandes, à la Terraferme ou à la Contesa. L'abonnement ne donne que de l'information, du confort et du cosmétique (CADRAGE-v3 § 10).
-- Le commerce est persistant, sans remise à zéro : rien de bâti ne se perd (seule exception : un véhicule engagé à la Porta, perdu s'il tombe dans les terres de Rome, docs/plan-porta.md), on ne punit jamais l'absence (aucun coût qui court pendant l'absence). Seule la Terraferme a des saisons courtes, d'une semaine ; `worlds.ends_at` ne borne plus le commerce.
+- Les règles d'or (CADRAGE-v3 § 2, version Hades' Star du 1er novembre 2026) font foi pour toute mécanique.
+- Le temps s'achète, la puissance jamais : les perle (monnaie précieuse, achetée ou gagnée en jouant) n'accélèrent que les chantiers et les recherches. On ne vend jamais ni ducats, ni marchandises, ni modules, ni plans, ni reliques, ni Sceaux, ni chantier ou place en plus ; la Terraferme et la Contesa restent à armes égales.
+- Le commerce est persistant, sans remise à zéro : personne ne pille ni ne prend ce qui est bâti. Seule perte : à la Porta, un véhicule encore dans les terres de Rome à la fermeture, ou tombé à la Porta noire choisie (hors de la Porta noire, un véhicule détruit au combat rentre abîmé). L'absence ne coûte rien, mais stocks, production et commandes plafonnent. Seule la Terraferme a des saisons courtes, d'une semaine ; `worlds.ends_at` ne borne plus le commerce.
 - Toute compétition se joue par bande de Puissance (calculée sur ce qui est bâti, jamais sur la caisse).
+- Tout se voit : toute fonctionnalité ou mode de jeu est d'abord visuel (sur la carte, objets qu'on touche, mouvements, animations). Ni tableur ni jeu de texte : chiffres et listes accompagnent l'image, jamais ne la remplacent.
 
 ## Façon de travailler
+- Chaque système absorbe les anciens au lieu de s'y ajouter : une douzaine de systèmes visibles, pas trente.
 - Commencer chaque tâche en mode plan, attendre validation avant de coder.
 - Écrire les tests avant le code pour packages/engine. Les tests du moteur utilisent la fixture figée test/fixture.ts, jamais les paramètres de Venise.
 - Tout changement d'équilibrage se valide au simulateur de 24 mois (toutes les graines) et se documente dans docs/calibration.md.
