@@ -163,3 +163,12 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 - **Les bonus de livraison** à la Hades' Star : une commande entière payée 10 % de plus, un « Jour de foire » après 10 livraisons, la vitesse vers l'arrêt suivant. Écartés du chantier 1 par le porteur ; à revoir avec les modules (chantier 2).
 - **Le relais automatique** (un commis qui livre seul, un peu moins bien qu'à la main) : jamais vendu. À rediscuter : CLAUDE.md interdit de vendre le confort qui donne de la puissance.
 - **La montée d'une ville nouvellement servie**, sur trois jours (docs/hades-star/01, § 4).
+
+## Audit de profondeur (1er novembre 2026), en attente des décisions du porteur
+Détail et ordre proposé dans `docs/audit-profondeur-2026-11-01.md` (un plancher bas pour le joueur du dimanche, un plafond haut pour l'acharné).
+- Lire : chiffres dépliables, aperçu de la paie au départ, Registre de 7 jours, écran Simple / Détaillé.
+- Le puzzle de la tournée : « Tracer » et la note de tournée, bonus de tournée (écart cible de 10 à 20 % au simulateur), le prochain geste.
+- L'échelle : le Libro d'oro (rendement par bande, records), la saison du chapitre au seuil, les Distinctions.
+- Le build : modules à double tranchant, équipements enregistrés, désapprendre à la Scuola et déménager un comptoir (une fois par ère).
+- Ensemble : la Grande Commande de compagnie (48 h, un week-end par mois), les modules des associés, le roulage, le don de reliques.
+- Le réseau : relais de poste, vocations des comptoirs, commandes de la cour, Gageures de la semaine, le commis.
