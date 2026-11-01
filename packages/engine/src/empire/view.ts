@@ -44,6 +44,7 @@ import {
   revealedOf,
   sectorCost,
   standingPosts,
+  unlockedOf,
 } from "./map.js";
 import { researchCost, researchMinutesOf } from "./modules.js";
 import { type CityOrders, ordersOf } from "./orders.js";
@@ -277,6 +278,8 @@ export interface EmpireMapView {
   transferUnitsPerHour: number;
   /** The cities the house's counters serve. */
   covered: string[];
+  /** The sectors the house owns: its vehicles go anywhere there (the hops). */
+  unlocked: string[];
   /** The sectors it may buy next (the sectors bought one by one), with the price of the next. */
   buyable: { cell: string; region: string; coast: boolean; casa: number }[];
   sectorCost: Deniers;
@@ -651,6 +654,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     postSpacing: s.map.postSpacing,
     transferUnitsPerHour: s.map.transferUnitsPerHour,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
+    unlocked: unlockedOf(house, s),
     buyable: buyableOf(house, s).map((cell) => {
       const c = s.map.cells[cell];
       return {

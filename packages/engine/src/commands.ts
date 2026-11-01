@@ -330,6 +330,8 @@ type EmpireCommandOf =
       to: string;
     }
   | { type: "empireDepartNow"; playerId: PlayerId; vehicleId: string }
+  /** Nothing but what every command settles first: the hops arrived, the sites ended. */
+  | { type: "empireSettle"; playerId: PlayerId }
   | { type: "empireCancelStop"; playerId: PlayerId; vehicleId: string }
   | { type: "empireLoad"; playerId: PlayerId; vehicleId: string; good: string; qty: number }
   | { type: "empireUnload"; playerId: PlayerId; vehicleId: string; good: string; qty: number }
@@ -667,6 +669,8 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireMove":
       moveVehicle(tx, cmd.playerId, cmd.vehicleId, cmd.to);
+      break;
+    case "empireSettle":
       break;
     case "empireDepartNow":
       departNow(tx, cmd.playerId, cmd.vehicleId);
