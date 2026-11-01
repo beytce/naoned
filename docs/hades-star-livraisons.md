@@ -49,6 +49,8 @@
 - glisser un véhicule sur une ville l'ouvre directement ;
 - « Partir », l'action en or, lance la tournée.
 
+**Un seul métier** (1er novembre) : la mer, les gisements et les expéditions sont retirés ; les commandes, livrées en tournées, sont le cœur du jeu, et une ville commande davantage quand le comptoir qui la sert monte de niveau.
+
 **Les différences voulues** :
 - les commandes sont **propres à chaque joueur**, et sans course entre joueurs ;
 - elles sont **tirées des besoins de la région**, même si aucun comptoir voisin ne fabrique la marchandise : cela donne leur sens aux transferts entre comptoirs et au marché ;

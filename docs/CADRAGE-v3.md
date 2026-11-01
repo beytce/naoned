@@ -164,6 +164,8 @@ Les dix régions, dans l'ordre d'ouverture :
 
 ### 3.3 Le charroi et la flotte
 
+> **Décision du porteur du 1er novembre 2026 — un seul métier, livrer.** Les gisements, les expéditions et la mer (navires, convois, Muda, colleganza, corsaires, assurance) sont retirés de l'empire ; l'Arsenal aussi. Il ne reste que les charrettes, achetées et améliorées à la Remise, qui livrent les commandes des villes en tournées et portent le stock d'un comptoir à l'autre. Ce qu'une Maison y avait engagé lui a été rendu une fois (cargaisons, mises, enchères, navires et Arsenal à leur prix, recherches des modules retirés). Les hauts niveaux de recherche ne demandent plus de plans. Ce qui suit dans cette section sur la mer n'a plus cours.
+
 | Véhicule | Ouvert à (Casa) | Capacité | Trajets | Modules | Fabriqué par |
 | --- | --- | --- | --- | --- | --- |
 | Mule | 1 | 25 | Vénétie, 1 à 3 h | 0 | On l'achète |

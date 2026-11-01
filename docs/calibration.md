@@ -2068,6 +2068,33 @@ Ce sont les niveaux des **navires** qui déplacent l'équilibre : sans eux, on r
   - **la sortie de la première bande** (6,0 à 6,2 mois pour 4 à 6) et le prochain palier en jours de revenu frôlent leurs bornes ;
   - les cibles déjà manquées avant (puits ÷ sources des jeunes, bruts vendus à Venise) le restent.
 
+### Un seul métier : livrer (1er novembre 2026, le soir)
+
+**Ce qui change** :
+- les gisements, les expéditions et la mer sont retirés ; les bots n'ont plus qu'un profil ;
+- **une ville commande davantage quand le comptoir qui la sert monte de niveau** (`counters.bookStepBps`, 40 % par niveau, comme l'ancien carnet). Sans cela, le revenu plafonnait une fois les villes proches couvertes, et la première cohorte calait après la Casa 10 (la Casa 13 vers 494 jours) ;
+- **les cibles** perdent la part des métiers, la marge des voyages, la colleganza et le rattrapage des cohortes tardives (décision du porteur), et gagnent la part des commandes (40 à 70 %).
+
+**Essais** (graine 1, cohortes de 50) :
+
+| Essai | Cibles | Remarque |
+| --- | --- | --- |
+| Sans gain par niveau | 4 sur 9 | la première cohorte cale après la Casa 10 |
+| 2 unités par taille, sans prime, 3 % par taille | 6 sur 9 | la première cohorte cale encore en fin de partie |
+| **Gain de 40 % par niveau** (1 unité par taille, 15 %) | 5 sur 9 | le calendrier tient |
+| Gain de 20 % par niveau | 4 sur 9 | la fin de partie cale de nouveau |
+| Gain de 30 % par niveau | 4 sur 9 | la fin (Casa 15 à 19) trop vite |
+
+**Retenu, sur 3 graines (cohortes de 200)** : **4, 5 et 4 cibles sur 9**.
+
+- **Le calendrier de la Casa** de la première cohorte tient presque : la Casa 20 vers 680 jours, soit environ deux ans. Seuls les paliers 14 à 16 de la graine 1 (environ la moitié de la cible) et le 19 de la graine 3 sortent des bornes.
+- **Les cohortes tardives**, aidées par le rattrapage, atteignent la Casa 20 en 225 à 330 jours (cible retirée).
+- **Ce qui manque** :
+  - le prochain palier, à 1,1 jour de revenu certains mois (pour 2 à 7) ;
+  - la sortie de la première bande de Puissance, à 2,1 mois (pour 4 à 6) ;
+  - la part des commandes, à 74 à 75 % (la cible de 40 à 70 % supposait d'autres revenus, qui n'existent plus) ;
+  - puits ÷ sources des jeunes Maisons, comme toujours.
+
 ### Refaire le calibrage
 
 ```

@@ -146,3 +146,7 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 - Des comptoirs rivaux sur une même case, entre joueurs d'une bande (un comptoir y prend une part du carnet de l'autre).
 - Des villes qui grandissent quand on les livre souvent (leur carnet monte).
 - Des cases de mer à explorer (épaves, routes plus courtes), par les navires.
+
+## Un seul métier (1er novembre 2026), à repenser plus tard
+- **Le classement** ne se fera plus sur les ventes, mais sur d'autres éléments, à définir (décision du porteur : « on y réfléchira plus tard »).
+- La mer, les gisements et les expéditions, retirés : à revoir seulement s'ils servent les commandes des villes.
