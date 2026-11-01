@@ -94,6 +94,7 @@ const ERRORS: Record<string, string> = {
   pseudo_taken: "pseudo déjà pris",
   invalid_edit: "requête invalide",
   forbidden: "accès réservé",
+  vehicle_busy: "bataille de la Porta en cours, réessayer à sa fin",
 };
 
 /** Deniers (a string, never a float) written as ducats. */
@@ -662,6 +663,43 @@ function EmpireEditor({
   );
 }
 
+/** The house back to zero: typed confirmation, then the engine's `reset` (empire only). */
+function ResetZone({ name, busy, edit }: { name: string; busy: boolean; edit: (e: Edit) => void }) {
+  const [typed, setTyped] = useState("");
+  const ready = typed.trim() === name;
+  return (
+    <Panel className="ring-1 ring-vermilion/50">
+      <Label>Danger</Label>
+      <p className="mt-1 text-xs text-cream-dim">
+        Réinitialiser à zéro : la Maison redevient celle d'un nouveau venu (Casa 1, ateliers et
+        capital de départ). Caisse et stocks sortent par le grand livre ; cote de la Terraferme,
+        Lustre et palier de Condotta reviennent au départ. Le pseudo, le Pass et la compagnie
+        restent (sans rôle : un Capo passe la main). Irréversible.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <input
+          className="min-w-0 flex-1 rounded-lg bg-night-3 px-3 py-2 text-sm ring-1 ring-line"
+          placeholder={`Taper « ${name} » pour confirmer`}
+          value={typed}
+          onChange={(ev) => setTyped(ev.target.value)}
+          aria-label="Confirmation de la réinitialisation"
+        />
+        <button
+          type="button"
+          className={`${button} bg-vermilion text-cream hover:brightness-110`}
+          disabled={busy || !ready}
+          onClick={() => {
+            setTyped("");
+            edit({ kind: "reset" });
+          }}
+        >
+          Réinitialiser à zéro
+        </button>
+      </div>
+    </Panel>
+  );
+}
+
 function PlayerSheet({ id, onChanged }: { id: string; onChanged: () => void }) {
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [busy, setBusy] = useState(false);
@@ -779,6 +817,7 @@ function PlayerSheet({ id, onChanged }: { id: string; onChanged: () => void }) {
           <AccountEditor sheet={sheet} busy={busy} run={run} />
         </div>
       </div>
+      {sheet.empire && <ResetZone name={a.pseudo ?? "RÉINITIALISER"} busy={busy} edit={edit} />}
     </div>
   );
 }
