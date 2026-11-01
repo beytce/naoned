@@ -35,10 +35,11 @@ import { ActionPanel } from "./map/ActionPanel.js";
 import { BottomSlot } from "./map/BottomSlot.js";
 import { EmpireMap, type EmpireMapHandle, type Picked } from "./map/EmpireMap.js";
 import { Hud } from "./map/Hud.js";
+import { OrdersPanel } from "./map/OrdersPanel.js";
 import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
 import { RoundButtons } from "./map/RoundButtons.js";
-import { type Placing, type Target, canCasa } from "./map/logic.js";
+import { type Placing, type Target, type TourDraft, canCasa } from "./map/logic.js";
 import { inTutorial, nextStep } from "./next.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
@@ -82,6 +83,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // Putting a counter or the Arsenal down: the map lights the cells, a touch picks one.
   const [placing, setPlacing] = useState<Placing | null>(null);
   const [picked, setPicked] = useState<Picked | null>(null);
+  // The round being made (after Hades' Star): a vehicle, its stops, the city shown.
+  const [tour, setTour] = useState<TourDraft | null>(null);
   const map = useRef<EmpireMapHandle>(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -194,7 +197,17 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         now={now}
         busy={busy}
         act={act}
-        onTarget={(x) => !placing && setTarget(x)}
+        onTarget={(x) => {
+          if (placing) return;
+          // A vehicle chosen: a round begins; a city touched during a round: its orders to load.
+          if (x?.kind === "vehicle") {
+            setTarget(null);
+            setTour({ vehicleId: x.id, stops: [], focus: null });
+          } else if (x?.kind === "city" && tour) setTour({ ...tour, focus: x.code });
+          else if (!x && tour) setTour(tour.stops.length > 0 ? tour : null);
+          else setTarget(x);
+        }}
+        tour={tour}
         placing={placing}
         picked={picked}
         onPick={setPicked}
@@ -211,7 +224,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
 
       {/* The foot of the map: the round buttons, a place's panel, or the bar of placing. */}
       <BottomSlot
-        id={placing ? "placing" : target ? "panel" : "idle"}
+        id={placing ? "placing" : tour ? "tour" : target ? "panel" : "idle"}
         hidden={sheet !== null || good !== null}
       >
         {placing ? (
@@ -225,6 +238,20 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               setPlacing(null);
               setPicked(null);
             }}
+          />
+        ) : tour || (target?.kind === "city" && p.view?.map.tourUnitsPerMinute) ? (
+          <OrdersPanel
+            p={p}
+            now={now}
+            busy={busy}
+            act={act}
+            city={tour ? tour.focus : target?.kind === "city" ? target.code : null}
+            tour={tour}
+            onTour={(next) => {
+              setTour(next);
+              if (next) setTarget(null);
+            }}
+            onClose={() => setTarget(null)}
           />
         ) : target ? (
           <ActionPanel

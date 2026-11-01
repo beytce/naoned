@@ -109,7 +109,7 @@ try {
     // The map at the centre: the whole screen, Venice's sector across it, inhabited (step 4).
     await page.waitForSelector("[data-map=empire]");
     // The map that grows: Venice's sector alone, with Padua beside Venice, and Venice's reach.
-    if ((await page.locator("[data-city]").count()) !== 1)
+    if ((await page.locator("[data-city]:not([data-city=venezia])").count()) !== 1)
       faults.push(`${label}: Venice's sector without Padua, or with more`);
     if ((await page.locator("[data-reach-of=home]").count()) !== 1)
       faults.push(`${label}: no reach drawn around Venice`);
@@ -333,6 +333,22 @@ try {
     // The market sells no vehicle (1 November).
     if ((await page.locator("[data-market] ~ * [data-model]").count()) > 0)
       faults.push(`${label}: vehicles at the market`);
+    // The cities' orders (after Hades' Star): Padua's ring, its orders touched; a cart chosen
+    // lights the towns within its reach.
+    await page.locator("[data-city=padova]").first().click();
+    await page.locator("[data-orders-panel=padova] [data-order]").first().waitFor();
+    if ((await page.locator("[data-city=padova] [data-fill-ring]").count()) === 0)
+      faults.push(`${label}: no ring of orders around Padua`);
+    await shot("14-commandes");
+    await page.locator("[data-vehicle]").first().dispatchEvent("pointerdown");
+    await page.locator("[data-vehicle]").first().dispatchEvent("pointerup");
+    await page.mouse.up();
+    await page.locator("[data-touring]").waitFor();
+    if ((await page.locator("[data-tour-target]").count()) === 0)
+      faults.push(`${label}: no town lit for the round`);
+    await shot("15-tournee");
+    await page.locator("[data-touring] button[aria-label]").first().click();
+    await page.locator("[data-touring]").waitFor({ state: "detached" });
     // A sector next to Venice's to buy (1 November): its edge touched, its panel.
     await page.locator("[data-round=recenter]").click();
     await page.waitForTimeout(500);

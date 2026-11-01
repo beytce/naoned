@@ -319,6 +319,8 @@ export interface EmpireMapView {
   postSpacing: number;
   /** A land vehicle between two counters: so many units an hour. */
   transferUnitsPerHour: number;
+  /** A vehicle on a round to the cities' orders: so many units a minute (none: no orders). */
+  tourUnitsPerMinute: number | null;
   /** The cities the house's counters serve. */
   covered: string[];
   /** The sectors it may buy next (the sectors bought one by one), with the price of the next. */
@@ -330,7 +332,7 @@ export interface EmpireMapView {
   /** The Campo's cell, the door of the Terraferma. */
   camp: string | null;
   /** The cities found, on their cell, at their point. */
-  cities: { code: string; cell: string; region: string; x: number; y: number }[];
+  cities: { code: string; cell: string; region: string; x: number; y: number; size: number }[];
   /** How far a counter reveals. */
   radius: number;
   /** The Arsenal to build: its ducats, its minutes, its Casa; null once it stands or without one. */
@@ -746,6 +748,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     reach: s.map.reach,
     postSpacing: s.map.postSpacing,
     transferUnitsPerHour: s.map.transferUnitsPerHour,
+    tourUnitsPerMinute: s.orders?.unitsPerMinute ?? null,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
     buyable: buyableOf(house, s).map((cell) => {
       const c = s.map.cells[cell];
@@ -774,7 +777,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
       .filter((c) => seen.has(c.cell))
       .map((c) => {
         const [x, y] = citySpot(c, s);
-        return { code: c.code, cell: c.cell, region: c.region, x, y };
+        return { code: c.code, cell: c.cell, region: c.region, x, y, size: c.size };
       }),
     radius: s.map.revealRadius,
     arsenalSite:

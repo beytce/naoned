@@ -164,7 +164,15 @@ export function startTour(
   v.busyUntil = backAt;
   h.tours = [
     ...(h.tours ?? []),
-    { id: nextId(tx, "r"), vehicleId, post: post.id, period, stops: timed, backAt },
+    {
+      id: nextId(tx, "r"),
+      vehicleId,
+      post: post.id,
+      period,
+      leftAt: tx.now,
+      stops: timed,
+      backAt,
+    },
   ];
 }
 

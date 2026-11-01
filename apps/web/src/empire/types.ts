@@ -86,6 +86,25 @@ export interface EmpireView {
   map: EmpireMapView;
   /** Each counter's stock, Venice's first (the map that grows). */
   stores: { post: string; region: string; goods: Record<string, number> }[];
+  /** The orders of the cities its counters serve (after Hades' Star's shipments). */
+  orders: {
+    city: string;
+    region: string;
+    size: number;
+    orders: { good: string; qty: number; filled: number; unit: string }[];
+    fillBps: number;
+    renewsAt: number;
+  }[];
+  /** Its vehicles' rounds to the cities, stop by stop. */
+  tours: {
+    id: string;
+    vehicleId: string;
+    post: string;
+    period: number;
+    leftAt: number;
+    stops: { city: string; order: number; good: string; qty: number; at: number; done?: boolean }[];
+    backAt: number;
+  }[];
   /** The goods on the road between two counters. */
   transfers: {
     id: string;
@@ -288,6 +307,8 @@ export interface EmpireMapView {
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
   transferUnitsPerHour: number;
+  /** A vehicle on a round to the cities' orders: units a minute (none: no orders). */
+  tourUnitsPerMinute: number | null;
   /** The sectors it may buy next, and the price of the next. */
   buyable: { cell: string; region: string; coast: boolean; casa: number }[];
   sectorCost: string;
@@ -296,7 +317,15 @@ export interface EmpireMapView {
   sites: { kind: "post" | "arsenal" | "camp" | "depot"; cell: string; endsAt: number }[];
   arsenal: string | null;
   camp: string | null;
-  cities: { code: string; cell: string; region: string; x: number; y: number }[];
+  cities: {
+    code: string;
+    cell: string;
+    region: string;
+    x: number;
+    y: number;
+    /** 1 (a market town) to 5 (a capital): its bubble, its orders. */
+    size?: number;
+  }[];
   radius: number;
   arsenalSite: { cost: string; minutes: number; casa: number } | null;
   campSite: { cost: string; minutes: number; casa: number } | null;
@@ -358,6 +387,11 @@ export type EmpireAction =
   | { type: "empireSell"; good: string; qty: number; region?: string }
   | { type: "empireBuy"; good: string; qty: number; post?: string }
   | { type: "empireTransfer"; vehicleId: string; to: string; good: string; qty: number }
+  | {
+      type: "empireTour";
+      vehicleId: string;
+      stops: { city: string; order: number; qty: number }[];
+    }
   | { type: "empireDeliver"; good: string; qty: number; region?: string; city?: string }
   | { type: "empireClaim"; index: number }
   | { type: "empirePlaceCounter"; cell: string }

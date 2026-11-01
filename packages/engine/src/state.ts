@@ -371,6 +371,7 @@ export interface EmpireTour {
   vehicleId: string;
   post: string;
   period: number;
+  leftAt: number;
   stops: {
     city: string;
     order: number;

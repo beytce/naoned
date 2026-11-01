@@ -283,6 +283,24 @@ const frDict = {
       family: "Famille",
       allWorkshops: "Tous les ateliers",
     },
+    /** The cities' orders and the rounds (1 November, after Hades' Star). */
+    orders: {
+      round: "Tournée",
+      cityLine: (region: string, size: number, pct: number) =>
+        `${region} · ville de taille ${size} · commandes remplies à ${pct} %`,
+      outOfReach: "Hors du champ de vos comptoirs : posez-en un plus près.",
+      chooseCity: (post: string) => `Depuis ${post} : touchez une ville éclairée pour la charger.`,
+      filled: (n: number, of: number) => `${n} / ${of}`,
+      unit: (cost: string) => `${cost} l'unité`,
+      load: "Charger",
+      done: "Livrée",
+      load_: (n: number, of: number) => `Chargement ${n} / ${of}`,
+      minutes: (n: number) => `${n} min`,
+      go: "Partir",
+      noStock: "pas en stock au comptoir",
+      noVehicle: "aucun véhicule libre à portée",
+      renews: (at: string) => `Nouvelles commandes à ${at}`,
+    },
     market: {
       kicker: "Le négoce",
       title: "Le Marché",

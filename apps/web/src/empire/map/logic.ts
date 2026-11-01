@@ -192,7 +192,9 @@ export type Target =
   | { kind: "arsenal" }
   | { kind: "depot" }
   /** A sector to buy, next to one's own (1 November). */
-  | { kind: "sector"; cell: string };
+  | { kind: "sector"; cell: string }
+  /** A vehicle chosen for a round (after Hades' Star). */
+  | { kind: "vehicle"; id: string };
 
 export type ActionIcon =
   | "harvest"
@@ -363,6 +365,8 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
       ];
     case "depot":
       return [{ id: "vehicles", icon: "cart", words: { key: "vehicles" }, open: "remise" }];
+    case "vehicle":
+      return [];
     case "sector": {
       const b = view.map.buyable.find((x) => x.cell === target.cell);
       if (!b) return [];
@@ -431,4 +435,103 @@ export function postPoint(p: EmpirePayload, post: string): [number, number] | nu
   if (post === "home") return [map.home.x, map.home.y];
   const x = map.posts.find((q) => q.id === post);
   return x ? [x.x, x.y] : null;
+}
+
+/** A round being made (after Hades' Star): the vehicle, its stops in order. */
+export interface TourDraft {
+  vehicleId: string;
+  stops: { city: string; order: number; qty: number }[];
+  /** The city whose orders are shown to load. */
+  focus: string | null;
+}
+
+/** The counter a vehicle stands at, with its point and its reach. */
+export function vehiclePost(
+  p: EmpirePayload,
+  vehicleId: string,
+): { id: string; x: number; y: number; reach: number } | null {
+  const map = p.view?.map;
+  const v = p.view?.vehicles.mine.find((x) => x.id === vehicleId);
+  if (!map || !v) return null;
+  if (v.at === "home") return { id: "home", ...map.home };
+  const post = map.posts.find((x) => x.id === v.at);
+  return post ? { id: post.id, x: post.x, y: post.y, reach: post.reach } : null;
+}
+
+/** The cities a vehicle may bring orders to: those within its counter's reach. */
+export function tourCities(p: EmpirePayload, vehicleId: string): string[] {
+  const at = vehiclePost(p, vehicleId);
+  if (!at) return [];
+  return (p.view?.map.cities ?? [])
+    .filter((c) => (c.x - at.x) ** 2 + (c.y - at.y) ** 2 <= at.reach * at.reach)
+    .map((c) => c.code);
+}
+
+/** What an order still asks, less what the round being made already carries to it. */
+export function orderLeft(
+  p: EmpirePayload,
+  tour: TourDraft | null,
+  city: string,
+  i: number,
+): number {
+  const o = p.view?.orders.find((x) => x.city === city)?.orders[i];
+  if (!o) return 0;
+  const planned = (tour?.stops ?? [])
+    .filter((s) => s.city === city && s.order === i)
+    .reduce((n, s) => n + s.qty, 0);
+  return Math.max(0, o.qty - o.filled - planned);
+}
+
+/** The round's load against the vehicle's hold. */
+export function tourLoad(p: EmpirePayload, tour: TourDraft): { load: number; hold: number } {
+  const v = p.view?.vehicles.mine.find((x) => x.id === tour.vehicleId);
+  return { load: tour.stops.reduce((n, s) => n + s.qty, 0), hold: v?.capacity ?? 0 };
+}
+
+/** What the vehicle's counter holds of a good, less what the round already takes of it. */
+export function tourStock(p: EmpirePayload, tour: TourDraft, good: string): number {
+  const v = p.view?.vehicles.mine.find((x) => x.id === tour.vehicleId);
+  const held = p.view?.stores.find((x) => x.post === v?.at)?.goods[good] ?? 0;
+  const orders = p.view?.orders ?? [];
+  const taken = tour.stops
+    .filter((s) => orders.find((o) => o.city === s.city)?.orders[s.order]?.good === good)
+    .reduce((n, s) => n + s.qty, 0);
+  return Math.max(0, held - taken);
+}
+
+/** The round's minutes: from the counter through each city, and back. */
+export function tourMinutes(p: EmpirePayload, tour: TourDraft): number {
+  const at = vehiclePost(p, tour.vehicleId);
+  const speed = p.view?.map.tourUnitsPerMinute ?? 0;
+  if (!at || speed <= 0) return 0;
+  let from: [number, number] = [at.x, at.y];
+  let units = 0;
+  for (const s of tour.stops) {
+    const c = p.view?.map.cities.find((x) => x.code === s.city);
+    if (!c) continue;
+    units += Math.hypot(c.x - from[0], c.y - from[1]);
+    from = [c.x, c.y];
+  }
+  units += Math.hypot(at.x - from[0], at.y - from[1]);
+  return units / speed;
+}
+
+/** A free land vehicle of a counter that serves the city, the one holding most of a good first. */
+export function vehicleFor(
+  p: EmpirePayload,
+  city: string,
+  now: number,
+  good?: string,
+): string | null {
+  const view = p.view;
+  if (!view) return null;
+  const land = view.vehicles.mine.filter(
+    (v) => !view.vehicles.shop.find((s) => s.type === v.type)?.build && v.busyUntil <= now,
+  );
+  const ok = land.filter((v) => tourCities(p, v.id).includes(city));
+  const held = (id: string) => {
+    const at = view.vehicles.mine.find((v) => v.id === id)?.at;
+    return good ? (view.stores.find((x) => x.post === at)?.goods[good] ?? 0) : 0;
+  };
+  return [...ok].sort((a, b) => held(b.id) - held(a.id))[0]?.id ?? null;
 }

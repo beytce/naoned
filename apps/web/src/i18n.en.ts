@@ -363,6 +363,24 @@ export const en: Dictionary = {
       family: "Family",
       allWorkshops: "All workshops",
     },
+    /** The cities' orders and the rounds (1 November, after Hades' Star). */
+    orders: {
+      round: "Round",
+      cityLine: (region: string, size: number, pct: number) =>
+        `${region} · a town of size ${size} · orders ${pct} % filled`,
+      outOfReach: "Out of your counters' reach: put one closer.",
+      chooseCity: (post: string) => `From ${post}: touch a lit town to load it.`,
+      filled: (n: number, of: number) => `${n} / ${of}`,
+      unit: (cost: string) => `${cost} a unit`,
+      load: "Load",
+      done: "Delivered",
+      load_: (n: number, of: number) => `Load ${n} / ${of}`,
+      minutes: (n: number) => `${n} min`,
+      go: "Go",
+      noStock: "none in stock at the counter",
+      noVehicle: "no free vehicle in reach",
+      renews: (at: string) => `New orders at ${at}`,
+    },
     market: {
       kicker: "Trade",
       title: "The Market",
