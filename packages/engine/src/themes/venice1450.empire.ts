@@ -252,7 +252,9 @@ export const venice1450Empire: EmpireSettingsInput = {
   // a wave, a capital five.
   orders: {
     periodMinutes: 120,
-    perSize: [1, 2, 3, 4, 5],
+    // One to four orders a wave by the town's size (the waves piling up, five at the capital ran
+    // the end of the game a year ahead: calibration.md, 1 November, the hops).
+    perSize: [1, 2, 2, 3, 4],
     // One unit a size at the least (at five, the Casa ran far ahead of its calendar; at a
     // premium of 30 %, the first months too: calibration.md).
     qtyPerSize: 1,
