@@ -291,7 +291,50 @@ function landCapacity(w: World, h: House): number {
     .reduce((n, v) => n + holdOf(w, h, v.type), 0);
 }
 
+/**
+ * The cities' orders (1 November, after Hades' Star's shipments): in a session, the orders of the
+ * period of the cities its counters serve, as many as each town's size, of its region's goods;
+ * brought on a few rounds of its carts, from what it holds there. A period it does not play is
+ * simply missed.
+ */
+function deliverOrders(w: World, h: House) {
+  const o = w.s.orders;
+  if (!o) return;
+  let cap = landCapacity(w, h) * w.m.roundsPerSession;
+  const covered = citiesCovered(seen(h), w.s);
+  const convoy = effectOf(h.modules, "orderBonus", w.s) + identityEffect(w, h, "orderBonus");
+  for (const c of w.s.map.cities) {
+    if (cap <= 0) return;
+    if (!covered.has(c.code)) continue;
+    const r = w.s.regions.find((x) => x.code === c.region);
+    if (!r) continue;
+    const goods = Object.keys(r.demands);
+    if (goods.length === 0) continue;
+    const size = Math.min(5, Math.max(1, c.size));
+    // The expected orders of a period: so many of each good of the region.
+    const asked = ((o.perSize[size - 1] ?? 1) * o.qtyPerSize * size * 3) / 2 / goods.length;
+    for (const good of goods) {
+      if (cap <= 0) return;
+      if (!homesOf(h, good).has(c.region)) continue;
+      const n = Math.min(Math.floor(asked), h.stock.get(good) ?? 0, cap);
+      if (n <= 0) continue;
+      takeStock(h, good, n);
+      cap -= n;
+      const ref = r.demands[good] ?? 0n;
+      const bps = 10_000 + o.premiumBps + o.sizeBps * (size - 1) + o.distanceBps + convoy;
+      const gross = applyBpsFloor(ref * BigInt(n), bps);
+      receive(w, h, gross, "orders", "orders");
+      h.ordersValue += gross;
+      h.favour += Number(gross / (100n * DENIERS_PER_DUCAT)) * w.m.favourPer100Ducats;
+    }
+  }
+}
+
 function deliver(w: World, h: House, sinceHours: number) {
+  if (w.s.orders) {
+    deliverOrders(w, h);
+    return;
+  }
   let cap = Math.floor(
     (landCapacity(w, h) * w.s.localTripsPerDay * Math.min(DAY, sinceHours)) / DAY,
   );
@@ -330,6 +373,8 @@ function fillOrders(
   qty: number,
   trade: Trade,
 ): number {
+  // A world of orders has no daily book nor board: what a ship brings sells at the Dogana.
+  if (w.s.orders) return 0;
   const convoy = effectOf(h.modules, "orderBonus", w.s) + identityEffect(w, h, "orderBonus");
   const small = h.casa <= w.m.smallCasa;
   const mk = market(w, region, good);

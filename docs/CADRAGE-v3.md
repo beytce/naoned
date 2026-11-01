@@ -112,6 +112,13 @@ Les dix régions, dans l'ordre d'ouverture :
 
 **La carte** (décisions du porteur du 31 octobre 2026, « la carte au centre du jeu » puis « la carte qui grandit ») est une grille de **grands secteurs** hexagonaux sur la Méditerranée : une soixantaine de secteurs de terre, chacun dans une région, **deux villes au plus par secteur**. Un secteur que la mer touche est une côte.
 
+- **Les cases s'achètent de proche en proche** (décision du porteur du 1er novembre 2026) : une case voisine d'une case à soi, ou une côte à une ou deux cases de mer d'une côte à soi, de plus en plus chère, et dans une région que la Casa a atteinte. **Chaque case a une ville au moins, deux au plus** ; une quarantaine de cases et 68 villes, de la bourgade (taille 1) à la capitale (taille 5).
+- **Les commandes des villes**, à la manière des cargaisons de Hades' Star (`docs/hades-star-livraisons.md`), remplacent le carnet :
+  - chaque ville qu'un comptoir sert passe de 1 à 5 commandes selon sa taille, **renouvelées toutes les 2 h** ;
+  - on les remplit par **des tournées** : un véhicule charge au comptoir, visite les villes dans l'ordre en quelques minutes, puis rentre ;
+  - chaque unité est payée à l'arrivée, avec une prime pour la taille de la ville et la distance ;
+  - ce qui n'est pas livré disparaît, sans coût. La Dogana reste, plus bas, pour vendre en gros.
+- **L'Arsenal disparaît** : les navires se construisent à la Remise, seul bâtiment des véhicules.
 - **Ce qu'on voit.** Au départ, **le seul secteur de Venise, avec Venise et Padoue**. Le reste est dans le brouillard, sauf, pour **chaque région que la Casa a atteinte**, **son secteur le plus proche de ce qu'on connaît déjà**.
 - **Le comptoir se pose où l'on veut** dans un secteur qu'on voit, à l'écart des autres comptoirs. Il a **un cercle d'action**, qui grandit avec son niveau : il ne livre que les villes de ce cercle. Où le poser devient un choix.
 - **Le carnet d'une région** se partage entre ses villes ; on en tient la part des villes **dans le cercle d'un de ses comptoirs**. Venise, la capitale, pèse dix fois une autre ville dans le carnet de Vénétie.
@@ -607,6 +614,8 @@ La charte en Faveur disparaît (§ 3.4). Les effets qui l'allégeaient (lettres,
 - **de la texture** dans les secteurs développés ;
 - **plus de cases à l'écart** : la région atteinte apparaît au bord du connu (§ 3.4) ;
 - **la Remise** (terre) et **l'Arsenal** (mer) achètent et améliorent les véhicules : un niveau de modèle de 1 à 5, +10 % de capacité par niveau, pour tous les véhicules du type (§ 3.4).
+
+**Le 1er novembre**, sur la vidéo de Hades' Star : les cases s'achètent de proche en proche, une ville au moins par case ; l'Arsenal disparaît ; **les commandes des villes, renouvelées toutes les 2 h, se livrent en tournées** (une ville touchée, un véhicule touché ou glissé, « Partir ») ; un anneau autour de chaque ville montre leur remplissage, et la taille de sa bulle, celle de la ville ; le champ d'un comptoir couvre sa case et ses voisines ; le Campo touché ouvre la Terraferme ; les véhicules ne s'achètent qu'à la Remise. Le porteur veut une progression longue : le sommet vers un an de jeu régulier.
 
 **La nuit**, l'objectif : **une grande carte qui se développe avec le temps**.
 - **deux villes seulement dans le secteur de départ** (Venise et Padoue), les autres à découvrir ; de grandes cases, sur une carte plus vaste ;

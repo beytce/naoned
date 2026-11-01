@@ -2040,6 +2040,34 @@ Ce sont les niveaux des **navires** qui déplacent l'équilibre : sans eux, on r
 
 **Ce que le simulateur ne modélise pas** : le délai d'un transfert (quelques heures), et le charroi propre à chaque comptoir (il compte toujours un charroi pour toute la Maison). Les deux avantagent un peu le modèle sur le joueur ; à surveiller sur les premières semaines de jeu.
 
+### Les commandes des villes et les cases de proche en proche (1er novembre 2026) — à arbitrer
+
+- **La carte** : 42 cases, chacune avec une ou deux villes (68 villes, tailles 1 à 5). On achète une case voisine des siennes, à 300 ducats, puis 20 % de plus pour chaque case déjà à soi.
+- **Le champ** d'un comptoir : 36 unités de carte (sa case et une partie des voisines), et 8 de plus par niveau.
+- **Les commandes** remplacent le carnet :
+  - par période de 2 h, une ville de taille *t* passe *t* commandes, chacune de *t* à 2*t* − 1 unités d'une marchandise de sa région ;
+  - la paie est le prix de référence, plus 15 % de prime, 5 % par taille au-dessus de 1, et 8 % par case de distance au comptoir.
+- **Le simulateur** livre, à chaque séance, les commandes de la période dans les villes couvertes. Il est borné par 3 tournées de ses charrettes et par son stock. Une période sans séance est perdue.
+
+**Essais** (graine 1, cohortes de 50) :
+
+| Commandes | Prime | Cibles | Part des commandes | Remarque |
+| --- | --- | --- | --- | --- |
+| 5 unités par taille | 30 % | 4 sur 12 | 56 % | la Casa bien trop vite (12 paliers hors bornes) |
+| 2 ou 3 unités par taille | 30 % | 4 sur 12 | 57 % | idem |
+| 1 unité par taille | 30 % | 6 sur 12 | 46 % | la Casa 5 à 8 trop vite pour la première cohorte |
+| **1 unité par taille** | **15 %** | **7 sur 12** | **43 %** | le calendrier tient |
+| 1 unité, moins de commandes (1, 1, 2, 3, 4) | 30 % | 4 sur 12 | 31 % | trop lent pour les cohortes tardives |
+
+**Retenu, sur 3 graines (cohortes de 200)** : **7, 6 et 6 cibles sur 12**. Les commandes font **42 à 45 %** des recettes.
+
+- **Ce qui tient** : le calendrier de la Casa, donc le sommet vers un an et demi à deux ans de jeu régulier pour la première cohorte ; la marge des voyages ; les convois en colleganza ; l'indice des prix.
+- **Ce qui manque, à arbitrer** :
+  - **la part du métier** s'effondre. Le négociant ne tire plus que 5 % de ses recettes des voyages, l'exploitant 17 % des gisements. Les commandes, devenues le cœur du jeu, dominent tous les métiers ;
+  - **les cohortes tardives** ne rattrapent plus les premières (−20 à +16 % au lieu de +20 à 40 %). Le rattrapage allégeait des coûts que les commandes ne connaissent pas ;
+  - **la sortie de la première bande** (6,0 à 6,2 mois pour 4 à 6) et le prochain palier en jours de revenu frôlent leurs bornes ;
+  - les cibles déjà manquées avant (puits ÷ sources des jeunes, bruts vendus à Venise) le restent.
+
 ### Refaire le calibrage
 
 ```

@@ -327,8 +327,10 @@ export const venice1450Empire: EmpireSettingsInput = {
   orders: {
     periodMinutes: 120,
     perSize: [1, 2, 3, 4, 5],
-    qtyPerSize: 5,
-    premiumBps: 3_000,
+    // One unit a size at the least (at five, the Casa ran far ahead of its calendar; at a
+    // premium of 30 %, the first months too: calibration.md).
+    qtyPerSize: 1,
+    premiumBps: 1_500,
     sizeBps: 500,
     distanceBps: 800,
     unitsPerMinute: 15,
