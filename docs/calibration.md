@@ -2206,3 +2206,19 @@ pnpm --filter @comptoirs/simulator empire --cohort 30     # rapide (≈ 30 s), p
   - puits ÷ sources des jeunes Maisons, à 0,80–0,81, juste au bord de la cible.
 - **À affiner ensuite** : le coût des Casa 15 à 20 plutôt que les commandes. Les commandes règlent le début et le milieu de partie, et un coût de fin plus haut rendrait les deux ans sans ralentir les premiers mois.
 
+
+### Les modules montés sur les véhicules (1er novembre 2026, le soir)
+
+**Ce qui change** :
+- les modules de commerce ne valent que sur les charrettes qui les portent, une place par niveau du modèle ;
+- le simulateur monte ses modules sur toutes ses charrettes, et la prime de convoi compte autant que la moins équipée la porte ;
+- le Livre de route ajoute sa prime sur 30 % des unités (`ledgerShareBps`) ;
+- le Fouet et l'Estafette ne changent pas le revenu au simulateur, parce que les commandes y sont la borne.
+
+**Sur 3 graines (cohortes de 200)** : **7, 7 et 5 cibles sur 9**, contre 7, 6 et 5 avant ce changement.
+- **La Casa 20** de la première cohorte arrive vers 352–492 jours (contre 366–464 avant).
+- **Les cibles manquées** restent les mêmes :
+  - le prochain palier, à 0,9–1,1 jour de revenu certains mois (pour 2 à 7) ;
+  - la sortie de la première bande de Puissance, à 3,0–3,1 mois (pour 4 à 6) ;
+  - la fin de partie, un peu rapide (graine 3).
+- **La suite** : la recalibration de la fin de partie, par le coût des Casa 15 à 20.
