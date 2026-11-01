@@ -55,9 +55,14 @@ Ils s'achètent à la Remise, comme les transports, mais restent à part des vé
 
 | Modèle | Casa | Prix | PV | Vitesse (cases/min) | Places de composants |
 | --- | --- | --- | --- | --- | --- |
-| Cavalier | 9 | 1 500 ducats | 1 200 | 6 | 1 |
-| Chariot de guerre | 11 | 4 000 ducats | 3 000 | 4 | 2 |
-| Grand chariot armé | 14 | 10 000 ducats | 6 500 | 3 | 3 |
+| Cavalier | 9 | 1 500 ducats | 1 200 | 6 | 1 arme |
+| Chariot de guerre | 11 | 4 000 ducats | 3 000 | 4 | 1 arme, 1 défense |
+| Grand chariot armé | 14 | 10 000 ducats | 6 500 | 3 | 1 arme, 1 défense, 1 soutien |
+
+- **Les places typées** (décision du 1er novembre 2026, d'après les cuirassés de Hades' Star) :
+  - une place ne prend que les composants de son type (`wrong_place`) ;
+  - le modèle gagne une place de soutien à ses niveaux 3 et 5 (`modelLevels.supportAt`) ;
+  - un composant d'avant posé sur une place d'un autre type revient à la Remise, sans perte.
 
 - Un véhicule de combat **sans arme ne tire pas** : il ne fait qu'encaisser.
 - Les véhicules de combat **comptent dans la Puissance** comme ce qui est bâti. Une perte la fait baisser.
