@@ -22,7 +22,15 @@ import {
   lotYieldBps,
 } from "./curves.js";
 import { houseEffect } from "./effects.js";
-import { capacityOf, holdPlacesOf, upgradeCost, vehicleLevelOf } from "./fleet.js";
+import {
+  capacityOf,
+  depotLevelOf,
+  fleetCapOf,
+  holdPlacesOf,
+  nextDepotLevel,
+  upgradeCost,
+  vehicleLevelOf,
+} from "./fleet.js";
 import {
   counterCostOf,
   empireHouseAt,
@@ -74,6 +82,13 @@ export interface EmpireView {
   house: EmpireHouse;
   /** The Porta and its arms (docs/plan-porta.md). */
   porta: PortaView;
+  /** The fleet capped by the Remise's level (null without the fleet's levels). */
+  fleet: {
+    level: number;
+    vehicles: number;
+    cap: number;
+    next: { level: number; vehicles: number; casa: number; cost: Deniers; minutes: number } | null;
+  } | null;
   power: number;
   band: number;
   /** Receipts a day (the last full days), in deniers. */
@@ -274,11 +289,14 @@ export interface EmpireMapView {
     reach: number;
   }[];
   /** Venice's own counter, likewise. */
-  home: { x: number; y: number; level: number; reach: number };
+  /** The first fondaco: `placed` once the player put it down. */
+  home: { x: number; y: number; level: number; reach: number; cell: string; placed: boolean };
   /** The hexes' size, the reach at each level (none: no reach), the spacing of the counters. */
   hexSize: number;
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
+  /** No fondaco closer than this to a town. */
+  cityClearance: number;
   /** A land vehicle between two counters: so many units an hour. */
   transferUnitsPerHour: number;
   /** The cities the house's counters serve. */
@@ -431,6 +449,14 @@ export function empireView(
     regions: regionsOf(house, s),
     map: mapOf(house, s),
     porta: portaViewOf(house, s, now),
+    fleet: s.fleet
+      ? {
+          level: depotLevelOf(house),
+          vehicles: (house.vehicles ?? []).length,
+          cap: fleetCapOf(house, s),
+          next: nextDepotLevel(house, s),
+        }
+      : null,
     stores: storesOf(state.inventories[playerId], house, s),
     orders: ordersOf(ctx, house, playerId, s, now),
     moves: s.moves,
@@ -652,11 +678,19 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
       .map((p) => ({ ...p, reach: reachOf(p.level, s) })),
     home: (() => {
       const h = homePost(house, s);
-      return { x: h.x, y: h.y, level: h.level, reach: reachOf(h.level, s) };
+      return {
+        x: h.x,
+        y: h.y,
+        level: h.level,
+        reach: reachOf(h.level, s),
+        cell: h.cell,
+        placed: house.home !== undefined,
+      };
     })(),
     hexSize: s.map.hexSize,
     reach: s.map.reach,
     postSpacing: s.map.postSpacing,
+    cityClearance: s.map.cityClearance,
     transferUnitsPerHour: s.map.transferUnitsPerHour,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
     unlocked: unlockedOf(house, s),

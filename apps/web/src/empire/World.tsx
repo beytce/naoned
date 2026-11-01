@@ -217,6 +217,7 @@ export function Charroi({
   // Without its Remise, the house buys no land vehicle and raises no model.
   const noDepot = view.map.depot === null && view.map.depotSite !== null;
   const site = view.map.depotSite;
+  const full = view.fleet ? view.fleet.vehicles >= view.fleet.cap : false;
   return (
     <section className="mt-5" data-charroi>
       <Label>{c.title}</Label>
@@ -238,6 +239,9 @@ export function Charroi({
             </Slab>
           )}
         </div>
+      )}
+      {view.fleet && view.map.depot !== null && (
+        <FleetGauge p={p} fleet={view.fleet} busy={busy} act={act} />
       )}
       <ul className="mt-2 flex flex-wrap gap-2">
         {view.vehicles.mine.map((v) => {
@@ -278,10 +282,10 @@ export function Charroi({
                       size="sm"
                       tone="ghost"
                       busy={busy}
-                      disabled={noDepot || !affordable(p.cash, s.cost)}
+                      disabled={noDepot || full || !affordable(p.cash, s.cost)}
                       onClick={() => void act({ type: "empireBuyVehicle", vehicleType: s.type })}
                     >
-                      {c.buy(d(s.cost))}
+                      {full ? c.full : c.buy(d(s.cost))}
                     </Slab>
                   )}
                 </div>
@@ -293,6 +297,61 @@ export function Charroi({
           })}
       </ul>
     </section>
+  );
+}
+
+/**
+ * The fleet the Remise holds (after Hades' Star's shipyard): a cart drawn a place, filled when a
+ * vehicle stands in it, and the Remise's next level.
+ */
+function FleetGauge({
+  p,
+  fleet,
+  busy,
+  act,
+}: {
+  p: EmpirePayload;
+  fleet: NonNullable<NonNullable<EmpirePayload["view"]>["fleet"]>;
+  busy: boolean;
+  act: Act;
+}) {
+  const c = t.charroi;
+  const raising = p.view?.house.builds.find((b) => b.kind === "depot");
+  const next = fleet.next;
+  const places = Math.max(fleet.cap, fleet.vehicles);
+  return (
+    <div
+      className="mt-2 space-y-2 rounded-lg bg-night-2 p-3 ring-1 ring-inset ring-line/70"
+      data-fleet={`${fleet.vehicles}/${fleet.cap}`}
+    >
+      <div className="flex flex-wrap gap-1" aria-hidden>
+        {Array.from({ length: places }, (_, i) => (
+          <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: the places are only counted
+            key={i}
+            className={`h-3 w-5 rounded-sm ${i < fleet.vehicles ? "bg-gold" : "bg-night-4 ring-1 ring-inset ring-line"}`}
+          />
+        ))}
+      </div>
+      <p className="text-xs text-cream-dim">{c.fleet(fleet.vehicles, fleet.cap, fleet.level)}</p>
+      {raising ? (
+        <Badge tone="lagoon">{c.raising(hourOf(raising.endsAt))}</Badge>
+      ) : next === null ? (
+        <p className="text-xs font-semibold text-lagoon">{c.fleetTop}</p>
+      ) : (p.view?.house.casa ?? 1) < next.casa ? (
+        <p className="text-xs text-cream-dim">{c.opensAt(next.casa)}</p>
+      ) : (
+        <Slab
+          size="sm"
+          tone="ghost"
+          busy={busy}
+          disabled={!affordable(p.cash, next.cost)}
+          onClick={() => void act({ type: "empireUpgradeDepot" })}
+        >
+          {c.raise(next.vehicles, d(next.cost), minutesLabel(next.minutes))}
+        </Slab>
+      )}
+    </div>
   );
 }
 
