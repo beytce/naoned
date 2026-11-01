@@ -2222,3 +2222,46 @@ pnpm --filter @comptoirs/simulator empire --cohort 30     # rapide (≈ 30 s), p
   - la sortie de la première bande de Puissance, à 3,0–3,1 mois (pour 4 à 6) ;
   - la fin de partie, un peu rapide (graine 3).
 - **La suite** : la recalibration de la fin de partie, par le coût des Casa 15 à 20.
+
+### Les commandes comme des cargaisons (1er novembre 2026, la nuit) — calibrage incomplet
+
+**Ce qui change** (`docs/hades-star/05-commandes.md`) :
+- **Le remplissage** : une ville se remplit d'une commande à chaque intervalle, jusqu'à un plafond fixé par sa taille.
+- **Une commande** est un lot d'une marchandise que font les ateliers de la maison, et elle prend **une place** de soute.
+- **Les places** : mulet 2, charrette 3, chariot 5, burchio 6, +1 par niveau du modèle.
+- **Au simulateur**, une séance trouve les commandes venues depuis la précédente, dans la limite du plafond. Les charrettes en chargent autant que leurs places × `roundsPerSession`.
+
+**Référence** : la branche sans ce changement (`ce8c7b5`), graine 1, cohortes de 50, atteint **7 cibles sur 9**. La Casa 5 y vient en 6,9 jours et la Casa 8 en 23.
+
+**Essais** (graine 1, cohortes de 50) :
+
+| Lot | Plafonds | Paliers | Autre | Cibles | Casa 5 / 8 / 20 (jours) | Part des commandes |
+| --- | --- | --- | --- | --- | --- | --- |
+| 40 d | 3–10 | — | — | 3 sur 9 (cohortes de 200) | hors bornes | 49 % |
+| 100 d | 3–10 | — | — | 4 sur 9 | 1,9 / 4,7 / hors bornes | 68 % |
+| **80 d** | **3–14** | — | — | **4 sur 9** | **1,9 / 4,7 / 636** | **66 %** |
+| 130 d | 3–10 | — | — | 4 sur 9 | 13 paliers hors bornes | 70 % |
+| 20 d | 3–14 | ×2, ×5, ×8 | — | 3 sur 9 | 1,9 / 4,7 / 556 | 60 % |
+| 25 d | 3–10 | ×2, ×4, ×6 | — | 3 sur 9 | 1,9 / 5,2 / — | 58 % |
+| 8 d | 3–10 | ×4, ×10, ×15 | — | 3 sur 9 | 1,9 / 6,7 / 593 | 55 % |
+| 8 d | 3–10 | ×4, ×10, ×15 | 4 tournées par séance | 4 sur 9 | 1,9 / 12,7 / — | 42 % |
+
+**Retenu** : un lot de 80 ducats, des plafonds de 3, 5, 8, 11 et 14, sans paliers. Sur 3 graines (cohortes de 50) : **4, 4 et 4 cibles sur 9**.
+- **Ce qui tient** :
+  - la part des commandes, de 65 à 66 % ;
+  - le calendrier des Casa 9 à 20, sauf la fin de partie de la graine 2, plus lente ;
+  - l'indice des prix et la Terraferme.
+- **Ce qui manque** :
+  - **les Casa 5 à 8 viennent trop tôt** (1,9 à 4,7 jours, pour 7 à 30) ;
+  - le prochain palier, à 0,6–3,9 jours de revenu ;
+  - la première bande de Puissance, quittée en 1,4 mois (pour 4 à 6) ;
+  - puits ÷ sources des jeunes Maisons, à 0,95 (pour 0,6 à 0,8) ;
+  - les bruts des jeunes, à 5 % (pour 10 %).
+- **Le diagnostic** : la vitesse des Casa 5 à 8 ne suit pas la valeur des commandes. Elle reste à 1,9 jour pour la Casa 5 avec un lot de 5 comme de 130 ducats. Elle vient du modèle des bots :
+  - **avant**, la soute se comptait en unités. Les commandes la dépassaient, et les bots achetaient tôt des charrettes et la Remise, qui absorbaient leur caisse ;
+  - **maintenant**, un mulet de 2 places chargé 10 fois par séance couvre toutes les commandes d'une jeune maison. Les bots n'achètent plus rien d'autre que leur Casa.
+- **La suite**, à arbitrer par le porteur :
+  - relever le coût des Casa 5 à 8 ;
+  - ou réduire `roundsPerSession` (charger à la main, commande par commande, prend plus de temps qu'un chargement automatique), en relevant le lot pour garder le milieu de partie ;
+  - ou les deux.
+  - Les paliers (`orders.tierTimes`) existent dans le moteur, mais restent vides pour Venise.
