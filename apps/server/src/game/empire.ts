@@ -91,6 +91,20 @@ const action = z.discriminatedUnion("type", [
     city: z.string().max(40).optional(),
   }),
   z.object({
+    type: z.literal("empireTour"),
+    vehicleId: z.string().max(40),
+    stops: z
+      .array(
+        z.object({
+          city: z.string().max(40),
+          order: z.number().int().min(0).max(10),
+          qty: z.number().int().min(1).max(100_000),
+        }),
+      )
+      .min(1)
+      .max(8),
+  }),
+  z.object({
     type: z.literal("empireTransfer"),
     vehicleId: z.string().max(40),
     to: z.string().max(40),
@@ -110,8 +124,8 @@ const action = z.discriminatedUnion("type", [
     x: z.number().int().min(-10_000).max(10_000).optional(),
     y: z.number().int().min(-10_000).max(10_000).optional(),
   }),
-  z.object({ type: z.literal("empireBuildArsenal"), cell: z.string().max(12) }),
   z.object({ type: z.literal("empireBuildCamp"), cell: z.string().max(12) }),
+  z.object({ type: z.literal("empireUnlockCell"), cell: z.string().max(12) }),
   z.object({ type: z.literal("empireBuildDepot"), cell: z.string().max(12) }),
   // The Porta (docs/plan-porta.md): its arms at the Remise, the building, the way, the antiquarian.
   z.object({ type: z.literal("empireBuyArm"), model: z.string().max(40) }),
@@ -142,51 +156,7 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("empireUpgradeVehicle"), vehicleType: z.string().max(40) }),
   z.object({ type: z.literal("empireUpgradeCounter"), region: z.string().max(40) }),
   z.object({ type: z.literal("empireBuyVehicle"), vehicleType: z.string().max(40) }),
-  z.object({
-    type: z.literal("empireVoyage"),
-    vehicleId: z.string().max(32),
-    from: z.string().max(40),
-    to: z.string().max(40),
-    good: z.string().max(40),
-    qty: z.number().int().min(1).max(100_000),
-    insured: z.boolean().optional(),
-  }),
   z.object({ type: z.literal("empireResearch"), module: z.string().max(40) }),
-  // The sea (CADRAGE-v3 § 3.3): the Arsenal, the Muda, the colleganza.
-  z.object({ type: z.literal("empireBuildShip"), vehicleType: z.string().max(40) }),
-  z.object({
-    type: z.literal("empireFitShip"),
-    vehicleId: z.string().max(32),
-    slot: z.number().int().min(0).max(8),
-    module: z.string().max(40),
-  }),
-  z.object({
-    type: z.literal("empireMudaBid"),
-    vehicleId: z.string().max(32),
-    amount: z.string().regex(/^\d{1,15}$/),
-  }),
-  z.object({
-    type: z.literal("empireColleganzaOpen"),
-    vehicleId: z.string().max(32),
-    from: z.string().max(40),
-    to: z.string().max(40),
-    good: z.string().max(40),
-    qty: z.number().int().min(1).max(100_000),
-    target: z.string().regex(/^\d{1,15}$/),
-  }),
-  z.object({
-    type: z.literal("empireColleganzaStake"),
-    id: z.string().max(40),
-    amount: z.string().regex(/^\d{1,15}$/),
-  }),
-  z.object({ type: z.literal("empireColleganzaWithdraw"), id: z.string().max(40) }),
-  z.object({ type: z.literal("empireColleganzaCancel"), id: z.string().max(40) }),
-  z.object({
-    type: z.literal("empireColleganzaSail"),
-    id: z.string().max(40),
-    insured: z.boolean().optional(),
-  }),
-  z.object({ type: z.literal("empireTeam"), depositId: z.string().max(64) }),
   z.object({
     type: z.literal("empireFit"),
     workshopId: z.string().max(32),

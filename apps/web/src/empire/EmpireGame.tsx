@@ -18,8 +18,7 @@ import { MarketSheet } from "./Market.js";
 import { CasaMoment } from "./Moment.js";
 import { NewWorkshopSheet } from "./NewWorkshop.js";
 import { GoodSheet } from "./Resources.js";
-import { Arsenal } from "./Sea.js";
-import { RegionPlace, Scuola, VoyageSheet, regionName } from "./World.js";
+import { Charroi, RegionPlace, Scuola, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import {
   affordable,
@@ -35,10 +34,11 @@ import { ActionPanel } from "./map/ActionPanel.js";
 import { BottomSlot } from "./map/BottomSlot.js";
 import { EmpireMap, type EmpireMapHandle, type Picked } from "./map/EmpireMap.js";
 import { Hud } from "./map/Hud.js";
+import { OrdersPanel } from "./map/OrdersPanel.js";
 import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
 import { RoundButtons } from "./map/RoundButtons.js";
-import { type Placing, type Target, canCasa } from "./map/logic.js";
+import { type Placing, type Target, type TourDraft, canCasa } from "./map/logic.js";
 import { inTutorial, nextStep } from "./next.js";
 import { ArmsSheet } from "./porta/ArmsSheet.js";
 import { BattleScreen } from "./porta/Battle.js";
@@ -50,6 +50,8 @@ type SheetId =
   | "casa"
   | "market"
   | "company"
+  | "company:terra"
+  | "remise"
   | "new"
   | "away"
   | "family"
@@ -57,13 +59,11 @@ type SheetId =
   | "help"
   | "production"
   | "production:vehicles"
-  | "arsenal"
   | "arms"
   | "porta"
   | `region:${string}`
   | `workshop:${string}`
-  | `new:${string}`
-  | `voyage:${string}`;
+  | `new:${string}`;
 
 const t = fr.empire;
 const unknownError = fr.errors.unknown ?? "";
@@ -89,6 +89,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // Putting a counter or the Arsenal down: the map lights the cells, a touch picks one.
   const [placing, setPlacing] = useState<Placing | null>(null);
   const [picked, setPicked] = useState<Picked | null>(null);
+  // The round being made (after Hades' Star): a vehicle, its stops, the city shown.
+  const [tour, setTour] = useState<TourDraft | null>(null);
   const map = useRef<EmpireMapHandle>(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -168,10 +170,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       setSheet(null);
       setPicked(null);
       setPlacing({
-        kind:
-          kind === "arsenal" || kind === "camp" || kind === "depot" || kind === "porta"
-            ? kind
-            : "post",
+        kind: kind === "camp" || kind === "depot" || kind === "porta" ? kind : "post",
         ...(region ? { region } : {}),
       });
       map.current?.far();
@@ -182,15 +181,13 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const place = async () => {
     if (!placing || !picked) return;
     await act(
-      placing.kind === "arsenal"
-        ? { type: "empireBuildArsenal", cell: picked.cell }
-        : placing.kind === "camp"
-          ? { type: "empireBuildCamp", cell: picked.cell }
-          : placing.kind === "depot"
-            ? { type: "empireBuildDepot", cell: picked.cell }
-            : placing.kind === "porta"
-              ? { type: "empireBuildPorta", cell: picked.cell }
-              : { type: "empirePlaceCounter", ...picked },
+      placing.kind === "camp"
+        ? { type: "empireBuildCamp", cell: picked.cell }
+        : placing.kind === "depot"
+          ? { type: "empireBuildDepot", cell: picked.cell }
+          : placing.kind === "porta"
+            ? { type: "empireBuildPorta", cell: picked.cell }
+            : { type: "empirePlaceCounter", ...picked },
     );
     setPlacing(null);
     setPicked(null);
@@ -206,10 +203,21 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         now={now}
         busy={busy}
         act={act}
-        onTarget={(x) => !placing && setTarget(x)}
+        onTarget={(x) => {
+          if (placing) return;
+          // A vehicle chosen: a round begins; a city touched during a round: its orders to load.
+          if (x?.kind === "vehicle") {
+            setTarget(null);
+            setTour({ vehicleId: x.id, stops: [], focus: null });
+          } else if (x?.kind === "city" && tour) setTour({ ...tour, focus: x.code });
+          else if (!x && tour) setTour(tour.stops.length > 0 ? tour : null);
+          else setTarget(x);
+        }}
+        tour={tour}
         placing={placing}
         picked={picked}
         onPick={setPicked}
+        onCamp={() => setSheet("company:terra")}
       />
 
       <Hud
@@ -222,7 +230,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
 
       {/* The foot of the map: the round buttons, a place's panel, or the bar of placing. */}
       <BottomSlot
-        id={placing ? "placing" : target ? "panel" : "idle"}
+        id={placing ? "placing" : tour ? "tour" : target ? "panel" : "idle"}
         hidden={sheet !== null || good !== null}
       >
         {placing ? (
@@ -236,6 +244,20 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               setPlacing(null);
               setPicked(null);
             }}
+          />
+        ) : tour || (target?.kind === "city" && p.view?.map.tourUnitsPerMinute) ? (
+          <OrdersPanel
+            p={p}
+            now={now}
+            busy={busy}
+            act={act}
+            city={tour ? tour.focus : target?.kind === "city" ? target.code : null}
+            tour={tour}
+            onTour={(next) => {
+              setTour(next);
+              if (next) setTarget(null);
+            }}
+            onClose={() => setTarget(null)}
           />
         ) : target ? (
           <ActionPanel
@@ -308,20 +330,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         pane={sheet === "production:vehicles" ? "vehicles" : "buildings"}
         highlight={highlight}
         onPlace={(kind) => open(`place:${kind}`)}
+        onRemise={() => setSheet("remise")}
         busy={busy}
         onClose={close}
         act={act}
       />
-      {sheet?.startsWith("voyage:") && (
-        <VoyageSheet
-          p={p}
-          from={sheet.slice("voyage:".length)}
-          open
-          busy={busy}
-          onClose={close}
-          act={act}
-        />
-      )}
       {sheet?.startsWith("region:") && (
         <Sheet open onClose={close} kicker={t.world.map} title={regionName(sheet.slice(7))}>
           <RegionPlace
@@ -331,13 +344,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             busy={busy}
             act={act}
             onBuild={() => setSheet(`new:${sheet.slice(7)}`)}
-            onConvoy={() => setSheet(`voyage:${sheet.slice(7)}`)}
             onPlace={() => open(`place:post:${sheet.slice(7)}`)}
           />
         </Sheet>
       )}
-      <Sheet open={sheet === "arsenal"} onClose={close} title={t.scene.arsenal}>
-        <Arsenal p={p} now={now} busy={busy} act={act} />
+      {/* The Remise: the only place where the vehicles are bought, raised and sent (1 November). */}
+      <Sheet open={sheet === "remise"} onClose={close} kicker={t.scene.owner} title={t.scene.depot}>
+        <div data-remise>
+          <Charroi p={p} now={now} busy={busy} act={act} />
+        </div>
       </Sheet>
       <CasaSheet
         p={p}
@@ -360,7 +375,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       <CompanySheet
         p={p}
         now={now}
-        open={sheet === "company"}
+        open={sheet?.startsWith("company") === true}
+        pane={sheet === "company:terra" ? "terra" : undefined}
         busy={busy}
         calls={{
           carnet: claimable(p),

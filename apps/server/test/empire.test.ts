@@ -241,36 +241,6 @@ describe("the map (the map at the centre, step 2)", () => {
   });
 });
 
-describe("the sea", () => {
-  it("answers the Arsenal, the Muda and the colleganza through the route, and shows the risk", async () => {
-    const cookie = await login("ada@example.org");
-    await post(cookie, "/api/empire/join");
-    const body = (await get(cookie)).json();
-    const galea = body.view.vehicles.shop.find((v: { type: string }) => v.type === "galea");
-    expect(galea).toMatchObject({ muda: true, slots: 4 });
-    expect(body.view.muda.next).toBeGreaterThan(now);
-    expect(
-      body.view.regions.find((r: { code: string }) => r.code === "dalmazia").corsairRiskBps,
-    ).toBeGreaterThan(0);
-    const ship = await act(cookie, { type: "empireBuildShip", vehicleType: "marciliana" });
-    expect(ship.json().error).toBe("requirement_unmet");
-    const mule = body.view.vehicles.mine[0].id;
-    expect(
-      (await act(cookie, { type: "empireMudaBid", vehicleId: mule, amount: "100" })).json().error,
-    ).toBe("unknown_building_type");
-    const open = await act(cookie, {
-      type: "empireColleganzaOpen",
-      vehicleId: mule,
-      from: "veneto",
-      to: "veneto",
-      good: "clay",
-      qty: 5,
-      target: "1000",
-    });
-    expect(open.json().error).toBe("requirement_unmet");
-  });
-});
-
 describe("the house's identity", () => {
   it("hires a master, places it, and reads its identity", async () => {
     const cookie = await login("ada@example.org");

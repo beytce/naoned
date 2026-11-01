@@ -39,9 +39,3 @@ export function researchMinutesOf(level: number, s: EmpireSettings): number {
   const table = s.research.minutes;
   return table[Math.min(level, table.length) - 1] ?? 0;
 }
-
-/** The plans (from relics) a module's level n asks: none below `plansFromLevel`, then more. */
-export function plansFor(level: number, s: EmpireSettings): number {
-  const { plansFromLevel, plansPerLevel } = s.research;
-  return level < plansFromLevel ? 0 : plansPerLevel * (level - plansFromLevel + 1);
-}

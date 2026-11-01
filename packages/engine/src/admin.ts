@@ -42,7 +42,7 @@ export type AdminEdit =
   /** The whole map seen. */
   | { kind: "revealMap" }
   /** The Arsenal, the Campo or the Remise stands at once, on the first fitting cell of Venetia. */
-  | { kind: "site"; site: "arsenal" | "camp" | "depot" };
+  | { kind: "site"; site: "camp" | "depot" };
 
 export type AdminCommand = { type: "adminEdit"; playerId: PlayerId; edit: AdminEdit };
 
@@ -177,9 +177,7 @@ function editHouse(tx: Tx, playerId: PlayerId, edit: AdminEdit): void {
       const def = s.map[edit.site];
       if (!def) fail("unknown_building_type");
       if (h[edit.site]) fail("built");
-      const cells = Object.entries(s.map.cells).filter(
-        ([, c]) => c.region === HOME && (edit.site !== "arsenal" || c.coast),
-      );
+      const cells = Object.entries(s.map.cells).filter(([, c]) => c.region === HOME);
       const taken = new Set([h.arsenal, h.camp, h.depot, ...(h.posts ?? []).map((p) => p.cell)]);
       const cell = (cells.find(([k]) => !taken.has(k)) ?? cells[0])?.[0];
       if (!cell) fail("unknown_cell");

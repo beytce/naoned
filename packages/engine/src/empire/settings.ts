@@ -52,8 +52,6 @@ const region = z.object({
   demands: z.record(z.string(), money).prefault({}),
   /** Units of orders a day the region's cities give each counter there (its private book). */
   localOrdersPerCounter: qty,
-  /** The corsairs' risk on the way there, per voyage (0: none, as in Venetia). */
-  corsairRiskBps: bps.max(10_000),
 });
 
 const moduleDef = z.object({
@@ -90,12 +88,6 @@ export const empireSettingsSchema = z.object({
         costDucats: qty,
         regions: z.array(z.string()).min(1),
         speedBps: bps,
-        /** A ship: built at the private Arsenal (its site's minutes and materials), not bought. */
-        build: z
-          .object({ minutes: positive, materials: z.record(z.string(), qty).prefault({}) })
-          .optional(),
-        /** Its places for trade modules: on a ship, they count only where they are fitted. */
-        slots: qty.prefault(0),
       }),
     )
     .prefault({}),
@@ -104,6 +96,25 @@ export const empireSettingsSchema = z.object({
    * first holds `stepBps` more for every vehicle of the model, and costs the model's price (at
    * least `minCostDucats`) times `costTimes`, doubled at each level.
    */
+  /**
+   * The cities' orders (decision of the owner, 1 November 2026, after Hades' Star's shipments):
+   * each city a counter serves asks `perSize[size − 1]` orders a period, of `qtyPerSize` × its size
+   * units at the least, paid the reference with `premiumBps`, `sizeBps` a size above the first,
+   * and `distanceBps` a sector of the way from the counter; a vehicle goes `unitsPerMinute`.
+   * None: the cities' daily book, as before.
+   */
+  orders: z
+    .object({
+      periodMinutes: positive,
+      perSize: z.array(positive).length(5),
+      qtyPerSize: positive,
+      premiumBps: bps,
+      sizeBps: bps,
+      distanceBps: bps,
+      unitsPerMinute: positive,
+    })
+    .nullable()
+    .prefault(null),
   vehicleLevels: z
     .object({
       max: positive.prefault(5),
@@ -433,6 +444,8 @@ export const empireSettingsSchema = z.object({
             y: z.number().int().optional(),
             /** Its weight in its region's book, against its region's other cities. */
             weight: positive.prefault(1),
+            /** Its size, 1 (a market town) to 5 (a capital): its bubble, how many orders it gives. */
+            size: positive.prefault(1),
           }),
         )
         .prefault([]),
@@ -443,6 +456,15 @@ export const empireSettingsSchema = z.object({
        * and `perLevel` more a level beyond the first, are served by it. None: every city found is.
        */
       reach: z.object({ base: positive, perLevel: qty }).nullable().prefault(null),
+      /**
+       * The sectors bought one by one (decision of the owner, 1 November 2026): one next to a
+       * sector of one's own, or a coast within `seaHops` of a coast of one's own; its price, dearer
+       * by `stepBps` for each sector already owned. None: the sectors are seen as before.
+       */
+      unlock: z
+        .object({ costDucats: qty, stepBps: bps, seaHops: positive })
+        .nullable()
+        .prefault(null),
       /** No counter closer than this to another, in the chart's units. */
       postSpacing: qty.prefault(0),
       /** A land vehicle between two counters: so many of the chart's units an hour. */
@@ -452,10 +474,6 @@ export const empireSettingsSchema = z.object({
       version: positive.prefault(1),
       /** Each counter already put down makes the next this much dearer. */
       costStepBps: bps.prefault(2_500),
-      arsenal: z
-        .object({ costDucats: qty, casa: positive, minutes: qty })
-        .nullable()
-        .prefault(null),
       /** The Campo, on a land cell: the door of the Terraferma (decision of 31 October 2026). */
       camp: z.object({ costDucats: qty, casa: positive, minutes: qty }).nullable().prefault(null),
       /** The Remise, on a land cell: where the land vehicles are bought and their models raised. */
@@ -511,65 +529,8 @@ export const empireSettingsSchema = z.object({
     costGrowthBps: positive,
     /** Minutes of research of a module's level n (index n − 1). */
     minutes: z.array(qty).min(1),
-    /** From this level on, a level also asks plans (from relics). */
-    plansFromLevel: positive,
-    plansPerLevel: qty,
     /** The modules a house may research in this world (their systems exist); none listed: all. */
     available: z.array(z.string()).prefault([]),
-  }),
-  deposits: z.object({
-    /** Chance a day that a deposit appears in a region open to some house, in bps. */
-    spawnBpsPerRegionDay: bps,
-    minStock: positive,
-    maxStock: positive,
-    /** Units an hour a team of base level takes. */
-    teamPerHour: positive,
-    /** A region gets its daily chance once per so many houses present there (one at least). */
-    housesPerDeposit: positive.prefault(10),
-    /** The Casa of the first team, and a team more every so many levels. */
-    teamsFromCasa: positive.prefault(5),
-    casaPerTeam: positive.prefault(4),
-  }),
-  expeditions: z.object({
-    /** Per tier (index tier − 1): the fleet strength it asks, and the relics it gives on success. */
-    tiers: z.array(z.object({ strength: positive, relics: positive })).min(1),
-    /** Success at exactly the asked strength; more strength adds, less takes away. */
-    baseSuccessBps: bps.max(10_000),
-  }),
-  corsairs: z.object({
-    /** The share of a cargo an attack takes, before the escort. */
-    lossShareBps: bps.max(10_000),
-    /** An escort of this strength halves the risk; each as much again halves it again. */
-    escortHalving: positive,
-    /** The insurance's premium: the risk times the cargo's value times this (12 000: × 1,2). */
-    premiumBps: bps.prefault(12_000),
-  }),
-  /**
-   * The Muda's galleys sail in convoy, twice a week; their places are auctioned (the incanto,
-   * CADRAGE-v3 § 12 bis): places in proportion to the houses owning such a galley, a reserve in
-   * days of the bidders' median income, and the price paid destroyed.
-   */
-  muda: z
-    .object({
-      vehicles: z.array(z.string()),
-      departuresPerWeek: positive,
-      placesShareBps: bps,
-      reserveDaysBps: bps,
-      /** The departures, by day from Monday (0) and hour in Venice: Tuesday and Friday at 18. */
-      departures: z
-        .array(z.object({ day: qty.max(6), hour: qty.max(23) }))
-        .min(1)
-        .prefault([
-          { day: 1, hour: 18 },
-          { day: 4, hour: 18 },
-        ]),
-      /** A place won lets its galley leave this long after the departure (it sails at its hour). */
-      passHours: positive.prefault(24),
-    })
-    .prefault({ vehicles: [], departuresPerWeek: 2, placesShareBps: 10_000, reserveDaysBps: 0 }),
-  colleganza: z.object({
-    /** The traveller's share of the profit (the custom: a quarter). */
-    travellerShareBps: bps.max(10_000),
   }),
   /** The Porta, the battles in the lands of Rome (docs/plan-porta.md). */
   porta: portaSettingsSchema,

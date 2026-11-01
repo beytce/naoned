@@ -302,6 +302,8 @@ export const days = (hours: number) => hours / DAY;
 export const seen = (h: House) =>
   ({
     revealed: [...h.revealed],
+    // The sectors bought one by one: those it sees are those it owns.
+    unlocked: [...h.revealed],
     casa: h.casa,
     homeLevel: h.homeLevel,
     posts: h.spots.map((p, i) => ({ id: `p${i + 1}`, ...p })),

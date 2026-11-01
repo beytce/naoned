@@ -112,13 +112,11 @@ describe("the admin's hand", () => {
     w.advance(MIN);
   });
 
-  it("reveals the map and stands the Arsenal on a coast", () => {
+  it("reveals the map, and stands no building the world does not set", () => {
     const w = world();
     edit(w, { kind: "revealMap" });
     expect(house(w).revealed).toHaveLength(10);
-    expect(edit(w, { kind: "site", site: "arsenal" }).ok).toBe(true);
-    expect(house(w).arsenal).toBe("0,0");
-    expect(edit(w, { kind: "site", site: "arsenal" }).ok).toBe(false);
+    expect(edit(w, { kind: "site", site: "depot" }).ok).toBe(false);
     expect(edit(w, { kind: "site", site: "camp" }).ok).toBe(false);
   });
 

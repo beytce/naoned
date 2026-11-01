@@ -19,7 +19,7 @@ import { buildMinutesOf, casaLevelOf, casaRequirementMet, levelCost } from "./cu
 import { houseEffect } from "./effects.js";
 import { settleLearning } from "./knowledge.js";
 import { ensureMap, settlePost } from "./map.js";
-import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
+import { researchCost, researchMinutesOf } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
 import { HOME_POST, putAt, storeOf, takeAt, wherePut } from "./stores.js";
 
@@ -350,7 +350,6 @@ export function startResearch(tx: Tx, playerId: PlayerId, code: string): void {
   if ((h.research ?? []).length >= casaLevelOf(h.casa, s).researchSlots) fail("no_build_slot");
   const level = (h.modules?.[code] ?? 0) + 1;
   if (level > s.research.minutes.length) fail("max_level");
-  if (plansFor(level, s) > 0) fail("requirement_unmet");
   transfer(
     tx,
     cashAccount(playerId),

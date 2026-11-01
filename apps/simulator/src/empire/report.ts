@@ -81,22 +81,6 @@ export function evaluate(r: EmpireResult): Check[] {
         : `${off.length} hors bornes (${off.map((x) => x.level).join(", ")})`,
     pass: off.length === 0,
   });
-  // The latest cohort with four months to run at least.
-  const late = [...r.options.cohortMonths]
-    .reverse()
-    .find((m) => m > 0 && m <= r.options.months - 4);
-  const level = 10;
-  const first = daysToCasa(r, 0, level);
-  const later = late !== undefined ? daysToCasa(r, late, level) : null;
-  const ratio = first && later ? later / first : null;
-  checks.push({
-    code: "catchup",
-    label: `Cohorte du mois ${late ?? "—"} plus rapide jusqu'à la Casa ${level}`,
-    target: "20 à 40 % plus vite",
-    value: ratio === null ? "—" : `${Math.round((1 - ratio) * 100)} % plus vite`,
-    pass: ratio !== null && ratio >= 0.6 && ratio <= 0.8,
-  });
-
   // 2. An objective in sight within 24 h.
   const sessions = hs.reduce((n, h) => n + h.sessions, 0);
   const inSight = hs.reduce((n, h) => n + h.sessionsInSight, 0);
@@ -202,8 +186,6 @@ export function evaluate(r: EmpireResult): Check[] {
   });
 
   // 9. The arbitrage pays the voyage, without making the orders useless.
-  const voyages = hs.reduce((n, h) => n + h.voyagesDone, 0);
-  const margin = hs.reduce((a, h) => a + h.voyageMargin, 0n);
   const income = (t: Trade) => hs.reduce((a, h) => a + h.income[t], 0n);
   const total = (["orders", "market", "voyages", "extraction", "expeditions"] as Trade[]).reduce(
     (a, t) => a + income(t),
@@ -211,44 +193,14 @@ export function evaluate(r: EmpireResult): Check[] {
   );
   const orders = hs.reduce((a, h) => a + h.ordersValue, 0n);
   const ordersBps = total > 0n ? Number((orders * 10_000n) / total) : 0;
-  const perVoyage = voyages > 0 ? Number(margin / BigInt(voyages) / 100n) : 0;
+  // One trade, delivering (1 November): the cities' orders are the heart of the game.
   checks.push({
-    code: "arbitrage",
-    label: "Marge moyenne d'un voyage, et part des commandes dans les recettes",
-    target: "marge > 0, commandes ≥ 25 %",
-    value: `${perVoyage} d par voyage, commandes ${pct(ordersBps)}`,
-    pass: perVoyage > 0 && ordersBps >= 2_500,
-  });
-
-  // 10. Each of the three trades is lived from by the houses that lean to it.
-  const bentTrade = { trader: "voyages", miner: "extraction", armourer: "expeditions" } as const;
-  const shares = (Object.keys(bentTrade) as (keyof typeof bentTrade)[]).map((bent) => {
-    const of = hs.filter((h) => h.bent === bent);
-    const part = of.reduce((a, h) => a + h.income[bentTrade[bent]], 0n);
-    const all = of.reduce((a, h) => a + h.earned, 0n);
-    return { bent, bps: all > 0n ? Number((part * 10_000n) / all) : 0 };
-  });
-  checks.push({
-    code: "trades",
-    label:
-      "Part de son métier dans les recettes : voyages (négociant), gisements (exploitant), expéditions (armateur)",
-    target: "≥ 25 % chacun",
-    value: shares.map((x) => `${x.bent} ${pct(x.bps)}`).join(", "),
-    pass: shares.every((x) => x.bps >= 2_500),
-  });
-
-  // 11. The Muda's places are dear, and the colleganza lives from them (§ 12 bis).
-  const muda = w.muda;
-  const withBps = muda.voyages > 0 ? Math.round((muda.withColleganza * 10_000) / muda.voyages) : 0;
-  const placePrice = muda.places > 0 ? Number(muda.paid / BigInt(muda.places) / 100n) : 0;
-  const largerBps = muda.stakes > 0n ? Number((muda.fromLarger * 10_000n) / muda.stakes) : 0;
-  checks.push({
-    code: "colleganza",
-    label:
-      "Convois de la Muda financés en colleganza ; prix moyen d'une place, part des mises venue de plus grandes Maisons",
-    target: "≥ 20 % des convois",
-    value: `${pct(withBps)} de ${muda.voyages} ; place ${placePrice} d, plus grandes ${pct(largerBps)}`,
-    pass: withBps >= 2_000,
+    code: "orders",
+    label: "Part des commandes dans les recettes",
+    // 60 to 85 % (decision of the owner, 1 November): the rest from the Dogana and the court.
+    target: "60 à 85 %",
+    value: pct(ordersBps),
+    pass: ordersBps >= 6_000 && ordersBps <= 8_500,
   });
   return checks;
 }

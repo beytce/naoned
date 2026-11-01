@@ -96,7 +96,6 @@ function payload(over: Partial<NonNullable<EmpirePayload["view"]>> = {}, cash = 
           { code: "milano", cell: "0,4", region: "lombardia" },
         ],
         radius: 2,
-        arsenalSite: { cost: "300000", minutes: 480, casa: 9 },
         depot: null,
         depotSite: { cost: "20000", minutes: 120, casa: 2 },
       },
@@ -106,7 +105,6 @@ function payload(over: Partial<NonNullable<EmpirePayload["view"]>> = {}, cash = 
           { id: "v1", type: "mule", busyUntil: 0, capacity: 10 },
           { id: "v2", type: "mule", busyUntil: 5 * HOUR, capacity: 10 },
         ],
-        voyages: [],
         haulPerDay: 80,
       },
       ...over,
@@ -186,17 +184,10 @@ describe("putting down on the map (step 2)", () => {
     expect(placingCost(casa6, { kind: "post" }, "0,4")).toBe("50000");
   });
 
-  it("lights the coasts for the Arsenal, its price from the view", () => {
-    expect(placeable(payload(), { kind: "arsenal" })).toEqual(["1,5", "2,4"]);
-    expect(placingCost(payload(), { kind: "arsenal" }, "2,4")).toBe("300000");
-  });
-
-  it("lights every free cell for the Remise, and opens its vehicles once it stands", () => {
+  it("lights every free cell for the Remise, and opens its sheet once it stands", () => {
     expect(placeable(payload(), { kind: "depot" })).toEqual(["0,4", "1,5", "2,4"]);
     expect(placingCost(payload(), { kind: "depot" }, "1,5")).toBe("20000");
-    expect(actionsOf(payload(), { kind: "depot" }, HOUR).map((a) => a.open)).toEqual([
-      "production:vehicles",
-    ]);
+    expect(actionsOf(payload(), { kind: "depot" }, HOUR).map((a) => a.open)).toEqual(["remise"]);
   });
 });
 

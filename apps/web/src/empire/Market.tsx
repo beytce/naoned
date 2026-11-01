@@ -4,8 +4,7 @@ import { d } from "../game/format.js";
 import { fr } from "../i18n.js";
 import { Sheet, Slab } from "../ui.js";
 import { Court } from "./Identity.js";
-import { Colleganze } from "./Sea.js";
-import { Charroi, regionName } from "./World.js";
+import { regionName } from "./World.js";
 import { affordable, trendOf } from "./logic.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
@@ -18,7 +17,7 @@ const TONE = { up: "text-lagoon", down: "text-vermilion", flat: "text-cream-dim"
 /**
  * The Marché tab (lot C of the UX audit): each good of Venice, the store first, with its price
  * and how it stands against its rate; a touch opens the good to sell or deliver. Then the court,
- * the carts of the Charroi and the colleganze: what is bought and sold, in one place.
+ * and the colleganze. The vehicles are bought at the Remise only (1 November).
  */
 export function MarketSheet({
   p,
@@ -125,8 +124,6 @@ export function MarketSheet({
         </ul>
       )}
       <Court p={p} busy={busy} act={act} />
-      <Charroi p={p} now={now} busy={busy} act={act} />
-      <Colleganze p={p} busy={busy} act={act} />
     </Sheet>
   );
 }

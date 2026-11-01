@@ -87,8 +87,7 @@ export const tierOpen = (h: EmpireHouse, tier: number) =>
 
 const landOf = (h: EmpireHouse, id: string) => h.vehicles?.find((v) => v.id === id);
 const combatOf = (h: EmpireHouse, id: string) => h.arms?.vehicles.find((v) => v.id === id);
-const landVehicle = (s: EmpireSettings, type: string) =>
-  s.vehicles[type] !== undefined && !s.vehicles[type]?.build;
+const landVehicle = (s: EmpireSettings, type: string) => s.vehicles[type] !== undefined;
 
 /** Sends vehicles from the Remise to the Porta: land vehicles that are free, combat vehicles home. */
 export function sendToPorta(tx: Tx, playerId: PlayerId, ids: string[]): void {

@@ -24,8 +24,7 @@ export function startTransfer(
   const v = h.vehicles?.find((x) => x.id === vehicleId);
   if (!v) fail("unknown_building");
   const spec = s.vehicles[v.type];
-  // A ship sails between ports (a voyage); a land vehicle goes between counters.
-  if (!spec || spec.build) fail("unknown_building_type");
+  if (!spec) fail("unknown_building_type");
   if (v.busyUntil > tx.now) fail("building_busy");
   const posts = standingPosts(h, s);
   const from = posts.find((p) => p.id === (v.at ?? HOME_POST));

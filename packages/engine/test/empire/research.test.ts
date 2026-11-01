@@ -63,7 +63,7 @@ describe("the Scuola", () => {
     expect(error(research(w, "sails"))).toBe("");
   });
 
-  it("researches only the modules the world opens, and no level asking plans yet", () => {
+  it("researches only the modules the world opens, every level for ducats and time", () => {
     const w = world();
     expect(error(research(w, "yield"))).toBe("unknown_building_type");
     for (let level = 1; level <= 3; level++) {
@@ -71,36 +71,12 @@ describe("the Scuola", () => {
       w.advance(4 * HOUR);
     }
     expect(house(w).modules?.hold).toBe(3);
-    // Level 4 asks plans, from the relics.
-    expect(error(research(w, "hold"))).toBe("requirement_unmet");
+    // No plan asked any more (the expeditions gone, 1 November).
+    expect(error(research(w, "hold"))).toBe("");
   });
 });
 
 describe("the trade modules", () => {
-  it("make the hold bigger and the news earlier", () => {
-    const w = world(4);
-    w.do({ type: "empireResearch", playerId: "a", module: "hold" });
-    w.advance(HOUR);
-    w.do({ type: "empireResearch", playerId: "a", module: "portolan" });
-    w.advance(HOUR);
-    w.do({ type: "empireBuyVehicle", playerId: "a", vehicleType: "burchio" });
-    const burchio = house(w).vehicles?.[0]?.id ?? "";
-    w.give("a", "salt", 110);
-    // 100 and 10 %: 110 units.
-    w.do({
-      type: "empireVoyage",
-      playerId: "a",
-      vehicleId: burchio,
-      from: "veneto",
-      to: "lombardia",
-      good: "salt",
-      qty: 110,
-    });
-    // The portolan halves Lombardy's six hours of news.
-    const q = empireQuotes(w.ctx, w.state, w.now, "a").find((x) => x.region === "lombardia");
-    expect(q?.asOf).toBe(w.now - 3 * HOUR);
-  });
-
   it("count in the Power", () => {
     const w = world();
     const before = empireHouseAt(w.ctx, w.state, "a", w.now);

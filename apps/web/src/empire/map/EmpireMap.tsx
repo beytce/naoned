@@ -3,6 +3,7 @@ import {
   forwardRef,
   memo,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useLayoutEffect,
   useMemo,
@@ -35,10 +36,12 @@ import {
   ORBIT_UNITS,
   type Placing,
   type Target,
+  type TourDraft,
   centredOn,
   farCamera,
   placeable,
   postPoint,
+  tourCities,
 } from "./logic.js";
 import { useCamera } from "./useCamera.js";
 
@@ -102,8 +105,15 @@ export const EmpireMap = forwardRef<
     placing?: Placing | null;
     picked?: Picked | null;
     onPick?: (at: Picked) => void;
+    /** The Campo touched: the Terraferma. */
+    onCamp?: () => void;
+    /** The round being made: the cities within its vehicle's reach are lit. */
+    tour?: TourDraft | null;
   }
->(function EmpireMap({ p, now, busy, act, onTarget, placing = null, picked = null, onPick }, ref) {
+>(function EmpireMap(
+  { p, now, busy, act, onTarget, placing = null, picked = null, onPick, onCamp, tour = null },
+  ref,
+) {
   const root = useRef<HTMLDivElement>(null);
   const back = useRef<HTMLDivElement>(null);
   const mist = useRef<HTMLDivElement>(null);
@@ -202,6 +212,7 @@ export const EmpireMap = forwardRef<
           placing={placing}
           picked={picked}
           onPick={onPick}
+          onSector={(cell) => onTarget({ kind: "sector", cell })}
         />
       ) : null,
     [view?.map, view?.regions, base, texture, placing, picked, onPick],
@@ -209,7 +220,30 @@ export const EmpireMap = forwardRef<
   if (!view) return null;
   const map = view.map;
   // The cities under the workshops deployed give way to them.
+  // A round begun: the workshops fold away, the towns come back in sight.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only when a round begins or ends
+  useEffect(() => {
+    if (tour) setOpened(null);
+  }, [tour !== null]);
   const centre = opened ? openedAt.current : null;
+  const lit = new Set(tour ? tourCities(p, tour.vehicleId) : []);
+  /** A vehicle dragged from its counter onto a city: the round, and that city's orders. */
+  const dragVehicle = (id: string) => (e: React.PointerEvent) => {
+    e.stopPropagation();
+    const x0 = e.clientX;
+    const y0 = e.clientY;
+    const up = (ev: PointerEvent) => {
+      window.removeEventListener("pointerup", up);
+      const moved = Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8;
+      onTarget({ kind: "vehicle", id });
+      if (!moved) return;
+      const city = (document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null)
+        ?.closest("[data-city]")
+        ?.getAttribute("data-city");
+      if (city) onTarget({ kind: "city", code: city });
+    };
+    window.addEventListener("pointerup", up);
+  };
   const underOrbit = (x: number, y: number) =>
     centre !== null && Math.hypot(x - centre[0], y - centre[1]) < ORBIT_UNITS / 2;
 
@@ -301,6 +335,8 @@ export const EmpireMap = forwardRef<
         {/* Venice's bubble stays itself when its workshops deploy: touched again, its Casa. */}
         <HomeMark
           p={p}
+          lit={lit.has("venezia")}
+          onOrders={() => onTarget({ kind: "city", code: "venezia" })}
           onClick={() =>
             opened === "home" ? onTarget({ kind: "casa" }) : deploy("veneto", homeAt(p), "home")
           }
@@ -314,6 +350,8 @@ export const EmpireMap = forwardRef<
               code={c.code}
               at={[c.x, c.y]}
               region={c.region}
+              size={c.size ?? 1}
+              lit={lit.has(c.code)}
               hidden={underOrbit(c.x, c.y)}
               onClick={() => onTarget({ kind: "city", code: c.code })}
             />
@@ -350,37 +388,68 @@ export const EmpireMap = forwardRef<
         })}
         {/* The vehicles around the bubble of the counter they stand at (the map that grows). */}
         {[{ id: "home", x: map.home.x, y: map.home.y }, ...map.posts].map((x) => {
-          const here = view.vehicles.mine.filter(
-            (v) =>
-              v.at === x.id &&
-              v.busyUntil <= now &&
-              !view.vehicles.shop.find((q) => q.type === v.type)?.build,
-          );
+          const here = view.vehicles.mine.filter((v) => v.at === x.id && v.busyUntil <= now);
           if (here.length === 0) return null;
           const r = x.id === "home" ? 46 : 34;
           return (
             <div
               key={`f${x.id}`}
               data-at={`${x.x},${x.y}`}
-              className="map-pin pointer-events-none"
+              className="map-pin"
               data-fleet-at={x.id}
             >
               {here.slice(0, 8).map((v, i) => {
                 const a = ((-60 + i * 30) * Math.PI) / 180;
+                const chosen = tour?.vehicleId === v.id;
                 return (
-                  <span
+                  <button
                     key={v.id}
+                    type="button"
                     data-vehicle={v.id}
-                    className="absolute flex h-6 w-6 items-center justify-center rounded-full bg-night-3 text-cream ring-1 ring-lagoon/70 shadow-md shadow-black/50 [&_svg]:h-3.5 [&_svg]:w-3.5"
+                    aria-label={t.vehicleNames[v.type] ?? v.type}
+                    aria-pressed={chosen}
+                    onPointerDown={dragVehicle(v.id)}
+                    className={`pointer-events-auto absolute flex h-8 w-8 touch-none items-center justify-center rounded-full bg-night-3 text-cream shadow-md shadow-black/50 active:scale-95 [&_svg]:h-4 [&_svg]:w-4 ${chosen ? "ring-2 ring-gold" : "ring-1 ring-lagoon/70"}`}
                     style={{
-                      transform: `translate(${r * Math.cos(a) - 12}px, ${r * Math.sin(a) - 12}px)`,
+                      transform: `translate(${r * Math.cos(a) - 16}px, ${r * Math.sin(a) - 16}px)`,
                     }}
                   >
                     {Icon.cart()}
-                  </span>
+                  </button>
                 );
               })}
             </div>
+          );
+        })}
+        {/* The rounds to the cities' orders: a cart from stop to stop, and home. */}
+        {view.tours.map((tr) => {
+          const home = postPoint(p, tr.post);
+          if (!home) return null;
+          const pts: { at: [number, number]; t: number }[] = [{ at: home, t: tr.leftAt }];
+          for (const s of tr.stops) {
+            const c = map.cities.find((x) => x.code === s.city);
+            if (c) pts.push({ at: [c.x, c.y], t: s.at });
+          }
+          pts.push({ at: home, t: tr.backAt });
+          let [x, y] = home;
+          for (let i = 1; i < pts.length; i++) {
+            const a = pts[i - 1];
+            const b = pts[i];
+            if (!a || !b || now > b.t) continue;
+            const k = Math.min(1, Math.max(0, (now - a.t) / Math.max(1, b.t - a.t)));
+            x = a.at[0] + (b.at[0] - a.at[0]) * k;
+            y = a.at[1] + (b.at[1] - a.at[1]) * k;
+            break;
+          }
+          return (
+            <span
+              key={tr.id}
+              data-tour={tr.id}
+              className="absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-gold text-ink ring-2 ring-night transition-transform duration-1000 ease-linear [&_svg]:h-3.5 [&_svg]:w-3.5"
+              style={{ transform: `translate(${x * base - 12}px, ${y * base - 12}px)` }}
+            >
+              {Icon.cart()}
+            </span>
           );
         })}
         {/* The goods on the road between two counters: a cart gliding along the way. */}
@@ -405,34 +474,24 @@ export const EmpireMap = forwardRef<
             </span>
           );
         })}
-        {/* The convoys on their way: a point along their road, gliding from second to second. */}
-        {view.vehicles.voyages.map((v) => {
-          const backAt =
-            view.vehicles.mine.find((x) => x.id === v.vehicleId)?.busyUntil ?? v.arrivesAt;
-          const left = 2 * v.arrivesAt - backAt;
-          const k = (now - left) / Math.max(1, v.arrivesAt - left);
-          const [x, y] = alongPath(routeBetween(v.from, v.to), k);
-          return (
-            <span
-              key={v.id}
-              data-convoy
-              className="absolute left-0 top-0 h-3 w-3 rounded-full bg-lagoon ring-2 ring-night transition-transform duration-1000 ease-linear"
-              style={{ transform: `translate(${x * base - 6}px, ${y * base - 6}px)` }}
-            />
-          );
-        })}
         {map.camp &&
           (() => {
             const [px, py] = cellCentre(map.camp);
             return (
               <div data-at={`${px},${py + 7}`} className="map-pin">
-                <span
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-night-3 text-vermilion ring-2 ring-vermilion/70 shadow-md shadow-black/50 [&_svg]:h-4 [&_svg]:w-4"
+                {/* The Campo touched: the Terraferma opens (1 November: it did nothing before). */}
+                <button
+                  type="button"
+                  onClick={() => onCamp?.()}
                   data-camp-mark
-                  title={t.placing.campCard}
+                  aria-label={t.placing.campCard}
+                  className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
                 >
-                  {Icon.troops()}
-                </span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-night-3 text-vermilion ring-2 ring-vermilion/70 shadow-md shadow-black/50 [&_svg]:h-5 [&_svg]:w-5">
+                    {Icon.troops()}
+                  </span>
+                  <span className="map-name">{t.placing.campCard}</span>
+                </button>
               </div>
             );
           })()}
@@ -511,6 +570,7 @@ const Chart = memo(function Chart({
   placing,
   picked,
   onPick,
+  onSector,
 }: {
   p: EmpirePayload;
   base: number;
@@ -518,6 +578,8 @@ const Chart = memo(function Chart({
   placing: Placing | null;
   picked: Picked | null;
   onPick?: (at: Picked) => void;
+  /** A sector to buy touched (the sectors bought one by one). */
+  onSector?: (cell: string) => void;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -656,6 +718,28 @@ const Chart = memo(function Chart({
           />
         );
       })}
+      {/* The sectors to buy next to one's own: a dashed gold edge, a touch to buy. */}
+      {!placing && (map.buyable ?? []).length > 0 && (
+        <g data-buyable-cells>
+          {map.buyable.map((b) => (
+            <path
+              key={`b${b.cell}`}
+              d={hexPath(b.cell, 1.6)}
+              fill={P.gold}
+              fillOpacity={view.house.casa >= b.casa ? 0.06 : 0.02}
+              stroke={P.gold}
+              strokeOpacity={view.house.casa >= b.casa ? 0.75 : 0.3}
+              strokeWidth="1.4"
+              strokeDasharray="4 3"
+              vectorEffect="non-scaling-stroke"
+              style={{ pointerEvents: "all", cursor: "pointer" }}
+              data-buyable={b.cell}
+              onClick={() => onSector?.(b.cell)}
+              onKeyDown={(e) => e.key === "Enter" && onSector?.(b.cell)}
+            />
+          ))}
+        </g>
+      )}
       {/* Placing: the cells it may go on, lit; the one picked, and what it would reveal. */}
       {allowed && (
         <g data-placing-cells>
@@ -792,10 +876,42 @@ function homeAt(p: EmpirePayload): [number, number] {
 }
 
 /** Venice on the map: the house's gold sun, its Casa written in it; touched, its workshops deploy. */
-function HomeMark({ p, onClick }: { p: EmpirePayload; onClick: () => void }) {
+function HomeMark({
+  p,
+  onClick,
+  onOrders,
+  lit = false,
+}: {
+  p: EmpirePayload;
+  onClick: () => void;
+  /** Venice's own orders: its badge touched. */
+  onOrders?: () => void;
+  lit?: boolean;
+}) {
   const [x, y] = homeAt(p);
+  const orders = p.view?.orders.find((o) => o.city === "venezia");
+  const waiting = orders ? orders.orders.filter((o) => o.filled < o.qty).length : 0;
   return (
     <div data-at={`${x},${y}`} data-home className="map-pin">
+      {orders && (
+        // Venice's orders, beside its bubble (the bubble itself opens its workshops).
+        <button
+          type="button"
+          onClick={onOrders}
+          data-city="venezia"
+          data-fill={orders.fillBps}
+          data-tour-target={lit ? "" : undefined}
+          aria-label={t.cityNames.venezia ?? "Venezia"}
+          className={`pointer-events-auto absolute -right-9 bottom-3 flex h-9 w-9 flex-col items-center justify-center rounded-full bg-night-3 font-display text-xs font-bold text-gold shadow-md shadow-black/50 active:scale-95 ${lit ? "ring-4 ring-gold" : "ring-2 ring-gold/70"}`}
+          style={{
+            background: `conic-gradient(#E8B24C ${orders.fillBps / 100}%, rgb(14 30 54) 0)`,
+          }}
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night-3">
+            {waiting}
+          </span>
+        </button>
+      )}
       <button
         type="button"
         onClick={onClick}
@@ -822,23 +938,38 @@ function CityMark({
   code,
   at,
   region,
+  size,
   hidden,
+  lit,
   onClick,
 }: {
   p: EmpirePayload;
   code: string;
   at: [number, number];
   region: string;
+  /** 1 (a market town) to 5 (a capital): its bubble's size. */
+  size: number;
   hidden: boolean;
+  /** Within the reach of the vehicle making a round: lit to be loaded. */
+  lit: boolean;
   onClick: () => void;
 }) {
   const map = p.view?.map;
   const r = p.view?.regions.find((x) => x.code === region);
   // Served when a counter has it in reach (the map that grows), else where the region is open.
   const open = map?.reach ? map.covered.includes(code) : (r?.counter ?? 0) > 0;
-  const best = open ? bestQuote(p, region) : null;
+  const orders = p.view?.orders.find((x) => x.city === code);
+  const best = open && !orders ? bestQuote(p, region) : null;
   const [x, y] = at;
   const tint = tintOf(region);
+  // The bubble grows with the town (after Hades' Star's planets); its ring, how far its orders
+  // are filled.
+  const px = 30 + 6 * Math.min(5, Math.max(1, size));
+  const ring = px + 10;
+  const r0 = ring / 2 - 2.5;
+  const round = 2 * Math.PI * r0;
+  const fill = orders ? orders.fillBps / 10_000 : 0;
+  const waiting = orders ? orders.orders.filter((o) => o.filled < o.qty).length : 0;
   return (
     <div
       data-at={`${x},${y}`}
@@ -850,20 +981,66 @@ function CityMark({
         data-city={code}
         data-city-region={region}
         data-look={open ? "open" : "reachable"}
+        data-size={size}
+        data-fill={orders ? orders.fillBps : undefined}
+        data-tour-target={lit ? "" : undefined}
         aria-label={t.cityNames[code] ?? code}
         className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
       >
         <span
-          className={`relative flex h-11 w-11 items-center justify-center rounded-full shadow-lg shadow-black/60 ring-2 ${open ? "ring-lagoon" : "ring-gold/80"}`}
-          style={{
-            background: `radial-gradient(circle at 34% 30%, #F6E8CC 0%, ${tint} 38%, #16263E 100%)`,
-          }}
+          className="relative flex items-center justify-center"
+          style={{ width: ring, height: ring }}
         >
-          {best && (
-            <span className="rounded-full bg-night/70 p-0.5">
-              <GoodsMark code={best} size={18} />
-            </span>
+          {orders && (
+            <svg
+              className="absolute inset-0"
+              width={ring}
+              height={ring}
+              viewBox={`0 0 ${ring} ${ring}`}
+              aria-hidden="true"
+              data-fill-ring
+            >
+              <circle
+                cx={ring / 2}
+                cy={ring / 2}
+                r={r0}
+                fill="none"
+                stroke="rgb(0 0 0 / 0.45)"
+                strokeWidth="4"
+              />
+              <circle
+                cx={ring / 2}
+                cy={ring / 2}
+                r={r0}
+                fill="none"
+                stroke={fill >= 1 ? "#7DB596" : "#E8B24C"}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={`${round * fill} ${round}`}
+                transform={`rotate(-90 ${ring / 2} ${ring / 2})`}
+                className="transition-[stroke-dasharray] duration-700"
+              />
+            </svg>
           )}
+          <span
+            className={`relative flex items-center justify-center rounded-full shadow-lg shadow-black/60 ${lit ? "ring-4 ring-gold" : open ? "ring-2 ring-lagoon" : "ring-2 ring-gold/60"}`}
+            style={{
+              width: px,
+              height: px,
+              background: `radial-gradient(circle at 34% 30%, #F6E8CC 0%, ${tint} 38%, #16263E 100%)`,
+            }}
+          >
+            {best && (
+              <span className="rounded-full bg-night/70 p-0.5">
+                <GoodsMark code={best} size={18} />
+              </span>
+            )}
+            {waiting > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-display text-[0.6875rem] font-bold text-ink ring-2 ring-night">
+                {waiting}
+              </span>
+            )}
+          </span>
         </span>
         <span className="map-name">{t.cityNames[code] ?? code}</span>
       </button>

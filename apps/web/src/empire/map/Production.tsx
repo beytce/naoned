@@ -4,7 +4,6 @@ import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
 import { Sheet, Slab } from "../../ui.js";
 import { NewWorkshopList } from "../NewWorkshop.js";
-import { Arsenal } from "../Sea.js";
 import { Charroi } from "../World.js";
 import { shownAt } from "../logic.js";
 import { pt } from "../porta/texts.js";
@@ -17,7 +16,7 @@ export type ProductionPane = "buildings" | "vehicles";
 /**
  * The Production, behind the « + » of the upper right corner (the map at the centre, step 1):
  * what the house may build, in two panes. The buildings: a new workshop in Venetia. The vehicles:
- * the fleet, those at home among all, the carts to buy and the ships of the Arsenal.
+ * the fleet, and the way to the Remise.
  */
 export function ProductionSheet({
   p,
@@ -29,6 +28,7 @@ export function ProductionSheet({
   onClose,
   act,
   onPlace,
+  onRemise,
 }: {
   p: EmpirePayload;
   now: number;
@@ -38,8 +38,10 @@ export function ProductionSheet({
   busy: boolean;
   onClose: () => void;
   act: (a: EmpireAction) => Promise<void>;
-  /** Puts a counter or the Arsenal down: the map in its mode of placing. */
-  onPlace: (kind: "post" | "arsenal" | "camp" | "depot" | "porta") => void;
+  /** Puts a counter or a building down: the map in its mode of placing. */
+  onPlace: (kind: "post" | "camp" | "depot" | "porta") => void;
+  /** The Remise, where the vehicles are bought, raised and sent. */
+  onRemise?: () => void;
 }) {
   const [pane, setPane] = useState<ProductionPane>(first);
   useEffect(() => {
@@ -85,8 +87,19 @@ export function ProductionSheet({
               · {fr.empire.charroi.upgradeHint}
             </span>
           </p>
-          <Charroi p={p} now={now} busy={busy} act={act} onPlaceDepot={() => onPlace("depot")} />
-          <Arsenal p={p} now={now} busy={busy} act={act} />
+          {/* The vehicles are bought, raised and sent at the Remise only (1 November). */}
+          <div className="mt-4 space-y-2" data-to-remise>
+            <p className="text-sm text-cream-dim">{t.remiseText}</p>
+            {p.view.map.depot && onRemise ? (
+              <Slab size="sm" tone="ghost" onClick={onRemise}>
+                {t.toRemise}
+              </Slab>
+            ) : (
+              <Slab size="sm" tone="ghost" onClick={() => onPlace("depot")}>
+                {fr.empire.placing.depot}
+              </Slab>
+            )}
+          </div>
         </>
       )}
     </Sheet>
@@ -95,26 +108,25 @@ export function ProductionSheet({
 
 /**
  * The buildings put on the map (the map at the centre, step 2): a counter, from the cheapest of
- * the regions reached, and the Arsenal once its Casa nears.
+ * the regions reached, then the Remise and the Campo once their Casa nears.
  */
 function Buildings({
   p,
   onPlace,
 }: {
   p: EmpirePayload;
-  onPlace: (kind: "post" | "arsenal" | "camp" | "depot" | "porta") => void;
+  onPlace: (kind: "post" | "camp" | "depot" | "porta") => void;
 }) {
   const view = p.view;
   if (!view) return null;
   const pl = fr.empire.placing;
   const costs = view.regions.flatMap((r) => (r.postCost ? [BigInt(r.postCost)] : []));
   const cheapest = costs.length > 0 ? costs.reduce((a, b) => (b < a ? b : a)) : null;
-  const yard = view.map.arsenalSite;
   const camp = view.map.campSite;
   const depot = view.map.depotSite;
   const porta = view.porta?.cell ? null : (view.porta?.site ?? null);
   const card = (
-    kind: "post" | "arsenal" | "camp" | "depot" | "porta",
+    kind: "post" | "camp" | "depot" | "porta",
     title: string,
     text: string,
     price: string | null,
@@ -147,15 +159,6 @@ function Buildings({
     <ul className="mb-4 space-y-3" data-buildings>
       {cheapest !== null &&
         card("post", pl.postCard, pl.postText, pl.from(d(cheapest.toString())), true)}
-      {yard &&
-        shownAt(view.house.casa, yard.casa) &&
-        card(
-          "arsenal",
-          pl.arsenalCard,
-          pl.arsenalText(yard.casa),
-          d(yard.cost),
-          view.house.casa >= yard.casa,
-        )}
       {depot &&
         shownAt(view.house.casa, depot.casa) &&
         card(

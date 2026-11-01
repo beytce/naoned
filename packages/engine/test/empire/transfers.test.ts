@@ -14,14 +14,6 @@ const empire: EmpireSettingsInput = {
   map: { ...testEmpire.map, transferUnitsPerHour: 25 },
   vehicles: {
     cart: { casa: 1, capacity: 30, costDucats: 100, regions: ["veneto"], speedBps: 0 },
-    cocca: {
-      casa: 1,
-      capacity: 100,
-      costDucats: 1_000,
-      regions: ["veneto", "lombardia"],
-      speedBps: 0,
-      build: { minutes: 60, materials: {} },
-    },
   },
 };
 

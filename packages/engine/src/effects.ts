@@ -6,6 +6,7 @@ export type LedgerReason =
   | "admin_adjust"
   | "empire_aid"
   | "empire_muda"
+  | "empire_refund"
   | "empire_insurance"
   | "empire_colleganza"
   | "empire_build"

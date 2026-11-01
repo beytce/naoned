@@ -1,10 +1,5 @@
-import {
-  type EmpireSettingsInput,
-  depositStock,
-  parseEmpireSettings,
-  venice1450Empire,
-} from "@comptoirs/engine";
-import { arrive, finishBuild, mudaIncanto, newHouse, playsNow, session } from "./bots.js";
+import { type EmpireSettingsInput, parseEmpireSettings, venice1450Empire } from "@comptoirs/engine";
+import { finishBuild, newHouse, playsNow, session } from "./bots.js";
 import { DEFAULT_MODEL } from "./defaults.js";
 import { type DailyRow, type MonthRow, monthSample, snapshot } from "./metrics.js";
 import { type Activity, type Bent, DAY, MONTH, type SimModel, type World } from "./model.js";
@@ -73,7 +68,6 @@ export function runEmpire(options: EmpireOptions): EmpireResult {
     if (w.now % DAY === 0) {
       newDay(w);
       shareOfCasa(w);
-      spawnDeposits(w, rng);
       if ((w.now / DAY) % 7 === 0 && w.now > 0) terraWeek(w, rng, w.now / DAY / 7);
       const cash = w.houses.reduce((a, h) => a + h.cash, 0n);
       if (cash !== w.created - w.destroyed)
@@ -83,11 +77,6 @@ export function runEmpire(options: EmpireOptions): EmpireResult {
       daily.push(snapshot(w));
       if (w.now > 0 && w.now % MONTH === 0) monthly.push(monthSample(w));
     }
-    if (
-      s.muda.vehicles.length > 0 &&
-      w.now % Math.round((7 * DAY) / s.muda.departuresPerWeek) === 0
-    )
-      mudaIncanto(w, rng);
     relaxMarkets(w);
     for (const h of w.houses) {
       if (h.builds.length > 0) {
@@ -103,13 +92,6 @@ export function runEmpire(options: EmpireOptions): EmpireResult {
           h.research = h.research.filter((r) => r.endsAt > w.now);
           for (const r of done) h.modules[r.code] = r.level;
         }
-      }
-    }
-    if (w.voyages.length > 0) {
-      const arrived = w.voyages.filter((v) => v.arrivesAt <= w.now);
-      if (arrived.length > 0) {
-        w.voyages = w.voyages.filter((v) => v.arrivesAt > w.now);
-        for (const v of arrived) arrive(w, v, rng);
       }
     }
     // In a new order each hour: no house is always first at the cities' board.
@@ -131,41 +113,4 @@ function shareOfCasa(w: World) {
   w.workshopShare = Array.from({ length: w.s.workshops.maxLevel }, (_, i) =>
     Math.floor((best.filter((l) => l >= i + 1).length * 10_000) / n),
   );
-}
-
-/** A deposit's good, the dearer ones more often (a silver vein before a field of clay). */
-function valuable(rng: ReturnType<typeof newRng>, produces: Record<string, bigint>): string {
-  const goods = Object.entries(produces);
-  const total = goods.reduce((a, [, p]) => a + Number(p), 0);
-  let pick = rng.next() * total;
-  for (const [good, p] of goods) {
-    pick -= Number(p);
-    if (pick < 0) return good;
-  }
-  return goods[0]?.[0] ?? "salt";
-}
-
-/** New deposits, in the regions some house has a counter in (profondeur.md § A). */
-function spawnDeposits(w: World, rng: ReturnType<typeof newRng>) {
-  w.deposits = w.deposits.filter((x) => x.stock > 0);
-  const open = new Set(w.houses.flatMap((h) => [...h.counters.keys()]));
-  for (const r of w.s.regions) {
-    if (!open.has(r.code)) continue;
-    const raws = Object.keys(r.produces);
-    if (raws.length === 0) continue;
-    // As many deposits a day as the rate says (1,5: one, and a second one day in two).
-    // In proportion to the houses there: a crowded region is prospected more.
-    const there = w.houses.filter((h) => h.counters.has(r.code) && h.awayUntil <= w.now).length;
-    const rate = Math.round(
-      (w.s.deposits.spawnBpsPerRegionDay * Math.max(1, there)) / w.s.deposits.housesPerDeposit,
-    );
-    const count = Math.floor(rate / 10_000) + (rng.next() * 10_000 < rate % 10_000 ? 1 : 0);
-    for (let i = 0; i < count; i++)
-      w.deposits.push({
-        id: w.nextId++,
-        region: r.code,
-        good: valuable(rng, r.produces),
-        stock: depositStock(rng, w.s),
-      });
-  }
 }

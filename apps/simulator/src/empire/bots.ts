@@ -3,8 +3,8 @@ import {
   type Deniers,
   type Rng,
   applyBpsFloor,
-  arsenalCost,
   buildMinutesOf,
+  buyableOf,
   casaLevelOf,
   casaRequirementMet,
   catchupCut,
@@ -12,18 +12,12 @@ import {
   cellsWithin,
   citiesCovered,
   citySpot,
-  corsairRiskBps,
   effectOf,
-  extract,
   highRecipeRaw,
   levelCost,
   localBookOf,
   lotYieldBps,
-  mudaAuction,
-  mudaPlaces,
-  mudaReserve,
   newsDelayMs,
-  plansFor,
   regionCells,
   regionCities,
   regionSeat,
@@ -31,10 +25,9 @@ import {
   researchMinutesOf,
   revealedOf,
   routeHours,
-  settleColleganza,
+  sectorCost,
   standingPosts,
   startCells,
-  teamRate,
 } from "@comptoirs/engine";
 import { askAid, joinCompany, supplyAid } from "./company.js";
 import {
@@ -243,42 +236,13 @@ function collect(w: World, h: House) {
   }
 }
 
-// ——— Extraction (profondeur.md § A) ———
-
-function teamsOf(w: World, h: House): number {
-  if (h.casa < 5) return 0;
-  const base = 1 + Math.floor((h.casa - 5) / 4);
-  return h.bent === "miner" ? base * w.m.minerTeams : base;
-}
-
-function extractNow(w: World, h: House, hours: number) {
-  const teams = teamsOf(w, h);
-  if (teams === 0 || hours <= 0) return;
-  const remote = (h.modules.remote ?? 0) > 0;
-  const deposits = w.deposits
-    .filter((x) => x.stock > 0 && (remote || h.counters.has(x.region)))
-    .sort((a, b) => b.stock - a.stock)
-    .slice(0, teams);
-  const rate = teamRate(effectOf(h.modules, "yield", w.s), w.s);
-  for (const dep of deposits) {
-    const r = extract(dep.stock, [rate], hours);
-    dep.stock = r.left;
-    const qty = r.taken[0] ?? 0;
-    if (qty <= 0) continue;
-    // Sold where it is found, at that market's price; what the market cannot take is kept.
-    addStock(h, dep.good, qty);
-    takeStock(h, dep.good, sellToMarket(w, h, dep.region, dep.good, qty, "extraction"));
-  }
-}
-
 // ——— City orders ———
 
 /** A vehicle's hold at the house's level of its model (+10 % a level, by default). */
 function holdOf(w: World, h: House, type: string): number {
   const base = w.m.vehicles[type]?.capacity ?? 0;
   const lv = w.s.vehicleLevels;
-  const per = w.s.vehicles[type]?.build ? (lv.shipStepBps ?? lv.stepBps) : lv.stepBps;
-  const step = per * ((h.levels[type] ?? 1) - 1);
+  const step = lv.stepBps * ((h.levels[type] ?? 1) - 1);
   return Math.floor((base * (10_000 + step)) / 10_000);
 }
 
@@ -288,7 +252,73 @@ function landCapacity(w: World, h: House): number {
     .reduce((n, v) => n + holdOf(w, h, v.type), 0);
 }
 
+/**
+ * The cities' orders (1 November, after Hades' Star's shipments): in a session, the orders of the
+ * period of the cities its counters serve, as many as each town's size, of its region's goods;
+ * brought on a few rounds of its carts, from what it holds there. A period it does not play is
+ * simply missed.
+ */
+/** How much greater a city's orders are for its counter's level (Venice's own for Venetia). */
+function boostOf(w: World, h: House, region: string): number {
+  const level = region === "veneto" ? h.homeLevel : (h.counters.get(region) ?? 1);
+  return 10_000 + w.s.counters.bookStepBps * (Math.max(1, level) - 1);
+}
+
+/** The units the orders of a period ask in the cities its counters serve (their expectation). */
+function ordersPerSession(w: World, h: House): number {
+  const o = w.s.orders;
+  if (!o) return Number.POSITIVE_INFINITY;
+  const covered = citiesCovered(seen(h), w.s);
+  return w.s.map.cities
+    .filter((c) => covered.has(c.code))
+    .reduce((n, c) => {
+      const size = Math.min(5, Math.max(1, c.size));
+      const asked = ((o.perSize[size - 1] ?? 1) * o.qtyPerSize * size * 3) / 2;
+      return n + (asked * boostOf(w, h, c.region)) / 10_000;
+    }, 0);
+}
+
+function deliverOrders(w: World, h: House) {
+  const o = w.s.orders;
+  if (!o) return;
+  let cap = landCapacity(w, h) * w.m.roundsPerSession;
+  const covered = citiesCovered(seen(h), w.s);
+  const convoy = effectOf(h.modules, "orderBonus", w.s) + identityEffect(w, h, "orderBonus");
+  for (const c of w.s.map.cities) {
+    if (cap <= 0) return;
+    if (!covered.has(c.code)) continue;
+    const r = w.s.regions.find((x) => x.code === c.region);
+    if (!r) continue;
+    const goods = Object.keys(r.demands);
+    if (goods.length === 0) continue;
+    const size = Math.min(5, Math.max(1, c.size));
+    // The expected orders of a period: so many of each good of the region.
+    const asked =
+      ((((o.perSize[size - 1] ?? 1) * o.qtyPerSize * size * 3) / 2 / goods.length) *
+        boostOf(w, h, c.region)) /
+      10_000;
+    for (const good of goods) {
+      if (cap <= 0) return;
+      if (!homesOf(h, good).has(c.region)) continue;
+      const n = Math.min(Math.floor(asked), h.stock.get(good) ?? 0, cap);
+      if (n <= 0) continue;
+      takeStock(h, good, n);
+      cap -= n;
+      const ref = r.demands[good] ?? 0n;
+      const bps = 10_000 + o.premiumBps + o.sizeBps * (size - 1) + o.distanceBps + convoy;
+      const gross = applyBpsFloor(ref * BigInt(n), bps);
+      receive(w, h, gross, "orders", "orders");
+      h.ordersValue += gross;
+      h.favour += Number(gross / (100n * DENIERS_PER_DUCAT)) * w.m.favourPer100Ducats;
+    }
+  }
+}
+
 function deliver(w: World, h: House, sinceHours: number) {
+  if (w.s.orders) {
+    deliverOrders(w, h);
+    return;
+  }
   let cap = Math.floor(
     (landCapacity(w, h) * w.s.localTripsPerDay * Math.min(DAY, sinceHours)) / DAY,
   );
@@ -327,6 +357,8 @@ function fillOrders(
   qty: number,
   trade: Trade,
 ): number {
+  // A world of orders has no daily book nor board: what a ship brings sells at the Dogana.
+  if (w.s.orders) return 0;
   const convoy = effectOf(h.modules, "orderBonus", w.s) + identityEffect(w, h, "orderBonus");
   const small = h.casa <= w.m.smallCasa;
   const mk = market(w, region, good);
@@ -390,274 +422,6 @@ function sellSurplus(w: World, h: House) {
     }
     takeStock(h, good, sellToMarket(w, h, best, good, spare, "market"));
   }
-}
-
-// ——— Voyages (profondeur.md § D, § E) ———
-
-function vehicleSpec(w: World, type: string) {
-  const v = w.m.vehicles[type];
-  if (!v) throw new RangeError(`no vehicle ${type}`);
-  return v;
-}
-
-function strengthOf(w: World, h: House): number {
-  if (h.galleys === 0) return 0;
-  const bonus =
-    effectOf(h.modules, "strength", w.s) +
-    effectOf(h.modules, "defence", w.s) +
-    effectOf(h.modules, "support", w.s);
-  return Math.floor((h.galleys * w.m.galleyStrength * (10_000 + bonus)) / 10_000);
-}
-
-interface Route {
-  from: string;
-  to: string;
-  good: string;
-  hours: number;
-  unit: Deniers;
-  gain: number;
-  qty: number;
-  /** What the cargo should fetch over its cost, in deniers. */
-  margin: number;
-}
-
-/**
- * A vehicle's best route by gain an hour. A port takes a share of its day's depth, selling more
- * would only sink its price; a Muda convoy sells at the port's fair, a full hold.
- */
-function bestRoute(w: World, h: House, type: string): Route | null {
-  const spec = vehicleSpec(w, type);
-  const intel = effectOf(h.modules, "intel", w.s);
-  const hold = effectOf(h.modules, "capacity", w.s);
-  const speed = effectOf(h.modules, "speed", w.s);
-  const cap = Math.floor((holdOf(w, h, type) * (10_000 + hold)) / 10_000);
-  const fair = w.s.muda.vehicles.includes(type);
-  let best: Route | null = null;
-  for (const from of spec.regions) {
-    if (!h.counters.has(from)) continue;
-    for (const to of spec.regions) {
-      if (to === from) continue;
-      const hours = routeHours(from, to, spec.speedBps + speed, w.s);
-      const delay = Math.round(newsDelayMs(to, h.counters.has(to), intel, w.s) / DAY_MS);
-      const risk = corsairRiskBps(to, strengthOf(w, h), w.s) * w.s.corsairs.lossShareBps;
-      const depth = depthOf(w, to) + (fair ? cap : 0);
-      const qtyMax = fair ? cap : Math.min(cap, Math.floor(depth * w.m.voyageDepthShare));
-      const impact = (w.s.prices.impactBps * qtyMax) / (2 * depth) / 10_000;
-      for (const good of Object.keys(w.s.regions.find((r) => r.code === to)?.demands ?? {})) {
-        const buy = priceOf(w, market(w, from, good));
-        const sell = Number(knownPrice(w, h, to, good, delay)) * (1 - impact);
-        const expected = sell * (1 - risk / 1e8) - Number(buy) * 1.03;
-        const gain = (expected * qtyMax) / (2 * hours);
-        if (expected > Number(buy) * 0.1 && (!best || gain > best.gain))
-          best = { from, to, good, hours, unit: buy, gain, qty: qtyMax, margin: expected * qtyMax };
-      }
-    }
-  }
-  return best;
-}
-
-function planVoyages(w: World, h: House, rng: Rng) {
-  h.vehicles.forEach((v, index) => {
-    const spec = vehicleSpec(w, v.type);
-    if (spec.regions.length < 2 || v.busyUntil > w.now) return;
-    // A Muda galley sails only with a place won at the incanto.
-    const muda = w.s.muda.vehicles.includes(v.type);
-    if (muda && h.mudaPasses <= 0) return;
-    const best = bestRoute(w, h, v.type);
-    if (!best) return;
-    const unit = (best.unit * 103n) / 100n;
-    // Its own goods first: the négociant sells its surplus where it fetches most.
-    const own = Math.min(best.qty, h.stock.get(best.good) ?? 0);
-    const wanted = best.qty - own;
-    // It pays from what it may spend: its reserve for the Casa stays, the colleganza fills in.
-    const free = minBig(h.cash, maxBig(0n, spendable(w, h)));
-    let qty = Math.min(wanted, unit > 0n ? Number(free / unit) : 0);
-    // A convoy carries the stakes that paid its place.
-    const stakes: Voyage["stakes"] = muda ? h.mudaStakes : [];
-    const place = muda ? h.mudaPrice : 0n;
-    if (muda) {
-      h.mudaStakes = [];
-      h.mudaPrice = 0n;
-    }
-    // A long voyage or a convoy short of capital opens a colleganza (Casa 11).
-    if ((muda || best.hours >= 48) && h.casa >= 11 && qty < wanted) {
-      const raised = raise(w, h, unit * BigInt(wanted - qty), stakes, rng);
-      qty = Math.min(wanted, Number((free + raised) / unit));
-    }
-    const bought = qty > 0 ? buyFromMarket(w, h, best.from, best.good, qty) : 0;
-    if (bought + own <= 0) {
-      // Nothing to carry: the investors have their stakes back, as far as the house can.
-      if (muda) h.mudaPasses--;
-      for (const st of stakes) {
-        const inv = w.houses[st.house];
-        if (inv) transfer(h, inv, minBig(st.amount, h.cash));
-      }
-      return;
-    }
-    takeStock(h, best.good, bought + own);
-    v.busyUntil = w.now + 2 * best.hours;
-    // A prudent house insures a risky road (step 7a): the premium destroyed now.
-    const risk = corsairRiskBps(best.to, strengthOf(w, h), w.s);
-    const value = unit * BigInt(bought) + best.unit * BigInt(own);
-    const premium = (value * BigInt(risk) * BigInt(w.s.corsairs.premiumBps)) / 100_000_000n;
-    const insured = risk >= w.m.insureFromBps && premium > 0n && h.cash >= premium;
-    if (insured) destroy(w, h, premium, "insurance");
-    if (muda) {
-      h.mudaPasses--;
-      w.muda.voyages++;
-      if (stakes.length > 0) w.muda.withColleganza++;
-      for (const st of stakes) {
-        w.muda.stakes += st.amount;
-        if ((w.houses[st.house]?.casa ?? 0) > h.casa) w.muda.fromLarger += st.amount;
-      }
-    }
-    w.voyages.push({
-      house: w.houses.indexOf(h),
-      vehicle: index,
-      good: best.good,
-      qty: bought + own,
-      to: best.to,
-      arrivesAt: w.now + best.hours,
-      // Its own goods count at what they would have fetched at home.
-      // A convoy's place is part of its cost.
-      cost: unit * BigInt(bought) + best.unit * BigInt(own) + place,
-      stakes,
-      escort: strengthOf(w, h),
-      muda,
-      ...(insured ? { insured: true } : {}),
-    });
-  });
-}
-
-/**
- * Raises up to `missing` from up to three houses with money to spare, as stakes in a colleganza.
- * Returns what was raised.
- */
-function raise(w: World, h: House, missing: Deniers, stakes: Voyage["stakes"], rng: Rng): Deniers {
-  let raised = 0n;
-  const investors = w.houses
-    .filter((x) => x !== h && x.awayUntil <= w.now && investable(w, x) > 0n)
-    .sort(() => rng.next() - 0.5)
-    .slice(0, 3);
-  for (const inv of investors) {
-    if (raised >= missing) break;
-    const stake = minBig(missing - raised, investable(w, inv));
-    if (stake <= 0n) continue;
-    transfer(inv, h, stake);
-    stakes.push({ house: w.houses.indexOf(inv), amount: stake });
-    raised += stake;
-  }
-  return raised;
-}
-
-/**
- * The incanto (CADRAGE-v3 § 12 bis), before each Muda departure. A place not sailed is lost, and
- * its investors have back what the house can give. Each owner of an idle Muda galley bids a share
- * of what its best convoy should make; a winner short of free cash raises the rest in colleganza
- * on that convoy, or gives the place up. The price is destroyed.
- */
-export function mudaIncanto(w: World, rng: Rng) {
-  for (const h of w.houses) {
-    for (const st of h.mudaStakes) {
-      const inv = w.houses[st.house];
-      if (inv) transfer(h, inv, minBig(st.amount, h.cash));
-    }
-    h.mudaPasses = 0;
-    h.mudaPrice = 0n;
-    h.mudaStakes = [];
-  }
-  const types = w.s.muda.vehicles;
-  const owners = w.houses.filter((h) => h.vehicles.some((v) => types.includes(v.type)));
-  const places = mudaPlaces(owners.length, w.s);
-  if (places === 0) return;
-  const incomes = owners.map(incomePerDay).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  const reserve = mudaReserve(incomes[Math.floor(incomes.length / 2)] ?? 0n, w.s);
-  const bidders: House[] = [];
-  const bids: Deniers[] = [];
-  for (const h of owners) {
-    if (h.awayUntil > w.now) continue;
-    const idle = h.vehicles.find((v) => types.includes(v.type) && v.busyUntil <= w.now);
-    const route = idle ? bestRoute(w, h, idle.type) : null;
-    if (!route) continue;
-    const bid = BigInt(Math.floor((route.margin * w.m.mudaBidBps) / 10_000));
-    if (bid <= 0n) continue;
-    bidders.push(h);
-    bids.push(bid);
-  }
-  mudaAuction(bids, places, reserve).forEach((price, i) => {
-    const h = bidders[i];
-    if (!h || price === null) return;
-    const free = minBig(h.cash, maxBig(0n, spendable(w, h)));
-    const stakes: Voyage["stakes"] = [];
-    if (free < price) raise(w, h, price - free, stakes, rng);
-    if (h.cash < price) {
-      for (const st of stakes) {
-        const inv = w.houses[st.house];
-        if (inv) transfer(h, inv, st.amount);
-      }
-      return;
-    }
-    destroy(w, h, price, "muda");
-    h.mudaPasses = 1;
-    h.mudaPrice = price;
-    h.mudaStakes = stakes;
-    w.muda.places++;
-    w.muda.paid += price;
-  });
-}
-
-const minBig = (a: Deniers, b: Deniers) => (a < b ? a : b);
-const maxBig = (a: Deniers, b: Deniers) => (a > b ? a : b);
-
-/** What a house may put in a colleganza: past its reserve and three days of income. */
-function investable(w: World, h: House): Deniers {
-  return h.cash - reserveOf(w, h) - incomePerDay(h) * 3n;
-}
-
-/** A voyage arrives: the corsairs perhaps, the sale at the port, the colleganza shared. */
-export function arrive(w: World, v: Voyage, rng: Rng) {
-  const h = w.houses[v.house];
-  if (!h) return;
-  let qty = v.qty;
-  const risk = corsairRiskBps(v.to, v.escort, w.s);
-  if (risk > 0 && rng.next() * 10_000 < risk) {
-    const lost = Math.floor((qty * w.s.corsairs.lossShareBps) / 10_000);
-    qty -= lost;
-    if (v.insured) create(w, h, market(w, v.to, v.good).ref * BigInt(lost), "insurance", "voyages");
-  }
-  const before = h.cash;
-  // The port's orders first, then its market; what it cannot take comes home in stock.
-  addStock(h, v.good, qty);
-  const delivered = fillOrders(w, h, v.to, v.good, qty, "voyages");
-  const fair = v.muda ? qty : 0;
-  const sold = sellToMarket(w, h, v.to, v.good, qty - delivered, "voyages", fair) + delivered;
-  takeStock(h, v.good, sold - delivered);
-  const net = h.cash - before;
-  const kept = priceOf(w, market(w, v.to, v.good)) * BigInt(qty - sold);
-  h.voyagesDone++;
-  h.voyageMargin += net + kept - v.cost;
-  if (v.stakes.length > 0) settle(w, h, v, net);
-}
-
-function settle(w: World, h: House, v: Voyage, net: Deniers) {
-  const stakes = v.stakes.map((x) => x.amount);
-  const capital = stakes.reduce((a, x) => a + x, 0n);
-  // The share of the voyage the investors paid for, settled as the engine's colleganza does.
-  const share = v.cost > 0n ? (net * capital) / v.cost : 0n;
-  const out = colleganzaShare(w, stakes, share > 0n ? share : 0n);
-  v.stakes.forEach((st, i) => {
-    const inv = w.houses[st.house];
-    const due = out[i] ?? 0n;
-    if (inv && due > 0n) {
-      transfer(h, inv, minBig(due, h.cash));
-      w.colleganza.toYoung += inv.casa >= 12 && h.casa <= 12 ? st.amount : 0n;
-      w.colleganza.total += st.amount;
-    }
-  });
-}
-
-function colleganzaShare(w: World, stakes: Deniers[], proceeds: Deniers): Deniers[] {
-  return settleColleganza(stakes, proceeds, w.s).investors;
 }
 
 // ——— Building (CADRAGE-v3 § 3) ———
@@ -935,11 +699,44 @@ function bestPoint(
   return best;
 }
 
+/** The weight of a sector's towns: their sizes. */
+const townsIn = (w: World, cell: string) =>
+  w.s.map.cities.filter((c) => c.cell === cell).reduce((n, c) => n + c.size, 0);
+
+/**
+ * A sector bought next to its own (1 November): the one with the greatest towns, of a region its
+ * Casa has reached, when it can pay it.
+ */
+function tryUnlock(w: World, h: House): boolean {
+  if (!w.s.map.unlock) return false;
+  const best = buyableOf(seen(h), w.s)
+    .filter((c) => {
+      const r = w.s.regions.find((x) => x.code === w.s.map.cells[c]?.region);
+      return r !== undefined && r.casa <= h.casa;
+    })
+    .map((c) => ({ c, n: townsIn(w, c) }))
+    .filter((x) => x.n > 0)
+    .sort((a, b) => b.n - a.n)[0];
+  if (!best) return false;
+  const cost = sectorCost(seen(h), w.s);
+  if (spendable(w, h) < cost) return false;
+  destroy(w, h, cost, "counters");
+  h.revealed.add(best.c);
+  return true;
+}
+
 function tryCounter(w: World, h: House): boolean {
   if (busy(h, "counter") || busy(h, "post")) return false;
   // A new region, its seat in sight from its Casa (no Favour now): a counter put down there.
   const region = w.s.regions.find((r) => !h.counters.has(r.code) && r.casa <= h.casa);
-  const seat = region ? regionSeat(w.s, region.code) : null;
+  // On a map bought sector by sector, the region's sector it owns with the most towns.
+  const seat = region
+    ? w.s.map.unlock
+      ? (regionCells(w.s, region.code)
+          .filter((c) => h.revealed.has(c))
+          .sort((a, b) => townsIn(w, b) - townsIn(w, a))[0] ?? null)
+      : regionSeat(w.s, region.code)
+    : null;
   const cost = region ? postCostOf(w, h, region.code) : 0n;
   // A new region is the house's growth: it is opened before saving, as soon as it pays back.
   if (region && seat && (regionPaysBack(w, region.code, cost) ? h.cash : spendable(w, h)) >= cost) {
@@ -1000,33 +797,17 @@ function tryCounter(w: World, h: House): boolean {
 
 function tryVehicle(w: World, h: House): boolean {
   if (busy(h, "vehicle")) return false;
-  // The négociant keeps a larger fleet.
-  const most = 2 + Math.floor((h.casa * (h.bent === "trader" ? 2 : 1)) / 2);
+  const most = 2 + Math.floor(h.casa / 2);
   if (h.vehicles.length >= most) return false;
-  const types = Object.entries(w.m.vehicles)
+  // A cart more while the orders of a session outgrow what its carts bring.
+  if (landCapacity(w, h) * w.m.roundsPerSession >= ordersPerSession(w, h)) return false;
+  const pick = Object.entries(w.m.vehicles)
     .filter(([, v]) => v.casa <= h.casa)
-    .sort((a, b) => b[1].capacity - a[1].capacity);
-  // A land vehicle while Venice's own book outgrows the carts, else the largest ship.
-  const book = localBookOf("veneto", h.counters.get("veneto") ?? 0, w.s);
-  const wantLand = landCapacity(w, h) * w.s.localTripsPerDay < book;
-  const pick = wantLand ? types.find(([, v]) => v.regions.length === 1) : types[0];
-  if (!pick || (!wantLand && pick[1].regions.length === 1)) return false;
-  // A ship is built at the Arsenal (step 7a): its site's hours, its materials from the stock, or
-  // their worth at the reference when the house lacks them (the model buys them for it).
-  const build = w.s.vehicles[pick[0]]?.build;
-  // On the map (step 2), the Arsenal is put down on a coast first.
-  const yard = w.s.map.arsenal;
-  if (build && yard && !h.arsenal) {
-    if (busy(h, "arsenal") || h.casa < yard.casa) return false;
-    const price = arsenalCost(w.s);
-    if (spendable(w, h) < price) return false;
-    destroy(w, h, price, "vehicles");
-    startBuild(w, h, { kind: "arsenal", target: "arsenal" }, yard.minutes);
-    return true;
-  }
-  // A land vehicle is bought at the Remise (31 October, evening), put down first.
+    .sort((a, b) => b[1].capacity - a[1].capacity)[0];
+  if (!pick) return false;
+  // Bought at the Remise (31 October, evening), put down first.
   const depot = w.s.map.depot;
-  if (!build && depot && !h.depot) {
+  if (depot && !h.depot) {
     if (busy(h, "depot") || h.casa < depot.casa) return false;
     const price = BigInt(depot.costDucats) * DENIERS_PER_DUCAT;
     if (spendable(w, h) < price) return false;
@@ -1034,24 +815,10 @@ function tryVehicle(w: World, h: House): boolean {
     startBuild(w, h, { kind: "depot", target: "depot" }, depot.minutes);
     return true;
   }
-  let cost = d(pick[1].costDucats);
-  const lacking: [string, number][] = [];
-  for (const [g, n] of Object.entries(build?.materials ?? {})) {
-    const short = n - Math.min(n, h.stock.get(g) ?? 0);
-    if (short > 0) {
-      cost += globalRef(g, w.s, w.m) * BigInt(short);
-      lacking.push([g, n - short]);
-    } else lacking.push([g, n]);
-  }
+  const cost = d(pick[1].costDucats);
   if (spendable(w, h) < cost) return false;
-  for (const [g, n] of lacking) takeStock(h, g, n);
   destroy(w, h, cost, "vehicles");
-  startBuild(
-    w,
-    h,
-    { kind: "vehicle", target: pick[0] },
-    build ? Math.ceil(build.minutes / 60) : 120,
-  );
+  startBuild(w, h, { kind: "vehicle", target: pick[0] }, 120);
   return true;
 }
 
@@ -1063,36 +830,24 @@ function tryVehicle(w: World, h: House): boolean {
 function tryModel(w: World, h: House): boolean {
   if (busy(h, "model")) return false;
   const lv = w.s.vehicleLevels;
+  if (w.s.map.depot && !h.depot) return false;
+  // Only while the orders outgrow the carts: a hold more is worth only what it brings.
+  if (landCapacity(w, h) * w.m.roundsPerSession >= ordersPerSession(w, h)) return false;
   const owned = new Map<string, number>();
   for (const v of h.vehicles) owned.set(v.type, (owned.get(v.type) ?? 0) + 1);
+  const r = w.s.regions.find((x) => x.code === "veneto");
+  const goods = Object.keys(r?.demands ?? {});
+  if (goods.length === 0) return false;
+  const avg = goods.reduce((a, g) => a + market(w, "veneto", g).ref, 0n) / BigInt(goods.length);
   for (const [type, count] of owned) {
     const spec = w.m.vehicles[type];
     const level = h.levels[type] ?? 1;
     if (!spec || level >= lv.max) continue;
-    const ship = Boolean(w.s.vehicles[type]?.build);
-    if (ship ? w.s.map.arsenal && !h.arsenal : w.s.map.depot && !h.depot) continue;
     const cost =
       d(Math.max(spec.costDucats, lv.minCostDucats)) * BigInt(lv.costTimes) * 2n ** BigInt(level);
-    const per = ship ? (lv.shipStepBps ?? lv.stepBps) : lv.stepBps;
-    const more = Math.floor((spec.capacity * per) / 10_000) * count;
-    let perDay = 0n;
-    if (spec.regions.length === 1) {
-      const book = localBookOf("veneto", h.counters.get("veneto") ?? 0, w.s);
-      if (landCapacity(w, h) * w.s.localTripsPerDay >= book) continue;
-      const r = w.s.regions.find((x) => x.code === "veneto");
-      const goods = Object.keys(r?.demands ?? {});
-      if (goods.length === 0) continue;
-      const avg = goods.reduce((a, g) => a + market(w, "veneto", g).ref, 0n) / BigInt(goods.length);
-      perDay = (avg * BigInt(more * w.s.localTripsPerDay)) / 10n;
-    } else {
-      const best = bestRoute(w, h, type);
-      if (!best || best.qty <= 0 || best.margin <= 0) continue;
-      // A hold larger than the port takes earns nothing: only a full hold is worth raising.
-      const hold = effectOf(h.modules, "capacity", w.s);
-      if (best.qty < Math.floor((holdOf(w, h, type) * (10_000 + hold)) / 10_000)) continue;
-      const perUnit = best.margin / best.qty;
-      perDay = BigInt(Math.floor((perUnit * more * DAY) / (2 * Math.max(1, best.hours))));
-    }
+    const more = Math.floor((spec.capacity * lv.stepBps) / 10_000) * count;
+    // The orders' premium on the units more a day (two sessions, its rounds each).
+    const perDay = (avg * BigInt(more * w.m.roundsPerSession * 2)) / 10n;
     if (perDay <= 0n || cost > perDay * BigInt(w.m.paybackDays) || spendable(w, h) < cost) continue;
     destroy(w, h, cost, "vehicles");
     startBuild(w, h, { kind: "model", target: type }, 1);
@@ -1112,60 +867,26 @@ function tryCamp(w: World, h: House): boolean {
   return true;
 }
 
-function tryGalley(w: World, h: House): boolean {
-  if (h.casa < 9 || busy(h, "galley")) return false;
-  if (h.galleys >= 1 + Math.floor(h.casa / 4)) return false;
-  const cost = d(w.m.galleyCostDucats) * BigInt(h.galleys + 1);
-  if (spendable(w, h) < cost) return false;
-  destroy(w, h, cost, "galleys");
-  startBuild(w, h, { kind: "galley", target: "galley" }, 480);
-  return true;
-}
-
+/**
+ * One trade, delivering (1 November): every house builds alike, the Casa first, then its counters
+ * and sectors, its workshops, its carts, the Campo.
+ */
+const ORDER = [
+  tryCasa,
+  tryCounter,
+  tryUnlock,
+  tryNewWorkshop,
+  tryWorkshop,
+  tryVehicle,
+  tryModel,
+  tryCamp,
+  tryWorks,
+];
 const PRIORITY: Record<Bent, ((w: World, h: House) => boolean)[]> = {
-  trader: [
-    tryCasa,
-    tryCounter,
-    tryVehicle,
-    tryModel,
-    tryNewWorkshop,
-    tryWorkshop,
-    tryCamp,
-    tryWorks,
-  ],
-  miner: [
-    tryCasa,
-    tryCounter,
-    tryNewWorkshop,
-    tryWorkshop,
-    tryVehicle,
-    tryCamp,
-    tryWorks,
-    // The miner raises its models last: its ducats go to its deposits first.
-    tryModel,
-  ],
-  armourer: [
-    tryCasa,
-    tryCounter,
-    tryCamp,
-    tryGalley,
-    tryNewWorkshop,
-    tryWorkshop,
-    tryVehicle,
-    tryModel,
-    tryWorks,
-  ],
-  mixed: [
-    tryCasa,
-    tryCounter,
-    tryNewWorkshop,
-    tryWorkshop,
-    tryVehicle,
-    tryModel,
-    tryGalley,
-    tryCamp,
-    tryWorks,
-  ],
+  trader: ORDER,
+  miner: ORDER,
+  armourer: ORDER,
+  mixed: ORDER,
 };
 
 /**
@@ -1219,7 +940,7 @@ export function finishBuild(w: World, h: House, b: Build) {
       y: y === "" ? Math.round(cy) : Number(y),
       level: 1,
     });
-    for (const c of cellsWithin(cell, w.s.map.revealRadius)) h.revealed.add(c);
+    if (!w.s.map.unlock) for (const c of cellsWithin(cell, w.s.map.revealRadius)) h.revealed.add(c);
     if (!h.counters.has(region)) h.counters.set(region, 1);
   } else if (b.kind === "arsenal") {
     h.arsenal = true;
@@ -1247,33 +968,11 @@ function research(w: World, h: House) {
     if (level > 10) continue;
     const cost = researchCost(level, w.s);
     if (spendable(w, h) < cost) return;
-    const plans = plansFor(level, w.s);
-    if (h.plans < plans && !buyPlans(w, h, plans - h.plans)) continue;
-    // The plans bought may leave it short: they wait for the next round.
-    if (h.cash < cost) return;
-    h.plans -= plans;
+    if (!w.s.modules.some((m) => m.code === code)) continue;
+    if (w.s.research.available.length > 0 && !w.s.research.available.includes(code)) continue;
     destroy(w, h, cost, "research");
     h.research.push({ code, level, endsAt: w.now + hoursOf(researchMinutesOf(level, w.s)) });
   }
-}
-
-function buyPlans(w: World, h: House, qty: number): boolean {
-  const price = d(w.m.planPriceDucats);
-  let need = qty;
-  for (const lot of w.planPool) {
-    if (need === 0) break;
-    const seller = w.houses[lot.house];
-    if (!seller || seller === h) continue;
-    const take = Math.min(need, lot.qty, Number(h.cash / price));
-    if (take <= 0) break;
-    transfer(h, seller, price * BigInt(take));
-    seller.income.expeditions += price * BigInt(take);
-    lot.qty -= take;
-    need -= take;
-    h.plans += take;
-  }
-  w.planPool = w.planPool.filter((x) => x.qty > 0);
-  return need === 0;
 }
 
 // ——— The Porta (docs/plan-porta.md), in place of the expeditions of profondeur.md § C ———
@@ -1285,7 +984,7 @@ function expedition(w: World, h: House, rng: Rng) {
   // A house at the Porta buys the land vehicle of the biggest hold its Casa opens, for its relics.
   if (h.porta) {
     const best = Object.entries(w.s.vehicles)
-      .filter(([, v]) => !v.build && v.casa <= h.casa)
+      .filter(([, v]) => v.casa <= h.casa)
       .sort((a, b) => b[1].capacity - a[1].capacity)[0];
     const owned = h.vehicles.some((v) => v.type === best?.[0]);
     const price = best ? d(best[1].costDucats) : 0n;
@@ -1294,9 +993,9 @@ function expedition(w: World, h: House, rng: Rng) {
       h.vehicles.push({ type: best[0], busyUntil: 0 });
     }
   }
-  // Any land vehicle, as the engine takes (`landVehicle`): never a ship of the Arsenal.
+  // Any land vehicle, as the engine takes (`landVehicle`).
   const land = h.vehicles
-    .filter((v) => w.s.vehicles[v.type] !== undefined && !w.s.vehicles[v.type]?.build)
+    .filter((v) => w.s.vehicles[v.type] !== undefined)
     .sort((a, b) => holdOf(w, h, b.type) - holdOf(w, h, a.type))[0];
   const holdRelics = () =>
     land
@@ -1307,7 +1006,7 @@ function expedition(w: World, h: House, rng: Rng) {
   };
   const bread = w.markets.get("veneto:bread")?.ref ?? d(1);
   const before = h.porta?.battles ?? 0;
-  const relics = portaDay(
+  portaDay(
     w,
     h,
     rng,
@@ -1322,16 +1021,6 @@ function expedition(w: World, h: House, rng: Rng) {
   if (!h.porta || h.porta.battles === before) return;
   h.expeditionsTried = h.porta.battles;
   h.expeditionsWon = h.porta.won;
-  // Relics deciphered into plans, when the model says so (an open question: plan-porta.md § 13).
-  const plans = relics * w.m.plansPerRelic;
-  if (plans > 0) {
-    h.plans += plans;
-    const spare = Math.max(0, h.plans - 6);
-    if (spare > 0) {
-      h.plans -= spare;
-      w.planPool.push({ house: w.houses.indexOf(h), qty: spare });
-    }
-  }
 }
 
 // ——— The session ———
@@ -1341,7 +1030,6 @@ export function session(w: World, h: House, rng: Rng) {
   const since = w.now - h.lastSession;
   const worked = Math.min(since, w.m.queueHours);
   collect(w, h);
-  extractNow(w, h, worked);
   deliver(w, h, since);
   // Its partners' requests first, from what it holds beyond its inputs and its next Casa.
   const keep = nextCasaMaterials(w, h);
@@ -1349,7 +1037,6 @@ export function session(w: World, h: House, rng: Rng) {
   supplyAid(w, h, (g) => (inputs.has(g) ? Number.POSITIVE_INFINITY : (keep[g] ?? 0)));
   sellSurplus(w, h);
   sellToCourt(w, h);
-  if (h.bent !== "miner" || h.casa >= 8) planVoyages(w, h, rng);
   if (h.bent === "armourer") expedition(w, h, rng);
   build(w, h);
   research(w, h);

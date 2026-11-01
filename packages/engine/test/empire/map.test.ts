@@ -127,7 +127,7 @@ describe("a house of an older drawing of the grid", () => {
 });
 
 describe("a house of before, taken up on the map", () => {
-  it("sees Venetia and its regions' seats, its counters there, its Arsenal with a ship", () => {
+  it("sees Venetia and its regions' seats, its counters there", () => {
     const h = {
       casa: 6,
       counters: { lombardia: 2 },
@@ -144,14 +144,14 @@ describe("a house of before, taken up on the map", () => {
           costDucats: 0,
           regions: ["veneto"],
           speedBps: 0,
-          build: { minutes: 60, materials: {} },
         },
       },
     });
     ensureMap(h, ships);
     expect(h.posts).toEqual([expect.objectContaining({ cell: "4,0", region: "lombardia" })]);
     expect(h.revealed).toEqual(expect.arrayContaining(["0,0", "1,1", "4,0", "6,0", "3,1"]));
-    expect(h.arsenal).toBe("0,0");
+    // No Arsenal any more (1 November).
+    expect(h.arsenal).toBeUndefined();
     // Taken up once: what it has stays.
     const again = structuredClone(h);
     ensureMap(again, ships);

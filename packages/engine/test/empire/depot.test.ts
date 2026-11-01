@@ -23,14 +23,6 @@ const empire: EmpireSettingsInput = {
   vehicleLevels: { max: 5, stepBps: 1_000, costTimes: 1, minCostDucats: 0 },
   vehicles: {
     cart: { casa: 1, capacity: 30, costDucats: 100, regions: ["veneto"], speedBps: 0 },
-    cocca: {
-      casa: 1,
-      capacity: 100,
-      costDucats: 1_000,
-      regions: ["veneto", "lombardia"],
-      speedBps: 0,
-      build: { minutes: 60, materials: {} },
-    },
   },
 };
 
@@ -130,22 +122,6 @@ describe("a model's level", () => {
     });
     const h = { casa: 2, workshops: [], builds: [] } as unknown as EmpireHouse;
     expect(upgradeCost(h, "cart", s)).toBe(500n * 2n * 100n);
-    expect(upgradeCost(h, "cocca", s)).toBe(1_000n * 2n * 100n);
-  });
-
-  it("raises a ship by its own step, when the world sets one", () => {
-    const s = parseEmpireSettings({
-      ...empire,
-      vehicleLevels: { max: 5, stepBps: 1_000, shipStepBps: 500, costTimes: 1 },
-    });
-    const h = {
-      casa: 2,
-      workshops: [],
-      builds: [],
-      vehicleLevels: { cart: 3, cocca: 3 },
-    } as unknown as EmpireHouse;
-    expect(capacityOf(h, "cart", s)).toBe(36);
-    expect(capacityOf(h, "cocca", s)).toBe(110);
   });
 
   it("raises the hold of every vehicle of the model by a tenth a level, up to the fifth", () => {
@@ -162,13 +138,6 @@ describe("a model's level", () => {
     expect(error(d.try({ type: "empireUpgradeVehicle", playerId: "a", vehicleType: "cart" }))).toBe(
       "max_level",
     );
-  });
-
-  it("asks the Arsenal for a ship's model", () => {
-    const d = withDepot();
-    expect(
-      error(d.try({ type: "empireUpgradeVehicle", playerId: "a", vehicleType: "cocca" })),
-    ).toBe("no_arsenal");
   });
 
   it("counts in the Power as a module's level, its first level free", () => {

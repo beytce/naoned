@@ -366,6 +366,24 @@ export interface EmpireTransfer {
   arrivesAt: number;
 }
 
+/** A vehicle's round from its counter to the cities' orders, and back (after Hades' Star). */
+export interface EmpireTour {
+  id: string;
+  vehicleId: string;
+  post: string;
+  period: number;
+  leftAt: number;
+  stops: {
+    city: string;
+    order: number;
+    good: string;
+    qty: number;
+    at: number;
+    done?: boolean;
+  }[];
+  backAt: number;
+}
+
 /** A house of the persistent empire: what it has built, never reset. */
 export interface EmpireHouse {
   casa: number;
@@ -377,6 +395,8 @@ export interface EmpireHouse {
   counters?: Record<string, number>;
   /** The map's cells the house sees (« q,r »): Venetia's, and what its counters revealed. */
   revealed?: string[];
+  /** The sectors it owns, bought one next to another (Venice's at the founding). */
+  unlocked?: string[];
   /** The drawing of the grid those cells are of. */
   mapVersion?: number;
   /**
@@ -417,6 +437,10 @@ export interface EmpireHouse {
   porta?: EmpirePorta;
   /** Goods on the road between two counters, carried by a land vehicle. */
   transfers?: EmpireTransfer[];
+  /** What it brought of each city's orders in the period (by order, in their order). */
+  filled?: { period: number; cities: Record<string, number[]> };
+  /** Its vehicles' rounds to the cities, stop by stop. */
+  tours?: EmpireTour[];
   /** The deposits its teams work, by id. */
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */

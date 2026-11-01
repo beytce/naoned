@@ -113,7 +113,7 @@ export function hudOf(p: EmpirePayload): { id: "ducats" | "favour" | "seals"; va
 }
 
 /** What may be put on the map: a counter, or the Arsenal. */
-export type Placing = { kind: "post" | "arsenal" | "camp" | "depot" | "porta"; region?: string };
+export type Placing = { kind: "post" | "camp" | "depot" | "porta"; region?: string };
 
 /**
  * The cells where the house may put what it places: for a counter, the land cells it sees, of a
@@ -135,17 +135,15 @@ export function placeable(p: EmpirePayload, placing: Placing): string[] {
   ]);
   return Object.entries(map.cells)
     .filter(([cell, c]) =>
-      placing.kind === "arsenal"
-        ? c.coast && !taken.has(cell)
-        : placing.kind === "camp" || placing.kind === "depot"
-          ? !taken.has(cell)
-          : placing.kind === "porta"
-            ? // A sector holds several buildings: the Porta goes on any cell seen.
-              map.revealed.includes(cell)
-            : reached.has(c.region) &&
-              // With a reach, counters share a cell, apart (the map that grows).
-              (map.reach ? true : !taken.has(cell)) &&
-              (placing.region === undefined || c.region === placing.region),
+      placing.kind === "camp" || placing.kind === "depot"
+        ? !taken.has(cell)
+        : placing.kind === "porta"
+          ? // A sector holds several buildings: the Porta goes on any cell seen.
+            map.revealed.includes(cell)
+          : reached.has(c.region) &&
+            // With a reach, counters share a cell, apart (the map that grows).
+            (map.reach ? true : !taken.has(cell)) &&
+            (placing.region === undefined || c.region === placing.region),
     )
     .map(([cell]) => cell)
     .sort();
@@ -155,7 +153,6 @@ export function placeable(p: EmpirePayload, placing: Placing): string[] {
 export function placingCost(p: EmpirePayload, placing: Placing, cell: string): string | null {
   const view = p.view;
   if (!view) return null;
-  if (placing.kind === "arsenal") return view.map.arsenalSite?.cost ?? null;
   if (placing.kind === "camp") return view.map.campSite?.cost ?? null;
   if (placing.kind === "depot") return view.map.depotSite?.cost ?? null;
   if (placing.kind === "porta") return view.porta?.site?.cost ?? null;
@@ -195,6 +192,10 @@ export type Target =
   | { kind: "city"; code: string }
   | { kind: "arsenal" }
   | { kind: "depot" }
+  /** A sector to buy, next to one's own (1 November). */
+  | { kind: "sector"; cell: string }
+  /** A vehicle chosen for a round (after Hades' Star). */
+  | { kind: "vehicle"; id: string }
   | { kind: "porta" };
 
 export type ActionIcon =
@@ -206,6 +207,7 @@ export type ActionIcon =
   | "banner"
   | "anchor"
   | "cart"
+  | "plus"
   | "workshops"
   | "lock"
   | "details";
@@ -365,12 +367,31 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
       ];
     case "depot":
       return [
-        { id: "vehicles", icon: "cart", words: { key: "vehicles" }, open: "production:vehicles" },
+        { id: "vehicles", icon: "cart", words: { key: "vehicles" }, open: "remise" },
         // The Porta's arms are bought at the Remise (docs/plan-porta.md § 4).
         ...(p.view?.porta?.site
           ? [{ id: "arms", icon: "build" as const, words: { key: "arms" }, open: "arms" }]
           : []),
       ];
+    case "vehicle":
+      return [];
+    case "sector": {
+      const b = view.map.buyable.find((x) => x.cell === target.cell);
+      if (!b) return [];
+      const closed = view.house.casa < b.casa;
+      return [
+        closed
+          ? { id: "closed", icon: "lock", words: { key: "closed", n: b.casa }, disabled: true }
+          : {
+              id: "unlock",
+              icon: "plus",
+              words: { key: "unlock" },
+              cost: view.map.sectorCost,
+              disabled: !affordable(p.cash, view.map.sectorCost),
+              action: { type: "empireUnlockCell", cell: target.cell },
+            },
+      ];
+    }
     case "porta":
       return [
         { id: "porta", icon: "banner", words: { key: "porta" }, open: "porta" },
@@ -427,4 +448,101 @@ export function postPoint(p: EmpirePayload, post: string): [number, number] | nu
   if (post === "home") return [map.home.x, map.home.y];
   const x = map.posts.find((q) => q.id === post);
   return x ? [x.x, x.y] : null;
+}
+
+/** A round being made (after Hades' Star): the vehicle, its stops in order. */
+export interface TourDraft {
+  vehicleId: string;
+  stops: { city: string; order: number; qty: number }[];
+  /** The city whose orders are shown to load. */
+  focus: string | null;
+}
+
+/** The counter a vehicle stands at, with its point and its reach. */
+export function vehiclePost(
+  p: EmpirePayload,
+  vehicleId: string,
+): { id: string; x: number; y: number; reach: number } | null {
+  const map = p.view?.map;
+  const v = p.view?.vehicles.mine.find((x) => x.id === vehicleId);
+  if (!map || !v) return null;
+  if (v.at === "home") return { id: "home", ...map.home };
+  const post = map.posts.find((x) => x.id === v.at);
+  return post ? { id: post.id, x: post.x, y: post.y, reach: post.reach } : null;
+}
+
+/** The cities a vehicle may bring orders to: those within its counter's reach. */
+export function tourCities(p: EmpirePayload, vehicleId: string): string[] {
+  const at = vehiclePost(p, vehicleId);
+  if (!at) return [];
+  return (p.view?.map.cities ?? [])
+    .filter((c) => (c.x - at.x) ** 2 + (c.y - at.y) ** 2 <= at.reach * at.reach)
+    .map((c) => c.code);
+}
+
+/** What an order still asks, less what the round being made already carries to it. */
+export function orderLeft(
+  p: EmpirePayload,
+  tour: TourDraft | null,
+  city: string,
+  i: number,
+): number {
+  const o = p.view?.orders.find((x) => x.city === city)?.orders[i];
+  if (!o) return 0;
+  const planned = (tour?.stops ?? [])
+    .filter((s) => s.city === city && s.order === i)
+    .reduce((n, s) => n + s.qty, 0);
+  return Math.max(0, o.qty - o.filled - planned);
+}
+
+/** The round's load against the vehicle's hold. */
+export function tourLoad(p: EmpirePayload, tour: TourDraft): { load: number; hold: number } {
+  const v = p.view?.vehicles.mine.find((x) => x.id === tour.vehicleId);
+  return { load: tour.stops.reduce((n, s) => n + s.qty, 0), hold: v?.capacity ?? 0 };
+}
+
+/** What the vehicle's counter holds of a good, less what the round already takes of it. */
+export function tourStock(p: EmpirePayload, tour: TourDraft, good: string): number {
+  const v = p.view?.vehicles.mine.find((x) => x.id === tour.vehicleId);
+  const held = p.view?.stores.find((x) => x.post === v?.at)?.goods[good] ?? 0;
+  const orders = p.view?.orders ?? [];
+  const taken = tour.stops
+    .filter((s) => orders.find((o) => o.city === s.city)?.orders[s.order]?.good === good)
+    .reduce((n, s) => n + s.qty, 0);
+  return Math.max(0, held - taken);
+}
+
+/** The round's minutes: from the counter through each city, and back. */
+export function tourMinutes(p: EmpirePayload, tour: TourDraft): number {
+  const at = vehiclePost(p, tour.vehicleId);
+  const speed = p.view?.map.tourUnitsPerMinute ?? 0;
+  if (!at || speed <= 0) return 0;
+  let from: [number, number] = [at.x, at.y];
+  let units = 0;
+  for (const s of tour.stops) {
+    const c = p.view?.map.cities.find((x) => x.code === s.city);
+    if (!c) continue;
+    units += Math.hypot(c.x - from[0], c.y - from[1]);
+    from = [c.x, c.y];
+  }
+  units += Math.hypot(at.x - from[0], at.y - from[1]);
+  return units / speed;
+}
+
+/** A free land vehicle of a counter that serves the city, the one holding most of a good first. */
+export function vehicleFor(
+  p: EmpirePayload,
+  city: string,
+  now: number,
+  good?: string,
+): string | null {
+  const view = p.view;
+  if (!view) return null;
+  const land = view.vehicles.mine.filter((v) => v.busyUntil <= now);
+  const ok = land.filter((v) => tourCities(p, v.id).includes(city));
+  const held = (id: string) => {
+    const at = view.vehicles.mine.find((v) => v.id === id)?.at;
+    return good ? (view.stores.find((x) => x.post === at)?.goods[good] ?? 0) : 0;
+  };
+  return [...ok].sort((a, b) => held(b.id) - held(a.id))[0]?.id ?? null;
 }

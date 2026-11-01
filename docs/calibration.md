@@ -2106,6 +2106,66 @@ Deux défauts du premier jet ont été corrigés :
 
 **À trancher par le porteur** : accepter cet équilibre (des métiers égaux, une Muda moins financée), ou rendre aux négociants ce qu'ils perdent ailleurs (la Muda, les voyages), plutôt que de regonfler l'armurier.
 
+### Les commandes des villes et les cases de proche en proche (1er novembre 2026) — à arbitrer
+
+- **La carte** : 42 cases, chacune avec une ou deux villes (68 villes, tailles 1 à 5). On achète une case voisine des siennes, à 300 ducats, puis 20 % de plus pour chaque case déjà à soi.
+- **Le champ** d'un comptoir : 36 unités de carte (sa case et une partie des voisines), et 8 de plus par niveau.
+- **Les commandes** remplacent le carnet :
+  - par période de 2 h, une ville de taille *t* passe *t* commandes, chacune de *t* à 2*t* − 1 unités d'une marchandise de sa région ;
+  - la paie est le prix de référence, plus 15 % de prime, 5 % par taille au-dessus de 1, et 8 % par case de distance au comptoir.
+- **Le simulateur** livre, à chaque séance, les commandes de la période dans les villes couvertes. Il est borné par 3 tournées de ses charrettes et par son stock. Une période sans séance est perdue.
+
+**Essais** (graine 1, cohortes de 50) :
+
+| Commandes | Prime | Cibles | Part des commandes | Remarque |
+| --- | --- | --- | --- | --- |
+| 5 unités par taille | 30 % | 4 sur 12 | 56 % | la Casa bien trop vite (12 paliers hors bornes) |
+| 2 ou 3 unités par taille | 30 % | 4 sur 12 | 57 % | idem |
+| 1 unité par taille | 30 % | 6 sur 12 | 46 % | la Casa 5 à 8 trop vite pour la première cohorte |
+| **1 unité par taille** | **15 %** | **7 sur 12** | **43 %** | le calendrier tient |
+| 1 unité, moins de commandes (1, 1, 2, 3, 4) | 30 % | 4 sur 12 | 31 % | trop lent pour les cohortes tardives |
+
+**Retenu, sur 3 graines (cohortes de 200)** : **7, 6 et 6 cibles sur 12**. Les commandes font **42 à 45 %** des recettes.
+
+- **Ce qui tient** : le calendrier de la Casa, donc le sommet vers un an et demi à deux ans de jeu régulier pour la première cohorte ; la marge des voyages ; les convois en colleganza ; l'indice des prix.
+- **Ce qui manque, à arbitrer** :
+  - **la part du métier** s'effondre. Le négociant ne tire plus que 5 % de ses recettes des voyages, l'exploitant 17 % des gisements. Les commandes, devenues le cœur du jeu, dominent tous les métiers ;
+  - **les cohortes tardives** ne rattrapent plus les premières (−20 à +16 % au lieu de +20 à 40 %). Le rattrapage allégeait des coûts que les commandes ne connaissent pas ;
+  - **la sortie de la première bande** (6,0 à 6,2 mois pour 4 à 6) et le prochain palier en jours de revenu frôlent leurs bornes ;
+  - les cibles déjà manquées avant (puits ÷ sources des jeunes, bruts vendus à Venise) le restent.
+
+### Un seul métier : livrer (1er novembre 2026, le soir)
+
+**Ce qui change** :
+- les gisements, les expéditions et la mer sont retirés ; les bots n'ont plus qu'un profil ;
+- **une ville commande davantage quand le comptoir qui la sert monte de niveau** (`counters.bookStepBps`, 40 % par niveau, comme l'ancien carnet). Sans cela, le revenu plafonnait une fois les villes proches couvertes, et la première cohorte calait après la Casa 10 (la Casa 13 vers 494 jours) ;
+- **les cibles** perdent la part des métiers, la marge des voyages, la colleganza et le rattrapage des cohortes tardives (décision du porteur), et gagnent la part des commandes (40 à 70 %).
+
+**Essais** (graine 1, cohortes de 50) :
+
+| Essai | Cibles | Remarque |
+| --- | --- | --- |
+| Sans gain par niveau | 4 sur 9 | la première cohorte cale après la Casa 10 |
+| 2 unités par taille, sans prime, 3 % par taille | 6 sur 9 | la première cohorte cale encore en fin de partie |
+| **Gain de 40 % par niveau** (1 unité par taille, 15 %) | 5 sur 9 | le calendrier tient |
+| Gain de 20 % par niveau | 4 sur 9 | la fin de partie cale de nouveau |
+| Gain de 30 % par niveau | 4 sur 9 | la fin (Casa 15 à 19) trop vite |
+
+**Retenu, sur 3 graines (cohortes de 200)** : **4, 5 et 4 cibles sur 9**.
+
+- **Le calendrier de la Casa** de la première cohorte tient presque : la Casa 20 vers 680 jours, soit environ deux ans. Seuls les paliers 14 à 16 de la graine 1 (environ la moitié de la cible) et le 19 de la graine 3 sortent des bornes.
+- **Les cohortes tardives**, aidées par le rattrapage, atteignent la Casa 20 en 225 à 330 jours (cible retirée).
+- **Ce qui manque** :
+  - le prochain palier, à 1,1 jour de revenu certains mois (pour 2 à 7) ;
+  - la sortie de la première bande de Puissance, à 2,1 mois (pour 4 à 6) ;
+  - puits ÷ sources des jeunes Maisons, comme toujours.
+
+**Décision du porteur** : la cible de la part des commandes passe à **60 à 85 %** (le reste vient de la Dogana et de la cour) ; avec elle, les trois graines font **5, 6 et 5 cibles sur 9**. On fusionne, puis on affine le milieu de partie dans une PR suivante.
+
+Le détail des écarts :
+  - la part des commandes, à 74 à 75 % : dans la nouvelle cible ;
+  - puits ÷ sources des jeunes Maisons, comme toujours.
+
 ### Refaire le calibrage
 
 ```

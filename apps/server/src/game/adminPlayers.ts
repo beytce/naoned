@@ -38,7 +38,7 @@ const editSchema: z.ZodType<AdminEdit> = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("staffLevel"), staffId: z.string().max(32), level: int.min(1) }),
   z.object({ kind: z.literal("finish") }),
   z.object({ kind: z.literal("revealMap") }),
-  z.object({ kind: z.literal("site"), site: z.enum(["arsenal", "camp", "depot"]) }),
+  z.object({ kind: z.literal("site"), site: z.enum(["camp", "depot"]) }),
 ]);
 
 const accountPatch = z.object({
@@ -235,7 +235,6 @@ export function registerAdminPlayerRoutes(app: FastifyInstance, deps: Deps): voi
               vehicles: Object.entries(s.vehicles).map(([type, v]) => ({
                 type,
                 casa: v.casa,
-                ship: v.build !== undefined,
               })),
               modules: s.modules.map((m) => ({ code: m.code, kind: m.kind, effect: m.effect })),
               knowledge: s.knowledge.branches.map((b) => ({
@@ -243,7 +242,6 @@ export function registerAdminPlayerRoutes(app: FastifyInstance, deps: Deps): voi
                 codes: [...b.nodes, ...b.capstones].map((n) => n.code),
               })),
               sites: {
-                arsenal: s.map.arsenal !== null,
                 camp: s.map.camp !== null,
                 depot: s.map.depot !== null,
               },

@@ -237,6 +237,9 @@ const frDict = {
       unknown: "Terre inconnue",
       arsenal: "L'Arsenal",
       depot: "La Remise",
+      sector: "Case à acheter : ses villes se découvrent à l'achat",
+      remiseText: "Les véhicules s'achètent, s'améliorent et s'envoient à la Remise.",
+      toRemise: "Aller à la Remise",
       free: "Une place libre",
       help: "Conseil",
       recenter: "Recentrer",
@@ -268,6 +271,7 @@ const frDict = {
         post: () => "Comptoir",
         ship: () => "Navires",
         vehicles: () => "Véhicules",
+        unlock: () => "Acheter la case",
       } as Record<string, (n: number) => string>,
     },
     /** The five tabs of the empire (lot C of the UX audit): the loop, from the house to the family. */
@@ -278,6 +282,24 @@ const frDict = {
       company: "Compagnie",
       family: "Famille",
       allWorkshops: "Tous les ateliers",
+    },
+    /** The cities' orders and the rounds (1 November, after Hades' Star). */
+    orders: {
+      round: "Tournée",
+      cityLine: (region: string, size: number, pct: number) =>
+        `${region} · ville de taille ${size} · commandes remplies à ${pct} %`,
+      outOfReach: "Hors du champ de vos comptoirs : posez-en un plus près.",
+      chooseCity: (post: string) => `Depuis ${post} : touchez une ville éclairée pour la charger.`,
+      filled: (n: number, of: number) => `${n} / ${of}`,
+      unit: (cost: string) => `${cost} l'unité`,
+      load: "Charger",
+      done: "Livrée",
+      load_: (n: number, of: number) => `Chargement ${n} / ${of}`,
+      minutes: (n: number) => `${n} min`,
+      go: "Partir",
+      noStock: "pas en stock au comptoir",
+      noVehicle: "aucun véhicule libre à portée",
+      renews: (at: string) => `Nouvelles commandes à ${at}`,
     },
     market: {
       kicker: "Le négoce",
@@ -412,7 +434,7 @@ const frDict = {
       action: "Tout ramasser",
     },
     sea: {
-      arsenal: "L'Arsenal privé",
+      arsenal: "Les navires",
       shipLine: (cap: number, slots: number, routes: string) =>
         `${cap} · ${slots} place${slots > 1 ? "s" : ""} de modules · ${routes}`,
       mudaOnly: "part avec la Muda",
@@ -893,6 +915,8 @@ const frDict = {
       hidden_cell: "Cette case est encore dans le brouillard.",
       no_camp: "Posez d'abord le Campo sur la carte.",
       no_depot: "Posez d'abord la Remise sur la carte.",
+      not_adjacent: "Cette case n'est pas voisine des vôtres.",
+      locked_cell: "Achetez d'abord cette case.",
       post_too_close: "Trop près d'un autre comptoir.",
       out_of_reach: "Aucun de vos comptoirs n'a cette ville dans son cercle.",
       no_arsenal: "Posez d'abord l'Arsenal sur une côte.",

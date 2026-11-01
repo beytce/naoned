@@ -167,7 +167,7 @@ export function portaViewOf(h: EmpireHouse, s: EmpireSettings, now: number): Por
       on: carrier(c.id),
     })),
     transports: (h.vehicles ?? [])
-      .filter((v) => s.vehicles[v.type] && !s.vehicles[v.type]?.build)
+      .filter((v) => s.vehicles[v.type])
       .map((v) => ({
         id: v.id,
         type: v.type,

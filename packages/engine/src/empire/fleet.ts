@@ -2,7 +2,7 @@ import { DENIERS_PER_DUCAT, type Deniers } from "../money.js";
 import { type EmpireHouse, type PlayerId, SINK_ACCOUNT, cashAccount } from "../state.js";
 import { type Tx, fail, transfer } from "../tx.js";
 import { empireSettings, ownHouse } from "./house.js";
-import { checkArsenal, checkDepot, ensureMap } from "./map.js";
+import { checkDepot, ensureMap } from "./map.js";
 import type { EmpireSettings } from "./settings.js";
 
 /** A model's level for the house: 1 until it is raised. */
@@ -17,8 +17,7 @@ export function capacityOf(h: EmpireHouse, type: string, s: EmpireSettings): num
   const spec = s.vehicles[type];
   const base = spec?.capacity ?? 0;
   const lv = s.vehicleLevels;
-  const per = spec?.build ? (lv.shipStepBps ?? lv.stepBps) : lv.stepBps;
-  const step = per * (vehicleLevelOf(h, type) - 1);
+  const step = lv.stepBps * (vehicleLevelOf(h, type) - 1);
   return Math.floor((base * (10_000 + step)) / 10_000);
 }
 
@@ -35,10 +34,9 @@ export function upgradeCost(h: EmpireHouse, type: string, s: EmpireSettings): De
   );
 }
 
-/** The building a model is bought and raised at: the Arsenal for a ship, else the Remise. */
-export function checkYard(h: EmpireHouse, type: string, s: EmpireSettings): void {
-  if (s.vehicles[type]?.build) checkArsenal(h, s);
-  else checkDepot(h, s);
+/** The building a model is bought and raised at: the Remise. */
+export function checkYard(h: EmpireHouse, _type: string, s: EmpireSettings): void {
+  checkDepot(h, s);
 }
 
 /**
