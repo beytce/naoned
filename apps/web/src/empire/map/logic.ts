@@ -113,7 +113,7 @@ export function hudOf(p: EmpirePayload): { id: "ducats" | "favour" | "seals"; va
 }
 
 /** What may be put on the map: a counter, or the Arsenal. */
-export type Placing = { kind: "post" | "arsenal" | "camp" | "depot"; region?: string };
+export type Placing = { kind: "post" | "arsenal" | "camp" | "depot" | "porta"; region?: string };
 
 /**
  * The cells where the house may put what it places: for a counter, the land cells it sees, of a
@@ -139,10 +139,13 @@ export function placeable(p: EmpirePayload, placing: Placing): string[] {
         ? c.coast && !taken.has(cell)
         : placing.kind === "camp" || placing.kind === "depot"
           ? !taken.has(cell)
-          : reached.has(c.region) &&
-            // With a reach, counters share a cell, apart (the map that grows).
-            (map.reach ? true : !taken.has(cell)) &&
-            (placing.region === undefined || c.region === placing.region),
+          : placing.kind === "porta"
+            ? // A sector holds several buildings: the Porta goes on any cell seen.
+              map.revealed.includes(cell)
+            : reached.has(c.region) &&
+              // With a reach, counters share a cell, apart (the map that grows).
+              (map.reach ? true : !taken.has(cell)) &&
+              (placing.region === undefined || c.region === placing.region),
     )
     .map(([cell]) => cell)
     .sort();
@@ -155,6 +158,7 @@ export function placingCost(p: EmpirePayload, placing: Placing, cell: string): s
   if (placing.kind === "arsenal") return view.map.arsenalSite?.cost ?? null;
   if (placing.kind === "camp") return view.map.campSite?.cost ?? null;
   if (placing.kind === "depot") return view.map.depotSite?.cost ?? null;
+  if (placing.kind === "porta") return view.porta?.site?.cost ?? null;
   const region = view.map.cells[cell]?.region;
   return view.regions.find((r) => r.code === region)?.postCost ?? null;
 }
@@ -190,7 +194,8 @@ export type Target =
   | { kind: "region"; code: string }
   | { kind: "city"; code: string }
   | { kind: "arsenal" }
-  | { kind: "depot" };
+  | { kind: "depot" }
+  | { kind: "porta" };
 
 export type ActionIcon =
   | "harvest"
@@ -361,6 +366,15 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
     case "depot":
       return [
         { id: "vehicles", icon: "cart", words: { key: "vehicles" }, open: "production:vehicles" },
+        // The Porta's arms are bought at the Remise (docs/plan-porta.md § 4).
+        ...(p.view?.porta?.site
+          ? [{ id: "arms", icon: "build" as const, words: { key: "arms" }, open: "arms" }]
+          : []),
+      ];
+    case "porta":
+      return [
+        { id: "porta", icon: "banner", words: { key: "porta" }, open: "porta" },
+        { id: "arms", icon: "build", words: { key: "arms" }, open: "arms" },
       ];
   }
 }

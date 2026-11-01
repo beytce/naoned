@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { portaSettingsSchema } from "./porta/settings.js";
 
 /**
  * The persistent empire's parameters (CADRAGE-v3, docs/refonte-2026-10-29/profondeur.md), an
@@ -570,6 +571,8 @@ export const empireSettingsSchema = z.object({
     /** The traveller's share of the profit (the custom: a quarter). */
     travellerShareBps: bps.max(10_000),
   }),
+  /** The Porta, the battles in the lands of Rome (docs/plan-porta.md). */
+  porta: portaSettingsSchema,
 });
 
 export type EmpireSettingsInput = z.input<typeof empireSettingsSchema>;

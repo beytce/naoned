@@ -55,9 +55,12 @@ export function powerOfHouse(h: EmpireHouse, s: EmpireSettings): number {
         ...Object.values(h.modules ?? {}),
         ...(h.knowledge ?? []).map(() => 1),
         ...Object.values(h.vehicleLevels ?? {}).map((l) => l - 1),
+        // The Porta's arms: a combat model's levels beyond its first, each component's level.
+        ...Object.values(h.arms?.levels ?? {}).map((l) => l - 1),
+        ...(h.arms?.components ?? []).map((c) => c.level),
       ],
       staffLevels: (h.staff ?? []).map((m) => m.level),
-      vehicles: (h.vehicles ?? []).length,
+      vehicles: (h.vehicles ?? []).length + (h.arms?.vehicles.length ?? 0),
     },
     s,
   );

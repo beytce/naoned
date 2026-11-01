@@ -19,7 +19,7 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage qui fait
 - Toute opération de marché = une transaction SQL unique, sérialisée par un verrou transactionnel par (world_id, resource).
 - Paramètres d'équilibrage dans worlds.settings (JSON), jamais en dur.
 - On ne vend jamais de temps ni de puissance : ni ducats, ni ressources, ni Sceaux, ni accélération, ni chantier ou file en plus, ni avantage dans les bandes, à la Terraferme ou à la Contesa. L'abonnement ne donne que de l'information, du confort et du cosmétique (CADRAGE-v3 § 10).
-- Le commerce est persistant, sans remise à zéro : rien de bâti ne se perd, on ne punit jamais l'absence (aucun coût qui court pendant l'absence). Seule la Terraferme a des saisons courtes, d'une semaine ; `worlds.ends_at` ne borne plus le commerce.
+- Le commerce est persistant, sans remise à zéro : rien de bâti ne se perd (seule exception : un véhicule engagé à la Porta, perdu s'il tombe dans les terres de Rome, docs/plan-porta.md), on ne punit jamais l'absence (aucun coût qui court pendant l'absence). Seule la Terraferme a des saisons courtes, d'une semaine ; `worlds.ends_at` ne borne plus le commerce.
 - Toute compétition se joue par bande de Puissance (calculée sur ce qui est bâti, jamais sur la caisse).
 
 ## Façon de travailler
@@ -27,6 +27,7 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage qui fait
 - Écrire les tests avant le code pour packages/engine. Les tests du moteur utilisent la fixture figée test/fixture.ts, jamais les paramètres de Venise.
 - Tout changement d'équilibrage se valide au simulateur de 24 mois (toutes les graines) et se documente dans docs/calibration.md.
 - Le socle de l'empire (CADRAGE-v3 § 13, étape 3) vit à côté du monde mensuel : moteur `packages/engine/src/empire/` (commandes `empire*`), routes `/api/empire`, écran `apps/web/src/empire/`. La bascule (`EMPIRE_FROM`) ne s'active en production que sur décision du porteur.
+- La Porta (le PvE des terres de Rome, CADRAGE-v3 § 12 quater) : détail dans docs/plan-porta.md ; moteur dans `packages/engine/src/empire/porta/`, serveur `apps/server/src/game/porta.ts`, écran `apps/web/src/empire/porta/`.
 - Petits commits, un par fonctionnalité.
 - Hors périmètre MVP : noter dans IDEAS.md, ne pas coder.
 - Refonte totale du 29 octobre 2026 (docs/refonte-2026-10-29/ : synthèse, arbitrages du porteur, notes d'expert) : toute mécanique suit CADRAGE-v3 et son chemin (§ 13), une étape à la fois, chacune avec son plan validé. Les gels et chantiers antérieurs (recommandations du 20 octobre, plan de rupture du 27 octobre) sont clos ; une idée hors du chemin va dans IDEAS.md.

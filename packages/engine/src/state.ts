@@ -329,7 +329,8 @@ export interface EmpireBuild {
     | "post"
     | "arsenal"
     | "camp"
-    | "depot";
+    | "depot"
+    | "porta";
   /** A counter put down on the map, or the Arsenal: its cell (« q,r »). */
   cell?: string;
   /** The cells a counter put down reveals when it stands. */
@@ -406,9 +407,14 @@ export interface EmpireHouse {
     type: string;
     busyUntil: number;
     fitted?: string[];
+    /** A land vehicle at the Porta (`busyUntil` then holds it there). */
+    porta?: PortaPlace;
     /** The counter it stands at (the map that grows): Venice's when absent. */
     at?: string;
   }[];
+  /** The Porta's arms (docs/plan-porta.md): its combat vehicles, its components, their models. */
+  arms?: EmpireArms;
+  porta?: EmpirePorta;
   /** Goods on the road between two counters, carried by a land vehicle. */
   transfers?: EmpireTransfer[];
   /** The deposits its teams work, by id. */
@@ -1062,4 +1068,50 @@ export function activePlayerCount(ctx: WorldContext, state: WorldState, now: num
   let n = 0;
   for (const p of Object.values(state.players)) if (isActive(ctx, p, now)) n++;
   return n;
+}
+
+/** A combat vehicle of the Remise: its model, its places (a component's id, or null). */
+export interface CombatVehicle {
+  id: string;
+  model: string;
+  slots: (string | null)[];
+  /** Sent to the Porta (docked once `arrivesAt` is past), and in a battle there. */
+  porta?: PortaPlace;
+  /** On its way back to the Remise until then. */
+  backAt?: number;
+}
+
+/** A vehicle sent to the Porta: there once `arrivesAt` is past, engaged in a battle or not. */
+export interface PortaPlace {
+  arrivesAt: number;
+  battle?: string;
+}
+
+/** The house's Porta (docs/plan-porta.md §§ 3, 8, 9). */
+export interface EmpirePorta {
+  cell: string;
+  level: number;
+  /** The best tier won (0: none yet). */
+  best: number;
+  /** The relics kept, by rarity. */
+  relics: Partial<Record<"common" | "rare" | "precious" | "legendary", number>>;
+  /** The points of the week (the Carnet's week index), for the ranking. */
+  week: { index: number; points: number };
+  /** The battle the house is in: its tier, its vehicles, the victuals paid. */
+  battle?: { id: string; tier: number; combatId: string; transportId: string; paid: number };
+}
+
+/** A component of the house, fitted on a combat vehicle or kept at the Remise. */
+export interface ArmComponent {
+  id: string;
+  code: string;
+  level: number;
+}
+
+/** The arms of a house (docs/plan-porta.md §§ 4–5). */
+export interface EmpireArms {
+  vehicles: CombatVehicle[];
+  components: ArmComponent[];
+  /** Each combat model's level (1 when unset). */
+  levels?: Record<string, number>;
 }

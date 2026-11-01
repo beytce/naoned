@@ -40,6 +40,9 @@ import { ProductionSheet } from "./map/Production.js";
 import { RoundButtons } from "./map/RoundButtons.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
 import { inTutorial, nextStep } from "./next.js";
+import { ArmsSheet } from "./porta/ArmsSheet.js";
+import { BattleScreen } from "./porta/Battle.js";
+import { PortaSheet } from "./porta/PortaSheet.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
 type SheetId =
@@ -55,6 +58,8 @@ type SheetId =
   | "production"
   | "production:vehicles"
   | "arsenal"
+  | "arms"
+  | "porta"
   | `region:${string}`
   | `workshop:${string}`
   | `new:${string}`
@@ -75,6 +80,10 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const skew = useRef(first.now - Date.now());
   const [now, setNow] = useState(first.now);
   const [sheet, setSheet] = useState<SheetId | null>(first.view?.away ? "away" : null);
+  // The Porta's battle on screen (docs/plan-porta.md § 6).
+  const [fighting, setFighting] = useState(false);
+  // A battle closed to look at the map stays closed until the next.
+  const [leftBattle, setLeftBattle] = useState<string | null>(null);
   // The place of the map touched, its panel open at the foot of the screen.
   const [target, setTarget] = useState<Target | null>(null);
   // Putting a counter or the Arsenal down: the map lights the cells, a touch picks one.
@@ -159,7 +168,10 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       setSheet(null);
       setPicked(null);
       setPlacing({
-        kind: kind === "arsenal" || kind === "camp" || kind === "depot" ? kind : "post",
+        kind:
+          kind === "arsenal" || kind === "camp" || kind === "depot" || kind === "porta"
+            ? kind
+            : "post",
         ...(region ? { region } : {}),
       });
       map.current?.far();
@@ -176,7 +188,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           ? { type: "empireBuildCamp", cell: picked.cell }
           : placing.kind === "depot"
             ? { type: "empireBuildDepot", cell: picked.cell }
-            : { type: "empirePlaceCounter", ...picked },
+            : placing.kind === "porta"
+              ? { type: "empireBuildPorta", cell: picked.cell }
+              : { type: "empirePlaceCounter", ...picked },
     );
     setPlacing(null);
     setPicked(null);
@@ -386,6 +400,28 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         />
       )}
       <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
+      <ArmsSheet p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+      <PortaSheet
+        p={p}
+        now={now}
+        open={sheet === "porta"}
+        busy={busy}
+        onClose={close}
+        act={act}
+        onBattle={() => {
+          setSheet(null);
+          setFighting(true);
+        }}
+      />
+      {(fighting || (p.view?.porta?.battle && p.view.porta.battle.id !== leftBattle)) && (
+        <BattleScreen
+          onClose={() => {
+            setFighting(false);
+            setLeftBattle(p.view?.porta?.battle?.id ?? null);
+            void refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

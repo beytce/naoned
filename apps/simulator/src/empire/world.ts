@@ -17,6 +17,7 @@ import {
 } from "@comptoirs/engine";
 import { identityEffect } from "./identity.js";
 import { DAY, type House, type Market, type SimModel, type Trade, type World } from "./model.js";
+import { LOADOUT } from "./porta.js";
 
 export const d = (ducats: number): Deniers => BigInt(Math.round(ducats)) * DENIERS_PER_DUCAT;
 
@@ -117,6 +118,10 @@ export function transfer(from: House, to: House, amount: Deniers) {
   to.cash += amount;
 }
 
+/** The components a bot's combat model carries. */
+const componentsOf = (model: string, s: World["s"]) =>
+  Math.min(s.porta.models[model]?.slots ?? 0, LOADOUT[model]?.length ?? 0);
+
 export function power(w: World, h: House): number {
   return powerOf(
     {
@@ -124,9 +129,19 @@ export function power(w: World, h: House): number {
       workshopLevels: h.workshops.map((x) => x.level),
       counterLevels: [...h.counters.values()],
       // A model's levels beyond its first count as a module's.
-      moduleLevels: [...Object.values(h.modules), ...Object.values(h.levels).map((l) => l - 1)],
+      moduleLevels: [
+        ...Object.values(h.modules),
+        ...Object.values(h.levels).map((l) => l - 1),
+        // The Porta's combat vehicle: its model's levels beyond the first, its components'.
+        ...(h.porta?.combat
+          ? [
+              h.porta.combat.level - 1,
+              ...Array(componentsOf(h.porta.combat.model, w.s)).fill(h.porta.combat.level),
+            ]
+          : []),
+      ],
       staffLevels: [],
-      vehicles: h.vehicles.length + h.galleys,
+      vehicles: h.vehicles.length + h.galleys + (h.porta?.combat ? 1 : 0),
     },
     w.s,
   );

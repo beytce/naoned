@@ -48,6 +48,7 @@ import {
 } from "./map.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import { mudaDepartureAfter } from "./mudaSail.js";
+import { type PortaView, portaViewOf } from "./porta/view.js";
 import { bandOf } from "./power.js";
 import { regionOf } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
@@ -68,6 +69,8 @@ export interface EmpireSite {
 
 export interface EmpireView {
   house: EmpireHouse;
+  /** The Porta and its arms (docs/plan-porta.md). */
+  porta: PortaView;
   power: number;
   band: number;
   /** Receipts a day (the last full days), in deniers. */
@@ -458,6 +461,7 @@ export function empireView(
     away: awayOf(ctx, state.empire?.houses[playerId], house, now, s),
     regions: regionsOf(house, s),
     map: mapOf(house, s),
+    porta: portaViewOf(house, s, now),
     stores: storesOf(state.inventories[playerId], house, s),
     transfers: house.transfers ?? [],
     vehicles: vehiclesOf(state, playerId, house, s),

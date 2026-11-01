@@ -1,4 +1,5 @@
 import type { Deniers, EmpireHouse, EmpireSettings } from "@comptoirs/engine";
+import type { SimPorta } from "./porta.js";
 
 /**
  * The 24-month model simulator (CADRAGE-v3 § 13): houses aggregated hour by hour, living the
@@ -143,6 +144,8 @@ export interface House {
   /** What the cities paid it for orders, by mules or by voyages. */
   ordersValue: Deniers;
   voyageMargin: Deniers;
+  /** The Porta (docs/plan-porta.md): its level, its arms, its battles and relics. */
+  porta?: SimPorta;
   expeditionsWon: number;
   expeditionsTried: number;
   terraValue: Deniers;
@@ -277,6 +280,8 @@ export interface SimModel {
   /** What a plan sells for between houses, in ducats. */
   planPriceDucats: number;
   plansPerRelic: number;
+  /** Battles a house plays at the Porta a day, at most (one a session). */
+  portaBattlesPerDay: Record<Activity, number>;
   /** An expedition's victuals, in ducats a tier (destroyed). */
   victualsPerTierDucats: number;
   /** The Terraferma (CADRAGE-v3 § 8): who plays a week, its ration and its rewards. */
