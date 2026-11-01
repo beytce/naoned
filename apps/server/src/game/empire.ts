@@ -133,6 +133,12 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("empireUnlockCell"), cell: z.string().max(12) }),
   z.object({ type: z.literal("empireBuildDepot"), cell: z.string().max(12) }),
   z.object({ type: z.literal("empireUpgradeDepot") }),
+  z.object({
+    type: z.literal("empirePlaceHome"),
+    cell: z.string().max(12),
+    x: z.number().int(),
+    y: z.number().int(),
+  }),
   // The Porta (docs/plan-porta.md): its arms at the Remise, the building, the way, the antiquarian.
   z.object({ type: z.literal("empireBuyArm"), model: z.string().max(40) }),
   z.object({ type: z.literal("empireUpgradeArm"), model: z.string().max(40) }),

@@ -489,6 +489,13 @@ export const empireSettingsSchema = z.object({
         .prefault(null),
       /** No counter closer than this to another, in the chart's units. */
       postSpacing: qty.prefault(0),
+      /**
+       * The house's first fondaco, no town (decision of the owner, 1 November 2026): where it
+       * stands until the player puts it down, in the sector of the start. None: on Venice.
+       */
+      home: z.object({ x: z.number().int(), y: z.number().int() }).nullable().prefault(null),
+      /** No fondaco closer than this to a town, in the chart's units. */
+      cityClearance: qty.prefault(0),
       /** A land vehicle between two counters: so many of the chart's units an hour. */
       transferUnitsPerHour: positive.prefault(20),
       revealRadius: positive.prefault(2),

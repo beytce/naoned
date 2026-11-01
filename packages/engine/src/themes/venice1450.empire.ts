@@ -216,6 +216,10 @@ export const venice1450Empire: EmpireSettingsInput = {
     unlock: { costDucats: 300, stepBps: 2_000, seaHops: 3 },
     reach: { base: 36, perLevel: 8 },
     postSpacing: 8,
+    // The first fondaco is no town (1 November 2026): put down by the player in Venice's sector,
+    // at this point until then, nine units east of Venice, as many towns in reach as on Venice.
+    home: { x: 174, y: 140 },
+    cityClearance: 4,
     costStepBps: 2_500,
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
     // fell short of their share, calibration.md).

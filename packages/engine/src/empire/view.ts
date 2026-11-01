@@ -286,7 +286,8 @@ export interface EmpireMapView {
     reach: number;
   }[];
   /** Venice's own counter, likewise. */
-  home: { x: number; y: number; level: number; reach: number };
+  /** The first fondaco: `placed` once the player put it down. */
+  home: { x: number; y: number; level: number; reach: number; cell: string; placed: boolean };
   /** The hexes' size, the reach at each level (none: no reach), the spacing of the counters. */
   hexSize: number;
   reach: { base: number; perLevel: number } | null;
@@ -672,7 +673,14 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
       .map((p) => ({ ...p, reach: reachOf(p.level, s) })),
     home: (() => {
       const h = homePost(house, s);
-      return { x: h.x, y: h.y, level: h.level, reach: reachOf(h.level, s) };
+      return {
+        x: h.x,
+        y: h.y,
+        level: h.level,
+        reach: reachOf(h.level, s),
+        cell: h.cell,
+        placed: house.home !== undefined,
+      };
     })(),
     hexSize: s.map.hexSize,
     reach: s.map.reach,

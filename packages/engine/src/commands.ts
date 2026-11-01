@@ -53,7 +53,14 @@ import {
   upgradeCounter,
 } from "./empire/house.js";
 import { startLearning } from "./empire/knowledge.js";
-import { buildCamp, buildDepot, ensureMap, placeCounter, unlockCell } from "./empire/map.js";
+import {
+  buildCamp,
+  buildDepot,
+  ensureMap,
+  placeCounter,
+  placeHome,
+  unlockCell,
+} from "./empire/map.js";
 import {
   autoDeliver,
   cancelStop,
@@ -366,6 +373,7 @@ type EmpireCommandOf =
   | { type: "empireUnlockCell"; playerId: PlayerId; cell: string }
   | { type: "empireBuildDepot"; playerId: PlayerId; cell: string }
   | { type: "empireUpgradeDepot"; playerId: PlayerId }
+  | { type: "empirePlaceHome"; playerId: PlayerId; cell: string; x: number; y: number }
   | { type: "empireUpgradeVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string }
   | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
@@ -592,6 +600,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireUpgradeDepot":
       upgradeDepot(tx, cmd.playerId);
+      break;
+    case "empirePlaceHome":
+      placeHome(tx, cmd.playerId, cmd.cell, cmd.x, cmd.y);
       break;
     case "empireUpgradeVehicle":
       upgradeModel(tx, cmd.playerId, cmd.vehicleType);
