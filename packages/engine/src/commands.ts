@@ -61,7 +61,14 @@ import {
   upgradeCounter,
 } from "./empire/house.js";
 import { startLearning } from "./empire/knowledge.js";
-import { buildArsenal, buildCamp, buildDepot, ensureMap, placeCounter } from "./empire/map.js";
+import {
+  buildArsenal,
+  buildCamp,
+  buildDepot,
+  ensureMap,
+  placeCounter,
+  unlockCell,
+} from "./empire/map.js";
 import { bidMuda, settleMuda } from "./empire/mudaSail.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
@@ -335,6 +342,7 @@ type EmpireCommandOf =
   | { type: "empirePlaceCounter"; playerId: PlayerId; cell: string; x?: number; y?: number }
   | { type: "empireBuildArsenal"; playerId: PlayerId; cell: string }
   | { type: "empireBuildCamp"; playerId: PlayerId; cell: string }
+  | { type: "empireUnlockCell"; playerId: PlayerId; cell: string }
   | { type: "empireBuildDepot"; playerId: PlayerId; cell: string }
   | { type: "empireUpgradeVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string }
@@ -555,6 +563,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireBuildArsenal":
       buildArsenal(tx, cmd.playerId, cmd.cell);
+      break;
+    case "empireUnlockCell":
+      unlockCell(tx, cmd.playerId, cmd.cell);
       break;
     case "empireBuildCamp":
       buildCamp(tx, cmd.playerId, cmd.cell);

@@ -35,6 +35,7 @@ import {
 import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import {
   arsenalCost,
+  buyableOf,
   citiesCovered,
   citiesFound,
   citySpot,
@@ -44,6 +45,7 @@ import {
   postCost,
   reachOf,
   revealedOf,
+  sectorCost,
   standingPosts,
 } from "./map.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
@@ -314,6 +316,9 @@ export interface EmpireMapView {
   transferUnitsPerHour: number;
   /** The cities the house's counters serve. */
   covered: string[];
+  /** The sectors it may buy next (the sectors bought one by one), with the price of the next. */
+  buyable: { cell: string; region: string; coast: boolean; casa: number }[];
+  sectorCost: Deniers;
   /** The counters and the Arsenal under way, on their cell. */
   sites: { kind: "post" | "arsenal" | "camp" | "depot"; cell: string; endsAt: number }[];
   arsenal: string | null;
@@ -735,6 +740,16 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     postSpacing: s.map.postSpacing,
     transferUnitsPerHour: s.map.transferUnitsPerHour,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
+    buyable: buyableOf(house, s).map((cell) => {
+      const c = s.map.cells[cell];
+      return {
+        cell,
+        region: c?.region ?? "",
+        coast: c?.coast ?? false,
+        casa: s.regions.find((r) => r.code === c?.region)?.casa ?? 1,
+      };
+    }),
+    sectorCost: sectorCost(house, s),
     sites: house.builds
       .filter(
         (b) =>

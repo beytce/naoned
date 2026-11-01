@@ -23,6 +23,8 @@ export type EngineErrorCode =
   | "no_depot"
   | "post_too_close"
   | "out_of_reach"
+  | "not_adjacent"
+  | "locked_cell"
   | "registration_closed"
   | "season_over"
   | "unknown_building"

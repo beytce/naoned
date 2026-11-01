@@ -376,6 +376,8 @@ export interface EmpireHouse {
   counters?: Record<string, number>;
   /** The map's cells the house sees (« q,r »): Venetia's, and what its counters revealed. */
   revealed?: string[];
+  /** The sectors it owns, bought one next to another (Venice's at the founding). */
+  unlocked?: string[];
   /** The drawing of the grid those cells are of. */
   mapVersion?: number;
   /**

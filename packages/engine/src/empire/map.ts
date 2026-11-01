@@ -1,6 +1,6 @@
 import { DENIERS_PER_DUCAT, type Deniers, applyBpsFloor } from "../money.js";
-import type { EmpireHouse, PlayerId } from "../state.js";
-import { type Tx, fail, nextId } from "../tx.js";
+import { type EmpireHouse, type PlayerId, SINK_ACCOUNT, cashAccount } from "../state.js";
+import { type Tx, fail, nextId, transfer } from "../tx.js";
 import { levelCost } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { counterCostOf, empireSettings, openSite, ownHouse } from "./house.js";
@@ -172,6 +172,67 @@ export function startCells(s: EmpireSettings): string[] {
   return s.map.reach && home ? [home] : regionCells(s, HOME);
 }
 
+/** The sectors a house owns (the sectors bought one by one): Venice's at the least. */
+export function unlockedOf(h: EmpireHouse, s: EmpireSettings): string[] {
+  return h.unlocked ?? ownedAtStart(h, s);
+}
+
+/** What a house owns when the sectors become bought: Venice's, and those it has built on. */
+function ownedAtStart(h: EmpireHouse, s: EmpireSettings): string[] {
+  const home = homeCell(s);
+  const built = [
+    ...(h.posts ?? []).map((p) => p.cell),
+    ...[h.depot, h.camp, h.arsenal].filter((c): c is string => typeof c === "string"),
+  ];
+  return [...new Set([...(home ? [home] : []), ...built])].filter((c) => s.map.cells[c]);
+}
+
+/**
+ * The sectors a house may buy: next to one it owns, or, from a coast it owns, a coast within
+ * `seaHops`; of a region its Casa has reached shown with their price (the others refused).
+ */
+export function buyableOf(h: EmpireHouse, s: EmpireSettings): string[] {
+  const u = s.map.unlock;
+  if (!u) return [];
+  const owned = unlockedOf(h, s);
+  const mine = new Set(owned);
+  const coasts = owned.filter((c) => s.map.cells[c]?.coast);
+  return Object.keys(s.map.cells)
+    .filter((c) => !mine.has(c))
+    .filter(
+      (c) =>
+        owned.some((o) => cellDistance(o, c) === 1) ||
+        (s.map.cells[c]?.coast === true && coasts.some((o) => cellDistance(o, c) <= u.seaHops)),
+    )
+    .sort();
+}
+
+/** The price of the next sector bought. */
+export function sectorCost(h: EmpireHouse, s: EmpireSettings): Deniers {
+  const u = s.map.unlock;
+  if (!u) return 0n;
+  const owned = unlockedOf(h, s).length;
+  let price = BigInt(u.costDucats) * DENIERS_PER_DUCAT;
+  for (let i = 1; i < owned; i++) price = applyBpsFloor(price, 10_000 + u.stepBps);
+  return price;
+}
+
+/** Buys a sector next to one's own (decision of the owner, 1 November 2026): it is seen at once. */
+export function unlockCell(tx: Tx, playerId: PlayerId, cell: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  ensureMap(h, s);
+  if (!s.map.unlock) fail("unknown_building_type");
+  const c = s.map.cells[cell];
+  if (!c) fail("unknown_cell");
+  if (unlockedOf(h, s).includes(cell)) fail("built");
+  if (!buyableOf(h, s).includes(cell)) fail("not_adjacent");
+  const r = s.regions.find((x) => x.code === c.region);
+  if (!r || h.casa < r.casa) fail("requirement_unmet");
+  transfer(tx, cashAccount(playerId), SINK_ACCOUNT, sectorCost(h, s), "empire_build", cell);
+  h.unlocked = [...unlockedOf(h, s), cell];
+}
+
 /** A region's cities. */
 export function regionCities(s: EmpireSettings, region: string): { code: string; cell: string }[] {
   return indexOf(s).cities.get(region) ?? [];
@@ -183,6 +244,8 @@ export function regionCities(s: EmpireSettings, region: string): { code: string;
  * put there reveals the rest.
  */
 export function revealedOf(h: EmpireHouse, s: EmpireSettings): Set<string> {
+  // The sectors bought one by one (1 November): one sees the sectors one owns.
+  if (s.map.unlock) return new Set(unlockedOf(h, s));
   const seen = new Set(h.revealed ?? startCells(s));
   // A region the Casa reaches shows its sector nearest to what is known (step 4): never one far
   // off on its own, which a finger would not find.
@@ -259,6 +322,11 @@ function namePosts(h: EmpireHouse, s: EmpireSettings): void {
  */
 export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   if (!hasMap(s)) return;
+  // The Arsenal gone (1 November): a house that had one has its Remise there, its ships with it.
+  if (!s.map.arsenal && s.map.depot && h.arsenal && !h.depot) h.depot = h.arsenal;
+  // The sectors bought one by one: a house of before owns those it has built on.
+  if (s.map.unlock && !h.unlocked && h.revealed && h.mapVersion === s.map.version)
+    h.unlocked = ownedAtStart(h, s);
   // A house that already played the Terraferma keeps its door: its Campo in Venetia.
   if ((h.terraBest || h.terraSeals) && !h.camp) {
     const home = homeCell(s);
@@ -286,6 +354,8 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   h.mapVersion = s.map.version;
   if (moved || !h.posts) h.posts = posts.length > 0 ? posts : undefined;
   namePosts(h, s);
+  // The sectors owned: Venice's, and those of its counters and buildings.
+  if (s.map.unlock) h.unlocked = ownedAtStart(h, s);
   const coast = [homeCell(s), ...regionCells(s, HOME)].find((c) => c && s.map.cells[c]?.coast);
   const ships = (h.vehicles ?? []).some((v) => s.vehicles[v.type]?.build);
   if ((ships || h.arsenal) && (moved || !h.arsenal) && coast) h.arsenal = coast;
@@ -339,7 +409,7 @@ export function placeCounter(
   ensureMap(h, s);
   const c = s.map.cells[cell];
   if (!c) fail("unknown_cell");
-  if (!revealedOf(h, s).has(cell)) fail("hidden_cell");
+  if (!revealedOf(h, s).has(cell)) fail(s.map.unlock ? "locked_cell" : "hidden_cell");
   // Its point (the map that grows): anywhere in the cell, its centre when none is given.
   const [cx, cy] = pointOf(cell, s);
   const at: [number, number] = [x ?? cx, y ?? cy];
@@ -378,7 +448,8 @@ export function placeCounter(
     x: at[0],
     y: at[1],
     post: nextId(tx, "c"),
-    reveal: revealedBy(cell, s),
+    // The sectors bought one by one: a counter reveals nothing more of itself.
+    reveal: s.map.unlock ? [] : revealedBy(cell, s),
     ...site,
   });
 }
@@ -453,9 +524,13 @@ export function checkCamp(h: EmpireHouse, s: EmpireSettings): void {
 export const arsenalCost = (s: EmpireSettings): Deniers =>
   BigInt(s.map.arsenal?.costDucats ?? 0) * DENIERS_PER_DUCAT;
 
-/** The Arsenal asked by the ships, in a world that sets one. */
+/**
+ * The yard of the ships: the Arsenal in a world that sets one, else the Remise (the Arsenal gone,
+ * decision of the owner, 1 November 2026).
+ */
 export function checkArsenal(h: EmpireHouse, s: EmpireSettings): void {
   if (hasMap(s) && s.map.arsenal && !h.arsenal) fail("no_arsenal");
+  if (hasMap(s) && !s.map.arsenal && s.map.depot && !h.depot) fail("no_depot");
 }
 
 /**

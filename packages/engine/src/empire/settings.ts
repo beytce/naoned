@@ -432,6 +432,8 @@ export const empireSettingsSchema = z.object({
             y: z.number().int().optional(),
             /** Its weight in its region's book, against its region's other cities. */
             weight: positive.prefault(1),
+            /** Its size, 1 (a market town) to 5 (a capital): its bubble, how many orders it gives. */
+            size: positive.prefault(1),
           }),
         )
         .prefault([]),
@@ -442,6 +444,15 @@ export const empireSettingsSchema = z.object({
        * and `perLevel` more a level beyond the first, are served by it. None: every city found is.
        */
       reach: z.object({ base: positive, perLevel: qty }).nullable().prefault(null),
+      /**
+       * The sectors bought one by one (decision of the owner, 1 November 2026): one next to a
+       * sector of one's own, or a coast within `seaHops` of a coast of one's own; its price, dearer
+       * by `stepBps` for each sector already owned. None: the sectors are seen as before.
+       */
+      unlock: z
+        .object({ costDucats: qty, stepBps: bps, seaHops: positive })
+        .nullable()
+        .prefault(null),
       /** No counter closer than this to another, in the chart's units. */
       postSpacing: qty.prefault(0),
       /** A land vehicle between two counters: so many of the chart's units an hour. */

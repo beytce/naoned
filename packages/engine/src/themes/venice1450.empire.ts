@@ -236,18 +236,21 @@ export const venice1450Empire: EmpireSettingsInput = {
     // Venice, the capital, weighs most in Venetia's book (the map that grows, calibration.md).
     cities: VENICE_MAP_CITIES.map((c) => (c.code === "venezia" ? { ...c, weight: 20 } : c)),
     revealRadius: 1,
-    // The fourth drawing: some sixty sectors, two cities at most each (the map that grows, 31
-    // October, night); a counter put anywhere in a sector serves the cities within its reach.
-    version: 4,
+    // The fifth drawing (1 November): some forty sectors, each with one town or two, bought one
+    // next to another; a counter's reach takes in its sector and its neighbours, about two rings
+    // of sectors at its top.
+    version: 5,
     hexSize: 24,
-    reach: { base: 14, perLevel: 7 },
+    unlock: { costDucats: 300, stepBps: 2_000, seaHops: 3 },
+    reach: { base: 36, perLevel: 8 },
     postSpacing: 8,
     costStepBps: 2_500,
-    arsenal: { costDucats: 3_000, casa: 9, minutes: 480 },
+    // The Arsenal gone (1 November): the ships are built at the Remise.
+    arsenal: null,
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
     // fell short of their share, calibration.md).
     camp: { costDucats: 600, casa: 4, minutes: 240 },
-    // The Remise, where the land vehicles are bought and their models raised (31 October, evening).
+    // The Remise, where the vehicles are bought and their models raised, the ships too.
     depot: { costDucats: 200, casa: 2, minutes: 120 },
   },
   // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the

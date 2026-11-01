@@ -178,4 +178,17 @@ describe("a model's level", () => {
     d.do({ type: "empireUpgradeVehicle", playerId: "a", vehicleType: "cart" });
     expect(powerOfHouse(house(d), s) - before).toBe(s.power.moduleLevel);
   });
+
+  it("builds the ships at the Remise in a world without an Arsenal", () => {
+    const yardless: EmpireSettingsInput = { ...empire, map: { ...empire.map, arsenal: null } };
+    const w = new World(makeContext({ empire: yardless }));
+    w.do({ type: "empireJoin", playerId: "a" });
+    w.do({ type: "empireBuildCasa", playerId: "a" });
+    expect(error(w.try({ type: "empireBuildShip", playerId: "a", vehicleType: "cocca" }))).toBe(
+      "no_depot",
+    );
+    w.do({ type: "empireBuildDepot", playerId: "a", cell: "1,0" });
+    w.advance(HOUR);
+    expect(error(w.try({ type: "empireBuildShip", playerId: "a", vehicleType: "cocca" }))).toBe("");
+  });
 });
