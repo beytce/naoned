@@ -247,8 +247,9 @@ export const venice1450Empire: EmpireSettingsInput = {
       speedBps: 0,
     },
   },
-  // The cities' orders, renewed every two hours, brought on rounds of a few minutes (1 November,
-  // after Hades' Star's shipments): a town of size 1 asks one order, a capital five.
+  // The cities' orders, a wave every two hours piling up to six (twelve hours), brought hop by hop
+  // in a few seconds (1 November, after Hades' Star's shipments): a town of size 1 asks one order
+  // a wave, a capital five.
   orders: {
     periodMinutes: 120,
     perSize: [1, 2, 3, 4, 5],
@@ -258,8 +259,11 @@ export const venice1450Empire: EmpireSettingsInput = {
     premiumBps: 1_500,
     sizeBps: 500,
     distanceBps: 800,
-    unitsPerMinute: 15,
+    maxWaves: 6,
   },
+  // A hop: ten seconds to leave (left at once, or taken back), then eight units of the chart a
+  // second, three to ten seconds across a counter's reach; fifteen stops queued at most.
+  moves: { departSeconds: 10, unitsPerSecond: 8, maxStops: 15 },
   // A model raised at the Remise or the Arsenal: its price, 500 ducats at the least, doubled at
   // each level; +10 % a level on land, +5 % at sea (at +10 %, the ships took the trade from the
   // miners and the traders: decision of the owner, calibration.md).

@@ -17,7 +17,7 @@ import { houseEffect } from "./effects.js";
 import { capacityOf } from "./fleet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
 import { bookShareBps, citiesCovered, revealedOf, standingPosts } from "./map.js";
-import { autoTour } from "./orders.js";
+import { autoDeliver } from "./moves.js";
 import { powerOf } from "./power.js";
 import {
   localBookOf,
@@ -382,7 +382,7 @@ export function deliverOrders(
   }
   const s = empireSettings(tx.ctx);
   // A world of orders: a round to the city's orders, made for the player.
-  if (s.orders) return autoTour(tx, playerId, good, qty, region, city);
+  if (s.orders) return autoDeliver(tx, playerId, good, qty, region, city);
   // From the counters that serve the city (those that have it in reach), else the region's.
   const from = city !== undefined && s.map.reach ? postsServing(h, s, city) : postsIn(h, s, region);
   checkPlace(tx, playerId, h, region, good, from);

@@ -102,7 +102,10 @@ export function sendToPorta(tx: Tx, playerId: PlayerId, ids: string[]): void {
     const combat = combatOf(h, id);
     if (land) {
       if (!landVehicle(s, land.type)) fail("unknown_vehicle");
-      if (land.porta || land.busyUntil > tx.now) fail("vehicle_busy");
+      // Under way, loaded or standing at a city (the hops): not at the Remise.
+      if (land.porta || land.busyUntil > tx.now || land.legs?.length || land.cargo)
+        fail("vehicle_busy");
+      if (land.at?.startsWith("city:")) fail("vehicle_busy");
       land.porta = { arrivesAt };
       land.busyUntil = HELD;
     } else if (combat) {

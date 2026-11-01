@@ -54,7 +54,16 @@ import {
 } from "./empire/house.js";
 import { startLearning } from "./empire/knowledge.js";
 import { buildCamp, buildDepot, ensureMap, placeCounter, unlockCell } from "./empire/map.js";
-import { settleTours, startTour } from "./empire/orders.js";
+import {
+  autoDeliver,
+  cancelStop,
+  departNow,
+  loadVehicle,
+  moveVehicle,
+  retireRounds,
+  settleMoves,
+} from "./empire/moves.js";
+import { trackOrders } from "./empire/orders.js";
 import { buyArm, buyComponent, fitArm, upgradeArm, upgradeComponent } from "./empire/porta/arms.js";
 import type { BattleOutcome } from "./empire/porta/battle/sim.js";
 import {
@@ -72,7 +81,6 @@ import { retireSea } from "./empire/retire.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
 import { buyGoods, deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
-import { settleTransfers, startTransfer } from "./empire/transfers.js";
 import { buyEmpireVehicle } from "./empire/voyages.js";
 import { fitModule, relaunchAll, relaunchWorkshop, swapWorkshops } from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
@@ -315,19 +323,16 @@ type EmpireCommandOf =
   | { type: "empireSell"; playerId: PlayerId; good: string; qty: number; region?: string }
   | { type: "empireBuy"; playerId: PlayerId; good: string; qty: number; post?: string }
   | {
-      type: "empireTour";
+      type: "empireMove";
       playerId: PlayerId;
       vehicleId: string;
-      stops: { city: string; order: number; qty: number }[];
-    }
-  | {
-      type: "empireTransfer";
-      playerId: PlayerId;
-      vehicleId: string;
+      /** A counter's id, or `city:<code>`. */
       to: string;
-      good: string;
-      qty: number;
     }
+  | { type: "empireDepartNow"; playerId: PlayerId; vehicleId: string }
+  | { type: "empireCancelStop"; playerId: PlayerId; vehicleId: string }
+  | { type: "empireLoad"; playerId: PlayerId; vehicleId: string; good: string; qty: number }
+  | { type: "empireUnload"; playerId: PlayerId; vehicleId: string; good: string; qty: number }
   | {
       type: "empireDeliver";
       playerId: PlayerId;
@@ -501,8 +506,8 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   if (tx.ctx.settings.empire && tx.s.empire) {
     // The sea, the deposits and the expeditions gone: what was engaged in them, given back once.
     retireSea(tx);
-    settleTransfers(tx);
-    settleTours(tx);
+    retireRounds(tx);
+    settleMoves(tx);
     settleAid(tx);
     // The week's Terraferma: last week's theatres closed and paid when the week turns.
     settleTerra(tx);
@@ -514,6 +519,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     h.favour += Math.max(0, Math.floor(cmd.favour ?? 0));
     ensureCarnet(tx, cmd.playerId, h);
     ensureMap(h, empireSettings(tx.ctx));
+    trackOrders(h, empireSettings(tx.ctx), tx.now);
     passGenerations(tx, cmd.playerId);
     return;
   }
@@ -522,6 +528,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   settleBuilds(h, tx.now);
   ensureCarnet(tx, cmd.playerId, h);
   ensureMap(h, empireSettings(tx.ctx));
+  trackOrders(h, empireSettings(tx.ctx), tx.now);
   // The generations passed, then the factors' work while the house was away, before its own.
   passGenerations(tx, cmd.playerId);
   runFactors(tx, cmd.playerId);
@@ -658,11 +665,20 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     case "empireContesaRoster":
       setRoster(tx, cmd.playerId, cmd.members);
       break;
-    case "empireTransfer":
-      startTransfer(tx, cmd.playerId, cmd.vehicleId, cmd.to, cmd.good, cmd.qty);
+    case "empireMove":
+      moveVehicle(tx, cmd.playerId, cmd.vehicleId, cmd.to);
       break;
-    case "empireTour":
-      startTour(tx, cmd.playerId, cmd.vehicleId, cmd.stops);
+    case "empireDepartNow":
+      departNow(tx, cmd.playerId, cmd.vehicleId);
+      break;
+    case "empireCancelStop":
+      cancelStop(tx, cmd.playerId, cmd.vehicleId);
+      break;
+    case "empireLoad":
+      loadVehicle(tx, cmd.playerId, cmd.vehicleId, cmd.good, cmd.qty);
+      break;
+    case "empireUnload":
+      loadVehicle(tx, cmd.playerId, cmd.vehicleId, cmd.good, -cmd.qty);
       break;
     case "empireBuy":
       buyGoods(tx, cmd.playerId, cmd.good, cmd.qty, cmd.post);

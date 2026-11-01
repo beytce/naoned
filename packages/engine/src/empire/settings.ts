@@ -111,10 +111,19 @@ export const empireSettingsSchema = z.object({
       premiumBps: bps,
       sizeBps: bps,
       distanceBps: bps,
-      unitsPerMinute: positive,
+      /** At most so many waves open by city: beyond, no new wave until something is brought. */
+      maxWaves: positive.prefault(6),
     })
     .nullable()
     .prefault(null),
+  /** The vehicles' hops (after Hades' Star): seconds before leaving, speed, stops queued at most. */
+  moves: z
+    .object({
+      departSeconds: qty.prefault(10),
+      unitsPerSecond: positive.prefault(8),
+      maxStops: positive.prefault(15),
+    })
+    .prefault({}),
   vehicleLevels: z
     .object({
       max: positive.prefault(5),

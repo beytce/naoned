@@ -3,9 +3,8 @@ import {
   type CarnetObjective,
   DAY_MS,
   type EmpireHouse,
+  type EmpireLeg,
   type EmpireStaff,
-  type EmpireTour,
-  type EmpireTransfer,
   type EmpireVoyage,
   HOUR_MS,
   type PlayerId,
@@ -107,11 +106,10 @@ export interface EmpireView {
   map: EmpireMapView;
   /** Each counter's stock, Venice's first (the map that grows). */
   stores: { post: string; region: string; goods: Record<string, number> }[];
-  /** The goods on the road between two counters. */
-  transfers: EmpireTransfer[];
-  /** The orders of the cities its counters serve, and its vehicles' rounds (after Hades' Star). */
+  /** The orders of the cities its counters serve, wave by wave (after Hades' Star). */
   orders: CityOrders[];
-  tours: EmpireTour[];
+  /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
+  moves: { departSeconds: number; unitsPerSecond: number; maxStops: number };
   /** The vehicles one may buy, those of the house, and its voyages under way. */
   vehicles: {
     shop: {
@@ -131,8 +129,11 @@ export interface EmpireView {
       busyUntil: number;
       capacity: number;
       fitted?: string[];
-      /** The counter it stands at, or is bound for. */
+      /** Where it stands: a counter's id, or `city:<code>`. */
       at: string;
+      /** What it carries, by good, and its stops to come (hop by hop). */
+      cargo: Record<string, { qty: number; from: string }>;
+      legs: EmpireLeg[];
     }[];
     haulPerDay: number;
   };
@@ -274,8 +275,6 @@ export interface EmpireMapView {
   postSpacing: number;
   /** A land vehicle between two counters: so many units an hour. */
   transferUnitsPerHour: number;
-  /** A vehicle on a round to the cities' orders: so many units a minute (none: no orders). */
-  tourUnitsPerMinute: number | null;
   /** The cities the house's counters serve. */
   covered: string[];
   /** The sectors it may buy next (the sectors bought one by one), with the price of the next. */
@@ -425,9 +424,8 @@ export function empireView(
     map: mapOf(house, s),
     porta: portaViewOf(house, s, now),
     stores: storesOf(state.inventories[playerId], house, s),
-    transfers: house.transfers ?? [],
     orders: ordersOf(ctx, house, playerId, s, now),
-    tours: house.tours ?? [],
+    moves: s.moves,
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
     workshopPlaces: Object.fromEntries(
@@ -652,7 +650,6 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     reach: s.map.reach,
     postSpacing: s.map.postSpacing,
     transferUnitsPerHour: s.map.transferUnitsPerHour,
-    tourUnitsPerMinute: s.orders?.unitsPerMinute ?? null,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
     buyable: buyableOf(house, s).map((cell) => {
       const c = s.map.cells[cell];
@@ -717,6 +714,8 @@ function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s
   const mine = (house.vehicles ?? []).map((v) => ({
     ...v,
     at: v.at ?? "home",
+    cargo: v.cargo ?? {},
+    legs: v.legs ?? [],
     capacity: Number(
       applyBpsFloor(
         BigInt(capacityOf(house, v.type, s)),
