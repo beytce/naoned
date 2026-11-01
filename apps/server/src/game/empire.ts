@@ -91,6 +91,20 @@ const action = z.discriminatedUnion("type", [
     city: z.string().max(40).optional(),
   }),
   z.object({
+    type: z.literal("empireTour"),
+    vehicleId: z.string().max(40),
+    stops: z
+      .array(
+        z.object({
+          city: z.string().max(40),
+          order: z.number().int().min(0).max(10),
+          qty: z.number().int().min(1).max(100_000),
+        }),
+      )
+      .min(1)
+      .max(8),
+  }),
+  z.object({
     type: z.literal("empireTransfer"),
     vehicleId: z.string().max(40),
     to: z.string().max(40),

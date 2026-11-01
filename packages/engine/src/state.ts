@@ -365,6 +365,23 @@ export interface EmpireTransfer {
   arrivesAt: number;
 }
 
+/** A vehicle's round from its counter to the cities' orders, and back (after Hades' Star). */
+export interface EmpireTour {
+  id: string;
+  vehicleId: string;
+  post: string;
+  period: number;
+  stops: {
+    city: string;
+    order: number;
+    good: string;
+    qty: number;
+    at: number;
+    done?: boolean;
+  }[];
+  backAt: number;
+}
+
 /** A house of the persistent empire: what it has built, never reset. */
 export interface EmpireHouse {
   casa: number;
@@ -413,6 +430,10 @@ export interface EmpireHouse {
   }[];
   /** Goods on the road between two counters, carried by a land vehicle. */
   transfers?: EmpireTransfer[];
+  /** What it brought of each city's orders in the period (by order, in their order). */
+  filled?: { period: number; cities: Record<string, number[]> };
+  /** Its vehicles' rounds to the cities, stop by stop. */
+  tours?: EmpireTour[];
   /** The deposits its teams work, by id. */
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */

@@ -103,6 +103,25 @@ export const empireSettingsSchema = z.object({
    * first holds `stepBps` more for every vehicle of the model, and costs the model's price (at
    * least `minCostDucats`) times `costTimes`, doubled at each level.
    */
+  /**
+   * The cities' orders (decision of the owner, 1 November 2026, after Hades' Star's shipments):
+   * each city a counter serves asks `perSize[size − 1]` orders a period, of `qtyPerSize` × its size
+   * units at the least, paid the reference with `premiumBps`, `sizeBps` a size above the first,
+   * and `distanceBps` a sector of the way from the counter; a vehicle goes `unitsPerMinute`.
+   * None: the cities' daily book, as before.
+   */
+  orders: z
+    .object({
+      periodMinutes: positive,
+      perSize: z.array(positive).length(5),
+      qtyPerSize: positive,
+      premiumBps: bps,
+      sizeBps: bps,
+      distanceBps: bps,
+      unitsPerMinute: positive,
+    })
+    .nullable()
+    .prefault(null),
   vehicleLevels: z
     .object({
       max: positive.prefault(5),

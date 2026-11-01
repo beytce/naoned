@@ -70,6 +70,7 @@ import {
   unlockCell,
 } from "./empire/map.js";
 import { bidMuda, settleMuda } from "./empire/mudaSail.js";
+import { settleTours, startTour } from "./empire/orders.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
 import { buyGoods, deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
@@ -322,6 +323,12 @@ type EmpireCommandOf =
   | { type: "empireSell"; playerId: PlayerId; good: string; qty: number; region?: string }
   | { type: "empireBuy"; playerId: PlayerId; good: string; qty: number; post?: string }
   | {
+      type: "empireTour";
+      playerId: PlayerId;
+      vehicleId: string;
+      stops: { city: string; order: number; qty: number }[];
+    }
+  | {
       type: "empireTransfer";
       playerId: PlayerId;
       vehicleId: string;
@@ -507,6 +514,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   if (tx.ctx.settings.empire && tx.s.empire) {
     settleVoyages(tx);
     settleTransfers(tx);
+    settleTours(tx);
     // The deposits' extraction up to now, then the days' new ones.
     settleDeposits(tx);
     settleAid(tx);
@@ -678,6 +686,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireTransfer":
       startTransfer(tx, cmd.playerId, cmd.vehicleId, cmd.to, cmd.good, cmd.qty);
+      break;
+    case "empireTour":
+      startTour(tx, cmd.playerId, cmd.vehicleId, cmd.stops);
       break;
     case "empireBuy":
       buyGoods(tx, cmd.playerId, cmd.good, cmd.qty, cmd.post);

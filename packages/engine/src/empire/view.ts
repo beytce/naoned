@@ -4,6 +4,7 @@ import {
   DAY_MS,
   type EmpireHouse,
   type EmpireStaff,
+  type EmpireTour,
   type EmpireTransfer,
   type EmpireVoyage,
   HOUR_MS,
@@ -50,6 +51,7 @@ import {
 } from "./map.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import { mudaDepartureAfter } from "./mudaSail.js";
+import { type CityOrders, ordersOf } from "./orders.js";
 import { bandOf } from "./power.js";
 import { regionOf } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
@@ -108,6 +110,9 @@ export interface EmpireView {
   stores: { post: string; region: string; goods: Record<string, number> }[];
   /** The goods on the road between two counters. */
   transfers: EmpireTransfer[];
+  /** The orders of the cities its counters serve, and its vehicles' rounds (after Hades' Star). */
+  orders: CityOrders[];
+  tours: EmpireTour[];
   /** The vehicles one may buy, those of the house, and its voyages under way. */
   vehicles: {
     shop: {
@@ -465,6 +470,8 @@ export function empireView(
     map: mapOf(house, s),
     stores: storesOf(state.inventories[playerId], house, s),
     transfers: house.transfers ?? [],
+    orders: ordersOf(ctx, house, playerId, s, now),
+    tours: house.tours ?? [],
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
     deposits: (state.empire?.deposits ?? [])

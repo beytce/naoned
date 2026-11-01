@@ -322,6 +322,17 @@ export const venice1450Empire: EmpireSettingsInput = {
       slots: 4,
     },
   },
+  // The cities' orders, renewed every two hours, brought on rounds of a few minutes (1 November,
+  // after Hades' Star's shipments): a town of size 1 asks one order, a capital five.
+  orders: {
+    periodMinutes: 120,
+    perSize: [1, 2, 3, 4, 5],
+    qtyPerSize: 5,
+    premiumBps: 3_000,
+    sizeBps: 500,
+    distanceBps: 800,
+    unitsPerMinute: 15,
+  },
   // A model raised at the Remise or the Arsenal: its price, 500 ducats at the least, doubled at
   // each level; +10 % a level on land, +5 % at sea (at +10 %, the ships took the trade from the
   // miners and the traders: decision of the owner, calibration.md).

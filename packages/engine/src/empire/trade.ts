@@ -17,6 +17,7 @@ import { houseEffect } from "./effects.js";
 import { capacityOf } from "./fleet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
 import { bookShareBps, citiesCovered, revealedOf, standingPosts } from "./map.js";
+import { autoTour } from "./orders.js";
 import { powerOf } from "./power.js";
 import {
   localBookOf,
@@ -376,8 +377,10 @@ export function deliverOrders(
     if (s.map.reach && !citiesCovered(h, s).has(city)) fail("out_of_reach");
     region = c.region;
   }
-  // From the counters that serve the city (those that have it in reach), else the region's.
   const s = empireSettings(tx.ctx);
+  // A world of orders: a round to the city's orders, made for the player.
+  if (s.orders) return autoTour(tx, playerId, good, qty, region, city);
+  // From the counters that serve the city (those that have it in reach), else the region's.
   const from = city !== undefined && s.map.reach ? postsServing(h, s, city) : postsIn(h, s, region);
   checkPlace(tx, playerId, h, region, good, from);
   const n = fillOrders(tx, playerId, good, Math.min(qty, haulLeft(tx, h, from)), region, from);
@@ -406,6 +409,8 @@ export function fillOrders(
 ): number {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
+  // A world of orders has no daily book: the cities' orders are brought on rounds.
+  if (s.orders) return 0;
   const ref = regionOf(region, s).demands[good];
   if (ref === undefined) return 0;
   const day = dayOf(tx.now);
