@@ -81,14 +81,22 @@ function vehicleOf(h: EmpireHouse, s: EmpireSettings, vehicleId: string): Vehicl
  * Loads at the counter it stands at what the orders of its stops to come ask (those it does not
  * carry already), no more than it holds nor than the counter has.
  */
-function loadFor(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle): void {
+function loadFor(
+  tx: Tx,
+  h: EmpireHouse,
+  playerId: PlayerId,
+  v: Vehicle,
+  at = tx.now,
+  legs: EmpireLeg[] = v.legs ?? [],
+  routed = false,
+): void {
   const s = empireSettings(tx.ctx);
   const post = v.at ?? HOME_POST;
   if (placeCity(post) !== null) return;
   let room = holdOf(h, v, s) - carried(v);
-  const cities = [...new Set((v.legs ?? []).map((l) => placeCity(l.to)).filter((c) => c !== null))];
+  const cities = [...new Set(legs.map((l) => placeCity(l.to)).filter((c) => c !== null))];
   const want = new Map<string, number>();
-  const orders = ordersOf(tx.ctx, h, playerId, s, tx.now);
+  const orders = ordersOf(tx.ctx, h, playerId, s, at);
   for (const code of cities)
     for (const o of orders.find((x) => x.city === code)?.orders ?? [])
       want.set(o.good, (want.get(o.good) ?? 0) + o.qty - o.filled);
@@ -98,9 +106,29 @@ function loadFor(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle): void {
     const n = Math.min(room, asked - have, storeOf(tx, h, playerId, post, good));
     if (n <= 0) continue;
     takeAt(tx, h, playerId, post, good, n, "empire_voyage");
-    v.cargo = { ...(v.cargo ?? {}), [good]: { qty: have + n, from: post } };
+    // Loaded on the way by the Livre de route: its premium on these units.
+    const before = v.cargo?.[good]?.routed ?? 0;
+    v.cargo = {
+      ...(v.cargo ?? {}),
+      [good]: {
+        qty: have + n,
+        from: post,
+        ...(routed || before ? { routed: before + (routed ? n : 0) } : {}),
+      },
+    };
     room -= n;
   }
+}
+
+/** Does a city's open orders ask a good the vehicle carries (the Fouet's hop)? */
+function carriesFor(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle, place: string) {
+  const code = placeCity(place);
+  if (code === null) return false;
+  const s = empireSettings(tx.ctx);
+  const goods = new Set(Object.keys(v.cargo ?? {}));
+  return (ordersOf(tx.ctx, h, playerId, s, tx.now).find((x) => x.city === code)?.orders ?? []).some(
+    (o) => o.qty > o.filled && goods.has(o.good),
+  );
 }
 
 /** Sends a vehicle to a place: a stop more at the end of its queue. */
@@ -115,12 +143,27 @@ export function moveVehicle(tx: Tx, playerId: PlayerId, vehicleId: string, to: s
   const b = placePoint(h, s, to);
   if (!a || !b) fail("unknown_target");
   const last = v.legs?.at(-1);
-  const departAt = last ? last.arrivesAt : tx.now + s.moves.departSeconds * 1_000;
+  const place = { vehicleId: v.id };
+  // The Estafette: no wait before leaving, a first hop shorter.
+  const courier = houseEffect(h, "courier", s, place);
+  const departAt = last
+    ? last.arrivesAt
+    : tx.now + (courier > 0 ? 0 : s.moves.departSeconds * 1_000);
   const leg: EmpireLeg = { from, to, departAt, arrivesAt: departAt + hopMs(s, a, b) };
+  // The first hop leaves from where it stands: loaded now (below), never again on its way.
+  if (!last) leg.loaded = true;
   v.legs = [...(v.legs ?? []), leg];
-  v.busyUntil = leg.arrivesAt;
   // Still at its counter: it loads for its stops to come.
   if (!underWay(v, tx.now)) loadFor(tx, h, playerId, v);
+  // The Fouet: quicker when its cargo goes to this stop.
+  let ms = hopMs(s, a, b);
+  const whip = houseEffect(h, "whipSpeed", s, place);
+  if (whip > 0 && carriesFor(tx, h, playerId, v, to))
+    ms = Math.max(1_000, Math.round((ms * 10_000) / (10_000 + whip)));
+  if (!last && courier > 0)
+    ms = Math.max(1_000, Math.round((ms * (10_000 - Math.min(9_000, courier))) / 10_000));
+  leg.arrivesAt = departAt + ms;
+  v.busyUntil = leg.arrivesAt;
 }
 
 /** Leaves at once, if not under way yet: every stop to come as much earlier. */
@@ -199,22 +242,55 @@ function arrive(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle, leg: Emp
     const post = standingPosts(h, s).find((p) => p.id === load.from);
     const sectors = post ? Math.hypot(cx - post.x, cy - post.y) / s.map.hexSize : 0;
     const way = Math.floor(s.orders.distanceBps * sectors);
-    const bonus = houseEffect(h, "orderBonus", s, { region: c.region });
-    receive(tx, playerId, applyBpsFloor(gross, 10_000 + way + bonus), `orders:${code}:${good}`);
+    const bonus = houseEffect(h, "orderBonus", s, { region: c.region, vehicleId: v.id });
+    // The Livre de route's premium on the units it loaded on the way.
+    const routed = Math.min(n, load.routed ?? 0);
+    const ledger =
+      routed > 0
+        ? applyBpsFloor(
+            (gross * BigInt(routed)) / BigInt(n),
+            houseEffect(h, "ledger", s, { vehicleId: v.id }),
+          )
+        : 0n;
+    receive(
+      tx,
+      playerId,
+      applyBpsFloor(gross, 10_000 + way + bonus) + ledger,
+      `orders:${code}:${good}`,
+    );
     advanceCarnet(h, "deliver", n);
     setCargo(v, good, load.qty - n, load.from);
+    if (routed > 0 && v.cargo?.[good])
+      v.cargo[good] = { ...v.cargo[good], routed: (load.routed ?? 0) - routed };
   }
 }
 
-/** The hops arrived by now, every house's, in the order of their arrival. */
+/**
+ * The hops arrived by now, every house's, in the order of their times: each arrival, and each
+ * departure from a counter on the way of a vehicle carrying the Livre de route (it loads there
+ * what its stops to come ask).
+ */
 export function settleMoves(tx: Tx): void {
+  const s = empireSettings(tx.ctx);
   for (const [id, h] of Object.entries(tx.s.empire?.houses ?? {})) {
-    const due: { v: Vehicle; leg: EmpireLeg }[] = [];
-    for (const v of h.vehicles ?? [])
-      for (const leg of v.legs ?? []) if (leg.arrivesAt <= tx.now) due.push({ v, leg });
+    const due: { v: Vehicle; leg: EmpireLeg; at: number; kind: "load" | "arrive" }[] = [];
+    for (const v of h.vehicles ?? []) {
+      const ledger = houseEffect(h, "ledger", s, { vehicleId: v.id }) > 0;
+      for (const leg of v.legs ?? []) {
+        if (ledger && !leg.loaded && leg.departAt <= tx.now && placeCity(leg.from) === null)
+          due.push({ v, leg, at: leg.departAt, kind: "load" });
+        if (leg.arrivesAt <= tx.now) due.push({ v, leg, at: leg.arrivesAt, kind: "arrive" });
+      }
+    }
     if (due.length === 0) continue;
-    due.sort((a, b) => a.leg.arrivesAt - b.leg.arrivesAt);
-    for (const { v, leg } of due) {
+    due.sort((a, b) => a.at - b.at || (a.kind === "arrive" ? -1 : 1));
+    for (const { v, leg, at, kind } of due) {
+      if (kind === "load") {
+        leg.loaded = true;
+        const rest = (v.legs ?? []).filter((l) => l.departAt >= leg.departAt);
+        loadFor(tx, h, id, v, at, rest, true);
+        continue;
+      }
       arrive(tx, h, id, v, leg);
       const legs = (v.legs ?? []).filter((l) => l !== leg);
       v.legs = legs.length > 0 ? legs : undefined;

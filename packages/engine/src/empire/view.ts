@@ -56,6 +56,7 @@ import { staffHireCost, staffSlots } from "./staff.js";
 import { storesOf } from "./stores.js";
 import { isContesaWeek, terraWeekStart } from "./terra.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
+import { vehicleSlotsOf } from "./vehicleModules.js";
 import { moduleSlotsOf, neighbourBonus } from "./workshops.js";
 
 export interface EmpireSite {
@@ -133,8 +134,10 @@ export interface EmpireView {
       /** Where it stands: a counter's id, or `city:<code>`. */
       at: string;
       /** What it carries, by good, and its stops to come (hop by hop). */
-      cargo: Record<string, { qty: number; from: string }>;
+      cargo: Record<string, { qty: number; from: string; routed?: number }>;
       legs: EmpireLeg[];
+      /** Its places for trade modules (a level of its model), and what is fitted there. */
+      slots: number;
     }[];
     haulPerDay: number;
   };
@@ -720,6 +723,9 @@ function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s
     at: v.at ?? "home",
     cargo: v.cargo ?? {},
     legs: v.legs ?? [],
+    // Its places for trade modules, one a level of its model, and what is fitted there.
+    slots: vehicleSlotsOf(house, v.type),
+    fitted: v.fitted ?? [],
     capacity: Number(
       applyBpsFloor(
         BigInt(capacityOf(house, v.type, s)),

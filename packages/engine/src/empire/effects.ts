@@ -4,6 +4,7 @@ import { knowledgeEffect } from "./knowledge.js";
 import { moduleEffectBps } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
 import { staffEffect } from "./staff.js";
+import { fittedOn } from "./vehicleModules.js";
 
 /** Where an effect is read: the staff placed there and the modules fitted there count too. */
 export interface EffectPlace {
@@ -25,15 +26,25 @@ export function houseEffect(
 ): number {
   if (!h) return 0;
   let total = 0;
+  // A workshop's module counts on its workshop, a trade module on its vehicle (1 November 2026,
+  // after Hades' Star's ships); the others for the whole house.
+  const placed = (kind: string) => kind === "workshop" || kind === "trade";
   const of = (code: string, level: number, fitted: boolean) => {
     const m = s.modules.find((x) => x.code === code);
-    if (m && (m.kind === "workshop") === fitted && m.effect === effect)
+    if (m && placed(m.kind) === fitted && m.effect === effect)
       total += moduleEffectBps(code, level, s);
   };
   for (const [code, level] of Object.entries(h.modules ?? {})) of(code, level, false);
   // The workshop's own modules, at their researched level.
   const ws = place?.workshopId ? h.workshops.find((w) => w.id === place.workshopId) : undefined;
-  for (const code of ws?.fitted ?? []) of(code, h.modules?.[code] ?? 0, true);
+  for (const code of ws?.fitted ?? [])
+    if (s.modules.find((m) => m.code === code)?.kind === "workshop")
+      of(code, h.modules?.[code] ?? 0, true);
+  // The vehicle's own trade modules.
+  const v = place?.vehicleId ? h.vehicles?.find((x) => x.id === place.vehicleId) : undefined;
+  for (const code of fittedOn(h, v))
+    if (s.modules.find((m) => m.code === code)?.kind === "trade")
+      of(code, h.modules?.[code] ?? 0, true);
   total += knowledgeEffect(h, effect, s);
   total += staffEffect(h, effect, s, place);
   total += lineageEffect(h, effect, s);

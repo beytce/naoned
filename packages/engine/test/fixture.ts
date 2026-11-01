@@ -442,6 +442,10 @@ export const testEmpire: EmpireSettingsInput = {
   modules: [
     { code: "hold", kind: "trade", effect: "capacity", firstLevelBps: 1_000, perLevelBps: 500 },
     { code: "sails", kind: "trade", effect: "speed", firstLevelBps: 800, perLevelBps: 400 },
+    { code: "convoy", kind: "trade", effect: "orderBonus", firstLevelBps: 500, perLevelBps: 300 },
+    { code: "ledger", kind: "trade", effect: "ledger", firstLevelBps: 500, perLevelBps: 300 },
+    { code: "whip", kind: "trade", effect: "whipSpeed", firstLevelBps: 1_000, perLevelBps: 800 },
+    { code: "courier", kind: "trade", effect: "courier", firstLevelBps: 1_000, perLevelBps: 500 },
     { code: "yield", kind: "extract", effect: "yield", firstLevelBps: 1_500, perLevelBps: 700 },
     {
       code: "crossbow",
