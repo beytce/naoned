@@ -1281,8 +1281,22 @@ function buyPlans(w: World, h: House, qty: number): boolean {
 function expedition(w: World, h: House, rng: Rng) {
   const s = w.s;
   // The transport: its best free land vehicle, a relic for every `holdPerRelic` of its hold.
+  // Docked at the Porta in the game, it waits there: never asked free of the deliveries here.
+  // A house at the Porta buys the land vehicle of the biggest hold its Casa opens, for its relics.
+  if (h.porta) {
+    const best = Object.entries(w.s.vehicles)
+      .filter(([, v]) => !v.build && v.casa <= h.casa)
+      .sort((a, b) => b[1].capacity - a[1].capacity)[0];
+    const owned = h.vehicles.some((v) => v.type === best?.[0]);
+    const price = best ? d(best[1].costDucats) : 0n;
+    if (best && !owned && spendable(w, h) >= price) {
+      destroy(w, h, price, "vehicles");
+      h.vehicles.push({ type: best[0], busyUntil: 0 });
+    }
+  }
+  // Any land vehicle, as the engine takes (`landVehicle`): never a ship of the Arsenal.
   const land = h.vehicles
-    .filter((v) => w.m.vehicles[v.type]?.regions.length === 1 && v.busyUntil <= w.now)
+    .filter((v) => w.s.vehicles[v.type] !== undefined && !w.s.vehicles[v.type]?.build)
     .sort((a, b) => holdOf(w, h, b.type) - holdOf(w, h, a.type))[0];
   const holdRelics = () =>
     land
@@ -1293,7 +1307,18 @@ function expedition(w: World, h: House, rng: Rng) {
   };
   const bread = w.markets.get("veneto:bread")?.ref ?? d(1);
   const before = h.porta?.battles ?? 0;
-  const relics = portaDay(w, h, rng, () => spendable(w, h), holdRelics, loseTransport, bread);
+  const relics = portaDay(
+    w,
+    h,
+    rng,
+    // The armourer's trade comes first: half its treasury, whatever its next Casa asks.
+    () => (h.bent === "armourer" ? h.cash / 2n : spendable(w, h)),
+    holdRelics,
+    loseTransport,
+    bread,
+    w.m.portaBattlesPerDay[h.activity],
+    land ? d(w.s.vehicles[land.type]?.costDucats ?? 0) : 0n,
+  );
   if (!h.porta || h.porta.battles === before) return;
   h.expeditionsTried = h.porta.battles;
   h.expeditionsWon = h.porta.won;
@@ -1325,10 +1350,11 @@ export function session(w: World, h: House, rng: Rng) {
   sellSurplus(w, h);
   sellToCourt(w, h);
   if (h.bent !== "miner" || h.casa >= 8) planVoyages(w, h, rng);
+  if (h.bent === "armourer") expedition(w, h, rng);
   build(w, h);
   research(w, h);
   growIdentity(w, h, () => spendable(w, h));
-  if (h.bent === "armourer" || h.bent === "mixed") expedition(w, h, rng);
+  if (h.bent === "mixed") expedition(w, h, rng);
   h.sessions++;
   const soon = w.now + DAY;
   const reachable = h.cash + incomePerDay(h);

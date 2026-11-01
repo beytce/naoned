@@ -678,7 +678,7 @@ export const venice1450Empire: EmpireSettingsInput = {
         strengthBps: 10_000,
         relicsPerCity: { min: 1, max: 2 },
         rarityWeights: { common: 90, rare: 10, precious: 0, legendary: 0 },
-        breadPerVehicle: 10,
+        breadPerVehicle: 4,
       },
       {
         minPlayers: 1,
@@ -690,7 +690,7 @@ export const venice1450Empire: EmpireSettingsInput = {
         strengthBps: 11_000,
         relicsPerCity: { min: 1, max: 2 },
         rarityWeights: { common: 70, rare: 25, precious: 5, legendary: 0 },
-        breadPerVehicle: 20,
+        breadPerVehicle: 8,
       },
       {
         minPlayers: 1,
@@ -702,7 +702,7 @@ export const venice1450Empire: EmpireSettingsInput = {
         strengthBps: 13_000,
         relicsPerCity: { min: 1, max: 3 },
         rarityWeights: { common: 50, rare: 35, precious: 15, legendary: 0 },
-        breadPerVehicle: 40,
+        breadPerVehicle: 15,
       },
       {
         minPlayers: 1,
@@ -714,7 +714,7 @@ export const venice1450Empire: EmpireSettingsInput = {
         strengthBps: 24_000,
         relicsPerCity: { min: 2, max: 3 },
         rarityWeights: { common: 35, rare: 40, precious: 22, legendary: 3 },
-        breadPerVehicle: 70,
+        breadPerVehicle: 25,
       },
       {
         minPlayers: 2,
@@ -726,7 +726,7 @@ export const venice1450Empire: EmpireSettingsInput = {
         strengthBps: 28_000,
         relicsPerCity: { min: 2, max: 3 },
         rarityWeights: { common: 20, rare: 40, precious: 32, legendary: 8 },
-        breadPerVehicle: 110,
+        breadPerVehicle: 40,
       },
       {
         minPlayers: 2,
@@ -738,14 +738,15 @@ export const venice1450Empire: EmpireSettingsInput = {
         strengthBps: 36_000,
         relicsPerCity: { min: 2, max: 4 },
         rarityWeights: { common: 10, rare: 35, precious: 40, legendary: 15 },
-        breadPerVehicle: 160,
+        breadPerVehicle: 60,
       },
     ],
     relics: {
+      // A battle worth about half a day of income at the Casa its tier is played at (lot 6).
       common: { loadS: 10, priceDucats: 150, points: 1 },
-      rare: { loadS: 20, priceDucats: 500, points: 3 },
-      precious: { loadS: 35, priceDucats: 1_500, points: 8 },
-      legendary: { loadS: 60, priceDucats: 5_000, points: 20 },
+      rare: { loadS: 20, priceDucats: 1_000, points: 3 },
+      precious: { loadS: 35, priceDucats: 4_000, points: 8 },
+      legendary: { loadS: 60, priceDucats: 15_000, points: 20 },
     },
   },
 };

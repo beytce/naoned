@@ -280,6 +280,8 @@ export interface SimModel {
   /** What a plan sells for between houses, in ducats. */
   planPriceDucats: number;
   plansPerRelic: number;
+  /** Battles a house plays at the Porta a day, at most (one a session). */
+  portaBattlesPerDay: Record<Activity, number>;
   /** An expedition's victuals, in ducats a tier (destroyed). */
   victualsPerTierDucats: number;
   /** The Terraferma (CADRAGE-v3 § 8): who plays a week, its ration and its rewards. */

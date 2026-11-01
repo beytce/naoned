@@ -89,6 +89,7 @@ export const DEFAULT_MODEL: SimModel = {
   planPriceDucats: 80,
   // The antiquarian buys the relics (docs/plan-porta.md): none deciphered into plans.
   plansPerRelic: 0,
+  portaBattlesPerDay: { assidu: 3, median: 2, occasional: 1, absent: 1 },
   victualsPerTierDucats: 40,
   terra: {
     playBps: { assidu: 8_000, median: 5_000, occasional: 2_000, absent: 3_000 },

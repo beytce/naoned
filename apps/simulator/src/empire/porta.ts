@@ -102,11 +102,13 @@ export function playBattle(
           (u.outcome === "in" && u === transport && transport.cargo.length >= transport.capacity))
       )
         orderBattle(b, "bot", { type: "leave", unitId: u.id });
+    // Home in time, with a full hold, or before the combat vehicle falls (under 40 % of its hp).
     if (
       !homing &&
       (left < Math.max(back(transport), back(combat)) ||
         transport.outcome !== "in" ||
-        transport.cargo.length >= transport.capacity)
+        transport.cargo.length >= transport.capacity ||
+        combat.hp < combat.maxHp * 0.4)
     )
       homing = true;
     // The nearest city that still holds its relics (the cities are ordered from the gate).
@@ -200,6 +202,8 @@ export interface SimPorta {
   best: number;
   combat: { model: string; level: number } | null;
   day: number;
+  /** Battles played that day. */
+  today: number;
   battles: number;
   won: number;
   lostCombat: number;
@@ -213,6 +217,7 @@ export const newPorta = (): SimPorta => ({
   best: 0,
   combat: null,
   day: -1,
+  today: 0,
   battles: 0,
   won: 0,
   lostCombat: 0,
@@ -223,8 +228,8 @@ export const newPorta = (): SimPorta => ({
 
 /**
  * A house's day at the Porta (armourer or mixed, from the Porta's Casa): it puts the Porta down,
- * buys its combat vehicle and loadout, raises them when it can spare the ducats, then plays one
- * battle a day at the highest tier its outcomes make worth it; it sells its relics at once.
+ * buys its combat vehicle and loadout, raises them when it can spare the ducats, then plays a
+ * battle a session, so many a day, at the highest tier its outcomes make worth it; it sells its relics at once.
  */
 export function portaDay(
   w: World,
@@ -234,6 +239,8 @@ export function portaDay(
   holdRelics: () => number,
   loseTransport: () => void,
   victualPrice: bigint,
+  battlesPerDay: number,
+  transportPrice: bigint,
 ): number {
   const s = w.s;
   const b = s.porta.building;
@@ -246,48 +253,61 @@ export function portaDay(
     h.porta = newPorta();
   }
   const p = h.porta;
-  if (p.day === today) return 0;
+  if (p.day !== today) {
+    p.day = today;
+    p.today = 0;
+  }
+  if (p.today >= battlesPerDay) return 0;
   const model = bestModel(h.casa, s);
   if (!model) return 0;
-  if (!p.combat || (p.combat.model !== model && spendable() >= armsCost(model, 1, s).buy * 3n)) {
+  if (
+    !p.combat ||
+    (p.combat.model !== model && spendable() >= (armsCost(model, 1, s).buy * 3n) / 2n)
+  ) {
     const { buy } = armsCost(model, 1, s);
     if (spendable() < buy) return 0;
     destroy(w, h, buy, "arms");
     p.combat = { model, level: 1 };
   }
-  // Raised when the house can spare it three times over.
+  // Raised when the house can spare it twice over.
   const { raise } = armsCost(p.combat.model, p.combat.level, s);
-  if (p.combat.level < s.porta.modelLevels.max && spendable() >= raise * 3n) {
+  if (p.combat.level < s.porta.modelLevels.max && spendable() >= raise * 2n) {
     destroy(w, h, raise, "arms");
     p.combat.level += 1;
   }
   if (p.level < s.porta.tiers.length && p.best >= p.level) {
     const cost = d(b.levelCostDucats * 2 ** p.level);
-    if (spendable() >= cost * 2n) {
+    if (spendable() >= cost) {
       destroy(w, h, cost, "porta");
       p.level += 1;
     }
   }
   const relics = holdRelics();
   if (relics === 0) return 0;
-  // The highest open tier a lone house can play (a group needs others: the lone bot keeps to them)
-  // whose relics outweigh the victuals and the losses.
+  // The tier worth most, its losses reckoned (the combat vehicle and its levels, the transport,
+  // the victuals); a new tier only when the house wins it one time in two. A lone house keeps to
+  // the tiers it may play alone.
   let pick = 0;
   let worth = 0n;
+  // A loss reckoned at the vehicle's price: its levels are sunk.
+  const kept = armsCost(p.combat.model, 1, s).buy;
   for (let t = 1; t <= Math.min(p.level, p.best + 1); t++) {
     const line = s.porta.tiers[t - 1];
     if (!line || line.minPlayers > 1) continue;
     const outs = outcomesOf(t, p.combat.model, p.combat.level, relics, s);
+    const n = BigInt(outs.length);
+    const wins = outs.filter((o) => o.won).length;
+    if (t > p.best && wins * 2 < outs.length) continue;
     const gain =
-      outs.reduce((a, o) => a + o.relics.reduce((x, r) => x + relicPrice(r, s), 0n), 0n) /
-      BigInt(outs.length);
-    const lossCombat =
-      (BigInt(outs.filter((o) => o.vehicles[0]?.outcome !== "exited").length) *
-        armsCost(p.combat.model, 1, s).buy) /
-      BigInt(outs.length);
-    const value = gain - lossCombat - BigInt(line.breadPerVehicle * 2) * victualPrice;
-    // The next tier to win is tried; past it, the best worth.
-    if (t === p.best + 1 || value > worth) {
+      outs.reduce((a, o) => a + o.relics.reduce((x, r) => x + relicPrice(r, s), 0n), 0n) / n;
+    const lostCombat = BigInt(outs.filter((o) => o.vehicles[0]?.outcome !== "exited").length);
+    const lostTransport = BigInt(outs.filter((o) => o.vehicles[1]?.outcome !== "exited").length);
+    const value =
+      gain -
+      (lostCombat * kept) / n -
+      (lostTransport * transportPrice) / n -
+      BigInt(line.breadPerVehicle * 2) * victualPrice;
+    if (value > worth) {
       pick = t;
       worth = value;
     }
@@ -296,7 +316,7 @@ export function portaDay(
   const line = s.porta.tiers[pick - 1];
   const victuals = BigInt((line?.breadPerVehicle ?? 0) * 2) * victualPrice;
   if (h.cash < victuals) return 0;
-  p.day = today;
+  p.today++;
   destroy(w, h, victuals, "victuals");
   const outs = outcomesOf(pick, p.combat.model, p.combat.level, relics, s);
   const o = outs[Math.floor(rng.next() * outs.length)] as BattleOutcome;
