@@ -42,6 +42,8 @@ Gemini a refusé la planche de style (1er novembre 2026) : un texte long, quatre
 | **ChatGPT** (offre gratuite) | Le même générateur, le plus obéissant ; sait faire un **fond transparent** (« transparent background, PNG ») ; garde le style dans la conversation | Peu d'images par jour en gratuit |
 | Leonardo.ai (offre gratuite) | Fond transparent natif, « Style Reference » | Jetons quotidiens limités ; moins constant |
 
+Tous les textes, un par élément : `docs/prompts-images.md`.
+
 Méthode : **une conversation par famille**. On commence par **un seul sujet par image** avec le bloc STYLE court (ci-dessous) ; une fois la planche de style réussie, on la joint à chaque message et on peut passer à quatre sujets par image (grille 2 × 2). Tu m'envoies les images telles quelles : je les découpe, je retire le fond, je nomme et je range.
 
 ### Le bloc STYLE court (si un outil refuse ou se perd)
