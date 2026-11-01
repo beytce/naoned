@@ -10,9 +10,10 @@ const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
 
 /**
- * A city touched (after Hades' Star's planets, 1 November 2026), at the foot of the map: its open
- * orders by good, how full it is of waves, when the next comes; « Y envoyer un véhicule » sends the
- * vehicle chosen (or the first free one) there, as a drag would.
+ * A city touched (after Hades' Star's planets, 1 November 2026), at the foot of the map: its orders
+ * waiting, each a lot and its pay, how many of its cap, when the next comes. They are loaded from a
+ * vehicle docked at a counter; « Y envoyer un véhicule » sends the vehicle chosen (or the first
+ * free one) there, as a drag would.
  */
 export function OrdersPanel({
   p,
@@ -32,9 +33,7 @@ export function OrdersPanel({
   if (!view) return null;
   const at = view.orders.find((x) => x.city === city);
   const name = fr.empire.cityNames[city] ?? city;
-  // The cap of the waves, as the ring reckons it (six in Venice's world).
-  const max = at && at.fillBps > 0 ? Math.round((at.waves * 10_000) / at.fillBps) : 6;
-  const open = (at?.orders ?? []).filter((o) => o.filled < o.qty);
+  const open = at?.orders ?? [];
   return (
     <section
       className="pointer-events-auto w-full border-t border-line bg-night-2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-xl shadow-black/50 lg:mb-4 lg:w-[30rem] lg:rounded-2xl lg:border"
@@ -46,7 +45,7 @@ export function OrdersPanel({
             {name}
           </h3>
           <p className="text-xs text-cream-dim">
-            {at ? t.cityLine(regionName(at.region), at.size, at.waves, max) : t.outOfReach}
+            {at ? t.cityLine(regionName(at.region), at.size, open.length, at.cap) : t.outOfReach}
           </p>
         </div>
         <CloseButton onClick={onClose} />
@@ -59,23 +58,25 @@ export function OrdersPanel({
             <ul className="mt-2 space-y-1.5" data-city-orders={city}>
               {open.map((o) => (
                 <li
-                  key={o.good}
+                  key={o.id}
                   className="flex items-center gap-2 text-sm text-cream"
-                  data-order={`${city}:${o.good}`}
+                  data-order={o.id}
                 >
                   <GoodsMark code={o.good} size={22} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate">{goodName(p, o.good)}</span>
-                    <span className="block text-xs text-cream-dim">
-                      {t.filled(o.filled, o.qty)} · {t.unit(d(o.unit))}
+                    <span className="block truncate">
+                      {goodName(p, o.good)} × {o.qty}
                     </span>
+                  </span>
+                  <span className="font-display text-sm font-bold tabular-nums text-gold">
+                    {d(o.pay)}
                   </span>
                 </li>
               ))}
             </ul>
           )}
           <p className="mt-2 text-xs text-cream-dim" data-renews>
-            {at.fillBps >= 10_000 ? t.full : t.renews(hourOf(at.renewsAt))}
+            {at.nextAt === null ? t.full : t.renews(hourOf(at.nextAt))}
           </p>
           {onSend && open.length > 0 && (
             <div className="mt-2" data-send-here>

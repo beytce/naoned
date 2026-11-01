@@ -26,15 +26,6 @@ const empire: EmpireSettingsInput = {
     home: { x: 10, y: 0 },
     cityClearance: 5,
   },
-  orders: {
-    periodMinutes: 120,
-    perSize: [1, 1, 1, 1, 1],
-    qtyPerSize: 1,
-    premiumBps: 0,
-    sizeBps: 0,
-    distanceBps: 0,
-    maxWaves: 6,
-  },
 };
 const s = parseEmpireSettings(empire);
 
@@ -55,7 +46,7 @@ describe("the first fondaco, a place of its own", () => {
     expect(homePost(house(w), s)).toEqual(expect.objectContaining({ x: 10, y: 0, cell: "0,0" }));
     expect(view(w)?.map.home).toEqual(expect.objectContaining({ x: 10, y: 0, placed: false }));
     expect(citiesCovered(house(w), s).has("venezia")).toBe(true);
-    expect(view(w)?.orders.some((o) => o.city === "venezia")).toBe(true);
+    expect(view(w)?.map.cities.some((c) => c.code === "venezia")).toBe(true);
   });
 
   it("is put down once, free, at a point of a cell of the start the house sees", () => {

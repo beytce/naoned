@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   bringsTo,
+  dockOrders,
   hopSeconds,
   lastPlace,
-  loadable,
   nearestPlace,
   placesOf,
   vehiclePose,
@@ -21,7 +21,7 @@ const cart = (over: Partial<Mine> = {}): Mine =>
     busyUntil: 0,
     capacity: 30,
     at: "home",
-    cargo: {},
+    loads: [],
     legs: [],
     ...over,
   }) as Mine;
@@ -48,12 +48,21 @@ function payload(v: Mine): EmpirePayload {
           region: "veneto",
           size: 1,
           orders: [
-            { good: "salt", qty: 12, filled: 2, unit: "100" },
-            { good: "bread", qty: 4, filled: 0, unit: "50" },
+            { id: "padova#0", city: "padova", good: "salt", qty: 10, pay: "1000" },
+            { id: "padova#1", city: "padova", good: "bread", qty: 4, pay: "200" },
           ],
-          waves: 2,
-          fillBps: 3333,
-          renewsAt: 0,
+          cap: 3,
+          fillBps: 6666,
+          nextAt: 0,
+        },
+        {
+          city: "venezia",
+          region: "veneto",
+          size: 3,
+          orders: [{ id: "venezia#0", city: "venezia", good: "bread", qty: 60, pay: "3000" }],
+          cap: 6,
+          fillBps: 1666,
+          nextAt: 0,
         },
       ],
       vehicles: { shop: [], mine: [v], haulPerDay: 0 },
@@ -95,34 +104,54 @@ describe("a vehicle's pose", () => {
   });
 });
 
+const aboard = {
+  id: "padova#2",
+  city: "padova",
+  good: "salt",
+  qty: 3,
+  pay: "300",
+  from: "home",
+};
+
 describe("what a vehicle would bring to a city", () => {
-  it("is its cargo and, at its counter, what the counter holds, against the orders left", () => {
-    const p = payload(cart({ cargo: { salt: { qty: 3, from: "home" } } }));
+  it("is the orders of that city aboard, with their pay", () => {
+    const p = payload(cart({ loads: [aboard] }));
     const v = p.view?.vehicles.mine[0] as Mine;
-    // Salt: 10 asked, 3 aboard and 8 at the counter, so 10; bread: 4 asked, 50 held, so 4.
-    expect(bringsTo(p, v, "padova")).toEqual([
-      { good: "salt", n: 10, pay: 1_000n },
-      { good: "bread", n: 4, pay: 200n },
-    ]);
-    // On the way, only what it carries.
-    const away = { ...v, at: "city:venezia" };
-    expect(bringsTo(p, away, "padova")).toEqual([{ good: "salt", n: 3, pay: 300n }]);
+    expect(bringsTo(p, v, "padova")).toEqual([{ good: "salt", n: 3, pay: 300n }]);
+    expect(bringsTo(p, v, "venezia")).toEqual([]);
   });
 });
 
 describe("the cities a vehicle chosen lights up", () => {
-  it("are those it would bring something to, with how much", () => {
+  it("are those of the orders aboard, with how many", () => {
+    const p = payload(cart({ loads: [aboard, { ...aboard, id: "padova#3" }] }));
+    const v = p.view?.vehicles.mine[0] as Mine;
+    expect([...wantedBy(p, v)]).toEqual([["padova", 2]]);
+    expect([...wantedBy(p, payload(cart()).view?.vehicles.mine[0] as Mine)]).toEqual([]);
+  });
+});
+
+describe("the orders a docked vehicle may load", () => {
+  it("are those of the cities its counter serves, the ready ones first, sorted", () => {
     const p = payload(cart());
     const v = p.view?.vehicles.mine[0] as Mine;
-    // At its counter: 8 salt and 50 bread there, Padua asks 10 salt and 4 bread.
-    expect([...wantedBy(p, v)]).toEqual([["padova", 12]]);
-    expect([...wantedBy(p, { ...v, at: "city:venezia" })]).toEqual([]);
-  });
-
-  it("load by hand only what the orders still ask, less what it carries", () => {
-    const p = payload(cart({ cargo: { salt: { qty: 3, from: "home" } } }));
-    const v = p.view?.vehicles.mine[0] as Mine;
-    expect(loadable(p, v, "salt")).toEqual({ left: 7, cities: ["padova"] });
-    expect(loadable(p, v, "iron")).toEqual({ left: 0, cities: [] });
+    // 8 salt at the counter: Padua's 10 salt are greyed; 50 bread: Padua's 4, not Venice's 60.
+    const dear = dockOrders(p, v, "dear");
+    expect(dear.map((o) => [o.id, o.ready])).toEqual([
+      ["padova#1", true],
+      ["venezia#0", false],
+      ["padova#0", false],
+    ]);
+    expect(dear.find((o) => o.id === "padova#0")?.held).toBe(8);
+    expect(dockOrders(p, v, "cheap").map((o) => o.id)).toEqual([
+      "padova#1",
+      "padova#0",
+      "venezia#0",
+    ]);
+    expect(dockOrders(p, v, "far").map((o) => o.id)).toEqual(["padova#1", "padova#0", "venezia#0"]);
+    // On its way, or at a city: nothing to load.
+    expect(dockOrders(p, { ...v, at: "city:venezia" })).toEqual([]);
+    // Another counter, out of reach of these cities: nothing.
+    expect(dockOrders(p, { ...v, at: "p1" })).toEqual([]);
   });
 });

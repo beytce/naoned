@@ -310,16 +310,9 @@ export function Fleet({
               className={`flex h-8 w-8 items-center justify-center rounded-full bg-night-3/90 shadow-md shadow-black/50 ${on ? "ring-2 ring-gold shadow-[0_0_14px_rgb(var(--gold)/0.7)]" : "ring-1 ring-lagoon/70"}`}
             >
               <span style={{ transform: `rotate(${pose.angle}rad)` }} className="flex">
-                <Wagon loaded={Object.keys(v.cargo).length > 0} />
+                <Wagon loaded={v.loads.length > 0} />
               </span>
             </span>
-            {/* A sign of its trade modules of the road (the Livre de route, the Fouet). */}
-            {(v.fitted ?? []).some((m) => m === "ledger" || m === "whip") && (
-              <span
-                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-gold ring-2 ring-night"
-                data-vehicle-modules-sign
-              />
-            )}
           </button>
         );
       })}

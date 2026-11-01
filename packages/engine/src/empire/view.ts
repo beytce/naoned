@@ -4,6 +4,7 @@ import {
   DAY_MS,
   type EmpireHouse,
   type EmpireLeg,
+  type EmpireOrder,
   type EmpireStaff,
   type EmpireVoyage,
   HOUR_MS,
@@ -25,6 +26,7 @@ import {
   capacityOf,
   depotLevelOf,
   fleetCapOf,
+  holdPlacesOf,
   nextDepotLevel,
   upgradeCost,
   vehicleLevelOf,
@@ -54,6 +56,7 @@ import {
   unlockedOf,
 } from "./map.js";
 import { researchCost, researchMinutesOf } from "./modules.js";
+import { holdOf } from "./moves.js";
 import { type CityOrders, ordersOf } from "./orders.js";
 import { type PortaView, portaViewOf } from "./porta/view.js";
 import { bandOf } from "./power.js";
@@ -122,7 +125,7 @@ export interface EmpireView {
   map: EmpireMapView;
   /** Each counter's stock, Venice's first (the map that grows). */
   stores: { post: string; region: string; goods: Record<string, number> }[];
-  /** The orders of the cities its counters serve, wave by wave (after Hades' Star). */
+  /** The orders of the cities its counters serve (after Hades' Star's shipments). */
   orders: CityOrders[];
   /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
   moves: { departSeconds: number; unitsPerSecond: number; maxStops: number };
@@ -147,8 +150,8 @@ export interface EmpireView {
       fitted?: string[];
       /** Where it stands: a counter's id, or `city:<code>`. */
       at: string;
-      /** What it carries, by good, and its stops to come (hop by hop). */
-      cargo: Record<string, { qty: number; from: string; routed?: number }>;
+      /** The orders aboard (each a place of its hold), and its stops to come (hop by hop). */
+      loads: (EmpireOrder & { from: string })[];
       legs: EmpireLeg[];
       /** Its places for trade modules (a level of its model), and what is fitted there. */
       slots: number;
@@ -750,28 +753,28 @@ const plainSite = (cost: Deniers, minutes: number, level: number): EmpireSite =>
 
 function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s: EmpireSettings) {
   const hold = houseEffect(house, "capacity", s);
-  const capacity = (c: number) => Number(applyBpsFloor(BigInt(c), 10_000 + hold));
-  const mine = (house.vehicles ?? []).map((v) => ({
-    ...v,
-    at: v.at ?? "home",
-    cargo: v.cargo ?? {},
-    legs: v.legs ?? [],
-    // Its places for trade modules, one a level of its model, and what is fitted there.
-    slots: vehicleSlotsOf(house, v.type),
-    fitted: v.fitted ?? [],
-    capacity: Number(
-      applyBpsFloor(
-        BigInt(capacityOf(house, v.type, s)),
-        10_000 + houseEffect(house, "capacity", s, { vehicleId: v.id }),
-      ),
-    ),
-  }));
+  // A model's places of hold, the house's effect counted (as a vehicle's, holdOf).
+  const capacity = (c: number) => c + Math.floor((c * hold) / 10_000);
+  const mine = (house.vehicles ?? []).map((v) => {
+    const { cargo: _, ...rest } = v;
+    return {
+      ...rest,
+      at: v.at ?? "home",
+      // The orders aboard, each a place of its hold (after Hades' Star's shipments).
+      loads: v.loads ?? [],
+      legs: v.legs ?? [],
+      // Its places for trade modules, one a level of its model, and what is fitted there.
+      slots: vehicleSlotsOf(house, v.type),
+      fitted: v.fitted ?? [],
+      capacity: holdOf(house, v, s),
+    };
+  });
   return {
     shop: Object.entries(s.vehicles).map(([type, v]) => ({
       type,
       casa: v.casa,
       cost: BigInt(v.costDucats) * DENIERS_PER_DUCAT,
-      capacity: capacity(capacityOf(house, type, s)),
+      capacity: capacity(holdPlacesOf(house, type, s)),
       regions: v.regions,
       speedBps: v.speedBps,
       level: vehicleLevelOf(house, type),

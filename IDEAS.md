@@ -172,3 +172,10 @@ Détail et ordre proposé dans `docs/audit-profondeur-2026-11-01.md` (un planche
 - Le build : modules à double tranchant, équipements enregistrés, désapprendre à la Scuola et déménager un comptoir (une fois par ère).
 - Ensemble : la Grande Commande de compagnie (48 h, un week-end par mois), les modules des associés, le roulage, le don de reliques.
 - Le réseau : relais de poste, vocations des comptoirs, commandes de la cour, Gageures de la semaine, le commis.
+
+## Les commandes comme les cargaisons de Hades' Star (1er novembre 2026, la nuit), hors du chantier
+
+- **Le bonus de lot** : livrer plusieurs commandes d'un coup à la même ville paie un peu plus (+3 % par commande au-delà de la première, chez Hades' Star).
+- **La prime de distance** : une commande d'une ville lointaine paierait plus. Écartée par le porteur ; la distance ne coûte aujourd'hui que du temps.
+- **Les modules retirés à repenser** pour des commandes-places : un ramassage en route (le Shipment Computer), la vitesse vers l'arrêt où va la cargaison (le Rush), le départ immédiat.
+- **Le compteur de soute sur le véhicule** (3/8) et **la pastille du comptoir** (le nombre de commandes chargeables avec son stock) : proposés, non retenus pour l'instant.

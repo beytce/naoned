@@ -85,6 +85,8 @@ export const empireSettingsSchema = z.object({
       z.object({
         casa: positive,
         capacity: positive,
+        /** Its hold in orders (after Hades' Star's shipments): one place an order. */
+        places: positive.prefault(2),
         costDucats: qty,
         regions: z.array(z.string()).min(1),
         speedBps: bps,
@@ -98,21 +100,20 @@ export const empireSettingsSchema = z.object({
    */
   /**
    * The cities' orders (decision of the owner, 1 November 2026, after Hades' Star's shipments):
-   * each city a counter serves asks `perSize[size − 1]` orders a period, of `qtyPerSize` × its size
-   * units at the least, paid the reference with `premiumBps`, `sizeBps` a size above the first,
-   * and `distanceBps` a sector of the way from the counter; a vehicle goes `unitsPerMinute`.
-   * None: the cities' daily book, as before.
+   * a city a counter of the house serves fills with orders, one every `everyMinutes[size − 1]`
+   * up to `cap[size − 1]`; each a fixed lot of a good a workshop of the house makes (`lots`, or
+   * what is worth `lotDucats` at its reference), paid its reference with `premiumBps`, taking one
+   * place of a vehicle's hold. None: the cities' daily book, as before.
    */
   orders: z
     .object({
-      periodMinutes: positive,
-      perSize: z.array(positive).length(5),
-      qtyPerSize: positive,
-      premiumBps: bps,
-      sizeBps: bps,
-      distanceBps: bps,
-      /** At most so many waves open by city: beyond, no new wave until something is brought. */
-      maxWaves: positive.prefault(6),
+      cap: z.array(positive).length(5).prefault([3, 4, 6, 8, 10]),
+      everyMinutes: z.array(positive).length(5).prefault([240, 180, 120, 90, 72]),
+      lotDucats: positive.prefault(40),
+      /** A lot's worth by its good's tier (raw, intermediate, finished, luxury): `lotDucats` times. */
+      tierTimes: z.record(z.string(), positive).prefault({}),
+      lots: z.record(z.string(), positive).prefault({}),
+      premiumBps: bps.prefault(1_500),
     })
     .nullable()
     .prefault(null),
@@ -128,6 +129,8 @@ export const empireSettingsSchema = z.object({
     .object({
       max: positive.prefault(5),
       stepBps: bps.prefault(1_000),
+      /** The places of hold a level adds, after the first (the orders). */
+      placesPerLevel: qty.prefault(1),
       /** A ship's step, when it differs (a ship's hold weighs on every port: 31 October). */
       shipStepBps: bps.optional(),
       costTimes: positive.prefault(1),

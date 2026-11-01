@@ -107,13 +107,11 @@ export const DEFAULT_MODEL: SimModel = {
   leaveBpsPerWeek: 3_000,
   // The trade modules fitted on the carts (1 November): the convoy's premium, the Livre de route.
   researchOrder: {
-    trader: ["hold", "sails", "portolan", "convoy", "ledger", "floating", "tools"],
-    miner: ["yield", "campaign", "tools", "hold", "sustain", "convoy", "ledger"],
-    armourer: ["crossbow", "pavise", "bombard", "surgeon", "hold", "mantlet", "convoy", "ledger"],
-    mixed: ["hold", "tools", "yield", "crossbow", "sails", "pavise", "convoy", "ledger"],
+    trader: ["hold", "sails", "portolan", "convoy", "floating", "tools"],
+    miner: ["yield", "campaign", "tools", "hold", "sustain", "convoy"],
+    armourer: ["crossbow", "pavise", "bombard", "surgeon", "hold", "mantlet", "convoy"],
+    mixed: ["hold", "tools", "yield", "crossbow", "sails", "pavise", "convoy"],
   },
-  // The share of the units a cart carrying the Livre de route loads on its way.
-  ledgerShareBps: 3_000,
   casaFirst: true,
   saveDays: 10,
   worksDays: 30,

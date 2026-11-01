@@ -295,8 +295,6 @@ export interface SimModel {
   sessionsPerDay: Record<Activity, number[]>;
   /** The rounds a land vehicle makes in a session, to the cities' orders (1 November). */
   roundsPerSession: number;
-  /** The share of the units a cart carrying the Livre de route loads on its way, in bps. */
-  ledgerShareBps: number;
   /** The absent profile: a chance a week to leave, for 3 to 14 days. */
   leaveBpsPerWeek: number;
   /** Research order by bent. */

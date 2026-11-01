@@ -158,12 +158,6 @@ const MODULES = [
   // a level of the model.
   module("hold", "trade", "capacity", 1_500, 700),
   module("convoy", "trade", "orderBonus", 500, 300),
-  // The Livre de route: loads on its way what its stops ask, a premium on those units.
-  module("ledger", "trade", "ledger", 500, 300),
-  // The Fouet du charretier: quicker on a hop whose cargo goes to that stop.
-  module("whip", "trade", "whipSpeed", 1_000, 800),
-  // The Estafette: leaves at once, its first hop shorter.
-  module("courier", "trade", "courier", 1_000, 500),
   module("tools", "workshop", "workshopYield", 1_000, 500),
   module("apprentices", "workshop", "workshopSpeed", 1_000, 500),
   module("master", "workshop", "quality", 1_000, 500),
@@ -257,11 +251,12 @@ export const venice1450Empire: EmpireSettingsInput = {
   // The vehicles of step 4 (CADRAGE-v3 § 3.3), as the 24-month simulator has them; the ships come
   // with the sea.
   vehicles: {
-    mule: { casa: 1, capacity: 25, costDucats: 60, regions: ["veneto"], speedBps: 0 },
-    cart: { casa: 3, capacity: 40, costDucats: 120, regions: ["veneto"], speedBps: 0 },
+    mule: { casa: 1, capacity: 25, places: 2, costDucats: 60, regions: ["veneto"], speedBps: 0 },
+    cart: { casa: 3, capacity: 40, places: 3, costDucats: 120, regions: ["veneto"], speedBps: 0 },
     burchio: {
       casa: 5,
       capacity: 90,
+      places: 6,
       costDucats: 400,
       regions: ["veneto", "lombardia", "romagna"],
       speedBps: 0,
@@ -269,26 +264,23 @@ export const venice1450Empire: EmpireSettingsInput = {
     chariot: {
       casa: 6,
       capacity: 70,
+      places: 5,
       costDucats: 500,
       regions: ["veneto", "lombardia", "friuli", "germania"],
       speedBps: 0,
     },
   },
-  // The cities' orders, a wave every two hours piling up to six (twelve hours), brought hop by hop
-  // in a few seconds (1 November, after Hades' Star's shipments): a town of size 1 asks one order
-  // a wave, a capital five.
+  // The cities' orders (1 November, after Hades' Star's shipments): a town fills over a day, one
+  // order every four hours up to three for a market town, every 51 minutes up to fourteen for a
+  // capital; a lot worth some eighty ducats of a good the house's workshops make, one place of a
+  // hold, paid its reference and 15 % (calibration.md, the orders as shipments).
   orders: {
-    periodMinutes: 120,
-    // One to four orders a wave by the town's size (the waves piling up, five at the capital ran
-    // the end of the game a year ahead: calibration.md, 1 November, the hops).
-    perSize: [1, 2, 2, 3, 4],
-    // One unit a size at the least (at five, the Casa ran far ahead of its calendar; at a
-    // premium of 30 %, the first months too: calibration.md).
-    qtyPerSize: 1,
+    cap: [3, 5, 8, 11, 14],
+    everyMinutes: [240, 144, 90, 65, 51],
+    lotDucats: 80,
+    tierTimes: {},
+    lots: {},
     premiumBps: 1_500,
-    sizeBps: 500,
-    distanceBps: 800,
-    maxWaves: 6,
   },
   // A hop: ten seconds to leave (left at once, or taken back), then eight units of the chart a
   // second, three to ten seconds across a counter's reach; fifteen stops queued at most.
@@ -296,7 +288,15 @@ export const venice1450Empire: EmpireSettingsInput = {
   // A model raised at the Remise or the Arsenal: its price, 500 ducats at the least, doubled at
   // each level; +10 % a level on land, +5 % at sea (at +10 %, the ships took the trade from the
   // miners and the traders: decision of the owner, calibration.md).
-  vehicleLevels: { max: 5, stepBps: 1_000, shipStepBps: 500, costTimes: 1, minCostDucats: 500 },
+  vehicleLevels: {
+    max: 5,
+    stepBps: 1_000,
+    shipStepBps: 500,
+    costTimes: 1,
+    minCostDucats: 500,
+    // A place of hold more a level (the orders, after Hades' Star's transport).
+    placesPerLevel: 1,
+  },
   localTripsPerDay: 4,
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
   // The knowledge (CADRAGE-v3 § 3.5): four branches, four knowledges and two capstones each,
@@ -441,17 +441,7 @@ export const venice1450Empire: EmpireSettingsInput = {
     minutes: [30, 90, 240, 480, 960, 1_440, 2_880, 5_760, 10_080, 14_400],
     // One trade, delivering (1 November): the carts' hold and haul, the orders' bonus, the
     // workshops'. The sea, the deposits and the expeditions are gone.
-    available: [
-      "hold",
-      "convoy",
-      "ledger",
-      "whip",
-      "courier",
-      "tools",
-      "apprentices",
-      "master",
-      "furnace",
-    ],
+    available: ["hold", "convoy", "tools", "apprentices", "master", "furnace"],
   },
   // The Porta's arms (docs/plan-porta.md §§ 4–5), to calibrate at the 24-month simulator (lot 6).
   porta: {

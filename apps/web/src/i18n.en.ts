@@ -372,14 +372,12 @@ export const en: Dictionary = {
     },
     /** The cities' orders and the rounds (1 November, after Hades' Star). */
     orders: {
-      cityLine: (region: string, size: number, waves: number, max: number) =>
-        `${region} · a town of size ${size} · ${waves} wave${waves > 1 ? "s" : ""} of orders out of ${max}`,
+      cityLine: (region: string, size: number, n: number, max: number) =>
+        `${region} · a town of size ${size} · ${n} order${n > 1 ? "s" : ""} out of ${max}`,
       outOfReach: "Out of reach of your fondaci: put one closer.",
-      filled: (n: number, of: number) => `${n} / ${of}`,
-      unit: (cost: string) => `${cost} a unit`,
       none: "No orders waiting.",
-      renews: (at: string) => `Next wave at ${at}`,
-      full: "Full: no new wave until something is delivered.",
+      renews: (at: string) => `Next order at ${at}`,
+      full: "Full: no new order until one is loaded.",
       send: "Send a vehicle there",
     },
     hops: {
@@ -403,9 +401,18 @@ export const en: Dictionary = {
       prev: "Previous vehicle",
       next: "Next vehicle",
       none: "No vehicle: buy one at the Remise.",
-      atCounter: (n: number) => `${n} at the fondaco`,
-      askedBy: (cities: string) => `asked by ${cities}`,
-      nothingOrdered: "Nothing at this fondaco that the cities order.",
+      forCity: (city: string, leagues: number) => `for ${city} · ${leagues} leagues`,
+      stock: (n: number, of: number) => `stock ${n}/${of}`,
+      nothingOrdered: "No orders from the cities this fondaco serves.",
+      tapToLoad: "Touch an order to load it.",
+      holdFull: "Hold full.",
+      sort: "Sort",
+      sorts: {
+        dear: "Dearest",
+        cheap: "Cheapest",
+        near: "Nearest",
+        far: "Farthest",
+      } as Record<string, string>,
       modules: "Modules",
       slot: (i: number) => `Place ${i}`,
       emptySlot: "Free place",

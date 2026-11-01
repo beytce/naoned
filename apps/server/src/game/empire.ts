@@ -105,16 +105,15 @@ const action = z.discriminatedUnion("type", [
     module: z.string().max(40).nullable(),
   }),
   z.object({
-    type: z.literal("empireLoad"),
+    type: z.literal("empireLoadOrder"),
     vehicleId: z.string().max(40),
-    good: z.string().max(40),
-    qty: z.number().int().min(1).max(100_000),
+    city: z.string().max(40),
+    orderId: z.string().max(60),
   }),
   z.object({
-    type: z.literal("empireUnload"),
+    type: z.literal("empireUnloadOrder"),
     vehicleId: z.string().max(40),
-    good: z.string().max(40),
-    qty: z.number().int().min(1).max(100_000),
+    orderId: z.string().max(60),
   }),
   z.object({
     type: z.literal("empireBuy"),
