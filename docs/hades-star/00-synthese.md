@@ -59,7 +59,15 @@
   - les lieux qui rétrécissent au zoom, dans `EmpireMap.tsx` et `index.css`.
 - **Les réglages de Venise** : `moves { departSeconds 10, unitsPerSecond 8, maxStops 15 }` et `orders.maxWaves 6`.
 
-## Chantier 2 — les véhicules et les modules (à planifier)
+## Chantier 2 — les véhicules et les modules (fait, PR « modules des véhicules »)
+
+- **Les modules de commerce** (`vehicleModules.ts`, `empireFitVehicle`) :
+  - montés sur chaque véhicule, une place par niveau de son modèle ;
+  - le montage se fait d'office une fois, puis à la main ;
+  - trois modules nouveaux : le Livre de route, le Fouet du charretier et l'Estafette (`moves.ts`).
+- **Les places typées des véhicules de combat** (`porta/arms.ts`) : une arme, une défense, puis des soutiens, avec un soutien de plus aux niveaux 3 et 5 du modèle.
+
+Ce que prévoyait la feuille de route :
 
 - **Les places de modules** typées sur tous les véhicules ; un niveau de modèle ajoute une place, comme dans Hades' Star (02, § 1).
 - **Les modules de commerce** :

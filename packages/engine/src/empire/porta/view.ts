@@ -9,6 +9,7 @@ import {
   armStats,
   armUpgradeCost,
   componentUpgradeCost,
+  placesOf,
 } from "./arms.js";
 import { portaTravelMinutes, portaUpgradeCost, tierOpen, weekPoints } from "./porta.js";
 import { RARITIES, type Rarity } from "./settings.js";
@@ -54,6 +55,8 @@ export interface PortaView {
     hp: number;
     speedCenti: number;
     slots: number;
+    /** Its places' kinds, a support more at some levels (null: any component). */
+    places: ("weapon" | "defense" | "support" | null)[];
     level: number;
     upgradeCost: Deniers | null;
   }[];
@@ -136,7 +139,9 @@ export function portaViewOf(h: EmpireHouse, s: EmpireSettings, now: number): Por
       cost: ducats(m.costDucats),
       hp: m.hp,
       speedCenti: m.speedCenti,
-      slots: m.slots,
+      slots: placesOf(h, code, s).length,
+      /** Its places' kinds (null: any component). */
+      places: placesOf(h, code, s),
       level: armLevelOf(h, code),
       upgradeCost: armUpgradeCost(h, code, s),
     })),

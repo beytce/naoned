@@ -164,6 +164,13 @@ Les dix régions, dans l'ordre d'ouverture :
 
 ### 3.3 Le charroi et la flotte
 
+> **Décision du porteur du 1er novembre 2026, le soir — les modules montés sur les véhicules** (d'après Hades' Star, `docs/hades-star/00-synthese.md`). Les modules de commerce se recherchent à la Scuola, puis se montent véhicule par véhicule. Ils ne valent que sur le véhicule qui les porte, et un véhicule a une place par niveau de son modèle (1 à 5). S'y ajoutent trois modules :
+> - le **Livre de route** charge aux comptoirs traversés et paie une prime sur ces livraisons ;
+> - le **Fouet du charretier** rend le saut plus rapide quand la cargaison va à l'arrêt suivant ;
+> - l'**Estafette** fait partir sans attendre, avec un premier saut plus court.
+>
+> Les véhicules de combat de la Porta ont des places typées (arme, défense, soutien).
+
 > **Décision du porteur du 1er novembre 2026 — un seul métier, livrer.** Les gisements, les expéditions et la mer (navires, convois, Muda, colleganza, corsaires, assurance) sont retirés de l'empire ; l'Arsenal aussi. Il ne reste que les charrettes, achetées et améliorées à la Remise, qui livrent les commandes des villes saut par saut et portent le stock d'un comptoir à l'autre. Ce qu'une Maison y avait engagé lui a été rendu une fois (cargaisons, mises, enchères, navires et Arsenal à leur prix, recherches des modules retirés). Les hauts niveaux de recherche ne demandent plus de plans. Ce qui suit dans cette section sur la mer n'a plus cours.
 
 | Véhicule | Ouvert à (Casa) | Capacité | Trajets | Modules | Fabriqué par |

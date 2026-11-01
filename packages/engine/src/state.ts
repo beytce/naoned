@@ -372,6 +372,8 @@ export interface EmpireLeg {
   to: string;
   departAt: number;
   arrivesAt: number;
+  /** Leaving a counter on the way, its Livre de route loaded there (once). */
+  loaded?: boolean;
 }
 
 /**
@@ -450,7 +452,7 @@ export interface EmpireHouse {
     /** Where it stands (the map that grows): a counter's id, or `city:<code>`; Venice's when absent. */
     at?: string;
     /** What it carries, by good, with the counter it was loaded at (the way's premium). */
-    cargo?: Record<string, { qty: number; from: string }>;
+    cargo?: Record<string, { qty: number; from: string; routed?: number }>;
     /** Its stops to come, hop by hop (after Hades' Star): each leaves when the one before arrives. */
     legs?: EmpireLeg[];
   }[];

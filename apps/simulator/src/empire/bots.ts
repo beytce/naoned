@@ -246,6 +246,23 @@ function holdOf(w: World, h: House, type: string): number {
   return Math.floor((base * (10_000 + step)) / 10_000);
 }
 
+/**
+ * A trade effect on its carts (1 November, after Hades' Star): the bots fit their researched
+ * trade modules on every cart, the highest first, as many as a cart has places (its model's
+ * level); the effect counts as far as the least cart carries it.
+ */
+function tradeEffect(w: World, h: House, effect: string): number {
+  const places = Math.min(...h.vehicles.map((v) => h.levels[v.type] ?? 1), 5);
+  if (!Number.isFinite(places)) return 0;
+  const fitted = Object.entries(h.modules)
+    .filter(
+      ([code, level]) => level > 0 && w.s.modules.find((m) => m.code === code)?.kind === "trade",
+    )
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, places);
+  return effectOf(Object.fromEntries(fitted), effect, w.s);
+}
+
 function landCapacity(w: World, h: House): number {
   return h.vehicles
     .filter((v) => w.m.vehicles[v.type]?.regions.length === 1)
@@ -294,7 +311,11 @@ function deliverOrders(w: World, h: House, sinceMs: number) {
   const waves = wavesSince(w, sinceMs);
   let cap = landCapacity(w, h) * w.m.roundsPerSession;
   const covered = citiesCovered(seen(h), w.s);
-  const convoy = effectOf(h.modules, "orderBonus", w.s) + identityEffect(w, h, "orderBonus");
+  const convoy =
+    tradeEffect(w, h, "orderBonus") +
+    // The Livre de route's premium, on the share of the units loaded on the way.
+    Math.floor((tradeEffect(w, h, "ledger") * w.m.ledgerShareBps) / 10_000) +
+    identityEffect(w, h, "orderBonus");
   for (const c of w.s.map.cities) {
     if (cap <= 0) return;
     if (!covered.has(c.code)) continue;
@@ -370,7 +391,11 @@ function fillOrders(
 ): number {
   // A world of orders has no daily book nor board: what a ship brings sells at the Dogana.
   if (w.s.orders) return 0;
-  const convoy = effectOf(h.modules, "orderBonus", w.s) + identityEffect(w, h, "orderBonus");
+  const convoy =
+    tradeEffect(w, h, "orderBonus") +
+    // The Livre de route's premium, on the share of the units loaded on the way.
+    Math.floor((tradeEffect(w, h, "ledger") * w.m.ledgerShareBps) / 10_000) +
+    identityEffect(w, h, "orderBonus");
   const small = h.casa <= w.m.smallCasa;
   const mk = market(w, region, good);
   let left = qty;

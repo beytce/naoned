@@ -51,6 +51,8 @@ export interface PortaView {
     hp: number;
     speedCenti: number;
     slots: number;
+    /** Its places' kinds, a support more at some levels (null: any component). */
+    places: ("weapon" | "defense" | "support" | null)[];
     level: number;
     upgradeCost: string | null;
   }[];

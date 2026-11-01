@@ -11,12 +11,20 @@ const bps = z.number().int().nonnegative();
 const positive = z.number().int().positive();
 
 /** A combat model of the Remise (plan-porta.md § 4): no hold, so many places for components. */
+const placeKind = z.enum(["weapon", "defense", "support"]);
+
+/**
+ * A combat model of the Remise (plan-porta.md § 4): no hold, its places for components; typed
+ * (1 November 2026, after Hades' Star's battleships: a weapon, a defense, then supports) when
+ * `places` is given, else `slots` places taking any component.
+ */
 const combatModel = z.object({
   casa: positive,
   costDucats: positive,
   hp: positive,
   speedCenti: positive,
-  slots: positive,
+  slots: positive.optional(),
+  places: z.array(placeKind).optional(),
 });
 
 /** What a component does in battle (plan-porta.md § 5), after Hades' Star's modules. */
@@ -34,7 +42,7 @@ export type ComponentEffect = (typeof COMPONENT_EFFECTS)[number];
 
 /** A component, bought one by one at the Remise and fitted on a combat vehicle. */
 const component = z.object({
-  kind: z.enum(["weapon", "defense", "support"]),
+  kind: placeKind,
   effect: z.enum(COMPONENT_EFFECTS),
   casa: positive.prefault(1),
   costDucats: positive,
@@ -178,6 +186,8 @@ export const portaSettingsSchema = z
         max: positive.prefault(5),
         stepBps: bps.prefault(1_000),
         costTimes: positive.prefault(1),
+        /** The model's levels that add a support place to its typed places. */
+        supportAt: z.array(positive).prefault([3, 5]),
       })
       .prefault({}),
     components: z.record(z.string(), component).prefault({}),
@@ -194,6 +204,7 @@ export const portaSettingsSchema = z
 
 export type PortaSettings = z.output<typeof portaSettingsSchema>;
 export type CombatModelSettings = z.output<typeof combatModel>;
+export type PlaceKind = z.output<typeof placeKind>;
 export type ComponentSettings = z.output<typeof component>;
 export type RomeUnitSettings = z.output<typeof romeUnit>;
 export type TierSettings = z.output<typeof tier>;

@@ -128,6 +128,8 @@ export interface EmpireView {
       cargo: Record<string, { qty: number; from: string }>;
       /** Its stops to come, hop by hop: each leaves when the one before arrives. */
       legs: { from: string; to: string; departAt: number; arrivesAt: number }[];
+      /** Its places for trade modules (a level of its model), and what is fitted there. */
+      slots: number;
     }[];
     haulPerDay: number;
   };
@@ -331,6 +333,7 @@ export type EmpireAction =
   | { type: "empireDepartNow"; vehicleId: string }
   | { type: "empireSettle" }
   | { type: "empireCancelStop"; vehicleId: string }
+  | { type: "empireFitVehicle"; vehicleId: string; slot: number; module: string | null }
   | { type: "empireLoad"; vehicleId: string; good: string; qty: number }
   | { type: "empireUnload"; vehicleId: string; good: string; qty: number }
   | { type: "empireDeliver"; good: string; qty: number; region?: string; city?: string }

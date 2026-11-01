@@ -257,6 +257,14 @@ describe("a vehicle's hops (after Hades' Star)", () => {
     expect(legs[0].to).toBe("city:padova");
     const back = await act(cookie, { type: "empireCancelStop", vehicleId: vehicle.id });
     expect(back.json().view.vehicles.mine[0].legs).toEqual([]);
+    // A trade module fitted on it, researched or not (none researched yet).
+    const fit = await act(cookie, {
+      type: "empireFitVehicle",
+      vehicleId: vehicle.id,
+      slot: 0,
+      module: "hold",
+    });
+    expect(fit.json().error).toBe("unknown_building_type");
     const bad = await act(cookie, {
       type: "empireMove",
       vehicleId: vehicle.id,

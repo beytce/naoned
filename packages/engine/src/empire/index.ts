@@ -31,4 +31,5 @@ export * from "./porta/porta.js";
 export * from "./porta/view.js";
 export * from "./stores.js";
 export * from "./moves.js";
+export * from "./vehicleModules.js";
 export * from "./orders.js";

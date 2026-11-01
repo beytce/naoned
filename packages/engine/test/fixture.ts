@@ -442,6 +442,10 @@ export const testEmpire: EmpireSettingsInput = {
   modules: [
     { code: "hold", kind: "trade", effect: "capacity", firstLevelBps: 1_000, perLevelBps: 500 },
     { code: "sails", kind: "trade", effect: "speed", firstLevelBps: 800, perLevelBps: 400 },
+    { code: "convoy", kind: "trade", effect: "orderBonus", firstLevelBps: 500, perLevelBps: 300 },
+    { code: "ledger", kind: "trade", effect: "ledger", firstLevelBps: 500, perLevelBps: 300 },
+    { code: "whip", kind: "trade", effect: "whipSpeed", firstLevelBps: 1_000, perLevelBps: 800 },
+    { code: "courier", kind: "trade", effect: "courier", firstLevelBps: 1_000, perLevelBps: 500 },
     { code: "yield", kind: "extract", effect: "yield", firstLevelBps: 1_500, perLevelBps: 700 },
     {
       code: "crossbow",
@@ -467,8 +471,14 @@ export const testEmpire: EmpireSettingsInput = {
       travelMinutesPerCell: 10,
     },
     models: {
-      rider: { casa: 2, costDucats: 1_000, hp: 1_000, speedCenti: 600, slots: 1 },
-      wagon: { casa: 4, costDucats: 3_000, hp: 3_000, speedCenti: 400, slots: 2 },
+      rider: { casa: 2, costDucats: 1_000, hp: 1_000, speedCenti: 600, places: ["weapon"] },
+      wagon: {
+        casa: 4,
+        costDucats: 3_000,
+        hp: 3_000,
+        speedCenti: 400,
+        places: ["weapon", "defense"],
+      },
     },
     modelLevels: { max: 5, stepBps: 1_000, costTimes: 1 },
     components: {

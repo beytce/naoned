@@ -313,6 +313,13 @@ export function Fleet({
                 <Wagon loaded={Object.keys(v.cargo).length > 0} />
               </span>
             </span>
+            {/* A sign of its trade modules of the road (the Livre de route, the Fouet). */}
+            {(v.fitted ?? []).some((m) => m === "ledger" || m === "whip") && (
+              <span
+                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-gold ring-2 ring-night"
+                data-vehicle-modules-sign
+              />
+            )}
           </button>
         );
       })}

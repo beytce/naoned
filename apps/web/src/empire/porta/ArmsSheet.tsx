@@ -103,34 +103,48 @@ export function ArmsSheet({
                   </span>
                 </div>
                 <ul className="mt-2 space-y-1.5">
-                  {x.slots.map((slot, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: a place is its index
-                    <li key={i}>
-                      <select
-                        aria-label={`${pt.fit} ${i + 1}`}
-                        className="w-full rounded-lg border border-edge bg-night-3 px-2 py-2 text-sm text-cream disabled:opacity-50"
-                        disabled={busy || away}
-                        value={slot ?? ""}
-                        onChange={(e) =>
-                          void act({
-                            type: "empireFitArm",
-                            vehicleId: x.id,
-                            slot: i,
-                            componentId: e.target.value === "" ? null : e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">{pt.empty}</option>
-                        {v.inventory
-                          .filter((c) => c.on === null || c.on === x.id || ownerAtRemise(v, c.on))
-                          .map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {nameOf(c.id)}
-                            </option>
-                          ))}
-                      </select>
-                    </li>
-                  ))}
+                  {x.slots.map((slot, i) => {
+                    // A typed place (1 November): a weapon, a defense or a support only.
+                    const kind = v.models.find((m) => m.code === x.model)?.places?.[i] ?? null;
+                    const kindOf = (id: string) =>
+                      v.components.find(
+                        (c) => c.code === v.inventory.find((y) => y.id === id)?.code,
+                      )?.kind;
+                    return (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: a place is its index
+                      <li key={i} data-place-kind={kind ?? undefined}>
+                        {kind && (
+                          <span className="mb-0.5 block text-[0.6875rem] font-semibold uppercase tracking-wider text-cream-dim">
+                            {pt.kind[kind]}
+                          </span>
+                        )}
+                        <select
+                          aria-label={`${pt.fit} ${i + 1}`}
+                          className="w-full rounded-lg border border-edge bg-night-3 px-2 py-2 text-sm text-cream disabled:opacity-50"
+                          disabled={busy || away}
+                          value={slot ?? ""}
+                          onChange={(e) =>
+                            void act({
+                              type: "empireFitArm",
+                              vehicleId: x.id,
+                              slot: i,
+                              componentId: e.target.value === "" ? null : e.target.value,
+                            })
+                          }
+                        >
+                          <option value="">{pt.empty}</option>
+                          {v.inventory
+                            .filter((c) => c.on === null || c.on === x.id || ownerAtRemise(v, c.on))
+                            .filter((c) => kind === null || kindOf(c.id) === kind)
+                            .map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {nameOf(c.id)}
+                              </option>
+                            ))}
+                        </select>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             );

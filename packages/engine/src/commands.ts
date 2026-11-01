@@ -64,7 +64,14 @@ import {
   settleMoves,
 } from "./empire/moves.js";
 import { trackOrders } from "./empire/orders.js";
-import { buyArm, buyComponent, fitArm, upgradeArm, upgradeComponent } from "./empire/porta/arms.js";
+import {
+  buyArm,
+  buyComponent,
+  ensureArmPlaces,
+  fitArm,
+  upgradeArm,
+  upgradeComponent,
+} from "./empire/porta/arms.js";
 import type { BattleOutcome } from "./empire/porta/battle/sim.js";
 import {
   buildPorta,
@@ -81,6 +88,7 @@ import { retireSea } from "./empire/retire.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
 import { buyGoods, deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
+import { ensureFitted, fitVehicle } from "./empire/vehicleModules.js";
 import { buyEmpireVehicle } from "./empire/voyages.js";
 import { fitModule, relaunchAll, relaunchWorkshop, swapWorkshops } from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
@@ -333,6 +341,14 @@ type EmpireCommandOf =
   /** Nothing but what every command settles first: the hops arrived, the sites ended. */
   | { type: "empireSettle"; playerId: PlayerId }
   | { type: "empireCancelStop"; playerId: PlayerId; vehicleId: string }
+  /** A researched trade module fitted on a vehicle's place (null: emptied). */
+  | {
+      type: "empireFitVehicle";
+      playerId: PlayerId;
+      vehicleId: string;
+      slot: number;
+      module: string | null;
+    }
   | { type: "empireLoad"; playerId: PlayerId; vehicleId: string; good: string; qty: number }
   | { type: "empireUnload"; playerId: PlayerId; vehicleId: string; good: string; qty: number }
   | {
@@ -531,6 +547,8 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   ensureCarnet(tx, cmd.playerId, h);
   ensureMap(h, empireSettings(tx.ctx));
   trackOrders(h, empireSettings(tx.ctx), tx.now);
+  ensureFitted(h, empireSettings(tx.ctx));
+  ensureArmPlaces(h, empireSettings(tx.ctx));
   // The generations passed, then the factors' work while the house was away, before its own.
   passGenerations(tx, cmd.playerId);
   runFactors(tx, cmd.playerId);
@@ -674,6 +692,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireDepartNow":
       departNow(tx, cmd.playerId, cmd.vehicleId);
+      break;
+    case "empireFitVehicle":
+      fitVehicle(tx, cmd.playerId, cmd.vehicleId, cmd.slot, cmd.module);
       break;
     case "empireCancelStop":
       cancelStop(tx, cmd.playerId, cmd.vehicleId);

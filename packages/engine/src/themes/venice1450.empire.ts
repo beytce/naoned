@@ -154,9 +154,16 @@ const module = (
 
 /** The modules (profondeur.md § B), each from level 1 to 10. */
 const MODULES = [
+  // The trade modules, fitted on the vehicles (1 November 2026, after Hades' Star's ships): a place
+  // a level of the model.
   module("hold", "trade", "capacity", 1_500, 700),
   module("convoy", "trade", "orderBonus", 500, 300),
-  module("haul", "trade", "haul", 1_000, 1_000),
+  // The Livre de route: loads on its way what its stops ask, a premium on those units.
+  module("ledger", "trade", "ledger", 500, 300),
+  // The Fouet du charretier: quicker on a hop whose cargo goes to that stop.
+  module("whip", "trade", "whipSpeed", 1_000, 800),
+  // The Estafette: leaves at once, its first hop shorter.
+  module("courier", "trade", "courier", 1_000, 500),
   module("tools", "workshop", "workshopYield", 1_000, 500),
   module("apprentices", "workshop", "workshopSpeed", 1_000, 500),
   module("master", "workshop", "quality", 1_000, 500),
@@ -414,7 +421,17 @@ export const venice1450Empire: EmpireSettingsInput = {
     minutes: [30, 90, 240, 480, 960, 1_440, 2_880, 5_760, 10_080, 14_400],
     // One trade, delivering (1 November): the carts' hold and haul, the orders' bonus, the
     // workshops'. The sea, the deposits and the expeditions are gone.
-    available: ["hold", "convoy", "haul", "tools", "apprentices", "master", "furnace"],
+    available: [
+      "hold",
+      "convoy",
+      "ledger",
+      "whip",
+      "courier",
+      "tools",
+      "apprentices",
+      "master",
+      "furnace",
+    ],
   },
   // The Porta's arms (docs/plan-porta.md §§ 4–5), to calibrate at the 24-month simulator (lot 6).
   porta: {
@@ -428,9 +445,23 @@ export const venice1450Empire: EmpireSettingsInput = {
       travelMinutesPerCell: 10,
     },
     models: {
-      cavaliere: { casa: 9, costDucats: 1_500, hp: 1_200, speedCenti: 600, slots: 1 },
-      carro: { casa: 11, costDucats: 4_000, hp: 3_000, speedCenti: 400, slots: 2 },
-      carro_grande: { casa: 14, costDucats: 10_000, hp: 6_500, speedCenti: 300, slots: 3 },
+      cavaliere: { casa: 9, costDucats: 1_500, hp: 1_200, speedCenti: 600, places: ["weapon"] },
+      carro: {
+        casa: 11,
+        costDucats: 4_000,
+        hp: 3_000,
+        speedCenti: 400,
+        places: ["weapon", "defense"],
+      },
+      // Typed places (1 November, after Hades' Star's battleships): a weapon, a defense, then
+      // supports, a support more at the model's levels 3 and 5.
+      carro_grande: {
+        casa: 14,
+        costDucats: 10_000,
+        hp: 6_500,
+        speedCenti: 300,
+        places: ["weapon", "defense", "support"],
+      },
     },
     modelLevels: { max: 5, stepBps: 1_000, costTimes: 1 },
     components: {

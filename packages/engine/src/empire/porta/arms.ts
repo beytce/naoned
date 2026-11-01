@@ -12,7 +12,7 @@ import { type Tx, fail, nextId, transfer } from "../../tx.js";
 import { empireSettings, ownHouse } from "../house.js";
 import { checkDepot, ensureMap } from "../map.js";
 import type { EmpireSettings } from "../settings.js";
-import type { ComponentEffect } from "./settings.js";
+import type { ComponentEffect, PlaceKind } from "./settings.js";
 
 /**
  * The arms of the Porta (docs/plan-porta.md §§ 4–5): the combat vehicles bought and raised at the
@@ -29,6 +29,40 @@ const ducats = (n: number | bigint): Deniers => BigInt(n) * DENIERS_PER_DUCAT;
 
 /** A combat model's level for the house: 1 until it is raised. */
 export const armLevelOf = (h: EmpireHouse, model: string): number => h.arms?.levels?.[model] ?? 1;
+
+/**
+ * A combat model's places at the house's level of it (1 November 2026, after Hades' Star's
+ * battleships): its typed places and a support more at each level of `supportAt`; a model without
+ * typed places has `slots` places taking any component (null).
+ */
+export function placesOf(h: EmpireHouse, model: string, s: EmpireSettings): (PlaceKind | null)[] {
+  const spec = s.porta.models[model];
+  if (!spec) return [];
+  if (!spec.places) return Array.from({ length: spec.slots ?? 1 }, () => null);
+  const level = armLevelOf(h, model);
+  const more = s.porta.modelLevels.supportAt.filter((at) => level >= at).length;
+  return [...spec.places, ...Array.from({ length: more }, () => "support" as const)];
+}
+
+/**
+ * Each combat vehicle with its model's places: one gained at a level is added empty; a component
+ * on a place of another kind goes back to the Remise (it stays the house's, unfitted).
+ */
+export function ensureArmPlaces(h: EmpireHouse, s: EmpireSettings): void {
+  for (const v of h.arms?.vehicles ?? []) {
+    const places = placesOf(h, v.model, s);
+    if (places.length === 0) continue;
+    const kindOf = (id: string | null) => {
+      const c = id ? h.arms?.components.find((x) => x.id === id) : undefined;
+      return c ? s.porta.components[c.code]?.kind : undefined;
+    };
+    const slots = places.map((kind, i) => {
+      const id = v.slots[i] ?? null;
+      return id && (kind === null || kindOf(id) === kind) ? id : null;
+    });
+    if (slots.length !== v.slots.length || slots.some((x, i) => x !== v.slots[i])) v.slots = slots;
+  }
+}
 
 /** The price of a combat model's next level, or null at the last: its price doubled each level. */
 export function armUpgradeCost(h: EmpireHouse, model: string, s: EmpireSettings): Deniers | null {
@@ -72,7 +106,7 @@ export function buyArm(tx: Tx, playerId: PlayerId, model: string): void {
   const arms = armsOf(h);
   arms.vehicles = [
     ...arms.vehicles,
-    { id: nextId(tx, "cv"), model, slots: Array.from({ length: spec.slots }, () => null) },
+    { id: nextId(tx, "cv"), model, slots: placesOf(h, model, s).map(() => null) },
   ];
 }
 
@@ -87,6 +121,7 @@ export function upgradeArm(tx: Tx, playerId: PlayerId, model: string): void {
   pay(tx, playerId, cost);
   const arms = armsOf(h);
   arms.levels = { ...(arms.levels ?? {}), [model]: armLevelOf(h, model) + 1 };
+  ensureArmPlaces(h, s);
 }
 
 /** Buys a component, from its Casa: it waits at the Remise until it is fitted. */
@@ -133,14 +168,19 @@ export function fitArm(
   slot: number,
   componentId: string | null,
 ): void {
-  const { h } = atRemise(tx, playerId);
+  const { h, s } = atRemise(tx, playerId);
+  ensureArmPlaces(h, s);
   const arms = armsOf(h);
   const v = arms.vehicles.find((x) => x.id === vehicleId);
   if (!v) fail("unknown_vehicle");
   if (!Number.isInteger(slot) || slot < 0 || slot >= v.slots.length) fail("no_room");
   if (armAway(v, tx.now)) fail("vehicle_busy");
   if (componentId !== null) {
-    if (!arms.components.some((c) => c.id === componentId)) fail("unknown_arm");
+    const c = arms.components.find((x) => x.id === componentId);
+    if (!c) fail("unknown_arm");
+    // A typed place takes only its kind (a weapon, a defense, a support).
+    const kind = placesOf(h, v.model, s)[slot];
+    if (kind && s.porta.components[c.code]?.kind !== kind) fail("wrong_place");
     const from = carrierOf(arms, componentId);
     if (from && armAway(from, tx.now)) fail("vehicle_busy");
     if (from) from.slots = from.slots.map((x) => (x === componentId ? null : x));

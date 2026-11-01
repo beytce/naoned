@@ -364,6 +364,11 @@ try {
       await page.mouse.up();
       await page.locator("[data-vehicle-panel] [data-hop-action=go]").waitFor();
       await shot("16-depart");
+      // Its trade modules (1 November): a place a level of its model, the others still closed.
+      await page.locator("[data-vehicle-panel] [data-hop-action=modules]").click();
+      if ((await page.locator("[data-vehicle-modules] [data-vehicle-slot][data-open]").count()) < 1)
+        faults.push(`${label}: no place for a trade module on the vehicle`);
+      await shot("16b-modules");
       await page.locator("[data-vehicle-panel] [data-hop-action=go]").click();
       await page.locator("[data-vehicle][data-moving]").first().waitFor({ timeout: 5_000 });
       await shot("17-en-route");
