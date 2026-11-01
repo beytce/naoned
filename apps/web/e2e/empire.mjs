@@ -108,17 +108,31 @@ try {
         .click();
     // The map at the centre: the whole screen, Venice's sector across it, inhabited (step 4).
     await page.waitForSelector("[data-map=empire]");
-    // The map that grows: Venice's sector alone, with Padua beside Venice, and Venice's reach.
+    // The map that grows: Venice's sector alone, Venice and Padua towns with their orders, the
+    // house's fondaco apart (1 November 2026), its reach hidden until it is touched.
     if ((await page.locator("[data-city]:not([data-city=venezia])").count()) !== 1)
       faults.push(`${label}: Venice's sector without Padua, or with more`);
-    if ((await page.locator("[data-reach-of=home]").count()) !== 1)
-      faults.push(`${label}: no reach drawn around Venice`);
+    if ((await page.locator("[data-city=venezia]").count()) !== 1)
+      faults.push(`${label}: Venice not drawn as a town`);
+    if ((await page.locator("[data-reach-of]").count()) !== 0)
+      faults.push(`${label}: a reach drawn before a fondaco is touched`);
+    // The first fondaco put down: the house is asked once, at a point apart from the towns.
+    await page.locator("[data-placing-bar=home]").waitFor();
+    await shot("1c-fondaco");
+    const cellLit = page.locator("[data-cell]").first();
+    const box = await cellLit.boundingBox();
+    if (box) await cellLit.click({ position: { x: box.width * 0.78, y: box.height * 0.55 } });
+    await page.locator("[data-picked-reach]").waitFor();
+    await page.getByRole("button", { name: /poser ici · gratuit/i }).click();
+    await page.locator("[data-placing-bar=home]").waitFor({ state: "hidden" });
     if ((await page.locator("[data-orbit-open]").count()) > 0)
       faults.push(`${label}: the workshops shown before Venice is touched`);
     await shot("1c-secteur");
-    // Venice touched: its workshops deploy around it.
+    // The fondaco touched: its workshops deploy around it, and its reach shows.
     await page.locator("[data-region=veneto]").click();
     await page.locator("[data-orbit-open=home] [data-workshop]").first().waitFor();
+    if ((await page.locator("[data-reach-of=home]").count()) !== 1)
+      faults.push(`${label}: no reach drawn around the fondaco touched`);
     // The bubble stays itself in the middle of its workshops: no second sun.
     if (
       (await page.locator("[data-home]").count()) !== 1 ||

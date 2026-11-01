@@ -118,6 +118,8 @@ export const EmpireMap = forwardRef<
     onMove?: (vehicleId: string, place: string) => void;
     /** A hop arrived by the clock: the house's state to settle. */
     onArrive?: () => void;
+    /** The house's name, under its first fondaco. */
+    houseName?: string;
   }
 >(function EmpireMap(
   {
@@ -134,6 +136,7 @@ export const EmpireMap = forwardRef<
     aiming = false,
     onMove,
     onArrive,
+    houseName = "",
   },
   ref,
 ) {
@@ -241,6 +244,10 @@ export const EmpireMap = forwardRef<
   });
 
   const texture = artSource("world", "map")?.src;
+  // A fondaco's reach shows only when it is touched, or when a vehicle of it is chosen (decision
+  // of the owner, 1 November 2026); the placing shows the reach it would have.
+  const chosenAt = selected ? view?.vehicles.mine.find((v) => v.id === selected)?.at : undefined;
+  const reachShown = opened ?? (chosenAt && !chosenAt.startsWith("city:") ? chosenAt : null);
   // The chart changes with the house's map and the placing, never with the clock.
   // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its view's map
   const chart = useMemo(
@@ -254,9 +261,10 @@ export const EmpireMap = forwardRef<
           picked={picked}
           onPick={onPick}
           onSector={(cell) => onTarget({ kind: "sector", cell })}
+          reachShown={reachShown}
         />
       ) : null,
-    [view?.map, view?.regions, base, texture, placing, picked, onPick],
+    [view?.map, view?.regions, base, texture, placing, picked, onPick, reachShown],
   );
   if (!view) return null;
   const map = view.map;
@@ -379,34 +387,31 @@ export const EmpireMap = forwardRef<
             );
           })()}
         <Names p={p} />
-        {/* Venice's bubble stays itself when its workshops deploy: touched again, its Casa. */}
+        {/* The first fondaco stays itself when its workshops deploy: touched again, its Casa. */}
         <HomeMark
           p={p}
-          lit={lit.has("venezia")}
-          wanted={wanted?.get("venezia")}
-          onOrders={() => sendTo("city:venezia") || onTarget({ kind: "city", code: "venezia" })}
+          name={houseName}
           onClick={() =>
             sendTo("home") ||
             (opened === "home" ? onTarget({ kind: "casa" }) : deploy("veneto", homeAt(p), "home"))
           }
         />
-        {map.cities
-          .filter((c) => c.code !== "venezia")
-          .map((c) => (
-            <CityMark
-              key={c.code}
-              p={p}
-              code={c.code}
-              at={[c.x, c.y]}
-              region={c.region}
-              size={c.size ?? 1}
-              lit={lit.has(c.code)}
-              wanted={wanted?.get(c.code)}
-              dim={wanted !== null && !wanted.has(c.code)}
-              hidden={underOrbit(c.x, c.y)}
-              onClick={() => sendTo(`city:${c.code}`) || onTarget({ kind: "city", code: c.code })}
-            />
-          ))}
+        {/* Venice is a town as the others, with its orders (the fondaco is no town). */}
+        {map.cities.map((c) => (
+          <CityMark
+            key={c.code}
+            p={p}
+            code={c.code}
+            at={[c.x, c.y]}
+            region={c.region}
+            size={c.size ?? 1}
+            lit={lit.has(c.code)}
+            wanted={wanted?.get(c.code)}
+            dim={wanted !== null && !wanted.has(c.code)}
+            hidden={underOrbit(c.x, c.y)}
+            onClick={() => sendTo(`city:${c.code}`) || onTarget({ kind: "city", code: c.code })}
+          />
+        ))}
         {map.posts.map((x) => {
           const [px, py] = [x.x, x.y];
           return (
@@ -420,10 +425,13 @@ export const EmpireMap = forwardRef<
                     ? onTarget({ kind: "region", code: x.region })
                     : deploy(x.region, [px, py], x.id))
                 }
-                aria-label={t.placing.postCard}
-                className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-lg bg-night-3 text-gold ring-2 ring-gold/70 shadow-md shadow-black/50 active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
+                aria-label={t.world.postName[x.region] ?? t.placing.postCard}
+                className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
               >
-                {Icon.banner()}
+                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-night-3 text-gold ring-2 ring-gold/70 shadow-md shadow-black/50 [&_svg]:h-5 [&_svg]:w-5">
+                  {Icon.banner()}
+                </span>
+                <span className="map-name">{t.world.postName[x.region] ?? t.placing.postCard}</span>
               </button>
             </div>
           );
@@ -547,6 +555,7 @@ const Chart = memo(function Chart({
   picked,
   onPick,
   onSector,
+  reachShown = null,
 }: {
   p: EmpirePayload;
   base: number;
@@ -556,6 +565,8 @@ const Chart = memo(function Chart({
   onPick?: (at: Picked) => void;
   /** A sector to buy touched (the sectors bought one by one). */
   onSector?: (cell: string) => void;
+  /** The fondaco whose reach shows (« home », a post's id), or none. */
+  reachShown?: string | null;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -564,6 +575,7 @@ const Chart = memo(function Chart({
   const lands = Object.entries(map.cells);
   const allowed = placing ? placeable(p, placing) : null;
   const preview = picked && placing?.kind === "post" ? cellsWithin(picked.cell, map.radius) : [];
+  const placingFondaco = placing?.kind === "post" || placing?.kind === "home";
   // A touch on a lit cell: its point on the chart, where the counter goes (the map that grows).
   const pick = (cell: string, e: { clientX: number; clientY: number; currentTarget: Element }) => {
     const svg = (e.currentTarget as SVGGraphicsElement).ownerSVGElement;
@@ -751,7 +763,7 @@ const Chart = memo(function Chart({
             />
           ))}
           {/* The point picked, and the reach the counter would have there. */}
-          {picked && placing?.kind === "post" && reachBase > 0 && (
+          {picked && placingFondaco && reachBase > 0 && (
             <g data-picked-reach style={{ pointerEvents: "none" }}>
               <circle
                 cx={picked.x}
@@ -769,25 +781,27 @@ const Chart = memo(function Chart({
           )}
         </g>
       )}
-      {/* Each counter's reach (the map that grows): the cities inside are its to serve. */}
-      {reachBase > 0 && (
+      {/* A fondaco's reach, when touched or its vehicle chosen: the cities inside are its to serve. */}
+      {reachBase > 0 && reachShown && (
         <g data-reach style={{ pointerEvents: "none" }}>
-          {[{ id: "home", ...map.home }, ...map.posts].map((x) => (
-            <circle
-              key={x.id}
-              cx={x.x}
-              cy={x.y}
-              r={x.reach}
-              fill={P.gold}
-              fillOpacity="0.05"
-              stroke={P.gold}
-              strokeOpacity="0.55"
-              strokeWidth="1.2"
-              strokeDasharray="3 3"
-              vectorEffect="non-scaling-stroke"
-              data-reach-of={x.id}
-            />
-          ))}
+          {[{ id: "home", ...map.home }, ...map.posts]
+            .filter((x) => x.id === reachShown)
+            .map((x) => (
+              <circle
+                key={x.id}
+                cx={x.x}
+                cy={x.y}
+                r={x.reach}
+                fill={P.gold}
+                fillOpacity="0.05"
+                stroke={P.gold}
+                strokeOpacity="0.55"
+                strokeWidth="1.2"
+                strokeDasharray="3 3"
+                vectorEffect="non-scaling-stroke"
+                data-reach-of={x.id}
+              />
+            ))}
         </g>
       )}
     </svg>
@@ -851,58 +865,35 @@ function homeAt(p: EmpirePayload): [number, number] {
   return h ? [h.x, h.y] : seatOf("veneto");
 }
 
-/** Venice on the map: the house's gold sun, its Casa written in it; touched, its workshops deploy. */
+/**
+ * The house's first fondaco on the map: its gold sun, its Casa written in it, the house's name
+ * under it; no town (decision of the owner, 1 November 2026): Venice has its own bubble and its
+ * orders. Touched, its workshops deploy.
+ */
 function HomeMark({
   p,
+  name,
   onClick,
-  onOrders,
-  lit = false,
-  wanted,
 }: {
   p: EmpirePayload;
+  name: string;
   onClick: () => void;
-  /** Venice's own orders: its badge touched. */
-  onOrders?: () => void;
-  lit?: boolean;
-  /** The units the vehicle chosen would bring Venice: its badge shines. */
-  wanted?: number;
 }) {
   const [x, y] = homeAt(p);
-  const orders = p.view?.orders.find((o) => o.city === "venezia");
-  const waiting = orders?.waves ?? 0;
+  const label = t.world.homeName(name);
   return (
     <div data-at={`${x},${y}`} data-home className="map-place">
-      {orders && (
-        // Venice's orders, beside its bubble (the bubble itself opens its workshops).
-        <button
-          type="button"
-          onClick={onOrders}
-          data-city="venezia"
-          data-fill={orders.fillBps}
-          data-tour-target={lit ? "" : undefined}
-          aria-label={t.cityNames.venezia ?? "Venezia"}
-          className={`pointer-events-auto absolute -right-9 bottom-3 flex h-9 w-9 flex-col items-center justify-center rounded-full bg-night-3 font-display text-xs font-bold text-gold shadow-md shadow-black/50 active:scale-95 ${lit ? "ring-4 ring-gold" : "ring-2 ring-gold/70"}`}
-          style={{
-            background: `conic-gradient(#E8B24C ${orders.fillBps / 100}%, rgb(14 30 54) 0)`,
-          }}
-        >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night-3">
-            {waiting}
-          </span>
-          {wanted !== undefined && <WantedHalo n={wanted} />}
-        </button>
-      )}
       <button
         type="button"
         onClick={onClick}
         data-region="veneto"
-        aria-label={t.world.venice}
+        aria-label={label}
         className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
       >
         <span className="sun-breathe flex h-16 w-16 items-center justify-center rounded-full font-display text-base font-bold text-ink shadow-[0_0_32px_rgb(var(--gold)/0.45)] [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_50%,rgb(var(--gold-deep))_100%)]">
           {p.view?.house.casa ?? 1}
         </span>
-        <span className="map-name">{t.world.venice}</span>
+        <span className="map-name">{label}</span>
       </button>
     </div>
   );

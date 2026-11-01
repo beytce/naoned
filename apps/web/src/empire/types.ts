@@ -263,11 +263,12 @@ export interface EmpireMapView {
     reach: number;
   }[];
   /** Venice's own counter, likewise. */
-  home: { x: number; y: number; level: number; reach: number };
+  home: { x: number; y: number; level: number; reach: number; cell?: string; placed?: boolean };
   hexSize: number;
   /** A counter's reach (the map that grows): none on a map without it. */
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
+  cityClearance?: number;
   transferUnitsPerHour: number;
   /** The sectors it may buy next, and the price of the next. */
   buyable: { cell: string; region: string; coast: boolean; casa: number }[];
@@ -350,6 +351,7 @@ export type EmpireAction =
   | { type: "empireUnlockCell"; cell: string }
   | { type: "empireBuildDepot"; cell: string }
   | { type: "empireUpgradeDepot" }
+  | { type: "empirePlaceHome"; cell: string; x: number; y: number }
   | { type: "empireUpgradeVehicle"; vehicleType: string }
   | { type: "empireUpgradeCounter"; region: string }
   | { type: "empireBuyVehicle"; vehicleType: string }

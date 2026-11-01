@@ -76,6 +76,9 @@ const goodName = (p: EmpirePayload, code: string) =>
  * orbit, the building sites, the store and the Carnet of the week. Lagune: three depths (the map,
  * the place up close, the sheet below) and one gold action.
  */
+/** The house was asked once to put its first fondaco down. */
+const HOME_ASKED = "fondaco:home-asked";
+
 export function EmpireGame({ account, first }: { account: Account; first: EmpireAnswer }) {
   const [p, setP] = useState<EmpireAnswer>(first);
   const skew = useRef(first.now - Date.now());
@@ -102,6 +105,21 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // The Casa reached since the last view: its moment.
   const [moment, setMoment] = useState<number | null>(null);
   const last = useRef<EmpireAnswer | null>(first);
+
+  // The first fondaco not put down yet: the house is asked once to put it down (decision of the
+  // owner, 1 November 2026); « Plus tard » keeps the world's point, the Casa's panel asks again.
+  const homeUnplaced = p.view?.map?.home?.placed === false;
+  useEffect(() => {
+    if (!homeUnplaced) return;
+    try {
+      if (localStorage.getItem(HOME_ASKED)) return;
+      localStorage.setItem(HOME_ASKED, "1");
+    } catch {
+      return;
+    }
+    setPicked(null);
+    setPlacing({ kind: "home" });
+  }, [homeUnplaced]);
 
   const take = useCallback((next: EmpireAnswer) => {
     const reached = casaReached(last.current, next);
@@ -232,7 +250,10 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       setSheet(null);
       setPicked(null);
       setPlacing({
-        kind: kind === "camp" || kind === "depot" || kind === "porta" ? kind : "post",
+        kind:
+          kind === "camp" || kind === "depot" || kind === "porta" || kind === "home"
+            ? kind
+            : "post",
         ...(region ? { region } : {}),
       });
       map.current?.far();
@@ -249,7 +270,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           ? { type: "empireBuildDepot", cell: picked.cell }
           : placing.kind === "porta"
             ? { type: "empireBuildPorta", cell: picked.cell }
-            : { type: "empirePlaceCounter", ...picked },
+            : placing.kind === "home"
+              ? { type: "empirePlaceHome", ...picked }
+              : { type: "empirePlaceCounter", ...picked },
     );
     setPlacing(null);
     setPicked(null);
@@ -288,6 +311,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         picked={picked}
         onPick={setPicked}
         onCamp={() => setSheet("company:terra")}
+        houseName={account.pseudo ?? ""}
       />
 
       <Hud

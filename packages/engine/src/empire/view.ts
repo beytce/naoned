@@ -292,6 +292,8 @@ export interface EmpireMapView {
   hexSize: number;
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
+  /** No fondaco closer than this to a town. */
+  cityClearance: number;
   /** A land vehicle between two counters: so many units an hour. */
   transferUnitsPerHour: number;
   /** The cities the house's counters serve. */
@@ -685,6 +687,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     hexSize: s.map.hexSize,
     reach: s.map.reach,
     postSpacing: s.map.postSpacing,
+    cityClearance: s.map.cityClearance,
     transferUnitsPerHour: s.map.transferUnitsPerHour,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
     unlocked: unlockedOf(house, s),
