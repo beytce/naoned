@@ -305,7 +305,7 @@ function deliverOrders(w: World, h: House, sinceMs: number) {
     const size = Math.min(5, Math.max(1, c.size));
     // The expected orders of the waves: so many of each good of the region.
     const asked =
-      ((((waves * (o.perSize[size - 1] ?? 1) * o.qtyPerSize * size * 3) / 2) / goods.length) *
+      (((waves * (o.perSize[size - 1] ?? 1) * o.qtyPerSize * size * 3) / 2 / goods.length) *
         boostOf(w, h, c.region)) /
       10_000;
     for (const good of goods) {
