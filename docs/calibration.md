@@ -2092,7 +2092,12 @@ Ce sont les niveaux des **navires** qui déplacent l'équilibre : sans eux, on r
 - **Ce qui manque** :
   - le prochain palier, à 1,1 jour de revenu certains mois (pour 2 à 7) ;
   - la sortie de la première bande de Puissance, à 2,1 mois (pour 4 à 6) ;
-  - la part des commandes, à 74 à 75 % (la cible de 40 à 70 % supposait d'autres revenus, qui n'existent plus) ;
+  - puits ÷ sources des jeunes Maisons, comme toujours.
+
+**Décision du porteur** : la cible de la part des commandes passe à **60 à 85 %** (le reste vient de la Dogana et de la cour) ; avec elle, les trois graines font **5, 6 et 5 cibles sur 9**. On fusionne, puis on affine le milieu de partie dans une PR suivante.
+
+Le détail des écarts :
+  - la part des commandes, à 74 à 75 % : dans la nouvelle cible ;
   - puits ÷ sources des jeunes Maisons, comme toujours.
 
 ### Refaire le calibrage

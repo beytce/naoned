@@ -197,9 +197,10 @@ export function evaluate(r: EmpireResult): Check[] {
   checks.push({
     code: "orders",
     label: "Part des commandes dans les recettes",
-    target: "40 à 70 %",
+    // 60 to 85 % (decision of the owner, 1 November): the rest from the Dogana and the court.
+    target: "60 à 85 %",
     value: pct(ordersBps),
-    pass: ordersBps >= 4_000 && ordersBps <= 7_000,
+    pass: ordersBps >= 6_000 && ordersBps <= 8_500,
   });
   return checks;
 }
