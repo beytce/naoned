@@ -3,9 +3,11 @@ import {
   bringsTo,
   hopSeconds,
   lastPlace,
+  loadable,
   nearestPlace,
   placesOf,
   vehiclePose,
+  wantedBy,
 } from "../src/empire/map/logic.js";
 import type { EmpirePayload } from "../src/empire/types.js";
 
@@ -105,5 +107,22 @@ describe("what a vehicle would bring to a city", () => {
     // On the way, only what it carries.
     const away = { ...v, at: "city:venezia" };
     expect(bringsTo(p, away, "padova")).toEqual([{ good: "salt", n: 3, pay: 300n }]);
+  });
+});
+
+describe("the cities a vehicle chosen lights up", () => {
+  it("are those it would bring something to, with how much", () => {
+    const p = payload(cart());
+    const v = p.view?.vehicles.mine[0] as Mine;
+    // At its counter: 8 salt and 50 bread there, Padua asks 10 salt and 4 bread.
+    expect([...wantedBy(p, v)]).toEqual([["padova", 12]]);
+    expect([...wantedBy(p, { ...v, at: "city:venezia" })]).toEqual([]);
+  });
+
+  it("load by hand only what the orders still ask, less what it carries", () => {
+    const p = payload(cart({ cargo: { salt: { qty: 3, from: "home" } } }));
+    const v = p.view?.vehicles.mine[0] as Mine;
+    expect(loadable(p, v, "salt")).toEqual({ left: 7, cities: ["padova"] });
+    expect(loadable(p, v, "iron")).toEqual({ left: 0, cities: [] });
   });
 });

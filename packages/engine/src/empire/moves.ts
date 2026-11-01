@@ -210,6 +210,15 @@ export function loadVehicle(
   if (!Number.isInteger(qty) || qty === 0) fail("invalid_quantity");
   const have = v.cargo?.[good]?.qty ?? 0;
   if (qty > 0) {
+    // Only what the cities' open orders ask, less what it carries already (1 November).
+    const asked = s.orders
+      ? ordersOf(tx.ctx, h, playerId, s, tx.now)
+          .flatMap((c) => c.orders)
+          .filter((o) => o.good === good)
+          .reduce((n, o) => n + o.qty - o.filled, 0)
+      : Number.POSITIVE_INFINITY;
+    if (asked <= 0) fail("not_ordered");
+    if (have + qty > asked) fail("invalid_quantity");
     if (carried(v) + qty > holdOf(h, v, s)) fail("invalid_quantity");
     takeAt(tx, h, playerId, post, good, qty, "empire_voyage");
     v.cargo = { ...(v.cargo ?? {}), [good]: { qty: have + qty, from: post } };
