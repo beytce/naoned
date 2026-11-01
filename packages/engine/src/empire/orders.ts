@@ -49,6 +49,7 @@ export function cityOrders(
   playerId: PlayerId,
   code: string,
   period: number,
+  boostBps = 0,
 ): Omit<CityOrder, "filled">[] {
   const o = s.orders;
   const c = s.map.cities.find((x) => x.code === code);
@@ -62,11 +63,26 @@ export function cityOrders(
   return Array.from({ length: count }, (_, i) => {
     const key = `order|${playerId}|${code}|${period}|${i}`;
     const good = goods[draw(ctx, `${key}|good`) % goods.length] ?? goods[0] ?? "";
-    const qty = least + (draw(ctx, `${key}|qty`) % least);
+    // A greater counter serving it, greater orders (its level, as the book of before grew).
+    const qty = Math.floor(
+      ((least + (draw(ctx, `${key}|qty`) % least)) * (10_000 + boostBps)) / 10_000,
+    );
     const ref = r.demands[good] ?? 0n;
     const unit = applyBpsFloor(ref, 10_000 + o.premiumBps + o.sizeBps * (size - 1));
     return { good, qty, unit };
   });
+}
+
+/** How much greater a city's orders are for the best counter of the house serving it. */
+export function orderBoostBps(h: EmpireHouse, s: EmpireSettings, code: string): number {
+  const ids = new Set(postsServing(h, s, code));
+  const level = Math.max(
+    1,
+    ...standingPosts(h, s)
+      .filter((p) => ids.has(p.id))
+      .map((p) => p.level),
+  );
+  return s.counters.bookStepBps * (level - 1);
 }
 
 /** What the house brought of a city's orders in the period. */
@@ -89,7 +105,8 @@ export function ordersOf(
     .filter((c) => covered.has(c.code))
     .map((c) => {
       const done = filledOf(h, c.code, period);
-      const orders = cityOrders(ctx, s, playerId, c.code, period).map((x, i) => ({
+      const boost = orderBoostBps(h, s, c.code);
+      const orders = cityOrders(ctx, s, playerId, c.code, period, boost).map((x, i) => ({
         ...x,
         filled: Math.min(x.qty, done[i] ?? 0),
       }));
@@ -136,7 +153,14 @@ export function startTour(
   const planned: { city: string; order: number; good: string; qty: number }[] = [];
   for (const stop of stops) {
     if (!postsServing(h, s, stop.city).includes(post.id)) fail("out_of_reach");
-    const asked = cityOrders(tx.ctx, s, playerId, stop.city, period)[stop.order];
+    const asked = cityOrders(
+      tx.ctx,
+      s,
+      playerId,
+      stop.city,
+      period,
+      orderBoostBps(h, s, stop.city),
+    )[stop.order];
     if (!asked) fail("unknown_target");
     const done = filledOf(h, stop.city, period)[stop.order] ?? 0;
     const already = planned
@@ -195,7 +219,14 @@ export function settleTours(tx: Tx): void {
         let paid = 0;
         // An order of a period gone is no longer asked: its goods come back.
         if (periodOf(stop.at, s) === tour.period) {
-          const asked = cityOrders(tx.ctx, s, id, stop.city, tour.period)[stop.order];
+          const asked = cityOrders(
+            tx.ctx,
+            s,
+            id,
+            stop.city,
+            tour.period,
+            orderBoostBps(h, s, stop.city),
+          )[stop.order];
           const done = filledOf(h, stop.city, tour.period);
           const left = Math.max(0, (asked?.qty ?? 0) - (done[stop.order] ?? 0));
           paid = Math.min(stop.qty, left);
@@ -258,7 +289,7 @@ export function autoTour(
     for (const code of cities) {
       if (!postsServing(h, s, code).includes(at)) continue;
       const done = filledOf(h, code, period);
-      cityOrders(tx.ctx, s, playerId, code, period).forEach((x, i) => {
+      cityOrders(tx.ctx, s, playerId, code, period, orderBoostBps(h, s, code)).forEach((x, i) => {
         if (room <= 0 || x.good !== good) return;
         const n = Math.min(room, x.qty - (done[i] ?? 0));
         if (n <= 0) return;

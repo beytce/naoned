@@ -84,6 +84,22 @@ describe("the orders of a city", () => {
   });
 });
 
+describe("a greater counter", () => {
+  it("brings greater orders: its level, as the book of before grew", () => {
+    const w = new World(
+      makeContext({ empire: { ...empire, start: { ...empire.start, capitalDucats: 1_000_000 } } }),
+    );
+    w.do({ type: "empireJoin", playerId: "a" });
+    const before = city(w, "venezia")?.orders.map((o) => o.qty) ?? [];
+    w.do({ type: "empireUpgradeCounter", playerId: "a", region: "home" });
+    w.advance(HOUR);
+    const after = city(w, "venezia")?.orders.map((o) => o.qty) ?? [];
+    const step = s.counters.bookStepBps;
+    expect(after).toEqual(before.map((q) => Math.floor((q * (10_000 + step)) / 10_000)));
+    expect(step).toBeGreaterThan(0);
+  });
+});
+
 describe("a vehicle's round", () => {
   it("carries the counter's goods to the cities, paid at each arrival, then comes home", () => {
     const w = world();
