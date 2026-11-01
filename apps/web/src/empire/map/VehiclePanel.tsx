@@ -39,7 +39,7 @@ export function VehiclePanel({
   onCycle: (step: 1 | -1) => void;
   onClose: () => void;
 }) {
-  const [pane, setPane] = useState<"cargo" | "load" | null>(null);
+  const [pane, setPane] = useState<"cargo" | "load" | "modules" | null>(null);
   const view = p.view;
   const v = view?.vehicles.mine.find((x) => x.id === vehicleId);
   if (!view || !v) return null;
@@ -168,6 +168,13 @@ export function VehiclePanel({
             </>
           ) : null}
           {button("move", t.move, Icon.send(), () => onAim(!aiming), aiming)}
+          {button(
+            "modules",
+            t.modules,
+            Icon.build(),
+            () => setPane(pane === "modules" ? null : "modules"),
+            pane === "modules",
+          )}
           {atPost &&
             button(
               "load",
@@ -187,6 +194,7 @@ export function VehiclePanel({
         </button>
       </div>
       {aiming && <p className="mt-1 text-center text-xs text-gold">{t.aim}</p>}
+      {pane === "modules" && <ModulesPane p={p} busy={busy} act={act} vehicleId={v.id} />}
       {pane === "cargo" && (
         <ul className="mt-2 space-y-1" data-cargo>
           {carried === 0 && <li className="text-xs text-cream-dim">{t.empty}</li>}
@@ -240,5 +248,74 @@ export function VehiclePanel({
         </ul>
       )}
     </section>
+  );
+}
+
+/**
+ * The trade modules of a vehicle (1 November 2026, after Hades' Star's ships): its places, one a
+ * level of its model, up to five; each takes a trade module the house has researched, once.
+ */
+function ModulesPane({
+  p,
+  busy,
+  act,
+  vehicleId,
+}: {
+  p: EmpirePayload;
+  busy: boolean;
+  act: (a: EmpireAction) => Promise<void>;
+  vehicleId: string;
+}) {
+  const view = p.view;
+  const v = view?.vehicles.mine.find((x) => x.id === vehicleId);
+  if (!view || !v) return null;
+  const names = fr.empire.moduleNames;
+  const researched = view.research.modules.filter((m) => m.kind === "trade" && m.level > 0);
+  const max = 5;
+  return (
+    <div className="mt-2 space-y-1.5" data-vehicle-modules>
+      <p className="text-[0.6875rem] text-cream-dim">{t.fittedNote}</p>
+      {researched.length === 0 && <p className="text-xs text-cream-dim">{t.noModule}</p>}
+      <ul className="space-y-1.5">
+        {Array.from({ length: max }, (_, i) => {
+          const open = i < v.slots;
+          const here = v.fitted?.[i] || "";
+          return (
+            // biome-ignore lint/suspicious/noArrayIndexKey: a place is its index
+            <li key={i} data-vehicle-slot={i} data-open={open ? "" : undefined}>
+              {open ? (
+                <select
+                  aria-label={t.slot(i + 1)}
+                  className="w-full rounded-lg border border-edge bg-night-3 px-2 py-2 text-sm text-cream disabled:opacity-50"
+                  disabled={busy || researched.length === 0}
+                  value={here}
+                  onChange={(e) =>
+                    void act({
+                      type: "empireFitVehicle",
+                      vehicleId,
+                      slot: i,
+                      module: e.target.value === "" ? null : e.target.value,
+                    })
+                  }
+                >
+                  <option value="">{t.emptySlot}</option>
+                  {researched
+                    .filter((m) => m.code === here || !(v.fitted ?? []).includes(m.code))
+                    .map((m) => (
+                      <option key={m.code} value={m.code}>
+                        {`${names[m.code]?.[0] ?? m.code} ${m.level} — ${names[m.code]?.[1] ?? ""}`}
+                      </option>
+                    ))}
+                </select>
+              ) : (
+                <p className="rounded-lg border border-dashed border-line px-2 py-2 text-xs text-cream-dim">
+                  {t.opensAt(i + 1)}
+                </p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
