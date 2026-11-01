@@ -342,6 +342,26 @@ try {
     await shot("14-commandes");
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
+    // A cart touched at its counter (after Hades' Star's shipment list): « Charger » lists the
+    // orders of the cities the counter serves, sorted; a touch loads one.
+    // A touch on the cart (its pointer down, then up anywhere: the header may cover it).
+    const tapBox = await page.locator("[data-vehicle]").first().boundingBox();
+    const tap = {
+      clientX: (tapBox?.x ?? 0) + (tapBox?.width ?? 0) / 2,
+      clientY: (tapBox?.y ?? 0) + (tapBox?.height ?? 0) / 2,
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+    };
+    await page.locator("[data-vehicle]").first().dispatchEvent("pointerdown", tap);
+    await page.evaluate((t) => window.dispatchEvent(new PointerEvent("pointerup", t)), tap);
+    await page.locator("[data-vehicle-panel] [data-hop-action=load]").click();
+    await page.locator("[data-vehicle-panel] [data-load-pane]").waitFor();
+    if ((await page.locator("[data-load-pane] [data-order]").count()) === 0)
+      faults.push(`${label}: no order to load at Venice's counter`);
+    await shot("14b-charger");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(300);
     // A vehicle dragged to Padua (after Hades' Star): a dotted line follows, the dark label tells
     // where and how long; let go, it waits ten seconds to leave, « Partir » sends it at once.
     const cartBox = await page.locator("[data-vehicle]").first().boundingBox();
