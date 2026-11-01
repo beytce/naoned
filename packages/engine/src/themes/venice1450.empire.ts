@@ -34,7 +34,6 @@ const CASA: [number, Record<string, number>, number, string[]][] = [
 
 const slots = (level: number, at: number[]) => at.filter((l) => level >= l).length;
 
-
 /** The ten regions, by their order of opening (CADRAGE-v3 § 3.4). */
 const REGIONS: EmpireSettingsInput["regions"] = [
   {
