@@ -23,14 +23,16 @@ Fondaco est un jeu de commerce multijoueur en 2D, sur navigateur PC et mobile (P
 
 ## 2. Les règles d'or
 
-Elles remplacent les règles de conception de la v2.
+*Réécrites le 1er novembre 2026, à la décision du porteur, pour coller à Hades' Star (`docs/audit-profondeur-2026-11-01.md`). Elles remplacent les six règles du 29 octobre ; en cas de conflit avec une autre section de ce cadrage, elles priment.*
 
-1. **Rien de ce que le joueur a bâti ne se perd.** Ni par le temps, ni par l'absence, ni par un autre joueur (hors de la Terraferme, qui repart chaque semaine). Seule exception, choisie par le joueur : un véhicule engagé dans les terres de Rome, à la Porta, y est perdu avec ses composants s'il tombe ou s'il n'est pas rentré à la fermeture (§ 12 quater).
-2. **On ne punit jamais l'absence.** Il n'y a ni série à casser, ni coût qui court pendant qu'on est parti, ni marchandise qui pourrit en entrepôt pendant une absence.
-3. **Seules les positions disputées se perdent**, parce que d'autres les prennent : Podestà, charges, Doge, emplacement du Grand Canal, classement de la Terraferme.
-4. **Toute compétition se joue par bande de puissance.** Le vétéran est une légende qu'on voit, jamais un prédateur qu'on croise.
-5. **On ne vend jamais de temps ni de puissance** : ni ducats, ni ressources, ni accélération, ni chantier, ni file en plus.
-6. **Chaque système absorbe les anciens au lieu de s'y ajouter.** La cible est une douzaine de systèmes visibles, pas trente.
+1. **Ton empire t'appartient.** Personne ne peut piller ni prendre ce que tu as bâti. *(Hades' Star : l'étoile jaune est privée.)*
+2. **Le risque vient des terres de Rome, jamais d'un autre joueur.** Un véhicule détruit au combat de la Porta rentre abîmé ; un véhicule encore à la Porta à sa fermeture est perdu ; la perte définitive à chaque combat n'existe qu'à la Porta noire, que le joueur choisit. *(Hades' Star DARK NEBULA : le vaisseau détruit rentre, la supernova est définitive, l'étoile rouge sombre est choisie.)*
+3. **L'absence ne coûte rien, mais rien ne s'accumule sans fin.** Les stocks, la production et les commandes ont un plafond : une fois plein, ça s'arrête, sans rien perdre. *(Hades' Star : le stockage plafonné des planètes.)*
+4. **Le temps s'achète, la puissance jamais.** Une monnaie précieuse, les **perle**, accélère les chantiers et les recherches ; elle s'achète, et se gagne aussi en jouant (événements, saisons, Carnet). On ne vend jamais de ducats, de marchandises, de modules, de plans, de reliques, de Sceaux, ni de place de chantier ou de module en plus. La Terraferme et la Contesa restent à armes égales. *(Hades' Star : « pay-to-rush, pas pay-to-win ».)*
+5. **Les hauts niveaux se gagnent en jouant.** Au-delà d'un certain niveau, les modules demandent des plans, qui viennent des reliques de la Porta. *(Hades' Star : les plans tirés des artefacts.)*
+6. **On affronte des joueurs de son niveau.** Combats, classements et appariements se font par bande de Puissance, calculée sur ce qui est bâti, jamais sur la caisse. *(Hades' Star : l'appariement par niveau, l'Influence plafonnée par le scanner.)*
+7. **Le jeu se joue en quelques minutes, plusieurs fois par jour, et la compagnie aide sans obliger.** Les modes en direct sont courts (une dizaine de minutes) ; aucun mode n'exige d'être présent pendant des jours. *(La leçon des étoiles blanches.)*
+8. **Tout se voit.** Toute fonctionnalité, tout mode de jeu, quel qu'il soit, est d'abord visuel : sur la carte, par des objets qu'on touche, des mouvements et des animations. Ce n'est ni un tableur ni un jeu de texte : un chiffre ou une liste accompagnent l'image, ils ne la remplacent jamais. *(Hades' Star : tout se passe sur la carte.)*
 
 ## 3. Ce qui grandit : cinq axes
 
@@ -427,6 +429,8 @@ Le prélèvement est :
 
 ### 5.4 Trois monnaies, pas plus
 
+> **Décision du porteur du 1er novembre 2026 (règle d'or 4)** : une quatrième monnaie, les **perle** (les perles de verre de Murano), s'achète et se gagne en jouant (événements, saisons, Carnet). Elle ne sert qu'à accélérer les chantiers et les recherches, et aux cosmétiques. Les trois monnaies ci-dessous ne s'achètent toujours jamais.
+
 | Monnaie | Se gagne | S'achète | Sert à |
 | --- | --- | --- | --- |
 | **Ducats** | Le commerce | Jamais contre de l'argent réel | Tout ce qui est économique |
@@ -520,6 +524,8 @@ Le point où un jeu persistant se gagne ou se perd. Les parades se cumulent :
 - **les Annales de Venise** : une page publique écrite par le serveur à partir des événements, sans texte libre. C'est l'outil d'acquisition d'un monde ancien.
 
 ## 10. La monétisation
+
+> **Décision du porteur du 1er novembre 2026 (règle d'or 4)** : le temps se vend désormais, comme dans Hades' Star. Les perle (§ 5.4) accélèrent les chantiers et les recherches ; l'abonnement peut en verser chaque jour. Ce qui suit sur l'accélération et sur « l'abonnement sans temps » n'a plus cours ; le reste de la liste (ni ducats, ni ressources, ni Sceaux, ni chantier ou file en plus, ni avantage à la Terraferme ou à la Contesa) tient toujours.
 
 **On ne vend jamais** :
 - de ducats, de ressources ou de Sceaux ;

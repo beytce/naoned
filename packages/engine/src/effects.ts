@@ -4,6 +4,7 @@ import type { ResourceCode } from "./theme.js";
 
 export type LedgerReason =
   | "admin_adjust"
+  | "admin_reset"
   | "empire_aid"
   | "empire_muda"
   | "empire_refund"
@@ -118,6 +119,7 @@ export interface LedgerEntry {
 
 export type StockReason =
   | "admin_adjust"
+  | "admin_reset"
   | "empire_aid"
   | "empire_porta"
   | "empire_corsairs"

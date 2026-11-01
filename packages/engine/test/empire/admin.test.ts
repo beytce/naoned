@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   type AdminEdit,
   type EmpireSettingsInput,
+  type Player,
   cashAccount,
   empireHouseAt,
 } from "../../src/index.js";
@@ -134,6 +135,60 @@ describe("the admin's hand", () => {
     expect(house(w).revealed).toHaveLength(10);
     expect(edit(w, { kind: "site", site: "depot" }).ok).toBe(false);
     expect(edit(w, { kind: "site", site: "camp" }).ok).toBe(false);
+  });
+
+  it("resets a house to zero: a newcomer again, through the journals", () => {
+    const w = world();
+    edit(w, { kind: "cash", deniers: "90000000" });
+    edit(w, { kind: "stock", good: "wheat", qty: 40 });
+    edit(w, { kind: "casa", level: 4 });
+    edit(w, { kind: "house", favour: 300, seals: 7, heritage: 2 });
+    edit(w, { kind: "module", code: "hold", level: 3 });
+    edit(w, { kind: "counter", region: "lombardia", level: 2 });
+    edit(w, { kind: "vehicle", vehicleType: "mule" });
+    const empire = w.state.empire;
+    const h = empire?.houses.a;
+    if (!empire || !h) throw new Error("no house");
+    w.state = {
+      ...w.state,
+      empire: {
+        ...empire,
+        houses: { a: { ...h, company: "c1", companySince: 5 } },
+        aid: [{ id: "a:1", house: "a", company: "c1", good: "wheat", qty: 5, at: 1 }],
+      },
+      players: { ...w.state.players, a: { ...(w.state.players.a as Player), passUntil: 99 } },
+    };
+    expect(edit(w, { kind: "reset" }).ok).toBe(true);
+    const fresh = house(w);
+    expect(fresh.casa).toBe(1);
+    expect(fresh.workshops).toHaveLength(1);
+    expect(fresh.workshops[0]?.level).toBe(1);
+    expect([fresh.favour, fresh.seals, fresh.heritage ?? 0]).toEqual([0, 0, 0]);
+    expect(fresh.modules ?? {}).toEqual({});
+    expect(fresh.counters ?? {}).toEqual({});
+    expect(fresh.vehicles ?? []).toHaveLength(0);
+    expect(cash(w)).toBe(10_000n * 100n);
+    expect(w.state.inventories.a ?? {}).toEqual({});
+    // The company stays, its open requests go.
+    expect([fresh.company, fresh.companySince]).toEqual(["c1", 5]);
+    expect(w.state.empire?.aid ?? []).toHaveLength(0);
+    // The account's Pass stays.
+    expect(w.state.players.a?.passUntil).toBe(99);
+  });
+
+  it("does not reset a house in a battle of the Porta", () => {
+    const w = world();
+    const empire = w.state.empire;
+    const h = empire?.houses.a;
+    if (!empire || !h) throw new Error("no house");
+    const battle = { id: "b1", tier: 1, combatId: "x", transportId: "y", paid: 0 };
+    const porta = { cell: "0,0", level: 1, best: 0, relics: {}, week: { index: 0, points: 0 } };
+    w.state = {
+      ...w.state,
+      empire: { ...empire, houses: { a: { ...h, porta: { ...porta, battle } } } },
+    };
+    const res = edit(w, { kind: "reset" });
+    expect(res.ok ? "" : res.error).toBe("vehicle_busy");
   });
 
   it("refuses an unknown merchant", () => {

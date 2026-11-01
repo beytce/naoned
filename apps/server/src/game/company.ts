@@ -248,6 +248,30 @@ export async function settleSuccession(
 }
 
 /**
+ * A partner leaves its vocation (an admin's reset of its house): it stays in the company; a Capo
+ * gives the place to the oldest Consigliere, else to the oldest other partner.
+ */
+export async function stepDown(db: Db, accountId: string): Promise<void> {
+  const id = await companyIdOf(db, accountId);
+  if (!id) return;
+  const members = await membersOf(db, id);
+  const me = members.find((m) => m.id === accountId);
+  if (!me?.role) return;
+  await db
+    .update(companyMembers)
+    .set({ role: null })
+    .where(eq(companyMembers.accountId, accountId));
+  if (me.role !== "capo") return;
+  const others = members.filter((m) => m.id !== accountId);
+  const heir = others.find((m) => m.role === "consigliere") ?? others[0];
+  if (heir)
+    await db
+      .update(companyMembers)
+      .set({ role: "capo" })
+      .where(eq(companyMembers.accountId, heir.id));
+}
+
+/**
  * The Capo names a partner to a vocation, or takes it away (`null`). Naming another Capo hands
  * over the place; one Cassiere, two to four Consiglieri. In the empire only.
  */
