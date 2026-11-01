@@ -124,9 +124,6 @@ export interface EmpireView {
       capacity: number;
       regions: string[];
       speedBps: number;
-      build: { minutes: number; materials: Record<string, number> } | null;
-      slots: number;
-      muda: boolean;
       /** The house's level of the model, and its next level's price (null at the last). */
       level: number;
       upgrade: string | null;
@@ -140,7 +137,6 @@ export interface EmpireView {
       /** The counter it stands at, or is bound for. */
       at: string;
     }[];
-    voyages: EmpireVoyage[];
     haulPerDay: number;
   };
   research: {
@@ -152,45 +148,11 @@ export interface EmpireView {
       effect: string;
       level: number;
       next: EmpireSite | null;
-      plans: number;
     }[];
   };
-  deposits: {
-    id: string;
-    region: string;
-    good: string;
-    stock: number;
-    teams: number;
-    mine: boolean;
-  }[];
-  teams: { max: number; used: number };
   workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
   courtLeft: number;
   identity: EmpireIdentity;
-  muda: {
-    next: number | null;
-    bids: { vehicleId: string; amount: string }[];
-    passes: { vehicleId: string; departure: number; until: number }[];
-    last: { departure: number; places: number; reserve: string; prices: string[] } | null;
-  };
-  colleganze: {
-    open: {
-      id: string;
-      traveller: string;
-      mine: boolean;
-      vehicleType: string;
-      from: string;
-      to: string;
-      good: string;
-      qty: number;
-      target: string;
-      staked: string;
-      myStake: string;
-      status: string;
-      record: { voyages: number; returnBps: number } | null;
-    }[];
-    record: { voyages: number; returnBps: number } | null;
-  };
   terra: {
     week: number;
     contesa: boolean;
@@ -271,7 +233,6 @@ export interface EmpireIdentity {
 export interface EmpireRegion {
   code: string;
   casa: number;
-  corsairRiskBps: number;
   hoursFromVenice: number;
   workshopSlots: number;
   produces: string[];
@@ -314,7 +275,7 @@ export interface EmpireMapView {
   sectorCost: string;
   /** The cities the house's counters serve. */
   covered: string[];
-  sites: { kind: "post" | "arsenal" | "camp" | "depot"; cell: string; endsAt: number }[];
+  sites: { kind: "post" | "camp" | "depot"; cell: string; endsAt: number }[];
   arsenal: string | null;
   camp: string | null;
   cities: {
@@ -327,23 +288,10 @@ export interface EmpireMapView {
     size?: number;
   }[];
   radius: number;
-  arsenalSite: { cost: string; minutes: number; casa: number } | null;
   campSite: { cost: string; minutes: number; casa: number } | null;
   /** The Remise: where the land vehicles are bought and their models raised. */
   depot: string | null;
   depotSite: { cost: string; minutes: number; casa: number } | null;
-}
-
-export interface EmpireVoyage {
-  id: string;
-  house: string;
-  vehicleId: string;
-  good: string;
-  qty: number;
-  from: string;
-  to: string;
-  arrivesAt: number;
-  cost: string;
 }
 
 export interface EmpireQuote {
@@ -395,40 +343,13 @@ export type EmpireAction =
   | { type: "empireDeliver"; good: string; qty: number; region?: string; city?: string }
   | { type: "empireClaim"; index: number }
   | { type: "empirePlaceCounter"; cell: string }
-  | { type: "empireBuildArsenal"; cell: string }
   | { type: "empireBuildCamp"; cell: string }
   | { type: "empireUnlockCell"; cell: string }
   | { type: "empireBuildDepot"; cell: string }
   | { type: "empireUpgradeVehicle"; vehicleType: string }
   | { type: "empireUpgradeCounter"; region: string }
   | { type: "empireBuyVehicle"; vehicleType: string }
-  | {
-      type: "empireVoyage";
-      vehicleId: string;
-      from: string;
-      to: string;
-      good: string;
-      qty: number;
-      insured?: boolean;
-    }
-  | { type: "empireBuildShip"; vehicleType: string }
-  | { type: "empireFitShip"; vehicleId: string; slot: number; module: string }
-  | { type: "empireMudaBid"; vehicleId: string; amount: string }
-  | {
-      type: "empireColleganzaOpen";
-      vehicleId: string;
-      from: string;
-      to: string;
-      good: string;
-      qty: number;
-      target: string;
-    }
-  | { type: "empireColleganzaStake"; id: string; amount: string }
-  | { type: "empireColleganzaWithdraw"; id: string }
-  | { type: "empireColleganzaCancel"; id: string }
-  | { type: "empireColleganzaSail"; id: string; insured?: boolean }
   | { type: "empireResearch"; module: string }
-  | { type: "empireTeam"; depositId: string }
   | { type: "empireFit"; workshopId: string; slot: number; module: string }
   | { type: "empireCourt"; good: string; qty: number }
   | { type: "empireSwap"; a: string; b: string }

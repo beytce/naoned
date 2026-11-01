@@ -4,7 +4,6 @@ import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
 import { Sheet, Slab } from "../../ui.js";
 import { NewWorkshopList } from "../NewWorkshop.js";
-import { Arsenal } from "../Sea.js";
 import { Charroi } from "../World.js";
 import { shownAt } from "../logic.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
@@ -16,7 +15,7 @@ export type ProductionPane = "buildings" | "vehicles";
 /**
  * The Production, behind the « + » of the upper right corner (the map at the centre, step 1):
  * what the house may build, in two panes. The buildings: a new workshop in Venetia. The vehicles:
- * the fleet, those at home among all, the carts to buy and the ships of the Arsenal.
+ * the fleet, and the way to the Remise.
  */
 export function ProductionSheet({
   p,
@@ -38,8 +37,8 @@ export function ProductionSheet({
   busy: boolean;
   onClose: () => void;
   act: (a: EmpireAction) => Promise<void>;
-  /** Puts a counter or the Arsenal down: the map in its mode of placing. */
-  onPlace: (kind: "post" | "arsenal" | "camp" | "depot") => void;
+  /** Puts a counter or a building down: the map in its mode of placing. */
+  onPlace: (kind: "post" | "camp" | "depot") => void;
   /** The Remise, where the vehicles are bought, raised and sent. */
   onRemise?: () => void;
 }) {
@@ -108,25 +107,24 @@ export function ProductionSheet({
 
 /**
  * The buildings put on the map (the map at the centre, step 2): a counter, from the cheapest of
- * the regions reached, and the Arsenal once its Casa nears.
+ * the regions reached, then the Remise and the Campo once their Casa nears.
  */
 function Buildings({
   p,
   onPlace,
 }: {
   p: EmpirePayload;
-  onPlace: (kind: "post" | "arsenal" | "camp" | "depot") => void;
+  onPlace: (kind: "post" | "camp" | "depot") => void;
 }) {
   const view = p.view;
   if (!view) return null;
   const pl = fr.empire.placing;
   const costs = view.regions.flatMap((r) => (r.postCost ? [BigInt(r.postCost)] : []));
   const cheapest = costs.length > 0 ? costs.reduce((a, b) => (b < a ? b : a)) : null;
-  const yard = view.map.arsenalSite;
   const camp = view.map.campSite;
   const depot = view.map.depotSite;
   const card = (
-    kind: "post" | "arsenal" | "camp" | "depot",
+    kind: "post" | "camp" | "depot",
     title: string,
     text: string,
     price: string | null,
@@ -157,15 +155,6 @@ function Buildings({
     <ul className="mb-4 space-y-3" data-buildings>
       {cheapest !== null &&
         card("post", pl.postCard, pl.postText, pl.from(d(cheapest.toString())), true)}
-      {yard &&
-        shownAt(view.house.casa, yard.casa) &&
-        card(
-          "arsenal",
-          pl.arsenalCard,
-          pl.arsenalText(yard.casa),
-          d(yard.cost),
-          view.house.casa >= yard.casa,
-        )}
       {depot &&
         shownAt(view.house.casa, depot.casa) &&
         card(

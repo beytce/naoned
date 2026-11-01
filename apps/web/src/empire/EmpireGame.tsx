@@ -18,8 +18,7 @@ import { MarketSheet } from "./Market.js";
 import { CasaMoment } from "./Moment.js";
 import { NewWorkshopSheet } from "./NewWorkshop.js";
 import { GoodSheet } from "./Resources.js";
-import { Arsenal } from "./Sea.js";
-import { Charroi, RegionPlace, Scuola, VoyageSheet, regionName } from "./World.js";
+import { Charroi, RegionPlace, Scuola, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import {
   affordable,
@@ -57,11 +56,9 @@ type SheetId =
   | "help"
   | "production"
   | "production:vehicles"
-  | "arsenal"
   | `region:${string}`
   | `workshop:${string}`
-  | `new:${string}`
-  | `voyage:${string}`;
+  | `new:${string}`;
 
 const t = fr.empire;
 const unknownError = fr.errors.unknown ?? "";
@@ -164,7 +161,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       setSheet(null);
       setPicked(null);
       setPlacing({
-        kind: kind === "arsenal" || kind === "camp" || kind === "depot" ? kind : "post",
+        kind: kind === "camp" || kind === "depot" ? kind : "post",
         ...(region ? { region } : {}),
       });
       map.current?.far();
@@ -175,13 +172,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const place = async () => {
     if (!placing || !picked) return;
     await act(
-      placing.kind === "arsenal"
-        ? { type: "empireBuildArsenal", cell: picked.cell }
-        : placing.kind === "camp"
-          ? { type: "empireBuildCamp", cell: picked.cell }
-          : placing.kind === "depot"
-            ? { type: "empireBuildDepot", cell: picked.cell }
-            : { type: "empirePlaceCounter", ...picked },
+      placing.kind === "camp"
+        ? { type: "empireBuildCamp", cell: picked.cell }
+        : placing.kind === "depot"
+          ? { type: "empireBuildDepot", cell: picked.cell }
+          : { type: "empirePlaceCounter", ...picked },
     );
     setPlacing(null);
     setPicked(null);
@@ -329,16 +324,6 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onClose={close}
         act={act}
       />
-      {sheet?.startsWith("voyage:") && (
-        <VoyageSheet
-          p={p}
-          from={sheet.slice("voyage:".length)}
-          open
-          busy={busy}
-          onClose={close}
-          act={act}
-        />
-      )}
       {sheet?.startsWith("region:") && (
         <Sheet open onClose={close} kicker={t.world.map} title={regionName(sheet.slice(7))}>
           <RegionPlace
@@ -348,19 +333,14 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             busy={busy}
             act={act}
             onBuild={() => setSheet(`new:${sheet.slice(7)}`)}
-            onConvoy={() => setSheet(`voyage:${sheet.slice(7)}`)}
             onPlace={() => open(`place:post:${sheet.slice(7)}`)}
           />
         </Sheet>
       )}
-      <Sheet open={sheet === "arsenal"} onClose={close} title={t.scene.arsenal}>
-        <Arsenal p={p} now={now} busy={busy} act={act} />
-      </Sheet>
       {/* The Remise: the only place where the vehicles are bought, raised and sent (1 November). */}
       <Sheet open={sheet === "remise"} onClose={close} kicker={t.scene.owner} title={t.scene.depot}>
         <div data-remise>
           <Charroi p={p} now={now} busy={busy} act={act} />
-          <Arsenal p={p} now={now} busy={busy} act={act} />
         </div>
       </Sheet>
       <CasaSheet

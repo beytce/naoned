@@ -4,7 +4,6 @@ import { d } from "../game/format.js";
 import { fr } from "../i18n.js";
 import { Sheet, Slab } from "../ui.js";
 import { Court } from "./Identity.js";
-import { Colleganze } from "./Sea.js";
 import { regionName } from "./World.js";
 import { affordable, trendOf } from "./logic.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
@@ -125,7 +124,6 @@ export function MarketSheet({
         </ul>
       )}
       <Court p={p} busy={busy} act={act} />
-      <Colleganze p={p} busy={busy} act={act} />
     </Sheet>
   );
 }

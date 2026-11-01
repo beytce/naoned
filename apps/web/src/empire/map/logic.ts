@@ -113,7 +113,7 @@ export function hudOf(p: EmpirePayload): { id: "ducats" | "favour" | "seals"; va
 }
 
 /** What may be put on the map: a counter, or the Arsenal. */
-export type Placing = { kind: "post" | "arsenal" | "camp" | "depot"; region?: string };
+export type Placing = { kind: "post" | "camp" | "depot"; region?: string };
 
 /**
  * The cells where the house may put what it places: for a counter, the land cells it sees, of a
@@ -135,14 +135,12 @@ export function placeable(p: EmpirePayload, placing: Placing): string[] {
   ]);
   return Object.entries(map.cells)
     .filter(([cell, c]) =>
-      placing.kind === "arsenal"
-        ? c.coast && !taken.has(cell)
-        : placing.kind === "camp" || placing.kind === "depot"
-          ? !taken.has(cell)
-          : reached.has(c.region) &&
-            // With a reach, counters share a cell, apart (the map that grows).
-            (map.reach ? true : !taken.has(cell)) &&
-            (placing.region === undefined || c.region === placing.region),
+      placing.kind === "camp" || placing.kind === "depot"
+        ? !taken.has(cell)
+        : reached.has(c.region) &&
+          // With a reach, counters share a cell, apart (the map that grows).
+          (map.reach ? true : !taken.has(cell)) &&
+          (placing.region === undefined || c.region === placing.region),
     )
     .map(([cell]) => cell)
     .sort();
@@ -152,7 +150,6 @@ export function placeable(p: EmpirePayload, placing: Placing): string[] {
 export function placingCost(p: EmpirePayload, placing: Placing, cell: string): string | null {
   const view = p.view;
   if (!view) return null;
-  if (placing.kind === "arsenal") return view.map.arsenalSite?.cost ?? null;
   if (placing.kind === "camp") return view.map.campSite?.cost ?? null;
   if (placing.kind === "depot") return view.map.depotSite?.cost ?? null;
   const region = view.map.cells[cell]?.region;
@@ -525,9 +522,7 @@ export function vehicleFor(
 ): string | null {
   const view = p.view;
   if (!view) return null;
-  const land = view.vehicles.mine.filter(
-    (v) => !view.vehicles.shop.find((s) => s.type === v.type)?.build && v.busyUntil <= now,
-  );
+  const land = view.vehicles.mine.filter((v) => v.busyUntil <= now);
   const ok = land.filter((v) => tourCities(p, v.id).includes(city));
   const held = (id: string) => {
     const at = view.vehicles.mine.find((v) => v.id === id)?.at;

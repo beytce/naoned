@@ -35,24 +35,16 @@ export function PlacingBar({
       data-placing-bar={placing.kind}
     >
       <h3 className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
-        {placing.kind === "arsenal"
-          ? t.arsenal
-          : placing.kind === "camp"
-            ? t.camp
-            : placing.kind === "depot"
-              ? t.depot
-              : t.post}
+        {placing.kind === "camp" ? t.camp : placing.kind === "depot" ? t.depot : t.post}
       </h3>
       <p className="mt-1 text-xs text-cream-dim">
         {none
           ? t.none
-          : placing.kind === "arsenal"
-            ? t.hintArsenal
-            : placing.kind === "camp"
-              ? t.hintCamp
-              : placing.kind === "depot"
-                ? t.hintDepot
-                : t.hintPost}
+          : placing.kind === "camp"
+            ? t.hintCamp
+            : placing.kind === "depot"
+              ? t.hintDepot
+              : t.hintPost}
       </p>
       {check && (
         <p className="mt-1 text-xs font-semibold text-gold" data-point-check>

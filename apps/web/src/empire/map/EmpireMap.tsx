@@ -387,12 +387,7 @@ export const EmpireMap = forwardRef<
         })}
         {/* The vehicles around the bubble of the counter they stand at (the map that grows). */}
         {[{ id: "home", x: map.home.x, y: map.home.y }, ...map.posts].map((x) => {
-          const here = view.vehicles.mine.filter(
-            (v) =>
-              v.at === x.id &&
-              v.busyUntil <= now &&
-              !view.vehicles.shop.find((q) => q.type === v.type)?.build,
-          );
+          const here = view.vehicles.mine.filter((v) => v.at === x.id && v.busyUntil <= now);
           if (here.length === 0) return null;
           const r = x.id === "home" ? 46 : 34;
           return (
@@ -476,22 +471,6 @@ export const EmpireMap = forwardRef<
             >
               {Icon.cart()}
             </span>
-          );
-        })}
-        {/* The convoys on their way: a point along their road, gliding from second to second. */}
-        {view.vehicles.voyages.map((v) => {
-          const backAt =
-            view.vehicles.mine.find((x) => x.id === v.vehicleId)?.busyUntil ?? v.arrivesAt;
-          const left = 2 * v.arrivesAt - backAt;
-          const k = (now - left) / Math.max(1, v.arrivesAt - left);
-          const [x, y] = alongPath(routeBetween(v.from, v.to), k);
-          return (
-            <span
-              key={v.id}
-              data-convoy
-              className="absolute left-0 top-0 h-3 w-3 rounded-full bg-lagoon ring-2 ring-night transition-transform duration-1000 ease-linear"
-              style={{ transform: `translate(${x * base - 6}px, ${y * base - 6}px)` }}
-            />
           );
         })}
         {map.camp &&

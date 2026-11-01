@@ -27,7 +27,6 @@ export function RegionPlace({
   busy,
   act,
   onBuild,
-  onConvoy,
   onPlace,
 }: {
   p: EmpirePayload;
@@ -36,7 +35,6 @@ export function RegionPlace({
   busy: boolean;
   act: Act;
   onBuild: () => void;
-  onConvoy: () => void;
   /** To put a counter down there: the map in its mode of placing. */
   onPlace?: () => void;
 }) {
@@ -46,7 +44,6 @@ export function RegionPlace({
   const w = t.world;
   const quotes = p.market.filter((q) => q.region === code);
   const workshops = view.house.workshops.filter((x) => (x.region ?? "veneto") === code);
-  const deposits = view.deposits.filter((x) => x.region === code);
   // The stock its counters hold (the map that grows): each counter sells and delivers its own.
   const stock = view.stores
     .filter((x) => x.region === code)
@@ -164,222 +161,11 @@ export function RegionPlace({
           </ul>
         </div>
       )}
-
-      {r.counter > 0 && convoys(p, code) && (
-        <Slab size="md" tone="ghost" className="w-full" onClick={onConvoy}>
-          {w.sendConvoy}
-        </Slab>
-      )}
-
-      <div>
-        <div className="flex items-baseline justify-between">
-          <Label>{w.deposits}</Label>
-          <span className="text-xs text-cream-dim">
-            {view.teams.max > 0 ? w.teams(view.teams.used, view.teams.max) : w.noTeam}
-          </span>
-        </div>
-        {deposits.length === 0 ? (
-          <p className="mt-1 text-sm text-cream-dim">{w.noDeposit}</p>
-        ) : (
-          <ul className="mt-1 space-y-2">
-            {deposits.map((x) => (
-              <li key={x.id} className="flex items-center gap-2 text-sm text-cream">
-                <GoodsMark code={x.good} size={22} />
-                <span className="flex-1">
-                  {goodName(p, x.good)}
-                  <span className="block text-xs text-cream-dim">
-                    {w.depositStock(x.stock, x.teams)}
-                  </span>
-                </span>
-                {x.mine ? (
-                  <Badge tone="lagoon">{w.teamThere}</Badge>
-                ) : (
-                  <Slab
-                    size="sm"
-                    tone="ghost"
-                    busy={busy}
-                    disabled={view.teams.used >= view.teams.max}
-                    onClick={() => void act({ type: "empireTeam", depositId: x.id })}
-                  >
-                    {w.sendTeam}
-                  </Slab>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
     </section>
   );
 }
 
-/** Has the house a vehicle of the roads that leaves from this region? */
-function convoys(p: EmpirePayload, code: string): boolean {
-  const view = p.view;
-  if (!view) return false;
-  return view.vehicles.mine.some((v) => {
-    const spec = view.vehicles.shop.find((s) => s.type === v.type);
-    return spec !== undefined && spec.regions.length > 1 && spec.regions.includes(code);
-  });
-}
-
-/**
- * A convoy from a region (the third depth, a sheet): a free vehicle of the route, its destination,
- * the goods and their quantity, and the margin the dated prices promise.
- */
-export function VoyageSheet({
-  p,
-  from,
-  open,
-  busy,
-  onClose,
-  act,
-}: {
-  p: EmpirePayload;
-  from: string;
-  open: boolean;
-  busy: boolean;
-  onClose: () => void;
-  act: Act;
-}) {
-  const view = p.view;
-  const v = t.voyage;
-  const shop = view?.vehicles.shop ?? [];
-  const free = (view?.vehicles.mine ?? []).filter((x) => {
-    const spec = shop.find((s) => s.type === x.type);
-    return (
-      spec && spec.regions.length > 1 && spec.regions.includes(from) && x.busyUntil <= (p.now ?? 0)
-    );
-  });
-  const [vehicleId, setVehicle] = useState<string>("");
-  const vehicle = free.find((x) => x.id === vehicleId) ?? free[0];
-  const spec = shop.find((s) => s.type === vehicle?.type);
-  const reachable = (view?.regions ?? []).filter(
-    (r) => r.code !== from && spec?.regions.includes(r.code) && (view?.house.casa ?? 0) >= r.casa,
-  );
-  const [to, setTo] = useState<string>("");
-  const dest = reachable.find((r) => r.code === to)?.code ?? reachable[0]?.code ?? "";
-  const traded = p.market.filter((q) => q.region === dest);
-  const [good, setGood] = useState<string>("");
-  const chosen = traded.find((q) => q.good === good)?.good ?? traded[0]?.good ?? "";
-  const max = vehicle?.capacity ?? 0;
-  const [qty, setQty] = useState(0);
-  const amount = Math.min(max, qty > 0 ? qty : max);
-  const there = traded.find((q) => q.good === chosen);
-  const here = p.market.find((q) => q.region === from && q.good === chosen);
-  const margin = there && here ? BigInt(there.price) - BigInt(here.price) : null;
-  // The corsairs' risk there, and the insurance's premium on what the cargo is worth here.
-  const risk = reachable.find((r) => r.code === dest)?.corsairRiskBps ?? 0;
-  const premium =
-    here && risk > 0 ? (BigInt(here.price) * BigInt(amount) * BigInt(risk) * 12n) / 100_000n : 0n;
-  const [insured, setInsured] = useState(false);
-  const [target, setTarget] = useState("");
-  return (
-    <Sheet open={open} onClose={onClose} kicker={v.kicker} title={v.title} summary={v.summary}>
-      {!vehicle ? (
-        <p className="text-sm text-cream-dim">{v.noVehicle}</p>
-      ) : (
-        <div className="space-y-3">
-          <Choice
-            label={v.vehicle}
-            value={vehicle.id}
-            onChange={setVehicle}
-            options={free.map((x) => [x.id, `${t.vehicleNames[x.type] ?? x.type} · ${x.capacity}`])}
-          />
-          <Choice
-            label={v.to}
-            value={dest}
-            onChange={setTo}
-            options={reachable.map((r) => [
-              r.code,
-              `${regionName(r.code)} · ${v.hours(r.hoursFromVenice)}`,
-            ])}
-          />
-          <Choice
-            label={v.good}
-            value={chosen}
-            onChange={setGood}
-            options={traded.map((q) => [q.good, goodName(p, q.good)])}
-          />
-          <label className="block text-sm text-cream">
-            {v.qty(amount, max)}
-            <input
-              type="range"
-              min={1}
-              max={Math.max(1, max)}
-              value={amount}
-              onChange={(e) => setQty(Number(e.target.value))}
-              className="lagune-range mt-1 w-full"
-            />
-          </label>
-          {margin !== null && <p className="text-sm text-cream-dim">{v.margin(d(margin))}</p>}
-          {risk > 0 ? (
-            <label className="flex items-center gap-2 text-sm text-cream" data-insure>
-              <input
-                type="checkbox"
-                checked={insured}
-                onChange={(e) => setInsured(e.target.checked)}
-              />
-              {fr.empire.sea.insure(Math.round(risk / 100), d(premium))}
-            </label>
-          ) : (
-            <p className="text-xs text-cream-dim">{fr.empire.sea.noRisk}</p>
-          )}
-          <Slab
-            tone="gold"
-            size="lg"
-            className="w-full"
-            busy={busy}
-            disabled={!dest || !chosen}
-            onClick={() =>
-              void act({
-                type: "empireVoyage",
-                vehicleId: vehicle.id,
-                from,
-                to: dest,
-                good: chosen,
-                qty: amount,
-                ...(insured ? { insured: true } : {}),
-              }).then(onClose)
-            }
-          >
-            {v.action}
-          </Slab>
-          <div className="flex gap-2" data-open-colleganza>
-            <input
-              inputMode="numeric"
-              value={target}
-              onChange={(e) => setTarget(e.target.value.replace(/\D/g, ""))}
-              placeholder={fr.empire.sea.targetPlaceholder}
-              aria-label={fr.empire.sea.targetPlaceholder}
-              className="min-h-11 w-32 bg-night-2 px-3 text-cream ring-1 ring-inset ring-line slab"
-            />
-            <Slab
-              size="sm"
-              tone="ghost"
-              busy={busy}
-              disabled={!target || !dest || !chosen}
-              onClick={() =>
-                void act({
-                  type: "empireColleganzaOpen",
-                  vehicleId: vehicle.id,
-                  from,
-                  to: dest,
-                  good: chosen,
-                  qty: amount,
-                  target: String(Number(target) * 100),
-                }).then(onClose)
-              }
-            >
-              {fr.empire.sea.openColleganza}
-            </Slab>
-          </div>
-        </div>
-      )}
-    </Sheet>
-  );
-}
-
+/** A choice among options, labelled. */
 export function Choice({
   label,
   value,
@@ -455,7 +241,7 @@ export function Charroi({
       )}
       <ul className="mt-2 flex flex-wrap gap-2">
         {view.vehicles.mine.map((v) => {
-          const land = !view.vehicles.shop.find((x) => x.type === v.type)?.build;
+          const land = true;
           const free = v.busyUntil <= now;
           return (
             <li key={v.id} className="flex items-center gap-1">
@@ -482,7 +268,7 @@ export function Charroi({
       )}
       <ul className="mt-3 space-y-2">
         {view.vehicles.shop
-          .filter((s) => !s.build && shownAt(view.house.casa, s.casa))
+          .filter((s) => shownAt(view.house.casa, s.casa))
           .map((s) => {
             const built = view.vehicles.mine.filter((v) => v.type === s.type).length;
             return (
@@ -681,8 +467,6 @@ export function Scuola({ p, busy, act }: { p: EmpirePayload; busy: boolean; act:
                   <span className="text-xs text-cream-dim">
                     {sc.running(hourOf(running.endsAt))}
                   </span>
-                ) : m.plans > 0 ? (
-                  <span className="text-xs text-cream-dim">{sc.plans(m.plans)}</span>
                 ) : m.next ? (
                   <Slab
                     size="sm"
