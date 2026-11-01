@@ -1,7 +1,14 @@
-import { empireSettings, ownHouse, settleBuilds } from "./empire/house.js";
+import { empireJoin, empireSettings, ownHouse, settleBuilds } from "./empire/house.js";
 import { regionSeat, revealedBy, settlePost } from "./empire/map.js";
+import { cancelAllOrders } from "./market.js";
 import type { Deniers } from "./money.js";
-import { type PlayerId, SINK_ACCOUNT, SOURCE_ACCOUNT, cashAccount } from "./state.js";
+import {
+  type PlayerId,
+  SINK_ACCOUNT,
+  SOURCE_ACCOUNT,
+  cashAccount,
+  escrowAccount,
+} from "./state.js";
 import {
   type Tx,
   addStock,
@@ -42,7 +49,9 @@ export type AdminEdit =
   /** The whole map seen. */
   | { kind: "revealMap" }
   /** The Arsenal, the Campo or the Remise stands at once, on the first fitting cell of Venetia. */
-  | { kind: "site"; site: "camp" | "depot" };
+  | { kind: "site"; site: "camp" | "depot" }
+  /** The house back to zero: a newcomer again (its company kept), not while at the Porta. */
+  | { kind: "reset" };
 
 export type AdminCommand = { type: "adminEdit"; playerId: PlayerId; edit: AdminEdit };
 
@@ -80,10 +89,47 @@ export function applyAdmin(tx: Tx, cmd: AdminCommand): void {
     setCash(tx, playerId, BigInt(edit.deniers));
   } else if (edit.kind === "stock") {
     setStock(tx, playerId, edit.good, edit.qty);
+  } else if (edit.kind === "reset") {
+    resetHouse(tx, playerId);
   } else {
     editHouse(tx, playerId, edit);
   }
   emit(tx, "admin_edit", playerId, { kind: edit.kind });
+}
+
+/**
+ * The house back to zero (decision of the owner, 1 November 2026): what it engaged is undone, its
+ * money and its goods leave through the journals (to the sink), then it joins again as a newcomer
+ * would. Its company stays (the server takes its vocation away); a battle of the Porta in course
+ * is the live server's, so the reset waits for its end.
+ */
+function resetHouse(tx: Tx, playerId: PlayerId): void {
+  const empire = tx.s.empire;
+  const h = empire?.houses[playerId];
+  if (!empire || !h) fail("unknown_player");
+  if (h.porta?.battle) fail("vehicle_busy");
+  cancelAllOrders(tx, playerId);
+  if (empire.aid) empire.aid = empire.aid.filter((r) => r.house !== playerId);
+  for (const [good, line] of Object.entries(tx.s.inventories[playerId] ?? {}))
+    if (line.available > 0) removeStock(tx, playerId, good, line.available, "admin_reset");
+  for (const account of [cashAccount(playerId), escrowAccount(playerId)]) {
+    const held = tx.s.accounts[account] ?? 0n;
+    if (held > 0n) transfer(tx, account, SINK_ACCOUNT, held, "admin_reset");
+  }
+  const { company, companySince } = h;
+  // The account's own marks stay: the Pass, the computer's houses.
+  const { passUntil, npc } = tx.s.players[playerId] ?? {};
+  delete empire.houses[playerId];
+  delete tx.s.players[playerId];
+  empireJoin(tx, playerId);
+  const player = tx.s.players[playerId];
+  if (player && passUntil !== undefined) player.passUntil = passUntil;
+  if (player && npc) player.npc = npc;
+  const fresh = empire.houses[playerId];
+  if (fresh && company !== undefined) {
+    fresh.company = company;
+    if (companySince !== undefined) fresh.companySince = companySince;
+  }
 }
 
 function editHouse(tx: Tx, playerId: PlayerId, edit: AdminEdit): void {
