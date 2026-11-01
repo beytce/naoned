@@ -20,7 +20,7 @@ Subject: A Venetian Gothic merchant palazzo of brick and white Istrian stone, po
 Standing on a small round floating island with a stone edge and a rocky underside with roots, exactly like the attached brick kiln, same painting style. A few small details of life around it. No smoke. Single subject centred and fully inside the image, on a plain flat magenta background.
 ```
 
-### 2. Comptoir, niveau 1 — `buildings/post-1.png`
+### 2. Fondaco, niveau 1 — `buildings/post-1.png`
 
 ```
 Hand-painted digital miniature for a premium mobile strategy game set in Venice in 1450. Three-quarter top-down view, clean readable shapes, soft painterly shading, warm orange lantern light in the windows, thin cyan moonlight on the edges, rich grown-up colours (terracotta, cream stone, ochre, olive, deep red). Elegant, not childish, not photorealistic. No text, no letters, no numbers, no frame.
@@ -28,7 +28,7 @@ Subject: A modest Venetian brick warehouse (fondaco) with a wooden loading crane
 Standing on a small round floating island with a stone edge and a rocky underside with roots, exactly like the attached brick kiln, same painting style. A few small details of life around it. No smoke. Single subject centred and fully inside the image, on a plain flat magenta background.
 ```
 
-### 3. Comptoir, niveau 2 — `buildings/post-2.png`
+### 3. Fondaco, niveau 2 — `buildings/post-2.png`
 
 ```
 Hand-painted digital miniature for a premium mobile strategy game set in Venice in 1450. Three-quarter top-down view, clean readable shapes, soft painterly shading, warm orange lantern light in the windows, thin cyan moonlight on the edges, rich grown-up colours (terracotta, cream stone, ochre, olive, deep red). Elegant, not childish, not photorealistic. No text, no letters, no numbers, no frame.
@@ -36,7 +36,7 @@ Subject: A larger stone fondaco with an arcaded ground floor, two storeys, crate
 Standing on a small round floating island with a stone edge and a rocky underside with roots, exactly like the attached brick kiln, same painting style. A few small details of life around it. No smoke. Single subject centred and fully inside the image, on a plain flat magenta background.
 ```
 
-### 4. Comptoir, niveau 3 — `buildings/post-3.png`
+### 4. Fondaco, niveau 3 — `buildings/post-3.png`
 
 ```
 Hand-painted digital miniature for a premium mobile strategy game set in Venice in 1450. Three-quarter top-down view, clean readable shapes, soft painterly shading, warm orange lantern light in the windows, thin cyan moonlight on the edges, rich grown-up colours (terracotta, cream stone, ochre, olive, deep red). Elegant, not childish, not photorealistic. No text, no letters, no numbers, no frame.
