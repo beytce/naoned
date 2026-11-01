@@ -16,8 +16,10 @@ import {
   highRecipeRaw,
   levelCost,
   localBookOf,
+  lotOf,
   lotYieldBps,
   newsDelayMs,
+  orderRefOf,
   regionCells,
   regionCities,
   regionSeat,
@@ -270,79 +272,78 @@ function landCapacity(w: World, h: House): number {
 }
 
 /**
- * The cities' orders (1 November, after Hades' Star's shipments): in a session, the waves piled up
- * since the last one (one each period, `maxWaves` at most) of the cities its counters serve, as
- * many orders a wave as each town's size, of its region's goods; brought hop by hop by its carts
- * (a hop is a few seconds: `roundsPerSession` loads in a session), from what it holds there.
+ * The places of hold of its land vehicles (1 November, after Hades' Star's transport): each
+ * model's, a place more a level, and the Agrandissement's share; an order takes one.
  */
-/** How much greater a city's orders are for its counter's level (Venice's own for Venetia). */
-function boostOf(w: World, h: House, region: string): number {
-  const level = region === "veneto" ? h.homeLevel : (h.counters.get(region) ?? 1);
-  return 10_000 + w.s.counters.bookStepBps * (Math.max(1, level) - 1);
-}
-
-/** The waves a session finds piled up, after so long away. */
-function wavesSince(w: World, sinceMs: number): number {
-  const o = w.s.orders;
-  if (!o) return 0;
-  const period = o.periodMinutes * 60_000;
-  return Math.min(o.maxWaves, Math.max(1, Math.floor(sinceMs / period)));
-}
-
-/** The units the waves of a session ask in the cities its counters serve (their expectation). */
-function ordersPerSession(w: World, h: House): number {
-  const o = w.s.orders;
-  if (!o) return Number.POSITIVE_INFINITY;
-  // Two sessions a day: half a day of waves.
-  const waves = wavesSince(w, 12 * 3_600_000);
-  const covered = citiesCovered(seen(h), w.s);
-  return w.s.map.cities
-    .filter((c) => covered.has(c.code))
-    .reduce((n, c) => {
-      const size = Math.min(5, Math.max(1, c.size));
-      const asked = ((o.perSize[size - 1] ?? 1) * o.qtyPerSize * size * 3) / 2;
-      return n + (waves * asked * boostOf(w, h, c.region)) / 10_000;
+function landPlaces(w: World, h: House): number {
+  const bps = tradeEffect(w, h, "capacity");
+  return h.vehicles
+    .filter((v) => w.m.vehicles[v.type]?.regions.length === 1)
+    .reduce((n, v) => {
+      const base =
+        (w.s.vehicles[v.type]?.places ?? 0) +
+        w.s.vehicleLevels.placesPerLevel * ((h.levels[v.type] ?? 1) - 1);
+      return n + base + Math.floor((base * bps) / 10_000);
     }, 0);
 }
 
-function deliverOrders(w: World, h: House, sinceMs: number) {
+/**
+ * The cities' orders (1 November, after Hades' Star's shipments): a city its counters serve fills
+ * with an order every interval of its size, up to its cap; each a lot of a good its workshops
+ * make. A session finds what came since the last one (the cap at most), and its carts bring as
+ * many as their places allow, `roundsPerSession` loads (a hop is a few seconds), from its stock.
+ */
+function ordersSince(w: World, size: number, sinceHours: number): number {
+  const o = w.s.orders;
+  if (!o) return 0;
+  const k = Math.min(5, Math.max(1, size)) - 1;
+  const every = o.everyMinutes[k] ?? 120;
+  return Math.min(o.cap[k] ?? 0, Math.max(1, Math.floor((sinceHours * 60) / every)));
+}
+
+/** The goods its workshops make, as the orders draw them. */
+function orderGoods(h: House): string[] {
+  return [...new Set(h.workshops.map((x) => x.good))].sort();
+}
+
+/** The orders a session finds in the cities its counters serve (two sessions a day). */
+function ordersPerSession(w: World, h: House): number {
+  if (!w.s.orders) return Number.POSITIVE_INFINITY;
+  if (orderGoods(h).length === 0) return 0;
+  const covered = citiesCovered(seen(h), w.s);
+  return w.s.map.cities
+    .filter((c) => covered.has(c.code))
+    .reduce((n, c) => n + ordersSince(w, c.size, 12), 0);
+}
+
+function deliverOrders(w: World, h: House, sinceHours: number) {
   const o = w.s.orders;
   if (!o) return;
-  const waves = wavesSince(w, sinceMs);
-  let cap = landCapacity(w, h) * w.m.roundsPerSession;
+  let places = landPlaces(w, h) * w.m.roundsPerSession;
   const covered = citiesCovered(seen(h), w.s);
-  const convoy =
-    tradeEffect(w, h, "orderBonus") +
-    // The Livre de route's premium, on the share of the units loaded on the way.
-    Math.floor((tradeEffect(w, h, "ledger") * w.m.ledgerShareBps) / 10_000) +
-    identityEffect(w, h, "orderBonus");
+  const convoy = tradeEffect(w, h, "orderBonus") + identityEffect(w, h, "orderBonus");
+  const all = orderGoods(h);
   for (const c of w.s.map.cities) {
-    if (cap <= 0) return;
+    if (places <= 0) return;
     if (!covered.has(c.code)) continue;
-    const r = w.s.regions.find((x) => x.code === c.region);
-    if (!r) continue;
-    const goods = Object.keys(r.demands);
+    const goods = all.filter((g) => orderRefOf(w.s, c.region, g) !== null);
     if (goods.length === 0) continue;
-    const size = Math.min(5, Math.max(1, c.size));
-    // The expected orders of the waves: so many of each good of the region.
-    const asked =
-      (((waves * (o.perSize[size - 1] ?? 1) * o.qtyPerSize * size * 3) / 2 / goods.length) *
-        boostOf(w, h, c.region)) /
-      10_000;
-    for (const good of goods) {
-      if (cap <= 0) return;
-      if (!homesOf(h, good).has(c.region)) continue;
-      const n = Math.min(Math.floor(asked), h.stock.get(good) ?? 0, cap);
-      if (n <= 0) continue;
-      takeStock(h, good, n);
-      cap -= n;
-      const ref = r.demands[good] ?? 0n;
-      const bps = 10_000 + o.premiumBps + o.sizeBps * (size - 1) + o.distanceBps + convoy;
-      const gross = applyBpsFloor(ref * BigInt(n), bps);
+    const n = ordersSince(w, c.size, sinceHours);
+    // The orders drawn among its goods: so many of each, the rest to the first ones.
+    goods.forEach((good, i) => {
+      const ref = orderRefOf(w.s, c.region, good);
+      if (places <= 0 || ref === null || !homesOf(h, good).has(c.region)) return;
+      const asked = Math.floor(n / goods.length) + (i < n % goods.length ? 1 : 0);
+      const lot = lotOf(w.s, good, ref);
+      const k = Math.min(asked, Math.floor((h.stock.get(good) ?? 0) / lot), places);
+      if (k <= 0) return;
+      takeStock(h, good, k * lot);
+      places -= k;
+      const gross = applyBpsFloor(ref * BigInt(k * lot), 10_000 + o.premiumBps + convoy);
       receive(w, h, gross, "orders", "orders");
       h.ordersValue += gross;
       h.favour += Number(gross / (100n * DENIERS_PER_DUCAT)) * w.m.favourPer100Ducats;
-    }
+    });
   }
 }
 
@@ -391,11 +392,7 @@ function fillOrders(
 ): number {
   // A world of orders has no daily book nor board: what a ship brings sells at the Dogana.
   if (w.s.orders) return 0;
-  const convoy =
-    tradeEffect(w, h, "orderBonus") +
-    // The Livre de route's premium, on the share of the units loaded on the way.
-    Math.floor((tradeEffect(w, h, "ledger") * w.m.ledgerShareBps) / 10_000) +
-    identityEffect(w, h, "orderBonus");
+  const convoy = tradeEffect(w, h, "orderBonus") + identityEffect(w, h, "orderBonus");
   const small = h.casa <= w.m.smallCasa;
   const mk = market(w, region, good);
   let left = qty;
@@ -836,7 +833,7 @@ function tryVehicle(w: World, h: House): boolean {
   const most = 2 + Math.floor(h.casa / 2);
   if (h.vehicles.length >= most) return false;
   // A cart more while the orders of a session outgrow what its carts bring.
-  if (landCapacity(w, h) * w.m.roundsPerSession >= ordersPerSession(w, h)) return false;
+  if (landPlaces(w, h) * w.m.roundsPerSession >= ordersPerSession(w, h)) return false;
   const pick = Object.entries(w.m.vehicles)
     .filter(([, v]) => v.casa <= h.casa)
     .sort((a, b) => b[1].capacity - a[1].capacity)[0];
@@ -868,21 +865,19 @@ function tryModel(w: World, h: House): boolean {
   const lv = w.s.vehicleLevels;
   if (w.s.map.depot && !h.depot) return false;
   // Only while the orders outgrow the carts: a hold more is worth only what it brings.
-  if (landCapacity(w, h) * w.m.roundsPerSession >= ordersPerSession(w, h)) return false;
+  if (landPlaces(w, h) * w.m.roundsPerSession >= ordersPerSession(w, h)) return false;
   const owned = new Map<string, number>();
   for (const v of h.vehicles) owned.set(v.type, (owned.get(v.type) ?? 0) + 1);
-  const r = w.s.regions.find((x) => x.code === "veneto");
-  const goods = Object.keys(r?.demands ?? {});
-  if (goods.length === 0) return false;
-  const avg = goods.reduce((a, g) => a + market(w, "veneto", g).ref, 0n) / BigInt(goods.length);
+  // An order's pay, about: its lot's worth and the premium.
+  const avg = applyBpsFloor(d(w.s.orders?.lotDucats ?? 0), 10_000 + (w.s.orders?.premiumBps ?? 0));
   for (const [type, count] of owned) {
     const spec = w.m.vehicles[type];
     const level = h.levels[type] ?? 1;
     if (!spec || level >= lv.max) continue;
     const cost =
       d(Math.max(spec.costDucats, lv.minCostDucats)) * BigInt(lv.costTimes) * 2n ** BigInt(level);
-    const more = Math.floor((spec.capacity * lv.stepBps) / 10_000) * count;
-    // The orders' premium on the units more a day (two sessions, its rounds each).
+    const more = lv.placesPerLevel * count;
+    // The orders' premium on the places more a day (two sessions, its rounds each).
     const perDay = (avg * BigInt(more * w.m.roundsPerSession * 2)) / 10n;
     if (perDay <= 0n || cost > perDay * BigInt(w.m.paybackDays) || spendable(w, h) < cost) continue;
     destroy(w, h, cost, "vehicles");
