@@ -124,7 +124,7 @@ export function startTour(
   const v = h.vehicles?.find((x) => x.id === vehicleId);
   if (!v) fail("unknown_building");
   const spec = s.vehicles[v.type];
-  if (!spec || spec.build) fail("unknown_building_type");
+  if (!spec) fail("unknown_building_type");
   if (v.busyUntil > tx.now) fail("building_busy");
   if (!Array.isArray(stops) || stops.length === 0 || stops.length > 8) fail("invalid_quantity");
   const post = standingPosts(h, s).find((p) => p.id === (v.at ?? HOME_POST));
@@ -251,7 +251,7 @@ export function autoTour(
         .map((c) => c.city);
   for (const v of h.vehicles ?? []) {
     const spec = s.vehicles[v.type];
-    if (!spec || spec.build || v.busyUntil > tx.now) continue;
+    if (!spec || v.busyUntil > tx.now) continue;
     const at = v.at ?? HOME_POST;
     let room = Math.min(qty, capacityOf(h, v.type, s));
     const stops: { city: string; order: number; qty: number }[] = [];

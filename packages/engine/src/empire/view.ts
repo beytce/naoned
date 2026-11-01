@@ -14,7 +14,6 @@ import {
 } from "../state.js";
 import { carnetPreview, carnetWeek } from "./carnet.js";
 import { catchupCut } from "./catchup.js";
-import { corsairRiskBps } from "./corsairs.js";
 import {
   buildMinutesOf,
   casaLevelOf,
@@ -23,7 +22,6 @@ import {
   lotYieldBps,
 } from "./curves.js";
 import { houseEffect } from "./effects.js";
-import { extractionTeams as teamsOf } from "./extraction.js";
 import { capacityOf, upgradeCost, vehicleLevelOf } from "./fleet.js";
 import {
   counterCostOf,
@@ -35,7 +33,6 @@ import {
 } from "./house.js";
 import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import {
-  arsenalCost,
   buyableOf,
   citiesCovered,
   citiesFound,
@@ -49,8 +46,7 @@ import {
   sectorCost,
   standingPosts,
 } from "./map.js";
-import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
-import { mudaDepartureAfter } from "./mudaSail.js";
+import { researchCost, researchMinutesOf } from "./modules.js";
 import { type CityOrders, ordersOf } from "./orders.js";
 import { bandOf } from "./power.js";
 import { regionOf } from "./prices.js";
@@ -122,10 +118,6 @@ export interface EmpireView {
       capacity: number;
       regions: string[];
       speedBps: number;
-      /** A ship of the Arsenal: its site's minutes and materials, its places of modules. */
-      build: { minutes: number; materials: Record<string, number> } | null;
-      slots: number;
-      muda: boolean;
       /** The house's level of the model, and the price of its next (null at the last). */
       level: number;
       upgrade: Deniers | null;
@@ -139,7 +131,6 @@ export interface EmpireView {
       /** The counter it stands at, or is bound for. */
       at: string;
     }[];
-    voyages: EmpireVoyage[];
     haulPerDay: number;
   };
   /** The Scuola: its places, what runs, each module open in the world and its next level. */
@@ -152,50 +143,13 @@ export interface EmpireView {
       effect: string;
       level: number;
       next: EmpireSite | null;
-      plans: number;
     }[];
   };
-  /** The deposits the house sees (its regions, everywhere with the remote concession), its teams. */
-  deposits: {
-    id: string;
-    region: string;
-    good: string;
-    stock: number;
-    teams: number;
-    mine: boolean;
-  }[];
-  teams: { max: number; used: number };
   /** The workshops' places for modules, and their neighbourhood's bonus (bps). */
   workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
   /** What the court of Venice still takes today. */
   courtLeft: number;
   identity: EmpireIdentity;
-  /** The Muda (CADRAGE-v3 § 3.3): its next departure, the house's bids and places won. */
-  muda: {
-    next: number | null;
-    bids: { vehicleId: string; amount: Deniers }[];
-    passes: { vehicleId: string; departure: number; until: number }[];
-    last: { departure: number; places: number; reserve: Deniers; prices: Deniers[] } | null;
-  };
-  /** The colleganze: the voyages open to stakes, the house's own, its record as a traveller. */
-  colleganze: {
-    open: {
-      id: string;
-      traveller: string;
-      mine: boolean;
-      vehicleType: string;
-      from: string;
-      to: string;
-      good: string;
-      qty: number;
-      target: Deniers;
-      staked: Deniers;
-      myStake: Deniers;
-      status: string;
-      record: { voyages: number; returnBps: number } | null;
-    }[];
-    record: { voyages: number; returnBps: number } | null;
-  };
   /** The Terraferma (CADRAGE-v3 § 8): the week, the house's theatre, the Contesa's roster. */
   terra: {
     week: number;
@@ -276,8 +230,6 @@ export interface KnowledgeNodeView {
 export interface EmpireRegionView {
   code: string;
   casa: number;
-  /** The corsairs' risk on the way there (bps), shown before any departure. */
-  corsairRiskBps: number;
   hoursFromVenice: number;
   workshopSlots: number;
   /** The goods it makes cheaply (a workshop makes no other raw good there) and those it asks. */
@@ -335,8 +287,6 @@ export interface EmpireMapView {
   cities: { code: string; cell: string; region: string; x: number; y: number; size: number }[];
   /** How far a counter reveals. */
   radius: number;
-  /** The Arsenal to build: its ducats, its minutes, its Casa; null once it stands or without one. */
-  arsenalSite: { cost: Deniers; minutes: number; casa: number } | null;
   /** The Campo to build, likewise. */
   campSite: { cost: Deniers; minutes: number; casa: number } | null;
   /** The Remise's cell: the land vehicles bought and raised there. */
@@ -476,17 +426,6 @@ export function empireView(
     tours: house.tours ?? [],
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
-    deposits: (state.empire?.deposits ?? [])
-      .filter((d) => counterLevel(house, d.region) > 0 || houseEffect(house, "range", s) > 0)
-      .map((d) => ({
-        id: d.id,
-        region: d.region,
-        good: d.good,
-        stock: d.stock,
-        teams: d.teams.length,
-        mine: d.teams.includes(playerId),
-      })),
-    teams: { max: teamsOf(house, s), used: (house.teams ?? []).length },
     workshopPlaces: Object.fromEntries(
       house.workshops.map((w) => [
         w.id,
@@ -500,42 +439,6 @@ export function empireView(
     identity: identityOf(house, s),
     aid: aidOf(state, house, now, s),
     terra: terraOf(ctx, state, playerId, house, now, s),
-    muda: {
-      next: s.muda.vehicles.length > 0 ? mudaDepartureAfter(now, s) : null,
-      bids: (state.empire?.muda?.bids ?? [])
-        .filter((b) => b.house === playerId)
-        .map((b) => ({ vehicleId: b.vehicleId, amount: b.amount })),
-      passes: (house.mudaPasses ?? []).filter((p) => p.until > now),
-      last: state.empire?.muda?.lastResult ?? null,
-    },
-    colleganze: {
-      open: (state.empire?.colleganze ?? [])
-        .filter(
-          (c) =>
-            c.status === "open" ||
-            c.traveller === playerId ||
-            c.stakes.some((x) => x.house === playerId),
-        )
-        .map((c) => {
-          const traveller = state.empire?.houses[c.traveller];
-          return {
-            id: c.id,
-            traveller: c.traveller,
-            mine: c.traveller === playerId,
-            vehicleType: traveller?.vehicles?.find((v) => v.id === c.vehicleId)?.type ?? "",
-            from: c.from,
-            to: c.to,
-            good: c.good,
-            qty: c.qty,
-            target: c.target,
-            staked: c.stakes.reduce((a, x) => a + x.amount, 0n),
-            myStake: c.stakes.find((x) => x.house === playerId)?.amount ?? 0n,
-            status: c.status,
-            record: traveller?.colleganzaRecord ?? null,
-          };
-        }),
-      record: house.colleganzaRecord ?? null,
-    },
   };
 }
 
@@ -711,7 +614,6 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
     return {
       code: r.code,
       casa: r.casa,
-      corsairRiskBps: corsairRiskBps(r.code, 0, s),
       hoursFromVenice: r.hoursFromVenice,
       workshopSlots: workshopPlaces(house, r.code, s) || r.workshopSlots,
       produces: Object.keys(r.produces),
@@ -728,8 +630,6 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
 /** The map as the house sees it: its cells, its counters, its Arsenal, the cities it found. */
 function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
   const seen = revealedOf(house, s);
-  const a = s.map.arsenal;
-  const building = house.builds.some((b) => b.kind === "arsenal");
   return {
     cells: Object.fromEntries(
       Object.entries(s.map.cells)
@@ -780,10 +680,6 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
         return { code: c.code, cell: c.cell, region: c.region, x, y, size: c.size };
       }),
     radius: s.map.revealRadius,
-    arsenalSite:
-      a && !house.arsenal && !building
-        ? { cost: arsenalCost(s), minutes: a.minutes, casa: a.casa }
-        : null,
     campSite:
       s.map.camp && !house.camp && !house.builds.some((b) => b.kind === "camp")
         ? {
@@ -814,7 +710,6 @@ const plainSite = (cost: Deniers, minutes: number, level: number): EmpireSite =>
 function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s: EmpireSettings) {
   const hold = houseEffect(house, "capacity", s);
   const capacity = (c: number) => Number(applyBpsFloor(BigInt(c), 10_000 + hold));
-  // A ship's hold counts its own fitted modules only.
   const mine = (house.vehicles ?? []).map((v) => ({
     ...v,
     at: v.at ?? "home",
@@ -833,14 +728,10 @@ function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s
       capacity: capacity(capacityOf(house, type, s)),
       regions: v.regions,
       speedBps: v.speedBps,
-      build: v.build ?? null,
-      slots: v.slots,
-      muda: s.muda.vehicles.includes(type),
       level: vehicleLevelOf(house, type),
       upgrade: upgradeCost(house, type, s),
     })),
     mine,
-    voyages: (state.empire?.voyages ?? []).filter((v) => v.house === playerId),
     haulPerDay:
       mine
         .filter((v) => s.vehicles[v.type]?.regions.length === 1)
@@ -867,7 +758,6 @@ function researchOf(house: EmpireHouse, s: EmpireSettings): EmpireView["research
           nextLevel > s.research.minutes.length
             ? null
             : plainSite(researchCost(nextLevel, s), researchMinutesOf(nextLevel, s), nextLevel),
-        plans: plansFor(nextLevel, s),
       };
     }),
   };

@@ -47,7 +47,6 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     // Shared by its seven cities, Venice weighing twenty (the map that grows): the founding serves
     // twenty-one parts in twenty-six, every city found and reached adds to it (calibration.md).
     localOrdersPerCounter: 22,
-    corsairRiskBps: 0,
   },
   {
     code: "lombardia",
@@ -58,7 +57,6 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     produces: { iron: 9 * D, wool: 8 * D, wheat: 4 * D },
     demands: { salt: 9 * D, glass: 30 * D, cloth: 40 * D },
     localOrdersPerCounter: 20,
-    corsairRiskBps: 0,
   },
   {
     code: "friuli",
@@ -69,7 +67,6 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     produces: { wood: 2 * D, marble: 15 * D, wine: 6 * D },
     demands: { bread: 13 * D, iron: 14 * D, cloth: 42 * D },
     localOrdersPerCounter: 16,
-    corsairRiskBps: 0,
   },
   {
     code: "romagna",
@@ -80,7 +77,6 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     produces: { salt: 3 * D, wheat: 3 * D },
     demands: { planks: 13 * D, glass: 32 * D },
     localOrdersPerCounter: 16,
-    corsairRiskBps: 100,
   },
   {
     code: "dalmazia",
@@ -91,7 +87,6 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     produces: { oak: 12 * D, salt: 3 * D, wine: 5 * D },
     demands: { bread: 14 * D, cloth: 46 * D, iron: 15 * D },
     localOrdersPerCounter: 16,
-    corsairRiskBps: 400,
   },
   {
     code: "germania",
@@ -102,7 +97,6 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     produces: { silver: 60 * D, copper: 20 * D, iron: 7 * D },
     demands: { spices: 110 * D, glass: 45 * D, silk: 160 * D },
     localOrdersPerCounter: 6,
-    corsairRiskBps: 200,
   },
   {
     code: "grecia",
@@ -113,7 +107,6 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     produces: { sugar: 25 * D, wine: 4 * D, cotton: 18 * D },
     demands: { cloth: 50 * D, glass: 40 * D, iron: 16 * D },
     localOrdersPerCounter: 6,
-    corsairRiskBps: 800,
   },
   {
     code: "levante",
@@ -124,7 +117,6 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     produces: { spices: 35 * D, silk: 80 * D, cotton: 12 * D },
     demands: { cloth: 60 * D, silver: 85 * D, copper: 32 * D, glass: 50 * D },
     localOrdersPerCounter: 5,
-    corsairRiskBps: 1_200,
   },
   {
     code: "costantinopoli",
@@ -135,7 +127,6 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     produces: { alum: 20 * D, furs: 40 * D, wheat: 3 * D },
     demands: { cloth: 58 * D, glass: 48 * D, spices: 90 * D },
     localOrdersPerCounter: 5,
-    corsairRiskBps: 1_500,
   },
   {
     code: "fiandra",
@@ -146,7 +137,6 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     produces: { cloth: 30 * D, wool: 6 * D },
     demands: { spices: 140 * D, silk: 200 * D, alum: 45 * D, sugar: 55 * D, wine: 14 * D },
     localOrdersPerCounter: 5,
-    corsairRiskBps: 1_000,
   },
 ];
 
@@ -165,33 +155,8 @@ const module = (
 /** The modules (profondeur.md § B), each from level 1 to 10. */
 const MODULES = [
   module("hold", "trade", "capacity", 1_500, 700),
-  module("sails", "trade", "speed", 1_000, 500),
-  module("prompt", "trade", "turnaround", 2_000, 800),
-  module("courier", "trade", "dispatch", 1_000, 500),
-  module("floating", "trade", "portSale", 500, 300),
   module("convoy", "trade", "orderBonus", 500, 300),
-  module("flag", "trade", "warPass", 3_000, 700),
-  module("portolan", "trade", "intel", 2_000, 800),
-  module("letter", "trade", "noCash", 1_000, 1_000),
-  module("recall", "trade", "recall", 1_000, 1_000),
-  module("yield", "extract", "yield", 2_000, 1_000),
-  module("campaign", "extract", "burst", 3_000, 3_000),
-  module("remote", "extract", "range", 1_000, 1_000),
-  module("prospect", "extract", "spawn", 1_000, 500),
-  module("sustain", "extract", "depletion", 1_000, 500),
-  module("haul", "extract", "haul", 1_000, 1_000),
-  module("crossbow", "arms", "strength", 2_000, 1_200),
-  module("bombard", "arms", "strength", 2_500, 1_400),
-  module("greekfire", "arms", "strength", 2_200, 1_300),
-  module("culverin", "arms", "strength", 2_400, 1_300),
-  module("pavise", "arms", "defence", 2_000, 1_000),
-  module("mantlet", "arms", "defence", 2_500, 1_100),
-  module("cuirass", "arms", "defence", 3_000, 1_200),
-  module("surgeon", "arms", "support", 1_500, 800),
-  module("scout", "arms", "support", 1_000, 600),
-  module("victualler", "arms", "support", 1_000, 600),
-  module("engineer", "arms", "support", 1_500, 800),
-  module("trumpet", "arms", "support", 1_000, 600),
+  module("haul", "trade", "haul", 1_000, 1_000),
   module("tools", "workshop", "workshopYield", 1_000, 500),
   module("apprentices", "workshop", "workshopSpeed", 1_000, 500),
   module("master", "workshop", "quality", 1_000, 500),
@@ -245,8 +210,6 @@ export const venice1450Empire: EmpireSettingsInput = {
     reach: { base: 36, perLevel: 8 },
     postSpacing: 8,
     costStepBps: 2_500,
-    // The Arsenal gone (1 November): the ships are built at the Remise.
-    arsenal: null,
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
     // fell short of their share, calibration.md).
     camp: { costDucats: 600, casa: 4, minutes: 240 },
@@ -283,44 +246,6 @@ export const venice1450Empire: EmpireSettingsInput = {
       regions: ["veneto", "lombardia", "friuli", "germania"],
       speedBps: 0,
     },
-    // The ships of the private Arsenal (step 7a), as the 24-month simulator has them: built on a
-    // site, with places for trade modules; the galea and the Flanders galley sail with the Muda.
-    marciliana: {
-      casa: 9,
-      capacity: 150,
-      costDucats: 1_500,
-      regions: ADRIATIC,
-      speedBps: 2_000,
-      build: { minutes: 480, materials: { planks: 80, oak: 20 } },
-      slots: 2,
-    },
-    cocca: {
-      casa: 11,
-      capacity: 300,
-      costDucats: 3_500,
-      regions: SEA,
-      speedBps: 2_000,
-      build: { minutes: 1_440, materials: { planks: 150, oak: 60 } },
-      slots: 3,
-    },
-    galea: {
-      casa: 14,
-      capacity: 500,
-      costDucats: 9_000,
-      regions: GALLEY,
-      speedBps: 3_000,
-      build: { minutes: 2_880, materials: { planks: 250, oak: 120, iron: 40 } },
-      slots: 4,
-    },
-    fiandra: {
-      casa: 18,
-      capacity: 800,
-      costDucats: 25_000,
-      regions: [...GALLEY, "fiandra"],
-      speedBps: 3_000,
-      build: { minutes: 5_760, materials: { planks: 400, oak: 200, iron: 80 } },
-      slots: 4,
-    },
   },
   // The cities' orders, renewed every two hours, brought on rounds of a few minutes (1 November,
   // after Hades' Star's shipments): a town of size 1 asks one order, a capital five.
@@ -354,7 +279,7 @@ export const venice1450Empire: EmpireSettingsInput = {
         nodes: [
           { code: "tariffa", effects: { taxCut: 50 } },
           { code: "scritta", effects: { orderBonus: 500 } },
-          { code: "libro", effects: { book: 1_000 } },
+          { code: "libro", effects: { orderBonus: 1_000 } },
           { code: "cambio", effects: { taxCut: 50 } },
         ],
         capstones: [
@@ -365,9 +290,9 @@ export const venice1450Empire: EmpireSettingsInput = {
       {
         code: "navigazione",
         nodes: [
-          { code: "bussola", effects: { speed: 1_000 } },
+          { code: "bussola", effects: { haul: 500 } },
           { code: "stiva", effects: { capacity: 1_000 } },
-          { code: "corriere", effects: { intel: 3_333 } },
+          { code: "corriere", effects: { orderBonus: 500 } },
           { code: "carri", effects: { haul: 1_000 } },
         ],
         capstones: [
@@ -394,7 +319,7 @@ export const venice1450Empire: EmpireSettingsInput = {
           { code: "lettere", effects: { charterCut: 2_000 } },
           { code: "patti", effects: { counterCut: 1_000 } },
           { code: "favori", effects: { carnetFavour: 2_000 } },
-          { code: "squadre", effects: { teamsExtra: 1 } },
+          { code: "squadre", effects: { counterCut: 1_000 } },
         ],
         capstones: [
           { code: "ambasciata", effects: { charterCut: 5_000 } },
@@ -481,36 +406,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     baseCostDucats: 50,
     costGrowthBps: 16_000,
     minutes: [30, 90, 240, 480, 960, 1_440, 2_880, 5_760, 10_080, 14_400],
-    plansFromLevel: 4,
-    plansPerLevel: 2,
-    // Step 4: the trade modules whose systems exist, and the deposits'; the others wait for theirs.
-    available: [
-      "hold",
-      "sails",
-      "portolan",
-      "convoy",
-      "yield",
-      "remote",
-      "tools",
-      "apprentices",
-      "master",
-      "furnace",
-    ],
+    // One trade, delivering (1 November): the carts' hold and haul, the orders' bonus, the
+    // workshops'. The sea, the deposits and the expeditions are gone.
+    available: ["hold", "convoy", "haul", "tools", "apprentices", "master", "furnace"],
   },
-  deposits: { spawnBpsPerRegionDay: 15_000, minStock: 1_000, maxStock: 5_000, teamPerHour: 30 },
-  expeditions: {
-    tiers: Array.from({ length: 12 }, (_, i) => ({
-      strength: Math.round(10 * 1.6 ** i),
-      relics: 1 + Math.floor(i / 2),
-    })),
-    baseSuccessBps: 6_500,
-  },
-  corsairs: { lossShareBps: 2_500, escortHalving: 30 },
-  muda: {
-    vehicles: ["galea", "fiandra"],
-    departuresPerWeek: 2,
-    placesShareBps: 5_000,
-    reserveDaysBps: 10_000,
-  },
-  colleganza: { travellerShareBps: 2_500 },
 };

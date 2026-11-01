@@ -322,8 +322,8 @@ function namePosts(h: EmpireHouse, s: EmpireSettings): void {
  */
 export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   if (!hasMap(s)) return;
-  // The Arsenal gone (1 November): a house that had one has its Remise there, its ships with it.
-  if (!s.map.arsenal && s.map.depot && h.arsenal && !h.depot) h.depot = h.arsenal;
+  // The Arsenal gone (1 November): a house that had one has its Remise there.
+  if (s.map.depot && h.arsenal && !h.depot) h.depot = h.arsenal;
   // The sectors bought one by one: a house of before owns those it has built on.
   if (s.map.unlock && !h.unlocked && h.revealed && h.mapVersion === s.map.version)
     h.unlocked = ownedAtStart(h, s);
@@ -334,7 +334,7 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   }
   // A house that already bought a land vehicle keeps its Remise: in Venetia.
   if (s.map.depot && !h.depot) {
-    const land = (h.vehicles ?? []).filter((v) => !s.vehicles[v.type]?.build).length;
+    const land = (h.vehicles ?? []).length;
     const home = homeCell(s);
     if (home && (land > s.start.vehicles.length || h.vehicleLevels)) h.depot = home;
   }
@@ -356,9 +356,6 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   namePosts(h, s);
   // The sectors owned: Venice's, and those of its counters and buildings.
   if (s.map.unlock) h.unlocked = ownedAtStart(h, s);
-  const coast = [homeCell(s), ...regionCells(s, HOME)].find((c) => c && s.map.cells[c]?.coast);
-  const ships = (h.vehicles ?? []).some((v) => s.vehicles[v.type]?.build);
-  if ((ships || h.arsenal) && (moved || !h.arsenal) && coast) h.arsenal = coast;
   if (h.camp && moved) h.camp = homeCell(s) ?? h.camp;
   if (h.depot && moved) h.depot = homeCell(s) ?? h.depot;
   // The sites under way on the cells of before end where they now stand.
@@ -454,22 +451,6 @@ export function placeCounter(
   });
 }
 
-/** Puts the Arsenal on a coast the house sees, from the Casa of its first ship. */
-export function buildArsenal(tx: Tx, playerId: PlayerId, cell: string): void {
-  const s = empireSettings(tx.ctx);
-  const h = ownHouse(tx, playerId);
-  ensureMap(h, s);
-  const a = s.map.arsenal;
-  if (!a) fail("unknown_building_type");
-  const c = s.map.cells[cell];
-  if (!c?.coast) fail("unknown_cell");
-  if (!revealedOf(h, s).has(cell)) fail("hidden_cell");
-  if (h.arsenal || h.builds.some((b) => b.kind === "arsenal")) fail("built");
-  if (h.casa < a.casa) fail("requirement_unmet");
-  const site = openSite(tx, playerId, h, arsenalCost(s), {}, a.minutes, 0);
-  h.builds.push({ kind: "arsenal", level: 1, region: c.region, cell, ...site });
-}
-
 /**
  * Puts the Campo on a land cell the house sees, with nothing else on it, from its Casa: the door
  * of the Terraferma (decision of the owner, 31 October 2026).
@@ -518,19 +499,6 @@ export function checkDepot(h: EmpireHouse, s: EmpireSettings): void {
 /** The Campo asked by the Terraferma, in a world that sets one. */
 export function checkCamp(h: EmpireHouse, s: EmpireSettings): void {
   if (hasMap(s) && s.map.camp && !h.camp) fail("no_camp");
-}
-
-/** The Arsenal's ducats, in deniers. */
-export const arsenalCost = (s: EmpireSettings): Deniers =>
-  BigInt(s.map.arsenal?.costDucats ?? 0) * DENIERS_PER_DUCAT;
-
-/**
- * The yard of the ships: the Arsenal in a world that sets one, else the Remise (the Arsenal gone,
- * decision of the owner, 1 November 2026).
- */
-export function checkArsenal(h: EmpireHouse, s: EmpireSettings): void {
-  if (hasMap(s) && s.map.arsenal && !h.arsenal) fail("no_arsenal");
-  if (hasMap(s) && !s.map.arsenal && s.map.depot && !h.depot) fail("no_depot");
 }
 
 /**

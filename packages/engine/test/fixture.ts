@@ -406,7 +406,6 @@ export const testEmpire: EmpireSettingsInput = {
     ],
     revealRadius: 2,
     costStepBps: 2_500,
-    arsenal: { costDucats: 500, casa: 2, minutes: 60 },
   },
   regions: [
     {
@@ -418,7 +417,6 @@ export const testEmpire: EmpireSettingsInput = {
       produces: { wheat: 400 },
       demands: { bread: 1_200, spices: 6_000 },
       localOrdersPerCounter: 40,
-      corsairRiskBps: 0,
     },
     {
       code: "lombardia",
@@ -429,7 +427,6 @@ export const testEmpire: EmpireSettingsInput = {
       produces: { iron: 900 },
       demands: { salt: 700 },
       localOrdersPerCounter: 30,
-      corsairRiskBps: 0,
     },
     {
       code: "levante",
@@ -440,7 +437,6 @@ export const testEmpire: EmpireSettingsInput = {
       produces: { spices: 2_500 },
       demands: { cloth: 3_000 },
       localOrdersPerCounter: 20,
-      corsairRiskBps: 1_200,
     },
   ],
   modules: [
@@ -459,18 +455,5 @@ export const testEmpire: EmpireSettingsInput = {
     baseCostDucats: 2_000,
     costGrowthBps: 14_000,
     minutes: [30, 60, 120, 240, 480, 960, 1_440, 2_880, 7_200, 14_400],
-    plansFromLevel: 4,
-    plansPerLevel: 2,
   },
-  deposits: { spawnBpsPerRegionDay: 3_000, minStock: 200, maxStock: 1_000, teamPerHour: 10 },
-  expeditions: {
-    tiers: [
-      { strength: 10, relics: 1 },
-      { strength: 25, relics: 2 },
-      { strength: 60, relics: 3 },
-    ],
-    baseSuccessBps: 6_000,
-  },
-  corsairs: { lossShareBps: 3_000, escortHalving: 20 },
-  colleganza: { travellerShareBps: 2_500 },
 };
