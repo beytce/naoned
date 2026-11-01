@@ -583,6 +583,7 @@ function Founding({ busy, onJoin, name }: { busy: boolean; onJoin: () => void; n
 function siteLabel(p: EmpirePayload, b: EmpireBuild): string {
   if (b.kind === "casa") return t.sites.casa(b.level);
   if (b.kind === "newWorkshop") return t.sites.newWorkshop(buildingName(p, b.workshopType ?? ""));
+  if (b.kind === "depot") return t.sites.depot(b.level);
   if (b.kind === "ship")
     return t.sites.ship(t.vehicleNames[b.vehicleType ?? ""] ?? b.vehicleType ?? "");
   const ws = p.view?.house.workshops.find((w) => w.id === b.workshopId);

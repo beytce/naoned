@@ -459,6 +459,7 @@ export const en: Dictionary = {
       casa: (n: number) => `Casa ${n}`,
       newWorkshop: (name: string) => `New ${name}`,
       ship: (name: string) => `${name} at the Arsenal`,
+      depot: (n: number) => `Remise level ${n}`,
       upgrade: (name: string, n: number) => `${name} level ${n}`,
     },
     workshop: {
@@ -944,6 +945,13 @@ export const en: Dictionary = {
       at: (post: string) => `at ${post}`,
       upgradeHint:
         "Each level gives +10 % capacity to every vehicle of the model (+5 % for a ship).",
+      fleet: (n: number, cap: number, level: number) =>
+        `Remise level ${level} · ${n} vehicle${n > 1 ? "s" : ""} of ${cap}`,
+      full: "Remise full",
+      raise: (vehicles: number, cost: string, time: string) =>
+        `Enlarge the Remise (${vehicles} vehicles) · ${cost} · ${time}`,
+      raising: (at: string) => `Remise being enlarged, done at ${at}`,
+      fleetTop: "Remise at its largest",
     },
     scuola: {
       title: "The Scuola",

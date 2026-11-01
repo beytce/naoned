@@ -22,7 +22,7 @@ export interface EmpireWorkshop {
 }
 
 export interface EmpireBuild {
-  kind: "casa" | "newWorkshop" | "upgrade" | "counter" | "ship";
+  kind: "casa" | "newWorkshop" | "upgrade" | "counter" | "ship" | "depot";
   vehicleType?: string;
   region?: string;
   level: number;
@@ -61,6 +61,13 @@ export interface EmpireView {
   };
   power: number;
   band: number;
+  /** The fleet capped by the Remise's level (null without the fleet's levels). */
+  fleet?: {
+    level: number;
+    vehicles: number;
+    cap: number;
+    next: { level: number; vehicles: number; casa: number; cost: string; minutes: number } | null;
+  } | null;
   incomePerDay: string;
   asleep: boolean;
   nextCasa:
@@ -342,6 +349,7 @@ export type EmpireAction =
   | { type: "empireBuildCamp"; cell: string }
   | { type: "empireUnlockCell"; cell: string }
   | { type: "empireBuildDepot"; cell: string }
+  | { type: "empireUpgradeDepot" }
   | { type: "empireUpgradeVehicle"; vehicleType: string }
   | { type: "empireUpgradeCounter"; region: string }
   | { type: "empireBuyVehicle"; vehicleType: string }

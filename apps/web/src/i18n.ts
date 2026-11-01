@@ -379,6 +379,7 @@ const frDict = {
       casa: (n: number) => `Casa ${n}`,
       newWorkshop: (name: string) => `${name} neuf`,
       ship: (name: string) => `${name} à l'Arsenal`,
+      depot: (n: number) => `Remise niveau ${n}`,
       upgrade: (name: string, n: number) => `${name} niveau ${n}`,
     },
     workshop: {
@@ -873,6 +874,14 @@ const frDict = {
       at: (post: string) => `à ${post}`,
       upgradeHint:
         "Chaque niveau donne +10 % de capacité à tous les véhicules du modèle (+5 % pour un navire).",
+
+      fleet: (n: number, cap: number, level: number) =>
+        `Remise niveau ${level} · ${n} véhicule${n > 1 ? "s" : ""} sur ${cap}`,
+      full: "Remise pleine",
+      raise: (vehicles: number, cost: string, time: string) =>
+        `Agrandir la Remise (${vehicles} véhicules) · ${cost} · ${time}`,
+      raising: (at: string) => `Remise en travaux, finie à ${at}`,
+      fleetTop: "Remise au plus grand",
     },
     scuola: {
       title: "La Scuola",
