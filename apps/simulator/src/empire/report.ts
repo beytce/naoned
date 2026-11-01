@@ -253,6 +253,7 @@ export function reportMarkdown(results: EmpireResult[]): string {
     );
   }
   const w = r.world;
+  lines.push("", portaSection(r), "");
   const powers = w.houses.map((h) => power(w, h)).sort((a, b) => b - a);
   const top = powers.slice(0, 10);
   lines.push(
@@ -286,4 +287,37 @@ export function reportMarkdown(results: EmpireResult[]): string {
     `Violations de la comptabilité : ${results.reduce((n, x) => n + x.violations.length, 0)}. Durée : ${results.map((x) => `${(x.durationMs / 1000).toFixed(0)} s`).join(", ")}.`,
   );
   return lines.join("\n");
+}
+
+/**
+ * The Porta (docs/plan-porta.md, lot 6): the houses that played it, their battles, their best
+ * tier, their losses, the relics they sold and what the Porta made and destroyed.
+ */
+function portaSection(r: EmpireResult): string {
+  const w = r.world;
+  const hs = w.houses.filter((h) => h.porta);
+  const battles = hs.reduce((a, h) => a + (h.porta?.battles ?? 0), 0);
+  const won = hs.reduce((a, h) => a + (h.porta?.won ?? 0), 0);
+  const lostC = hs.reduce((a, h) => a + (h.porta?.lostCombat ?? 0), 0);
+  const lostT = hs.reduce((a, h) => a + (h.porta?.lostTransport ?? 0), 0);
+  const best = new Map<number, number>();
+  for (const h of hs) best.set(h.porta?.best ?? 0, (best.get(h.porta?.best ?? 0) ?? 0) + 1);
+  const relics = (["common", "rare", "precious", "legendary"] as const).map(
+    (k) => `${k} ${hs.reduce((a, h) => a + (h.porta?.relics[k] ?? 0), 0)}`,
+  );
+  const n = (why: string, of: Record<string, bigint>) =>
+    Number((of[why] ?? 0n) / 100n).toLocaleString("fr-FR");
+  const days = Math.max(1, r.options.months * 30);
+  return [
+    `## La Porta (graine ${r.options.seed})`,
+    "",
+    `${hs.length} Maisons ont posé la Porta ; ${battles} batailles (${(battles / days).toFixed(0)} par jour), ${battles > 0 ? Math.round((100 * won) / battles) : 0} % gagnées ; véhicules de combat perdus : ${lostC}, transports perdus : ${lostT}.`,
+    "",
+    `Meilleur palier gagné : ${[...best.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([t, k]) => `${t} → ${k}`)
+      .join(", ")}.`,
+    "",
+    `Reliques vendues : ${relics.join(", ")}. L'antiquaire a payé ${n("relics", w.createdBy)} d ; la Porta, les armes et les vivres ont détruit ${n("porta", w.destroyedBy)} d, ${n("arms", w.destroyedBy)} d et ${n("victuals", w.destroyedBy)} d.`,
+  ].join("\n");
 }

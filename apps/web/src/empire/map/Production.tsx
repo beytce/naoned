@@ -6,6 +6,7 @@ import { Sheet, Slab } from "../../ui.js";
 import { NewWorkshopList } from "../NewWorkshop.js";
 import { Charroi } from "../World.js";
 import { shownAt } from "../logic.js";
+import { pt } from "../porta/texts.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { fleetOf } from "./logic.js";
 
@@ -38,7 +39,7 @@ export function ProductionSheet({
   onClose: () => void;
   act: (a: EmpireAction) => Promise<void>;
   /** Puts a counter or a building down: the map in its mode of placing. */
-  onPlace: (kind: "post" | "camp" | "depot") => void;
+  onPlace: (kind: "post" | "camp" | "depot" | "porta") => void;
   /** The Remise, where the vehicles are bought, raised and sent. */
   onRemise?: () => void;
 }) {
@@ -114,7 +115,7 @@ function Buildings({
   onPlace,
 }: {
   p: EmpirePayload;
-  onPlace: (kind: "post" | "camp" | "depot") => void;
+  onPlace: (kind: "post" | "camp" | "depot" | "porta") => void;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -123,8 +124,9 @@ function Buildings({
   const cheapest = costs.length > 0 ? costs.reduce((a, b) => (b < a ? b : a)) : null;
   const camp = view.map.campSite;
   const depot = view.map.depotSite;
+  const porta = view.porta?.cell ? null : (view.porta?.site ?? null);
   const card = (
-    kind: "post" | "camp" | "depot",
+    kind: "post" | "camp" | "depot" | "porta",
     title: string,
     text: string,
     price: string | null,
@@ -138,7 +140,9 @@ function Buildings({
             ? Icon.troops()
             : kind === "depot"
               ? Icon.cart()
-              : Icon.anchor()}
+              : kind === "porta"
+                ? Icon.skirmish()
+                : Icon.anchor()}
       </span>
       <span className="min-w-0 flex-1 text-sm text-cream">
         {title}
@@ -163,6 +167,15 @@ function Buildings({
           pl.depotText(depot.casa),
           d(depot.cost),
           view.house.casa >= depot.casa,
+        )}
+      {porta &&
+        shownAt(view.house.casa, porta.casa) &&
+        card(
+          "porta",
+          pt.porta,
+          pt.placeText(porta.casa),
+          d(porta.cost),
+          view.house.casa >= porta.casa,
         )}
       {camp &&
         shownAt(view.house.casa, camp.casa) &&

@@ -2,6 +2,7 @@ import { d } from "../../game/format.js";
 import { fr } from "../../i18n.js";
 import { Slab } from "../../ui.js";
 import { affordable } from "../logic.js";
+import { pt } from "../porta/texts.js";
 import type { EmpirePayload } from "../types.js";
 import { type Placing, placeable, placingCost, pointCheck } from "./logic.js";
 
@@ -35,7 +36,13 @@ export function PlacingBar({
       data-placing-bar={placing.kind}
     >
       <h3 className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
-        {placing.kind === "camp" ? t.camp : placing.kind === "depot" ? t.depot : t.post}
+        {placing.kind === "camp"
+          ? t.camp
+          : placing.kind === "depot"
+            ? t.depot
+            : placing.kind === "porta"
+              ? pt.place
+              : t.post}
       </h3>
       <p className="mt-1 text-xs text-cream-dim">
         {none
@@ -44,7 +51,9 @@ export function PlacingBar({
             ? t.hintCamp
             : placing.kind === "depot"
               ? t.hintDepot
-              : t.hintPost}
+              : placing.kind === "porta"
+                ? pt.hint
+                : t.hintPost}
       </p>
       {check && (
         <p className="mt-1 text-xs font-semibold text-gold" data-point-check>

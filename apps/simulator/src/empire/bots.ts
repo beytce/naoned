@@ -50,6 +50,7 @@ import {
   type Workshop,
   type World,
 } from "./model.js";
+import { portaDay } from "./porta.js";
 import {
   addStock,
   bookOf,
@@ -974,6 +975,54 @@ function research(w: World, h: House) {
   }
 }
 
+// ——— The Porta (docs/plan-porta.md), in place of the expeditions of profondeur.md § C ———
+
+function expedition(w: World, h: House, rng: Rng) {
+  const s = w.s;
+  // The transport: its best free land vehicle, a relic for every `holdPerRelic` of its hold.
+  // Docked at the Porta in the game, it waits there: never asked free of the deliveries here.
+  // A house at the Porta buys the land vehicle of the biggest hold its Casa opens, for its relics.
+  if (h.porta) {
+    const best = Object.entries(w.s.vehicles)
+      .filter(([, v]) => v.casa <= h.casa)
+      .sort((a, b) => b[1].capacity - a[1].capacity)[0];
+    const owned = h.vehicles.some((v) => v.type === best?.[0]);
+    const price = best ? d(best[1].costDucats) : 0n;
+    if (best && !owned && spendable(w, h) >= price) {
+      destroy(w, h, price, "vehicles");
+      h.vehicles.push({ type: best[0], busyUntil: 0 });
+    }
+  }
+  // Any land vehicle, as the engine takes (`landVehicle`).
+  const land = h.vehicles
+    .filter((v) => w.s.vehicles[v.type] !== undefined)
+    .sort((a, b) => holdOf(w, h, b.type) - holdOf(w, h, a.type))[0];
+  const holdRelics = () =>
+    land
+      ? Math.max(1, Math.floor(holdOf(w, h, land.type) / s.porta.battle.transport.holdPerRelic))
+      : 0;
+  const loseTransport = () => {
+    if (land) h.vehicles = h.vehicles.filter((v) => v !== land);
+  };
+  const bread = w.markets.get("veneto:bread")?.ref ?? d(1);
+  const before = h.porta?.battles ?? 0;
+  portaDay(
+    w,
+    h,
+    rng,
+    // The armourer's trade comes first: half its treasury, whatever its next Casa asks.
+    () => (h.bent === "armourer" ? h.cash / 2n : spendable(w, h)),
+    holdRelics,
+    loseTransport,
+    bread,
+    w.m.portaBattlesPerDay[h.activity],
+    land ? d(w.s.vehicles[land.type]?.costDucats ?? 0) : 0n,
+  );
+  if (!h.porta || h.porta.battles === before) return;
+  h.expeditionsTried = h.porta.battles;
+  h.expeditionsWon = h.porta.won;
+}
+
 // ——— The session ———
 
 /** A bot's round of five minutes (CADRAGE-v3 § 4.1). */
@@ -988,9 +1037,11 @@ export function session(w: World, h: House, rng: Rng) {
   supplyAid(w, h, (g) => (inputs.has(g) ? Number.POSITIVE_INFINITY : (keep[g] ?? 0)));
   sellSurplus(w, h);
   sellToCourt(w, h);
+  if (h.bent === "armourer") expedition(w, h, rng);
   build(w, h);
   research(w, h);
   growIdentity(w, h, () => spendable(w, h));
+  if (h.bent === "mixed") expedition(w, h, rng);
   h.sessions++;
   const soon = w.now + DAY;
   const reachable = h.cash + incomePerDay(h);

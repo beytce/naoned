@@ -9,7 +9,8 @@
     "inspect": "tsx src/inspect.ts",
     "terra": "tsx src/terra-cli.ts",
     "condotta": "tsx src/condotta-cli.ts",
-    "empire": "tsx src/empire-cli.ts"
+    "empire": "tsx src/empire-cli.ts",
+    "porta-bench": "tsx src/porta-bench.ts"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*"

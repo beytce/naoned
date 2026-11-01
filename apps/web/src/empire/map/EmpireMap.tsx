@@ -29,6 +29,7 @@ import { clock } from "../../ui.js";
 import { EmpireOrbit } from "../Orbit.js";
 import { regionName } from "../World.js";
 import { bestQuote } from "../logic.js";
+import { pt } from "../porta/texts.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import {
   CHART,
@@ -509,6 +510,26 @@ export const EmpireMap = forwardRef<
                     {Icon.cart()}
                   </span>
                   <span className="map-name">{t.scene.depot}</span>
+                </button>
+              </div>
+            );
+          })()}
+        {p.view?.porta?.cell &&
+          (() => {
+            // The Porta: the gate to the lands of Rome (docs/plan-porta.md § 3).
+            const [px, py] = cellCentre(p.view.porta.cell);
+            return (
+              <div data-at={`${px + 9},${py - 9}`} className="map-pin">
+                <button
+                  type="button"
+                  onClick={() => onTarget({ kind: "porta" })}
+                  data-porta-mark
+                  className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-night-3 text-vermilion ring-2 ring-gold/70 shadow-md shadow-black/50 [&_svg]:h-5 [&_svg]:w-5">
+                    {Icon.skirmish()}
+                  </span>
+                  <span className="map-name">{pt.porta}</span>
                 </button>
               </div>
             );

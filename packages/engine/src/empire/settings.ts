@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { portaSettingsSchema } from "./porta/settings.js";
 
 /**
  * The persistent empire's parameters (CADRAGE-v3, docs/refonte-2026-10-29/profondeur.md), an
@@ -531,6 +532,8 @@ export const empireSettingsSchema = z.object({
     /** The modules a house may research in this world (their systems exist); none listed: all. */
     available: z.array(z.string()).prefault([]),
   }),
+  /** The Porta, the battles in the lands of Rome (docs/plan-porta.md). */
+  porta: portaSettingsSchema,
 });
 
 export type EmpireSettingsInput = z.input<typeof empireSettingsSchema>;

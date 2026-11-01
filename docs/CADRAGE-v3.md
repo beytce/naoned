@@ -25,7 +25,7 @@ Fondaco est un jeu de commerce multijoueur en 2D, sur navigateur PC et mobile (P
 
 Elles remplacent les règles de conception de la v2.
 
-1. **Rien de ce que le joueur a bâti ne se perd.** Ni par le temps, ni par l'absence, ni par un autre joueur (hors de la Terraferme, qui repart chaque semaine).
+1. **Rien de ce que le joueur a bâti ne se perd.** Ni par le temps, ni par l'absence, ni par un autre joueur (hors de la Terraferme, qui repart chaque semaine). Seule exception, choisie par le joueur : un véhicule engagé dans les terres de Rome, à la Porta, y est perdu avec ses composants s'il tombe ou s'il n'est pas rentré à la fermeture (§ 12 quater).
 2. **On ne punit jamais l'absence.** Il n'y a ni série à casser, ni coût qui court pendant qu'on est parti, ni marchandise qui pourrit en entrepôt pendant une absence.
 3. **Seules les positions disputées se perdent**, parce que d'autres les prennent : Podestà, charges, Doge, emplacement du Grand Canal, classement de la Terraferme.
 4. **Toute compétition se joue par bande de puissance.** Le vétéran est une légende qu'on voit, jamais un prédateur qu'on croise.
@@ -268,14 +268,17 @@ Plus de quarante modules sur dix niveaux : on ne maximise jamais tout. **Le choi
 
 ## 3 ter. Les expéditions à paliers et les reliques
 
-- **L'expédition** (l'équivalent des Red Stars) :
-  - une partie coopérative de 1 à 5 Maisons, en direct (10 à 15 minutes) ou en différé sur 24 h ;
-  - **paliers 1 à 12**, ouverts par le palier précédent et le niveau de sa galère armée ;
-  - les lieux : la côte barbaresque, les épaves ioniennes, la route de Tana, les ruines de Byzance, les caravanes du Sinaï.
-- **Les reliques** (portulans, codex, objets d'art, pièces d'armes) :
-  - elles se **déchiffrent** à la Scuola, de 1 h à 2 jours, en plans de modules, en plans de savoirs, en ornements du palais ;
-  - elles se **vendent au Rialto** : un marché des reliques ;
-  - le palier fixe leur qualité.
+*Remplacé par la Porta le 31 octobre 2026 (§ 12 quater) ; le détail est dans `docs/plan-porta.md`, qui fait foi pour ce système.*
+
+- **La Porta** (l'équivalent du Scanner rouge et des Red Stars d'Hades' Star) :
+  - un bâtiment posé sur la carte perso dès la Casa 10, de niveau 1 à 6, qui ouvre les **paliers 1 à 6** ;
+  - une bataille **en direct de 8 à 12 minutes**, de 1 à 4 joueurs (seul jusqu'au palier 4), dans les terres de Rome : des villes gardées par **Rome pontificale**, une IA qui patrouille, voit, attaque le plus menaçant et se replie ;
+  - chaque joueur y engage **un véhicule de combat** (acheté à la Remise, avec ses composants) et **un transport** sans défense, qu'il faut escorter ;
+  - l'entrée se paie en pain ; tout ce qui n'est pas rentré à la porte à la fermeture est perdu.
+- **Les reliques** (commune, rare, précieuse, légendaire) :
+  - elles se chargent dans les villes, une à la fois, d'autant plus longtemps qu'elles sont rares ; le palier fixe leur rareté ;
+  - elles se **vendent à l'antiquaire**, à la Porta, en ducats selon la rareté ;
+  - elles donnent des **points** au classement de la semaine, par bande de Puissance.
 - **La partie rapide** (l'ancienne Condotta, l'équivalent des Blue Stars) : de 4 à 5 joueurs en direct, à armes égales. Elle rend quelques Sceaux.
 
 ## 3 quater. Des marchés vivants et la colleganza
@@ -626,6 +629,23 @@ La charte en Faveur disparaît (§ 3.4). Les effets qui l'allégeaient (lettres,
 - **« Poser un comptoir » dans le « + »** en haut à droite ;
 - puis, aux étapes suivantes : **un stock par comptoir** (l'achat au marché choisit son comptoir, au prix de sa région), **les véhicules à leur comptoir**, et **des livraisons entre comptoirs** par véhicule, en un temps selon la distance.
 
+## 12 quater. Arbitrages du 31 octobre 2026 : la Porta, le PvE des terres de Rome
+
+Le porteur demande le mode PvE d'Hades' Star (les Red Stars), au plus près de l'original, aux codes et à la DA de Fondaco. Le détail est dans `docs/plan-porta.md`.
+
+**Ses décisions** :
+- **une bataille en direct de 8 à 12 minutes**, simulée par le serveur, de **1 à 4 joueurs** : une file par palier et par bande de Puissance, une invitation par lien, et « Partir seul maintenant » sans attendre ;
+- **six paliers**, faisables seul jusqu'au palier 4 (très difficile seul) ; les reliques rares croissent avec le palier ;
+- **la Porta**, un bâtiment posé où l'on veut sur la carte perso ; les véhicules y voyagent depuis la Remise ;
+- **les véhicules de combat** sont des véhicules de terre, achetés et améliorés à **la Remise**, comme les transports ; **les composants** (lances, arbalètes, couleuvrine, pavois, cuirasse, chirurgien, trompette, fumée) s'achètent à l'unité et se posent sur eux ;
+- **un véhicule de combat et un transport par joueur** ; le transport n'a aucune défense ;
+- **la perte est définitive** : un véhicule à 0 PV est détruit avec ses composants, et ce qui n'est pas rentré à la porte à la fermeture est perdu avec sa cargaison. C'est une exception à la règle d'or 1, choisie par le joueur quand il entre ; les corsaires, eux, ne prennent toujours jamais le navire ;
+- **les survivants ressortent soignés**, sans réparation à payer ;
+- **les reliques** se chargent dans les villes par un temps qui croît avec la rareté, et se vendent à **l'antiquaire** en ducats ; l'**entrée se paie en pain**, détruit ;
+- **un classement de la semaine** sur les points des reliques, par bande de Puissance ;
+- **Rome pontificale de 1450** garde les villes : arbalétrier, hallebardier, chevau-léger, bombarde, Gonfalonier de l'Église ;
+- **le pilotage** : toucher le véhicule, puis la destination ; tir automatique ; un bouton rond par composant actif.
+
 ## 13. Le chemin
 
 Chaque étape fait l'objet d'un plan, validé avant le code.
@@ -703,7 +723,7 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
    - **les bandes de Puissance** élargies (0, 4 500, 7 000, 9 500, 12 000) pour la cible du nouveau, puis ajustées avec la mer (7a).
 7. **La mer et les armes** : la Dalmatie, l'Arsenal, les navires à modules, la Muda des joueurs, les corsaires ; puis les expéditions et les reliques, et la colleganza.
 
-   L'étape se fait en deux plans : 7a, la mer ; 7b, les armes, les expéditions et les reliques.
+   L'étape se fait en deux plans : 7a, la mer ; 7b, les armes, les expéditions et les reliques. Le plan 7b est la Porta (§ 12 quater, `docs/plan-porta.md`), en sept lots : le document, le moteur des armes, le moteur de bataille, la Porta et l'antiquaire, le serveur en direct, l'écran, le simulateur.
 
    *7a fait le 30 octobre 2026*, dans le monde de l'empire :
    - **l'Arsenal privé** : la marciliana (Casa 9), la cocca (11), la galea grossa (14) et la galère de Flandre (18) se construisent sur une place de chantier, jamais ne s'achètent ; leurs places (2, 3, 4, 4) reçoivent des modules de négoce recherchés, qui ne comptent que sur le navire qui les porte ;

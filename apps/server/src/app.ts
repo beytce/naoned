@@ -18,6 +18,7 @@ import { AuthError, AuthService, SESSION_DAYS, langSchema, originSchema } from "
 import type { Db } from "./db/client.js";
 import { countFunnel } from "./funnel.js";
 import { CondottaHub } from "./game/condotta.js";
+import { PortaHub } from "./game/porta.js";
 import { registerGameRoutes } from "./game/routes.js";
 import { SkirmishHub } from "./game/skirmish.js";
 import type { GameWorld } from "./game/world.js";
@@ -41,6 +42,8 @@ export interface AppOptions {
   communityUrl?: string;
   /** Notifications (bell and push); in-game only by default. */
   notifier?: Notifier;
+  /** The Porta's battles, when the caller drives them (the tests); started here otherwise. */
+  porta?: PortaHub;
   /** Built web app to serve (production). */
   webDist?: string;
   now?: () => Date;
@@ -298,9 +301,18 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     skirmishes.start();
     const condottas = new CondottaHub(options.db, options.world);
     condottas.start();
+    // The Porta's battles a restart cut short are undone (victuals given back) before any is played.
+    const porta =
+      options.porta ??
+      (options.world.ctx.settings.empire ? new PortaHub(options.world) : undefined);
+    if (porta && !options.porta) {
+      await porta.recover();
+      porta.start();
+    }
     app.addHook("onClose", async () => {
       skirmishes.stop();
       condottas.stop();
+      porta?.stop();
       await skirmishes.flush();
     });
     registerGameRoutes(app, {
@@ -311,6 +323,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       notifier,
       skirmishes,
       condottas,
+      porta,
       adminEmails: options.adminEmails ?? [],
       communityUrl: options.communityUrl ?? null,
     });

@@ -23,13 +23,14 @@ describe("the 24-month model simulator (CADRAGE-v3 § 13)", () => {
     expect(small(2).violations).toEqual([]);
   });
 
-  it("lets the houses grow on the cities' orders, with no sea nor expedition (1 November)", () => {
+  it("lets the houses grow on the cities' orders, with no sea; the Porta stays (1 November)", () => {
     const r = small(3);
     const hs = r.world.houses;
     expect(Math.max(...hs.map((h) => h.casa))).toBeGreaterThan(9);
     expect(hs.reduce((n, h) => n + h.ordersValue, 0n) > 0n).toBe(true);
     expect(hs.reduce((n, h) => n + h.voyagesDone, 0)).toBe(0);
-    expect(hs.reduce((n, h) => n + h.expeditionsWon, 0)).toBe(0);
+    // The old expeditions are gone; the battles of the Porta count here (docs/plan-porta.md).
+    expect(hs.reduce((n, h) => n + h.expeditionsWon, 0)).toBeGreaterThan(0);
   });
 
   it("judges the nine targets", () => {

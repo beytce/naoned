@@ -55,6 +55,19 @@ import {
 import { startLearning } from "./empire/knowledge.js";
 import { buildCamp, buildDepot, ensureMap, placeCounter, unlockCell } from "./empire/map.js";
 import { settleTours, startTour } from "./empire/orders.js";
+import { buyArm, buyComponent, fitArm, upgradeArm, upgradeComponent } from "./empire/porta/arms.js";
+import type { BattleOutcome } from "./empire/porta/battle/sim.js";
+import {
+  buildPorta,
+  cancelPorta,
+  enterPorta,
+  recallFromPorta,
+  sellRelics,
+  sendToPorta,
+  settlePorta,
+  upgradePorta,
+} from "./empire/porta/porta.js";
+import type { Rarity } from "./empire/porta/settings.js";
 import { retireSea } from "./empire/retire.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
@@ -332,6 +345,32 @@ type EmpireCommandOf =
   | { type: "empireUpgradeVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string }
   | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
+  | { type: "empireBuyArm"; playerId: PlayerId; model: string }
+  | { type: "empireUpgradeArm"; playerId: PlayerId; model: string }
+  | { type: "empireBuyComponent"; playerId: PlayerId; code: string }
+  | { type: "empireUpgradeComponent"; playerId: PlayerId; componentId: string }
+  | { type: "empireBuildPorta"; playerId: PlayerId; cell: string }
+  | { type: "empireUpgradePorta"; playerId: PlayerId }
+  | { type: "empireSendToPorta"; playerId: PlayerId; vehicleIds: string[] }
+  | { type: "empireRecallFromPorta"; playerId: PlayerId; vehicleIds: string[] }
+  | {
+      type: "empirePortaEnter";
+      playerId: PlayerId;
+      battleId: string;
+      tier: number;
+      combatId: string;
+      transportId: string;
+    }
+  | { type: "empirePortaSettle"; playerId: PlayerId; battleId: string; outcome: BattleOutcome }
+  | { type: "empirePortaCancel"; playerId: PlayerId; battleId: string }
+  | { type: "empireSellRelics"; playerId: PlayerId; rarity: Rarity; qty: number }
+  | {
+      type: "empireFitArm";
+      playerId: PlayerId;
+      vehicleId: string;
+      slot: number;
+      componentId: string | null;
+    }
   | { type: "empireResearch"; playerId: PlayerId; module: string }
   | { type: "empireFit"; playerId: PlayerId; workshopId: string; slot: number; module: string }
   | { type: "empireCourt"; playerId: PlayerId; good: string; qty: number }
@@ -531,6 +570,45 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireBuyVehicle":
       buyEmpireVehicle(tx, cmd.playerId, cmd.vehicleType);
+      break;
+    case "empireBuyArm":
+      buyArm(tx, cmd.playerId, cmd.model);
+      break;
+    case "empireUpgradeArm":
+      upgradeArm(tx, cmd.playerId, cmd.model);
+      break;
+    case "empireBuyComponent":
+      buyComponent(tx, cmd.playerId, cmd.code);
+      break;
+    case "empireUpgradeComponent":
+      upgradeComponent(tx, cmd.playerId, cmd.componentId);
+      break;
+    case "empireBuildPorta":
+      buildPorta(tx, cmd.playerId, cmd.cell);
+      break;
+    case "empireUpgradePorta":
+      upgradePorta(tx, cmd.playerId);
+      break;
+    case "empireSendToPorta":
+      sendToPorta(tx, cmd.playerId, cmd.vehicleIds);
+      break;
+    case "empireRecallFromPorta":
+      recallFromPorta(tx, cmd.playerId, cmd.vehicleIds);
+      break;
+    case "empirePortaEnter":
+      enterPorta(tx, cmd.playerId, cmd.battleId, cmd.tier, cmd.combatId, cmd.transportId);
+      break;
+    case "empirePortaSettle":
+      settlePorta(tx, cmd.playerId, cmd.battleId, cmd.outcome);
+      break;
+    case "empirePortaCancel":
+      cancelPorta(tx, cmd.playerId, cmd.battleId);
+      break;
+    case "empireSellRelics":
+      sellRelics(tx, cmd.playerId, cmd.rarity, cmd.qty);
+      break;
+    case "empireFitArm":
+      fitArm(tx, cmd.playerId, cmd.vehicleId, cmd.slot, cmd.componentId);
       break;
     case "empireResearch":
       startResearch(tx, cmd.playerId, cmd.module);

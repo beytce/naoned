@@ -7,10 +7,13 @@ import { fr } from "../../i18n.js";
 import { CloseButton } from "../../ui.js";
 import { regionName } from "../World.js";
 import { buildingName } from "../logic.js";
+import { pt } from "../porta/texts.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { type ActionIcon, type Target, actionsOf } from "./logic.js";
 
 const t = fr.empire;
+/** The Porta's actions, worded in its own texts. */
+const portaWords: Record<string, string> = { arms: pt.arms, porta: pt.battle };
 
 const ICONS: Record<ActionIcon, () => ReactNode> = {
   harvest: Icon.harvest,
@@ -66,6 +69,8 @@ function headOf(p: EmpirePayload, target: Target): { title: string; sub: string 
       const b = view?.map.buyable.find((x) => x.cell === target.cell);
       return { title: regionName(b?.region ?? ""), sub: s.sector };
     }
+    case "porta":
+      return { title: pt.porta, sub: pt.level(view?.porta?.level ?? 1) };
   }
 }
 
@@ -133,7 +138,9 @@ export function ActionPanel({
               {a.good ? <GoodsMark code={a.good} size={26} /> : ICONS[a.icon]()}
             </span>
             <span className="line-clamp-2 text-center text-[0.6875rem] font-semibold leading-tight">
-              {(t.scene.actions[a.words.key] ?? (() => a.words.key))(a.words.n ?? 0)}
+              {(t.scene.actions[a.words.key] ?? (() => portaWords[a.words.key] ?? a.words.key))(
+                a.words.n ?? 0,
+              )}
             </span>
             {a.cost && (
               <span className="flex items-center gap-1 text-[0.6875rem] tabular-nums text-gold">

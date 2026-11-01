@@ -126,6 +126,13 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 - Désaffecter un membre du personnel, le renvoyer.
 - La compagnie (après l'étape 6a) : l'Expédition de compagnie, le fondaco de compagnie, le Courrier de compagnie, la colleganza de compagnie, les contrats de fourniture et la réputation, le roulage, le *garzone* (l'apprenti d'une compagnie qui accueille les nouveaux) ; l'usage du Mérite ; l'annonce de la succession dans le fil.
 
+## La Porta (31 octobre 2026), hors du chemin
+- Des Sceaux pour les premiers du classement de la semaine des reliques.
+- Déchiffrer une relique en plans à la Scuola au lieu de la vendre : la recherche des modules de négoce en demande dès le niveau 4.
+- Les batailles en mer, avec des galères armées de l'Arsenal.
+- Un ordre « escorter » (le véhicule de combat suit un transport), des véhicules de combat de plus haut rang, d'autres unités de Rome.
+- Une Porta de compagnie, aux paliers réservés aux associés.
+
 ## V2
 - Plusieurs mondes en parallèle ; ouverture d'un nouveau monde quand le précédent dépasse J+14 (seulement si la population le permet sans vider les carnets).
 - Mondes privés pour une communauté, une école ou une entreprise, facturés par saison.
