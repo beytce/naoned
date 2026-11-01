@@ -223,6 +223,22 @@ export const venice1450Empire: EmpireSettingsInput = {
     // The Remise, where the vehicles are bought and their models raised, the ships too.
     depot: { costDucats: 200, casa: 2, minutes: 120 },
   },
+  // The Remise's levels cap the transport vehicles (1 November 2026, after Hades' Star's shipyard,
+  // whose ten levels take the fleet from 4 to 16): the first is the Remise put down.
+  fleet: {
+    levels: [
+      { vehicles: 4, casa: 2, costDucats: 0, minutes: 0 },
+      { vehicles: 5, casa: 3, costDucats: 300, minutes: 30 },
+      { vehicles: 7, casa: 5, costDucats: 600, minutes: 120 },
+      { vehicles: 8, casa: 7, costDucats: 1_500, minutes: 360 },
+      { vehicles: 10, casa: 9, costDucats: 3_000, minutes: 720 },
+      { vehicles: 12, casa: 11, costDucats: 6_000, minutes: 1_440 },
+      { vehicles: 13, casa: 13, costDucats: 10_000, minutes: 2_880 },
+      { vehicles: 14, casa: 15, costDucats: 16_000, minutes: 4_320 },
+      { vehicles: 15, casa: 17, costDucats: 25_000, minutes: 7_200 },
+      { vehicles: 16, casa: 19, costDucats: 36_000, minutes: 10_080 },
+    ],
+  },
   // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the
   // fourth place, a brickworks, the first choice (a farm instead would leave the Casa waiting).
   start: {

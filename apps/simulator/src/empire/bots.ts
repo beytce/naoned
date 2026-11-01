@@ -851,6 +851,19 @@ function tryVehicle(w: World, h: House): boolean {
     startBuild(w, h, { kind: "depot", target: "depot" }, depot.minutes);
     return true;
   }
+  // At the Remise's cap (after Hades' Star's shipyard), the Remise is raised first.
+  const levels = w.s.fleet?.levels;
+  const level = h.depotLevel ?? 1;
+  const cap = levels?.[Math.min(level, levels.length) - 1]?.vehicles ?? Number.POSITIVE_INFINITY;
+  if (h.vehicles.length >= cap) {
+    const next = levels?.[level];
+    if (!next || busy(h, "depot") || h.casa < next.casa) return false;
+    const price = d(next.costDucats);
+    if (spendable(w, h) < price) return false;
+    destroy(w, h, price, "vehicles");
+    startBuild(w, h, { kind: "depot", target: "raise" }, next.minutes);
+    return true;
+  }
   const cost = d(pick[1].costDucats);
   if (spendable(w, h) < cost) return false;
   destroy(w, h, cost, "vehicles");
@@ -982,6 +995,8 @@ export function finishBuild(w: World, h: House, b: Build) {
     h.arsenal = true;
   } else if (b.kind === "camp") {
     h.camp = true;
+  } else if (b.kind === "depot" && b.target === "raise") {
+    h.depotLevel = (h.depotLevel ?? 1) + 1;
   } else if (b.kind === "depot") {
     h.depot = true;
   } else if (b.kind === "model") {

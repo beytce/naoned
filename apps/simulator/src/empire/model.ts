@@ -103,6 +103,8 @@ export interface House {
   camp: boolean;
   /** Its Remise, where the land vehicles are bought and raised, and each model's level. */
   depot: boolean;
+  /** The Remise's level: it caps the transport vehicles (`fleet`). */
+  depotLevel?: number;
   levels: Record<string, number>;
   vehicles: Vehicle[];
   galleys: number;
