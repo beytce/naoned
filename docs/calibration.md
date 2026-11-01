@@ -2222,3 +2222,16 @@ pnpm --filter @comptoirs/simulator empire --cohort 30     # rapide (≈ 30 s), p
   - la sortie de la première bande de Puissance, à 3,0–3,1 mois (pour 4 à 6) ;
   - la fin de partie, un peu rapide (graine 3).
 - **La suite** : la recalibration de la fin de partie, par le coût des Casa 15 à 20.
+
+### La flotte bornée par la Remise, et le fondaco qui n'est pas une ville (1er novembre 2026, la nuit)
+
+**Ce qui change** :
+- **la Remise a dix niveaux** (`fleet.levels`, d'après le chantier naval de Hades' Star). Ils bornent les véhicules de transport à 4, 5, 7, 8, 10, 12, 13, 14, 15 et 16, aux Casa 2, 3, 5, 7, 9, 11, 13, 15, 17 et 19, pour 0 à 36 000 ducats et de quelques minutes à 7 jours de chantier. Au simulateur, un bot à son plafond agrandit d'abord sa Remise, puis achète le véhicule ;
+- **le premier fondaco quitte Venise** pour le point du monde (`map.home`, 174 ; 140), à 9 unités à l'est. Il garde le même nombre de villes à portée (neuf), mais pas tout à fait les mêmes. Le simulateur ne pose pas le fondaco lui-même : il reste au point du monde.
+
+**Sur 3 graines (cohortes de 200)** : **7, 5 et 6 cibles sur 9**, contre 7, 7 et 5 avant (18 cibles au total, dans les deux cas).
+- **Le calendrier** tient sur les graines 1 et 3. Sur la graine 2, la Casa 20 de la première cohorte arrive à 348 jours, sous la moitié de la cible (375). Avant ce changement, elle arrivait déjà entre 352 et 492 jours selon la graine : c'est la fin de partie trop rapide connue, pas un effet de la Remise (qui ne peut que freiner).
+- **Puits ÷ sources des jeunes Maisons** : 0,78 à 0,81, toujours au bord de la cible (graine 2 à 0,81).
+- **Les bruts des jeunes Maisons** : 10,0 % sur la graine 3, juste à la cible (12,2 et 12,6 % ailleurs).
+- **Les cibles manquées** restent celles d'avant : le prochain palier (1,0 à 5,1 jours de revenu certains mois, pour 2 à 7) et la sortie de la première bande (2,9 à 3,0 mois, pour 4 à 6).
+- **La suite** reste la même : recalibrer la fin de partie par le coût des Casa 15 à 20.
