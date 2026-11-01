@@ -19,7 +19,7 @@ import { CasaMoment } from "./Moment.js";
 import { NewWorkshopSheet } from "./NewWorkshop.js";
 import { GoodSheet } from "./Resources.js";
 import { Arsenal } from "./Sea.js";
-import { RegionPlace, Scuola, VoyageSheet, regionName } from "./World.js";
+import { Charroi, RegionPlace, Scuola, VoyageSheet, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import {
   affordable,
@@ -47,6 +47,8 @@ type SheetId =
   | "casa"
   | "market"
   | "company"
+  | "company:terra"
+  | "remise"
   | "new"
   | "away"
   | "family"
@@ -196,6 +198,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         placing={placing}
         picked={picked}
         onPick={setPicked}
+        onCamp={() => setSheet("company:terra")}
       />
 
       <Hud
@@ -294,6 +297,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         pane={sheet === "production:vehicles" ? "vehicles" : "buildings"}
         highlight={highlight}
         onPlace={(kind) => open(`place:${kind}`)}
+        onRemise={() => setSheet("remise")}
         busy={busy}
         onClose={close}
         act={act}
@@ -325,6 +329,13 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       <Sheet open={sheet === "arsenal"} onClose={close} title={t.scene.arsenal}>
         <Arsenal p={p} now={now} busy={busy} act={act} />
       </Sheet>
+      {/* The Remise: the only place where the vehicles are bought, raised and sent (1 November). */}
+      <Sheet open={sheet === "remise"} onClose={close} kicker={t.scene.owner} title={t.scene.depot}>
+        <div data-remise>
+          <Charroi p={p} now={now} busy={busy} act={act} />
+          <Arsenal p={p} now={now} busy={busy} act={act} />
+        </div>
+      </Sheet>
       <CasaSheet
         p={p}
         now={now}
@@ -346,7 +357,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       <CompanySheet
         p={p}
         now={now}
-        open={sheet === "company"}
+        open={sheet?.startsWith("company") === true}
+        pane={sheet === "company:terra" ? "terra" : undefined}
         busy={busy}
         calls={{
           carnet: claimable(p),

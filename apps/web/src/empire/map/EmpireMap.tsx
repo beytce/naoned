@@ -101,8 +101,13 @@ export const EmpireMap = forwardRef<
     placing?: Placing | null;
     picked?: Picked | null;
     onPick?: (at: Picked) => void;
+    /** The Campo touched: the Terraferma. */
+    onCamp?: () => void;
   }
->(function EmpireMap({ p, now, busy, act, onTarget, placing = null, picked = null, onPick }, ref) {
+>(function EmpireMap(
+  { p, now, busy, act, onTarget, placing = null, picked = null, onPick, onCamp },
+  ref,
+) {
   const root = useRef<HTMLDivElement>(null);
   const back = useRef<HTMLDivElement>(null);
   const mist = useRef<HTMLDivElement>(null);
@@ -201,6 +206,7 @@ export const EmpireMap = forwardRef<
           placing={placing}
           picked={picked}
           onPick={onPick}
+          onSector={(cell) => onTarget({ kind: "sector", cell })}
         />
       ) : null,
     [view?.map, view?.regions, base, texture, placing, picked, onPick],
@@ -425,13 +431,19 @@ export const EmpireMap = forwardRef<
             const [px, py] = cellCentre(map.camp);
             return (
               <div data-at={`${px},${py + 7}`} className="map-pin">
-                <span
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-night-3 text-vermilion ring-2 ring-vermilion/70 shadow-md shadow-black/50 [&_svg]:h-4 [&_svg]:w-4"
+                {/* The Campo touched: the Terraferma opens (1 November: it did nothing before). */}
+                <button
+                  type="button"
+                  onClick={() => onCamp?.()}
                   data-camp-mark
-                  title={t.placing.campCard}
+                  aria-label={t.placing.campCard}
+                  className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
                 >
-                  {Icon.troops()}
-                </span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-night-3 text-vermilion ring-2 ring-vermilion/70 shadow-md shadow-black/50 [&_svg]:h-5 [&_svg]:w-5">
+                    {Icon.troops()}
+                  </span>
+                  <span className="map-name">{t.placing.campCard}</span>
+                </button>
               </div>
             );
           })()}
@@ -490,6 +502,7 @@ const Chart = memo(function Chart({
   placing,
   picked,
   onPick,
+  onSector,
 }: {
   p: EmpirePayload;
   base: number;
@@ -497,6 +510,8 @@ const Chart = memo(function Chart({
   placing: Placing | null;
   picked: Picked | null;
   onPick?: (at: Picked) => void;
+  /** A sector to buy touched (the sectors bought one by one). */
+  onSector?: (cell: string) => void;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -635,6 +650,28 @@ const Chart = memo(function Chart({
           />
         );
       })}
+      {/* The sectors to buy next to one's own: a dashed gold edge, a touch to buy. */}
+      {!placing && (map.buyable ?? []).length > 0 && (
+        <g data-buyable-cells>
+          {map.buyable.map((b) => (
+            <path
+              key={`b${b.cell}`}
+              d={hexPath(b.cell, 1.6)}
+              fill={P.gold}
+              fillOpacity={view.house.casa >= b.casa ? 0.06 : 0.02}
+              stroke={P.gold}
+              strokeOpacity={view.house.casa >= b.casa ? 0.75 : 0.3}
+              strokeWidth="1.4"
+              strokeDasharray="4 3"
+              vectorEffect="non-scaling-stroke"
+              style={{ pointerEvents: "all", cursor: "pointer" }}
+              data-buyable={b.cell}
+              onClick={() => onSector?.(b.cell)}
+              onKeyDown={(e) => e.key === "Enter" && onSector?.(b.cell)}
+            />
+          ))}
+        </g>
+      )}
       {/* Placing: the cells it may go on, lit; the one picked, and what it would reveal. */}
       {allowed && (
         <g data-placing-cells>

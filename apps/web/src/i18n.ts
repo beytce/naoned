@@ -237,6 +237,9 @@ const frDict = {
       unknown: "Terre inconnue",
       arsenal: "L'Arsenal",
       depot: "La Remise",
+      sector: "Case à acheter : ses villes se découvrent à l'achat",
+      remiseText: "Les véhicules s'achètent, s'améliorent et s'envoient à la Remise.",
+      toRemise: "Aller à la Remise",
       free: "Une place libre",
       help: "Conseil",
       recenter: "Recentrer",
@@ -268,6 +271,7 @@ const frDict = {
         post: () => "Comptoir",
         ship: () => "Navires",
         vehicles: () => "Véhicules",
+        unlock: () => "Acheter la case",
       } as Record<string, (n: number) => string>,
     },
     /** The five tabs of the empire (lot C of the UX audit): the loop, from the house to the family. */
@@ -412,7 +416,7 @@ const frDict = {
       action: "Tout ramasser",
     },
     sea: {
-      arsenal: "L'Arsenal privé",
+      arsenal: "Les navires",
       shipLine: (cap: number, slots: number, routes: string) =>
         `${cap} · ${slots} place${slots > 1 ? "s" : ""} de modules · ${routes}`,
       mudaOnly: "part avec la Muda",
@@ -893,6 +897,8 @@ const frDict = {
       hidden_cell: "Cette case est encore dans le brouillard.",
       no_camp: "Posez d'abord le Campo sur la carte.",
       no_depot: "Posez d'abord la Remise sur la carte.",
+      not_adjacent: "Cette case n'est pas voisine des vôtres.",
+      locked_cell: "Achetez d'abord cette case.",
       post_too_close: "Trop près d'un autre comptoir.",
       out_of_reach: "Aucun de vos comptoirs n'a cette ville dans son cercle.",
       no_arsenal: "Posez d'abord l'Arsenal sur une côte.",

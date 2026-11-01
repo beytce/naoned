@@ -28,6 +28,7 @@ export function ProductionSheet({
   onClose,
   act,
   onPlace,
+  onRemise,
 }: {
   p: EmpirePayload;
   now: number;
@@ -39,6 +40,8 @@ export function ProductionSheet({
   act: (a: EmpireAction) => Promise<void>;
   /** Puts a counter or the Arsenal down: the map in its mode of placing. */
   onPlace: (kind: "post" | "arsenal" | "camp" | "depot") => void;
+  /** The Remise, where the vehicles are bought, raised and sent. */
+  onRemise?: () => void;
 }) {
   const [pane, setPane] = useState<ProductionPane>(first);
   useEffect(() => {
@@ -84,8 +87,19 @@ export function ProductionSheet({
               · {fr.empire.charroi.upgradeHint}
             </span>
           </p>
-          <Charroi p={p} now={now} busy={busy} act={act} onPlaceDepot={() => onPlace("depot")} />
-          <Arsenal p={p} now={now} busy={busy} act={act} />
+          {/* The vehicles are bought, raised and sent at the Remise only (1 November). */}
+          <div className="mt-4 space-y-2" data-to-remise>
+            <p className="text-sm text-cream-dim">{t.remiseText}</p>
+            {p.view.map.depot && onRemise ? (
+              <Slab size="sm" tone="ghost" onClick={onRemise}>
+                {t.toRemise}
+              </Slab>
+            ) : (
+              <Slab size="sm" tone="ghost" onClick={() => onPlace("depot")}>
+                {fr.empire.placing.depot}
+              </Slab>
+            )}
+          </div>
         </>
       )}
     </Sheet>

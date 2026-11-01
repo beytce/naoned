@@ -288,6 +288,9 @@ export interface EmpireMapView {
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
   transferUnitsPerHour: number;
+  /** The sectors it may buy next, and the price of the next. */
+  buyable: { cell: string; region: string; coast: boolean; casa: number }[];
+  sectorCost: string;
   /** The cities the house's counters serve. */
   covered: string[];
   sites: { kind: "post" | "arsenal" | "camp" | "depot"; cell: string; endsAt: number }[];
@@ -360,6 +363,7 @@ export type EmpireAction =
   | { type: "empirePlaceCounter"; cell: string }
   | { type: "empireBuildArsenal"; cell: string }
   | { type: "empireBuildCamp"; cell: string }
+  | { type: "empireUnlockCell"; cell: string }
   | { type: "empireBuildDepot"; cell: string }
   | { type: "empireUpgradeVehicle"; vehicleType: string }
   | { type: "empireUpgradeCounter"; region: string }

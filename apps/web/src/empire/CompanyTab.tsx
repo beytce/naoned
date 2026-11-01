@@ -25,6 +25,7 @@ export function CompanySheet({
   onClose,
   act,
   onPlaceCamp,
+  pane: first,
 }: {
   p: EmpirePayload;
   now: number;
@@ -36,11 +37,13 @@ export function CompanySheet({
   act: Act;
   /** The Campo to put on the map: the door of the Terraferma. */
   onPlaceCamp: () => void;
+  /** The pane to open on (the Campo touched: the Terraferma). */
+  pane?: CompanyPane;
 }) {
   const [pane, setPane] = useState<CompanyPane>("carnet");
   // biome-ignore lint/correctness/useExhaustiveDependencies: chosen once, as the sheet opens
   useEffect(() => {
-    if (open) setPane(PANES.find((x) => calls[x]) ?? "carnet");
+    if (open) setPane(first ?? PANES.find((x) => calls[x]) ?? "carnet");
   }, [open]);
   if (!p.view) return null;
   return (

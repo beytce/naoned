@@ -177,13 +177,10 @@ try {
     await page.locator("[data-production-pane=vehicles]").click();
     await page.locator("[data-fleet]").waitFor();
     await shot("5-production");
-    // The land vehicles wait for the Remise, put on the map from the Casa 2.
-    await page.locator("[data-no-depot]").waitFor();
-    if (await page.locator("[data-no-depot] button").isEnabled())
-      faults.push(`${label}: the Remise offered before the Casa 2`);
-    // At the Casa 1, the sea stays out of sight (lot A of the UX audit).
-    if ((await page.locator("[data-arsenal]").count()) > 0)
-      faults.push(`${label}: the Arsenal shown at the Casa 1`);
+    // The vehicles are bought at the Remise only (1 November): the pane points to it.
+    await page.locator("[data-to-remise]").waitFor();
+    if ((await page.locator("[data-model], [data-arsenal]").count()) > 0)
+      faults.push(`${label}: vehicles sold outside the Remise`);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
 
@@ -330,6 +327,26 @@ try {
         .locator(`[data-market-good=${good}]`)
         .getByText(/en stock/)
         .waitFor();
+    }
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(400);
+    // The market sells no vehicle (1 November).
+    if ((await page.locator("[data-market] ~ * [data-model]").count()) > 0)
+      faults.push(`${label}: vehicles at the market`);
+    // A sector next to Venice's to buy (1 November): its edge touched, its panel.
+    await page.locator("[data-round=recenter]").click();
+    await page.waitForTimeout(500);
+    const sector = page.locator("[data-buyable]").first();
+    if ((await page.locator("[data-buyable]").count()) === 0)
+      faults.push(`${label}: no sector to buy next to Venice's`);
+    else {
+      const cell = await sector.getAttribute("data-buyable");
+      await sector.dispatchEvent("click");
+      await page.locator("[data-action-panel=sector]").waitFor();
+      await shot("13-case");
+      // Its action: to buy it, or the Casa its region waits for.
+      if ((await page.locator("[data-map-action=unlock], [data-map-action=closed]").count()) === 0)
+        faults.push(`${label}: no action on the sector ${cell}`);
     }
     await page.close();
   }

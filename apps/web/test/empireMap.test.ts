@@ -191,11 +191,11 @@ describe("putting down on the map (step 2)", () => {
     expect(placingCost(payload(), { kind: "arsenal" }, "2,4")).toBe("300000");
   });
 
-  it("lights every free cell for the Remise, and opens its vehicles once it stands", () => {
+  it("lights every free cell for the Remise, and opens its sheet once it stands", () => {
     expect(placeable(payload(), { kind: "depot" })).toEqual(["0,4", "1,5", "2,4"]);
     expect(placingCost(payload(), { kind: "depot" }, "1,5")).toBe("20000");
     expect(actionsOf(payload(), { kind: "depot" }, HOUR).map((a) => a.open)).toEqual([
-      "production:vehicles",
+      "remise",
     ]);
   });
 });

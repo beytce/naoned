@@ -21,6 +21,7 @@ const ICONS: Record<ActionIcon, () => ReactNode> = {
   banner: Icon.banner,
   anchor: Icon.anchor,
   cart: Icon.cart,
+  plus: Icon.plus,
   workshops: Icon.workshops,
   lock: Icon.lock,
   details: Icon.chevronRight,
@@ -59,6 +60,10 @@ function headOf(p: EmpirePayload, target: Target): { title: string; sub: string 
       return { title: s.arsenal, sub: s.owner };
     case "depot":
       return { title: s.depot, sub: s.owner };
+    case "sector": {
+      const b = view?.map.buyable.find((x) => x.cell === target.cell);
+      return { title: regionName(b?.region ?? ""), sub: s.sector };
+    }
   }
 }
 

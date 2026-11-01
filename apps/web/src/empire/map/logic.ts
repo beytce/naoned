@@ -190,7 +190,9 @@ export type Target =
   | { kind: "region"; code: string }
   | { kind: "city"; code: string }
   | { kind: "arsenal" }
-  | { kind: "depot" };
+  | { kind: "depot" }
+  /** A sector to buy, next to one's own (1 November). */
+  | { kind: "sector"; cell: string };
 
 export type ActionIcon =
   | "harvest"
@@ -201,6 +203,7 @@ export type ActionIcon =
   | "banner"
   | "anchor"
   | "cart"
+  | "plus"
   | "workshops"
   | "lock"
   | "details";
@@ -359,9 +362,24 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
         { id: "details", icon: "details", words: { key: "details" }, open: "arsenal" },
       ];
     case "depot":
+      return [{ id: "vehicles", icon: "cart", words: { key: "vehicles" }, open: "remise" }];
+    case "sector": {
+      const b = view.map.buyable.find((x) => x.cell === target.cell);
+      if (!b) return [];
+      const closed = view.house.casa < b.casa;
       return [
-        { id: "vehicles", icon: "cart", words: { key: "vehicles" }, open: "production:vehicles" },
+        closed
+          ? { id: "closed", icon: "lock", words: { key: "closed", n: b.casa }, disabled: true }
+          : {
+              id: "unlock",
+              icon: "plus",
+              words: { key: "unlock" },
+              cost: view.map.sectorCost,
+              disabled: !affordable(p.cash, view.map.sectorCost),
+              action: { type: "empireUnlockCell", cell: target.cell },
+            },
       ];
+    }
   }
 }
 

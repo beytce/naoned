@@ -317,6 +317,9 @@ export const en: Dictionary = {
       unknown: "Unknown land",
       arsenal: "The Arsenal",
       depot: "The Remise",
+      sector: "A sector to buy: its towns are found when bought",
+      remiseText: "Vehicles are bought, improved and sent from the Remise.",
+      toRemise: "Go to the Remise",
       free: "A free place",
       help: "Advice",
       recenter: "Recentre",
@@ -348,6 +351,7 @@ export const en: Dictionary = {
         post: () => "Counter",
         ship: () => "Ships",
         vehicles: () => "Vehicles",
+        unlock: () => "Buy the sector",
       } as Record<string, (n: number) => string>,
     },
     /** The five tabs of the empire (lot C of the UX audit): the loop, from the house to the family. */
@@ -491,7 +495,7 @@ export const en: Dictionary = {
       action: "Collect everything",
     },
     sea: {
-      arsenal: "The private Arsenal",
+      arsenal: "The ships",
       shipLine: (cap: number, slots: number, routes: string) =>
         `${cap} · ${slots} module place${slots > 1 ? "s" : ""} · ${routes}`,
       mudaOnly: "sails with the Muda",
@@ -964,6 +968,8 @@ export const en: Dictionary = {
       hidden_cell: "This cell is still in the fog.",
       no_camp: "Put the Campo on the map first.",
       no_depot: "Put the Remise on the map first.",
+      not_adjacent: "This sector is not next to yours.",
+      locked_cell: "Buy this sector first.",
       post_too_close: "Too close to another counter.",
       out_of_reach: "None of your counters has this city in its circle.",
       no_arsenal: "Put the Arsenal on a coast first.",
