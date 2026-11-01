@@ -28,7 +28,8 @@ export function PlacingBar({
   onCancel: () => void;
 }) {
   const cost = picked ? placingCost(p, placing, picked.cell) : null;
-  const check = picked && placing.kind === "post" ? pointCheck(p, picked) : null;
+  const home = placing.kind === "home";
+  const check = picked && (placing.kind === "post" || home) ? pointCheck(p, picked, home) : null;
   const none = placeable(p, placing).length === 0;
   return (
     <section
@@ -36,47 +37,59 @@ export function PlacingBar({
       data-placing-bar={placing.kind}
     >
       <h3 className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
-        {placing.kind === "camp"
-          ? t.camp
-          : placing.kind === "depot"
-            ? t.depot
-            : placing.kind === "porta"
-              ? pt.place
-              : t.post}
+        {home
+          ? t.home
+          : placing.kind === "camp"
+            ? t.camp
+            : placing.kind === "depot"
+              ? t.depot
+              : placing.kind === "porta"
+                ? pt.place
+                : t.post}
       </h3>
       <p className="mt-1 text-xs text-cream-dim">
         {none
           ? t.none
-          : placing.kind === "camp"
-            ? t.hintCamp
-            : placing.kind === "depot"
-              ? t.hintDepot
-              : placing.kind === "porta"
-                ? pt.hint
-                : t.hintPost}
+          : home
+            ? t.hintHome
+            : placing.kind === "camp"
+              ? t.hintCamp
+              : placing.kind === "depot"
+                ? t.hintDepot
+                : placing.kind === "porta"
+                  ? pt.hint
+                  : t.hintPost}
       </p>
       {check && (
         <p className="mt-1 text-xs font-semibold text-gold" data-point-check>
           {check.tooClose
             ? t.tooClose
-            : check.serves.length > 0
-              ? t.serves(check.serves.map((c) => fr.empire.cityNames[c] ?? c).join(", "))
-              : t.servesNone}
+            : check.onCity
+              ? t.onCity
+              : check.serves.length > 0
+                ? t.serves(check.serves.map((c) => fr.empire.cityNames[c] ?? c).join(", "))
+                : t.servesNone}
         </p>
       )}
       <div className="mt-3 flex gap-2">
         <Slab size="md" tone="ghost" onClick={onCancel}>
-          {t.cancel}
+          {home ? t.later : t.cancel}
         </Slab>
         <Slab
           size="md"
           tone="gold"
           className="flex-1"
           busy={busy}
-          disabled={!picked || !cost || !affordable(p.cash, cost) || check?.tooClose === true}
+          disabled={
+            !picked ||
+            !cost ||
+            !affordable(p.cash, cost) ||
+            check?.tooClose === true ||
+            check?.onCity === true
+          }
           onClick={onPlace}
         >
-          {cost ? t.here(d(cost)) : t.post}
+          {home ? t.free : cost ? t.here(d(cost)) : t.post}
         </Slab>
       </div>
     </section>

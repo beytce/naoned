@@ -31,7 +31,7 @@ export interface EmpireWorkshop {
 }
 
 export interface EmpireBuild {
-  kind: "casa" | "newWorkshop" | "upgrade" | "counter" | "ship";
+  kind: "casa" | "newWorkshop" | "upgrade" | "counter" | "ship" | "depot";
   vehicleType?: string;
   region?: string;
   level: number;
@@ -70,6 +70,13 @@ export interface EmpireView {
   };
   power: number;
   band: number;
+  /** The fleet capped by the Remise's level (null without the fleet's levels). */
+  fleet?: {
+    level: number;
+    vehicles: number;
+    cap: number;
+    next: { level: number; vehicles: number; casa: number; cost: string; minutes: number } | null;
+  } | null;
   incomePerDay: string;
   asleep: boolean;
   nextCasa:
@@ -265,11 +272,12 @@ export interface EmpireMapView {
     reach: number;
   }[];
   /** Venice's own counter, likewise. */
-  home: { x: number; y: number; level: number; reach: number };
+  home: { x: number; y: number; level: number; reach: number; cell?: string; placed?: boolean };
   hexSize: number;
   /** A counter's reach (the map that grows): none on a map without it. */
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
+  cityClearance?: number;
   transferUnitsPerHour: number;
   /** The sectors it may buy next, and the price of the next. */
   buyable: { cell: string; region: string; coast: boolean; casa: number }[];
@@ -351,6 +359,8 @@ export type EmpireAction =
   | { type: "empireBuildCamp"; cell: string }
   | { type: "empireUnlockCell"; cell: string }
   | { type: "empireBuildDepot"; cell: string }
+  | { type: "empireUpgradeDepot" }
+  | { type: "empirePlaceHome"; cell: string; x: number; y: number }
   | { type: "empireUpgradeVehicle"; vehicleType: string }
   | { type: "empireUpgradeCounter"; region: string }
   | { type: "empireBuyVehicle"; vehicleType: string }

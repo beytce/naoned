@@ -122,7 +122,7 @@ export function hudOf(p: EmpirePayload): { id: "ducats" | "favour" | "seals"; va
 }
 
 /** What may be put on the map: a counter, or the Arsenal. */
-export type Placing = { kind: "post" | "camp" | "depot" | "porta"; region?: string };
+export type Placing = { kind: "post" | "camp" | "depot" | "porta" | "home"; region?: string };
 
 /**
  * The cells where the house may put what it places: for a counter, the land cells it sees, of a
@@ -142,6 +142,12 @@ export function placeable(p: EmpirePayload, placing: Placing): string[] {
     ...(map.camp ? [map.camp] : []),
     ...(map.depot ? [map.depot] : []),
   ]);
+  // The first fondaco: anywhere in the cells of the start the house sees.
+  if (placing.kind === "home")
+    return Object.entries(map.cells)
+      .filter(([, c]) => c.region === "veneto")
+      .map(([cell]) => cell)
+      .sort();
   return Object.entries(map.cells)
     .filter(([cell, c]) =>
       placing.kind === "camp" || placing.kind === "depot"
@@ -165,6 +171,7 @@ export function placingCost(p: EmpirePayload, placing: Placing, cell: string): s
   if (placing.kind === "camp") return view.map.campSite?.cost ?? null;
   if (placing.kind === "depot") return view.map.depotSite?.cost ?? null;
   if (placing.kind === "porta") return view.porta?.site?.cost ?? null;
+  if (placing.kind === "home") return "0";
   const region = view.map.cells[cell]?.region;
   return view.regions.find((r) => r.code === region)?.postCost ?? null;
 }
@@ -285,6 +292,9 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
       return out;
     }
     case "casa": {
+      // The first fondaco not put down yet: placed where the player wants, once.
+      if (view.map?.home?.placed === false)
+        out.push({ id: "home", icon: "banner", words: { key: "home" }, open: "place:home" });
       const next = view.nextCasa;
       if (next && !view.house.builds.some((b) => b.kind === "casa"))
         out.push({
@@ -422,18 +432,24 @@ export function arsenalAt(p: EmpirePayload): [number, number] | null {
 export function pointCheck(
   p: EmpirePayload,
   at: { x: number; y: number },
-): { tooClose: boolean; serves: string[] } {
+  home = false,
+): { tooClose: boolean; onCity: boolean; serves: string[] } {
   const map = p.view?.map;
-  if (!map?.reach) return { tooClose: false, serves: [] };
+  if (!map?.reach) return { tooClose: false, onCity: false, serves: [] };
   const gap = map.postSpacing;
-  const posts = [map.home, ...map.posts];
+  // The first fondaco moved: it stands apart from the others, not from where it stands now.
+  const posts = home ? map.posts : [map.home, ...map.posts];
   const tooClose = gap > 0 && posts.some((x) => (x.x - at.x) ** 2 + (x.y - at.y) ** 2 < gap * gap);
+  const clear = map.cityClearance ?? 0;
+  const onCity =
+    clear > 0 && map.cities.some((c) => (c.x - at.x) ** 2 + (c.y - at.y) ** 2 <= clear * clear);
   const r = map.reach.base;
+  // The first fondaco serves what it would hold in its circle; a new one, what is not served yet.
   const serves = map.cities
-    .filter((c) => !map.covered.includes(c.code))
+    .filter((c) => home || !map.covered.includes(c.code))
     .filter((c) => (c.x - at.x) ** 2 + (c.y - at.y) ** 2 <= r * r)
     .map((c) => c.code);
-  return { tooClose, serves };
+  return { tooClose, onCity, serves };
 }
 
 /** A counter's name: Venice, or its region and its rank there. */

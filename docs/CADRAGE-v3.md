@@ -166,6 +166,10 @@ Les dix régions, dans l'ordre d'ouverture :
 
 ### 3.3 Le charroi et la flotte
 
+> **Décision du porteur du 1er novembre 2026, la nuit — la flotte bornée par la Remise** (d'après le chantier naval de Hades' Star, dont le niveau borne la flotte, de 4 à 16 vaisseaux). La Remise a dix niveaux. Le premier est la Remise posée, les suivants sont des chantiers, à sa Casa et à son prix. Chaque niveau borne le nombre de véhicules de transport qu'une Maison peut avoir : 4, 5, 7, 8, 10, 12, 13, 14, 15 et 16, aux Casa 2, 3, 5, 7, 9, 11, 13, 15, 17 et 19 (`worlds.settings.fleet`). Au plafond, l'achat est refusé ; une Maison déjà au-delà garde tout (règle d'or 1).
+>
+> **Décision du porteur du 1er novembre 2026, la nuit — le fondaco n'est pas une ville.** « Comptoir » devient **fondaco** à l'écran. Le premier fondaco a sa place à lui : le joueur le pose une fois, gratuitement, où il veut dans le secteur de départ, jamais sur une ville (`map.cityClearance`). Jusque-là, il se tient au point du monde (`map.home`), à l'écart de Venise. **Venise est une ville comme les autres**, avec ses commandes. Sous la bulle du fondaco, le nom de la Maison ; sous les autres, le nom de leur région. La portée d'un fondaco ne s'affiche qu'en le touchant, en en posant un, ou en choisissant un de ses véhicules.
+
 > **Décision du porteur du 1er novembre 2026, le soir — les modules montés sur les véhicules** (d'après Hades' Star, `docs/hades-star/00-synthese.md`). Les modules de commerce se recherchent à la Scuola, puis se montent véhicule par véhicule. Ils ne valent que sur le véhicule qui les porte, et un véhicule a une place par niveau de son modèle (1 à 5). S'y ajoutent trois modules :
 > - le **Livre de route** charge aux comptoirs traversés et paie une prime sur ces livraisons ;
 > - le **Fouet du charretier** rend le saut plus rapide quand la cargaison va à l'arrêt suivant ;

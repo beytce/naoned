@@ -28,9 +28,14 @@ export function BottomSlot({
     }
     setLeaving(last.current);
     last.current = { id, node: children };
+  }, [id, children]);
+  // What left goes after its slide, its own timer: a render of what stays (the clock's, each
+  // second) no longer cancels it, which kept the piece gone hidden in the page for good.
+  useEffect(() => {
+    if (!leaving) return;
     const t = setTimeout(() => setLeaving(null), LEAVE_MS);
     return () => clearTimeout(t);
-  }, [id, children]);
+  }, [leaving]);
   return (
     <div
       className={`pointer-events-none absolute inset-x-0 bottom-0 z-30 transition-transform duration-[var(--t-base)] ease-[var(--ease-out)] ${hidden ? "translate-y-[110%]" : ""}`}
