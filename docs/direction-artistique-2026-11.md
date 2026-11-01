@@ -56,6 +56,22 @@ Single subject centred on a plain flat magenta background. No text.
 
 Puis une phrase pour le sujet, par exemple : « Subject: a small round floating island with a stone edge, carrying a Venetian brick kiln with a tall chimney, stacks of red bricks and a glowing kiln mouth. »
 
+### La planche de style retenue (1er novembre 2026, Copilot)
+
+Essai posé sur la carte : `docs/direction-artistique-2026-11/mock-carte.jpg` (en situation) et `mock-nuit.jpg` (sur le fond de l'orbite).
+
+- **La Briqueterie sur son île flottante est la référence** : île ronde, dessous de roche et de racines, lumière du four. C'est l'image à joindre à chaque message suivant.
+- **Le palais** est très beau, mais posé sur un socle carré : à refaire sur l'île ronde, comme la Briqueterie (sinon les lieux ne forment pas une famille).
+- **La mule** est juste de caractère, mais sur un socle de figurine : les véhicules se font sans socle, ils roulent sur la carte.
+- **Lorenzo** est réussi (visage, habit), mais avec un cadre et un fauteuil : les portraits se font sans cadre, le jeu dessine le sien.
+- **Pas de fumée peinte** : le jeu l'anime.
+- Le fond « magenta » sort en framboise sourde, pas en #FF00FF : ce n'est pas grave, le détourage lit la couleur du bord de chaque image.
+
+À ajouter à la phrase du sujet, selon la famille :
+- **lieux** : `standing on a small round floating island with a stone edge and a rocky underside with roots, exactly like the attached brick kiln. No smoke.`
+- **véhicules** : `no base, no pedestal, no ground, the vehicle alone, same painting style as the attached image.`
+- **portraits** : `bust portrait, no frame, no border, no chair, plain dark blue background, same painting style as the attached image.`
+
 ## 4. Les textes
 
 Les textes sont en anglais : les générateurs le comprennent mieux. Chaque texte = **le bloc STYLE** + **le bloc de la famille** + **les quatre sujets**.
