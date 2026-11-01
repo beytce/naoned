@@ -34,6 +34,13 @@ const CASA: [number, Record<string, number>, number, string[]][] = [
 
 const slots = (level: number, at: number[]) => at.filter((l) => level >= l).length;
 
+/**
+ * The end of the game dearer (1 November 2026, the hops and the waves): the Casa 13 to 20 cost
+ * × 1,3 to × 3,2, ducats and materials, the sites as long; the Casa 20 near two years again
+ * (calibration.md).
+ */
+const lateRamp = (level: number) => (level < 13 ? 1 : 1.3 + (1.9 * (level - 13)) / 7);
+
 /** The ten regions, by their order of opening (CADRAGE-v3 § 3.4). */
 const REGIONS: EmpireSettingsInput["regions"] = [
   {
@@ -173,9 +180,12 @@ const MODULES = [
 export const venice1450Empire: EmpireSettingsInput = {
   casa: CASA.map(([ducats, materials, buildMinutes, opens], i) => {
     const level = i + 1;
+    const k = lateRamp(level);
     return {
-      costDucats: ducats * D,
-      materials,
+      costDucats: Math.round(ducats * D * k),
+      materials: Object.fromEntries(
+        Object.entries(materials).map(([good, n]) => [good, Math.round(n * k)]),
+      ),
       buildMinutes,
       workshopSlots: 4 + slots(level, [2, 5, 8, 12]),
       buildSlots: 1 + slots(level, [5, 15, 19]),
