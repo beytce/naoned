@@ -26,7 +26,7 @@ interface House {
   builds: { kind: string; level: number; endsAt: number }[];
   counters?: Record<string, number>;
   vehicleLevels?: Record<string, number>;
-  vehicles?: { id: string; type: string; busyUntil: number }[];
+  vehicles?: { id: string; type: string; busyUntil: number; legs?: unknown[] }[];
   modules?: Record<string, number>;
   knowledge?: string[];
   learning?: { code: string; endsAt: number }[];
@@ -557,6 +557,22 @@ function EmpireEditor({
               >
                 + Offrir un {v.type}
               </button>
+              {owned > 0 && (
+                <button
+                  type="button"
+                  className={ghost}
+                  disabled={busy}
+                  data-admin-remove-vehicle={v.type}
+                  onClick={() => {
+                    // The last of the model, a free one first (standing, nothing on its way).
+                    const mine = (h.vehicles ?? []).filter((x) => x.type === v.type);
+                    const free = [...mine].reverse().find((x) => !x.legs?.length) ?? mine.at(-1);
+                    if (free) edit({ kind: "removeVehicle", vehicleId: free.id });
+                  }}
+                >
+                  − Retirer un {v.type}
+                </button>
+              )}
             </div>
           );
         })}

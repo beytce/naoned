@@ -33,6 +33,7 @@ const editSchema: z.ZodType<AdminEdit> = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("counter"), region: z.string().max(40), level: int.min(1) }),
   z.object({ kind: z.literal("vehicleLevel"), vehicleType: z.string().max(40), level: int.min(1) }),
   z.object({ kind: z.literal("vehicle"), vehicleType: z.string().max(40) }),
+  z.object({ kind: z.literal("removeVehicle"), vehicleId: z.string().max(40) }),
   z.object({ kind: z.literal("module"), code: z.string().max(40), level: int.min(0) }),
   z.object({ kind: z.literal("knowledge"), code: z.string().max(40), learnt: z.boolean() }),
   z.object({ kind: z.literal("staffLevel"), staffId: z.string().max(32), level: int.min(1) }),

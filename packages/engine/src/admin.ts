@@ -1,5 +1,6 @@
 import { empireSettings, ownHouse, settleBuilds } from "./empire/house.js";
-import { regionSeat, revealedBy, settlePost } from "./empire/map.js";
+import { regionSeat, revealedBy, settlePost, standingPosts } from "./empire/map.js";
+import { HOME_POST, putAt } from "./empire/stores.js";
 import type { Deniers } from "./money.js";
 import { type PlayerId, SINK_ACCOUNT, SOURCE_ACCOUNT, cashAccount } from "./state.js";
 import {
@@ -34,6 +35,8 @@ export type AdminEdit =
   | { kind: "vehicleLevel"; vehicleType: string; level: number }
   /** A vehicle of this model, given. */
   | { kind: "vehicle"; vehicleType: string }
+  /** A delivery vehicle taken away: its cargo back to its counter (Venice's on the way). */
+  | { kind: "removeVehicle"; vehicleId: string }
   | { kind: "module"; code: string; level: number }
   | { kind: "knowledge"; code: string; learnt: boolean }
   | { kind: "staffLevel"; staffId: string; level: number }
@@ -130,6 +133,19 @@ function editHouse(tx: Tx, playerId: PlayerId, edit: AdminEdit): void {
         { id: nextId(tx, "v"), type: edit.vehicleType, busyUntil: 0 },
       ];
       break;
+    case "removeVehicle": {
+      const v = (h.vehicles ?? []).find((x) => x.id === edit.vehicleId);
+      if (!v) fail("unknown_building");
+      if (v.porta) fail("vehicle_busy");
+      // Its cargo into the stock of the counter it stands at, else Venice's: nothing lost.
+      const posts = standingPosts(h, s).map((p) => p.id);
+      const into = v.at && posts.includes(v.at) && !(v.legs ?? []).length ? v.at : HOME_POST;
+      for (const [good, c] of Object.entries(v.cargo ?? {}))
+        putAt(tx, h, playerId, into, good, c.qty, "empire_voyage", v.id);
+      h.vehicles = (h.vehicles ?? []).filter((x) => x.id !== v.id);
+      for (const m of h.staff ?? []) if (m.placedAt === v.id) m.placedAt = undefined;
+      break;
+    }
     case "module": {
       if (!s.modules.some((m) => m.code === edit.code)) fail("unknown_choice");
       const level = whole(edit.level, 0, s.research.minutes.length);
