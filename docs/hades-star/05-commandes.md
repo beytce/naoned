@@ -42,12 +42,13 @@
 
 - **Le plafond par taille** (1 à 5) : 3, 5, 8, 11, 14.
 - **Une commande toutes les** 240, 144, 90, 65 et 51 minutes : chaque taille se remplit en 12 h.
-- **Un lot** vaut environ 80 ducats au prix de référence. `orders.tierTimes` peut le multiplier selon le palier de la marchandise (brute, intermédiaire, finie, luxe), mais il reste vide pour Venise.
+- **Un lot** vaut environ 80 ducats au prix de référence, multiplié selon le palier de la marchandise (`orders.tierTimes`) : brute ×1, intermédiaire ×2, finie ×3, luxe ×5.
+- **La Casa** (calibrage repris le 1er novembre, la nuit) : 1 200 à 20 000 ducats pour les Casa 4 à 8, puis au moins un cinquième de plus à chaque Casa, jusqu'à 178 000 pour la Casa 20.
 - **La prime** est de 15 %.
 - **Les places** :
   - mulet 2, charrette 3, chariot 5, burchio 6 ;
   - +1 place par niveau du modèle.
-- **Le calibrage reste incomplet** : 4 cibles sur 9, et les Casa 5 à 8 viennent trop tôt (voir calibration.md).
+- **Le calibrage** : 5, 6 et 5 cibles sur 9, le calendrier de la Casa tenu ; trois cibles restent à arbitrer (voir calibration.md).
 
 ## 4. Ce qui change dans le code
 

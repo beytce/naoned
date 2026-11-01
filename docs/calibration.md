@@ -2265,3 +2265,42 @@ pnpm --filter @comptoirs/simulator empire --cohort 30     # rapide (≈ 30 s), p
   - ou réduire `roundsPerSession` (charger à la main, commande par commande, prend plus de temps qu'un chargement automatique), en relevant le lot pour garder le milieu de partie ;
   - ou les deux.
   - Les paliers (`orders.tierTimes`) existent dans le moteur, mais restent vides pour Venise.
+
+### Le calibrage des commandes comme des cargaisons, repris (1er novembre 2026, la nuit)
+
+**Le point de départ** : 4, 4 et 4 cibles sur 9 (section précédente). Les Casa 5 à 8 venaient en 2 à 5 jours, et le milieu de partie butait sur un mur entre la Casa 11 et la Casa 12.
+
+**Essais** (graine 1, cohortes de 50) :
+
+| Essai | Cibles | Casa 5 / 8 / 20 (jours) | Remarque |
+| --- | --- | --- | --- |
+| 3 chargements par séance (au lieu de 10) | 3 | 1,9 / 7,7 / — | le début ne bouge pas, la fin n'arrive plus |
+| 4 chargements, lot de 120 d | 4 | 1,9 / 5,2 / — | de même |
+| Casa 4 à 8 ×8 (ducats), ×4 (matériaux) | 4 | 2,9 / 20,7 / 641 | le début presque tenu |
+| Casa 5 ×12 en plus | 5 | 3,9 / 21,2 / 414 | **calendrier tenu**, mais la Casa 8 plus chère que la 9 |
+| Exigences d'ateliers dès la Casa 5 | 4 | 25,9 / 35,7 / 317 | la Casa 5 bloquée, puis tout s'emballe |
+| Table croissante (chaque Casa ≥ 1,2 × la précédente) | 4 | 3,9 / 21,2 / — | la fin n'arrive plus : un mur à la Casa 12 |
+| Paliers des lots (×1, ×2, ×3, ×5) | 5 | 3,4 / 21,1 / 479 | **le mur levé**, puits ÷ sources tenu |
+| **Paliers et table croissante, Casa 5 ×16, Casa 6 ×11** | **5** | **3,9 / 22,7 / > 720** | **retenu** |
+
+**Le diagnostic** :
+- **le début** ne dépend pas des commandes, mais des ventes à la Dogana, que plus rien ne vient absorber. Seul le prix des Casa 4 à 8 le règle ;
+- **le milieu de partie** plafonnait, car chaque ville a un plafond de commandes. Les paliers des lots font payer davantage les commandes de produits finis, et relancent le revenu des Maisons qui montent leurs chaînes.
+
+**Retenu** :
+- **la Casa** : 1 200, 6 400, 11 000, 13 200 et 20 000 ducats pour les Casa 4 à 8, avec des matériaux ×4 à ×6. Ensuite, chaque Casa coûte au moins un cinquième de plus que la précédente : 24 000 pour la 9, jusqu'à 178 000 pour la 20 ;
+- **les paliers des lots** : brut ×1, intermédiaire ×2, fini ×3, luxe ×5.
+
+**Sur 3 graines (cohortes de 200)** : **5, 6 et 5 cibles sur 9** (contre 4, 4 et 4).
+- **Ce qui tient** :
+  - le calendrier de la Casa, sur les 3 graines : la Casa 19 vers 454 à 528 jours, et la Casa 20 à 682 jours sur la graine 3, au-delà des 24 mois sur les deux autres ;
+  - les objectifs du Carnet, l'indice des prix et la Terraferme ;
+  - la part des commandes, de 76 à 77 % ;
+  - puits ÷ sources, sur la graine 2 (1,00 et 1,01 sur les autres, juste au-dessus de la borne).
+- **Ce qui manque encore** :
+  - **le prochain palier**, à 1,2–4,0 jours de revenu (pour 2 à 7) ;
+  - **la cohorte du mois 12**, qui quitte la première bande en 1,8 mois (pour 4 à 6) : elle profite du rattrapage ;
+  - **les bruts des jeunes Maisons** vendus à Venise, à 3 % de leurs recettes (pour 10 %) : les commandes paient mieux les produits finis.
+  - Ces trois cibles tiennent au modèle des commandes plutôt qu'aux prix. Elles sont à arbitrer par le porteur.
+
+**À annoncer** dans les notes du chapitre, avant de s'appliquer (règle CLAUDE.md) : le nouveau prix des Casa, et les commandes de produits finis qui paient davantage.
