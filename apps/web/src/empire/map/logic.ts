@@ -87,6 +87,15 @@ export function farCamera(p: EmpirePayload, view: Viewport): Camera {
   );
 }
 
+/**
+ * The empire map's zoom: never farther than the house's whole map, a little room around
+ * (1 November: farther, the whole sea, the places grown to be touched broke the phone's memory).
+ */
+export function zoomBounds(p: EmpirePayload, view: Viewport): { min: number; max: number } {
+  const { min, max } = scaleBounds(view);
+  return { min: Math.min(max, Math.max(min, farCamera(p, view).s * 0.9)), max };
+}
+
 /** The scale at which Venice's orbit shows whole and comfortable on this screen. */
 export function nearScale(view: Viewport): number {
   const px = Math.min(

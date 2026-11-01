@@ -18,6 +18,7 @@ export function useCamera({
   onDoubleTap,
   onTap,
   onRest,
+  bounds,
 }: {
   root: RefObject<HTMLElement | null>;
   initial: (view: Viewport) => Camera;
@@ -27,13 +28,16 @@ export function useCamera({
   onTap?: () => void;
   /** The camera at rest again, after a gesture or a glide. */
   onRest?: (cam: Camera, view: Viewport) => void;
+  /** The zoom's range on this screen, when not the chart's own (`scaleBounds`). */
+  bounds?: (view: Viewport) => { min: number; max: number };
 }) {
   const cam = useRef<Camera | null>(null);
   const anim = useRef<{ from: Camera; to: Camera; t0: number; ms: number } | null>(null);
   const velocity = useRef<Point | null>(null);
   const frame = useRef(0);
-  const live = useRef({ onPaint, onDoubleTap, onTap, onRest, initial });
-  live.current = { onPaint, onDoubleTap, onTap, onRest, initial };
+  const live = useRef({ onPaint, onDoubleTap, onTap, onRest, initial, bounds });
+  live.current = { onPaint, onDoubleTap, onTap, onRest, initial, bounds };
+  const rangeOf = (v: Viewport) => live.current.bounds?.(v) ?? scaleBounds(v);
   // The screen's size, read when it changes (never in a frame), and one paint per frame.
   const size = useRef<Viewport | null>(null);
   const painting = useRef(0);
@@ -69,7 +73,7 @@ export function useCamera({
   const set = useCallback(
     (c: Camera) => {
       const v = view();
-      const { min, max } = scaleBounds(v);
+      const { min, max } = rangeOf(v);
       const s = Math.min(max, Math.max(min, c.s));
       // A scale clamped keeps the screen's middle where it was.
       const k = s / c.s;
@@ -153,7 +157,7 @@ export function useCamera({
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
     });
-    const bounds = () => scaleBounds(view());
+    const bounds = () => rangeOf(view());
     const down = (e: PointerEvent) => {
       if (e.button !== 0 && e.pointerType === "mouse") return;
       // A vehicle dragged to a place: its own gesture, the camera stays (the hops).

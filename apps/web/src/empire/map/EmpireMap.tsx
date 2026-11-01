@@ -42,6 +42,7 @@ import {
   nearestPlace,
   placeable,
   placesOf,
+  zoomBounds,
 } from "./logic.js";
 import { useCamera } from "./useCamera.js";
 
@@ -174,7 +175,8 @@ export const EmpireMap = forwardRef<
       layer.style.transform = moved;
       // The names of regions and the timers keep their size; the places follow the chart.
       layer.style.setProperty("--inv", String(1 / k));
-      layer.style.setProperty("--chartk", String(drawn.current / ref0.current));
+      // The places shrink with the chart, to a third of their size at the least.
+      layer.style.setProperty("--chartk", String(Math.max(0.3, drawn.current / ref0.current)));
     }
     // Far, the places' names give way (after Hades' Star: a planet's name shows near).
     const far = s / ref0.current < 0.62;
@@ -190,6 +192,9 @@ export const EmpireMap = forwardRef<
     root,
     initial: sectorOn,
     onPaint: paint,
+    // Never farther than the house's whole map (1 November: the zoom went to the whole sea, and
+    // the places grown to be touched broke the phone's memory).
+    bounds: (v) => zoomBounds(p, v),
     // A double touch on the sea: near (Venice's sector) and far (the whole map) in turn.
     onDoubleTap: () => {
       const v = camera.view();
