@@ -2042,6 +2042,8 @@ Ce sont les niveaux des **navires** qui déplacent l'équilibre : sans eux, on r
 
 ### La Porta au simulateur (1er novembre 2026, lot 6 de docs/plan-porta.md)
 
+> Écrit avant le retrait de la mer, des gisements et des expéditions : les cibles de « part de son métier », de la Muda et des voyages qu'on y lit n'ont plus cours.
+
 La Porta remplace l'expédition en boîte noire (un succès tiré au sort et un butin de 250 d × palier²). Au simulateur, un bot joue **la vraie bataille du moteur** (`apps/simulator/src/empire/porta.ts`, `playBattle`). Une bataille de dix minutes est trop longue pour chaque Maison chaque jour : chaque combinaison (palier, modèle de combat, niveau, reliques que porte le transport) est jouée six fois une fois pour toutes, et les Maisons tirent leur issue parmi ces six.
 
 **Le bot de bataille** :
@@ -2172,3 +2174,35 @@ Le détail des écarts :
 pnpm --filter @comptoirs/simulator empire                 # 3 graines, 24 mois, 4 cohortes de 200
 pnpm --filter @comptoirs/simulator empire --cohort 30     # rapide (≈ 30 s), plus bruité
 ```
+
+### La livraison saut par saut (1er novembre 2026, le soir, d'après Hades' Star)
+
+**Ce qui change** (`docs/hades-star/00-synthese.md`) :
+- **Les commandes** viennent par vagues : une toutes les 2 h, qui s'accumulent jusqu'à 6. Une séance trouve donc toutes les vagues venues depuis la précédente, au lieu de la seule période en cours.
+- **Le véhicule** livre saut par saut, en quelques secondes. Au simulateur, une séance charge ses charrettes dix fois (`roundsPerSession` 10, contre 3). Les commandes deviennent la vraie borne.
+
+**Essais** (graine 1, cohortes de 50) :
+
+| Commandes par vague selon la taille | Prime | Cibles | Remarque |
+| --- | --- | --- | --- |
+| 1, 2, 3, 4, 5 (comme avant) | 15 % | 6 sur 9 | la Casa 14 à 20 trop vite (la fin de partie un an en avance) |
+| 1, 2, 3, 4, 5, prime nulle et 3 % par taille | 0 % | 5 sur 9 | la Casa 15 à 19 encore trop vite |
+| 1, 1, 2, 2, 3 | 15 % | 5 sur 9 | la première cohorte cale au milieu (Casa 12 à 15) |
+| 1, 1, 2, 2, 3 | 25 % | 5 sur 9 | la Casa 4 trop lente, la fin trop vite |
+| 1, 1, 2, 3, 4 | 15 % | 6 sur 9 | le calendrier tient, la première bande à 3,3 mois |
+| **1, 2, 2, 3, 4** | **15 %** | **7 sur 9** | **le calendrier tient (la Casa 20 à 620 jours)** |
+
+**Retenu, sur 3 graines (cohortes de 200)** : **7, 6 et 5 cibles sur 9**.
+
+- **Ce qui tient** :
+  - le calendrier de la Casa de la première cohorte, sauf la Casa 20 de la graine 3 ;
+  - les objectifs du Carnet, l'indice des prix et la Terraferme ;
+  - les bruts des jeunes Maisons ;
+  - la part des commandes : 80 à 81 %.
+- **Ce qui manque** :
+  - **la Casa 20 tombe à 366–464 jours** pour la première cohorte. C'est dans les bornes larges (la moitié de la cible) mais en dessous des deux ans voulus : la fin de partie reste rapide avec cohortes de 200 ;
+  - le prochain palier, à 0,9–1,3 jour de revenu certains mois (pour 2 à 7) ;
+  - la sortie de la première bande de Puissance, à 2,8–3,1 mois (pour 4 à 6) ;
+  - puits ÷ sources des jeunes Maisons, à 0,80–0,81, juste au bord de la cible.
+- **À affiner ensuite** : le coût des Casa 15 à 20 plutôt que les commandes. Les commandes règlent le début et le milieu de partie, et un coût de fin plus haut rendrait les deux ans sans ralentir les premiers mois.
+
