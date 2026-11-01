@@ -34,13 +34,27 @@ Venise est faite d'îles. Hades' Star fait de chaque lieu une planète. **Fondac
 
 ## 3. L'outil
 
+Gemini a refusé la planche de style (1er novembre 2026) : un texte long, quatre sujets différents et des styles d'artistes nommés le font décrocher. On passe à un outil qui tient les textes longs.
+
 | Outil | Pourquoi | Limite |
 | --- | --- | --- |
-| **Google Gemini (« Nano Banana »), dans l'appli Gemini ou Google AI Studio** — recommandé | Gratuit ; le meilleur aujourd'hui pour **garder un style d'une image à l'autre** : on lui joint une planche réussie et il s'y tient ; il corrige une image sur demande (« même chose, toit plus rouge ») | Pas de fond transparent : on demande un fond magenta uni, je le découpe ; quota quotidien |
+| **Microsoft Copilot** (copilot.microsoft.com, ou Bing Image Creator) — recommandé | Gratuit avec un compte Microsoft ; le même générateur d'images qu'OpenAI, qui suit fidèlement les textes longs et les grilles ; on peut lui joindre une image de référence et demander une retouche | Quota quotidien ; fond transparent pas toujours tenu : garder le magenta |
+| **ChatGPT** (offre gratuite) | Le même générateur, le plus obéissant ; sait faire un **fond transparent** (« transparent background, PNG ») ; garde le style dans la conversation | Peu d'images par jour en gratuit |
 | Leonardo.ai (offre gratuite) | Fond transparent natif, « Style Reference » | Jetons quotidiens limités ; moins constant |
-| Recraft | Styles enregistrés, vectoriel | Images publiques et usage commercial limité en gratuit |
 
-Méthode avec Gemini : **une conversation par famille**, la planche de style jointe à chaque message, **quatre sujets par image en grille 2 × 2** (quatre fois moins de quota, et les quatre sont du même style). Tu m'envoies les planches telles quelles : je les découpe, je retire le fond, je nomme et je range.
+Méthode : **une conversation par famille**. On commence par **un seul sujet par image** avec le bloc STYLE court (ci-dessous) ; une fois la planche de style réussie, on la joint à chaque message et on peut passer à quatre sujets par image (grille 2 × 2). Tu m'envoies les images telles quelles : je les découpe, je retire le fond, je nomme et je range.
+
+### Le bloc STYLE court (si un outil refuse ou se perd)
+
+```
+Hand-painted digital miniature for a premium mobile strategy game set in Venice in 1450.
+Three-quarter top-down view, clean readable shapes, soft painterly shading, warm orange
+lantern light in the windows, thin cyan moonlight on the edges, rich grown-up colours
+(terracotta, cream stone, ochre, olive, deep red). Elegant, not childish, not photorealistic.
+Single subject centred on a plain flat magenta background. No text.
+```
+
+Puis une phrase pour le sujet, par exemple : « Subject: a small round floating island with a stone edge, carrying a Venetian brick kiln with a tall chimney, stacks of red bricks and a glowing kiln mouth. »
 
 ## 4. Les textes
 
