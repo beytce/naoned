@@ -91,6 +91,18 @@ describe("a lot", () => {
   });
 });
 
+describe("a lot of a higher tier", () => {
+  it("is worth more (a greater planet's shipments, at Hades' Star)", () => {
+    const tiers = parseEmpireSettings({
+      ...empire,
+      orders: { ...empire.orders, tierTimes: { finished: 3 } },
+    });
+    expect(lotOf(tiers, "wheat", 400n, "raw")).toBe(10);
+    // Bread is finished: three times forty ducats, at 12 ducats.
+    expect(lotOf(tiers, "bread", 1_200n, "finished")).toBe(10);
+  });
+});
+
 describe("a full city", () => {
   it("asks its next order an interval after a place is freed", () => {
     const w = world();

@@ -110,6 +110,8 @@ export const empireSettingsSchema = z.object({
       cap: z.array(positive).length(5).prefault([3, 4, 6, 8, 10]),
       everyMinutes: z.array(positive).length(5).prefault([240, 180, 120, 90, 72]),
       lotDucats: positive.prefault(40),
+      /** A lot's worth by its good's tier (raw, intermediate, finished, luxury): `lotDucats` times. */
+      tierTimes: z.record(z.string(), positive).prefault({}),
       lots: z.record(z.string(), positive).prefault({}),
       premiumBps: bps.prefault(1_500),
     })
