@@ -87,7 +87,12 @@ describe("the orders of a city", () => {
 describe("a greater counter", () => {
   it("brings greater orders: its level, as the book of before grew", () => {
     const w = new World(
-      makeContext({ empire: { ...empire, start: { ...empire.start, capitalDucats: 1_000_000 } } }),
+      makeContext({
+        empire: {
+          ...empire,
+          start: { capitalDucats: 1_000_000, workshops: [], vehicles: ["cart"] },
+        },
+      }),
     );
     w.do({ type: "empireJoin", playerId: "a" });
     const before = city(w, "venezia")?.orders.map((o) => o.qty) ?? [];
