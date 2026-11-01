@@ -30,6 +30,7 @@ import {
   sectorCost,
   standingPosts,
   startCells,
+  venice1450,
 } from "@comptoirs/engine";
 import { askAid, joinCompany, supplyAid } from "./company.js";
 import {
@@ -293,6 +294,9 @@ function landPlaces(w: World, h: House): number {
  * make. A session finds what came since the last one (the cap at most), and its carts bring as
  * many as their places allow, `roundsPerSession` loads (a hop is a few seconds), from its stock.
  */
+/** The goods' tiers (the theme's): a lot's worth follows its good's. */
+const tierOf = new Map<string, string>(venice1450.resources.map((r) => [r.code, r.tier]));
+
 function ordersSince(w: World, size: number, sinceHours: number): number {
   const o = w.s.orders;
   if (!o) return 0;
@@ -334,7 +338,7 @@ function deliverOrders(w: World, h: House, sinceHours: number) {
       const ref = orderRefOf(w.s, c.region, good);
       if (places <= 0 || ref === null || !homesOf(h, good).has(c.region)) return;
       const asked = Math.floor(n / goods.length) + (i < n % goods.length ? 1 : 0);
-      const lot = lotOf(w.s, good, ref);
+      const lot = lotOf(w.s, good, ref, tierOf.get(good));
       const k = Math.min(asked, Math.floor((h.stock.get(good) ?? 0) / lot), places);
       if (k <= 0) return;
       takeStock(h, good, k * lot);
@@ -848,6 +852,19 @@ function tryVehicle(w: World, h: House): boolean {
     startBuild(w, h, { kind: "depot", target: "depot" }, depot.minutes);
     return true;
   }
+  // At the Remise's cap (after Hades' Star's shipyard), the Remise is raised first.
+  const levels = w.s.fleet?.levels;
+  const level = h.depotLevel ?? 1;
+  const cap = levels?.[Math.min(level, levels.length) - 1]?.vehicles ?? Number.POSITIVE_INFINITY;
+  if (h.vehicles.length >= cap) {
+    const next = levels?.[level];
+    if (!next || busy(h, "depot") || h.casa < next.casa) return false;
+    const price = d(next.costDucats);
+    if (spendable(w, h) < price) return false;
+    destroy(w, h, price, "vehicles");
+    startBuild(w, h, { kind: "depot", target: "raise" }, next.minutes);
+    return true;
+  }
   const cost = d(pick[1].costDucats);
   if (spendable(w, h) < cost) return false;
   destroy(w, h, cost, "vehicles");
@@ -977,6 +994,8 @@ export function finishBuild(w: World, h: House, b: Build) {
     h.arsenal = true;
   } else if (b.kind === "camp") {
     h.camp = true;
+  } else if (b.kind === "depot" && b.target === "raise") {
+    h.depotLevel = (h.depotLevel ?? 1) + 1;
   } else if (b.kind === "depot") {
     h.depot = true;
   } else if (b.kind === "model") {

@@ -38,15 +38,16 @@
 | La soute | Elle se compte en **places**. Chaque type a ses places de base (`vehicles[type].places`), et chaque niveau du modèle en ajoute `vehicleLevels.placesPerLevel` |
 | Les modules | Le Livre de route, le Fouet du charretier et l'Estafette sont **retirés** pour l'instant. L'Agrandissement de soute (`capacity`) et la prime (`orderBonus`) restent |
 
-## 3. Les chiffres de Venise (à caler au simulateur)
+## 3. Les chiffres de Venise (calibration.md, « Les commandes comme des cargaisons »)
 
-- **Le plafond par taille** (1 à 5) : 3, 4, 6, 8, 10.
-- **Une commande toutes les** 240, 180, 120, 90 et 72 minutes : chaque taille se remplit en 12 h.
-- **Un lot** vaut environ 40 ducats au prix de référence.
+- **Le plafond par taille** (1 à 5) : 3, 5, 8, 11, 14.
+- **Une commande toutes les** 240, 144, 90, 65 et 51 minutes : chaque taille se remplit en 12 h.
+- **Un lot** vaut environ 80 ducats au prix de référence. `orders.tierTimes` peut le multiplier selon le palier de la marchandise (brute, intermédiaire, finie, luxe), mais il reste vide pour Venise.
 - **La prime** est de 15 %.
 - **Les places** :
   - mulet 2, charrette 3, chariot 5, burchio 6 ;
   - +1 place par niveau du modèle.
+- **Le calibrage reste incomplet** : 4 cibles sur 9, et les Casa 5 à 8 viennent trop tôt (voir calibration.md).
 
 ## 4. Ce qui change dans le code
 

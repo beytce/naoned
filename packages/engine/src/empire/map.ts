@@ -84,11 +84,44 @@ export function reachOf(level: number, s: EmpireSettings): number {
   return r ? r.base + r.perLevel * (Math.max(1, level) - 1) : 0;
 }
 
-/** Venice's own counter: at Venice's place, with its level. */
+/**
+ * The house's first fondaco, with its level: where the player put it down, else at the world's
+ * point, else (a world without one) at Venice's place, as before.
+ */
 export function homePost(h: EmpireHouse, s: EmpireSettings) {
+  const level = h.homeLevel ?? 1;
+  if (h.home) return { id: "home", region: HOME, ...h.home, level };
+  const at = s.map.home;
+  if (at) return { id: "home", cell: cellAtPoint(at.x, at.y, s), region: HOME, ...at, level };
   const venice = s.map.cities.find((c) => c.region === HOME);
   const [x, y] = venice ? citySpot(venice, s) : pointOf(regionCells(s, HOME)[0] ?? "0,0", s);
-  return { id: "home", cell: venice?.cell ?? "", region: HOME, x, y, level: h.homeLevel ?? 1 };
+  return { id: "home", cell: venice?.cell ?? "", region: HOME, x, y, level };
+}
+
+/**
+ * Puts the house's first fondaco down (decision of the owner, 1 November 2026): once, free and at
+ * once, at a point of a cell of the start the house sees, never on a town nor near another
+ * fondaco. Its vehicles and its stock stand with it.
+ */
+export function placeHome(tx: Tx, playerId: PlayerId, cell: string, x: number, y: number): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  ensureMap(h, s);
+  if (h.home) fail("built");
+  const c = s.map.cells[cell];
+  if (!c || c.region !== HOME) fail("unknown_cell");
+  if (!revealedOf(h, s).has(cell)) fail("hidden_cell");
+  if (!Number.isInteger(x) || !Number.isInteger(y)) fail("unknown_cell");
+  if (cellAtPoint(x, y, s) !== cell) fail("unknown_cell");
+  const clear = s.map.cityClearance;
+  if (clear > 0 && s.map.cities.some((t) => within(citySpot(t, s), [x, y], clear))) fail("on_city");
+  const others = standingPosts(h, s).slice(1);
+  if (
+    s.map.postSpacing > 0 &&
+    others.some((o) => within([o.x, o.y], [x, y], s.map.postSpacing - 1))
+  )
+    fail("post_too_close");
+  h.home = { cell, x, y };
 }
 
 /** Every counter that stands, Venice's first, each with its point and its level. */

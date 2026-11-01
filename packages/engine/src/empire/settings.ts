@@ -110,6 +110,8 @@ export const empireSettingsSchema = z.object({
       cap: z.array(positive).length(5).prefault([3, 4, 6, 8, 10]),
       everyMinutes: z.array(positive).length(5).prefault([240, 180, 120, 90, 72]),
       lotDucats: positive.prefault(40),
+      /** A lot's worth by its good's tier (raw, intermediate, finished, luxury): `lotDucats` times. */
+      tierTimes: z.record(z.string(), positive).prefault({}),
       lots: z.record(z.string(), positive).prefault({}),
       premiumBps: bps.prefault(1_500),
     })
@@ -136,6 +138,19 @@ export const empireSettingsSchema = z.object({
       minCostDucats: qty.prefault(0),
     })
     .prefault({}),
+  /**
+   * The Remise's levels (decision of the owner, 1 November 2026, after Hades' Star's shipyard):
+   * each caps the transport vehicles a house may hold; the first is the Remise put down, the next
+   * are sites. None: no cap.
+   */
+  fleet: z
+    .object({
+      levels: z
+        .array(z.object({ vehicles: positive, costDucats: qty, casa: positive, minutes: qty }))
+        .min(1),
+    })
+    .nullable()
+    .prefault(null),
   /** A land vehicle's round trips a day for the cities' orders. */
   localTripsPerDay: positive.prefault(4),
   /** The night queue: a workshop is relaunched for this many hours at most, for everyone. */
@@ -477,6 +492,13 @@ export const empireSettingsSchema = z.object({
         .prefault(null),
       /** No counter closer than this to another, in the chart's units. */
       postSpacing: qty.prefault(0),
+      /**
+       * The house's first fondaco, no town (decision of the owner, 1 November 2026): where it
+       * stands until the player puts it down, in the sector of the start. None: on Venice.
+       */
+      home: z.object({ x: z.number().int(), y: z.number().int() }).nullable().prefault(null),
+      /** No fondaco closer than this to a town, in the chart's units. */
+      cityClearance: qty.prefault(0),
       /** A land vehicle between two counters: so many of the chart's units an hour. */
       transferUnitsPerHour: positive.prefault(20),
       revealRadius: positive.prefault(2),

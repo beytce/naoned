@@ -210,12 +210,33 @@ export const venice1450Empire: EmpireSettingsInput = {
     unlock: { costDucats: 300, stepBps: 2_000, seaHops: 3 },
     reach: { base: 36, perLevel: 8 },
     postSpacing: 8,
+    // The first fondaco is no town (1 November 2026): put down by the player in Venice's sector,
+    // at this point until then, six units from Venice, the very towns in reach as on Venice (a
+    // point keeping as many but others slowed the end of the first cohort: calibration.md).
+    home: { x: 162, y: 135 },
+    cityClearance: 4,
     costStepBps: 2_500,
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
     // fell short of their share, calibration.md).
     camp: { costDucats: 600, casa: 4, minutes: 240 },
     // The Remise, where the vehicles are bought and their models raised, the ships too.
     depot: { costDucats: 200, casa: 2, minutes: 120 },
+  },
+  // The Remise's levels cap the transport vehicles (1 November 2026, after Hades' Star's shipyard,
+  // whose ten levels take the fleet from 4 to 16): the first is the Remise put down.
+  fleet: {
+    levels: [
+      { vehicles: 4, casa: 2, costDucats: 0, minutes: 0 },
+      { vehicles: 5, casa: 3, costDucats: 300, minutes: 30 },
+      { vehicles: 7, casa: 5, costDucats: 600, minutes: 120 },
+      { vehicles: 8, casa: 7, costDucats: 1_500, minutes: 360 },
+      { vehicles: 10, casa: 9, costDucats: 3_000, minutes: 720 },
+      { vehicles: 12, casa: 11, costDucats: 6_000, minutes: 1_440 },
+      { vehicles: 13, casa: 13, costDucats: 10_000, minutes: 2_880 },
+      { vehicles: 14, casa: 15, costDucats: 16_000, minutes: 4_320 },
+      { vehicles: 15, casa: 17, costDucats: 25_000, minutes: 7_200 },
+      { vehicles: 16, casa: 19, costDucats: 36_000, minutes: 10_080 },
+    ],
   },
   // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the
   // fourth place, a brickworks, the first choice (a farm instead would leave the Casa waiting).
@@ -251,13 +272,14 @@ export const venice1450Empire: EmpireSettingsInput = {
     },
   },
   // The cities' orders (1 November, after Hades' Star's shipments): a town fills over a day, one
-  // order every four hours up to three for a market town, every 72 minutes up to ten for a
-  // capital; a lot worth some forty ducats of a good the house's workshops make, one place of a
-  // hold, paid its reference and 15 %.
+  // order every four hours up to three for a market town, every 51 minutes up to fourteen for a
+  // capital; a lot worth some eighty ducats of a good the house's workshops make, one place of a
+  // hold, paid its reference and 15 % (calibration.md, the orders as shipments).
   orders: {
-    cap: [3, 4, 6, 8, 10],
-    everyMinutes: [240, 180, 120, 90, 72],
-    lotDucats: 40,
+    cap: [3, 5, 8, 11, 14],
+    everyMinutes: [240, 144, 90, 65, 51],
+    lotDucats: 80,
+    tierTimes: {},
     lots: {},
     premiumBps: 1_500,
   },

@@ -21,6 +21,8 @@ export type EngineErrorCode =
   | "no_arsenal"
   | "no_camp"
   | "no_depot"
+  | "fleet_full"
+  | "on_city"
   | "post_too_close"
   | "out_of_reach"
   | "not_adjacent"

@@ -54,11 +54,15 @@ export function orderRefOf(s: EmpireSettings, region: string, good: string): Den
   return low;
 }
 
-/** A good's lot: as set, else what is worth `lotDucats` at its reference (one at the least). */
-export function lotOf(s: EmpireSettings, good: string, ref: Deniers): number {
+/**
+ * A good's lot: as set, else what is worth `lotDucats` at its reference, times its tier's (a
+ * finished good's lot worth more than a raw one's, as a greater planet's shipments); one at least.
+ */
+export function lotOf(s: EmpireSettings, good: string, ref: Deniers, tier?: string): number {
   const set = s.orders?.lots[good];
   if (set !== undefined) return set;
-  const worth = BigInt(s.orders?.lotDucats ?? 0) * DENIERS_PER_DUCAT;
+  const times = (tier !== undefined ? s.orders?.tierTimes[tier] : undefined) ?? 1;
+  const worth = BigInt((s.orders?.lotDucats ?? 0) * times) * DENIERS_PER_DUCAT;
   if (ref <= 0n) return 1;
   return Math.max(1, Number((worth + ref / 2n) / ref));
 }
@@ -86,7 +90,8 @@ function drawOrder(
   const good = goods[draw(ctx, `order|${playerId}|${code}|${seq}`) % goods.length] ?? "";
   const ref = orderRefOf(s, region, good);
   if (ref === null) return null;
-  const qty = lotOf(s, good, ref);
+  const tier = ctx.theme.resources.find((r) => r.code === good)?.tier;
+  const qty = lotOf(s, good, ref, tier);
   const pay = applyBpsFloor(ref * BigInt(qty), 10_000 + (s.orders?.premiumBps ?? 0));
   return { id: `${code}#${seq}`, city: code, good, qty, pay };
 }

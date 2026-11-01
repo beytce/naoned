@@ -90,6 +90,9 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
       h.camp = b.cell;
     } else if (b.kind === "depot" && b.cell) {
       h.depot = b.cell;
+    } else if (b.kind === "depot") {
+      // The Remise raised: a greater fleet.
+      h.depotLevel = Math.max(h.depotLevel ?? 1, b.level);
     } else if (b.kind === "porta" && b.cell) {
       // The Porta put down, then raised (docs/plan-porta.md § 3).
       if (!h.porta)

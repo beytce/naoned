@@ -439,6 +439,10 @@ export interface EmpireHouse {
   posts?: { id?: string; cell: string; region: string; x?: number; y?: number; level?: number }[];
   /** Venice's own counter's level: its reach on the map (1 when unset). */
   homeLevel?: number;
+  /** The first fondaco, put down by the player (its point); the world's point until then. */
+  home?: { cell: string; x: number; y: number };
+  /** The Remise's level (1 when unset): it caps the transport vehicles (`fleet`). */
+  depotLevel?: number;
   /**
    * The stock of each counter beyond Venice, by counter, by good (the map that grows): Venice
    * holds the rest of the house's inventory.
