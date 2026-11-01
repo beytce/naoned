@@ -2270,11 +2270,22 @@ pnpm --filter @comptoirs/simulator empire --cohort 30     # rapide (≈ 30 s), p
 
 **Ce qui change** :
 - **la Remise a dix niveaux** (`fleet.levels`, d'après le chantier naval de Hades' Star). Ils bornent les véhicules de transport à 4, 5, 7, 8, 10, 12, 13, 14, 15 et 16, aux Casa 2, 3, 5, 7, 9, 11, 13, 15, 17 et 19, pour 0 à 36 000 ducats et de quelques minutes à 7 jours de chantier. Au simulateur, un bot à son plafond agrandit d'abord sa Remise, puis achète le véhicule ;
-- **le premier fondaco quitte Venise** pour le point du monde (`map.home`, 174 ; 140), à 9 unités à l'est. Il garde le même nombre de villes à portée (neuf), mais pas tout à fait les mêmes. Le simulateur ne pose pas le fondaco lui-même : il reste au point du monde.
+- **le premier fondaco quitte Venise**. Jusqu'à ce que le joueur le pose, il se tient au point du monde (`map.home`). Le simulateur ne le pose pas lui-même.
 
-**Sur 3 graines (cohortes de 200)** : **7, 5 et 6 cibles sur 9**, contre 7, 7 et 5 avant (18 cibles au total, dans les deux cas).
-- **Le calendrier** tient sur les graines 1 et 3. Sur la graine 2, la Casa 20 de la première cohorte arrive à 348 jours, sous la moitié de la cible (375). Avant ce changement, elle arrivait déjà entre 352 et 492 jours selon la graine : c'est la fin de partie trop rapide connue, pas un effet de la Remise (qui ne peut que freiner).
-- **Puits ÷ sources des jeunes Maisons** : 0,78 à 0,81, toujours au bord de la cible (graine 2 à 0,81).
-- **Les bruts des jeunes Maisons** : 10,0 % sur la graine 3, juste à la cible (12,2 et 12,6 % ailleurs).
-- **Les cibles manquées** restent celles d'avant : le prochain palier (1,0 à 5,1 jours de revenu certains mois, pour 2 à 7) et la sortie de la première bande (2,9 à 3,0 mois, pour 4 à 6).
-- **La suite** reste la même : recalibrer la fin de partie par le coût des Casa 15 à 20.
+**Le point du fondaco.** Il change les villes à portée, et la fin de partie y est sensible (graine 1, cohortes de 50, sur les commandes en cargaisons) :
+
+| Point | Villes à portée | Plafond de flotte | Casa 18 / 19 / 20 de la première cohorte (jours) |
+| --- | --- | --- | --- |
+| Venise (comme avant) | les 9 de Venise | non | 392 / 453 / 636 |
+| Venise | les 9 de Venise | oui | 358 / 456 / — |
+| (174 ; 140), 9 unités à l'est | 9, mais Rimini et Vérone au lieu de Mantoue et Belluno | oui | 692 / — / — |
+| (174 ; 140) | idem | non | — / — / — |
+| (174 ; 140), chantiers de la Remise raccourcis à 1 jour au plus | idem | oui | 615 / — / — |
+| **(162 ; 135), 6 unités au nord-ouest** | **les 9 de Venise** | **oui** | **382 / 538 / —** |
+
+La Remise ne ralentit donc pas la fin de partie. Ce qui la ralentissait, c'était un point qui changeait les villes à portée. **Retenu : (162 ; 135)**, qui garde exactement les villes de Venise, à 5,8 unités de la ville la plus proche (`map.cityClearance` 4).
+
+**Sur 3 graines (cohortes de 50)** : **4, 4 et 4 cibles sur 9**, comme la base (les commandes en cargaisons, ci-dessus).
+- Les cibles manquées sont celles de la base : les Casa 5 à 8 trop tôt (1,9 à 4,7 jours), le prochain palier, la première bande, puits ÷ sources des jeunes Maisons (0,95), leurs bruts (5 %).
+- La fin de partie de la première cohorte reste bruitée avec des cohortes de 50. La Casa 20 arrive à 535 jours sur la graine 3 et n'est pas atteinte en 24 mois sur les graines 1 et 2 ; la Casa 18 ne l'est pas non plus sur la graine 2, qui était déjà la plus lente avant ce changement.
+- **Avant la fusion** des commandes en cargaisons, sur l'ancienne mécanique (cohortes de 200, point (174 ; 140)) : 7, 5 et 6 cibles sur 9, contre 7, 7 et 5 avant le changement.
