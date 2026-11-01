@@ -251,13 +251,14 @@ export const venice1450Empire: EmpireSettingsInput = {
     },
   },
   // The cities' orders (1 November, after Hades' Star's shipments): a town fills over a day, one
-  // order every four hours up to three for a market town, every 72 minutes up to ten for a
-  // capital; a lot worth some forty ducats of a good the house's workshops make, one place of a
-  // hold, paid its reference and 15 %.
+  // order every four hours up to three for a market town, every 51 minutes up to fourteen for a
+  // capital; a lot worth some eighty ducats of a good the house's workshops make, one place of a
+  // hold, paid its reference and 15 % (calibration.md, the orders as shipments).
   orders: {
-    cap: [3, 4, 6, 8, 10],
-    everyMinutes: [240, 180, 120, 90, 72],
-    lotDucats: 40,
+    cap: [3, 5, 8, 11, 14],
+    everyMinutes: [240, 144, 90, 65, 51],
+    lotDucats: 80,
+    tierTimes: {},
     lots: {},
     premiumBps: 1_500,
   },
