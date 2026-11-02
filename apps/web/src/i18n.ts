@@ -295,6 +295,7 @@ const frDict = {
       cityLine: (region: string, size: number, n: number, max: number) =>
         `${region} · ville de taille ${size} · ${n} commande${n > 1 ? "s" : ""} sur ${max}`,
       outOfReach: "Hors du champ de vos fondaci : posez-en un plus près.",
+      infoCount: (n: number, max: number) => `${n}/${max}`,
       none: "Aucune commande en attente.",
       renews: (at: string) => `Prochaine commande à ${at}`,
       full: "Pleine : plus de nouvelle commande tant qu'aucune n'est chargée.",

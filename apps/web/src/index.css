@@ -1267,6 +1267,16 @@ button.map-place {
   opacity: 0;
   transition: opacity var(--t-quick, 150ms);
 }
+/* The information layer (after Hades' Star's tilde): held, every name, the orders, the holds. */
+.info-only {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms var(--ease-out, ease-out);
+}
+[data-info] .info-only,
+[data-info] .map-place .map-name {
+  opacity: 1;
+}
 /* A city the vehicle chosen would serve: its gold halo breathes (after Hades' Star). */
 .city-wanted {
   animation: city-wanted 1400ms ease-in-out infinite;

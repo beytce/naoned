@@ -4,6 +4,8 @@ import { coverClamp, scaleBounds } from "./logic.js";
 
 /** A finger that moved less than this (px) touched; more, it dragged. */
 const TAP_SLOP = 8;
+/** A finger held this long (ms), still, shows the information layer. */
+const HOLD_MS = 500;
 
 /**
  * The camera of the empire's map (the map at the centre, step 1), on the gestures of the monthly
@@ -17,15 +19,19 @@ export function useCamera({
   onPaint,
   onDoubleTap,
   onTap,
+  onHold,
   onRest,
   bounds,
 }: {
   root: RefObject<HTMLElement | null>;
   initial: (view: Viewport) => Camera;
   onPaint: (cam: Camera, view: Viewport) => void;
-  onDoubleTap?: () => void;
+  /** A double touch on the sea, at its point on the screen. */
+  onDoubleTap?: (at: Point) => void;
   /** A touch on the sea, not on a place. */
   onTap?: () => void;
+  /** A finger held still half a second (true), then lifted (false): the information layer. */
+  onHold?: (on: boolean) => void;
   /** The camera at rest again, after a gesture or a glide. */
   onRest?: (cam: Camera, view: Viewport) => void;
   /** The zoom's range on this screen, when not the chart's own (`scaleBounds`). */
@@ -35,8 +41,8 @@ export function useCamera({
   const anim = useRef<{ from: Camera; to: Camera; t0: number; ms: number } | null>(null);
   const velocity = useRef<Point | null>(null);
   const frame = useRef(0);
-  const live = useRef({ onPaint, onDoubleTap, onTap, onRest, initial, bounds });
-  live.current = { onPaint, onDoubleTap, onTap, onRest, initial, bounds };
+  const live = useRef({ onPaint, onDoubleTap, onTap, onHold, onRest, initial, bounds });
+  live.current = { onPaint, onDoubleTap, onTap, onHold, onRest, initial, bounds };
   const rangeOf = useCallback((v: Viewport) => live.current.bounds?.(v) ?? scaleBounds(v), []);
   // The screen's size, read when it changes (never in a frame), and one paint per frame.
   const size = useRef<Viewport | null>(null);
@@ -121,6 +127,25 @@ export function useCamera({
     [current, run, view],
   );
 
+  /** Glides the map by so many pixels of the screen (the keys of a computer). */
+  const panBy = useCallback(
+    (dx: number, dy: number, ms = 160) => {
+      const c = current();
+      easeTo({ ...c, tx: c.tx + dx, ty: c.ty + dy }, ms);
+    },
+    [current, easeTo],
+  );
+
+  /** Zooms by a factor around a point of the screen (its middle by default). */
+  const zoomBy = useCallback(
+    (k: number, at?: Point, ms = 160) => {
+      const v = view();
+      const { min, max } = rangeOf(v);
+      easeTo(zoomAt(current(), k, at ?? { x: v.w / 2, y: v.h / 2 }, min, max), ms);
+    },
+    [current, easeTo, view, rangeOf],
+  );
+
   // The first paint, and again when the screen changes size.
   useEffect(() => {
     set(current());
@@ -151,6 +176,13 @@ export function useCamera({
     let last: { p: Point; t: number } | null = null;
     let pinch: { d: number; mid: Point } | null = null;
     let lastTap = 0;
+    // A finger held still: the information layer while it stays down.
+    let hold = 0;
+    let holding = false;
+    const stopHold = () => {
+      clearTimeout(hold);
+      hold = 0;
+    };
     // The map's frame, read when a gesture starts, not at each move.
     let rect = el.getBoundingClientRect();
     const local = (e: PointerEvent | WheelEvent): Point => ({
@@ -169,7 +201,14 @@ export function useCamera({
       if (pointers.size === 1) {
         moved = 0;
         last = { p: local(e), t: performance.now() };
-      }
+        stopHold();
+        hold = window.setTimeout(() => {
+          hold = 0;
+          if (pointers.size !== 1 || moved > TAP_SLOP) return;
+          holding = true;
+          live.current.onHold?.(true);
+        }, HOLD_MS);
+      } else stopHold();
       if (pointers.size === 2) {
         const [a, b] = [...pointers.values()] as [Point, Point];
         pinch = {
@@ -198,6 +237,7 @@ export function useCamera({
       const dy = p.y - prev.y;
       moved += Math.abs(dx) + Math.abs(dy);
       if (moved <= TAP_SLOP) return;
+      stopHold();
       if (!el.dataset.dragging) el.dataset.dragging = "1";
       const c = current();
       set({ ...c, tx: c.tx + dx, ty: c.ty + dy });
@@ -213,6 +253,13 @@ export function useCamera({
       pointers.delete(e.pointerId);
       if (pointers.size < 2) pinch = null;
       if (pointers.size > 0) return;
+      stopHold();
+      // A hold let go: the layer goes, and it was no touch.
+      if (holding) {
+        holding = false;
+        live.current.onHold?.(false);
+        return;
+      }
       const tapped = moved <= TAP_SLOP;
       const sinceMove = last ? performance.now() - last.t : 999;
       if (!tapped && velocity.current && sinceMove < 60) run();
@@ -224,9 +271,13 @@ export function useCamera({
       // A double touch on the sea, not on a place.
       if ((e.target as HTMLElement | null)?.closest("button")) return;
       const t = performance.now();
-      if (t - lastTap < 300) live.current.onDoubleTap?.();
+      if (t - lastTap < 300) live.current.onDoubleTap?.(local(e));
       else live.current.onTap?.();
       lastTap = t;
+    };
+    // A hold shows the layer, never the phone's menu.
+    const menu = (e: Event) => {
+      if (holding || hold) e.preventDefault();
     };
     // A drag that started on a place is not a touch on it.
     const click = (e: MouseEvent) => {
@@ -248,7 +299,10 @@ export function useCamera({
     window.addEventListener("pointercancel", up);
     el.addEventListener("click", click, true);
     el.addEventListener("wheel", wheel, { passive: false });
+    el.addEventListener("contextmenu", menu);
     return () => {
+      stopHold();
+      el.removeEventListener("contextmenu", menu);
       el.removeEventListener("pointerdown", down);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
@@ -258,7 +312,7 @@ export function useCamera({
     };
   }, [root, set, current, run, view, rangeOf]);
 
-  return { cam: current, easeTo, view, repaint: () => set(current()) };
+  return { cam: current, easeTo, panBy, zoomBy, view, repaint: () => set(current()) };
 }
 
 /**

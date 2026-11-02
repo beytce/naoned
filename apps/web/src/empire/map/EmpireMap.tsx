@@ -56,7 +56,15 @@ export interface EmpireMapHandle {
   home(): void;
   /** Out to the map. */
   far(): void;
+  /** The information layer shown (Alt held) or not. */
+  info(on: boolean): void;
+  /** The map moved a step (a key: -1, 0 or 1 on each axis), or zoomed by a factor. */
+  pan(dx: number, dy: number): void;
+  zoom(k: number): void;
 }
+
+/** A key moves the map by this share of the screen. */
+const PAN_STEP = 0.12;
 
 /** A sector across the screen, as the example's systems (step 4): Venice's, at the start. */
 const sectorOn = (v: Viewport) =>
@@ -191,6 +199,14 @@ export const EmpireMap = forwardRef<
     void v;
   }, []);
 
+  /** The information layer (after Hades' Star's tilde): every name, the orders, the holds. */
+  const showInfo = useCallback((on: boolean) => {
+    const el = root.current;
+    if (!el) return;
+    if (on) el.dataset.info = "1";
+    else delete el.dataset.info;
+  }, []);
+
   // Every house starts on Venice's sector, across the screen.
   const camera = useCamera({
     root,
@@ -199,11 +215,20 @@ export const EmpireMap = forwardRef<
     // Never farther than the house's whole map (1 November: the zoom went to the whole sea, and
     // the places grown to be touched broke the phone's memory).
     bounds: (v) => zoomBounds(p, v),
-    // A double touch on the sea: near (Venice's sector) and far (the whole map) in turn.
-    onDoubleTap: () => {
+    // A double touch on the sea: near, around the point touched, and far (the whole map) in
+    // turn (after Hades' Star).
+    onDoubleTap: (at) => {
       const v = camera.view();
-      camera.easeTo(camera.cam().s < sectorOn(v).s * 0.8 ? sectorOn : farOn);
+      const c = camera.cam();
+      const near = sectorOn(v).s;
+      if (c.s >= near * 0.8) return camera.easeTo(farOn);
+      // The point of the chart under the finger comes to the middle of the screen, near.
+      const wx = (at.x - c.tx) / c.s;
+      const wy = (at.y - c.ty) / c.s;
+      camera.easeTo({ s: near, tx: v.w / 2 - wx * near, ty: v.h / 2 - wy * near });
     },
+    // A finger held still: the information layer, while it stays down.
+    onHold: (on) => showInfo(on),
     // The sea touched: the panel and the deployed workshops fold away.
     onTap: () => {
       onTarget(null);
@@ -232,6 +257,12 @@ export const EmpireMap = forwardRef<
       setOpened(null);
       camera.easeTo(farOn);
     },
+    info: showInfo,
+    pan: (dx, dy) => {
+      const v = camera.view();
+      camera.panBy(-dx * v.w * PAN_STEP, -dy * v.h * PAN_STEP);
+    },
+    zoom: (k) => camera.zoomBy(k),
   }));
   // The places put on the chart at its scale, when they or the scale change (never per frame).
   useLayoutEffect(() => {
@@ -1023,6 +1054,12 @@ function CityMark({
           </span>
         </span>
         <span className="map-name">{t.cityNames[code] ?? code}</span>
+        {/* The information layer: its orders on its cap, however far. */}
+        {orders && (
+          <span className="info-only rounded-full bg-night/85 px-1.5 font-display text-[0.625rem] font-bold tabular-nums text-gold ring-1 ring-gold/60">
+            {t.orders.infoCount(waiting, orders.cap)}
+          </span>
+        )}
       </button>
     </div>
   );

@@ -313,6 +313,10 @@ export function Fleet({
                 <Wagon loaded={v.loads.length > 0} />
               </span>
             </span>
+            {/* The information layer: its hold. */}
+            <span className="info-only absolute left-1/2 top-full mt-0.5 -translate-x-1/2 whitespace-nowrap rounded-full bg-night/85 px-1.5 font-display text-[0.625rem] font-bold tabular-nums text-cream ring-1 ring-lagoon/60">
+              {fr.empire.hops.hold(v.loads.length, v.capacity)}
+            </span>
           </button>
         );
       })}
