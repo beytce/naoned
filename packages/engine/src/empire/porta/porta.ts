@@ -278,6 +278,28 @@ export function weekPoints(h: EmpireHouse, now: number): number {
   return w && w.index === carnetWeek(now) ? w.points : 0;
 }
 
+/**
+ * Deciphers a relic at the Porta (2 November, the golden rule 5): it becomes plans of the kind
+ * chosen (a weapon's, a defense's, a support's), so many by its rarity, at once.
+ */
+export function decipherRelic(
+  tx: Tx,
+  playerId: PlayerId,
+  rarity: Rarity,
+  kind: "weapon" | "defense" | "support",
+): void {
+  const s = empireSettings(tx.ctx);
+  const porta = portaOf(ownHouse(tx, playerId));
+  if (!RARITIES.includes(rarity) || !["weapon", "defense", "support"].includes(kind))
+    fail("unknown_arm");
+  if ((porta.relics[rarity] ?? 0) < 1) fail("insufficient_stock");
+  porta.relics[rarity] = (porta.relics[rarity] ?? 0) - 1;
+  porta.plans = {
+    ...porta.plans,
+    [kind]: (porta.plans?.[kind] ?? 0) + s.porta.plansPerRarity[rarity],
+  };
+}
+
 /** Sells relics to the antiquarian, at the Porta: ducats by rarity, and the week's points. */
 export function sellRelics(tx: Tx, playerId: PlayerId, rarity: Rarity, qty: number): void {
   const s = empireSettings(tx.ctx);

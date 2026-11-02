@@ -279,6 +279,37 @@ describe("a battle entered and settled", () => {
   });
 });
 
+describe("the plans of the components (2 November, the golden rule 5)", () => {
+  it("come from relics deciphered, a kind chosen, and are asked from a component's level 4", () => {
+    const { w, rider, cart, lances } = docked();
+    enter(w, rider, cart);
+    w.do({
+      type: "empirePortaSettle",
+      playerId: "a",
+      battleId: "b1",
+      outcome: { vehicles: [], relics: ["legendary", "common"], won: true },
+    });
+    const decipher = (rarity: "common" | "legendary" | "rare") =>
+      w.try({ type: "empireDecipherRelic", playerId: "a", rarity, kind: "weapon" });
+    expect(error(decipher("rare"))).toBe("insufficient_stock");
+    expect(error(decipher("common"))).toBe("");
+    expect(house(w).porta?.plans).toEqual({ weapon: 1 });
+    // Back at the Remise to raise the lances: levels 2 and 3 need no plans.
+    w.do({ type: "empireRecallFromPorta", playerId: "a", vehicleIds: [rider, cart] });
+    w.advance(HOUR);
+    const up = () => w.try({ type: "empireUpgradeComponent", playerId: "a", componentId: lances });
+    expect(error(up())).toBe("");
+    expect(error(up())).toBe("");
+    const view = empireView(w.ctx, w.state, "a", w.now)?.porta;
+    expect(view?.inventory[0]?.upgradePlans).toEqual({ kind: "weapon", n: 10 });
+    expect(error(up())).toBe("no_plans");
+    expect(error(decipher("legendary"))).toBe("");
+    expect(error(up())).toBe("");
+    expect(house(w).porta?.plans).toEqual({ weapon: 11 });
+    expect(house(w).arms?.components[0]?.level).toBe(4);
+  });
+});
+
 describe("the antiquarian", () => {
   it("buys the relics by rarity, at the ledger, and counts their points to the week", () => {
     const { w, rider, cart } = docked();
