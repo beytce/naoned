@@ -64,6 +64,21 @@ describe("the 3D map's scene", () => {
     expect(s.towns.find((t) => t.code === "venezia")?.muted).toBe(false);
   });
 
+  it("walks the mule from the fondaco to Padua, the dressing off its road", () => {
+    const s = scene3d(start);
+    const mule = s.roads.mule ?? [];
+    expect(mule.length).toBeGreaterThan(10);
+    const [ax, ay] = mule[0] as [number, number];
+    const [bx, by] = mule[mule.length - 1] as [number, number];
+    expect(Math.hypot(ax - 178, ay - 146)).toBeCloseTo(4);
+    expect(Math.hypot(bx - 155, by - 141)).toBeCloseTo(4.5);
+    // It does not cross Venice.
+    for (const [x, y] of mule) expect(Math.hypot(x - 165, y - 140)).toBeGreaterThan(4);
+    for (const p of s.props)
+      for (const [x, y] of [...mule, ...(s.roads.cart ?? [])])
+        expect(Math.hypot(p.x - x, p.y - y)).toBeGreaterThan(3);
+  });
+
   it("walks a road from one end to the other, bent to one side", () => {
     const r = road([0, 0], [10, 0], 0.2, 10);
     expect(r[0]).toEqual([0, 0]);
@@ -86,9 +101,9 @@ describe("the KayKit models in the night board's palette", () => {
     const uv = [0.15, 0.3];
     const blue = linear(C.roof);
     const roof = recolour(uv);
-    expect(roof[2] / (roof[0] || 1e-9)).toBeCloseTo(blue[2] / blue[0]);
+    expect((roof[2] ?? 0) / (roof[0] ?? 1)).toBeCloseTo(blue[2] / blue[0]);
     const gold = recolour(uv, { roof: C.roofGold });
-    expect(gold[0]).toBeGreaterThan(gold[2]);
+    expect(gold[0] ?? 0).toBeGreaterThan(gold[2] ?? 0);
   });
 
   it("takes every colour from the board's palette", () => {

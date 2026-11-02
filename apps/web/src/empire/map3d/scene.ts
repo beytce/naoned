@@ -1,3 +1,4 @@
+import { HEX_SIZE, cellCentre, neighbours } from "../../art/hexmap.js";
 /**
  * The 3D map prototype (?map=3d): what stands on the board, out of the house's map, as plain data.
  * The same input as the night board's SVG (art/plateau/board.ts), the same grid (art/hexmap.ts,
@@ -7,7 +8,6 @@
  */
 import { DRESS } from "../../art/plateau/board.js";
 import { hashOf, rng } from "../../art/plateau/geom.js";
-import { HEX_SIZE, cellCentre, neighbours } from "../../art/hexmap.js";
 
 export interface SceneInput {
   cells: Record<string, { region: string; coast?: boolean }>;
@@ -61,12 +61,16 @@ export interface Scene3D {
   home: { x: number; y: number } | null;
   posts: { x: number; y: number }[];
   depot: { x: number; y: number } | null;
+  /** The rounds walked (the dressing keeps off them): the mule's, to Padua; the cart's. */
+  roads: { mule: [number, number][] | null; cart: [number, number][] | null };
   /** The ground seen, in chart units: the camera keeps over it. */
   bounds: { minX: number; maxX: number; minY: number; maxY: number };
 }
 
 /** What stands keeps this clear around it (chart units). */
 const CLEAR = { town: 7, home: 8, depot: 6 } as const;
+/** The dressing keeps this far off a road (chart units). */
+const ROAD_CLEAR = 3.2;
 
 export function scene3d(m: SceneInput): Scene3D {
   const own = new Set(m.unlocked);
@@ -129,6 +133,31 @@ export function scene3d(m: SceneInput): Scene3D {
     stands.push([depot.x, depot.y, CLEAR.depot]);
   }
 
+  // The rounds: the mule from the fondaco to Padua and back; the cart from the Remise to the
+  // fondaco, or from the fondaco down to the south of its sector. The dressing keeps off them.
+  const between = (a: [number, number], b: [number, number], shortA: number, shortB: number) => {
+    const d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const u: [number, number] = [(b[0] - a[0]) / d, (b[1] - a[1]) / d];
+    const a2: [number, number] = [a[0] + u[0] * shortA, a[1] + u[1] * shortA];
+    const b2: [number, number] = [b[0] - u[0] * shortB, b[1] - u[1] * shortB];
+    // Bent to the side farther from the towns.
+    const clearance = (pts: [number, number][]) =>
+      Math.min(
+        99,
+        ...pts.slice(2, -2).flatMap(([x, y]) => towns.map((tw) => Math.hypot(tw.x - x, tw.y - y))),
+      );
+    const left = road(a2, b2, 0.22);
+    const right = road(a2, b2, -0.22);
+    return clearance(left) >= clearance(right) ? left : right;
+  };
+  const padova = towns.find((tw) => tw.code === "padova") ?? towns[0];
+  const roads: Scene3D["roads"] = { mule: null, cart: null };
+  if (home && padova) roads.mule = between([home.x, home.y], [padova.x, padova.y], 4, 4.5);
+  if (home && depot) roads.cart = between([depot.x, depot.y], [home.x, home.y], 5, 6);
+  else if (home) roads.cart = between([home.x, home.y], [home.x + 2, home.y + 15], 5, 0);
+  for (const r of [roads.mule, roads.cart])
+    for (const [x, y] of r ?? []) stands.push([x, y, ROAD_CLEAR]);
+
   // The dressing of each land sector seen, drawn as the SVG board draws it.
   const props: Prop[] = [];
   for (const k of Object.keys(m.cells)) {
@@ -167,7 +196,8 @@ export function scene3d(m: SceneInput): Scene3D {
     }
     for (let i = 0; i < fi; i++) {
       const at = spot(9);
-      if (at) props.push({ kind: "plots", x: at[0], y: at[1], s: 0.4, rot: turn(), variant: 0, muted });
+      if (at)
+        props.push({ kind: "plots", x: at[0], y: at[1], s: 0.4, rot: turn(), variant: 0, muted });
     }
     for (let i = 0; i < pi; i++) {
       const at = spot(5);
@@ -241,7 +271,7 @@ export function scene3d(m: SceneInput): Scene3D {
     minY: Math.min(...ys) - pad,
     maxY: Math.max(...ys) + pad,
   };
-  return { tiles, props, towns, home, posts: m.posts, depot, bounds };
+  return { tiles, props, towns, home, posts: m.posts, depot, roads, bounds };
 }
 
 /** The sector under a point, among those seen. */
@@ -298,7 +328,8 @@ export function wider(
   for (let i = 0; i < 2; i++) for (const k of [...ring]) for (const n of neighbours(k)) ring.add(n);
   const revealed = [...ring].sort();
   const cells: SceneInput["cells"] = {};
-  for (const k of revealed) if (map.cells[k]) cells[k] = map.cells[k] as SceneInput["cells"][string];
+  for (const k of revealed)
+    if (map.cells[k]) cells[k] = map.cells[k] as SceneInput["cells"][string];
   const veneto = revealed.filter((k) => cells[k]?.region === "veneto" && k !== start).slice(0, 2);
   const unlocked = [...new Set([...m.unlocked, ...veneto])];
   return {
