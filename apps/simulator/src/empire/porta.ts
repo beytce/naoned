@@ -27,6 +27,10 @@ export const LOADOUT: Record<string, string[]> = {
   carro_grande: ["lances", "crossbows", "cuirass"],
 };
 
+/** A model's places: typed (since 1 November), else so many of any kind. */
+const placesOf = (m: { slots?: number; places?: unknown[] } | undefined) =>
+  m?.places?.length ?? m?.slots ?? 0;
+
 /** The strength of a model with its loadout, model and components at `level`. */
 export function botStats(model: string, level: number, s: EmpireSettings): ArmStats {
   const m = s.porta.models[model];
@@ -41,7 +45,7 @@ export function botStats(model: string, level: number, s: EmpireSettings): ArmSt
     actives: [],
     damageCutBps: 0,
   };
-  (LOADOUT[model] ?? []).slice(0, m.slots).forEach((code, i) => {
+  (LOADOUT[model] ?? []).slice(0, placesOf(m)).forEach((code, i) => {
     const c = s.porta.components[code];
     if (!c) return;
     const power = c.power + Math.floor((c.power * c.perLevelBps * (level - 1)) / 10_000);
@@ -177,7 +181,7 @@ export function plansFor(model: string, level: number, s: EmpireSettings): Recor
   const n = s.porta.plansPerLevel[level - s.porta.plansFromLevel];
   if (level < s.porta.plansFromLevel || n === undefined) return out;
   const m = s.porta.models[model];
-  for (const code of (LOADOUT[model] ?? []).slice(0, m?.slots ?? 0)) {
+  for (const code of (LOADOUT[model] ?? []).slice(0, placesOf(m))) {
     const kind = s.porta.components[code]?.kind;
     if (kind) out[kind] = (out[kind] ?? 0) + n;
   }
@@ -210,7 +214,7 @@ export function plansShort(
 export function armsCost(model: string, level: number, s: EmpireSettings) {
   const m = s.porta.models[model];
   const comps = (LOADOUT[model] ?? [])
-    .slice(0, m?.slots ?? 0)
+    .slice(0, placesOf(m))
     .map((c) => s.porta.components[c]?.costDucats ?? 0);
   const base = (m?.costDucats ?? 0) + comps.reduce((a, x) => a + x, 0);
   const step =
