@@ -10,7 +10,7 @@ import {
 } from "@comptoirs/engine";
 import type { Rng } from "@comptoirs/engine";
 import type { House, World } from "./model.js";
-import { DAY } from "./model.js";
+import { DAY, HOUR } from "./model.js";
 import { d, destroy, receive } from "./world.js";
 
 /**
@@ -395,7 +395,8 @@ export function portaDay(
   }
   if (o.vehicles.some((v) => v.outcome === "dead")) {
     p.damaged++;
-    p.repairUntil = w.now + s.porta.repairMinutes * 60_000;
+    // The simulator's clock counts hours.
+    p.repairUntil = w.now + (s.porta.repairMinutes / 60) * HOUR;
   }
   if (o.won) {
     p.won++;
