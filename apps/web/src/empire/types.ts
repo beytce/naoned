@@ -136,6 +136,8 @@ export interface EmpireView {
       id: string;
       type: string;
       busyUntil: number;
+      /** Fallen at the Porta: repaired at the Remise until then. */
+      repairUntil?: number;
       capacity: number;
       fitted?: string[];
       /** Where it stands: a counter's id, or `city:<code>`. */

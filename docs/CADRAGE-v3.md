@@ -658,6 +658,7 @@ Le porteur demande le mode PvE d'Hades' Star (les Red Stars), au plus près de l
 - **un véhicule de combat et un transport par joueur** ; le transport n'a aucune défense ;
 - **la perte est définitive** : un véhicule à 0 PV est détruit avec ses composants, et ce qui n'est pas rentré à la porte à la fermeture est perdu avec sa cargaison. C'est une exception à la règle d'or 1, choisie par le joueur quand il entre ; les corsaires, eux, ne prennent toujours jamais le navire ;
 - **les survivants ressortent soignés**, sans réparation à payer ;
+- *révisé le 2 novembre 2026 (chantier 3 d'Hades' Star, règle d'or 2)* : un véhicule à 0 PV **rentre abîmé** et se répare 2 h à la Remise, sans coût ; seul un véhicule encore dans les terres à la fermeture est perdu ; **la Porta noire**, choisie bataille par bataille, rend la perte définitive contre +50 % de reliques ; les reliques **se déchiffrent** en plans d'un type, exigés par les niveaux 4 et 5 des composants (règle d'or 5) ; **l'incendiaire**, dès le palier 4, brûle les reliques d'une ville qu'on ne défend pas ;
 - **les reliques** se chargent dans les villes par un temps qui croît avec la rareté, et se vendent à **l'antiquaire** en ducats ; l'**entrée se paie en pain**, détruit ;
 - **un classement de la semaine** sur les points des reliques, par bande de Puissance ;
 - **Rome pontificale de 1450** garde les villes : arbalétrier, hallebardier, chevau-léger, bombarde, Gonfalonier de l'Église ;

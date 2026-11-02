@@ -30,6 +30,8 @@ export interface PortaEntry {
   tier: number;
   combatId: string;
   transportId: string;
+  /** The Porta noire: the fallen lost for good, more relics (2 November). */
+  dark?: boolean;
 }
 
 interface Member extends PortaEntry {
@@ -195,7 +197,7 @@ export class PortaHub {
   async join(
     playerId: string,
     code: string,
-    vehicles: { combatId: string; transportId: string },
+    vehicles: { combatId: string; transportId: string; dark?: boolean },
   ): Promise<{ lobby?: Lobby; battle?: string } | { error: PortaRefusal }> {
     const busy = this.busy(playerId);
     if (busy) return { error: busy };
@@ -271,6 +273,7 @@ export class PortaHub {
         tier,
         combatId: m.combatId,
         transportId: m.transportId,
+        ...(m.dark ? { dark: true } : {}),
       });
       if (res.ok) inside.push(m);
       else refusal = res.error ?? "refused";
@@ -462,6 +465,8 @@ export function snapshot(live: Live, playerId: string) {
             rangeCenti: u.rangeCenti,
             visionCenti: u.visionCenti,
             dead: u.dead,
+            // The incendiary: how far it has burnt its city, for the fire ring.
+            ...(u.burnS > 0 ? { burnS: u.burnS, burning: u.burning ?? 0 } : {}),
           }
         : playerView(u, playerId),
     ),

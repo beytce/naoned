@@ -295,6 +295,7 @@ const frDict = {
       cityLine: (region: string, size: number, n: number, max: number) =>
         `${region} · ville de taille ${size} · ${n} commande${n > 1 ? "s" : ""} sur ${max}`,
       outOfReach: "Hors du champ de vos fondaci : posez-en un plus près.",
+      infoCount: (n: number, max: number) => `${n}/${max}`,
       none: "Aucune commande en attente.",
       renews: (at: string) => `Prochaine commande à ${at}`,
       full: "Pleine : plus de nouvelle commande tant qu'aucune n'est chargée.",
@@ -302,6 +303,7 @@ const frDict = {
     },
     hops: {
       docked: (place: string) => `À quai : ${place}`,
+      repairing: "En réparation à la Remise, au retour de la Porta",
       leaving: (place: string) => `Départ vers ${place}`,
       moving: (place: string) => `En route vers ${place}`,
       hold: (n: number, of: number) => `${n} / ${of}`,
@@ -315,6 +317,7 @@ const frDict = {
       aim: "Glissez le véhicule vers un lieu, ou touchez-le.",
       to: (place: string) => `Vers ${place}`,
       seconds: (n: number) => `${n} s`,
+      minutes: (n: number) => `${n} min`,
       leagues: (n: number) => `${n} lieues`,
       brings: (n: number, good: string, pay: string) => `${n} ${good} · +${pay}`,
       stops: (n: number) => `${n} arrêt${n > 1 ? "s" : ""} à venir`,

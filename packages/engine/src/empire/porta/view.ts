@@ -8,6 +8,7 @@ import {
   armLevelOf,
   armStats,
   armUpgradeCost,
+  componentPlans,
   componentUpgradeCost,
   placesOf,
 } from "./arms.js";
@@ -37,6 +38,9 @@ export interface PortaView {
   upgrade: { cost: Deniers; minutes: number } | null;
   travelMinutes: number;
   relics: Record<Rarity, number>;
+  /** The house's plans by component kind, and what a relic deciphered gives by rarity. */
+  plans: Record<"weapon" | "defense" | "support", number>;
+  plansPerRarity: Record<Rarity, number>;
   weekPoints: number;
   relicPrices: Record<Rarity, { price: Deniers; points: number; loadS: number }>;
   tiers: {
@@ -78,12 +82,16 @@ export interface PortaView {
     place: PortaPlaceView;
     arrivesAt: number | null;
     stats: ArmStats;
+    /** Fallen in combat: damaged at the Remise until then. */
+    repairUntil: number | null;
   }[];
   inventory: {
     id: string;
     code: string;
     level: number;
     upgradeCost: Deniers | null;
+    /** The plans its next level asks (from the level 4), of its kind. */
+    upgradePlans: { kind: "weapon" | "defense" | "support"; n: number } | null;
     on: string | null;
   }[];
   transports: {
@@ -92,8 +100,9 @@ export interface PortaView {
     hold: number;
     place: PortaPlaceView;
     arrivesAt: number | null;
+    repairUntil: number | null;
   }[];
-  battle: { id: string; tier: number } | null;
+  battle: { id: string; tier: number; dark: boolean } | null;
 }
 
 const ducats = (n: number) => BigInt(n) * DENIERS_PER_DUCAT;
@@ -114,6 +123,8 @@ export function portaViewOf(h: EmpireHouse, s: EmpireSettings, now: number): Por
     })(),
     travelMinutes: b && h.porta ? portaTravelMinutes(h, s) : 0,
     relics: { ...zero, ...(h.porta?.relics ?? {}) },
+    plans: { weapon: 0, defense: 0, support: 0, ...(h.porta?.plans ?? {}) },
+    plansPerRarity: s.porta.plansPerRarity,
     weekPoints: weekPoints(h, now),
     relicPrices: Object.fromEntries(
       RARITIES.map((r) => {
@@ -163,12 +174,14 @@ export function portaViewOf(h: EmpireHouse, s: EmpireSettings, now: number): Por
       place: placeOf(v, now),
       arrivesAt: v.porta?.arrivesAt ?? (armAway(v, now) ? (v.backAt ?? null) : null),
       stats: armStats(h, v.id, s),
+      repairUntil: (v.repairUntil ?? 0) > now ? (v.repairUntil ?? null) : null,
     })),
     inventory: arms.components.map((c) => ({
       id: c.id,
       code: c.code,
       level: c.level,
       upgradeCost: componentUpgradeCost(h, c.id, s),
+      upgradePlans: componentPlans(h, c.id, s),
       on: carrier(c.id),
     })),
     transports: (h.vehicles ?? [])
@@ -179,7 +192,10 @@ export function portaViewOf(h: EmpireHouse, s: EmpireSettings, now: number): Por
         hold: capacityOf(h, v.type, s),
         place: v.porta ? placeOf(v, now) : v.busyUntil > now ? "back" : "remise",
         arrivesAt: v.porta?.arrivesAt ?? (v.busyUntil > now ? v.busyUntil : null),
+        repairUntil: (v.repairUntil ?? 0) > now ? (v.repairUntil ?? null) : null,
       })),
-    battle: h.porta?.battle ? { id: h.porta.battle.id, tier: h.porta.battle.tier } : null,
+    battle: h.porta?.battle
+      ? { id: h.porta.battle.id, tier: h.porta.battle.tier, dark: h.porta.battle.dark === true }
+      : null,
   };
 }

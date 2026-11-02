@@ -20,9 +20,12 @@ Ce qu'on en reprend :
 | Tout ce qui n'a pas rejoint la porte à la supernova est perdu | Tout ce qui n'a pas rejoint la porte à la fermeture est perdu |
 
 Ce qu'on change :
-- **la perte est définitive** : un véhicule à 0 PV est détruit avec ses composants (décision du porteur) ;
+- **la perte** (décision du porteur du 2 novembre, qui remplace la perte définitive du 31 octobre) :
+  - un véhicule à 0 PV **rentre abîmé** : il revient à la Remise et s'y répare en 2 h (`porta.repairMinutes`), sans coût, avec ses composants ; il ne livre ni ne combat pendant ce temps ;
+  - un véhicule encore dans les terres à la fermeture **est perdu**, avec ses composants et sa cargaison ;
+  - **la Porta noire**, choisie bataille par bataille à l'entrée : un véhicule à 0 PV y est perdu pour de bon, contre +50 % de reliques (`porta.darkRelicsBps`) ;
 - **les survivants ressortent soignés**, sans coût de réparation ;
-- **les reliques se vendent à l'antiquaire** et donnent des points pour un **classement de la semaine par bande de Puissance**.
+- **les reliques se vendent à l'antiquaire** et donnent des points pour un **classement de la semaine par bande de Puissance** ; ou **se déchiffrent en plans** pour les hauts niveaux des composants (§ 9).
 
 ## 2. Le parcours du joueur
 
@@ -84,7 +87,8 @@ Un composant est un objet de l'inventaire de la Maison (`{ id, code, level }`). 
 | Soutien | **Fumée** (actif) | Stealth | 800 | Rome ne voit plus le véhicule pendant 8 s, et ses cibles le lâchent ; recharge 60 s ; tirer la rompt (+2 s/niv.) |
 
 - Les composants actifs se lancent par un **bouton rond** dans la bataille, avec leur temps de recharge visible.
-- Les composants posés sur un véhicule détruit sont **détruits avec lui**.
+- Les composants posés sur un véhicule perdu sont **perdus avec lui** ; un véhicule abîmé garde les siens.
+- **Les niveaux 4 et 5** d'un composant demandent des **plans de son type** (arme, défense ou soutien) : 10 puis 30 (`porta.plansFromLevel`, `porta.plansPerLevel`). Les plans viennent des reliques déchiffrées (§ 9).
 
 ## 6. La bataille : les terres de Rome
 
@@ -129,6 +133,7 @@ Un composant est un objet de l'inventaire de la Maison (`{ id, code, level }`). 
 | **Chevau-léger** | Intercepteur | 900 | 40 | 1 | 4 | 8 | Patrouille entre les villes ; **préfère les transports** |
 | **Bombarde** | Bombardier | 1 500 | 120 par coup toutes les 4 s, sur une case de rayon | 3 | 3 | 1,5 | Lente, dégâts de zone |
 | **Gonfalonier de l'Église** | Colosse | 25 000 | 150, qui monte sur la même cible comme les lances | 2 | 3 | 2 | Boss des paliers 4 à 6 |
+| **Incendiaire** (2 novembre) | — | 1 800 | — | — | — | 2,5 | Errant des paliers 4 à 6 : marche vers la ville qui garde les reliques les plus rares, y brûle 20 s (`burnS`, l'anneau de feu se remplit), puis toutes les reliques encore dans la ville sont perdues ; il passe à la suivante. Tué, il s'arrête. |
 
 Chaque palier multiplie ces PV et ces dégâts (§ 6.6).
 
@@ -179,7 +184,9 @@ Une machine à états pure, par unité, évaluée à chaque pas. Les changements
 ## 8. La sortie
 
 Une **seule transaction SQL** par joueur, à la fin de la bataille ou à la sortie de son dernier véhicule :
-- les véhicules **détruits**, ou restés dans la zone à la fermeture, sont retirés de `h.vehicles`, avec leurs composants ;
+- les véhicules **restés dans la zone à la fermeture**, et ceux **détruits à la Porta noire**, sont retirés de `h.vehicles`, avec leurs composants ;
+- les véhicules **détruits** hors Porta noire rentrent à la Remise, en réparation pendant 2 h (`repairUntil`) ;
+- à la Porta noire, les reliques rapportées sont multipliées par 1,5 : la part entière revient toujours, la fraction par un tirage, aux plus rares d'abord ;
 - les survivants reviennent **à pleins PV**, à quai à la Porta ;
 - les reliques rapportées s'ajoutent à l'inventaire de reliques de la Maison ;
 - le meilleur palier réussi monte s'il y a lieu.
@@ -191,6 +198,7 @@ Une **seule transaction SQL** par joueur, à la fin de la bataille ou à la sort
 - **L'antiquaire**, à la Porta, rachète les reliques au prix de leur rareté (§ 6.3). Les ducats sont créés au grand livre, depuis le compte de la monnaie, comme ceux de la Dogana.
 - **Les points** s'ajoutent à la vente, au classement de la semaine (du lundi au dimanche, heure de Venise), par **bande de Puissance**. Les rangs sont publics et honorifiques ; une récompense en Sceaux est notée dans `IDEAS.md`.
 - On garde ses reliques autant qu'on veut : la vente ne presse jamais.
+- **Déchiffrer** (2 novembre) : au lieu de la vendre, on déchiffre une relique, à l'instant, en plans **d'un type choisi** (arme, défense ou soutien) : 1, 3, 8 ou 20 plans selon sa rareté (`porta.plansPerRarity`). Une relique déchiffrée ne compte pas au classement (`empireDecipherRelic`).
 - Rien ne s'achète avec le Pass : ni véhicule, ni composant, ni entrée, ni relique.
 
 ## 10. L'économie
@@ -234,7 +242,9 @@ Au lot 6, le simulateur doit tenir l'indice des prix entre 80 et 130 sur 24 mois
 5. L'écran : la Remise des armes, la Porta sur la carte, la bataille, l'antiquaire, le classement. *Fait le 31 octobre 2026* (`apps/web/src/empire/porta/` : `ArmsSheet`, `PortaSheet`, `Battle`, le socket et les textes ; la Porta se pose depuis la Production et a son repère sur la carte ; la vue de l'empire porte `porta`, tirée de `empire/porta/view.ts` ; design au § La Porta de `docs/design.md` ; parcours `apps/web/e2e/porta.mjs`).
 6. Le simulateur de 24 mois : un bot joue la vraie bataille ; calibration documentée dans `docs/calibration.md` ; parcours `e2e:empire` étendu. *Fait le 1er novembre 2026* (`apps/simulator/src/empire/porta.ts`, banc `porta-bench` ; Rome allégée, reliques à 150, 1 000, 4 000 et 15 000 ducats, une relique par 25 de cale, entrée de 4 à 60 pains par véhicule ; 6, 8 et 7 cibles sur 12 contre 9, 9 et 8 sans la Porta : voir `docs/calibration.md`, § La Porta au simulateur. Le parcours est `apps/web/e2e/porta.mjs`, à part de `e2e:empire`.)
 
+7. Le chantier 3 d'Hades' Star (2 novembre 2026) : le retour abîmé, la Porta noire, les plans des composants, l'incendiaire. *Fait le 2 novembre 2026* (moteur `porta.ts`, `arms.ts`, `battle/ai.ts` ; serveur : `dark` à l'entrée et au salon, `empireDecipherRelic`, l'anneau de feu dans l'instantané ; écran : l'interrupteur « Porta noire » en vermillon, « Déchiffrer » à côté de « Vendre », la réparation à la Remise et dans le panneau du véhicule, l'incendiaire et la ville qui brûle dans la bataille ; simulateur : voir `docs/calibration.md`, § Chantier 3).
+
 ## 13. Ce qui reste ouvert
 
-- **Les plans de modules** : la recherche des modules de négoce demande des plans dès le niveau 4, que le cadrage tirait des reliques déchiffrées. Avec l'antiquaire, il faut une autre source : déchiffrer une relique en plans à la Scuola au lieu de la vendre (`IDEAS.md`, à trancher avant que des joueurs atteignent le niveau 4 d'un module).
+- **Les plans des composants** sont tranchés (§§ 5 et 9). **Les plans des modules de négoce**, eux, restent à trancher (`IDEAS.md`) : le déchiffrage pourrait aussi les servir.
 - **Les chiffres** des §§ 3 à 6 se confirment au lot 2 (une bataille de palier 1 doit se gagner seul avec un cavalier aux lances) et au lot 6.

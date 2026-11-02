@@ -300,6 +300,8 @@ function portaSection(r: EmpireResult): string {
   const won = hs.reduce((a, h) => a + (h.porta?.won ?? 0), 0);
   const lostC = hs.reduce((a, h) => a + (h.porta?.lostCombat ?? 0), 0);
   const lostT = hs.reduce((a, h) => a + (h.porta?.lostTransport ?? 0), 0);
+  const damaged = hs.reduce((a, h) => a + (h.porta?.damaged ?? 0), 0);
+  const deciphered = hs.reduce((a, h) => a + (h.porta?.deciphered ?? 0), 0);
   const best = new Map<number, number>();
   for (const h of hs) best.set(h.porta?.best ?? 0, (best.get(h.porta?.best ?? 0) ?? 0) + 1);
   const relics = (["common", "rare", "precious", "legendary"] as const).map(
@@ -311,7 +313,7 @@ function portaSection(r: EmpireResult): string {
   return [
     `## La Porta (graine ${r.options.seed})`,
     "",
-    `${hs.length} Maisons ont posé la Porta ; ${battles} batailles (${(battles / days).toFixed(0)} par jour), ${battles > 0 ? Math.round((100 * won) / battles) : 0} % gagnées ; véhicules de combat perdus : ${lostC}, transports perdus : ${lostT}.`,
+    `${hs.length} Maisons ont posé la Porta ; ${battles} batailles (${(battles / days).toFixed(0)} par jour), ${battles > 0 ? Math.round((100 * won) / battles) : 0} % gagnées ; véhicules de combat perdus : ${lostC}, transports perdus : ${lostT} ; retours abîmés : ${damaged} ; reliques déchiffrées : ${deciphered}.`,
     "",
     `Meilleur palier gagné : ${[...best.entries()]
       .sort((a, b) => a[0] - b[0])

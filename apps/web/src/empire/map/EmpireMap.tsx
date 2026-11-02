@@ -42,6 +42,8 @@ import {
   nearestPlace,
   placeable,
   placesOf,
+  postLevels,
+  postsRaised,
   wantedBy,
   zoomBounds,
 } from "./logic.js";
@@ -56,7 +58,15 @@ export interface EmpireMapHandle {
   home(): void;
   /** Out to the map. */
   far(): void;
+  /** The information layer shown (Alt held) or not. */
+  info(on: boolean): void;
+  /** The map moved a step (a key: -1, 0 or 1 on each axis), or zoomed by a factor. */
+  pan(dx: number, dy: number): void;
+  zoom(k: number): void;
 }
+
+/** A key moves the map by this share of the screen. */
+const PAN_STEP = 0.12;
 
 /** A sector across the screen, as the example's systems (step 4): Venice's, at the start. */
 const sectorOn = (v: Viewport) =>
@@ -191,6 +201,40 @@ export const EmpireMap = forwardRef<
     void v;
   }, []);
 
+  // A counter put down or raised: its ring fills with gold, then a burst and a wave (900 ms).
+  const levels = postLevels(p);
+  const levelKey = [...levels].map(([id, l]) => `${id}:${l}`).join(",");
+  const seenLevels = useRef<Map<string, number> | null>(null);
+  const [raised, setRaised] = useState<{ key: string; x: number; y: number }[]>([]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the levels change with their key
+  useEffect(() => {
+    const now = postLevels(p);
+    const ids = postsRaised(seenLevels.current, now);
+    seenLevels.current = now;
+    if (ids.length === 0) return;
+    const map = p.view?.map;
+    const at = (id: string): [number, number] | null => {
+      if (id === "home") return homeAt(p);
+      const x = map?.posts.find((y) => y.id === id);
+      return x ? [x.x, x.y] : null;
+    };
+    const fresh = ids.flatMap((id) => {
+      const xy = at(id);
+      return xy ? [{ key: `${id}:${now.get(id)}`, x: xy[0], y: xy[1] }] : [];
+    });
+    setRaised((xs) => [...xs, ...fresh]);
+    const keys = new Set(fresh.map((f) => f.key));
+    window.setTimeout(() => setRaised((xs) => xs.filter((x) => !keys.has(x.key))), 1_200);
+  }, [levelKey]);
+
+  /** The information layer (after Hades' Star's tilde): every name, the orders, the holds. */
+  const showInfo = useCallback((on: boolean) => {
+    const el = root.current;
+    if (!el) return;
+    if (on) el.dataset.info = "1";
+    else delete el.dataset.info;
+  }, []);
+
   // Every house starts on Venice's sector, across the screen.
   const camera = useCamera({
     root,
@@ -199,11 +243,20 @@ export const EmpireMap = forwardRef<
     // Never farther than the house's whole map (1 November: the zoom went to the whole sea, and
     // the places grown to be touched broke the phone's memory).
     bounds: (v) => zoomBounds(p, v),
-    // A double touch on the sea: near (Venice's sector) and far (the whole map) in turn.
-    onDoubleTap: () => {
+    // A double touch on the sea: near, around the point touched, and far (the whole map) in
+    // turn (after Hades' Star).
+    onDoubleTap: (at) => {
       const v = camera.view();
-      camera.easeTo(camera.cam().s < sectorOn(v).s * 0.8 ? sectorOn : farOn);
+      const c = camera.cam();
+      const near = sectorOn(v).s;
+      if (c.s >= near * 0.8) return camera.easeTo(farOn);
+      // The point of the chart under the finger comes to the middle of the screen, near.
+      const wx = (at.x - c.tx) / c.s;
+      const wy = (at.y - c.ty) / c.s;
+      camera.easeTo({ s: near, tx: v.w / 2 - wx * near, ty: v.h / 2 - wy * near });
     },
+    // A finger held still: the information layer, while it stays down.
+    onHold: (on) => showInfo(on),
     // The sea touched: the panel and the deployed workshops fold away.
     onTap: () => {
       onTarget(null);
@@ -232,6 +285,12 @@ export const EmpireMap = forwardRef<
       setOpened(null);
       camera.easeTo(farOn);
     },
+    info: showInfo,
+    pan: (dx, dy) => {
+      const v = camera.view();
+      camera.panBy(-dx * v.w * PAN_STEP, -dy * v.h * PAN_STEP);
+    },
+    zoom: (k) => camera.zoomBy(k),
   }));
   // The places put on the chart at its scale, when they or the scale change (never per frame).
   useLayoutEffect(() => {
@@ -437,6 +496,16 @@ export const EmpireMap = forwardRef<
             </div>
           );
         })}
+        {raised.map((r) => (
+          <div
+            key={r.key}
+            className="map-pin pointer-events-none"
+            style={{ left: r.x * base, top: r.y * base }}
+            data-post-raised
+          >
+            <PostRaise />
+          </div>
+        ))}
         {map.sites.map((x) => {
           const [px, py] = cellCentre(x.cell);
           return (
@@ -871,6 +940,41 @@ function homeAt(p: EmpirePayload): [number, number] {
  * under it; no town (decision of the owner, 1 November 2026): Venice has its own bubble and its
  * orders. Touched, its workshops deploy.
  */
+/**
+ * A counter put down or raised (after Hades' Star's upgrades, in the Lagune: an arc, never a
+ * bar): its ring fills with gold, then a short burst and a gold wave.
+ */
+function PostRaise() {
+  const r = 30;
+  const round = 2 * Math.PI * r;
+  return (
+    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <svg
+        width={72}
+        height={72}
+        viewBox="0 0 72 72"
+        className="post-fill block"
+        aria-hidden="true"
+      >
+        <circle
+          cx={36}
+          cy={36}
+          r={r}
+          fill="none"
+          stroke="rgb(var(--gold))"
+          strokeWidth={4}
+          strokeLinecap="round"
+          strokeDasharray={round}
+          transform="rotate(-90 36 36)"
+          style={{ "--round": `${round}` } as React.CSSProperties}
+        />
+      </svg>
+      <span className="post-burst absolute inset-0 rounded-full bg-gold/60" />
+      <span className="post-wave absolute inset-0 rounded-full ring-2 ring-gold" />
+    </span>
+  );
+}
+
 function HomeMark({
   p,
   name,
@@ -1023,6 +1127,12 @@ function CityMark({
           </span>
         </span>
         <span className="map-name">{t.cityNames[code] ?? code}</span>
+        {/* The information layer: its orders on its cap, however far. */}
+        {orders && (
+          <span className="info-only rounded-full bg-night/85 px-1.5 font-display text-[0.625rem] font-bold tabular-nums text-gold ring-1 ring-gold/60">
+            {t.orders.infoCount(waiting, orders.cap)}
+          </span>
+        )}
       </button>
     </div>
   );

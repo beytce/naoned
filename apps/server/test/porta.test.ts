@@ -302,3 +302,32 @@ describe("the week's ranking", () => {
     });
   });
 });
+
+describe("deciphering a relic", () => {
+  it("turns it into plans of the kind chosen", async () => {
+    const a = await armed("ada@example.org");
+    await hub.queue(a.id, { tier: 1, combatId: a.combatId, transportId: a.transportId }, "solo");
+    const battleId = house(a.id)?.porta?.battle?.id ?? "";
+    await world.execute({
+      type: "empirePortaSettle",
+      playerId: a.id,
+      battleId,
+      outcome: { vehicles: [], relics: ["rare"], won: true },
+    });
+    await act(a.cookie, { type: "empireDecipherRelic", rarity: "rare", kind: "weapon" });
+    expect(house(a.id)?.porta?.plans?.weapon).toBeGreaterThan(0);
+    expect(house(a.id)?.porta?.relics?.rare ?? 0).toBe(0);
+  });
+});
+
+describe("the Porta noire", () => {
+  it("is carried into the battle entered", async () => {
+    const a = await armed("ada@example.org");
+    await hub.queue(
+      a.id,
+      { tier: 1, combatId: a.combatId, transportId: a.transportId, dark: true },
+      "solo",
+    );
+    expect(house(a.id)?.porta?.battle?.dark).toBe(true);
+  });
+});

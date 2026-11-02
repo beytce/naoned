@@ -67,11 +67,13 @@ export function holdOf(h: EmpireHouse, v: Vehicle, s: EmpireSettings): number {
 const underWay = (v: Vehicle, now: number) =>
   (v.legs?.[0]?.departAt ?? Number.POSITIVE_INFINITY) <= now;
 
-function vehicleOf(h: EmpireHouse, s: EmpireSettings, vehicleId: string): Vehicle {
+function vehicleOf(h: EmpireHouse, s: EmpireSettings, vehicleId: string, now = 0): Vehicle {
   const v = h.vehicles?.find((x) => x.id === vehicleId);
   if (!v) fail("unknown_building");
   if (!s.vehicles[v.type]) fail("unknown_building_type");
   if (v.porta) fail("vehicle_busy");
+  // Fallen in combat at the Porta: damaged at the Remise until then (2 November).
+  if ((v.repairUntil ?? 0) > now) fail("vehicle_busy");
   return v;
 }
 
@@ -88,7 +90,7 @@ function dockedAt(h: EmpireHouse, s: EmpireSettings, v: Vehicle, now: number): s
 export function moveVehicle(tx: Tx, playerId: PlayerId, vehicleId: string, to: string): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
-  const v = vehicleOf(h, s, vehicleId);
+  const v = vehicleOf(h, s, vehicleId, tx.now);
   if ((v.legs?.length ?? 0) >= s.moves.maxStops) fail("invalid_quantity");
   const from = lastPlace(v);
   if (from === to) fail("unknown_target");
@@ -105,7 +107,7 @@ export function moveVehicle(tx: Tx, playerId: PlayerId, vehicleId: string, to: s
 /** Leaves at once, if not under way yet: every stop to come as much earlier. */
 export function departNow(tx: Tx, playerId: PlayerId, vehicleId: string): void {
   const s = empireSettings(tx.ctx);
-  const v = vehicleOf(ownHouse(tx, playerId), s, vehicleId);
+  const v = vehicleOf(ownHouse(tx, playerId), s, vehicleId, tx.now);
   const first = v.legs?.[0];
   if (!first || first.departAt <= tx.now) fail("building_busy");
   const early = first.departAt - tx.now;
@@ -120,7 +122,7 @@ export function departNow(tx: Tx, playerId: PlayerId, vehicleId: string): void {
 /** Takes back the last stop not begun; a hop begun is not stopped. */
 export function cancelStop(tx: Tx, playerId: PlayerId, vehicleId: string): void {
   const s = empireSettings(tx.ctx);
-  const v = vehicleOf(ownHouse(tx, playerId), s, vehicleId);
+  const v = vehicleOf(ownHouse(tx, playerId), s, vehicleId, tx.now);
   const last = v.legs?.at(-1);
   if (!last || last.departAt <= tx.now) fail("building_busy");
   const legs = (v.legs ?? []).slice(0, -1);
@@ -141,7 +143,7 @@ export function loadOrder(
 ): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
-  const v = vehicleOf(h, s, vehicleId);
+  const v = vehicleOf(h, s, vehicleId, tx.now);
   const post = dockedAt(h, s, v, tx.now);
   if (!s.orders || !postsServing(h, s, city).includes(post)) fail("unknown_target");
   if ((v.loads?.length ?? 0) >= holdOf(h, v, s)) fail("no_room");
@@ -160,7 +162,7 @@ export function loadOrder(
 export function unloadOrder(tx: Tx, playerId: PlayerId, vehicleId: string, orderId: string): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
-  const v = vehicleOf(h, s, vehicleId);
+  const v = vehicleOf(h, s, vehicleId, tx.now);
   const post = dockedAt(h, s, v, tx.now);
   const o = v.loads?.find((x) => x.id === orderId);
   if (!o) fail("not_ordered");

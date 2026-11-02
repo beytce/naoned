@@ -164,6 +164,11 @@ const action = z.discriminatedUnion("type", [
     rarity: z.enum(["common", "rare", "precious", "legendary"]),
     qty: z.number().int().min(1).max(10_000),
   }),
+  z.object({
+    type: z.literal("empireDecipherRelic"),
+    rarity: z.enum(["common", "rare", "precious", "legendary"]),
+    kind: z.enum(["weapon", "defense", "support"]),
+  }),
   z.object({ type: z.literal("empireUpgradeVehicle"), vehicleType: z.string().max(40) }),
   z.object({ type: z.literal("empireUpgradeCounter"), region: z.string().max(40) }),
   z.object({ type: z.literal("empireBuyVehicle"), vehicleType: z.string().max(40) }),

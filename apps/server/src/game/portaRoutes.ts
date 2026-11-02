@@ -22,6 +22,7 @@ const entry = z.object({
   tier: z.number().int().min(1).max(12),
   combatId: id,
   transportId: id,
+  dark: z.boolean().optional(),
 });
 const order = z.discriminatedUnion("type", [
   z.object({
@@ -90,7 +91,12 @@ export function registerPortaRoutes(app: FastifyInstance, deps: PortaRouteDeps):
     const account = await deps.requireAccount(req, reply);
     if (!account) return;
     const parsed = z
-      .object({ code: z.string().regex(/^\d{6}$/), combatId: id, transportId: id })
+      .object({
+        code: z.string().regex(/^\d{6}$/),
+        combatId: id,
+        transportId: id,
+        dark: z.boolean().optional(),
+      })
       .safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid" });
     const { code, ...vehicles } = parsed.data;

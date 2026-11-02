@@ -124,6 +124,12 @@ Le nom d'une ville est un marqueur à part, posé au-dessus des charrettes (`Cit
   - **Le glisser** : glissé, le véhicule tire un pointillé d'or qui s'aimante au lieu le plus proche (un anneau d'or et quatre chevrons), avec une étiquette sombre : où, les secondes, les lieues, ce qu'il y livrerait ; revenu sur lui-même, « Annuler ».
   - **Le trajet** : il glisse le long du pointillé, tourné vers sa route, les secondes restantes au milieu du trait. À l'arrivée, une onde d'or s'étend sur la ville et ce qu'il a livré monte et s'efface.
   - **Sur PC** : clic droit pour envoyer, Échap, virgule et point pour passer d'un véhicule à l'autre.
+- **Le reste de l'interface (2 novembre, chantier 4 d'Hades' Star)** :
+  - **Le calque d'information** : un appui long de 500 ms sur la carte (ou Alt maintenu sur PC) montre, tant qu'on le tient, le nom de toutes les villes même de loin, leurs commandes sur leur plafond (« 1/14 ») et la soute de chaque véhicule (« 0/2 »). Il s'efface en 160 ms au lâcher, qui ne compte pas comme un toucher.
+  - **L'arrivée** : en plus de l'onde d'or et du « +n » qui monte, une onde lagune s'élargit (600 ms), la marque livrée saute du véhicule à la ville (500 ms, `--spring`), et « + 1 240 d » monte en or et s'efface (900 ms).
+  - **Un comptoir posé ou monté** (le premier fondaco compris) : son anneau se remplit d'or (420 ms), puis un éclat et une onde d'or (700 ms). Un arc, jamais une barre.
+  - **Le double toucher** approche en centrant le point touché ; de près, il revient à la vue d'ensemble.
+  - **Le clavier** : flèches, ZQSD et WASD déplacent la carte d'un huitième d'écran ; « + » et « − » zooment par 1,4.
   - **Les modules d'un véhicule** (son panneau, « Modules ») : ses places, une par niveau de modèle ; chacune prend un module de commerce recherché. Les places fermées disent le niveau qui les ouvre. Un véhicule portant le Livre de route ou le Fouet a un point d'or sur la carte. À la Remise, chaque place d'un véhicule de combat dit son type et ne propose que ses composants.
 - **Les cases à acheter** : un contour d'or en pointillés, plus pâle tant que la Casa de la région n'est pas atteinte ; touché, son panneau dit sa région et son prix.
 - **Les ateliers autour de la bulle** : touchée, la bulle reste où elle est et reste elle-même ; ses ateliers sortent en anneau autour d'elle, la caméra zoomant autour d'elle sans la déplacer (sauf si l'anneau sortait de l'écran). Touchée encore, elle ouvre son panneau (la Casa pour Venise).

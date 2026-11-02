@@ -1267,6 +1267,16 @@ button.map-place {
   opacity: 0;
   transition: opacity var(--t-quick, 150ms);
 }
+/* The information layer (after Hades' Star's tilde): held, every name, the orders, the holds. */
+.info-only {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms var(--ease-out, ease-out);
+}
+[data-info] .info-only,
+[data-info] .map-place .map-name {
+  opacity: 1;
+}
 /* A city the vehicle chosen would serve: its gold halo breathes (after Hades' Star). */
 .city-wanted {
   animation: city-wanted 1400ms ease-in-out infinite;
@@ -1318,10 +1328,143 @@ button.map-place {
     opacity: 0;
   }
 }
+/* A counter put down or raised: its ring fills (420 ms), then a burst and a gold wave (700 ms). */
+.post-fill circle {
+  animation: post-fill 420ms var(--ease-out, ease-out) both;
+}
+@keyframes post-fill {
+  from {
+    stroke-dashoffset: var(--round);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.post-fill {
+  animation: post-fade 900ms linear both;
+}
+@keyframes post-fade {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.post-burst {
+  animation: post-burst 300ms var(--ease-out, ease-out) 380ms both;
+}
+@keyframes post-burst {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+.post-wave {
+  animation: post-wave 700ms var(--ease-out, ease-out) 400ms both;
+}
+@keyframes post-wave {
+  from {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .post-fill,
+  .post-fill circle,
+  .post-burst,
+  .post-wave {
+    animation: none;
+  }
+  .post-burst,
+  .post-wave {
+    display: none;
+  }
+}
+/* The wave of the lagoon from a city reached (600 ms), and the good that jumps there (500 ms). */
+.hop-wave {
+  animation: hop-wave 600ms var(--ease-out, ease-out) both;
+}
+@keyframes hop-wave {
+  from {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0.85;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(2.8);
+    opacity: 0;
+  }
+}
+.hop-jump {
+  animation: hop-jump 500ms var(--spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
+}
+@keyframes hop-jump {
+  0% {
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) scale(0.7);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  55% {
+    transform: translate(
+        calc(-50% + var(--dx, 0px) * 0.4),
+        calc(-50% + var(--dy, 0px) * 0.4 - 18px)
+      )
+      scale(1.15);
+  }
+  85% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+  }
+}
+/* The ducats an arrival paid, rising and fading (900 ms). */
+.hop-coin {
+  animation: hop-coin 900ms var(--ease-out, ease-out) 250ms both;
+}
+@keyframes hop-coin {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(-50%, -22px, 0);
+    opacity: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .hop-ring,
-  .hop-rise {
+  .hop-rise,
+  .hop-wave,
+  .hop-jump {
     animation: none;
+  }
+  .hop-wave,
+  .hop-jump {
+    display: none;
+  }
+  .hop-coin {
+    animation: none;
+    transform: translateX(-50%);
   }
 }
 .map-home {

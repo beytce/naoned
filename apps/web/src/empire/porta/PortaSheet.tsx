@@ -6,7 +6,7 @@ import { affordable } from "../logic.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { portaApi } from "./api.js";
 import { errorText, pt } from "./texts.js";
-import { type PortaState, RARITIES } from "./types.js";
+import { COMPONENT_KINDS, type ComponentKind, type PortaState, RARITIES } from "./types.js";
 
 /**
  * The Porta's sheet (docs/plan-porta.md §§ 3, 7, 9): its level, its quay (the vehicles sent from
@@ -38,6 +38,9 @@ export function PortaSheet({
   const [transportId, setTransportId] = useState("");
   const [code, setCode] = useState("");
   const [waiting, setWaiting] = useState(false);
+  // The Porta noire, chosen battle by battle (2 November): off by default.
+  const [dark, setDark] = useState(false);
+  const [kind, setKind] = useState<ComponentKind>("weapon");
 
   const take = useCallback(
     (s: PortaState) => {
@@ -58,6 +61,7 @@ export function PortaSheet({
   }, [open, refresh]);
 
   const docked = (place: string) => place === "porta";
+  const repairing = (until: number | null) => until !== null && until > now;
   const combats = v?.vehicles.filter((x) => docked(x.place)) ?? [];
   const transports = v?.transports.filter((x) => docked(x.place)) ?? [];
   useEffect(() => {
@@ -74,7 +78,7 @@ export function PortaSheet({
       setWaiting(false);
     }
   };
-  const entry = { tier, combatId, transportId };
+  const entry = { tier, combatId, transportId, ...(dark ? { dark: true } : {}) };
   const ready = combatId !== "" && transportId !== "";
   const line = v.tiers.find((x) => x.tier === tier);
   const lobby = state?.lobby ?? null;
@@ -111,6 +115,7 @@ export function PortaSheet({
             name: pt.model[x.model] ?? x.model,
             place: x.place,
             arrivesAt: x.arrivesAt,
+            repairUntil: x.repairUntil,
             role: pt.combat,
           })),
           ...v.transports.map((x) => ({
@@ -118,6 +123,7 @@ export function PortaSheet({
             name: x.type,
             place: x.place,
             arrivesAt: x.arrivesAt,
+            repairUntil: x.repairUntil,
             role: pt.transport,
           })),
         ].map((x) => (
@@ -129,13 +135,20 @@ export function PortaSheet({
             <span className="min-w-0 flex-1 text-sm text-cream">
               {x.name}
               <span className="block text-xs text-cream-dim">
-                {x.role} · {pt.place_[x.place]}
+                {x.role} ·{" "}
+                {repairing(x.repairUntil) ? (
+                  <span className="text-vermilion" data-repair>
+                    {pt.repair(Math.ceil(((x.repairUntil ?? 0) - now) / 60_000))}
+                  </span>
+                ) : (
+                  pt.place_[x.place]
+                )}
                 {x.arrivesAt && x.arrivesAt > now && x.place !== "battle"
                   ? ` · ${Math.ceil((x.arrivesAt - now) / 60_000)} min`
                   : ""}
               </span>
             </span>
-            {x.place === "remise" && (
+            {x.place === "remise" && !repairing(x.repairUntil) && (
               <Slab
                 size="sm"
                 tone="ghost"
@@ -241,6 +254,25 @@ export function PortaSheet({
                 </li>
               ))}
             </ul>
+            <label
+              className={`flex items-start gap-3 rounded-xl border p-3 text-xs ${dark ? "border-vermilion bg-vermilion/10" : "border-line"}`}
+              data-porta-dark
+            >
+              <input
+                type="checkbox"
+                role="switch"
+                aria-checked={dark}
+                checked={dark}
+                onChange={(e) => setDark(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-[rgb(var(--vermilion))]"
+              />
+              <span>
+                <span className={`block font-semibold ${dark ? "text-vermilion" : "text-cream"}`}>
+                  {pt.dark}
+                </span>
+                <span className={dark ? "text-vermilion" : "text-cream-dim"}>{pt.darkText}</span>
+              </span>
+            </label>
             {line && (
               <p className="text-xs text-cream-dim">
                 {line.open ? pt.entry(line.bread) : pt.tierLocked(line.tier)} ·{" "}
@@ -291,7 +323,11 @@ export function PortaSheet({
                 tone="ghost"
                 size="sm"
                 disabled={off || !ready || code.length !== 6}
-                onClick={() => void go(() => portaApi.join(code, { combatId, transportId }))}
+                onClick={() =>
+                  void go(() =>
+                    portaApi.join(code, { combatId, transportId, ...(dark ? { dark: true } : {}) }),
+                  )
+                }
               >
                 {pt.join}
               </Slab>
@@ -308,6 +344,22 @@ export function PortaSheet({
       <section className="mt-5 space-y-2" data-porta-antiquarian>
         <Label>{pt.antiquarian}</Label>
         <p className="text-xs text-cream-dim">{pt.antiquarianText}</p>
+        <p className="text-xs text-cream-dim">{pt.decipherText}</p>
+        <div className="flex flex-wrap items-center gap-2" data-porta-plans>
+          <span className="text-xs text-cream-dim">{pt.plans}</span>
+          {COMPONENT_KINDS.map((k) => (
+            <button
+              key={k}
+              type="button"
+              aria-pressed={kind === k}
+              onClick={() => setKind(k)}
+              data-plan-kind={k}
+              className={`rounded-full border px-2.5 py-1 text-xs tabular-nums ${kind === k ? "border-gold text-gold" : "border-line text-cream-dim"}`}
+            >
+              {pt.kind[k]} · {v.plans[k]}
+            </button>
+          ))}
+        </div>
         {RARITIES.map((r) => {
           const n = v.relics[r];
           const price = v.relicPrices[r];
@@ -323,6 +375,15 @@ export function PortaSheet({
                   <Coin size={11} /> {d(price.price)} · {pt.points(price.points)}
                 </span>
               </span>
+              <Slab
+                size="sm"
+                tone="ghost"
+                disabled={off || n === 0}
+                aria-label={`${pt.decipherAs(v.plansPerRarity[r])} ${pt.kind[kind]}`}
+                onClick={() => void act({ type: "empireDecipherRelic", rarity: r, kind })}
+              >
+                {pt.decipher} · {v.plansPerRarity[r]}
+              </Slab>
               <Slab
                 size="sm"
                 tone="ghost"

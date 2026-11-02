@@ -100,9 +100,22 @@ describe("a component", () => {
     w.do({ type: "empireBuyComponent", playerId: "a", code: "lances" });
     const id = house(w).arms?.components[0]?.id ?? "";
     expect(componentUpgradeCost(house(w), id, s)).toBe(1_000n * D);
-    for (let i = 0; i < 4; i++)
+    for (let i = 0; i < 2; i++)
+      w.do({ type: "empireUpgradeComponent", playerId: "a", componentId: id });
+    // The levels 4 and 5 ask plans of its kind (2 November): a house holding them, as kept.
+    expect(error(w.try({ type: "empireUpgradeComponent", playerId: "a", componentId: id }))).toBe(
+      "no_plans",
+    );
+    const state = structuredClone(w.state);
+    const h = state.empire?.houses.a;
+    if (!h) throw new Error("no house");
+    h.porta = { cell: "1,1", level: 1, best: 0, relics: {}, week: { index: 0, points: 0 } };
+    h.porta.plans = { weapon: 40 };
+    w.state = state;
+    for (let i = 0; i < 2; i++)
       w.do({ type: "empireUpgradeComponent", playerId: "a", componentId: id });
     expect(house(w).arms?.components[0]?.level).toBe(5);
+    expect(house(w).porta?.plans).toEqual({ weapon: 0 });
     expect(error(w.try({ type: "empireUpgradeComponent", playerId: "a", componentId: id }))).toBe(
       "max_level",
     );

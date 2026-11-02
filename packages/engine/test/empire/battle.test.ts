@@ -391,3 +391,38 @@ describe("a tier 1 alone", () => {
     expect(out?.won).toBe(true);
   });
 });
+
+describe("the incendiary (2 November)", () => {
+  const withIncendiary = (b: Battle): RomeUnit => {
+    const c = b.cities[0];
+    if (!c) throw new Error("no city");
+    const u = makeRomeUnit("inc", "incendiary", { x: c.x + 3, y: c.y }, c.id, tierLine(1, s), s);
+    b.units.push(u);
+    return u;
+  };
+  const relicsLeft = (b: Battle) =>
+    b.cities.reduce((n, c) => n + Object.values(c.relics).reduce((k, r) => k + r.length, 0), 0);
+
+  it("walks to the city of the rarest relics and burns them, a city left alone", () => {
+    const b = battle();
+    withIncendiary(b);
+    const before = relicsLeft(b);
+    for (let i = 0; i < 400 && !b.events.some((e) => e.kind === "burnt"); i++) stepBattle(b, s);
+    const burnt = b.events.find((e) => e.kind === "burnt");
+    expect(burnt).toBeDefined();
+    const city = b.cities.find((c) => burnt?.kind === "burnt" && c.id === burnt.city);
+    expect(Object.values(city?.relics ?? {}).flat()).toEqual([]);
+    expect(relicsLeft(b)).toBeLessThan(before);
+  });
+
+  it("burns nothing once dead", () => {
+    const b = battle();
+    const u = withIncendiary(b);
+    u.hp = 0;
+    u.dead = true;
+    const before = relicsLeft(b);
+    for (let i = 0; i < 400; i++) stepBattle(b, s);
+    expect(b.events.some((e) => e.kind === "burnt")).toBe(false);
+    expect(relicsLeft(b)).toBe(before);
+  });
+});

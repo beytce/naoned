@@ -84,17 +84,19 @@ Le plan est dans [05 — les commandes](05-commandes.md), et il remplace les vag
 - **la livraison** : le véhicule les livre saut par saut, puis reste sur place ;
 - **les modules** : le Livre de route, le Fouet et l'Estafette sont retirés.
 
-## Chantier 3 — la Porta (à planifier)
+## Chantier 3 — la Porta (fait, PR « chantier 3 de la Porta », 2 novembre)
 
-- **La perte** : un véhicule détruit rentre abîmé et se répare ; un véhicule pris quand Rome ferme est perdu.
-- **La Porta noire**, optionnelle : la perte définitive, contre +50 % de reliques.
-- **Les reliques** se déchiffrent à la Scuola en plans pour les hauts niveaux des composants, au lieu d'être vendues ; c'est le point ouvert du plan de la Porta, § 13.
-- **L'incendiaire** : un ennemi qui brûle une ville, dont les reliques sont perdues si on ne l'arrête pas.
+- **La perte** : un véhicule détruit rentre abîmé et se répare 2 h à la Remise, sans coût ; un véhicule pris quand Rome ferme est perdu.
+- **La Porta noire**, choisie bataille par bataille : la perte définitive, contre +50 % de reliques.
+- **Les reliques** se déchiffrent, à l'instant, en plans d'un type (1, 3, 8, 20 selon la rareté) ; les niveaux 4 et 5 des composants en demandent 10 puis 30.
+- **L'incendiaire**, dès le palier 4 : il brûle 20 s une ville, et ses reliques sont perdues si on ne l'arrête pas.
+- Le détail est dans `docs/plan-porta.md` (lot 7).
 
-## Chantier 4 — le reste de l'interface (à planifier)
+## Chantier 4 — le reste de l'interface (fait, PR « chantier 4 de l'interface », 2 novembre)
 
-Il est décrit dans 04, § 8 :
-- le calque d'information (appui long, ou Alt sur PC) ;
-- les destinations éclairées avec leur compte quand un véhicule chargé est choisi ;
-- les effets de construction et d'amélioration ;
-- les raccourcis restants.
+Décisions du porteur : le calque pour tous, l'arrivée complète, le seul comptoir posé ou monté, le clavier pour déplacer et zoomer, le double toucher centré.
+- **Le calque d'information** : appui long ou Alt ; les noms, les commandes de chaque ville, la soute des véhicules (`useCamera.ts`, `EmpireMap.tsx`, `index.css`).
+- **L'arrivée** : l'onde lagune, la marque qui saute, « + ducats » (`Fleet.tsx`).
+- **Le comptoir posé ou monté** : l'anneau d'or, l'éclat, l'onde (`postsRaised`, `logic.ts`).
+- **Le clavier** et **le double toucher centré** (`EmpireGame.tsx`, `useCamera.ts` : `panBy`, `zoomBy`).
+- Les destinations éclairées avec leur compte existaient depuis le chantier 1. Le bilan est dans 04, § 8.9.

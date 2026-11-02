@@ -14,6 +14,7 @@ import {
   nearness,
   placeable,
   placingCost,
+  postsRaised,
   scaleBounds,
   zoomBounds,
 } from "../src/empire/map/logic.js";
@@ -253,5 +254,23 @@ describe("the action panel", () => {
       good: "bread",
       action: { type: "empireDeliver", good: "bread", qty: 12, city: "venezia" },
     });
+  });
+});
+
+describe("the counters raised", () => {
+  it("are none at the first sight", () => {
+    expect(postsRaised(null, new Map([["home", 1]]))).toEqual([]);
+  });
+  it("are those put down or gone up a level since", () => {
+    const before = new Map([
+      ["home", 1],
+      ["p1", 2],
+    ]);
+    const now = new Map([
+      ["home", 2],
+      ["p1", 2],
+      ["p2", 1],
+    ]);
+    expect(postsRaised(before, now)).toEqual(["home", "p2"]);
   });
 });
