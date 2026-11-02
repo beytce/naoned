@@ -18,8 +18,7 @@ svg=render(sc,790,240)
 P='System.dc.html'  # a file of the design canvas
 s=open(P).read()
 if 'aria-label="Le kit de tuiles"' in s:
-    s=re.sub(r'(<svg width="788" height="230" viewBox="0 0 788 230" role="img" aria-label="Le kit de tuiles">).*?(</svg></div>)', lambda mm: mm.group(1)+svg+'</svg>'+'<!--k-->', s, count=1, flags=re.S)
-    s=s.replace('</svg><!--k-->','</svg>',1)
+    s=re.sub(r'(<svg width="788" height="230" viewBox="0 0 788 230" role="img" aria-label="Le kit de tuiles">).*?(</svg><div style="display: flex; justify-content: space-around)', lambda mm: mm.group(1)+svg+mm.group(2), s, count=1, flags=re.S)
     open(P,'w').write(s); open('prev_kit.html','w').write('<html><body style="margin:0;background:#122036"><svg width="788" height="230">'+svg+'</svg></body></html>'); raise SystemExit
 m=re.search(r'(<span[^>]*>Les lieux, en médailles</span>\s*)<div class="sea".*?</div>\s*<span[^>]*>.*?</span>',s,re.S)
 caps=''.join('<span style="width: 130px; text-align: center; font-size: 13px; color: #A9BCD4">%s</span>'%t for t in ('Votre fondaco','Un atelier','Une ville et sa jauge','Une forêt','Une terre vue','La lagune'))

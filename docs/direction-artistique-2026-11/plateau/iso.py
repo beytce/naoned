@@ -31,7 +31,7 @@ def newell(pts):
     return (nx / l, ny / l, nz / l)
 def centroid(pts): n = len(pts); return tuple(sum(p[i] for p in pts) / n for i in range(3))
 
-def faces_svg(sc, faces, center, col, extra='', lo=0.62, hi=0.42, edge=None):
+def faces_svg(sc, faces, center, col, extra='', lo=0.48, hi=0.6, edge=None):
     out = []
     for f in faces:
         pts, c = (f, col) if isinstance(f, list) else f
@@ -71,7 +71,7 @@ def cone(sc, cx, cy, z0, r, h, n, col, a=0.3):
     b = [(cx + r * math.cos(a + 2 * math.pi * i / n), cy + r * math.sin(a + 2 * math.pi * i / n), z0) for i in range(n)]
     apex = (cx, cy, z0 + h)
     faces = [[b[i], b[(i + 1) % n], apex] for i in range(n)]
-    return faces_svg(sc, faces, (cx, cy, z0 + h / 3), col, lo=0.55, hi=0.5)
+    return faces_svg(sc, faces, (cx, cy, z0 + h / 3), col, lo=0.45, hi=0.62)
 
 def gable(sc, cx, cy, z0, w, d, rh, a, col, over=1.12):
     W, D = w / 2 * over, d / 2 * over
@@ -79,7 +79,7 @@ def gable(sc, cx, cy, z0, w, d, rh, a, col, over=1.12):
     b1, b2, b3, b4 = q(-W, -D, z0), q(W, -D, z0), q(W, D, z0), q(-W, D, z0)
     r1, r2 = q(-W, 0, z0 + rh), q(W, 0, z0 + rh)
     faces = [[b4, b3, r2, r1], [b1, r1, r2, b2], [b1, b4, r1], [b2, r2, b3]]
-    return faces_svg(sc, faces, (cx, cy, z0 + rh / 3), col, lo=0.6, hi=0.45)
+    return faces_svg(sc, faces, (cx, cy, z0 + rh / 3), col, lo=0.5, hi=0.58)
 
 def face_quad(sc, cx, cy, z0, w, d, a, u0, u1, z1, z2, col, side='front'):
     """A flat quad (door, window) drawn on the +y face of a box, from u0 to u1 along its width."""
@@ -90,13 +90,14 @@ def face_quad(sc, cx, cy, z0, w, d, a, u0, u1, z1, z2, col, side='front'):
 
 # ---------- palette
 C = dict(land='#E2C27A', landside='#C9A55E', soil='#2E486E', mist='#9FB3CC', mistside='#7F95B3', mistsoil='#22385A',
-         water='#6EC8F5', pine='#3BA58A', trunk='#8A6A3A', rock='#A9BBD0', rock2='#8EA2BA', wall='#E9F0F8',
-         roof='#3F6A9E', roofgold='#F2C24F', wood='#B08A4E', brick='#C0704A', door='#22385A', plot='#D9B866', snow='#F4F8FC')
+         water='#6EC8F5', pine='#3BA58A', trunk='#8A6A3A', rock='#A9BBD0', rock2='#8EA2BA', wall='#E9F0F8', rockseen='#6F84A0', rock2seen='#8597B0', snowseen='#DDE6F0', pinemuted='#4F8C7C', roofmuted='#5A7394',
+         roof='#3F6A9E', roofgold='#F2C24F', wood='#C49A5A', brick='#C0704A', door='#22385A', plot='#D9B866', snow='#F4F8FC')
 
 def hexpts(cx, cy, R, z):
     return [(cx + R * math.cos(math.radians(60 * i)), cy + R * math.sin(math.radians(60 * i)), z) for i in range(6)]
 
-def tile(sc, cx, cy, R, kind):
+def tile(sc, cx, cy, R, kind, nb=None):
+    nb = nb or {}
     top, side, soil, t0 = {
         'own': (C['land'], C['landside'], C['soil'], 0),
         'seen': (C['mist'], C['mistside'], C['mistsoil'], 0),
@@ -110,6 +111,7 @@ def tile(sc, cx, cy, R, kind):
     for z_top, z_bot, col in ((t0, -11, side), (-11, -22, soil)):
         tp, bt = hexpts(cx, cy, Ri, z_top), hexpts(cx, cy, Ri, z_bot)
         for i in (0, 1, 2):
+            if kind == 'water' and nb.get(i) == 'water': continue
             f = [bt[i], bt[i + 1], tp[i + 1], tp[i]]
             n = newell(f)
             if dot(n, sub(centroid(f), (cx, cy, (z_top + z_bot) / 2))) < 0: n = tuple(-v for v in n)
@@ -120,46 +122,59 @@ def tile(sc, cx, cy, R, kind):
                 ' '.join('%.1f,%.1f' % sc.P(p) for p in f), fc, op, fc, op.replace('fill-opacity', 'stroke-opacity')))
     tp = hexpts(cx, cy, Ri, t0)
     tc = shade(top, 0.98)
-    op = ' fill-opacity=".8"' if kind == 'water' else ''
+    op = ' fill-opacity=".7" stroke-opacity=".7"' if kind == 'water' else ''
     out.append('<polygon points="%s" fill="%s"%s stroke="%s" stroke-width="4" stroke-linejoin="round"></polygon>' % (
         ' '.join('%.1f,%.1f' % sc.P(p) for p in tp), tc, op, tc))
+    if kind == 'own':
+        ip = hexpts(cx, cy, Ri - 3, t0)
+        out.append('<polygon points="%s" fill="none" stroke="#C9A55E" stroke-opacity=".6" stroke-width="1" stroke-linejoin="round"></polygon>' % ' '.join('%.1f,%.1f' % sc.P(p) for p in ip))
     # rim light on the back edges
     bk = hexpts(cx, cy, Ri - 1, t0)
-    out.append('<polyline points="%s" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="1.2" stroke-linecap="round"></polyline>' % (
+    if kind != 'water': out.append('<polyline points="%s" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="1.2" stroke-linecap="round"></polyline>' % (
         ' '.join('%.1f,%.1f' % sc.P(p) for p in (bk[3], bk[4], bk[5], bk[0]))))
     if kind == 'water':
         for dx, dy in ((-8, -4), (6, 6)):
             a, b2 = sc.P((cx + dx - 6, cy + dy, t0)), sc.P((cx + dx + 6, cy + dy, t0))
-            out.append('<path d="M%.1f %.1f q%.1f -3 %.1f 0" fill="none" stroke="#FFFFFF" stroke-opacity=".6" stroke-width="1.2" stroke-linecap="round"></path>' % (a[0], a[1], (b2[0] - a[0]) / 2, b2[0] - a[0]))
+            out.append('<path class="wave" d="M%.1f %.1f q%.1f -3 %.1f 0" fill="none" stroke="#FFFFFF" stroke-opacity=".6" stroke-width="1.2" stroke-linecap="round"></path>' % (a[0], a[1], (b2[0] - a[0]) / 2, b2[0] - a[0]))
     sc.tiles.append((cy, ''.join(out)))
 
 def fog(sc, cx, cy, R):
     pts = hexpts(cx, cy, R - 3, 0)
-    sc.ground.insert(0, '<polygon points="%s" fill="rgba(110,200,245,.04)" stroke="rgba(244,197,84,.35)" stroke-width="1.2" stroke-dasharray="5 4" stroke-linejoin="round"></polygon>' % ' '.join('%.1f,%.1f' % sc.P(p) for p in pts))
+    sc.ground.insert(0, '<polygon class="fogb" points="%s" fill="rgba(110,200,245,.03)" stroke="rgb(159,179,204)" stroke-opacity=".16" stroke-width="1" stroke-dasharray="3 5" stroke-linejoin="round"></polygon>' % ' '.join('%.1f,%.1f' % sc.P(p) for p in pts))
 
 # ---------- props
-def pine(sc, x, y, s=1.0):
+def shadow(sc, x, y, r):
+    cx, cy = sc.P((x + 3, y + 3, 0))
+    sc.ground.append('<ellipse cx="%.1f" cy="%.1f" rx="%.1f" ry="%.1f" fill="rgba(14,26,43,.32)"></ellipse>' % (cx, cy, r * sc.s, r * K * sc.s))
+def pine(sc, x, y, s=1.0, muted=False):
+    shadow(sc, x, y, 6 * s)
+    pc = C['pinemuted'] if muted else C['pine']
     o = prism(sc, x, y, 0, 1.6 * s, 4 * s, 5, C['trunk'])
-    o += cone(sc, x, y, 3 * s, 6.5 * s, 10 * s, 6, C['pine'])
-    o += cone(sc, x, y, 9 * s, 5 * s, 9 * s, 6, C['pine'], a=0.8)
+    o += cone(sc, x, y, 3 * s, 6.5 * s, 10 * s, 6, pc)
+    o += cone(sc, x, y, 9 * s, 5 * s, 9 * s, 6, pc, a=0.8)
     sc.objs.append((y, o))
-def rock(sc, x, y, s=1.0, seed=1):
+def rock(sc, x, y, s=1.0, seed=1, seen=False):
     random.seed(seed); jit = [0.8 + 0.4 * random.random() for _ in range(5)]
-    sc.objs.append((y, prism(sc, x, y, 0, 7 * s, 6 * s, 5, C['rock'], r2=3.5 * s, a=seed, jit=jit)))
-def mountain(sc, x, y, s=1.0, seed=3, snow=True):
+    shadow(sc, x, y, 7 * s)
+    sc.objs.append((y, prism(sc, x, y, 0, 7 * s, 6 * s, 5, C['rockseen'] if seen else C['rock'], r2=3.5 * s, a=seed, jit=jit)))
+def mountain(sc, x, y, s=1.0, seed=3, snow=True, seen=False):
     random.seed(seed); j = [0.85 + 0.3 * random.random() for _ in range(6)]
-    o = prism(sc, x, y, 0, 24 * s, 18 * s, 6, C['rock2'], r2=15 * s, a=0.2, jit=j)
-    o += prism(sc, x + 2 * s, y - 2 * s, 18 * s, 15 * s, 14 * s, 6, C['rock'], r2=7 * s, a=0.5, jit=j)
-    o += prism(sc, x + 3 * s, y - 3 * s, 32 * s, 7 * s, 6 * s, 5, C['snow'] if snow else C['rock'], r2=2.5 * s, a=0.9)
+    c1, c2, sn = (C['rock2seen'], C['rockseen'], C['snowseen']) if seen else (C['rock2'], C['rock'], C['snow'])
+    shadow(sc, x, y, 24 * s)
+    o = prism(sc, x, y, 0, 24 * s, 18 * s, 6, c1, r2=15 * s, a=0.2, jit=j)
+    o += prism(sc, x + 2 * s, y - 2 * s, 18 * s, 15 * s, 14 * s, 6, c2, r2=7 * s, a=0.5, jit=j)
+    o += prism(sc, x + 3 * s, y - 3 * s, 32 * s, 7 * s, 6 * s, 5, sn if snow else c2, r2=2.5 * s, a=0.9)
     sc.objs.append((y, o))
 def house(sc, x, y, s=1.0, a=0.5, roof=None, chimney=True):
     w, d, h = 14 * s, 11 * s, 9 * s
+    shadow(sc, x, y, 9 * s)
     o = box(sc, x, y, 0, w, d, h, a, C['wall'])
     o += face_quad(sc, x, y, 0, w, d, a, -2 * s, 2 * s, 0, 5.5 * s, C['door'])
     if chimney: o += box(sc, x + 4 * s, y - 2 * s, h, 2.6 * s, 2.6 * s, 7 * s, a, C['rock'])
     o += gable(sc, x, y, h, w, d, 6 * s, a, roof or C['roof'])
     sc.objs.append((y, o))
 def tower(sc, x, y, s=1.0, a=0.5, h=30, roof=None):
+    shadow(sc, x, y, 5 * s)
     o = box(sc, x, y, 0, 7 * s, 7 * s, h * s, a, C['wall'])
     o += face_quad(sc, x, y, 0, 7 * s, 7 * s, a, -1.4 * s, 1.4 * s, (h - 8) * s, (h - 3) * s, C['door'])
     o += cone(sc, x, y, h * s, 5.6 * s, 9 * s, 4, roof or C['roof'], a=a + math.pi / 4)
@@ -172,6 +187,7 @@ def flag(sc, x, y, z, s=1.0):
     sc.objs.append((y + 0.1, o))
 def fondaco(sc, x, y, s=1.0):
     a = 0.45
+    shadow(sc, x, y, 19 * s)
     o = box(sc, x, y, 0, 30 * s, 20 * s, 14 * s, a, C['wall'])
     for u in (-10, -3.5, 3):
         o += face_quad(sc, x, y, 0, 30 * s, 20 * s, a, u * s, (u + 4.5) * s, 0, 8 * s, C['door'])
@@ -180,6 +196,7 @@ def fondaco(sc, x, y, s=1.0):
     tower(sc, x - 13 * s, y - 9 * s, s * 0.9, a, 34, C['roofgold'])
     flag(sc, x - 13 * s, y - 9 * s, 42 * s * 0.9, s)
 def kiln(sc, x, y, s=1.0):
+    shadow(sc, x, y, 11 * s)
     o = prism(sc, x, y, 0, 10 * s, 11 * s, 8, C['brick'], r2=8 * s)
     o += prism(sc, x, y, 11 * s, 8 * s, 5 * s, 8, C['brick'], r2=4 * s)
     o += prism(sc, x + 1 * s, y - 1 * s, 14 * s, 2.6 * s, 18 * s, 6, C['brick'], r2=2.2 * s)
@@ -190,6 +207,7 @@ def kiln(sc, x, y, s=1.0):
     return sc.P((x + 1 * s, y - 1 * s, 32 * s))
 def barn(sc, x, y, s=1.0):
     a = 0.5
+    shadow(sc, x, y, 15 * s)
     o = box(sc, x, y, 0, 24 * s, 18 * s, 12 * s, a, C['wood'])
     o += face_quad(sc, x, y, 0, 24 * s, 18 * s, a, -5 * s, 5 * s, 0, 9 * s, C['door'])
     o += gable(sc, x, y, 12 * s, 24 * s, 18 * s, 9 * s, a, C['roof'])
@@ -207,15 +225,21 @@ def fence(sc, x, y, n, a, s=1.0):
     sc.objs.append((y, o))
 def dock(sc, x, y, s=1.0):
     sc.objs.append((y, box(sc, x, y, -3, 22 * s, 7 * s, 1.6 * s, 0.5, C['wood']) + box(sc, x - 8 * s, y + 4 * s, -8, 1.6 * s, 1.6 * s, 6.5, 0, C['wood'])))
-def ring(sc, x, y, R, frac):
+def ring(sc, x, y, R, frac, full=False):
     cx, cy = sc.P((x, y, 0))
     rx, ry = R * sc.s, R * K * sc.s
-    sc.ground.append('<ellipse cx="%.1f" cy="%.1f" rx="%.1f" ry="%.1f" fill="none" stroke="rgba(14,26,43,.35)" stroke-width="5"></ellipse>'
-                     '<ellipse class="ringfill" cx="%.1f" cy="%.1f" rx="%.1f" ry="%.1f" fill="none" stroke="#6EE0B8" stroke-width="3.2" stroke-linecap="round" pathLength="100" stroke-dasharray="%d 100" transform="rotate(-90 %.1f %.1f)"></ellipse>'
-                     % (cx, cy, rx, ry, cx, cy, ry, rx, int(frac * 100), cx, cy))
+    col = '#F2C24F' if full else '#6EE0B8'
+    disc = 'rgba(244,197,84,.14)' if full else 'rgba(110,224,184,.12)'
+    ang = math.radians(-90 + 360 * frac)
+    ex, ey = cx + rx * math.cos(ang), cy + ry * math.sin(ang)
+    sc.ground.append('<ellipse cx="%.1f" cy="%.1f" rx="%.1f" ry="%.1f" fill="%s" stroke="rgba(14,26,43,.4)" stroke-width="5"></ellipse>'
+                     '<ellipse cx="%.1f" cy="%.1f" rx="%.1f" ry="%.1f" fill="none" stroke="%s" stroke-width="3.2" stroke-linecap="round" pathLength="100" stroke-dasharray="%d 100" transform="rotate(-90 %.1f %.1f)"></ellipse>'
+                     % (cx, cy, rx, ry, disc, cx, cy, ry, rx, col, int(frac * 100), cx, cy)
+                     + ('' if full else '<circle cx="%.1f" cy="%.1f" r="2.6" fill="%s"></circle>' % (ex, ey, col))
+                     + ('<ellipse class="ripple-e" cx="%.1f" cy="%.1f" rx="%.1f" ry="%.1f" fill="none" stroke="%s" stroke-width="2" style="transform-origin: %.1fpx %.1fpx"></ellipse>' % (cx, cy, rx, ry, col, cx, cy) if full else ''))
 def render(sc, w, h):
     out = ''.join(sc.ground[:1]) if False else ''
-    fogs = [g for g in sc.ground if 'stroke-dasharray="5 4"' in g]
+    fogs = [g for g in sc.ground if 'class="fogb"' in g]
     rest = [g for g in sc.ground if g not in fogs]
     body = ''.join(fogs) + ''.join(t for _, t in sorted(sc.tiles, key=lambda t: t[0])) + ''.join(rest) + ''.join(o for _, o in sorted(sc.objs, key=lambda o: o[0]))
     return body
