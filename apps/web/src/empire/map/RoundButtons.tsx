@@ -82,14 +82,14 @@ function Round({
     >
       <span
         data-goods-to={store ? "store" : undefined}
-        className="relative flex h-12 w-12 items-center justify-center rounded-full bg-night/95 text-cream ring-1 ring-line shadow-lg shadow-black/50 [&_svg]:h-6 [&_svg]:w-6"
+        className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#1D304D] text-cream ring-1 ring-[#A9BCD4]/30 shadow-[0_4px_12px_rgb(0_0_0/0.35)] [&_svg]:h-[22px] [&_svg]:w-[22px]"
       >
         {children}
         {dot && (
           <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-vermilion ring-2 ring-night" />
         )}
       </span>
-      <span className="text-[0.6875rem] font-semibold text-cream [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+      <span className="text-xs font-semibold text-cream-dim [text-shadow:0_1px_4px_rgb(0_0_0/0.8)]">
         {label}
       </span>
     </button>
