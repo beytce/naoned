@@ -2,7 +2,7 @@ import sys, re, math
 sys.path.insert(0,'.')
 import iso
 from iso import *
-PROJ='/tmp/claude-0/-home-user-naoned/784c1c8f-2706-5287-bdbe-0e04e85abeeb/scratchpad/fondaco/project/'
+PROJ='./'  # the design canvas folder
 R=38
 def W(q,r): return (1.5*R*q, math.sqrt(3)*R*(r+q/2))
 # ---- Orders: Padoue

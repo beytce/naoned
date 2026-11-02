@@ -1,7 +1,7 @@
 import sys, re, math
 sys.path.insert(0, '.')
 from iso import *
-P='/tmp/claude-0/-home-user-naoned/784c1c8f-2706-5287-bdbe-0e04e85abeeb/scratchpad/fondaco/project/Orbit.dc.html'
+P='Orbit.dc.html'  # a file of the design canvas
 R=46
 sc=Scene(195, 300, 1.55)
 def W(q,r): return (1.5*R*q, math.sqrt(3)*R*(r+q/2))

@@ -15,7 +15,7 @@ for i,(k,what) in enumerate(items):
     if what=='mountain': mountain(sc,x,y,1.0,3)
     if what=='dock': dock(sc,x-6,y)
 svg=render(sc,790,240)
-P='/tmp/claude-0/-home-user-naoned/784c1c8f-2706-5287-bdbe-0e04e85abeeb/scratchpad/fondaco/project/System.dc.html'
+P='System.dc.html'  # a file of the design canvas
 s=open(P).read()
 if 'aria-label="Le kit de tuiles"' in s:
     s=re.sub(r'(<svg width="788" height="230" viewBox="0 0 788 230" role="img" aria-label="Le kit de tuiles">).*?(</svg></div>)', lambda mm: mm.group(1)+svg+'</svg>'+'<!--k-->', s, count=1, flags=re.S)
