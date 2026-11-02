@@ -26,7 +26,7 @@ const ORBIT_MAX_PX = 520;
 
 /** The scale at which the chart just covers the screen: never a border of nothing. */
 export function coverScale(view: Viewport): number {
-  return Math.max(view.w / CHART.w, view.h / (CHART.h * TILT));
+  return Math.max(view.w / CHART.w, view.h / CHART.h);
 }
 
 /** The zoom's range: from the chart covering the screen to Venice's orbit at its largest. */
