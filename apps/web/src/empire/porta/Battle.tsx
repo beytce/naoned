@@ -24,7 +24,11 @@ const ROME_GLYPH: Record<string, string> = {
   light_horse: "C",
   bombard: "B",
   gonfalonier: "G",
+  incendiary: "I",
 };
+
+/** How long a burnt city flames, in battle time (ms). */
+const FLAME_MS = 3_000;
 
 const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y);
@@ -77,6 +81,18 @@ export function BattleScreen({ onClose }: { onClose: () => void }) {
 
   const hits = useMemo(() => (battle?.events ?? []).filter((e) => e.kind === "hit"), [battle]);
 
+  // The cities the incendiary has burnt (2 November): each flames a moment, when it burns.
+  const [burnt, setBurnt] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!battle) return;
+    const now = battle.events.filter((e) => e.kind === "burnt");
+    if (now.length === 0) return;
+    setBurnt((b) => ({
+      ...b,
+      ...Object.fromEntries(now.map((e) => [e.city, battle.timeMs])),
+    }));
+  }, [battle]);
+
   if (!battle)
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-night" data-battle>
@@ -114,7 +130,13 @@ export function BattleScreen({ onClose }: { onClose: () => void }) {
           <p className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
             {pt.tier(battle.tier)}
           </p>
-          <p className="text-xs text-cream-dim">{sel ? pt.moveHint : pt.selectHint}</p>
+          {Object.values(burnt).some((t) => t + FLAME_MS > battle.timeMs) ? (
+            <output className="block text-xs font-semibold text-vermilion" data-burnt-alert>
+              {pt.burnt}
+            </output>
+          ) : (
+            <p className="text-xs text-cream-dim">{sel ? pt.moveHint : pt.selectHint}</p>
+          )}
         </div>
         <div className="text-right">
           <p className="text-[0.6875rem] uppercase tracking-wider text-cream-dim">{pt.timer}</p>
@@ -201,6 +223,23 @@ export function BattleScreen({ onClose }: { onClose: () => void }) {
                 strokeDasharray="0.1 0.12"
               />
               <circle r={0.55} fill="url(#porta-astre)" />
+              {(burnt[c.id] ?? Number.NEGATIVE_INFINITY) + FLAME_MS > battle.timeMs && (
+                <g data-burnt>
+                  <circle
+                    r={0.7}
+                    fill="rgb(var(--vermilion))"
+                    fillOpacity={0.35}
+                    className="motion-safe:animate-ping"
+                    style={{ transformOrigin: "center", transformBox: "fill-box" }}
+                  />
+                  <path
+                    d="M0 -0.5 C0.25 -0.2 0.3 0 0.22 0.18 C0.15 0.35 -0.15 0.35 -0.22 0.18 C-0.3 0 -0.1 -0.1 0 -0.5 Z"
+                    fill="rgb(var(--vermilion))"
+                    stroke="rgb(var(--gold))"
+                    strokeWidth={0.03}
+                  />
+                </g>
+              )}
               {relics.map((k, i) => {
                 const a = (2 * Math.PI * i) / Math.max(1, relics.length) - Math.PI / 2;
                 return (
@@ -381,8 +420,37 @@ function RomeMark({ u }: { u: RomeUnitView }) {
       <text y={0.1} textAnchor="middle" fontSize={0.26} fontWeight={700} fill="rgb(var(--cream))">
         {ROME_GLYPH[u.kind] ?? "?"}
       </text>
+      {u.burnS ? <FireRing done={(u.burning ?? 0) / (u.burnS * 1_000)} /> : null}
       <title>{`${pt.rome[u.kind] ?? u.kind} · ${pt.romeState[u.state] ?? u.state}`}</title>
       <HpBar hp={u.hp} max={u.maxHp} y={-size - 0.2} />
+    </g>
+  );
+}
+
+/** The incendiary's fire ring: it fills while it burns a city, the city's relics lost when full. */
+function FireRing({ done }: { done: number }) {
+  if (done <= 0) return null;
+  const r = 0.6;
+  const c = 2 * Math.PI * r;
+  return (
+    <g data-fire-ring={Math.round(done * 100)}>
+      <circle
+        r={r}
+        fill="none"
+        stroke="rgb(var(--vermilion))"
+        strokeOpacity={0.2}
+        strokeWidth={0.08}
+      />
+      <circle
+        r={r}
+        fill="none"
+        stroke="rgb(var(--vermilion))"
+        strokeWidth={0.08}
+        strokeLinecap="round"
+        strokeDasharray={`${c * Math.min(1, done)} ${c}`}
+        transform="rotate(-90)"
+        style={{ transition: "stroke-dasharray 250ms linear" }}
+      />
     </g>
   );
 }

@@ -2,6 +2,8 @@
 
 export type Rarity = "common" | "rare" | "precious" | "legendary";
 export const RARITIES: Rarity[] = ["common", "rare", "precious", "legendary"];
+export type ComponentKind = "weapon" | "defense" | "support";
+export const COMPONENT_KINDS: ComponentKind[] = ["weapon", "defense", "support"];
 export type PortaPlace = "remise" | "going" | "porta" | "battle" | "back";
 
 export interface ArmStatsView {
@@ -33,6 +35,9 @@ export interface PortaView {
   upgrade: { cost: string; minutes: number } | null;
   travelMinutes: number;
   relics: Record<Rarity, number>;
+  /** The house's plans by component kind, and what a relic deciphered gives (2 November). */
+  plans: Record<ComponentKind, number>;
+  plansPerRarity: Record<Rarity, number>;
   weekPoints: number;
   relicPrices: Record<Rarity, { price: string; points: number; loadS: number }>;
   tiers: {
@@ -73,6 +78,8 @@ export interface PortaView {
     slots: (string | null)[];
     place: PortaPlace;
     arrivesAt: number | null;
+    /** Fallen in battle: back at the Remise, repaired at this time (null: sound). */
+    repairUntil: number | null;
     stats: ArmStatsView;
   }[];
   inventory: {
@@ -80,6 +87,8 @@ export interface PortaView {
     code: string;
     level: number;
     upgradeCost: string | null;
+    /** The plans its next level asks, of its kind (from the level 4). */
+    upgradePlans: { kind: ComponentKind; n: number } | null;
     on: string | null;
   }[];
   transports: {
@@ -88,8 +97,9 @@ export interface PortaView {
     hold: number;
     place: PortaPlace;
     arrivesAt: number | null;
+    repairUntil: number | null;
   }[];
-  battle: { id: string; tier: number } | null;
+  battle: { id: string; tier: number; dark: boolean } | null;
 }
 
 export type PortaAction =
@@ -102,7 +112,8 @@ export type PortaAction =
   | { type: "empireFitArm"; vehicleId: string; slot: number; componentId: string | null }
   | { type: "empireSendToPorta"; vehicleIds: string[] }
   | { type: "empireRecallFromPorta"; vehicleIds: string[] }
-  | { type: "empireSellRelics"; rarity: Rarity; qty: number };
+  | { type: "empireSellRelics"; rarity: Rarity; qty: number }
+  | { type: "empireDecipherRelic"; rarity: Rarity; kind: ComponentKind };
 
 /** A unit of the battle, as the snapshot carries it. */
 export interface RomeUnitView {
@@ -118,6 +129,9 @@ export interface RomeUnitView {
   rangeCenti: number;
   visionCenti: number;
   dead: boolean;
+  /** The incendiary: the seconds it burns a city, and how long it has so far (ms). */
+  burnS?: number;
+  burning?: number;
 }
 
 export interface PlayerUnitView {
@@ -153,7 +167,8 @@ export type BattleEvent =
   | { kind: "loaded"; unit: string; rarity: Rarity }
   | { kind: "exited"; unit: string }
   | { kind: "lost"; unit: string }
-  | { kind: "alert"; unit: string; target: string };
+  | { kind: "alert"; unit: string; target: string }
+  | { kind: "burnt"; unit: string; city: string };
 
 export interface BattleSnapshot {
   id: string;

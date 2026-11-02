@@ -28,13 +28,15 @@ export interface PortaEntryInput {
   tier: number;
   combatId: string;
   transportId: string;
+  /** The Porta noire: a vehicle fallen is lost, more relics. */
+  dark?: boolean;
 }
 
 export const portaApi = {
   state: () => call("GET", "/api/empire/porta"),
   queue: (mode: "solo" | "public" | "invite", entry: PortaEntryInput) =>
     call("POST", "/api/empire/porta/queue", { mode, ...entry }),
-  join: (code: string, vehicles: { combatId: string; transportId: string }) =>
+  join: (code: string, vehicles: { combatId: string; transportId: string; dark?: boolean }) =>
     call("POST", "/api/empire/porta/join", { code, ...vehicles }),
   launch: () => call("POST", "/api/empire/porta/launch", {}),
   leave: () => call("POST", "/api/empire/porta/leave", {}),

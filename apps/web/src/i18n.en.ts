@@ -382,6 +382,7 @@ export const en: Dictionary = {
     },
     hops: {
       docked: (place: string) => `Docked: ${place}`,
+      repairing: "Under repair at the Remise, back from the Porta",
       leaving: (place: string) => `Leaving for ${place}`,
       moving: (place: string) => `On the way to ${place}`,
       hold: (n: number, of: number) => `${n} / ${of}`,
@@ -395,6 +396,7 @@ export const en: Dictionary = {
       aim: "Drag the vehicle to a place, or touch it.",
       to: (place: string) => `To ${place}`,
       seconds: (n: number) => `${n} s`,
+      minutes: (n: number) => `${n} min`,
       leagues: (n: number) => `${n} leagues`,
       brings: (n: number, good: string, pay: string) => `${n} ${good} · +${pay}`,
       stops: (n: number) => `${n} stop${n > 1 ? "s" : ""} to come`,

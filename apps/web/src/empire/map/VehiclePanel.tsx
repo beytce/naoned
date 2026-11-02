@@ -64,7 +64,10 @@ export function VehiclePanel({
           left: waiting.departAt - now,
           span: view.moves.departSeconds * 1_000,
         }
-      : { line: t.docked(name(v.at)), left: 0, span: 1 };
+      : (v.repairUntil ?? 0) > now
+        ? // Fallen at the Porta (2 November): repaired at the Remise, two hours.
+          { line: t.repairing, left: (v.repairUntil ?? 0) - now, span: 120 * 60_000 }
+        : { line: t.docked(name(v.at)), left: 0, span: 1 };
   const secs = Math.max(0, Math.ceil(state.left / 1_000));
   const more = v.legs.filter((l) => l !== leg && l !== waiting).length;
   const button = (
@@ -125,7 +128,7 @@ export function VehiclePanel({
                   }}
                 />
                 <span className="relative block text-center font-display text-[0.625rem] font-bold leading-4 text-cream">
-                  {t.seconds(secs)}
+                  {secs > 120 ? t.minutes(Math.ceil(secs / 60)) : t.seconds(secs)}
                 </span>
               </span>
             )}

@@ -99,7 +99,14 @@ export function ArmsSheet({
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="text-sm font-semibold text-cream">{pt.model[x.model] ?? x.model}</p>
                   <span className="text-xs text-cream-dim">
-                    {pt.place_[x.place]} · {pt.hp(x.stats.hp)}
+                    {x.repairUntil && x.repairUntil > Date.now() ? (
+                      <span className="text-vermilion" data-repair>
+                        {pt.repair(Math.ceil((x.repairUntil - Date.now()) / 60_000))}
+                      </span>
+                    ) : (
+                      pt.place_[x.place]
+                    )}{" "}
+                    · {pt.hp(x.stats.hp)}
                   </span>
                 </div>
                 <ul className="mt-2 space-y-1.5">
@@ -192,6 +199,20 @@ export function ArmsSheet({
                   {nameOf(c.id)}
                   <span className="block text-xs text-cream-dim">
                     {on ? (pt.model[on.model] ?? on.model) : pt.stock}
+                    {c.upgradePlans && (
+                      <span
+                        className={
+                          v.plans[c.upgradePlans.kind] >= c.upgradePlans.n
+                            ? " text-cream-dim"
+                            : " text-vermilion"
+                        }
+                        data-plans-need
+                      >
+                        {" · "}
+                        {pt.plansNeed(c.upgradePlans.n, pt.plansKind[c.upgradePlans.kind] ?? "")} (
+                        {v.plans[c.upgradePlans.kind]})
+                      </span>
+                    )}
                   </span>
                 </span>
                 {c.upgradeCost && (
@@ -199,7 +220,10 @@ export function ArmsSheet({
                     size="sm"
                     tone="ghost"
                     disabled={
-                      busy || (on && on.place !== "remise") || !affordable(p.cash, c.upgradeCost)
+                      busy ||
+                      (on && on.place !== "remise") ||
+                      !affordable(p.cash, c.upgradeCost) ||
+                      (c.upgradePlans !== null && v.plans[c.upgradePlans.kind] < c.upgradePlans.n)
                     }
                     onClick={() => void act({ type: "empireUpgradeComponent", componentId: c.id })}
                   >
