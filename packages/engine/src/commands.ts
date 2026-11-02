@@ -402,6 +402,8 @@ type EmpireCommandOf =
       tier: number;
       combatId: string;
       transportId: string;
+      /** The Porta noire: the fallen lost for good, more relics (2 November). */
+      dark?: boolean;
     }
   | { type: "empirePortaSettle"; playerId: PlayerId; battleId: string; outcome: BattleOutcome }
   | { type: "empirePortaCancel"; playerId: PlayerId; battleId: string }
@@ -649,7 +651,15 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       recallFromPorta(tx, cmd.playerId, cmd.vehicleIds);
       break;
     case "empirePortaEnter":
-      enterPorta(tx, cmd.playerId, cmd.battleId, cmd.tier, cmd.combatId, cmd.transportId);
+      enterPorta(
+        tx,
+        cmd.playerId,
+        cmd.battleId,
+        cmd.tier,
+        cmd.combatId,
+        cmd.transportId,
+        cmd.dark === true,
+      );
       break;
     case "empirePortaSettle":
       settlePorta(tx, cmd.playerId, cmd.battleId, cmd.outcome);

@@ -150,7 +150,79 @@ describe("a battle entered and settled", () => {
     expect(b.units.filter((u) => u.side === "player")).toHaveLength(2);
   });
 
-  it("keeps what came out, destroys the fallen with its components, and opens the next tier", () => {
+  it("brings the fallen back damaged to the Remise, two hours, with its components", () => {
+    const { w, rider, cart } = docked();
+    enter(w, rider, cart);
+    w.do({
+      type: "empirePortaSettle",
+      playerId: "a",
+      battleId: "b1",
+      outcome: {
+        vehicles: [
+          { vehicleId: rider, role: "combat", outcome: "dead" },
+          { vehicleId: cart, role: "transport", outcome: "dead" },
+        ],
+        relics: [],
+        won: false,
+      },
+    });
+    const h = house(w);
+    const r = h.arms?.vehicles[0];
+    expect(r?.porta).toBeUndefined();
+    expect(r?.repairUntil).toBe(w.now + 2 * HOUR);
+    expect(r?.slots.filter(Boolean)).toHaveLength(1);
+    expect(h.vehicles?.[0]?.repairUntil).toBe(w.now + 2 * HOUR);
+    // Under repair: neither sent to the Porta nor on the roads.
+    expect(error(w.try({ type: "empireSendToPorta", playerId: "a", vehicleIds: [rider] }))).toBe(
+      "vehicle_busy",
+    );
+    expect(error(w.try({ type: "empireMove", playerId: "a", vehicleId: cart, to: "home" }))).toBe(
+      "vehicle_busy",
+    );
+    w.advance(2 * HOUR);
+    expect(error(w.try({ type: "empireSendToPorta", playerId: "a", vehicleIds: [rider] }))).toBe(
+      "",
+    );
+  });
+
+  it("at the Porta noire, loses the fallen for good, and brings half as many relics more", () => {
+    const { w, rider, cart } = docked();
+    expect(
+      error(
+        w.try({
+          type: "empirePortaEnter",
+          playerId: "a",
+          battleId: "b1",
+          tier: 1,
+          combatId: rider,
+          transportId: cart,
+          dark: true,
+        }),
+      ),
+    ).toBe("");
+    expect(house(w).porta?.battle?.dark).toBe(true);
+    w.do({
+      type: "empirePortaSettle",
+      playerId: "a",
+      battleId: "b1",
+      outcome: {
+        vehicles: [
+          { vehicleId: rider, role: "combat", outcome: "dead" },
+          { vehicleId: cart, role: "transport", outcome: "exited" },
+        ],
+        relics: ["rare", "common", "common", "common"],
+        won: true,
+      },
+    });
+    const h = house(w);
+    expect(h.arms?.vehicles).toEqual([]);
+    expect(h.arms?.components).toEqual([]);
+    // Four brought out, six kept: each relic again one time in two.
+    const kept = Object.values(h.porta?.relics ?? {}).reduce((n, x) => n + (x ?? 0), 0);
+    expect(kept).toBe(6);
+  });
+
+  it("keeps what came out, damages the fallen, and opens the next tier", () => {
     const { w, rider, cart } = docked();
     enter(w, rider, cart);
     const outcome: BattleOutcome = {
@@ -166,8 +238,9 @@ describe("a battle entered and settled", () => {
     ).toBe("not_here");
     w.do({ type: "empirePortaSettle", playerId: "a", battleId: "b1", outcome });
     const h = house(w);
-    expect(h.arms?.vehicles).toEqual([]);
-    expect(h.arms?.components).toEqual([]);
+    // Fallen in combat: back damaged at the Remise, its components kept (2 November).
+    expect(h.arms?.vehicles[0]?.repairUntil).toBeGreaterThan(w.now);
+    expect(h.arms?.components).toHaveLength(1);
     expect(h.vehicles?.[0]?.porta).toEqual({ arrivesAt: expect.any(Number) });
     expect(h.porta?.relics).toEqual({ rare: 1, common: 2 });
     expect(h.porta?.best).toBe(1);

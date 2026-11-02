@@ -1,3 +1,4 @@
+import { draw } from "../../draw.js";
 import { DENIERS_PER_DUCAT, type Deniers } from "../../money.js";
 import type { CombatVehicle, EmpireHouse, EmpirePorta, PlayerId } from "../../state.js";
 import { type Tx, addStock, fail, removeStock } from "../../tx.js";
@@ -105,11 +106,13 @@ export function sendToPorta(tx: Tx, playerId: PlayerId, ids: string[]): void {
       // Under way, loaded or standing at a city (the hops): not at the Remise.
       if (land.porta || land.busyUntil > tx.now || land.legs?.length || land.cargo)
         fail("vehicle_busy");
+      if ((land.repairUntil ?? 0) > tx.now) fail("vehicle_busy");
       if (land.at?.startsWith("city:")) fail("vehicle_busy");
       land.porta = { arrivesAt };
       land.busyUntil = HELD;
     } else if (combat) {
-      if (combat.porta || (combat.backAt ?? 0) > tx.now) fail("vehicle_busy");
+      if (combat.porta || (combat.backAt ?? 0) > tx.now || (combat.repairUntil ?? 0) > tx.now)
+        fail("vehicle_busy");
       combat.porta = { arrivesAt };
       combat.backAt = undefined;
     } else fail("unknown_vehicle");
@@ -151,6 +154,7 @@ export function enterPorta(
   tier: number,
   combatId: string,
   transportId: string,
+  dark = false,
 ): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
@@ -161,11 +165,13 @@ export function enterPorta(
   const transport = landOf(h, transportId);
   if (!combat || !transport || !landVehicle(s, transport.type)) fail("unknown_vehicle");
   if (!docked(combat, tx.now) || !docked(transport, tx.now)) fail("vehicle_busy");
+  if ((combat.repairUntil ?? 0) > tx.now || (transport.repairUntil ?? 0) > tx.now)
+    fail("vehicle_busy");
   const paid = entryCost(tier, s);
   removeStock(tx, playerId, buildingOf(s).entryGood, paid, "empire_porta", battleId);
   if (combat.porta) combat.porta.battle = battleId;
   if (transport.porta) transport.porta.battle = battleId;
-  porta.battle = { id: battleId, tier, combatId, transportId, paid };
+  porta.battle = { id: battleId, tier, combatId, transportId, paid, ...(dark ? { dark } : {}) };
 }
 
 /** What a house brings into a battle: its combat vehicle at its strength, its transport's hold. */
@@ -199,10 +205,28 @@ function destroy(h: EmpireHouse, vehicleId: string) {
   arms.components = arms.components.filter((c) => !fitted.has(c.id));
 }
 
+/** A vehicle fallen in combat, back damaged at the Remise with its components (2 November). */
+function damage(h: EmpireHouse, vehicleId: string, until: number) {
+  const land = h.vehicles?.find((v) => v.id === vehicleId);
+  if (land) {
+    land.porta = undefined;
+    land.repairUntil = until;
+    land.busyUntil = until;
+  }
+  const combat = h.arms?.vehicles.find((v) => v.id === vehicleId);
+  if (combat) {
+    combat.porta = undefined;
+    combat.backAt = undefined;
+    combat.repairUntil = until;
+  }
+}
+
 /**
- * Settles a battle's outcome for the house (plan-porta.md § 8): the vehicles that came out stay
- * at the Porta at full strength, the others are destroyed with their components and cargo; the
- * relics brought out are kept; a tier won opens the next.
+ * Settles a battle's outcome for the house (plan-porta.md § 8, the golden rule 2): the vehicles
+ * that came out stay at the Porta at full strength; one fallen in combat comes back damaged to the
+ * Remise (lost for good at the Porta noire); one left inside at the closing is lost with its
+ * components; the relics brought out are kept (half as many more at the Porta noire); a tier won
+ * opens the next.
  */
 export function settlePorta(
   tx: Tx,
@@ -214,11 +238,26 @@ export function settlePorta(
   const porta = portaOf(h);
   const b = porta.battle;
   if (!b || b.id !== battleId) fail("not_here");
+  const s = empireSettings(tx.ctx);
   const ours = new Set([b.combatId, b.transportId]);
-  for (const v of outcome.vehicles)
-    if (ours.has(v.vehicleId) && v.outcome !== "exited") destroy(h, v.vehicleId);
-  for (const r of outcome.relics)
-    if (RARITIES.includes(r)) porta.relics[r] = (porta.relics[r] ?? 0) + 1;
+  const repaired = tx.now + s.porta.repairMinutes * 60_000;
+  for (const v of outcome.vehicles) {
+    if (!ours.has(v.vehicleId) || v.outcome === "exited") continue;
+    if (v.outcome === "dead" && !b.dark) damage(h, v.vehicleId, repaired);
+    else destroy(h, v.vehicleId);
+  }
+  // At the Porta noire, half as many relics more (`darkRelicsBps`): the rarest first, the part of
+  // one left over drawn.
+  const kept = outcome.relics.filter((r) => RARITIES.includes(r));
+  for (const r of kept) porta.relics[r] = (porta.relics[r] ?? 0) + 1;
+  if (b.dark && kept.length > 0) {
+    const share = kept.length * (s.porta.darkRelicsBps - 10_000);
+    const more =
+      Math.floor(share / 10_000) +
+      (draw(tx.ctx, `dark|${battleId}`) % 10_000 < share % 10_000 ? 1 : 0);
+    const rarest = [...kept].sort((a, z) => RARITIES.indexOf(z) - RARITIES.indexOf(a));
+    for (const r of rarest.slice(0, more)) porta.relics[r] = (porta.relics[r] ?? 0) + 1;
+  }
   if (outcome.relics.length > 0) porta.best = Math.max(porta.best, b.tier);
   release(h);
 }
