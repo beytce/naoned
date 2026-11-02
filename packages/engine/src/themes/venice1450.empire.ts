@@ -9,27 +9,29 @@ import { VENICE_MAP_CELLS, VENICE_MAP_CITIES } from "./venice1450.map.js";
 const D = 100; // deniers a ducat
 
 /** The Casa 1 to 20 (CADRAGE-v3 § 3.1 and § 3 septies). */
+// The Casa's price (1 November 2026, the orders as shipments): the Casa 4 to 8 dearer, then each a
+// fifth dearer than the one before at the least (calibration.md).
 const CASA: [number, Record<string, number>, number, string[]][] = [
   [0, {}, 0, []],
   [50, { bricks: 5, planks: 5 }, 2, []],
   [100, { bricks: 10, planks: 10 }, 10, ["cart", "limitOrders"]],
-  [150, { bricks: 15, planks: 15 }, 30, ["scuola", "tradeModules"]],
-  [400, { bricks: 30, planks: 30 }, 60, ["burchio", "extraction"]],
-  [1_000, { bricks: 60, planks: 60 }, 120, ["lombardia", "datedNews"]],
-  [1_600, { bricks: 80, planks: 80 }, 240, ["arte", "workshopModules", "qualities"]],
-  [2_500, { bricks: 100, planks: 100, glass: 20 }, 480, ["stato", "friuli", "forwards"]],
-  [3_800, { bricks: 120, planks: 120, iron: 30 }, 720, ["arms", "marciliana", "romagna"]],
-  [5_500, { planks: 150, oak: 40 }, 1_080, ["expeditions", "dalmazia"]],
-  [7_500, { planks: 180, oak: 60 }, 2_160, ["colleganza", "cocca", "ambassadors"]],
-  [10_000, { bricks: 200, marble: 40 }, 3_240, ["germania", "grecia", "fog"]],
-  [13_500, { marble: 60, glass: 60 }, 4_320, ["minorArte"]],
-  [17_000, { marble: 80, silk: 30 }, 5_400, ["levante", "galeaGrossa", "freePorts"]],
-  [22_000, { oak: 150, silk: 40 }, 6_480, []],
-  [27_000, { marble: 120, alum: 40 }, 7_560, ["costantinopoli"]],
-  [34_000, { marble: 150, alum: 60 }, 8_640, ["procuratia"]],
-  [41_000, { marble: 180, cloth: 80 }, 10_800, ["fiandra", "flandersGalley"]],
-  [49_000, { marble: 220, cloth: 100 }, 12_960, []],
-  [64_000, { marble: 300, silk: 100, alum: 100, cloth: 100 }, 15_120, ["maestria"]],
+  [1_200, { bricks: 60, planks: 60 }, 30, ["scuola", "tradeModules"]],
+  [6_400, { bricks: 180, planks: 180 }, 60, ["burchio", "extraction"]],
+  [11_000, { bricks: 300, planks: 300 }, 120, ["lombardia", "datedNews"]],
+  [13_200, { bricks: 320, planks: 320 }, 240, ["arte", "workshopModules", "qualities"]],
+  [20_000, { bricks: 400, planks: 400, glass: 80 }, 480, ["stato", "friuli", "forwards"]],
+  [24_000, { bricks: 120, planks: 120, iron: 30 }, 720, ["arms", "marciliana", "romagna"]],
+  [28_800, { planks: 150, oak: 40 }, 1_080, ["expeditions", "dalmazia"]],
+  [34_500, { planks: 180, oak: 60 }, 2_160, ["colleganza", "cocca", "ambassadors"]],
+  [41_500, { bricks: 200, marble: 40 }, 3_240, ["germania", "grecia", "fog"]],
+  [50_000, { marble: 60, glass: 60 }, 4_320, ["minorArte"]],
+  [60_000, { marble: 80, silk: 30 }, 5_400, ["levante", "galeaGrossa", "freePorts"]],
+  [72_000, { oak: 150, silk: 40 }, 6_480, []],
+  [86_000, { marble: 120, alum: 40 }, 7_560, ["costantinopoli"]],
+  [103_000, { marble: 150, alum: 60 }, 8_640, ["procuratia"]],
+  [124_000, { marble: 180, cloth: 80 }, 10_800, ["fiandra", "flandersGalley"]],
+  [149_000, { marble: 220, cloth: 100 }, 12_960, []],
+  [178_000, { marble: 300, silk: 100, alum: 100, cloth: 100 }, 15_120, ["maestria"]],
 ];
 
 const slots = (level: number, at: number[]) => at.filter((l) => level >= l).length;
@@ -279,7 +281,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     cap: [3, 5, 8, 11, 14],
     everyMinutes: [240, 144, 90, 65, 51],
     lotDucats: 80,
-    tierTimes: {},
+    // A lot of a finished good worth three of a raw one (calibration.md, the orders as shipments).
+    tierTimes: { raw: 1, intermediate: 2, finished: 3, luxury: 5 },
     lots: {},
     premiumBps: 1_500,
   },
