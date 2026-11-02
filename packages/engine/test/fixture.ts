@@ -578,6 +578,16 @@ export const testEmpire: EmpireSettingsInput = {
         periodS: 4,
         areaCenti: 100,
       },
+      incendiary: {
+        hp: 800,
+        power: 1,
+        rangeCenti: 50,
+        visionCenti: 50,
+        speedCenti: 400,
+        reviewS: 30,
+        leashCenti: 9_999,
+        burnS: 20,
+      },
       gonfalonier: {
         hp: 25_000,
         power: 150,

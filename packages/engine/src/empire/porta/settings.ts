@@ -80,6 +80,7 @@ export const ROME_KINDS = [
   "light_horse",
   "bombard",
   "gonfalonier",
+  "incendiary",
 ] as const;
 export type RomeKind = (typeof ROME_KINDS)[number];
 
@@ -107,6 +108,11 @@ const romeUnit = z.object({
   prefersTransport: z.boolean().prefault(false),
   /** Roams between the cities instead of guarding one. */
   roams: z.boolean().prefault(false),
+  /**
+   * The incendiary (2 November): it fights no one, walks to the city keeping the rarest relics and
+   * burns them after so many seconds there (0: not an incendiary).
+   */
+  burnS: qty.prefault(0),
 });
 
 const counts = z.partialRecord(z.enum(ROME_KINDS), qty).prefault({});
