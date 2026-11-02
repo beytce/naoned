@@ -339,6 +339,8 @@ Elle fait déjà l'essentiel : un doigt qui déplace avec un élan (frottement 0
 7. **Le calque d'information.**
 8. **Le délai d'armement**, seulement si le porteur le retient.
 
+*Bilan du 2 novembre 2026 (chantier 4)* : 1, 2, 4 et 8 étaient faits aux chantiers 1 et 2 (le départ en 10 s, ✓ et ✕) ; 5 (l'onde lagune, la marque qui saute, « + ducats »), 7 (appui long et Alt) et une partie de 6 (flèches, ZQSD/WASD, « + » et « − ») le sont au chantier 4, avec l'éclat d'un comptoir posé ou monté (§ 8.6). Écartés par le porteur : le survol et le clic droit vers une ville, Entrée, 1 à 5 et Espace, l'ouverture d'une case, l'atelier fini et la pastille de commande qui rebondit. Le facteur `--pin-k` a été remplacé par le rétrécissement des lieux avec la carte (chantier 1).
+
 ---
 
 ## 9. Sources

@@ -375,6 +375,7 @@ export const en: Dictionary = {
       cityLine: (region: string, size: number, n: number, max: number) =>
         `${region} · a town of size ${size} · ${n} order${n > 1 ? "s" : ""} out of ${max}`,
       outOfReach: "Out of reach of your fondaci: put one closer.",
+      infoCount: (n: number, max: number) => `${n}/${max}`,
       none: "No orders waiting.",
       renews: (at: string) => `Next order at ${at}`,
       full: "Full: no new order until one is loaded.",

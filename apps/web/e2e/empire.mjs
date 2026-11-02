@@ -125,9 +125,49 @@ try {
     await page.locator("[data-picked-reach]").waitFor();
     await page.getByRole("button", { name: /poser ici · gratuit/i }).click();
     await page.locator("[data-placing-bar=home]").waitFor({ state: "hidden" });
+    // Put down, the fondaco bursts with gold (chantier 4 of Hades' Star).
+    await page
+      .locator("[data-post-raised]")
+      .first()
+      .waitFor({ state: "attached", timeout: 3_000 })
+      .catch(() => faults.push(`${label}: no burst on the fondaco put down`));
     if ((await page.locator("[data-orbit-open]").count()) > 0)
       faults.push(`${label}: the workshops shown before Venice is touched`);
     await shot("1c-secteur");
+    // The information layer (chantier 4): a finger held on the map, then Alt; every name shows.
+    const mapBox = await page.locator("[data-map=empire]").boundingBox();
+    const seaX = (mapBox?.x ?? 0) + (mapBox?.width ?? width) * 0.12;
+    const seaY = (mapBox?.y ?? 0) + (mapBox?.height ?? height) * 0.62;
+    const isInfo = () =>
+      page.locator("[data-map=empire]").evaluate((el) => el.dataset.info === "1");
+    await page.mouse.move(seaX, seaY);
+    await page.mouse.down();
+    await page.waitForTimeout(700);
+    if (!(await isInfo())) faults.push(`${label}: no information layer on a long press`);
+    await shot("1d-calque");
+    await page.mouse.up();
+    if (await isInfo()) faults.push(`${label}: the information layer stays after the press`);
+    await page.keyboard.down("Alt");
+    if (!(await isInfo())) faults.push(`${label}: no information layer with Alt`);
+    await page.keyboard.up("Alt");
+    if (await isInfo()) faults.push(`${label}: the information layer stays after Alt`);
+    // The keys of a computer: an arrow moves the map, « + » zooms it, « - » back.
+    const layer = () =>
+      page
+        .locator("[data-map=empire] .map-layer")
+        .first()
+        .evaluate((el) => el.style.transform);
+    const before = await layer();
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(350);
+    if ((await layer()) === before) faults.push(`${label}: an arrow does not move the map`);
+    const moved = await layer();
+    await page.keyboard.press("+");
+    await page.waitForTimeout(350);
+    if ((await layer()) === moved) faults.push(`${label}: « + » does not zoom the map`);
+    await page.keyboard.press("-");
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForTimeout(350);
     // The fondaco touched: its workshops deploy around it, and its reach shows.
     await page.locator("[data-region=veneto]").click();
     await page.locator("[data-orbit-open=home] [data-workshop]").first().waitFor();

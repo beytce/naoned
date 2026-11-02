@@ -79,6 +79,22 @@ const goodName = (p: EmpirePayload, code: string) =>
 /** The house was asked once to put its first fondaco down. */
 const HOME_ASKED = "fondaco:home-asked";
 
+/** The keys of a computer that move the map a step (arrows, ZQSD and WASD): which way. */
+const PAN_KEYS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+  q: [-1, 0],
+  a: [-1, 0],
+  d: [1, 0],
+  z: [0, -1],
+  w: [0, -1],
+  s: [0, 1],
+};
+/** `+` and `-` zoom by this factor. */
+const ZOOM_KEY = 1.4;
+
 export function EmpireGame({ account, first }: { account: Account; first: EmpireAnswer }) {
   const [p, setP] = useState<EmpireAnswer>(first);
   const skew = useRef(first.now - Date.now());
@@ -211,9 +227,32 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         }
       } else if (e.key === ",") keys.current.cycle(-1);
       else if (e.key === ".") keys.current.cycle(1);
+      else if (e.key === "Alt") {
+        // The information layer while Alt is held (after Hades' Star's tilde), never the
+        // browser's menu.
+        e.preventDefault();
+        map.current?.info(true);
+      } else if (e.key === "+" || e.key === "=") map.current?.zoom(ZOOM_KEY);
+      else if (e.key === "-") map.current?.zoom(1 / ZOOM_KEY);
+      else {
+        const step = PAN_KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key];
+        if (!step || e.ctrlKey || e.metaKey) return;
+        e.preventDefault();
+        map.current?.pan(step[0], step[1]);
+      }
     };
+    const up = (e: KeyboardEvent) => {
+      if (e.key === "Alt") map.current?.info(false);
+    };
+    const off = () => map.current?.info(false);
     window.addEventListener("keydown", down);
-    return () => window.removeEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", off);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+      window.removeEventListener("blur", off);
+    };
   }, []);
   /** « Y envoyer un véhicule »: the one chosen, else the first standing free at a counter. */
   const sendable = (city: string) => {
