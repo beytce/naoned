@@ -40,7 +40,7 @@ export interface BoardInput {
 }
 
 /** What each region grows: mountains, pines, rocks, fields (out of a sector's draw). */
-const DRESS: Record<string, [number, number, number, number]> = {
+export const DRESS: Record<string, [number, number, number, number]> = {
   veneto: [0, 4, 1, 2],
   lombardia: [1, 4, 1, 2],
   friuli: [1, 5, 2, 1],
