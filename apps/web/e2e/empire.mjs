@@ -309,7 +309,7 @@ try {
     await page.locator("[data-round=recenter]").click();
     await page.locator("[data-map=empire]:not([data-orbit])").waitFor();
     await page.waitForTimeout(300);
-    if ((await page.locator("[data-frontier] path").count()) < 6)
+    if ((await page.locator("[data-plateau] .plateau-fog").count()) < 6)
       faults.push(`${label}: no silhouettes around Venice's sector`);
     if ((await page.locator("[data-city=milano], [data-region=lombardia]").count()) > 0)
       faults.push(`${label}: Lombardy seen through the dark at the Casa 1`);

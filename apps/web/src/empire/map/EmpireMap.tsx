@@ -13,15 +13,11 @@ import {
 import { artSource } from "../../art/Illustration.js";
 import { GoodsMark } from "../../art/goods.js";
 import { HEX_SIZE, cellCentre, hexPath, neighbours } from "../../art/hexmap.js";
-import {
-  MediterraneanGround,
-  ROUTES,
-  alongPath,
-  pathOf,
-  routeBetween,
-  seatOf,
-} from "../../art/mediterranean.js";
+import { ROUTES, alongPath, pathOf, routeBetween, seatOf } from "../../art/mediterranean.js";
 import { P } from "../../art/palette.js";
+import { PlateauShapes } from "../../art/plateau/Plateau.js";
+import { board } from "../../art/plateau/board.js";
+import { TILT } from "../../art/plateau/geom.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
@@ -82,14 +78,14 @@ const sectorOn = (v: Viewport) =>
 const orbitOn = (at: [number, number], from: Camera) => (v: Viewport) => {
   const s = (Math.min(v.w, v.h) * 0.86) / ORBIT_UNITS;
   const sx = at[0] * from.s + from.tx;
-  const sy = at[1] * from.s + from.ty;
+  const sy = at[1] * TILT * from.s + from.ty;
   const half = (ORBIT_UNITS / 2) * s;
   // The HUD above, the round buttons below: the orbit stays between them.
   const keep = (p: number, lo: number, hi: number) =>
     hi - lo < 2 * half ? (lo + hi) / 2 : Math.min(hi - half, Math.max(lo + half, p));
   const px = keep(sx, 8, v.w - 8);
   const py = keep(sy, 96, v.h - 104);
-  return { s, tx: px - at[0] * s, ty: py - at[1] * s };
+  return { s, tx: px - at[0] * s, ty: py - at[1] * TILT * s };
 };
 
 /** The chart is never drawn larger than this across (px): a phone's GPU keeps up with it. */
@@ -297,12 +293,11 @@ export const EmpireMap = forwardRef<
     for (const el of pins.current?.querySelectorAll<HTMLElement>("[data-at]") ?? []) {
       const [x = 0, y = 0] = (el.dataset.at ?? "0,0").split(",").map(Number);
       el.style.left = `${x * base}px`;
-      el.style.top = `${y * base}px`;
+      el.style.top = `${y * TILT * base}px`;
     }
     camera.repaint();
   });
 
-  const texture = artSource("world", "map")?.src;
   // A fondaco's reach shows only when it is touched, or when a vehicle of it is chosen (decision
   // of the owner, 1 November 2026); the placing shows the reach it would have.
   const chosenAt = selected ? view?.vehicles.mine.find((v) => v.id === selected)?.at : undefined;
@@ -315,7 +310,6 @@ export const EmpireMap = forwardRef<
         <Chart
           p={p}
           base={base}
-          texture={texture}
           placing={placing}
           picked={picked}
           onPick={onPick}
@@ -323,7 +317,7 @@ export const EmpireMap = forwardRef<
           reachShown={reachShown}
         />
       ) : null,
-    [view?.map, view?.regions, base, texture, placing, picked, onPick, reachShown],
+    [view?.map, view?.regions, base, placing, picked, onPick, reachShown],
   );
   if (!view) return null;
   const map = view.map;
@@ -348,7 +342,7 @@ export const EmpireMap = forwardRef<
   const toChart = (cx: number, cy: number): [number, number] => {
     const r = root.current?.getBoundingClientRect();
     const c = camera.cam();
-    return [(cx - (r?.left ?? 0) - c.tx) / c.s, (cy - (r?.top ?? 0) - c.ty) / c.s];
+    return [(cx - (r?.left ?? 0) - c.tx) / c.s, (cy - (r?.top ?? 0) - c.ty) / c.s / TILT];
   };
   /** A right click with a vehicle chosen: it goes to the place nearest (the computer's gesture). */
   const rightClick = (e: React.MouseEvent) => {
@@ -391,7 +385,7 @@ export const EmpireMap = forwardRef<
       <div
         ref={ground}
         className="map-layer pointer-events-none absolute left-0 top-0 origin-top-left"
-        style={{ width: CHART.w * base, height: CHART.h * base }}
+        style={{ width: CHART.w * base, height: CHART.h * TILT * base }}
       >
         {chart}
       </div>
@@ -406,7 +400,7 @@ export const EmpireMap = forwardRef<
       <div
         ref={pins}
         className="map-layer pointer-events-none absolute left-0 top-0 origin-top-left"
-        style={{ width: CHART.w * base, height: CHART.h * base }}
+        style={{ width: CHART.w * base, height: CHART.h * TILT * base }}
       >
         {/* The workshops of the counter touched, deployed around it (the map's own size). */}
         {opened &&
@@ -417,7 +411,7 @@ export const EmpireMap = forwardRef<
               <div
                 key={opened}
                 className="absolute -translate-x-1/2 -translate-y-1/2"
-                style={{ left: ox * base, top: oy * base, width: ORBIT_UNITS * base }}
+                style={{ left: ox * base, top: oy * TILT * base, width: ORBIT_UNITS * base }}
                 data-orbit-open={opened}
               >
                 {/* Centred by the frame above, grown by the one inside: the animation's own
@@ -488,7 +482,7 @@ export const EmpireMap = forwardRef<
                 aria-label={t.world.postName[x.region] ?? t.placing.postCard}
                 className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-night-3 text-gold ring-2 ring-gold/70 shadow-md shadow-black/50 [&_svg]:h-5 [&_svg]:w-5">
+                <span className="flex h-11 w-11 items-center justify-center [&_svg]:hidden">
                   {Icon.banner()}
                 </span>
                 <span className="map-name">{t.world.postName[x.region] ?? t.placing.postCard}</span>
@@ -541,7 +535,7 @@ export const EmpireMap = forwardRef<
                   aria-label={t.placing.campCard}
                   className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-night-3 text-vermilion ring-2 ring-vermilion/70 shadow-md shadow-black/50 [&_svg]:h-5 [&_svg]:w-5">
+                  <span className="flex h-11 w-11 items-center justify-center [&_svg]:hidden">
                     {Icon.troops()}
                   </span>
                   <span className="map-name">{t.placing.campCard}</span>
@@ -560,7 +554,7 @@ export const EmpireMap = forwardRef<
                   data-depot-mark
                   className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
                 >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-night-3 text-gold ring-2 ring-gold/70 shadow-md shadow-black/50 [&_svg]:h-5 [&_svg]:w-5">
+                  <span className="flex h-11 w-11 items-center justify-center [&_svg]:hidden">
                     {Icon.cart()}
                   </span>
                   <span className="map-name">{t.scene.depot}</span>
@@ -580,7 +574,7 @@ export const EmpireMap = forwardRef<
                   data-porta-mark
                   className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
                 >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-night-3 text-vermilion ring-2 ring-gold/70 shadow-md shadow-black/50 [&_svg]:h-5 [&_svg]:w-5">
+                  <span className="flex h-11 w-11 items-center justify-center [&_svg]:hidden">
                     {Icon.skirmish()}
                   </span>
                   <span className="map-name">{pt.porta}</span>
@@ -620,7 +614,6 @@ export const EmpireMap = forwardRef<
 const Chart = memo(function Chart({
   p,
   base,
-  texture,
   placing,
   picked,
   onPick,
@@ -629,7 +622,6 @@ const Chart = memo(function Chart({
 }: {
   p: EmpirePayload;
   base: number;
-  texture?: string;
   placing: Placing | null;
   picked: Picked | null;
   onPick?: (at: Picked) => void;
@@ -648,9 +640,9 @@ const Chart = memo(function Chart({
   const placingFondaco = placing?.kind === "post" || placing?.kind === "home";
   // A touch on a lit cell: its point on the chart, where the counter goes (the map that grows).
   const pick = (cell: string, e: { clientX: number; clientY: number; currentTarget: Element }) => {
-    const svg = (e.currentTarget as SVGGraphicsElement).ownerSVGElement;
-    const m = svg?.getScreenCTM()?.inverse();
-    if (!svg || !m || e.clientX === 0) {
+    // The cell lies in the tilted ground: its own matrix gives the chart's point.
+    const m = (e.currentTarget as SVGGraphicsElement).getScreenCTM?.()?.inverse();
+    if (!m || e.clientX === 0) {
       const [x, y] = cellCentre(cell);
       onPick?.({ cell, x: Math.round(x), y: Math.round(y) });
       return;
@@ -660,220 +652,145 @@ const Chart = memo(function Chart({
   };
   const reachBase = map.reach?.base ?? 0;
   const seatSeen = (code: string) => seen.has(seatCellOf(p, code));
-  const frontier = [
-    ...new Set(map.revealed.flatMap((c) => neighbours(c)).filter((c) => !seen.has(c))),
-  ];
+  const shapes = board({
+    cells: map.cells,
+    revealed: map.revealed,
+    unlocked: map.unlocked,
+    cities: map.cities,
+    home: map.home,
+    posts: map.posts,
+    depot: map.depot,
+    camp: map.camp,
+    porta: view.porta?.cell ?? null,
+  });
   return (
     <svg
-      viewBox={`0 0 ${CHART.w} ${CHART.h}`}
+      viewBox={`0 0 ${CHART.w} ${CHART.h * TILT}`}
       width={CHART.w * base}
-      height={CHART.h * base}
+      height={CHART.h * TILT * base}
       className="block"
       aria-hidden="true"
     >
-      <MediterraneanGround texture={texture} />
-      <defs>
-        {/* The dark, all but the sectors the house sees, a thin gap of night between them. */}
-        <mask id="fog-mask" maskUnits="userSpaceOnUse">
-          <rect x="-50" y="-50" width={CHART.w + 100} height={CHART.h + 100} fill="#fff" />
-          {map.revealed.map((cell) => (
-            <path key={cell} d={hexPath(cell, 1.2)} fill="#000" />
-          ))}
-        </mask>
-      </defs>
-      <rect
-        x="-50"
-        y="-50"
-        width={CHART.w + 100}
-        height={CHART.h + 100}
-        fill="#060C17"
-        opacity="0.96"
-        mask="url(#fog-mask)"
-        data-fog-layer
-      />
-      {/* The edge of the known: the sectors next to those seen, dark shapes outlined. */}
-      <g data-frontier>
-        {frontier.map((cell) => (
-          <path
-            key={cell}
-            d={hexPath(cell, 1.2)}
-            fill="#0C1729"
-            stroke="#BFE3FF"
-            strokeOpacity="0.14"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
-      </g>
-      {/* The sectors seen: a tile each, washed in its region's colour, grained, hatched with
-          fields and hills, lit in its middle and shaded to its edges, outlined. */}
-      <defs>
-        <pattern id="tex-grain" width="5" height="5" patternUnits="userSpaceOnUse">
-          <circle cx="1" cy="1.2" r="0.32" fill="#F6E8CC" opacity="0.18" />
-          <circle cx="3.6" cy="3.4" r="0.24" fill="#BFE3FF" opacity="0.14" />
-        </pattern>
-        <pattern
-          id="tex-fields"
-          width="6"
-          height="6"
-          patternUnits="userSpaceOnUse"
-          patternTransform="rotate(28)"
-        >
-          <path d="M0 2 H6 M0 4.6 H3.5" stroke="#F6E8CC" strokeOpacity="0.07" strokeWidth="0.5" />
-        </pattern>
-        <pattern id="tex-hills" width="18" height="12" patternUnits="userSpaceOnUse">
-          <path
-            d="M1 9 Q5 4 9 9 M10 6 Q13 2.5 16 6"
-            fill="none"
-            stroke="#BFE3FF"
-            strokeOpacity="0.1"
-            strokeWidth="0.6"
-          />
-        </pattern>
-        <radialGradient id="tex-light" cx="45%" cy="40%" r="65%">
-          <stop offset="0%" stopColor="#F6E8CC" stopOpacity="0.14" />
-          <stop offset="60%" stopColor="#F6E8CC" stopOpacity="0" />
-          <stop offset="100%" stopColor="#060C17" stopOpacity="0.45" />
-        </radialGradient>
-      </defs>
-      <g data-cells>
-        {lands.map(([cell, c]) => {
-          const d = hexPath(cell, 1.2);
+      {/* The board: a thick tile per sector seen, its dressing, its towns and buildings. */}
+      <PlateauShapes shapes={shapes} />
+      <g transform={`scale(1 ${TILT})`}>
+        {ROUTES.filter((r) => seatSeen(r.from) && seatSeen(r.to)).map((r) => {
+          const lit =
+            (view.regions.find((x) => x.code === r.from)?.counter ?? 0) > 0 &&
+            (view.regions.find((x) => x.code === r.to)?.counter ?? 0) > 0;
           return (
-            <g key={cell}>
-              <path d={d} fill={tintOf(c.region)} fillOpacity="0.12" />
-              <path d={d} fill="url(#tex-fields)" />
-              <path d={d} fill="url(#tex-hills)" />
-              <path d={d} fill="url(#tex-grain)" />
-              <path d={d} fill="url(#tex-light)" />
-              <path
-                d={d}
-                fill="none"
-                stroke={tintOf(c.region)}
-                strokeOpacity="0.45"
-                strokeWidth="1.4"
-                vectorEffect="non-scaling-stroke"
-              />
-            </g>
+            <path
+              key={`${r.from}:${r.to}`}
+              d={pathOf(routeBetween(r.from, r.to))}
+              fill="none"
+              stroke={r.sea ? P.info : P.cream}
+              strokeOpacity={lit ? 0.75 : 0.3}
+              strokeWidth={lit ? 2 : 1.4}
+              strokeDasharray={r.sea ? "6 5" : "2 5"}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
           );
         })}
-      </g>
-      {ROUTES.filter((r) => seatSeen(r.from) && seatSeen(r.to)).map((r) => {
-        const lit =
-          (view.regions.find((x) => x.code === r.from)?.counter ?? 0) > 0 &&
-          (view.regions.find((x) => x.code === r.to)?.counter ?? 0) > 0;
-        return (
-          <path
-            key={`${r.from}:${r.to}`}
-            d={pathOf(routeBetween(r.from, r.to))}
-            fill="none"
-            stroke={r.sea ? P.info : P.cream}
-            strokeOpacity={lit ? 0.75 : 0.3}
-            strokeWidth={lit ? 2 : 1.4}
-            strokeDasharray={r.sea ? "6 5" : "2 5"}
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
-        );
-      })}
-      {/* The sectors to buy next to one's own: a dashed gold edge, a touch to buy. */}
-      {!placing && (map.buyable ?? []).length > 0 && (
-        <g data-buyable-cells>
-          {map.buyable.map((b) => (
-            <path
-              key={`b${b.cell}`}
-              d={hexPath(b.cell, 1.6)}
-              fill={P.gold}
-              fillOpacity={view.house.casa >= b.casa ? 0.06 : 0.02}
-              stroke={P.gold}
-              strokeOpacity={view.house.casa >= b.casa ? 0.75 : 0.3}
-              strokeWidth="1.4"
-              strokeDasharray="4 3"
-              vectorEffect="non-scaling-stroke"
-              style={{ pointerEvents: "all", cursor: "pointer" }}
-              data-buyable={b.cell}
-              onClick={() => onSector?.(b.cell)}
-              onKeyDown={(e) => e.key === "Enter" && onSector?.(b.cell)}
-            />
-          ))}
-        </g>
-      )}
-      {/* Placing: the cells it may go on, lit; the one picked, and what it would reveal. */}
-      {allowed && (
-        <g data-placing-cells>
-          {preview.map((cell) => (
-            <path
-              key={`r${cell}`}
-              d={hexPath(cell, 0.8)}
-              fill={P.gold}
-              fillOpacity="0.08"
-              stroke={P.gold}
-              strokeOpacity="0.5"
-              strokeDasharray="2 2"
-              strokeWidth="1"
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
-          {allowed.map((cell) => (
-            <path
-              key={cell}
-              d={hexPath(cell, 1)}
-              fill={cell === picked?.cell ? P.gold : P.info}
-              fillOpacity={cell === picked?.cell ? 0.25 : 0.14}
-              stroke={cell === picked?.cell ? P.gold : P.info}
-              strokeWidth={cell === picked?.cell ? 2.4 : 1.4}
-              vectorEffect="non-scaling-stroke"
-              style={{ pointerEvents: "all", cursor: "pointer" }}
-              data-cell={cell}
-              onClick={(e) => pick(cell, e)}
-              onKeyDown={(e) =>
-                e.key === "Enter" &&
-                pick(cell, { clientX: 0, clientY: 0, currentTarget: e.currentTarget })
-              }
-            />
-          ))}
-          {/* The point picked, and the reach the counter would have there. */}
-          {picked && placingFondaco && reachBase > 0 && (
-            <g data-picked-reach style={{ pointerEvents: "none" }}>
-              <circle
-                cx={picked.x}
-                cy={picked.y}
-                r={reachBase}
+        {/* The sectors to buy next to one's own: a dashed gold edge, a touch to buy. */}
+        {!placing && (map.buyable ?? []).length > 0 && (
+          <g data-buyable-cells>
+            {map.buyable.map((b) => (
+              <path
+                key={`b${b.cell}`}
+                d={hexPath(b.cell, 1.6)}
                 fill={P.gold}
-                fillOpacity="0.1"
+                fillOpacity={view.house.casa >= b.casa ? 0.06 : 0.02}
                 stroke={P.gold}
-                strokeWidth="1.6"
+                strokeOpacity={view.house.casa >= b.casa ? 0.75 : 0.3}
+                strokeWidth="1.4"
                 strokeDasharray="4 3"
                 vectorEffect="non-scaling-stroke"
-              />
-              <circle cx={picked.x} cy={picked.y} r="1.6" fill={P.gold} />
-            </g>
-          )}
-        </g>
-      )}
-      {/* A fondaco's reach, when touched or its vehicle chosen: the cities inside are its to serve. */}
-      {reachBase > 0 && reachShown && (
-        <g data-reach style={{ pointerEvents: "none" }}>
-          {[{ id: "home", ...map.home }, ...map.posts]
-            .filter((x) => x.id === reachShown)
-            .map((x) => (
-              <circle
-                key={x.id}
-                cx={x.x}
-                cy={x.y}
-                r={x.reach}
-                fill={P.gold}
-                fillOpacity="0.05"
-                stroke={P.gold}
-                strokeOpacity="0.55"
-                strokeWidth="1.2"
-                strokeDasharray="3 3"
-                vectorEffect="non-scaling-stroke"
-                data-reach-of={x.id}
+                style={{ pointerEvents: "all", cursor: "pointer" }}
+                data-buyable={b.cell}
+                onClick={() => onSector?.(b.cell)}
+                onKeyDown={(e) => e.key === "Enter" && onSector?.(b.cell)}
               />
             ))}
-        </g>
-      )}
+          </g>
+        )}
+        {/* Placing: the cells it may go on, lit; the one picked, and what it would reveal. */}
+        {allowed && (
+          <g data-placing-cells>
+            {preview.map((cell) => (
+              <path
+                key={`r${cell}`}
+                d={hexPath(cell, 0.8)}
+                fill={P.gold}
+                fillOpacity="0.08"
+                stroke={P.gold}
+                strokeOpacity="0.5"
+                strokeDasharray="2 2"
+                strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+            {allowed.map((cell) => (
+              <path
+                key={cell}
+                d={hexPath(cell, 1)}
+                fill={cell === picked?.cell ? P.gold : P.info}
+                fillOpacity={cell === picked?.cell ? 0.25 : 0.14}
+                stroke={cell === picked?.cell ? P.gold : P.info}
+                strokeWidth={cell === picked?.cell ? 2.4 : 1.4}
+                vectorEffect="non-scaling-stroke"
+                style={{ pointerEvents: "all", cursor: "pointer" }}
+                data-cell={cell}
+                onClick={(e) => pick(cell, e)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" &&
+                  pick(cell, { clientX: 0, clientY: 0, currentTarget: e.currentTarget })
+                }
+              />
+            ))}
+            {/* The point picked, and the reach the counter would have there. */}
+            {picked && placingFondaco && reachBase > 0 && (
+              <g data-picked-reach style={{ pointerEvents: "none" }}>
+                <circle
+                  cx={picked.x}
+                  cy={picked.y}
+                  r={reachBase}
+                  fill={P.gold}
+                  fillOpacity="0.1"
+                  stroke={P.gold}
+                  strokeWidth="1.6"
+                  strokeDasharray="4 3"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <circle cx={picked.x} cy={picked.y} r="1.6" fill={P.gold} />
+              </g>
+            )}
+          </g>
+        )}
+        {/* A fondaco's reach, when touched or its vehicle chosen: the cities inside are its to serve. */}
+        {reachBase > 0 && reachShown && (
+          <g data-reach style={{ pointerEvents: "none" }}>
+            {[{ id: "home", ...map.home }, ...map.posts]
+              .filter((x) => x.id === reachShown)
+              .map((x) => (
+                <circle
+                  key={x.id}
+                  cx={x.x}
+                  cy={x.y}
+                  r={x.reach}
+                  fill={P.gold}
+                  fillOpacity="0.05"
+                  stroke={P.gold}
+                  strokeOpacity="0.55"
+                  strokeWidth="1.2"
+                  strokeDasharray="3 3"
+                  vectorEffect="non-scaling-stroke"
+                  data-reach-of={x.id}
+                />
+              ))}
+          </g>
+        )}
+      </g>
     </svg>
   );
 });
@@ -995,9 +912,8 @@ function HomeMark({
         aria-label={label}
         className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
       >
-        <span className="sun-breathe flex h-16 w-16 items-center justify-center rounded-full font-display text-base font-bold text-ink shadow-[0_0_32px_rgb(var(--gold)/0.45)] [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_50%,rgb(var(--gold-deep))_100%)]">
-          {p.view?.house.casa ?? 1}
-        </span>
+        {/* The fondaco stands on the board (art/plateau): here, its touch. */}
+        <span className="block h-16 w-16" data-casa={p.view?.house.casa ?? 1} />
         <span className="map-name">{label}</span>
       </button>
     </div>
@@ -1043,7 +959,6 @@ function CityMark({
   const orders = p.view?.orders.find((x) => x.city === code);
   const best = open && !orders ? bestQuote(p, region) : null;
   const [x, y] = at;
-  const tint = tintOf(region);
   // The bubble grows with the town (after Hades' Star's planets); its ring, how full it is of
   // orders (full: none new until one is loaded); its badge, the orders waiting.
   const px = 30 + 6 * Math.min(5, Math.max(1, size));
@@ -1082,21 +997,23 @@ function CityMark({
               viewBox={`0 0 ${ring} ${ring}`}
               aria-hidden="true"
               data-fill-ring
+              data-full={fill >= 1 ? "" : undefined}
+              style={{ transform: `translateY(${ring * 0.22}px) scaleY(${TILT})` }}
             >
               <circle
                 cx={ring / 2}
                 cy={ring / 2}
                 r={r0}
-                fill="none"
-                stroke="rgb(0 0 0 / 0.45)"
-                strokeWidth="4"
+                fill={fill >= 1 ? "rgb(244 197 84 / 0.14)" : "rgb(110 224 184 / 0.12)"}
+                stroke="rgb(14 26 43 / 0.45)"
+                strokeWidth="5"
               />
               <circle
                 cx={ring / 2}
                 cy={ring / 2}
                 r={r0}
                 fill="none"
-                stroke={fill >= 1 ? "#E36A4A" : "#E8B24C"}
+                stroke={fill >= 1 ? "#F2C24F" : "#6EE0B8"}
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeDasharray={`${round * fill} ${round}`}
@@ -1106,22 +1023,13 @@ function CityMark({
             </svg>
           )}
           <span
-            className={`relative flex items-center justify-center rounded-full shadow-lg shadow-black/60 ${lit || wanted !== undefined ? "ring-4 ring-gold" : open ? "ring-2 ring-lagoon" : "ring-2 ring-gold/60"}`}
-            style={{
-              width: px,
-              height: px,
-              background: `radial-gradient(circle at 34% 30%, #F6E8CC 0%, ${tint} 38%, #16263E 100%)`,
-            }}
+            className={`relative flex items-center justify-center rounded-full ${lit || wanted !== undefined ? "ring-4 ring-gold" : ""}`}
+            style={{ width: px, height: px }}
           >
             {wanted !== undefined && <WantedHalo n={wanted} />}
             {best && (
               <span className="rounded-full bg-night/70 p-0.5">
                 <GoodsMark code={best} size={18} />
-              </span>
-            )}
-            {waiting > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-display text-[0.6875rem] font-bold text-ink ring-2 ring-night">
-                {waiting}
               </span>
             )}
           </span>

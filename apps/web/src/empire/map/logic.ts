@@ -1,6 +1,7 @@
 import { cellsWithin } from "@comptoirs/engine";
 import { cellCentre } from "../../art/hexmap.js";
 import { WORLD_VIEW, seatOf } from "../../art/mediterranean.js";
+import { TILT } from "../../art/plateau/geom.js";
 import { d } from "../../game/format.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { fr } from "../../i18n.js";
@@ -25,7 +26,7 @@ const ORBIT_MAX_PX = 520;
 
 /** The scale at which the chart just covers the screen: never a border of nothing. */
 export function coverScale(view: Viewport): number {
-  return Math.max(view.w / CHART.w, view.h / CHART.h);
+  return Math.max(view.w / CHART.w, view.h / (CHART.h * TILT));
 }
 
 /** The zoom's range: from the chart covering the screen to Venice's orbit at its largest. */
@@ -41,13 +42,14 @@ export function coverClamp(cam: Camera, view: Viewport): Camera {
   return {
     s: cam.s,
     tx: fit(cam.tx, CHART.w * cam.s, view.w),
-    ty: fit(cam.ty, CHART.h * cam.s, view.h),
+    ty: fit(cam.ty, CHART.h * TILT * cam.s, view.h),
   };
 }
 
 /** The camera at a scale, centred on a chart point. */
 export function centredOn(at: [number, number], s: number, view: Viewport): Camera {
-  return coverClamp({ s, tx: view.w / 2 - at[0] * s, ty: view.h / 2 - at[1] * s }, view);
+  // The board is tilted (docs/plan-plateau.md): a chart point lies at y·TILT on it.
+  return coverClamp({ s, tx: view.w / 2 - at[0] * s, ty: view.h / 2 - at[1] * TILT * s }, view);
 }
 
 /** The orbit's width on screen (px) from which Venice's house shows: more on a large screen. */
@@ -78,7 +80,7 @@ export function farCamera(p: EmpirePayload, view: Viewport): Camera {
   const y0 = Math.min(...seen.map((s) => s[1])) - margin;
   const y1 = Math.max(...seen.map((s) => s[1])) + margin;
   const cover = coverScale(view);
-  const fit = Math.min(view.w / (x1 - x0), view.h / (y1 - y0));
+  const fit = Math.min(view.w / (x1 - x0), view.h / ((y1 - y0) * TILT));
   const far = (nearPx(view) - 30) / ORBIT_UNITS;
   return centredOn(
     [(x0 + x1) / 2, (y0 + y1) / 2],

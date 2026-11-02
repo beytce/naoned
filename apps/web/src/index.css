@@ -1473,3 +1473,49 @@ button.map-place {
 [data-dragging] .mist-drift {
   animation-play-state: paused;
 }
+
+/* The night board (docs/plan-plateau.md): the few things that move on it, slowly. */
+.plateau-wave {
+  animation: plateau-wave 5s ease-in-out infinite alternate;
+}
+@keyframes plateau-wave {
+  from {
+    transform: translateX(-1px);
+  }
+  to {
+    transform: translateX(1px);
+  }
+}
+.plateau-fog {
+  animation: plateau-fog 6s ease-in-out infinite;
+}
+@keyframes plateau-fog {
+  0%,
+  100% {
+    stroke-opacity: 0.1;
+  }
+  50% {
+    stroke-opacity: 0.22;
+  }
+}
+.plateau-flag {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: plateau-flag 1.6s ease-in-out infinite;
+}
+@keyframes plateau-flag {
+  0%,
+  100% {
+    transform: skewY(0);
+  }
+  50% {
+    transform: skewY(-8deg) scaleX(0.92);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plateau-wave,
+  .plateau-fog,
+  .plateau-flag {
+    animation: none;
+  }
+}
