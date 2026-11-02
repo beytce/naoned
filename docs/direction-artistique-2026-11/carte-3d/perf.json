@@ -1,0 +1,122 @@
+{
+  "immobile-repos": {
+    "seconds": 5,
+    "frames": 0,
+    "fps": 0,
+    "frameGapMs": {
+      "median": 0,
+      "p95": 0
+    },
+    "workMs": {
+      "median": 0,
+      "p95": 0
+    },
+    "drawCalls": 80,
+    "triangles": 49056
+  },
+  "immobile-pan": {
+    "seconds": 11.6,
+    "frames": 59,
+    "fps": 5.1,
+    "frameGapMs": {
+      "median": 194.2,
+      "p95": 242.3
+    },
+    "workMs": {
+      "median": 9.7,
+      "p95": 18.5
+    },
+    "drawCalls": 66,
+    "triangles": 28278
+  },
+  "vivante-repos": {
+    "seconds": 5,
+    "frames": 29,
+    "fps": 5.8,
+    "frameGapMs": {
+      "median": 169.4,
+      "p95": 201.4
+    },
+    "workMs": {
+      "median": 11.4,
+      "p95": 21.8
+    },
+    "drawCalls": 67,
+    "triangles": 28278
+  },
+  "vivante-pan": {
+    "seconds": 11.1,
+    "frames": 61,
+    "fps": 5.5,
+    "frameGapMs": {
+      "median": 176.9,
+      "p95": 214
+    },
+    "workMs": {
+      "median": 10.2,
+      "p95": 16.4
+    },
+    "drawCalls": 66,
+    "triangles": 28278
+  },
+  "immobile-sans-effets-repos": {
+    "seconds": 5,
+    "frames": 0,
+    "fps": 0,
+    "frameGapMs": {
+      "median": 0,
+      "p95": 0
+    },
+    "workMs": {
+      "median": 0,
+      "p95": 0
+    },
+    "drawCalls": 72,
+    "triangles": 49048
+  },
+  "immobile-sans-effets-pan": {
+    "seconds": 4.8,
+    "frames": 59,
+    "fps": 12.2,
+    "frameGapMs": {
+      "median": 78.6,
+      "p95": 96.2
+    },
+    "workMs": {
+      "median": 8.1,
+      "p95": 15
+    },
+    "drawCalls": 58,
+    "triangles": 28270
+  },
+  "vivante-sans-effets-repos": {
+    "seconds": 5,
+    "frames": 94,
+    "fps": 18.8,
+    "frameGapMs": {
+      "median": 50.5,
+      "p95": 82.2
+    },
+    "workMs": {
+      "median": 8.8,
+      "p95": 18.4
+    },
+    "drawCalls": 59,
+    "triangles": 28270
+  },
+  "vivante-sans-effets-pan": {
+    "seconds": 5.8,
+    "frames": 118,
+    "fps": 20.4,
+    "frameGapMs": {
+      "median": 47.8,
+      "p95": 87.3
+    },
+    "workMs": {
+      "median": 8.2,
+      "p95": 15
+    },
+    "drawCalls": 58,
+    "triangles": 28270
+  }
+}
