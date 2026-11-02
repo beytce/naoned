@@ -99,3 +99,111 @@ CHROMIUM=/opt/pw-browsers/chromium SIZES=390x844 SHOTS=/tmp/shots pnpm --filter 
 5. **Performance** : `PERF=1` (voir `docs/e2e.md`) sur une carte étendue ; si besoin, un niveau de détail au dézoom (tuiles sans décor sous une échelle donnée) et le découpage du plateau par case.
 6. **Contrastes** : `test/theme.test.ts` et `test/goods.test.ts` passent ; vérifier les noms posés sur les tuiles sable-or (halo sombre des `.map-name`).
 7. **Lorenzo** : le guide du jeu pousse déjà l'action prioritaire (« Un atelier attend · Tout relancer », « Livrez… ») ; rien à faire sauf écart constaté.
+
+## 7. Prototype 3D (2 novembre 2026, branche `claude/carte-3d-prototype`)
+
+Le porteur veut le rendu « pâte à modeler » de ses références : un vrai diorama en 3D temps réel, un mini monde vivant où les mules et les charrettes bougent pendant les livraisons. Le SVG du plateau ne fait que l'imiter. Ce prototype est **isolé** : la carte SVG reste celle du jeu, par défaut et intacte (ses tests et le parcours `e2e:empire` ne changent pas).
+
+### L'ouvrir
+
+- `?map=3d` dans l'adresse (ou un build avec `VITE_MAP=3d`). La carte 3D est un fragment de code à part (`Map3D-*.js`), chargé seulement dans ce cas, et hors du cache de la PWA, comme les modèles.
+- `?map=3d&scene=veneto` : la Vénétie vue plus large. On y voit la vraie carte du jeu (cellules et villes du moteur, `venice1450Empire.map`) à deux secteurs autour de la maison : la mer en lagune, les terres vues, deux secteurs vénitiens à soi et une Remise posée pour la démonstration. Au départ réel, la maison ne voit qu'un secteur (« 2,4 »), sans mer ni Remise.
+- Pour le développement : `&suivre=mule` (la caméra suit la mule), `&kit=1` (planche de tous les modèles), `&fx=0` (sans effets), `&perf=1` (sonde d'images), `&tone=agx`.
+
+### Ce qui est fait (`apps/web/src/empire/map3d/`)
+
+- **`scene.ts`** (pur, testé dans `test/map3d.test.ts`) : à partir de `p.view.map`, avec la même grille (`cellCentre`, `HEX_SIZE`, pointe en haut), les mêmes graines et le même `DRESS` que `board.ts`, il calcule :
+  - une tuile par secteur vu (à soi, vue, eau), et l'inconnu autour ;
+  - le décor de chaque secteur ;
+  - Venise et Padoue (maisons et campanile) ;
+  - le fondaco et la Remise ;
+  - les trajets de la mule (du fondaco à Padoue, infléchis du côté loin des villes) et de la charrette, le décor tenu à l'écart.
+
+  `wider()` donne la vue Vénétie.
+- **`recolor.ts`** : les modèles KayKit sont recolorés dans le code, sans toucher leurs fichiers. Chaque sommet prend la couleur de la palette `C` (`props.ts`) pour la case de l'atlas que visent ses UV, en gardant un peu du dégradé. L'atlas lui-même n'est jamais lu. Le toit d'or du fondaco est un simple remplacement (`roof → C.roofGold`) ; les terres vues ont des couleurs éteintes.
+- **`kit.tsx`** : les glTF fusionnés en une géométrie chacun, posés au sol et à l'échelle d'une unité ; les éléments répétés (sapins, rochers, montagnes, maisons, églises, champs) en `InstancedMesh`, un appel de dessin par modèle ; les tuiles en prismes hexagonaux biseautés (dalle sable-or ou gris-bleu sur un socle bleu nuit).
+- **`life.tsx`** :
+  - la mule : l'âne de Quaternius avec son cycle `Walk` joué par `AnimationMixer`, deux caisses et un bât bleu, orientée dans le sens de la marche, au repos (`Idle`) à chaque bout ;
+  - la charrette : caisse, deux roues qui tournent selon la distance parcourue, brancards, tirée par un âne ;
+  - la fumée de la cheminée du fondaco ;
+  - le fanion d'or qui flotte (sommets déplacés) ;
+  - les vaguelettes de la lagune (déplacement dans le shader) ;
+  - une ombre ronde sous ce qui bouge.
+
+  Tout s'arrête sous `prefers-reduced-motion` : la mule reste à mi-chemin, immobile.
+- **`Map3D.tsx`** :
+  - caméra orthographique inclinée comme `TILT` (le sol vu à 0,58) ; `MapControls` pour le pan et le zoom à la souris et au doigt, bornés à la région ;
+  - lumière : hémisphère bleuté et sol chaud, lumière directionnelle du haut à gauche, ombres PCFSoft 2048 calculées une fois puis seulement quand la carte change (`shadowMap.autoUpdate = false`) ;
+  - effets : N8AO en demi-résolution, tone mapping ACES (l'AgX délavait l'or en beige : `?tone=agx` pour comparer), tilt-shift au zoom proche ;
+  - fond et brouillard bleu nuit ; `frameloop="demand"` et DPR plafonné à 1,5 ;
+  - une horloge à 30 images/s tant que quelque chose vit ; rien quand l'onglet est caché ni au repos ;
+  - le composant n'est redessiné que si `p` change (pas à chaque tic de l'horloge du jeu) ;
+  - le toucher : un raycast sur des zones invisibles plus larges que les modèles ; le fondaco appelle `onTarget({ kind: "casa" })`, une ville `onTarget({ kind: "city" })`, avec un anneau lapis sous ce qui est touché ; un toucher dans la nuit referme ;
+  - les noms et l'anneau de commandes de chaque ville en HTML (`Html` de drei) : l'anneau, aplati, se remplit en lagune et passe à l'or quand il est plein. Il suit le zoom tandis que la zone tactile garde 44 px au moins ; les noms (12 px) disparaissent au dézoom ;
+  - la poignée `EmpireMapHandle` du jeu (Recentrer, flèches, + et −) est reprise.
+- **Modèles** (`apps/web/public/models/`, README avec les auteurs et la licence) : 16 modèles KayKit « Medieval Hexagon Pack » (CC0, Kay Lousberg) copiés tels quels, et l'âne Quaternius (CC0), allégé à ses deux animations.
+
+### Captures, vidéo, mesures (`docs/direction-artistique-2026-11/carte-3d/`, par `pnpm --filter @comptoirs/web e2e:map3d` après le build)
+
+- `1-depart.png` (la vraie carte de départ), `1b-padoue.png` (Padoue touchée : anneau lapis, feuille de la ville), `2-fondaco.png` (zoom proche), `2b-fondaco-touche.png` (le fondaco touché par raycast : feuille de la Casa), `3-mule.png` (la mule en marche), `4b-venetie.png` et `4-dezoom.png` (la Vénétie large, puis au plus loin), `mule.webm` (13 s), `perf.json`.
+- Mesures dans Chromium à 390 × 844, CPU ralenti ×4. Attention : ce conteneur n'a pas de GPU, le WebGL y est rendu **en logiciel** (SwiftShader, sur le CPU). Les images par seconde y sont donc très pessimistes par rapport à un téléphone ; le travail CPU par image est le chiffre le plus parlant.
+
+  | Situation | Images/s | Écart entre images (médiane / p95) | Travail CPU par image (médiane / p95) |
+  | --- | --- | --- | --- |
+  | Immobile (mouvement réduit), au repos | 0 (aucune image demandée) | — | — |
+  | Immobile, pendant un pan | 5,1 | 194 / 242 ms | 9,7 / 18,5 ms |
+  | Vivante, au repos | 5,8 | 169 / 201 ms | 11,4 / 21,8 ms |
+  | Vivante, pendant un pan | 5,5 | 177 / 214 ms | 10,2 / 16,4 ms |
+  | Vivante sans effets (`fx=0`), au repos | 18,8 | 51 / 82 ms | 8,8 / 18,4 ms |
+  | Vivante sans effets, pendant un pan | 20,4 | 48 / 87 ms | 8,2 / 15 ms |
+
+  Environ 66 appels de dessin et 28 000 triangles par image au départ. L'occlusion ambiante (N8AO) coûte ici les trois quarts du temps d'image en rendu logiciel ; c'est le premier réglage à mesurer sur de vrais téléphones.
+- Poids :
+  - le fragment 3D fait 1 178 Ko (362 Ko en gzip), chargé seulement avec le drapeau ;
+  - le bundle sans drapeau : +3 Ko ;
+  - le cache de la PWA : inchangé (les modèles et le fragment 3D n'y sont pas) ;
+  - les modèles : 941 Ko sur disque (305 Ko en gzip), dont l'âne 300 Ko.
+
+### Limites rencontrées
+
+- **Réseau du conteneur** : kenney.nl, quaternius.com, unpkg et jsdelivr sont refusés.
+  - KayKit vient de son dépôt GitHub (raw.githubusercontent.com).
+  - Le « Hexagon Kit » de Kenney n'a pas pu être pris : les tuiles sont faites dans le code.
+  - L'âne Quaternius vient d'une copie publique du pack sur GitHub, avec sa licence CC0 : à revérifier contre l'archive officielle avant la production.
+  - Pour Kenney : ajouter `kenney.nl` aux domaines autorisés de l'environnement.
+- **Modèles** :
+  - KayKit dessine ses maisons « à colombages », plus médiévales que vénitiennes, et sa « taverne » est un tonneau géant (écartée). Le fondaco est donc la grande maison KayKit, toit d'or, avec la tour ronde et un fanion fait dans le code.
+  - Le moulin de KayKit est d'un seul tenant : ses ailes ne peuvent pas tourner sans retoucher le fichier.
+  - Quaternius n'a pas de mule : c'est un âne, gris-bleu de la palette.
+- **Ombres** : PCFSoft ne lit pas le rayon de flou (`shadow.radius` ne sert qu'avec PCF ou VSM). Les ombres des éléments qui bougent sont des disques doux, pas des ombres portées.
+- **Mesures** : sans GPU, les images par seconde ne disent pas ce que donnera un téléphone ; il faudra mesurer sur un appareil réel (Android moyen de gamme, iPhone SE).
+
+### Plan d'intégration complète (à valider par le porteur)
+
+1. **Remplacer la carte SVG**, derrière le drapeau d'abord, puis par défaut :
+   - `Map3D` prend toutes les props d'`EmpireMap` (pose d'un fondaco, cases achetables, portée, visée d'un véhicule) ;
+   - les calques SVG inclinés (routes, cases achetables, portée) deviennent des maillages au sol (rubans, hexagones en surbrillance, anneau de portée) ;
+   - les repères HTML (Remise, Campo, Porta, fondaci secondaires) passent par `Html`, avec leurs comportements actuels.
+2. **Le toucher par raycast partout** :
+   - des zones tactiles en hexagone pour les lieux (fin des chevauchements) ;
+   - la pose d'un fondaco lit le point du sol touché (`event.point` → coordonnées de la carte) au lieu de `getScreenCTM` ;
+   - l'appui long (calque d'information) et le clic droit (envoi d'un véhicule) se branchent sur le canvas.
+3. **La caméra existante** :
+   - garder `logic.ts` (`centredOn`, `farCamera`, `coverClamp`, `zoomBounds`), qui calcule en unités de carte, et le traduire en cible et zoom orthographiques ;
+   - `useCamera` cède la main aux `MapControls`, ou les pilote pour garder l'inertie et les glissés animés (`glide`) ;
+   - les tests de `empireMap.test.ts` restent la référence.
+4. **Les véhicules réels de `Fleet`** :
+   - chaque véhicule en route devient un acteur 3D (mule, charrette, chariot ; les combattants pour la Porta) posé sur la courbe de sa route (`routeBetween`/`alongPath` en 3D) ;
+   - sa position est calculée par l'horloge comme aujourd'hui (départ, arrivée, durée), sans animation inventée ;
+   - les médailles et minuteurs restent en HTML au-dessus.
+5. **Le fondaco de près (`Orbit.tsx`)** :
+   - le zoom proche sur le fondaco remplace l'orbite SVG ;
+   - ses ateliers sur de petites tuiles 3D autour de lui (four, glaisière, coupe de bois, scierie, ferme, avec les modèles KayKit ou faits dans le code) ;
+   - les arcs de production et les boutons en HTML ;
+   - « Bâtir ici » sur la tuile libre.
+6. **Performance et qualité adaptative** :
+   - N8AO et tilt-shift coupés pendant un geste ou sur les appareils lents (`PerformanceMonitor` de drei) ;
+   - niveau de détail au dézoom (décor masqué sous un zoom donné) ;
+   - modèles regroupés en un seul `.glb` compressé (Meshopt, avec son décodeur servi par le jeu, car la CSP interdit le WebAssembly venu d'ailleurs) ;
+   - mesures sur appareils réels avant la bascule.
+7. **Tests** : `scene.ts` reste pur et testé ; le parcours `e2e:empire` tourne aussi avec `?map=3d` (mêmes sélecteurs `data-city`, `data-bottom-slot`).
