@@ -84,12 +84,13 @@ Le plan est dans [05 — les commandes](05-commandes.md), et il remplace les vag
 - **la livraison** : le véhicule les livre saut par saut, puis reste sur place ;
 - **les modules** : le Livre de route, le Fouet et l'Estafette sont retirés.
 
-## Chantier 3 — la Porta (à planifier)
+## Chantier 3 — la Porta (fait, PR « chantier 3 de la Porta », 2 novembre)
 
-- **La perte** : un véhicule détruit rentre abîmé et se répare ; un véhicule pris quand Rome ferme est perdu.
-- **La Porta noire**, optionnelle : la perte définitive, contre +50 % de reliques.
-- **Les reliques** se déchiffrent à la Scuola en plans pour les hauts niveaux des composants, au lieu d'être vendues ; c'est le point ouvert du plan de la Porta, § 13.
-- **L'incendiaire** : un ennemi qui brûle une ville, dont les reliques sont perdues si on ne l'arrête pas.
+- **La perte** : un véhicule détruit rentre abîmé et se répare 2 h à la Remise, sans coût ; un véhicule pris quand Rome ferme est perdu.
+- **La Porta noire**, choisie bataille par bataille : la perte définitive, contre +50 % de reliques.
+- **Les reliques** se déchiffrent, à l'instant, en plans d'un type (1, 3, 8, 20 selon la rareté) ; les niveaux 4 et 5 des composants en demandent 10 puis 30.
+- **L'incendiaire**, dès le palier 4 : il brûle 20 s une ville, et ses reliques sont perdues si on ne l'arrête pas.
+- Le détail est dans `docs/plan-porta.md` (lot 7).
 
 ## Chantier 4 — le reste de l'interface (à planifier)
 

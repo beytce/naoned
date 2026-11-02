@@ -466,6 +466,8 @@ export interface EmpireHouse {
     fitted?: string[];
     /** A land vehicle at the Porta (`busyUntil` then holds it there). */
     porta?: PortaPlace;
+    /** Fallen in combat at the Porta, damaged at the Remise until then (2 November). */
+    repairUntil?: number;
     /** Where it stands (the map that grows): a counter's id, or `city:<code>`; Venice's when absent. */
     at?: string;
     /** Of before (goods in bulk): put back into their counter once. */
@@ -1148,6 +1150,8 @@ export interface CombatVehicle {
   porta?: PortaPlace;
   /** On its way back to the Remise until then. */
   backAt?: number;
+  /** Fallen in combat, damaged at the Remise until then (2 November). */
+  repairUntil?: number;
 }
 
 /** A vehicle sent to the Porta: there once `arrivesAt` is past, engaged in a battle or not. */
@@ -1167,7 +1171,17 @@ export interface EmpirePorta {
   /** The points of the week (the Carnet's week index), for the ranking. */
   week: { index: number; points: number };
   /** The battle the house is in: its tier, its vehicles, the victuals paid. */
-  battle?: { id: string; tier: number; combatId: string; transportId: string; paid: number };
+  battle?: {
+    id: string;
+    tier: number;
+    combatId: string;
+    transportId: string;
+    paid: number;
+    /** The Porta noire: the fallen lost for good, more relics (2 November). */
+    dark?: boolean;
+  };
+  /** The plans of the house, by component kind, deciphered from relics (2 November). */
+  plans?: Partial<Record<"weapon" | "defense" | "support", number>>;
 }
 
 /** A component of the house, fitted on a combat vehicle or kept at the Remise. */

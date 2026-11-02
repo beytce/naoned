@@ -1,4 +1,5 @@
 import type { EmpireSettings } from "../../settings.js";
+import { RARITIES } from "../settings.js";
 import { distance } from "./map.js";
 import type { Battle, PlayerUnit, RomeUnit, Vec } from "./types.js";
 
@@ -108,9 +109,47 @@ function warn(u: RomeUnit, target: PlayerUnit, b: Battle, s: EmpireSettings) {
     }
 }
 
+/**
+ * The incendiary (2 November, after Hades' Star's destroyer): it fights no one, walks to the city
+ * that keeps the rarest relics and, after `burnS` seconds there, burns them all; then the next.
+ */
+function thinkIncendiary(u: RomeUnit, b: Battle, s: EmpireSettings, ms: number): void {
+  const worth = (c: Battle["cities"][number]) =>
+    Object.values(c.relics)
+      .flat()
+      .reduce((m, r) => Math.max(m, RARITIES.indexOf(r) + 1), 0);
+  const goal = [...b.cities]
+    .filter((c) => worth(c) > 0)
+    .sort((a, z) => worth(z) - worth(a) || distance(u, a) - distance(u, z))[0];
+  u.targetId = null;
+  if (!goal) {
+    u.burning = 0;
+    return;
+  }
+  if (u.home !== goal.id) {
+    u.home = goal.id;
+    u.burning = 0;
+  }
+  if (distance(u, goal) * 100 > s.porta.battle.cityRadiusCenti) {
+    moveToward(u, goal, stepLength(u.speedCenti, ms));
+    u.state = "alert";
+    return;
+  }
+  u.state = "attack";
+  u.burning = (u.burning ?? 0) + ms;
+  if (u.burning < u.burnS * 1_000) return;
+  for (const id of Object.keys(goal.relics)) goal.relics[id] = [];
+  u.burning = 0;
+  b.events.push({ kind: "burnt", unit: u.id, city: goal.id });
+}
+
 /** One step of a unit of Rome's mind and movement. */
 export function thinkRome(u: RomeUnit, b: Battle, s: EmpireSettings, ms: number): void {
   if (u.dead) return;
+  if (u.burnS > 0) {
+    thinkIncendiary(u, b, s, ms);
+    return;
+  }
   const bs = s.porta.battle;
   const home = cityOf(b, u.home);
   const len = stepLength(u.speedCenti, ms);

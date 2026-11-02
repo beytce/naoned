@@ -74,6 +74,8 @@ export interface RomeUnit extends Vec, RomeUnitSettings {
   /** Who struck it last, and when. */
   struck: Record<string, number>;
   dead: boolean;
+  /** The incendiary: how long it has burnt its city so far, in ms. */
+  burning?: number;
 }
 
 export type Unit = PlayerUnit | RomeUnit;
@@ -91,7 +93,8 @@ export type BattleEvent =
   | { kind: "loaded"; unit: string; rarity: Rarity }
   | { kind: "exited"; unit: string }
   | { kind: "lost"; unit: string }
-  | { kind: "alert"; unit: string; target: string };
+  | { kind: "alert"; unit: string; target: string }
+  | { kind: "burnt"; unit: string; city: string };
 
 export interface Battle {
   seed: number;

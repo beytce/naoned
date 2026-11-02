@@ -302,6 +302,7 @@ const frDict = {
     },
     hops: {
       docked: (place: string) => `À quai : ${place}`,
+      repairing: "En réparation à la Remise, au retour de la Porta",
       leaving: (place: string) => `Départ vers ${place}`,
       moving: (place: string) => `En route vers ${place}`,
       hold: (n: number, of: number) => `${n} / ${of}`,
@@ -315,6 +316,7 @@ const frDict = {
       aim: "Glissez le véhicule vers un lieu, ou touchez-le.",
       to: (place: string) => `Vers ${place}`,
       seconds: (n: number) => `${n} s`,
+      minutes: (n: number) => `${n} min`,
       leagues: (n: number) => `${n} lieues`,
       brings: (n: number, good: string, pay: string) => `${n} ${good} · +${pay}`,
       stops: (n: number) => `${n} arrêt${n > 1 ? "s" : ""} à venir`,

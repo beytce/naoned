@@ -80,6 +80,7 @@ export const ROME_KINDS = [
   "light_horse",
   "bombard",
   "gonfalonier",
+  "incendiary",
 ] as const;
 export type RomeKind = (typeof ROME_KINDS)[number];
 
@@ -107,6 +108,11 @@ const romeUnit = z.object({
   prefersTransport: z.boolean().prefault(false),
   /** Roams between the cities instead of guarding one. */
   roams: z.boolean().prefault(false),
+  /**
+   * The incendiary (2 November): it fights no one, walks to the city keeping the rarest relics and
+   * burns them after so many seconds there (0: not an incendiary).
+   */
+  burnS: qty.prefault(0),
 });
 
 const counts = z.partialRecord(z.enum(ROME_KINDS), qty).prefault({});
@@ -192,6 +198,17 @@ export const portaSettingsSchema = z
       .prefault({}),
     components: z.record(z.string(), component).prefault({}),
     componentMaxLevel: positive.prefault(5),
+    /** A vehicle fallen in combat comes back damaged to the Remise for so long (2 November). */
+    repairMinutes: positive.prefault(120),
+    /** The Porta noire: the fallen lost for good, the relics brought out so many bps of them. */
+    darkRelicsBps: positive.prefault(15_000),
+    /** A relic deciphered: so many plans of the kind chosen, by its rarity. */
+    plansPerRarity: z
+      .object({ common: qty, rare: qty, precious: qty, legendary: qty })
+      .prefault({ common: 1, rare: 3, precious: 8, legendary: 20 }),
+    /** A component's levels from this one ask plans of its kind: so many for each (index level − from). */
+    plansFromLevel: positive.prefault(4),
+    plansPerLevel: z.array(qty).prefault([10, 30]),
     battle,
     rome: z.partialRecord(z.enum(ROME_KINDS), romeUnit).prefault({}),
     tiers: z.array(tier).prefault([]),

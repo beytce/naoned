@@ -85,6 +85,7 @@ import type { BattleOutcome } from "./empire/porta/battle/sim.js";
 import {
   buildPorta,
   cancelPorta,
+  decipherRelic,
   enterPorta,
   recallFromPorta,
   sellRelics,
@@ -402,10 +403,19 @@ type EmpireCommandOf =
       tier: number;
       combatId: string;
       transportId: string;
+      /** The Porta noire: the fallen lost for good, more relics (2 November). */
+      dark?: boolean;
     }
   | { type: "empirePortaSettle"; playerId: PlayerId; battleId: string; outcome: BattleOutcome }
   | { type: "empirePortaCancel"; playerId: PlayerId; battleId: string }
   | { type: "empireSellRelics"; playerId: PlayerId; rarity: Rarity; qty: number }
+  /** A relic deciphered into plans of a component kind (2 November). */
+  | {
+      type: "empireDecipherRelic";
+      playerId: PlayerId;
+      rarity: Rarity;
+      kind: "weapon" | "defense" | "support";
+    }
   | {
       type: "empireFitArm";
       playerId: PlayerId;
@@ -649,13 +659,24 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       recallFromPorta(tx, cmd.playerId, cmd.vehicleIds);
       break;
     case "empirePortaEnter":
-      enterPorta(tx, cmd.playerId, cmd.battleId, cmd.tier, cmd.combatId, cmd.transportId);
+      enterPorta(
+        tx,
+        cmd.playerId,
+        cmd.battleId,
+        cmd.tier,
+        cmd.combatId,
+        cmd.transportId,
+        cmd.dark === true,
+      );
       break;
     case "empirePortaSettle":
       settlePorta(tx, cmd.playerId, cmd.battleId, cmd.outcome);
       break;
     case "empirePortaCancel":
       cancelPorta(tx, cmd.playerId, cmd.battleId);
+      break;
+    case "empireDecipherRelic":
+      decipherRelic(tx, cmd.playerId, cmd.rarity, cmd.kind);
       break;
     case "empireSellRelics":
       sellRelics(tx, cmd.playerId, cmd.rarity, cmd.qty);

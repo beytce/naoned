@@ -2333,3 +2333,38 @@ La Remise ne ralentit donc pas la fin de partie. Ce qui la ralentissait, c'étai
 - **Le calendrier** tient sur la graine 1, avec la Casa 20 à 500 jours. Il manque d'un palier sur les deux autres : la Casa 19 n'est pas atteinte en 24 mois sur la graine 2, et la Casa 20 est tout juste hors bornes sur la graine 3.
 - **Puits ÷ sources** des jeunes Maisons tient désormais sur les 3 graines (0,71–0,72, puis 1,00).
 - **Restent à arbitrer** les mêmes trois cibles : le prochain palier, la première bande et les bruts des jeunes.
+
+## Chantier 3 de la Porta : retour abîmé, Porta noire, plans, incendiaire (2 novembre 2026)
+
+**Ce qui change au simulateur** (`apps/simulator/src/empire/porta.ts`) :
+- un véhicule tombé au combat n'est plus perdu : la Maison ne joue plus la Porta pendant 2 h, le temps de sa réparation. Seul un véhicule pris à la fermeture est perdu ;
+- les bots ne jouent pas la Porta noire ;
+- **le déchiffrage** : tant que les niveaux suivants de leur véhicule demandent des plans (niveaux 4 et 5 : 10 puis 30 par composant), les bots déchiffrent chaque relique dans le type qui en manque le plus. Ensuite, ils vendent ;
+- **deux correctifs du modèle** :
+  - la réparation est comptée en heures du simulateur ;
+  - les places typées des modèles (chantier 2) sont lues. Auparavant, le prix du chargement des bots ne comptait plus les composants ;
+- l'incendiaire joue dans la vraie bataille du moteur, aux paliers 4 à 6 ; les bots s'arrêtent au palier 3, il ne les touche donc pas encore.
+
+**Sur 3 graines (cohortes de 200)** :
+
+| | Référence (base, graine 1) | Graine 1 | Graine 2 | Graine 3 |
+| --- | --- | --- | --- | --- |
+| Cibles | 6/9 | 5/9 | 4/9 | 5/9 |
+| Batailles par jour | 465 | 186 | 193 | 172 |
+| Retours abîmés | — | 24 455 | 21 618 | 23 710 |
+| Reliques déchiffrées | — | 29 237 | 28 455 | 28 899 |
+| Transports perdus | 52 937 | 261 | 225 | 225 |
+| Part des commandes | 76,4 % | 85,3 % | 85,3 % | 85,3 % |
+
+**Les constats** :
+- **La cible perdue** est la part des commandes, qui dépasse la borne de 0,3 point. Deux causes :
+  - les reliques déchiffrées ne sont plus vendues ;
+  - la réparation de 2 h retire des batailles.
+  
+  Les ducats de l'antiquaire pèsent donc moins dans les recettes.
+- **Les pertes** : les transports perdus tombent de 52 937 à quelques centaines, et les véhicules de combat ne se perdent plus. La règle d'or 2 est tenue.
+- **Le reste des cibles** est inchangé par rapport à la référence :
+  - le calendrier : sur la graine 2, la Casa 18 et la Casa 19 sortent des bornes, comme avant ;
+  - le prochain palier, la première bande et les bruts des jeunes, déjà à arbitrer.
+
+**À trancher par le porteur** : la borne de la part des commandes (85 %), ou un prix de l'antiquaire relevé pour compenser les reliques déchiffrées.

@@ -10,7 +10,7 @@ import {
 } from "@comptoirs/engine";
 import type { Rng } from "@comptoirs/engine";
 import type { House, World } from "./model.js";
-import { DAY } from "./model.js";
+import { DAY, HOUR } from "./model.js";
 import { d, destroy, receive } from "./world.js";
 
 /**
@@ -27,6 +27,10 @@ export const LOADOUT: Record<string, string[]> = {
   carro_grande: ["lances", "crossbows", "cuirass"],
 };
 
+/** A model's places: typed (since 1 November), else so many of any kind. */
+const placesOf = (m: { slots?: number; places?: unknown[] } | undefined) =>
+  m?.places?.length ?? m?.slots ?? 0;
+
 /** The strength of a model with its loadout, model and components at `level`. */
 export function botStats(model: string, level: number, s: EmpireSettings): ArmStats {
   const m = s.porta.models[model];
@@ -41,7 +45,7 @@ export function botStats(model: string, level: number, s: EmpireSettings): ArmSt
     actives: [],
     damageCutBps: 0,
   };
-  (LOADOUT[model] ?? []).slice(0, m.slots).forEach((code, i) => {
+  (LOADOUT[model] ?? []).slice(0, placesOf(m)).forEach((code, i) => {
     const c = s.porta.components[code];
     if (!c) return;
     const power = c.power + Math.floor((c.power * c.perLevelBps * (level - 1)) / 10_000);
@@ -171,11 +175,46 @@ export function outcomesOf(
   return list;
 }
 
+/** The plans a level of a model's loadout asks, by kind (from `plansFromLevel`). */
+export function plansFor(model: string, level: number, s: EmpireSettings): Record<string, number> {
+  const out: Record<string, number> = {};
+  const n = s.porta.plansPerLevel[level - s.porta.plansFromLevel];
+  if (level < s.porta.plansFromLevel || n === undefined) return out;
+  const m = s.porta.models[model];
+  for (const code of (LOADOUT[model] ?? []).slice(0, placesOf(m))) {
+    const kind = s.porta.components[code]?.kind;
+    if (kind) out[kind] = (out[kind] ?? 0) + n;
+  }
+  return out;
+}
+
+/** The kind most short of plans for the levels still to come (null: none is). */
+export function plansShort(
+  p: SimPorta,
+  model: string,
+  level: number,
+  s: EmpireSettings,
+): string | null {
+  const need: Record<string, number> = {};
+  for (let l = level + 1; l <= s.porta.modelLevels.max; l++)
+    for (const [k, n] of Object.entries(plansFor(model, l, s))) need[k] = (need[k] ?? 0) + n;
+  let best: string | null = null;
+  let gap = 0;
+  for (const [k, n] of Object.entries(need)) {
+    const g = n - (p.plans[k] ?? 0);
+    if (g > gap) {
+      best = k;
+      gap = g;
+    }
+  }
+  return best;
+}
+
 /** What a model and its loadout cost to buy, and to raise from `level` to the next. */
 export function armsCost(model: string, level: number, s: EmpireSettings) {
   const m = s.porta.models[model];
   const comps = (LOADOUT[model] ?? [])
-    .slice(0, m?.slots ?? 0)
+    .slice(0, placesOf(m))
     .map((c) => s.porta.components[c]?.costDucats ?? 0);
   const base = (m?.costDucats ?? 0) + comps.reduce((a, x) => a + x, 0);
   const step =
@@ -208,6 +247,12 @@ export interface SimPorta {
   won: number;
   lostCombat: number;
   lostTransport: number;
+  /** Fallen in battle (2 November): back damaged, under repair until then; how many times. */
+  repairUntil: number;
+  damaged: number;
+  /** The plans held by component kind, and the relics deciphered into them. */
+  plans: Record<string, number>;
+  deciphered: number;
   relics: Record<Rarity, number>;
   points: number;
 }
@@ -222,6 +267,10 @@ export const newPorta = (): SimPorta => ({
   won: 0,
   lostCombat: 0,
   lostTransport: 0,
+  repairUntil: 0,
+  damaged: 0,
+  plans: {},
+  deciphered: 0,
   relics: { common: 0, rare: 0, precious: 0, legendary: 0 },
   points: 0,
 });
@@ -253,6 +302,11 @@ export function portaDay(
     h.porta = newPorta();
   }
   const p = h.porta;
+  // A save from before the plans (2 November).
+  p.plans ??= {};
+  p.repairUntil ??= 0;
+  p.damaged ??= 0;
+  p.deciphered ??= 0;
   if (p.day !== today) {
     p.day = today;
     p.today = 0;
@@ -271,8 +325,15 @@ export function portaDay(
   }
   // Raised when the house can spare it twice over.
   const { raise } = armsCost(p.combat.model, p.combat.level, s);
-  if (p.combat.level < s.porta.modelLevels.max && spendable() >= raise * 2n) {
+  // From the level that asks plans, its components' plans too (2 November).
+  const asks = plansFor(p.combat.model, p.combat.level + 1, s);
+  if (
+    p.combat.level < s.porta.modelLevels.max &&
+    spendable() >= raise * 2n &&
+    Object.entries(asks).every(([k, n]) => (p.plans[k] ?? 0) >= n)
+  ) {
     destroy(w, h, raise, "arms");
+    for (const [k, n] of Object.entries(asks)) p.plans[k] = (p.plans[k] ?? 0) - n;
     p.combat.level += 1;
   }
   if (p.level < s.porta.tiers.length && p.best >= p.level) {
@@ -284,6 +345,8 @@ export function portaDay(
   }
   const relics = holdRelics();
   if (relics === 0) return 0;
+  // Under repair, neither the combat vehicle nor the transport fights.
+  if (w.now < p.repairUntil) return 0;
   // The tier worth most, its losses reckoned (the combat vehicle and its levels, the transport,
   // the victuals); a new tier only when the house wins it one time in two. A lone house keeps to
   // the tiers it may play alone.
@@ -300,8 +363,9 @@ export function portaDay(
     if (t > p.best && wins * 2 < outs.length) continue;
     const gain =
       outs.reduce((a, o) => a + o.relics.reduce((x, r) => x + relicPrice(r, s), 0n), 0n) / n;
-    const lostCombat = BigInt(outs.filter((o) => o.vehicles[0]?.outcome !== "exited").length);
-    const lostTransport = BigInt(outs.filter((o) => o.vehicles[1]?.outcome !== "exited").length);
+    // Only a vehicle caught at the closing is lost; a fallen one comes back damaged.
+    const lostCombat = BigInt(outs.filter((o) => o.vehicles[0]?.outcome === "lost").length);
+    const lostTransport = BigInt(outs.filter((o) => o.vehicles[1]?.outcome === "lost").length);
     const value =
       gain -
       (lostCombat * kept) / n -
@@ -321,13 +385,18 @@ export function portaDay(
   const outs = outcomesOf(pick, p.combat.model, p.combat.level, relics, s);
   const o = outs[Math.floor(rng.next() * outs.length)] as BattleOutcome;
   p.battles++;
-  if (o.vehicles[0]?.outcome !== "exited") {
+  if (o.vehicles[0]?.outcome === "lost") {
     p.lostCombat++;
     p.combat = null;
   }
-  if (o.vehicles[1]?.outcome !== "exited") {
+  if (o.vehicles[1]?.outcome === "lost") {
     p.lostTransport++;
     loseTransport();
+  }
+  if (o.vehicles.some((v) => v.outcome === "dead")) {
+    p.damaged++;
+    // The simulator's clock counts hours.
+    p.repairUntil = w.now + (s.porta.repairMinutes / 60) * HOUR;
   }
   if (o.won) {
     p.won++;
@@ -335,6 +404,13 @@ export function portaDay(
   }
   for (const r of o.relics) {
     p.relics[r]++;
+    // Deciphered while the next levels still ask plans of a kind; else sold.
+    const short = p.combat ? plansShort(p, p.combat.model, p.combat.level, s) : null;
+    if (short) {
+      p.plans[short] = (p.plans[short] ?? 0) + (s.porta.plansPerRarity[r] ?? 0);
+      p.deciphered++;
+      continue;
+    }
     p.points += relicPoints(r, s);
     // The antiquarian pays like any receipt, its wages taken.
     receive(w, h, relicPrice(r, s), "relics", "expeditions");

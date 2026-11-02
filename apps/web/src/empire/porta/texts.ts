@@ -55,6 +55,21 @@ export const pt = {
   antiquarianText:
     "Il rachète vos reliques ; chaque relique vendue compte au classement de la semaine.",
   sell: "Vendre",
+  dark: "Porta noire",
+  darkText: "Un véhicule détruit est perdu pour de bon ; +50 % de reliques.",
+  darkOn: "Porta noire : la perte est définitive",
+  decipher: "Déchiffrer",
+  decipherText:
+    "Une relique déchiffrée donne des plans d'un type, pour les niveaux 4 et 5 des composants.",
+  decipherAs: (n: number) => `Déchiffrer en ${n} plan${n > 1 ? "s" : ""} :`,
+  plans: "Plans",
+  plansNeed: (n: number, kind: string) => `${n} plans ${kind}`,
+  plansKind: { weapon: "d'arme", defense: "de défense", support: "de soutien" } as Record<
+    string,
+    string
+  >,
+  repair: (min: number) => `en réparation · ${min} min`,
+  burnt: "Une ville brûle : ses reliques sont perdues",
   points: (n: number) => `${n} pts`,
   week: (n: number) => `Cette semaine : ${n} pts`,
   ranking: "Le classement de la semaine",
@@ -110,6 +125,7 @@ export const pt = {
     light_horse: "Chevau-léger",
     bombard: "Bombarde",
     gonfalonier: "Gonfalonier de l'Église",
+    incendiary: "Incendiaire",
   } as Record<string, string>,
   romeState: {
     idle: "en garde",
@@ -141,6 +157,7 @@ export const pt = {
     insufficient_stock: "Pas assez de pain pour l'entrée.",
     too_far: "Approchez-vous de la porte.",
     not_ready: "Ce composant se recharge.",
+    no_plans: "Il manque des plans pour ce niveau.",
     network: "Le réseau ne répond pas.",
   } as Record<string, string>,
 };

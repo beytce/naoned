@@ -84,6 +84,22 @@ export function componentUpgradeCost(
   return ducats(spec.costDucats) * 2n ** BigInt(c.level);
 }
 
+/**
+ * The plans a component's next level asks (2 November, the golden rule 5): from
+ * `plansFromLevel`, so many plans of its kind, deciphered from relics; null when none.
+ */
+export function componentPlans(
+  h: EmpireHouse,
+  componentId: string,
+  s: EmpireSettings,
+): { kind: PlaceKind; n: number } | null {
+  const c = h.arms?.components.find((x) => x.id === componentId);
+  const spec = c && s.porta.components[c.code];
+  if (!c || !spec) return null;
+  const n = s.porta.plansPerLevel[c.level + 1 - s.porta.plansFromLevel] ?? 0;
+  return c.level + 1 >= s.porta.plansFromLevel && n > 0 ? { kind: spec.kind, n } : null;
+}
+
 /** The Remise asked by the arms, as by the land vehicles. */
 function atRemise(tx: Tx, playerId: PlayerId): { h: EmpireHouse; s: EmpireSettings } {
   const s = empireSettings(tx.ctx);
@@ -153,7 +169,11 @@ export function upgradeComponent(tx: Tx, playerId: PlayerId, componentId: string
   if (carrier && armAway(carrier, tx.now)) fail("vehicle_busy");
   const cost = componentUpgradeCost(h, componentId, s);
   if (cost === null) fail("max_level");
+  const plans = componentPlans(h, componentId, s);
+  const held = h.porta?.plans?.[plans?.kind ?? "weapon"] ?? 0;
+  if (plans && held < plans.n) fail("no_plans");
   pay(tx, playerId, cost);
+  if (plans && h.porta) h.porta.plans = { ...h.porta.plans, [plans.kind]: held - plans.n };
   c.level += 1;
 }
 
