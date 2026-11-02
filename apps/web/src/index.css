@@ -1519,3 +1519,11 @@ button.map-place {
     animation: none;
   }
 }
+/* The purse: night-blue leather, stitched in gold (the night board). */
+.purse {
+  background: repeating-linear-gradient(115deg, rgb(255 255 255 / 0.03) 0 2px, transparent 2px 5px),
+    radial-gradient(ellipse at 30% 20%, #2e486e, #16263e 70%);
+  outline: 1px dashed rgb(244 197 84 / 0.5);
+  outline-offset: -4px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
