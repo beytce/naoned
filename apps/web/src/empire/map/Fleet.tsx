@@ -41,6 +41,11 @@ interface Arrival {
   y: number;
   n: number;
   good: string;
+  /** What the orders brought paid, in deniers. */
+  pay: bigint;
+  /** Where the vehicle stood a beat before, from the city (chart units): the mark jumps from it. */
+  dx: number;
+  dy: number;
 }
 
 /**
@@ -95,21 +100,23 @@ export function Fleet({
   const clock = live ? Math.max(frame, now - 1_000) : now;
   const [drag, setDrag] = useState<Drag | null>(null);
   const [arrivals, setArrivals] = useState<Arrival[]>([]);
-  const wasMoving = useRef(new Map<string, string>());
+  const wasMoving = useRef(new Map<string, { to: string; x: number; y: number }>());
   const poses = mine.map((v) => ({ v, pose: vehiclePose(p, v, clock) }));
 
   // A hop ended by the clock at a city: its ring, what it brought, and the state settled.
   useEffect(() => {
     const before = wasMoving.current;
-    const next = new Map<string, string>();
+    const next = new Map<string, { to: string; x: number; y: number }>();
     let arrived = false;
     for (const { v, pose } of poses) {
       if (pose.hop) {
-        next.set(v.id, v.legs.find((l) => l.departAt <= clock && l.arrivesAt > clock)?.to ?? "");
+        const to = v.legs.find((l) => l.departAt <= clock && l.arrivesAt > clock)?.to ?? "";
+        next.set(v.id, { to, x: pose.x, y: pose.y });
         continue;
       }
-      const to = before.get(v.id);
-      if (to === undefined) continue;
+      const was = before.get(v.id);
+      if (was === undefined) continue;
+      const to = was.to;
       arrived = true;
       if (!to.startsWith("city:")) continue;
       const brought = bringsTo(p, { ...v, legs: [], at: to }, to.slice(5));
@@ -117,7 +124,18 @@ export function Fleet({
       const at = placePoint(p, to);
       if (n > 0 && at) {
         const key = `${v.id}:${clock}`;
-        setArrivals((xs) => [...xs, { key, x: at[0], y: at[1], n, good: brought[0]?.good ?? "" }]);
+        const pay = brought.reduce((k, x) => k + x.pay, 0n);
+        const arrival = {
+          key,
+          x: at[0],
+          y: at[1],
+          n,
+          good: brought[0]?.good ?? "",
+          pay,
+          dx: was.x - at[0],
+          dy: was.y - at[1],
+        };
+        setArrivals((xs) => [...xs, arrival]);
         window.setTimeout(() => setArrivals((xs) => xs.filter((x) => x.key !== key)), 1_800);
       }
     }
@@ -330,9 +348,35 @@ export function Fleet({
           data-arrival
         >
           <span className="hop-ring absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-gold" />
+          {/* The wave of the lagoon spreading from the city (after Hades' Star's arrivals). */}
+          <span
+            className="hop-wave absolute left-1/2 top-1/2 h-12 w-12 rounded-full ring-2 ring-lagoon"
+            data-arrival-wave
+          />
+          {/* The good delivered jumps from the vehicle to the city. */}
+          <span
+            className="hop-jump absolute left-1/2 top-1/2"
+            style={
+              {
+                "--dx": `${Math.round(a.dx * base)}px`,
+                "--dy": `${Math.round(a.dy * base)}px`,
+              } as React.CSSProperties
+            }
+            data-arrival-jump
+          >
+            <GoodsMark code={a.good} size={20} />
+          </span>
           <span className="hop-rise flex items-center gap-1 whitespace-nowrap rounded-full bg-night/85 px-2 py-0.5 font-display text-xs font-bold text-gold">
             <GoodsMark code={a.good} size={14} />+{a.n}
           </span>
+          {a.pay > 0n && (
+            <span
+              className="hop-coin absolute left-1/2 top-full mt-1 whitespace-nowrap font-display text-sm font-extrabold text-gold drop-shadow"
+              data-arrival-pay
+            >
+              +{d(a.pay)}
+            </span>
+          )}
         </div>
       ))}
 
