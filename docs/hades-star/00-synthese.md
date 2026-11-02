@@ -92,10 +92,11 @@ Le plan est dans [05 — les commandes](05-commandes.md), et il remplace les vag
 - **L'incendiaire**, dès le palier 4 : il brûle 20 s une ville, et ses reliques sont perdues si on ne l'arrête pas.
 - Le détail est dans `docs/plan-porta.md` (lot 7).
 
-## Chantier 4 — le reste de l'interface (à planifier)
+## Chantier 4 — le reste de l'interface (fait, PR « chantier 4 de l'interface », 2 novembre)
 
-Il est décrit dans 04, § 8 :
-- le calque d'information (appui long, ou Alt sur PC) ;
-- les destinations éclairées avec leur compte quand un véhicule chargé est choisi ;
-- les effets de construction et d'amélioration ;
-- les raccourcis restants.
+Décisions du porteur : le calque pour tous, l'arrivée complète, le seul comptoir posé ou monté, le clavier pour déplacer et zoomer, le double toucher centré.
+- **Le calque d'information** : appui long ou Alt ; les noms, les commandes de chaque ville, la soute des véhicules (`useCamera.ts`, `EmpireMap.tsx`, `index.css`).
+- **L'arrivée** : l'onde lagune, la marque qui saute, « + ducats » (`Fleet.tsx`).
+- **Le comptoir posé ou monté** : l'anneau d'or, l'éclat, l'onde (`postsRaised`, `logic.ts`).
+- **Le clavier** et **le double toucher centré** (`EmpireGame.tsx`, `useCamera.ts` : `panBy`, `zoomBy`).
+- Les destinations éclairées avec leur compte existaient depuis le chantier 1. Le bilan est dans 04, § 8.9.
