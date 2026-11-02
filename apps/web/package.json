@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "e2e": "node e2e/layout.mjs",
     "e2e:tutorial": "node e2e/tutorial.mjs",
-    "e2e:empire": "node e2e/empire.mjs"
+    "e2e:empire": "node e2e/empire.mjs",
+    "e2e:map3d": "node e2e/map3d.mjs"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*",
@@ -21,6 +22,7 @@
     "@react-three/drei": "9.122.0",
     "@react-three/fiber": "8.18.0",
     "@react-three/postprocessing": "2.19.1",
+    "postprocessing": "6.39.6",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "three": "0.170.0"
