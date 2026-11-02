@@ -606,7 +606,8 @@ export function postLevels(p: EmpirePayload): Map<string, number> {
   const map = p.view?.map;
   const out = new Map<string, number>();
   if (!map) return out;
-  out.set("home", map.home.level);
+  // The first fondaco not yet put down counts for none: put down, it bursts as a new one.
+  out.set("home", map.home.placed === false ? 0 : map.home.level);
   for (const x of map.posts) out.set(x.id, x.level);
   return out;
 }

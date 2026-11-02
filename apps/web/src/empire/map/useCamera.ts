@@ -206,6 +206,8 @@ export function useCamera({
           hold = 0;
           if (pointers.size !== 1 || moved > TAP_SLOP) return;
           holding = true;
+          // The lift that ends a hold is no click on the place under the finger.
+          el.dataset.dragging = "1";
           live.current.onHold?.(true);
         }, HOLD_MS);
       } else stopHold();
@@ -258,6 +260,9 @@ export function useCamera({
       if (holding) {
         holding = false;
         live.current.onHold?.(false);
+        setTimeout(() => {
+          delete el.dataset.dragging;
+        }, 0);
         return;
       }
       const tapped = moved <= TAP_SLOP;
