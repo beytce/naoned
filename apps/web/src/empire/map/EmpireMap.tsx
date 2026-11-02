@@ -42,6 +42,8 @@ import {
   nearestPlace,
   placeable,
   placesOf,
+  postLevels,
+  postsRaised,
   wantedBy,
   zoomBounds,
 } from "./logic.js";
@@ -198,6 +200,32 @@ export const EmpireMap = forwardRef<
     }
     void v;
   }, []);
+
+  // A counter put down or raised: its ring fills with gold, then a burst and a wave (900 ms).
+  const levels = postLevels(p);
+  const levelKey = [...levels].map(([id, l]) => `${id}:${l}`).join(",");
+  const seenLevels = useRef<Map<string, number> | null>(null);
+  const [raised, setRaised] = useState<{ key: string; x: number; y: number }[]>([]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the levels change with their key
+  useEffect(() => {
+    const now = postLevels(p);
+    const ids = postsRaised(seenLevels.current, now);
+    seenLevels.current = now;
+    if (ids.length === 0) return;
+    const map = p.view?.map;
+    const at = (id: string): [number, number] | null => {
+      if (id === "home") return homeAt(p);
+      const x = map?.posts.find((y) => y.id === id);
+      return x ? [x.x, x.y] : null;
+    };
+    const fresh = ids.flatMap((id) => {
+      const xy = at(id);
+      return xy ? [{ key: `${id}:${now.get(id)}`, x: xy[0], y: xy[1] }] : [];
+    });
+    setRaised((xs) => [...xs, ...fresh]);
+    const keys = new Set(fresh.map((f) => f.key));
+    window.setTimeout(() => setRaised((xs) => xs.filter((x) => !keys.has(x.key))), 1_200);
+  }, [levelKey]);
 
   /** The information layer (after Hades' Star's tilde): every name, the orders, the holds. */
   const showInfo = useCallback((on: boolean) => {
@@ -468,6 +496,16 @@ export const EmpireMap = forwardRef<
             </div>
           );
         })}
+        {raised.map((r) => (
+          <div
+            key={r.key}
+            className="map-pin pointer-events-none"
+            style={{ left: r.x * base, top: r.y * base }}
+            data-post-raised
+          >
+            <PostRaise />
+          </div>
+        ))}
         {map.sites.map((x) => {
           const [px, py] = cellCentre(x.cell);
           return (
@@ -902,6 +940,41 @@ function homeAt(p: EmpirePayload): [number, number] {
  * under it; no town (decision of the owner, 1 November 2026): Venice has its own bubble and its
  * orders. Touched, its workshops deploy.
  */
+/**
+ * A counter put down or raised (after Hades' Star's upgrades, in the Lagune: an arc, never a
+ * bar): its ring fills with gold, then a short burst and a gold wave.
+ */
+function PostRaise() {
+  const r = 30;
+  const round = 2 * Math.PI * r;
+  return (
+    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <svg
+        width={72}
+        height={72}
+        viewBox="0 0 72 72"
+        className="post-fill block"
+        aria-hidden="true"
+      >
+        <circle
+          cx={36}
+          cy={36}
+          r={r}
+          fill="none"
+          stroke="rgb(var(--gold))"
+          strokeWidth={4}
+          strokeLinecap="round"
+          strokeDasharray={round}
+          transform="rotate(-90 36 36)"
+          style={{ "--round": `${round}` } as React.CSSProperties}
+        />
+      </svg>
+      <span className="post-burst absolute inset-0 rounded-full bg-gold/60" />
+      <span className="post-wave absolute inset-0 rounded-full ring-2 ring-gold" />
+    </span>
+  );
+}
+
 function HomeMark({
   p,
   name,

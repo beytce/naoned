@@ -1328,6 +1328,71 @@ button.map-place {
     opacity: 0;
   }
 }
+/* A counter put down or raised: its ring fills (420 ms), then a burst and a gold wave (700 ms). */
+.post-fill circle {
+  animation: post-fill 420ms var(--ease-out, ease-out) both;
+}
+@keyframes post-fill {
+  from {
+    stroke-dashoffset: var(--round);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.post-fill {
+  animation: post-fade 900ms linear both;
+}
+@keyframes post-fade {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.post-burst {
+  animation: post-burst 300ms var(--ease-out, ease-out) 380ms both;
+}
+@keyframes post-burst {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+.post-wave {
+  animation: post-wave 700ms var(--ease-out, ease-out) 400ms both;
+}
+@keyframes post-wave {
+  from {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .post-fill,
+  .post-fill circle,
+  .post-burst,
+  .post-wave {
+    animation: none;
+  }
+  .post-burst,
+  .post-wave {
+    display: none;
+  }
+}
 /* The wave of the lagoon from a city reached (600 ms), and the good that jumps there (500 ms). */
 .hop-wave {
   animation: hop-wave 600ms var(--ease-out, ease-out) both;

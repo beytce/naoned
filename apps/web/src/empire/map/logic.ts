@@ -601,6 +601,28 @@ export function nearestPlace(
   return best;
 }
 
+/** The house's counters and their levels: Venice's (`home`) and each placed one, by id. */
+export function postLevels(p: EmpirePayload): Map<string, number> {
+  const map = p.view?.map;
+  const out = new Map<string, number>();
+  if (!map) return out;
+  out.set("home", map.home.level);
+  for (const x of map.posts) out.set(x.id, x.level);
+  return out;
+}
+
+/**
+ * The counters put down or raised since the levels seen before (their burst of gold, after
+ * Hades' Star's upgrades); none at the first sight.
+ */
+export function postsRaised(
+  before: Map<string, number> | null,
+  now: Map<string, number>,
+): string[] {
+  if (!before) return [];
+  return [...now].filter(([id, level]) => level > (before.get(id) ?? 0)).map(([id]) => id);
+}
+
 /** What a vehicle would bring to a city: the orders of that city aboard, with their pay. */
 export function bringsTo(
   p: EmpirePayload,
