@@ -202,3 +202,137 @@ export function tileFault(
   if (fondaci.some((p) => slotsTouch(p, at, s))) return "post_too_close";
   return null;
 }
+
+const tileId = (t: { cell: string; k: number }) => `${t.cell}#${t.k}`;
+
+/** The six small tiles around one, by their middles one step off (the lattice's own six ways). */
+function tilesAround(t: { cell: string; k: number }, s: EmpireSettings) {
+  const [x, y] = slotPoint(t.cell, t.k, s);
+  const step = SLOT_STEP * s.map.hexSize;
+  return [0, 1, 2, 3, 4, 5].map((j) => {
+    const a = -SLOT_TURN + (j * Math.PI) / 3;
+    return slotAt(x + step * Math.cos(a), y + step * Math.sin(a), s);
+  });
+}
+
+/**
+ * The road between two places, tile after tile (decision of the owner, 3 November 2026: the mules
+ * walk roads, not straight lines): the shortest way across the small tiles, a town's tile on the
+ * way counting four steps (the road goes around a town when it can) and a tile of the sea five
+ * (a ford, a bridge). From the tile under `a` to the tile under `b`; the same at every call.
+ */
+export function roadTiles(
+  a: [number, number],
+  b: [number, number],
+  s: EmpireSettings,
+): { cell: string; k: number }[] {
+  const from = slotAt(a[0], a[1], s);
+  const to = slotAt(b[0], b[1], s);
+  const goal = tileId(to);
+  const towns = new Set(
+    s.map.cities.map((c) => {
+      const [cx, cy] =
+        c.x !== undefined && c.y !== undefined ? [c.x, c.y] : cellCentreOf(c.cell, s);
+      return tileId(slotAt(cx, cy, s));
+    }),
+  );
+  const step = SLOT_STEP * s.map.hexSize;
+  const [gx, gy] = slotPoint(to.cell, to.k, s);
+  // Dijkstra, guided toward the goal (A*: the straight way left, in steps, never more than it is).
+  const left = (t: { cell: string; k: number }) => {
+    const [x, y] = slotPoint(t.cell, t.k, s);
+    return Math.hypot(gx - x, gy - y) / step;
+  };
+  const cost = new Map<string, number>([[tileId(from), 0]]);
+  const back = new Map<string, { cell: string; k: number }>();
+  const open: { t: { cell: string; k: number }; g: number; f: number }[] = [
+    { t: from, g: 0, f: left(from) },
+  ];
+  const done = new Set<string>();
+  for (let guard = 0; open.length > 0 && guard < 20_000; guard++) {
+    open.sort((p, q) => p.f - q.f || tileId(p.t).localeCompare(tileId(q.t)));
+    const cur = open.shift() as (typeof open)[number];
+    const id = tileId(cur.t);
+    if (done.has(id)) continue;
+    done.add(id);
+    if (id === goal) break;
+    for (const n of tilesAround(cur.t, s)) {
+      const nid = tileId(n);
+      if (done.has(nid)) continue;
+      const extra = nid === goal ? 0 : towns.has(nid) ? 3 : s.map.cells[n.cell] ? 0 : 4;
+      const g = cur.g + 1 + extra;
+      if (g < (cost.get(nid) ?? Number.POSITIVE_INFINITY)) {
+        cost.set(nid, g);
+        back.set(nid, cur.t);
+        open.push({ t: n, g, f: g + left(n) });
+      }
+    }
+  }
+  const path = [to];
+  for (let id = goal; id !== tileId(from); ) {
+    const prev = back.get(id);
+    if (!prev) return [from, to];
+    path.unshift(prev);
+    id = tileId(prev);
+  }
+  return path;
+}
+
+/**
+ * The road as it is walked and drawn: from `a` to `b` through the middles of the tiles between,
+ * its corners rounded (two passes of Chaikin's cutting), its ends where the places stand.
+ */
+export function roadBetween(
+  a: [number, number],
+  b: [number, number],
+  s: EmpireSettings,
+): [number, number][] {
+  const mids = roadTiles(a, b, s)
+    .slice(1, -1)
+    .map((t) => slotPoint(t.cell, t.k, s));
+  let pts: [number, number][] = [a, ...mids, b];
+  for (let pass = 0; pass < 2 && pts.length > 2; pass++) {
+    const out: [number, number][] = [pts[0] as [number, number]];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [px, py] = pts[i] as [number, number];
+      const [qx, qy] = pts[i + 1] as [number, number];
+      if (i > 0) out.push([0.75 * px + 0.25 * qx, 0.75 * py + 0.25 * qy]);
+      if (i < pts.length - 2) out.push([0.25 * px + 0.75 * qx, 0.25 * py + 0.75 * qy]);
+    }
+    out.push(pts.at(-1) as [number, number]);
+    pts = out;
+  }
+  return pts;
+}
+
+/** A line's length, in the chart's units. */
+export function roadLength(pts: [number, number][]): number {
+  let n = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const [ax, ay] = pts[i - 1] as [number, number];
+    const [bx, by] = pts[i] as [number, number];
+    n += Math.hypot(bx - ax, by - ay);
+  }
+  return n;
+}
+
+/** The point at a share (0 to 1) of a line's length, and its heading there (radians). */
+export function alongRoad(
+  pts: [number, number][],
+  k: number,
+): { x: number; y: number; angle: number } {
+  const total = roadLength(pts);
+  let want = Math.min(1, Math.max(0, k)) * total;
+  for (let i = 1; i < pts.length; i++) {
+    const [ax, ay] = pts[i - 1] as [number, number];
+    const [bx, by] = pts[i] as [number, number];
+    const seg = Math.hypot(bx - ax, by - ay);
+    if (want <= seg || i === pts.length - 1) {
+      const u = seg > 0 ? Math.min(1, want / seg) : 0;
+      return { x: ax + (bx - ax) * u, y: ay + (by - ay) * u, angle: Math.atan2(by - ay, bx - ax) };
+    }
+    want -= seg;
+  }
+  const [x, y] = pts[0] ?? [0, 0];
+  return { x, y, angle: 0 };
+}

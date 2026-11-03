@@ -8,6 +8,7 @@ import { empireSettings, ownHouse } from "./house.js";
 import { citiesCovered, citySpot, standingPosts, unlockedOf } from "./map.js";
 import { cityOrdersAt, returnOrder, takeOrder } from "./orders.js";
 import type { EmpireSettings } from "./settings.js";
+import { roadBetween, roadLength } from "./slots.js";
 import { HOME_POST, postsServing, putAt, storeOf, takeAt } from "./stores.js";
 import { receive } from "./trade.js";
 
@@ -53,7 +54,8 @@ const lastPlace = (v: Vehicle) => v.legs?.at(-1)?.to ?? v.at ?? HOME_POST;
  * voyages; else units a second), a second at the least.
  */
 export function hopMs(s: EmpireSettings, a: [number, number], b: [number, number]): number {
-  const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  // On the small tiles, the road's length (3 November: the mules walk roads); else straight.
+  const d = s.map.tiles ? roadLength(roadBetween(a, b, s)) : Math.hypot(b[0] - a[0], b[1] - a[1]);
   const per = s.moves.secondsPerUnit;
   return Math.max(1_000, Math.round(per ? d * per * 1_000 : (d / s.moves.unitsPerSecond) * 1_000));
 }

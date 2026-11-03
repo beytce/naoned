@@ -3,8 +3,12 @@ import {
   SLOT_STEP,
   cellCentreOf,
   cellsWithin,
+  hopMs,
   parseEmpireSettings,
   placeCities,
+  roadBetween,
+  roadLength,
+  roadTiles,
   slotAt,
   slotPoint,
   slotsTouch,
@@ -98,5 +102,61 @@ describe("the towns on their small tiles", () => {
   it("is the same at every call", () => {
     const cities = [{ code: "acri", cell: "9,0", region: "levante" }];
     expect(placeCities(cities, s)).toEqual(placeCities(cities, s));
+  });
+});
+
+describe("the roads from tile to tile", () => {
+  const towns = [
+    { code: "venezia", cell: "0,0", region: "veneto", x: 0, y: 0 },
+    { code: "padova", cell: "0,1", region: "veneto", x: 0, y: 0 },
+  ];
+  const m = parseEmpireSettings({
+    ...testEmpire,
+    map: {
+      ...testEmpire.map,
+      hexSize: 24,
+      tiles: true,
+      cities: placeCities(towns, s, ["0,0"]),
+    },
+  });
+  const v = m.map.cities[0] as { x: number; y: number };
+  const p = m.map.cities[1] as { x: number; y: number };
+
+  it("runs from one place's tile to the other's, step by step across the tiles", () => {
+    const r = roadTiles([v.x, v.y], [p.x, p.y], m);
+    expect(r[0]).toEqual(slotAt(v.x, v.y, m));
+    expect(r.at(-1)).toEqual(slotAt(p.x, p.y, m));
+    for (let i = 1; i < r.length; i++) {
+      const a = slotPoint((r[i - 1] as { cell: string }).cell, (r[i - 1] as { k: number }).k, m);
+      const b = slotPoint((r[i] as { cell: string }).cell, (r[i] as { k: number }).k, m);
+      expect(d(a, b)).toBeCloseTo(SLOT_STEP * 24, 4);
+    }
+  });
+
+  it("goes around a town's tile when it can", () => {
+    const r = roadTiles([v.x, v.y], [p.x, p.y], m).slice(1, -1);
+    for (const t of r) {
+      const at = slotPoint(t.cell, t.k, m);
+      for (const c of m.map.cities)
+        expect(d(at, [c.x as number, c.y as number])).toBeGreaterThan(1);
+    }
+  });
+
+  it("is a soft line from one place to the other, never shorter than the straight way", () => {
+    const pts = roadBetween([v.x, v.y], [p.x, p.y], m);
+    expect(pts[0]).toEqual([v.x, v.y]);
+    expect(pts.at(-1)).toEqual([p.x, p.y]);
+    expect(roadLength(pts)).toBeGreaterThanOrEqual(d([v.x, v.y], [p.x, p.y]) - 1e-9);
+    expect(roadBetween([v.x, v.y], [p.x, p.y], m)).toEqual(pts);
+  });
+
+  it("times a hop on its road on the small tiles, straight elsewhere", () => {
+    const slow = parseEmpireSettings({
+      ...testEmpire,
+      map: m.map,
+      moves: { departSeconds: 10, unitsPerSecond: 8, maxStops: 15, secondsPerUnit: 10 },
+    });
+    const len = roadLength(roadBetween([v.x, v.y], [p.x, p.y], slow));
+    expect(hopMs(slow, [v.x, v.y], [p.x, p.y])).toBe(Math.round(len * 10 * 1_000));
   });
 });
