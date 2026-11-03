@@ -293,7 +293,16 @@ export const venice1450Empire: EmpireSettingsInput = {
   // A hop: ten seconds to leave (left at once, or taken back), then eleven seconds a unit of the
   // chart (3 November, the long voyages): five minutes from the first fondaco to Venice, seven to
   // eight to Treviso, twenty to the far towns; fifteen stops queued at most.
-  moves: { departSeconds: 10, unitsPerSecond: 8, secondsPerUnit: 11, maxStops: 15 },
+  // The vehicles come back alone to their fondaco, and may be called back five seconds after they
+  // left (decision of the owner, 3 November 2026, after the map's audit).
+  moves: {
+    departSeconds: 10,
+    unitsPerSecond: 8,
+    secondsPerUnit: 11,
+    maxStops: 15,
+    returnHome: true,
+    recallSeconds: 5,
+  },
   // A model raised at the Remise or the Arsenal: its price, 500 ducats at the least, doubled at
   // each level; +10 % a level on land, +5 % at sea (at +10 %, the ships took the trade from the
   // miners and the traders: decision of the owner, calibration.md).

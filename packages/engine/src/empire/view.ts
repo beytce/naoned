@@ -135,6 +135,9 @@ export interface EmpireView {
     /** The long voyages: seconds a unit of the chart, when set (it rules then). */
     secondsPerUnit?: number;
     maxStops: number;
+    /** A vehicle comes back alone once at a city; called back this long after it left (s). */
+    returnHome?: boolean;
+    recallSeconds?: number;
   };
   /** The vehicles one may buy, those of the house, and its voyages under way. */
   vehicles: {

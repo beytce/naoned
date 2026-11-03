@@ -128,6 +128,13 @@ export const empireSettingsSchema = z.object({
        */
       secondsPerUnit: positive.optional(),
       maxStops: positive.prefault(15),
+      /**
+       * A vehicle comes back alone to its fondaco once at a city (decision of the owner,
+       * 3 November 2026, after the map's audit); off, it stays there.
+       */
+      returnHome: z.boolean().prefault(false),
+      /** How long after it left a vehicle may still be called back, its orders unloaded (s). */
+      recallSeconds: qty.prefault(5),
     })
     .prefault({}),
   vehicleLevels: z

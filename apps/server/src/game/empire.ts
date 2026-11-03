@@ -96,6 +96,12 @@ const action = z.discriminatedUnion("type", [
     to: z.string().max(60),
   }),
   z.object({ type: z.literal("empireDepartNow"), vehicleId: z.string().max(40) }),
+  z.object({
+    type: z.literal("empireDeliverCity"),
+    city: z.string().max(40),
+    orderIds: z.array(z.string().max(60)).max(20).optional(),
+  }),
+  z.object({ type: z.literal("empireRecall"), vehicleId: z.string().max(40) }),
   z.object({ type: z.literal("empireSettle") }),
   z.object({ type: z.literal("empireCancelStop"), vehicleId: z.string().max(40) }),
   z.object({

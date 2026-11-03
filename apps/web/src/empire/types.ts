@@ -125,6 +125,9 @@ export interface EmpireView {
     /** The long voyages: seconds a unit of the chart, when set (it rules then). */
     secondsPerUnit?: number;
     maxStops: number;
+    /** A vehicle comes back alone once at a city; called back this long after it left (s). */
+    returnHome?: boolean;
+    recallSeconds?: number;
   };
   vehicles: {
     shop: {
@@ -365,6 +368,8 @@ export type EmpireAction =
   | { type: "empireBuy"; good: string; qty: number; post?: string }
   | { type: "empireMove"; vehicleId: string; to: string }
   | { type: "empireDepartNow"; vehicleId: string }
+  | { type: "empireDeliverCity"; city: string; orderIds?: string[] }
+  | { type: "empireRecall"; vehicleId: string }
   | { type: "empireSettle" }
   | { type: "empireCancelStop"; vehicleId: string }
   | { type: "empireFitVehicle"; vehicleId: string; slot: number; module: string | null }
