@@ -45,6 +45,7 @@ import { C } from "../../art/plateau/props.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import type { EmpirePayload } from "../types.js";
 import { DISTANCE, orthoFrom } from "./camera.js";
+import { give3dUp } from "./flag.js";
 import { Fleet3D } from "./fleet3d.js";
 import {
   Instanced,
@@ -223,6 +224,7 @@ const Board3D = memo(
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
         onCreated={({ gl: renderer, scene, camera: c }) => {
           gl.current = renderer;
+          watchContext(renderer);
           renderer.shadowMap.autoUpdate = false;
           renderer.shadowMap.needsUpdate = true;
           scene.background = new Color(NIGHT);
@@ -381,6 +383,26 @@ function ShadowsOnce({ sc, k }: { sc: Scene3D; k: string }) {
     invalidate();
   }, [gl, sc, k]);
   return null;
+}
+
+/**
+ * A context lost (a phone's browser takes it back in the background, or under pressure): three.js
+ * gets it back; the still shadows are drawn again and a frame asked. Lost twice in a minute, the
+ * map goes on in SVG.
+ */
+function watchContext(renderer: import("three").WebGLRenderer) {
+  const el = renderer.domElement;
+  let lostAt = 0;
+  el.addEventListener("webglcontextlost", (e) => {
+    e.preventDefault();
+    const now = Date.now();
+    if (lostAt && now - lostAt < 60_000) give3dUp("context lost twice");
+    lostAt = now;
+  });
+  el.addEventListener("webglcontextrestored", () => {
+    renderer.shadowMap.needsUpdate = true;
+    invalidate();
+  });
 }
 
 /** Mounted once everything before it in its Suspense is in: the scene takes the touches. */

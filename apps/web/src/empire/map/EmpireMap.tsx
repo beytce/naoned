@@ -28,6 +28,7 @@ import { EmpireOrbit, ORBIT_MAX_PX_CSS, orbitOf } from "../Orbit.js";
 import { regionName } from "../World.js";
 import { bestQuote } from "../logic.js";
 import type { Board3DHandle } from "../map3d/Board3D.js";
+import { Guard3D } from "../map3d/Guard.js";
 import { groundAt } from "../map3d/camera.js";
 import { MAP_3D } from "../map3d/flag.js";
 import { sceneInputOf, sitesOf } from "../map3d/scene.js";
@@ -508,9 +509,11 @@ export const EmpireMap = forwardRef<
     >
       {/* The board in 3D, under every layer, its camera the map's. */}
       {MAP_3D && (
-        <Suspense fallback={null}>
-          <Board3D ref={onBoard3d} p={p} orbit={orbit3d} onReady={onThreeReady} />
-        </Suspense>
+        <Guard3D>
+          <Suspense fallback={null}>
+            <Board3D ref={onBoard3d} p={p} orbit={orbit3d} onReady={onThreeReady} />
+          </Suspense>
+        </Guard3D>
       )}
       {/* The night, far behind: a glow over the lagoon and its scattered lights. */}
       {!MAP_3D && (
