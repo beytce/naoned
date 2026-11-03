@@ -1,4 +1,4 @@
-import { cellsWithin } from "@comptoirs/engine";
+import { type EmpireSettings, cellsWithin, slotPoint, tileFault } from "@comptoirs/engine";
 import { cellCentre } from "../../art/hexmap.js";
 import { WORLD_VIEW, seatOf } from "../../art/mediterranean.js";
 import { TILT } from "../../art/plateau/geom.js";
@@ -520,8 +520,12 @@ export function placeName(p: EmpirePayload, place: string, regionName: (r: strin
 
 /** A hop's seconds between two points, as the engine reckons them (a second at the least). */
 export function hopSeconds(p: EmpirePayload, a: [number, number], b: [number, number]): number {
+  const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  // The long voyages (3 November): seconds a unit, when the world sets it (as the engine's hopMs).
+  const per = p.view?.moves.secondsPerUnit;
+  if (per) return Math.max(1, Math.round(d * per));
   const speed = p.view?.moves.unitsPerSecond ?? 8;
-  return Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / speed));
+  return Math.max(1, Math.round(d / speed));
 }
 
 /** A distance on the chart in leagues (a sector across: about ten). */
@@ -732,4 +736,32 @@ export function fleetSpots(
     const r = orbitOf(pose.place) * (south && pose.place.startsWith("city:") ? 1.5 : 1);
     return { v, pose, x: pose.x + r * Math.cos(a), y: pose.y + r * Math.sin(a) };
   });
+}
+
+/**
+ * A point picked to put a fondaco down, on the small tiles (3 November, the long voyages): the
+ * middle of the free tile nearest it in the cell picked (touching no town and no fondaco of the
+ * house, as the engine's `tileFault`), else the point as it is (the engine says why not).
+ */
+export function snapToTile(
+  p: EmpirePayload,
+  cell: string,
+  x: number,
+  y: number,
+): { cell: string; x: number; y: number } {
+  const map = p.view?.map;
+  if (!map?.tiles) return { cell, x, y };
+  const s = { map: { hexSize: map.hexSize } } as EmpireSettings;
+  const towns = map.cities.map((c): [number, number] => [c.x, c.y]);
+  const fondaci: [number, number][] = [
+    ...(map.home?.placed === false ? [] : [[map.home.x, map.home.y] as [number, number]]),
+    ...map.posts.map((q): [number, number] => [q.x, q.y]),
+  ];
+  const free = [0, 1, 2, 3, 4, 5, 6]
+    .map((k) => slotPoint(cell, k, s))
+    .map(([tx, ty]): [number, number] => [Math.round(tx), Math.round(ty)])
+    .filter((at) => tileFault(s, cell, at, towns, fondaci) === null)
+    .sort((a, b) => Math.hypot(a[0] - x, a[1] - y) - Math.hypot(b[0] - x, b[1] - y));
+  const at = free[0];
+  return at ? { cell, x: at[0], y: at[1] } : { cell, x, y };
 }

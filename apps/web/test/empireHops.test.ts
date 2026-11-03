@@ -79,6 +79,13 @@ describe("the places a vehicle may go to", () => {
     expect(nearestPlace(p, [40, 20], 10)).toBeNull();
   });
 
+  it("are long when the world counts seconds a unit (the long voyages, as the engine's hopMs)", () => {
+    const p = payload(cart());
+    const view = p.view as NonNullable<EmpirePayload["view"]>;
+    const slow = { ...p, view: { ...view, moves: { ...view.moves, secondsPerUnit: 11 } } };
+    expect(hopSeconds(slow as EmpirePayload, [0, 0], [26.6, 0])).toBe(293);
+  });
+
   it("are reached in the engine's seconds: the distance at the speed, a second at the least", () => {
     const p = payload(cart());
     expect(hopSeconds(p, [0, 0], [0, 40])).toBe(5);

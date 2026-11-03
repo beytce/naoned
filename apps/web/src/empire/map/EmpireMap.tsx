@@ -45,6 +45,7 @@ import {
   placesOf,
   postLevels,
   postsRaised,
+  snapToTile,
   wantedBy,
   zoomBounds,
 } from "./logic.js";
@@ -715,18 +716,18 @@ const Chart = memo(function Chart({
     // On the 3D board, the ray from the camera down to the ground (docs/plateau-reprise.md § 7).
     const g = e.clientX !== 0 ? ground?.(e.clientX, e.clientY) : null;
     if (g) {
-      onPick?.({ cell, x: Math.round(g[0]), y: Math.round(g[1]) });
+      onPick?.(snapToTile(p, cell, Math.round(g[0]), Math.round(g[1])));
       return;
     }
     // The cell lies in the tilted ground: its own matrix gives the chart's point.
     const m = (e.currentTarget as SVGGraphicsElement).getScreenCTM?.()?.inverse();
     if (!m || e.clientX === 0) {
       const [x, y] = cellCentre(cell);
-      onPick?.({ cell, x: Math.round(x), y: Math.round(y) });
+      onPick?.(snapToTile(p, cell, Math.round(x), Math.round(y)));
       return;
     }
     const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(m);
-    onPick?.({ cell, x: Math.round(pt.x), y: Math.round(pt.y) });
+    onPick?.(snapToTile(p, cell, Math.round(pt.x), Math.round(pt.y)));
   };
   const reachBase = map.reach?.base ?? 0;
   const seatSeen = (code: string) => seen.has(seatCellOf(p, code));
