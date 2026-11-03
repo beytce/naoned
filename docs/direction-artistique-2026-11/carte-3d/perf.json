@@ -11,53 +11,53 @@
       "median": 0,
       "p95": 0
     },
-    "drawCalls": 77,
-    "triangles": 50226
+    "drawCalls": 137,
+    "triangles": 99072
   },
   "immobile-pan": {
-    "seconds": 10.1,
-    "frames": 61,
-    "fps": 6.1,
+    "seconds": 13.5,
+    "frames": 63,
+    "fps": 4.7,
     "frameGapMs": {
-      "median": 143.2,
-      "p95": 355.4
+      "median": 188.9,
+      "p95": 378
     },
     "workMs": {
-      "median": 9.3,
-      "p95": 18.4
+      "median": 13.4,
+      "p95": 26.6
     },
-    "drawCalls": 57,
-    "triangles": 29331
+    "drawCalls": 102,
+    "triangles": 56919
   },
   "vivante-repos": {
     "seconds": 5,
     "frames": 19,
     "fps": 3.8,
     "frameGapMs": {
-      "median": 249.5,
-      "p95": 336.1
+      "median": 200.6,
+      "p95": 532.3
     },
     "workMs": {
-      "median": 13.1,
-      "p95": 23.7
+      "median": 13.5,
+      "p95": 20.5
     },
-    "drawCalls": 58,
-    "triangles": 29331
+    "drawCalls": 105,
+    "triangles": 57079
   },
   "vivante-pan": {
-    "seconds": 8.9,
-    "frames": 62,
-    "fps": 7,
+    "seconds": 13.2,
+    "frames": 66,
+    "fps": 5,
     "frameGapMs": {
-      "median": 137,
-      "p95": 311.2
+      "median": 196.3,
+      "p95": 376.5
     },
     "workMs": {
-      "median": 9.4,
-      "p95": 18.5
+      "median": 13.6,
+      "p95": 27.2
     },
-    "drawCalls": 57,
-    "triangles": 29331
+    "drawCalls": 101,
+    "triangles": 56839
   },
   "immobile-sans-effets-repos": {
     "seconds": 5,
@@ -71,52 +71,52 @@
       "median": 0,
       "p95": 0
     },
-    "drawCalls": 69,
-    "triangles": 50218
+    "drawCalls": 129,
+    "triangles": 99064
   },
   "immobile-sans-effets-pan": {
-    "seconds": 5.6,
-    "frames": 60,
-    "fps": 10.8,
+    "seconds": 8.2,
+    "frames": 63,
+    "fps": 7.7,
     "frameGapMs": {
-      "median": 86.8,
-      "p95": 123.2
+      "median": 135.7,
+      "p95": 232.7
     },
     "workMs": {
-      "median": 7.5,
-      "p95": 19.3
+      "median": 13.9,
+      "p95": 29.5
     },
-    "drawCalls": 55,
-    "triangles": 29329
+    "drawCalls": 104,
+    "triangles": 57077
   },
   "vivante-sans-effets-repos": {
     "seconds": 5,
-    "frames": 72,
-    "fps": 14.4,
+    "frames": 40,
+    "fps": 8,
     "frameGapMs": {
-      "median": 66.4,
-      "p95": 124.4
+      "median": 116.4,
+      "p95": 162.4
     },
     "workMs": {
-      "median": 8.3,
-      "p95": 22.1
+      "median": 14.3,
+      "p95": 32.4
     },
-    "drawCalls": 56,
-    "triangles": 29329
+    "drawCalls": 103,
+    "triangles": 57077
   },
   "vivante-sans-effets-pan": {
-    "seconds": 6.6,
-    "frames": 91,
-    "fps": 13.9,
+    "seconds": 8.2,
+    "frames": 65,
+    "fps": 8,
     "frameGapMs": {
-      "median": 66.4,
-      "p95": 156.5
+      "median": 121.9,
+      "p95": 243.4
     },
     "workMs": {
-      "median": 9.3,
-      "p95": 16.5
+      "median": 13.4,
+      "p95": 27
     },
-    "drawCalls": 55,
-    "triangles": 29329
+    "drawCalls": 104,
+    "triangles": 57077
   }
 }

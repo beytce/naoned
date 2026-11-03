@@ -38,6 +38,9 @@ async function startServer() {
       APP_URL: url,
       WEB_DIST: join(here, "..", "dist"),
       WORLD_KIND: "empire",
+      // The long voyages (five minutes and more) quickened for the journey: a second a unit, a
+      // hop to Padua in some thirty seconds (development only, refused in production).
+      WORLD_SETTINGS_OVERRIDE: JSON.stringify({ empire: { moves: { secondsPerUnit: 1 } } }),
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -89,18 +92,13 @@ async function found(page, url) {
       .click();
   await page.locator("[data-placing-bar=home]").waitFor();
   await page.waitForSelector("[data-map=empire] canvas", { timeout: 20_000 });
-  // The point put down comes from the camera's ray to the 3D ground: it must be the point the
-  // tilted SVG cell itself reads under the finger (its own matrix), within a unit.
+  // A touch anywhere in the sector: the point comes from the camera's ray to the 3D ground, then
+  // to the free small tile nearest it (3 November, the small tiles), the one where the first
+  // fondaco waits (its mark's point).
   const cell = page.locator("[data-cell]").first();
   const box = await cell.boundingBox();
-  const at = box ? { x: box.x + box.width * 0.78, y: box.y + box.height * 0.55 } : null;
-  const svgPoint = at
-    ? await cell.evaluate((el, q) => {
-        const m = el.getScreenCTM().inverse();
-        const pt = new DOMPoint(q.x, q.y).matrixTransform(m);
-        return [pt.x, pt.y];
-      }, at)
-    : null;
+  const at = box ? { x: box.x + box.width * 0.5, y: box.y + box.height * 0.8 } : null;
+  const waits = (await page.locator("[data-home]").getAttribute("data-at"))?.split(",").map(Number);
   let sent = null;
   page.on("request", (r) => {
     if (r.method() !== "POST" || !r.url().includes("/api/empire")) return;
@@ -110,8 +108,10 @@ async function found(page, url) {
   if (at) await page.mouse.click(at.x, at.y);
   await page.getByRole("button", { name: /poser ici · gratuit/i }).click();
   await page.waitForTimeout(500);
-  if (!sent || !svgPoint || Math.hypot(sent.x - svgPoint[0], sent.y - svgPoint[1]) > 1.01)
-    poseFaults.push(`the fondaco put down by the ray at ${JSON.stringify(sent)}, not ${svgPoint}`);
+  if (!sent || !waits || sent.x !== waits[0] || sent.y !== waits[1])
+    poseFaults.push(
+      `the fondaco put down at ${JSON.stringify(sent)}, not on its free tile ${waits}`,
+    );
   await page.locator("[data-placing-bar=home]").waitFor({ state: "hidden" });
 }
 
@@ -250,21 +250,56 @@ try {
     // folded first (Recentrer), the camera a little nearer.
     await page.getByRole("button", { name: /recentrer/i }).click();
     await page.waitForTimeout(900);
-    await page.keyboard.press("+");
-    await page.keyboard.press("+");
     await page.waitForTimeout(800);
     await send(page, "padova");
-    await page.waitForTimeout(900);
+    // Up close (as near as a small tile across the screen), the camera after the mule chosen.
+    for (let i = 0; i < 4; i++) {
+      await page.keyboard.press("+");
+      await page.waitForTimeout(400);
+    }
+    await page.waitForTimeout(2500);
     await shot("3-mule");
     if ((await page.locator("[data-map=empire] canvas").count()) !== 1)
       faults.push("the 3D board lost while a mule walks");
     await page.keyboard.press("Escape");
-    // 4. Out, as far as the map goes: the whole house's map on the board.
+    // 4. A sector bought next to Venice's (the first of Veneto's the Casa 1 may buy): seven tiles
+    // more on the board, the glass of the unknown giving way.
+    let bought = false;
+    for (const cell of ["2,3", "1,4", "1,5", "3,4", "3,3"]) {
+      const edge = page.locator(`[data-buyable="${cell}"]`);
+      if ((await edge.count()) === 0) continue;
+      await edge.dispatchEvent("click");
+      await page
+        .locator("[data-action-panel=sector]")
+        .waitFor({ timeout: 3_000 })
+        .catch(() => {});
+      const buy = page.locator("[data-map-action=unlock]:not([disabled])");
+      if ((await buy.count()) > 0) {
+        await buy.first().click();
+        bought = true;
+        break;
+      }
+      await page.keyboard.press("Escape");
+    }
+    if (!bought) faults.push("no sector of Veneto to buy next to Venice's");
+    await page.waitForTimeout(3000);
+    await page.keyboard.press("Escape");
+    // Recentrer: the camera leaves the mule it followed, out over the house's sectors.
+    await page.getByRole("button", { name: /recentrer/i }).click();
+    await page.waitForTimeout(1800);
+    await shot("4b-secteur");
+    // Out, as far as the map goes: the whole house's map on the board.
     for (let i = 0; i < 6; i++) await page.keyboard.press("-");
     await page.waitForTimeout(1500);
     await shot("4-dezoom");
 
-    // The video: a second mule sent to Venice, 13 s from its leaving (the recording cut by ffmpeg).
+    // Every vehicle at rest before the video (the mule sent to Padua arrives).
+    await page
+      .locator("[data-vehicle][data-moving]")
+      .first()
+      .waitFor({ state: "detached", timeout: 90_000 })
+      .catch(() => faults.push("a vehicle still under way after 90 s"));
+    // The video: a mule sent to Venice, 13 s from its leaving (the recording cut by ffmpeg).
     const rec = await browser.newContext({
       viewport: { width: W, height: H },
       locale: "fr-FR",
@@ -274,19 +309,21 @@ try {
     const t0 = Date.now();
     const vp = await rec.newPage();
     await open3d("", vp);
-    for (let i = 0; i < 3; i++) await vp.keyboard.press("+");
     await vp.waitForTimeout(800);
-    const tGo = Date.now();
-    // To and fro between the two towns, a hop after the other, for 13 s.
-    let id = null;
-    for (let k = 0; Date.now() - tGo < 13_000; k++) {
-      id = await send(vp, k % 2 === 0 ? "venezia" : "padova", id);
-      await vp
-        .locator(`[data-vehicle="${id}"][data-moving]`)
-        .waitFor({ state: "detached", timeout: 10_000 })
-        .catch(() => {});
-      await vp.keyboard.press("Escape");
+
+    // A hop of some thirty seconds (a second a unit in the journey): the mule walks all along,
+    // the film from its leaving (the wait before it, if any, cut).
+    const id = await send(vp, "venezia");
+    for (let i = 0; i < 4; i++) {
+      await vp.keyboard.press("+");
+      await vp.waitForTimeout(400);
     }
+    await vp
+      .locator(`[data-vehicle="${id}"][data-moving]`)
+      .waitFor({ timeout: 15_000 })
+      .catch(() => {});
+    const tGo = Date.now();
+    await vp.waitForTimeout(13_000);
     const video = vp.video();
     await rec.close();
     if (video) {

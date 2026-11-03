@@ -111,13 +111,27 @@ async function magicLink(email) {
 }
 
 const server = await startServer();
+/**
+ * A place of the map touched at its mark's middle: on the 3D board (the game's map), the touch goes
+ * through the mark to the scene, which finds the place by a ray.
+ */
+async function press(page, sel) {
+  const mark = page.locator(sel).first();
+  await mark.waitFor();
+  const b = await mark.boundingBox();
+  if (b) await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+}
+
 const browser = await chromium.launch({
+  // WebGL in software, for the 3D board, in a container without a GPU.
+  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
 });
 const faults = [];
 try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, locale: "fr-FR" });
   page.on("pageerror", (e) => faults.push(e.message));
+  if (process.env.DEBUG) page.on("console", (m) => console.log(`[${m.type()}] ${m.text()}`));
   const shot = async (name) => {
     await page.waitForTimeout(500);
     await assertNoOverflow(page).catch((e) => faults.push(`${name}: ${e.message}`));
@@ -174,7 +188,7 @@ try {
   await page.waitForSelector("[data-map=empire]");
 
   // The Remise's arms.
-  await page.locator("[data-depot-mark]").click();
+  await press(page, "[data-depot-mark]");
   await page.locator("[data-map-action=arms]").click();
   await page.waitForSelector("[data-arms-models]");
   await shot("1-armes");
@@ -184,7 +198,7 @@ try {
   await page.reload();
   await page.waitForSelector("[data-porta-mark]");
   await shot("2-carte");
-  await page.locator("[data-porta-mark]").click();
+  await press(page, "[data-porta-mark]");
   await shot("3-panneau");
   await page.locator("[data-map-action=porta]").click();
   await page.waitForSelector("[data-porta-battle]");

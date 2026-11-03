@@ -1,75 +1,103 @@
+import { type EmpireSettings, slotAt, slotPoint } from "@comptoirs/engine";
 import { describe, expect, it } from "vitest";
-import { HEX_SIZE, cellCentre } from "../src/art/hexmap.js";
+import { HEX_SIZE } from "../src/art/hexmap.js";
 import { C } from "../src/art/plateau/props.js";
 import { PALETTE, linear, recolour, swatchOf } from "../src/empire/map3d/recolor.js";
-import { type SceneInput, road, scene3d, zones } from "../src/empire/map3d/scene.js";
+import { type SceneInput, TILE_R, road, scene3d, zones } from "../src/empire/map3d/scene.js";
 
-/** The house's map at its start, as the server sends it (a session of e2e/map3d.mjs). */
+/** The house's map at its start, as the server sends it (the towns and the fondaco on tiles). */
 const start: SceneInput = {
   cells: { "2,4": { region: "veneto", coast: true } },
   revealed: ["2,4"],
   unlocked: ["2,4"],
   cities: [
-    { code: "venezia", region: "veneto", x: 165, y: 140, size: 5 },
-    { code: "padova", region: "veneto", x: 155, y: 141, size: 3 },
+    { code: "venezia", region: "veneto", x: 169, y: 129, size: 5 },
+    { code: "padova", region: "veneto", x: 151, y: 149, size: 3 },
   ],
-  home: { x: 178, y: 146 },
+  home: { x: 178, y: 154 },
   posts: [],
   depot: null,
 };
+const S = { map: { hexSize: HEX_SIZE } } as EmpireSettings;
 
-describe("the 3D map's scene", () => {
-  it("lays a tile per sector seen and the unknown around it", () => {
+describe("the 3D map's scene, on the small tiles", () => {
+  it("cuts each sector seen in seven small tiles, and the unknown around it", () => {
     const s = scene3d(start);
-    expect(s.tiles.filter((t) => t.kind === "own").map((t) => t.key)).toEqual(["2,4"]);
-    expect(s.tiles.filter((t) => t.kind === "fog")).toHaveLength(6);
-    const [x, y] = cellCentre("2,4");
-    expect(s.tiles[0]).toMatchObject({ x, y });
-    expect(s.bounds.maxX - s.bounds.minX).toBeCloseTo(2 * HEX_SIZE);
+    const own = s.tiles.filter((t) => t.kind === "own");
+    expect(own).toHaveLength(7);
+    expect(own.map((t) => [t.x, t.y])).toEqual(
+      [0, 1, 2, 3, 4, 5, 6].map((k) => slotPoint("2,4", k, S)),
+    );
+    expect(s.tiles.filter((t) => t.kind === "fog")).toHaveLength(6 * 7);
+    expect(TILE_R).toBeCloseTo(HEX_SIZE / Math.sqrt(7), 6);
   });
 
-  it("puts Venice and Padua where the game has them, the dressing clear of them", () => {
+  it("gives each place its tile: the towns, the fondaco; the free ones a kind of their own", () => {
     const s = scene3d(start);
-    expect(s.towns.map((t) => [t.code, t.x, t.y])).toEqual([
-      ["venezia", 165, 140],
-      ["padova", 155, 141],
-    ]);
+    const themeAt = (x: number, y: number) => {
+      const t = slotAt(x, y, S);
+      return s.tiles.find((u) => u.cell === t.cell && u.k === t.k)?.theme;
+    };
+    expect(themeAt(169, 129)).toBe("town");
+    expect(themeAt(151, 149)).toBe("town");
+    expect(themeAt(178, 154)).toBe("fondaco");
+    const free = s.tiles.filter((t) => t.kind === "own" && !["town", "fondaco"].includes(t.theme));
+    expect(free).toHaveLength(4);
+    for (const t of free)
+      expect(["forest", "mountain", "field", "rocks", "plain", "farm"]).toContain(t.theme);
     // Venice, a capital, has more houses than Padua.
     expect(s.towns[0]?.houses.length).toBeGreaterThan(s.towns[1]?.houses.length ?? 0);
-    for (const p of s.props)
-      for (const t of s.towns) expect(Math.hypot(p.x - t.x, p.y - t.y)).toBeGreaterThan(5);
-    for (const p of s.props)
-      expect(Math.hypot(p.x - 178, p.y - 146)).toBeGreaterThan(p.kind === "pine" ? 4 : 7);
   });
 
-  it("dresses a sector after its region and its seed, the same at every call", () => {
-    const a = scene3d(start);
-    const b = scene3d(start);
-    expect(a).toEqual(b);
-    expect(a.props.some((p) => p.kind === "pine")).toBe(true);
+  it("keeps each tile's dressing inside it, never on a town's or a fondaco's", () => {
+    const s = scene3d(start);
+    for (const p of s.props) {
+      const t = slotAt(p.x, p.y, S);
+      const tile = s.tiles.find((u) => u.cell === t.cell && u.k === t.k);
+      expect(["town", "fondaco"]).not.toContain(tile?.theme);
+    }
+  });
+
+  it("dresses the tiles after their region and their seed, the same at every call", () => {
+    expect(scene3d(start)).toEqual(scene3d(start));
     // Veneto grows no mountains.
-    expect(a.props.some((p) => p.kind === "mountain")).toBe(false);
+    expect(scene3d(start).props.some((p) => p.kind === "mountain")).toBe(false);
+    // Germany's sectors, forests and mountains.
+    const north: SceneInput = {
+      ...start,
+      cells: { "2,4": { region: "germania" } },
+      cities: [],
+      home: null,
+    };
+    const kinds = new Set(
+      scene3d(north)
+        .tiles.filter((t) => t.kind === "own")
+        .map((t) => t.theme),
+    );
+    expect([...kinds].some((k) => k === "forest" || k === "mountain")).toBe(true);
   });
 
   it("lays the lanes the vehicles walk, the dressing kept off them", () => {
     const s = scene3d(start);
-    // From the fondaco to each town, straight (logic.ts, vehiclePose).
     expect(s.lanes).toHaveLength(2);
     for (const lane of s.lanes) {
-      expect(lane[0]).toEqual([178, 146]);
+      expect(lane[0]).toEqual([178, 154]);
       const end = lane[lane.length - 1] as [number, number];
       expect(s.towns.some((t) => Math.hypot(t.x - end[0], t.y - end[1]) < 1e-9)).toBe(true);
     }
-    for (const p of s.props)
+    for (const p of s.props.filter((q) => q.kind !== "mountain"))
       for (const lane of s.lanes)
-        for (const [x, y] of lane) expect(Math.hypot(p.x - x, p.y - y)).toBeGreaterThan(3);
+        for (const [x, y] of lane) expect(Math.hypot(p.x - x, p.y - y)).toBeGreaterThan(2);
   });
 
-  it("puts the Campo and the Porta where the SVG board has them", () => {
+  it("puts the Campo and the Porta on free tiles of their sectors", () => {
     const s = scene3d({ ...start, camp: "2,4", porta: "2,4" });
-    const [x, y] = cellCentre("2,4");
-    expect(s.camp).toEqual({ x, y: y + 7 });
-    expect(s.porta).toEqual({ x: x + 9, y: y - 9 });
+    for (const at of [s.camp, s.porta]) {
+      const t = slotAt(at?.x ?? 0, at?.y ?? 0, S);
+      expect(t.cell).toBe("2,4");
+      const theme = s.tiles.find((u) => u.cell === t.cell && u.k === t.k)?.theme;
+      expect(["camp", "porta"]).toContain(theme);
+    }
     expect(scene3d(start).camp).toBeNull();
   });
 

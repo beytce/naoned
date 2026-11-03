@@ -6,6 +6,7 @@
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { type EmpireSettings, placeCities } from "@comptoirs/engine";
 import { HEX_SIZE, cellAt, cellCentre, gridCells, neighbours } from "../src/art/hexmap.js";
 import {
   BISCAY,
@@ -175,6 +176,13 @@ for (const c of CITIES) {
     size: c.size,
   });
 }
+// The small tiles (3 November, decision of the owner): each town on a tile of its sector, the towns
+// apart, a tile kept free in Venice's sector for the house's first fondaco (engine, slots.ts).
+const venice = cities.find((c) => c.code === "venezia");
+const onTiles = placeCities(cities, { map: { hexSize: HEX_SIZE } } as EmpireSettings, [
+  venice?.cell ?? "",
+]);
+cities.splice(0, cities.length, ...onTiles);
 // A sector without a town is no sector of the map (1 November): every one has one town or two.
 const empty = Object.keys(cells).filter((k) => !held[k]);
 for (const k of empty) delete cells[k];

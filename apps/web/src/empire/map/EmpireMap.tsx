@@ -30,6 +30,7 @@ import { bestQuote } from "../logic.js";
 import type { Board3DHandle } from "../map3d/Board3D.js";
 import { groundAt } from "../map3d/camera.js";
 import { MAP_3D } from "../map3d/flag.js";
+import { sceneInputOf, sitesOf } from "../map3d/scene.js";
 import { pt } from "../porta/texts.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { Fleet } from "./Fleet.js";
@@ -40,13 +41,16 @@ import {
   type Target,
   centredOn,
   farCamera,
+  fleetSpots,
   nearestPlace,
   placeable,
   placesOf,
   postLevels,
   postsRaised,
+  snapToTile,
   wantedBy,
   zoomBounds,
+  zoomBounds3d,
 } from "./logic.js";
 import { useCamera } from "./useCamera.js";
 
@@ -199,7 +203,12 @@ export const EmpireMap = forwardRef<
       // The names of regions and the timers keep their size; the places follow the chart.
       layer.style.setProperty("--inv", String(1 / k));
       // The places shrink with the chart, to a third of their size at the least.
-      layer.style.setProperty("--chartk", String(Math.max(0.3, drawn.current / ref0.current)));
+      // On the 3D board, up close: the places grow no more than half again their size (a mark the
+      // size of a tile would hide it); as the map scales the layer by k, the mark by --chartk.
+      const grown = MAP_3D
+        ? Math.min(1.5, Math.max(0.3, s / ref0.current)) / k
+        : Math.max(0.3, drawn.current / ref0.current);
+      layer.style.setProperty("--chartk", String(grown));
     }
     // Far, the places' names give way (after Hades' Star: a planet's name shows near).
     const far = s / ref0.current < 0.62;
@@ -251,7 +260,8 @@ export const EmpireMap = forwardRef<
     onPaint: paint,
     // Never farther than the house's whole map (1 November: the zoom went to the whole sea, and
     // the places grown to be touched broke the phone's memory).
-    bounds: (v) => zoomBounds(p, v),
+    // On the 3D board, as near as a small tile across the screen (3 November).
+    bounds: (v) => (MAP_3D ? zoomBounds3d(p, v) : zoomBounds(p, v)),
     // A double touch on the sea: near, around the point touched, and far (the whole map) in
     // turn (after Hades' Star).
     onDoubleTap: (at) => {
@@ -292,16 +302,22 @@ export const EmpireMap = forwardRef<
   };
   useImperativeHandle(ref, () => ({
     toggle: () => {
+      unfollow.current();
       if (openedNow.current) setOpened(null);
       camera.easeTo(openedNow.current ? sectorOn : farOn);
     },
-    home: () => deploy("veneto", homeAt(p), "home"),
+    home: () => {
+      unfollow.current();
+      deploy("veneto", homeAt(p), "home");
+    },
     far: () => {
+      unfollow.current();
       setOpened(null);
       camera.easeTo(farOn);
     },
     info: showInfo,
     pan: (dx, dy) => {
+      unfollow.current();
       const v = camera.view();
       camera.panBy(-dx * v.w * PAN_STEP, -dy * v.h * PAN_STEP);
     },
@@ -319,6 +335,50 @@ export const EmpireMap = forwardRef<
 
   // A fondaco's reach shows only when it is touched, or when a vehicle of it is chosen (decision
   // of the owner, 1 November 2026); the placing shows the reach it would have.
+  // A vehicle on its way, touched: on the 3D board, the camera follows it until it arrives or a
+  // finger takes the map again (decision of the owner, 3 November).
+  const latest = useRef(p);
+  latest.current = p;
+  // The camera's commands of the player (Recentrer, the keys' pan, home, far) end the following.
+  const unfollow = useRef<() => void>(() => {});
+  const followed =
+    MAP_3D && selected ? view?.vehicles.mine.find((v) => v.id === selected) : undefined;
+  const followKey =
+    followed && followed.legs.length > 0 ? `${followed.id}:${followed.legs.length}` : "";
+  // biome-ignore lint/correctness/useExhaustiveDependencies: followed by its key, the clock by `now`
+  useEffect(() => {
+    if (!followKey) return;
+    const skew = now - Date.now();
+    let raf = 0;
+    let on = true;
+    const stop = () => {
+      on = false;
+    };
+    unfollow.current = stop;
+    root.current?.addEventListener("pointerdown", stop, { once: true });
+    root.current?.addEventListener("wheel", stop, { once: true });
+    const step = () => {
+      if (!on) return;
+      const t = Date.now() + skew;
+      // The latest state (« Partir » brings its leaving forward), not the one it began with.
+      const at = fleetSpots(latest.current, t, true).find((x) => x.v.id === selected);
+      // Until its last stop is reached (waiting to leave, then on its way).
+      if (!at || !at.v.legs.some((l) => l.arrivesAt > t)) return;
+      // A zoom of the keys glides first; the camera comes back over the vehicle at its scale.
+      if (!camera.animating()) {
+        const c = camera.cam();
+        camera.jumpTo(centredOn([at.x, at.y], c.s, camera.view()));
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => {
+      on = false;
+      cancelAnimationFrame(raf);
+      root.current?.removeEventListener("pointerdown", stop);
+      root.current?.removeEventListener("wheel", stop);
+    };
+  }, [followKey]);
   const chosenAt = selected ? view?.vehicles.mine.find((v) => v.id === selected)?.at : undefined;
   const reachShown = opened ?? (chosenAt && !chosenAt.startsWith("city:") ? chosenAt : null);
   // The workshops deployed, on the 3D board: their tiles where the orbit draws them, on the chart
@@ -337,8 +397,13 @@ export const EmpireMap = forwardRef<
   }, [opened, base, view?.house, view?.workshopSlots, view?.regions]);
   // The 3D board in: its camera set from the map's at once (a stable callback: never again at a
   // tick of the clock, which would ask the board a frame each second).
+  // Until the 3D board is in (its code and its models fetched), the marks take the touches as on
+  // the SVG map; then the scene does (a ray), the marks letting the finger through.
+  const [threeReady, setThreeReady] = useState(false);
+  const onThreeReady = useCallback(() => setThreeReady(true), []);
   const onBoard3d = useCallback((h: Board3DHandle | null) => {
     board3d.current = h;
+    if (!h) setThreeReady(false);
     if (h) camRef.current.repaint();
   }, []);
   // On the 3D board, the ground's point under a touch, by the camera's ray (camera.ts).
@@ -387,6 +452,13 @@ export const EmpireMap = forwardRef<
     onMove?.(selected, place);
     return true;
   };
+  // On the 3D board, the Remise, the Campo and the Porta stand on small tiles (§ 8): their marks
+  // with them.
+  const sites3d = MAP_3D ? sitesOf(sceneInputOf(p)) : null;
+  const siteAt = (id: "depot" | "camp" | "porta", x: number, y: number) => {
+    const at = sites3d?.[id];
+    return at ? `${at.x},${at.y}` : `${x},${y}`;
+  };
   /** A place touched, by its mark or its hexagon on the 3D board: what it does. */
   const touchPlace = (id: string) => {
     if (id === "home") {
@@ -428,7 +500,7 @@ export const EmpireMap = forwardRef<
       ref={root}
       className="absolute inset-0 touch-none select-none overflow-hidden bg-[#08111F]"
       data-map="empire"
-      data-three={MAP_3D ? "" : undefined}
+      data-three={MAP_3D && threeReady ? "" : undefined}
       data-orbit={opened ?? undefined}
       data-placing={placing?.kind}
       data-aiming={targets ? "" : undefined}
@@ -595,7 +667,7 @@ export const EmpireMap = forwardRef<
           (() => {
             const [px, py] = cellCentre(map.camp);
             return (
-              <div data-at={`${px},${py + 7}`} className="map-place">
+              <div data-at={siteAt("camp", px, py + 7)} className="map-place">
                 {/* The Campo touched: the Terraferma opens (1 November: it did nothing before). */}
                 <button
                   type="button"
@@ -616,7 +688,7 @@ export const EmpireMap = forwardRef<
           (() => {
             const [px, py] = cellCentre(map.depot);
             return (
-              <div data-at={`${px - 9},${py + 9}`} className="map-place">
+              <div data-at={siteAt("depot", px - 9, py + 9)} className="map-place">
                 <button
                   type="button"
                   onClick={() => touchPlace("depot")}
@@ -636,7 +708,7 @@ export const EmpireMap = forwardRef<
             // The Porta: the gate to the lands of Rome (docs/plan-porta.md § 3).
             const [px, py] = cellCentre(p.view.porta.cell);
             return (
-              <div data-at={`${px + 9},${py - 9}`} className="map-place">
+              <div data-at={siteAt("porta", px + 9, py - 9)} className="map-place">
                 <button
                   type="button"
                   onClick={() => touchPlace("porta")}
@@ -715,18 +787,18 @@ const Chart = memo(function Chart({
     // On the 3D board, the ray from the camera down to the ground (docs/plateau-reprise.md § 7).
     const g = e.clientX !== 0 ? ground?.(e.clientX, e.clientY) : null;
     if (g) {
-      onPick?.({ cell, x: Math.round(g[0]), y: Math.round(g[1]) });
+      onPick?.(snapToTile(p, cell, Math.round(g[0]), Math.round(g[1])));
       return;
     }
     // The cell lies in the tilted ground: its own matrix gives the chart's point.
     const m = (e.currentTarget as SVGGraphicsElement).getScreenCTM?.()?.inverse();
     if (!m || e.clientX === 0) {
       const [x, y] = cellCentre(cell);
-      onPick?.({ cell, x: Math.round(x), y: Math.round(y) });
+      onPick?.(snapToTile(p, cell, Math.round(x), Math.round(y)));
       return;
     }
     const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(m);
-    onPick?.({ cell, x: Math.round(pt.x), y: Math.round(pt.y) });
+    onPick?.(snapToTile(p, cell, Math.round(pt.x), Math.round(pt.y)));
   };
   const reachBase = map.reach?.base ?? 0;
   const seatSeen = (code: string) => seen.has(seatCellOf(p, code));
@@ -781,9 +853,9 @@ const Chart = memo(function Chart({
                 key={`b${b.cell}`}
                 d={hexPath(b.cell, 1.6)}
                 fill={P.gold}
-                fillOpacity={view.house.casa >= b.casa ? 0.06 : 0.02}
+                fillOpacity={MAP_3D ? 0 : view.house.casa >= b.casa ? 0.06 : 0.02}
                 stroke={P.gold}
-                strokeOpacity={view.house.casa >= b.casa ? 0.75 : 0.3}
+                strokeOpacity={MAP_3D ? 0 : view.house.casa >= b.casa ? 0.75 : 0.3}
                 strokeWidth="1.4"
                 strokeDasharray="4 3"
                 vectorEffect="non-scaling-stroke"

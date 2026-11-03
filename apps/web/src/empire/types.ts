@@ -119,7 +119,13 @@ export interface EmpireView {
     nextAt: number | null;
   }[];
   /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
-  moves: { departSeconds: number; unitsPerSecond: number; maxStops: number };
+  moves: {
+    departSeconds: number;
+    unitsPerSecond: number;
+    /** The long voyages: seconds a unit of the chart, when set (it rules then). */
+    secondsPerUnit?: number;
+    maxStops: number;
+  };
   vehicles: {
     shop: {
       type: string;
@@ -280,6 +286,8 @@ export interface EmpireMapView {
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
   cityClearance?: number;
+  /** The small tiles: a fondaco is put down on a tile's middle (engine, slots.ts). */
+  tiles?: boolean;
   transferUnitsPerHour: number;
   /** The sectors it may buy next, and the price of the next. */
   buyable: { cell: string; region: string; coast: boolean; casa: number }[];

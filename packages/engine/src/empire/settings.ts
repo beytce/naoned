@@ -122,6 +122,11 @@ export const empireSettingsSchema = z.object({
     .object({
       departSeconds: qty.prefault(10),
       unitsPerSecond: positive.prefault(8),
+      /**
+       * The long voyages (decision of the owner, 3 November 2026): seconds a unit of the chart,
+       * a whole number; when set, it rules the hops instead of `unitsPerSecond`.
+       */
+      secondsPerUnit: positive.optional(),
       maxStops: positive.prefault(15),
     })
     .prefault({}),
@@ -499,6 +504,11 @@ export const empireSettingsSchema = z.object({
       home: z.object({ x: z.number().int(), y: z.number().int() }).nullable().prefault(null),
       /** No fondaco closer than this to a town, in the chart's units. */
       cityClearance: qty.prefault(0),
+      /**
+       * The small tiles (decision of the owner, 3 November 2026): a fondaco is put down on the
+       * middle of a small tile (slots.ts), never next to a town's nor to another fondaco's.
+       */
+      tiles: z.boolean().prefault(false),
       /** A land vehicle between two counters: so many of the chart's units an hour. */
       transferUnitsPerHour: positive.prefault(20),
       revealRadius: positive.prefault(2),

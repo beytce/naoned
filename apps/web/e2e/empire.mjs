@@ -36,6 +36,9 @@ async function startServer() {
       APP_URL: url,
       WEB_DIST: join(here, "..", "dist"),
       WORLD_KIND: "empire",
+      // The long voyages (five minutes and more) quickened for the journey: a second a unit, a
+      // hop to Padua in some thirty seconds (development only, refused in production).
+      WORLD_SETTINGS_OVERRIDE: JSON.stringify({ empire: { moves: { secondsPerUnit: 1 } } }),
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -65,10 +68,10 @@ async function magicLink(email) {
   throw new Error("no magic link in the server's log");
 }
 
-// MAP3D=1: the same journey on the 3D board (?map=3d, docs/plateau-reprise.md § 7): WebGL in
-// software in a container without a GPU; a place is touched through the scene (a ray), so its
-// mark is pressed at its middle with the mouse rather than clicked.
-const MAP3D = process.env.MAP3D === "1";
+// The journey on the 3D board, the game's map by default (3 November 2026): WebGL in software in a
+// container without a GPU; a place is touched through the scene (a ray), so its mark is pressed at
+// its middle with the mouse rather than clicked. MAP3D=0: on the SVG board, the fallback (?map=svg).
+const MAP3D = process.env.MAP3D !== "0";
 
 const server = await startServer();
 const browser = await chromium.launch({
@@ -101,7 +104,7 @@ try {
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
     await page.goto(
-      `${server.url}/connexion?token=${await magicLink(email)}${MAP3D ? "&map=3d" : ""}`,
+      `${server.url}/connexion?token=${await magicLink(email)}${MAP3D ? "" : "&map=svg"}`,
     );
     await page.waitForSelector("input[autocomplete=nickname]");
     await page.fill("input", `Casa_${width}`);
@@ -139,7 +142,7 @@ try {
     await shot("1c-fondaco");
     const cellLit = page.locator("[data-cell]").first();
     const box = await cellLit.boundingBox();
-    if (box) await cellLit.click({ position: { x: box.width * 0.78, y: box.height * 0.55 } });
+    if (box) await cellLit.click({ position: { x: box.width * 0.5, y: box.height * 0.8 } });
     await page.locator("[data-picked-reach]").waitFor();
     await page.getByRole("button", { name: /poser ici · gratuit/i }).click();
     await page.locator("[data-placing-bar=home]").waitFor({ state: "hidden" });
@@ -470,7 +473,7 @@ try {
       await page
         .locator("[data-vehicle-panel] [data-hop-state]")
         .getByText(/À quai/)
-        .waitFor({ timeout: 20_000 });
+        .waitFor({ timeout: 60_000 });
       await shot("18-arrivee");
       await page.keyboard.press("Escape");
     }

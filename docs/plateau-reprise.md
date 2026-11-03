@@ -106,7 +106,7 @@ Le porteur veut le rendu « pâte à modeler » de ses références : un vrai di
 
 ### L'ouvrir
 
-- `?map=3d` dans l'adresse (lu au chargement du jeu ; par exemple `…/connexion?token=…&map=3d`), ou un build avec `VITE_MAP=3d`. Le plateau 3D est un fragment de code à part (`Board3D-*.js`), chargé seulement alors, hors du cache de la PWA comme les modèles.
+- **La carte 3D est la carte du jeu par défaut depuis le 3 novembre 2026** (§ 8) ; la carte SVG, en repli : sans WebGL, ou avec `?map=svg`. Avant la bascule : `?map=3d` dans l'adresse, ou un build avec `VITE_MAP=3d`. Le plateau 3D est un fragment de code à part (`Board3D-*.js`), chargé seulement alors, hors du cache de la PWA comme les modèles.
 - Pour le développement : `&fx=0` (sans effets), `&perf=1` (sonde d'images, `window.__m3d`), `&tone=agx`.
 
 ### L'architecture : la même carte, son sol en 3D
@@ -167,3 +167,68 @@ L'idée qui porte tout : une caméra orthographique inclinée à sin(hauteur) = 
 2. **La bascule par défaut** (`VITE_MAP=3d`, puis retrait du plateau SVG `art/plateau/board.ts` et de son décor), décision du porteur.
 3. Les signaux d'action du § 6 (pastille « lots prêts », caisse dorée, onde des villes pleines) en 3D, posés dans la scène.
 4. Revérifier la provenance de l'âne ; ajouter Kenney si le domaine est autorisé ; un cheval CC0 pour les combattants.
+
+## 8. Les petites tuiles, les voyages longs, les routes (3 novembre 2026)
+
+Demande du porteur, sur ses références (des diorama où chaque tuile porte une seule chose) : des villes plus éloignées, des mules qui font vraiment le voyage sur des routes, des modèles plus variés, l'inconnu en verre. Plan validé, et choix du porteur : 7 petites tuiles par secteur, distances agrandies dans la carte du jeu, trajets de 5 minutes ou plus, palette « Plateau de nuit » gardée, verre vide pour l'inconnu, routes, zoom plus proche, suivi de la mule, un monument par ville, ateliers en orbite comme avant, 3D par défaut une fois prête.
+
+### Le jeu (moteur, équilibrage)
+
+- **Les petites tuiles** (`packages/engine/src/empire/slots.ts`) : 7 par secteur, sur leur propre réseau tourné d'environ 19,1°, sans trou d'un secteur à l'autre.
+  - `placeCities` pose les villes sur leurs tuiles (les données `venice1450.map.ts`, écrites par `apps/web/scripts/hexmap.ts`).
+  - `tileFault` impose de poser un fondaco au milieu d'une tuile libre, jamais à côté d'une ville ni d'un autre fondaco (`map.tiles`).
+  - Le client aimante le point touché vers la tuile libre la plus proche (`snapToTile`).
+- **Les voyages longs** : 11 secondes par unité (`moves.secondsPerUnit`), soit environ 5 min 24 jusqu'à Venise par la route.
+  - Commandes 5 fois plus grosses et plus rares (plafonds 1, 1, 2, 2, 3 ; lot de 400 ducats).
+  - Le simulateur passe à une tournée par session.
+  - Détail et simulations : `docs/calibration.md`, « Les voyages longs et les petites tuiles ».
+- **Les routes** (`roadTiles`, `roadBetween`) :
+  - le plus court chemin de tuile en tuile, en contournant les villes, avec des gués pour la mer, aux angles arrondis ;
+  - la durée d'un trajet se calcule sur sa longueur (environ 10 % de plus que la ligne droite) ;
+  - les médailles, la ligne pointillée, les animaux 3D et les pistes de terre suivent tous la même route (`roadOf` dans `logic.ts`).
+- **Les conséquences acceptées par le porteur** :
+  - le premier fondaco n'a plus qu'une place possible dans le secteur de Venise ;
+  - Venise n'occupe qu'une seule tuile ;
+  - quelques secteurs denses n'ont aucune tuile libre pour un fondaco ;
+  - 6 paires de villes restent voisines (Vénétie, Lombardie).
+
+### Le plateau 3D (`apps/web/src/empire/map3d/`)
+
+- **Les tuiles** (`scene.ts`, testé) : chaque tuile porte un thème.
+  - Thèmes : ville, fondaco, Remise, Campo, Porta, forêt dense, montagne (parfois avec une mine), champ, rochers, plaine, ferme.
+  - Le tirage suit la région (`DRESS`) et une graine par tuile.
+  - Une tuile traversée par une route reste basse (plaine ou rochers).
+  - La Remise, le Campo et la Porta se posent sur la tuile libre la plus proche de leur ancien point (`sitesOf`), et leurs repères HTML les suivent.
+- **Les modèles faits dans le code** (`props3d.tsx`) :
+  - champs de dalles en brique cerclés de clôtures, moulin aux ailes qui tournent, mine et wagonnet, tonneaux, charrette à l'arrêt ;
+  - touffes d'herbe, cailloux, taches de sable ;
+  - le campanile de Venise et la basilique à coupoles de Padoue (une église KayKit pour les autres villes).
+- **L'inconnu** : des tuiles épaisses en verre vide. Les secteurs à acheter ont leurs tuiles bordées d'or, brillant quand la Casa le permet ; le contour SVG, transparent, garde le toucher.
+- **La caméra** :
+  - en 3D, on s'approche jusqu'à une petite tuile en travers de l'écran (`zoomBounds3d`, testé) ;
+  - les repères grandissent au plus de moitié ;
+  - toucher un véhicule en route fait suivre la caméra jusqu'à son arrivée ; un geste, Recentrer ou les flèches arrêtent le suivi, le zoom ne l'arrête pas.
+
+### Vérifier
+
+- 1 320 tests verts ; typecheck et biome propres.
+- `e2e:empire` sans faute, sur la carte SVG comme sur la carte 3D (`MAP3D=1`).
+  - Les parcours accélèrent les voyages par `WORLD_SETTINGS_OVERRIDE` (une seconde par unité ; refusé en production).
+- `e2e:map3d` : captures, vidéo et mesures dans `docs/direction-artistique-2026-11/carte-3d/`.
+  - `3-mule.png` et `mule.webm` : la mule suivie de près sur sa route.
+  - `4b-secteur.png` : un secteur de Vénétie acheté.
+- **Mesures** (sans GPU, WebGL logiciel, CPU ×4) :
+  - aucune image au repos ;
+  - 4 à 5 images par seconde avec les effets, 8 sans ;
+  - environ 13 ms de travail CPU par image ;
+  - environ 100 appels de dessin et 57 000 triangles, soit deux fois plus qu'avant (le décor en plus).
+
+### Reste
+
+1. **La bascule est faite** (décision du porteur, 3 novembre 2026) : la carte 3D est celle du jeu par défaut.
+   - La carte SVG ne reste qu'en **repli** : sur un appareil sans WebGL, ou demandée par `?map=svg` (ou un build `VITE_MAP=svg`) ; `map3d/flag.ts`.
+   - Tant que le plateau 3D charge (son code, ses modèles), les repères prennent les touchers comme sur la carte SVG ; ensuite, la scène (`data-three`).
+   - Parcours : `e2e:empire` en 3D par défaut, `MAP3D=0` pour le repli SVG ; la Porta (`e2e/porta.mjs`) touche ses lieux au milieu de leur repère.
+   - À suivre : des mesures sur de vrais téléphones (`?perf=1`), et le retrait du plateau SVG (`art/plateau/board.ts`) quand le repli ne servira plus.
+2. Des monuments pour les autres grandes villes (Milan, Florence, Constantinople…).
+3. Kenney (domaine à autoriser), un cheval CC0 pour les combattants, la provenance de l'âne à revérifier.
