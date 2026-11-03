@@ -106,6 +106,17 @@ export function zoomBounds(p: EmpirePayload, view: Viewport): { min: number; max
   return { min: Math.min(max, Math.max(min, farCamera(p, view).s * 0.9)), max };
 }
 
+/**
+ * The zoom's range on the 3D board (3 November, decision of the owner): as the map's, but as near
+ * as one small tile across the screen (a mule, its crates, seen up close).
+ */
+export function zoomBounds3d(p: EmpirePayload, view: Viewport): { min: number; max: number } {
+  const { min, max } = zoomBounds(p, view);
+  // A small tile across its flat sides: √3 × its size, its size 24 / √7; a margin around it.
+  const across = Math.sqrt(3) * (24 / Math.sqrt(7)) * 1.05;
+  return { min, max: Math.max(max, Math.min(view.w, view.h * 1.2) / across) };
+}
+
 /** The scale at which Venice's orbit shows whole and comfortable on this screen. */
 export function nearScale(view: Viewport): number {
   const px = Math.min(

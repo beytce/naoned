@@ -317,7 +317,22 @@ export function useCamera({
     };
   }, [root, set, current, run, view, rangeOf]);
 
-  return { cam: current, easeTo, panBy, zoomBy, view, repaint: () => set(current()) };
+  return {
+    cam: current,
+    easeTo,
+    panBy,
+    zoomBy,
+    view,
+    repaint: () => set(current()),
+    /** A glide under way (a zoom, a pan of the keys): a follower lets it end. */
+    animating: () => anim.current !== null,
+    /** Straight to a camera, no glide (a vehicle followed, frame after frame). */
+    jumpTo: (c: Camera) => {
+      anim.current = null;
+      velocity.current = null;
+      set(c);
+    },
+  };
 }
 
 /**

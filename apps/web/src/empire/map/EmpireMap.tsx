@@ -41,6 +41,7 @@ import {
   type Target,
   centredOn,
   farCamera,
+  fleetSpots,
   nearestPlace,
   placeable,
   placesOf,
@@ -49,6 +50,7 @@ import {
   snapToTile,
   wantedBy,
   zoomBounds,
+  zoomBounds3d,
 } from "./logic.js";
 import { useCamera } from "./useCamera.js";
 
@@ -201,7 +203,12 @@ export const EmpireMap = forwardRef<
       // The names of regions and the timers keep their size; the places follow the chart.
       layer.style.setProperty("--inv", String(1 / k));
       // The places shrink with the chart, to a third of their size at the least.
-      layer.style.setProperty("--chartk", String(Math.max(0.3, drawn.current / ref0.current)));
+      // On the 3D board, up close: the places grow no more than half again their size (a mark the
+      // size of a tile would hide it); as the map scales the layer by k, the mark by --chartk.
+      const grown = MAP_3D
+        ? Math.min(1.5, Math.max(0.3, s / ref0.current)) / k
+        : Math.max(0.3, drawn.current / ref0.current);
+      layer.style.setProperty("--chartk", String(grown));
     }
     // Far, the places' names give way (after Hades' Star: a planet's name shows near).
     const far = s / ref0.current < 0.62;
@@ -253,7 +260,8 @@ export const EmpireMap = forwardRef<
     onPaint: paint,
     // Never farther than the house's whole map (1 November: the zoom went to the whole sea, and
     // the places grown to be touched broke the phone's memory).
-    bounds: (v) => zoomBounds(p, v),
+    // On the 3D board, as near as a small tile across the screen (3 November).
+    bounds: (v) => (MAP_3D ? zoomBounds3d(p, v) : zoomBounds(p, v)),
     // A double touch on the sea: near, around the point touched, and far (the whole map) in
     // turn (after Hades' Star).
     onDoubleTap: (at) => {
@@ -321,6 +329,47 @@ export const EmpireMap = forwardRef<
 
   // A fondaco's reach shows only when it is touched, or when a vehicle of it is chosen (decision
   // of the owner, 1 November 2026); the placing shows the reach it would have.
+  // A vehicle on its way, touched: on the 3D board, the camera follows it until it arrives or a
+  // finger takes the map again (decision of the owner, 3 November).
+  const latest = useRef(p);
+  latest.current = p;
+  const followed =
+    MAP_3D && selected ? view?.vehicles.mine.find((v) => v.id === selected) : undefined;
+  const followKey =
+    followed && followed.legs.length > 0 ? `${followed.id}:${followed.legs.length}` : "";
+  // biome-ignore lint/correctness/useExhaustiveDependencies: followed by its key, the clock by `now`
+  useEffect(() => {
+    if (!followKey) return;
+    const skew = now - Date.now();
+    let raf = 0;
+    let on = true;
+    const stop = () => {
+      on = false;
+    };
+    root.current?.addEventListener("pointerdown", stop, { once: true });
+    root.current?.addEventListener("wheel", stop, { once: true });
+    const step = () => {
+      if (!on) return;
+      const t = Date.now() + skew;
+      // The latest state (« Partir » brings its leaving forward), not the one it began with.
+      const at = fleetSpots(latest.current, t, true).find((x) => x.v.id === selected);
+      // Until its last stop is reached (waiting to leave, then on its way).
+      if (!at || !at.v.legs.some((l) => l.arrivesAt > t)) return;
+      // A zoom of the keys glides first; the camera comes back over the vehicle at its scale.
+      if (!camera.animating()) {
+        const c = camera.cam();
+        camera.jumpTo(centredOn([at.x, at.y], c.s, camera.view()));
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => {
+      on = false;
+      cancelAnimationFrame(raf);
+      root.current?.removeEventListener("pointerdown", stop);
+      root.current?.removeEventListener("wheel", stop);
+    };
+  }, [followKey]);
   const chosenAt = selected ? view?.vehicles.mine.find((v) => v.id === selected)?.at : undefined;
   const reachShown = opened ?? (chosenAt && !chosenAt.startsWith("city:") ? chosenAt : null);
   // The workshops deployed, on the 3D board: their tiles where the orbit draws them, on the chart

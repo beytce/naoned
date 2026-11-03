@@ -250,11 +250,14 @@ try {
     // folded first (Recentrer), the camera a little nearer.
     await page.getByRole("button", { name: /recentrer/i }).click();
     await page.waitForTimeout(900);
-    await page.keyboard.press("+");
-    await page.keyboard.press("+");
     await page.waitForTimeout(800);
     await send(page, "padova");
-    await page.waitForTimeout(900);
+    // Up close (as near as a small tile across the screen), the camera after the mule chosen.
+    for (let i = 0; i < 4; i++) {
+      await page.keyboard.press("+");
+      await page.waitForTimeout(400);
+    }
+    await page.waitForTimeout(2500);
     await shot("3-mule");
     if ((await page.locator("[data-map=empire] canvas").count()) !== 1)
       faults.push("the 3D board lost while a mule walks");
@@ -280,12 +283,15 @@ try {
     const t0 = Date.now();
     const vp = await rec.newPage();
     await open3d("", vp);
-    for (let i = 0; i < 3; i++) await vp.keyboard.press("+");
     await vp.waitForTimeout(800);
 
     // A hop of some thirty seconds (a second a unit in the journey): the mule walks all along,
     // the film from its leaving (the wait before it, if any, cut).
     const id = await send(vp, "venezia");
+    for (let i = 0; i < 4; i++) {
+      await vp.keyboard.press("+");
+      await vp.waitForTimeout(400);
+    }
     await vp
       .locator(`[data-vehicle="${id}"][data-moving]`)
       .waitFor({ timeout: 15_000 })

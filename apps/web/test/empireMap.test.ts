@@ -18,6 +18,7 @@ import {
   postsRaised,
   scaleBounds,
   zoomBounds,
+  zoomBounds3d,
 } from "../src/empire/map/logic.js";
 import type { EmpirePayload, EmpireRegion, EmpireWorkshop } from "../src/empire/types.js";
 
@@ -173,6 +174,17 @@ describe("the camera far out", () => {
         expect(y * TILT * cam.s + cam.ty).toBeLessThan(view.h - 20);
       }
     }
+  });
+});
+
+describe("the camera up close on the 3D board", () => {
+  it("comes as near as one small tile across a phone, never nearer on the map's own bounds", () => {
+    const flat = zoomBounds(payload(), PHONE);
+    const near = zoomBounds3d(payload(), PHONE);
+    expect(near.min).toBe(flat.min);
+    // A small tile, some 16.5 units across with its margin, fills the phone's width.
+    expect(near.max).toBeCloseTo(PHONE.w / ((Math.sqrt(3) * 24 * 1.05) / Math.sqrt(7)), 6);
+    expect(near.max).toBeGreaterThan(flat.max * 1.5);
   });
 });
 
