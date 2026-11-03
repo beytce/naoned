@@ -1534,3 +1534,8 @@ button.map-place {
 [data-three] [data-arsenal-mark] {
   pointer-events: none !important;
 }
+/* On the 3D board, a vehicle's medal lies on the ground just in front of its animal, which stands
+   and walks above it, seen whole. */
+[data-three] [data-vehicle] {
+  transform: translate(-50%, -50%) scale(var(--chartk, 1)) translateY(22px);
+}

@@ -1,17 +1,15 @@
 /**
- * What moves on the 3D map: the mule on its round (Quaternius's donkey, its walk played by an
- * AnimationMixer, two crates on its back), the cart (a crate on two wheels that turn, drawn by a
- * donkey), the smoke of a chimney, the lagoon's ripples, the fondaco's flag. Each moves only while
- * `live` (the device does not ask for less motion); the map's loop asks for frames meanwhile.
+ * What lives on the 3D map: Quaternius's donkey (its walk and its rest played by an AnimationMixer,
+ * for the vehicles, fleet3d.tsx), the smoke of a chimney, the lagoon's ripples, the fondaco's flag.
+ * Each moves only while `live` (the device does not ask for less motion); the map's loop asks for
+ * frames meanwhile.
  */
-import { RoundedBox, useGLTF } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import {
   AnimationMixer,
   Box3,
-  CatmullRomCurve3,
-  CylinderGeometry,
   DoubleSide,
   type Group,
   type Material,
@@ -24,7 +22,7 @@ import {
 } from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { C } from "../../art/plateau/props.js";
-import { claySolid, useKit } from "./kit.js";
+import { claySolid } from "./kit.js";
 
 const DONKEY = "/models/quaternius/donkey.glb";
 useGLTF.preload(DONKEY, false, false);
@@ -42,7 +40,7 @@ const DONKEY_COLOURS: Record<string, string> = {
 };
 
 /** A donkey of its own (its skeleton cloned), `length` chart units long, and its mixer. */
-function useDonkey(length: number) {
+export function useDonkey(length: number) {
   const gltf = useGLTF(DONKEY, false, false) as unknown as {
     scene: Object3D;
     animations: import("three").AnimationClip[];
@@ -75,186 +73,12 @@ function useDonkey(length: number) {
 }
 
 /** A soft round shadow under what moves (its shadow is not in the board's still shadow map). */
-function Blob({ r }: { r: number }) {
+export function Blob({ r }: { r: number }) {
   return (
     <mesh rotation-x={-Math.PI / 2} position-y={0.06} renderOrder={1}>
       <circleGeometry args={[r, 20]} />
       <meshBasicMaterial color="#0E1A2B" transparent opacity={0.28} depthWrite={false} />
     </mesh>
-  );
-}
-
-/** A round on a path there and back: where on it (0..1), which way, and resting at each end. */
-function roundAt(t: number, legSeconds: number, restSeconds: number) {
-  const cycle = 2 * (legSeconds + restSeconds);
-  const u = ((t % cycle) + cycle) % cycle;
-  if (u < legSeconds) return { at: ease(u / legSeconds), back: false, resting: false };
-  if (u < legSeconds + restSeconds) return { at: 1, back: false, resting: true };
-  const w = u - legSeconds - restSeconds;
-  if (w < legSeconds) return { at: 1 - ease(w / legSeconds), back: true, resting: false };
-  return { at: 0, back: true, resting: true };
-}
-const ease = (x: number) => x * x * (3 - 2 * x) * 0.25 + x * 0.75;
-
-function curveOf(path: [number, number, number][]) {
-  return new CatmullRomCurve3(path.map(([x, y, z]) => new Vector3(x, y, z)));
-}
-
-/** The mule: from the fondaco to a town and back, its two crates on its back. */
-export function Mule({
-  path,
-  live,
-  leg = 9,
-  follow,
-}: {
-  path: [number, number, number][];
-  live: boolean;
-  leg?: number;
-  /** The camera following it (?suivre=mule): told where it is at each frame. */
-  follow?: (at: Vector3) => void;
-}) {
-  const kit = useKit();
-  const donkey = useDonkey(3.6);
-  const group = useRef<Group>(null);
-  const curve = useMemo(() => curveOf(path), [path]);
-  const crate = kit("crate");
-  const t0 = useRef(0);
-  useEffect(() => () => void donkey.mixer.stopAllAction(), [donkey]);
-  const place = (time: number) => {
-    const g = group.current;
-    if (!g) return;
-    const r = roundAt(time, leg, 2.5);
-    const p = curve.getPointAt(Math.min(1, Math.max(0, r.at)));
-    const ahead = curve.getPointAt(Math.min(1, Math.max(0, r.at + (r.back ? -0.02 : 0.02))));
-    g.position.copy(p);
-    follow?.(p);
-    if (!r.resting && ahead.distanceToSquared(p) > 1e-6) g.lookAt(ahead.x, p.y, ahead.z);
-    if (donkey.walking && donkey.resting) {
-      donkey.walking.weight = r.resting ? 0 : 1;
-      donkey.resting.weight = r.resting ? 1 : 0;
-      if (r.resting && !donkey.resting.isRunning()) donkey.resting.play();
-    }
-  };
-  useFrame((_, dt) => {
-    if (!live) return;
-    t0.current += Math.min(dt, 0.1);
-    donkey.mixer.update(Math.min(dt, 0.1));
-    place(t0.current);
-  });
-  useEffect(() => {
-    // At rest (less motion asked): halfway, still.
-    place(live ? t0.current : leg * 0.45);
-    donkey.mixer.update(0);
-  });
-  const h = donkey.height;
-  return (
-    <group ref={group} name="mule">
-      <primitive object={donkey.root} />
-      {/* The pack: two crates, one on each flank. */}
-      <mesh
-        geometry={crate.geo}
-        material={claySolid(C.wood)}
-        position={[0.62, h * 0.62, 0.15]}
-        scale={0.95}
-      />
-      <mesh
-        geometry={crate.geo}
-        material={claySolid(C.wood)}
-        position={[-0.62, h * 0.62, 0.15]}
-        scale={0.95}
-      />
-      <RoundedBox args={[1.6, 0.25, 1.3]} radius={0.1} position={[0, h * 0.78, 0.15]}>
-        <meshStandardMaterial color={C.roof} roughness={0.95} />
-      </RoundedBox>
-      <Blob r={1.5} />
-    </group>
-  );
-}
-
-const wheelGeo = new CylinderGeometry(0.85, 0.85, 0.32, 14);
-wheelGeo.rotateZ(Math.PI / 2);
-
-/** The cart: a crate on two wheels that turn, drawn by a donkey, on another round. */
-export function Cart({
-  path,
-  live,
-  leg = 11,
-}: {
-  path: [number, number, number][];
-  live: boolean;
-  leg?: number;
-}) {
-  const kit = useKit();
-  const donkey = useDonkey(3.2);
-  const group = useRef<Group>(null);
-  const wheels = useRef<Group>(null);
-  const curve = useMemo(() => curveOf(path), [path]);
-  const length = useMemo(() => curve.getLength(), [curve]);
-  const t0 = useRef(1.7);
-  const last = useRef(0);
-  useEffect(() => () => void donkey.mixer.stopAllAction(), [donkey]);
-  const place = (time: number) => {
-    const g = group.current;
-    if (!g) return;
-    const r = roundAt(time, leg, 3);
-    const p = curve.getPointAt(r.at);
-    const ahead = curve.getPointAt(Math.min(1, Math.max(0, r.at + (r.back ? -0.02 : 0.02))));
-    g.position.copy(p);
-    if (!r.resting && ahead.distanceToSquared(p) > 1e-6) g.lookAt(ahead.x, p.y, ahead.z);
-    // The wheels turn as far as the cart goes.
-    const moved = Math.abs(r.at - last.current) * length;
-    last.current = r.at;
-    if (wheels.current)
-      for (const w of wheels.current.children) (w as Mesh).rotation.x += moved / 0.85;
-    if (donkey.walking && donkey.resting) {
-      donkey.walking.weight = r.resting ? 0 : 1;
-      donkey.resting.weight = r.resting ? 1 : 0;
-      if (r.resting && !donkey.resting.isRunning()) donkey.resting.play();
-    }
-  };
-  useFrame((_, dt) => {
-    if (!live) return;
-    t0.current += Math.min(dt, 0.1);
-    donkey.mixer.update(Math.min(dt, 0.1));
-    place(t0.current);
-  });
-  useEffect(() => {
-    place(live ? t0.current : leg * 0.3);
-    donkey.mixer.update(0);
-  });
-  const wood = claySolid(C.wood);
-  const trunk = claySolid(C.trunk);
-  return (
-    <group ref={group} name="cart">
-      {/* The donkey ahead, the cart behind it. */}
-      <group position={[0, 0, 1.6]}>
-        <primitive object={donkey.root} />
-      </group>
-      <group position={[0, 0, -1.6]}>
-        <RoundedBox args={[2.2, 0.9, 2.4]} radius={0.18} position={[0, 1.25, 0]} castShadow>
-          <primitive object={wood} attach="material" />
-        </RoundedBox>
-        <mesh geometry={kit("crate").geo} material={wood} position={[0, 1.7, -0.2]} scale={1.2} />
-        <mesh
-          geometry={kit("crateB").geo}
-          material={claySolid(C.plot)}
-          position={[0.3, 1.7, 0.75]}
-          scale={0.8}
-        />
-        <group ref={wheels}>
-          <mesh geometry={wheelGeo} material={trunk} position={[1.25, 0.85, 0]} />
-          <mesh geometry={wheelGeo} material={trunk} position={[-1.25, 0.85, 0]} />
-        </group>
-        {/* The shafts, to the donkey's flanks. */}
-        <mesh material={trunk} position={[0.7, 1.15, 1.7]} rotation-x={0.12}>
-          <boxGeometry args={[0.12, 0.12, 2.6]} />
-        </mesh>
-        <mesh material={trunk} position={[-0.7, 1.15, 1.7]} rotation-x={0.12}>
-          <boxGeometry args={[0.12, 0.12, 2.6]} />
-        </mesh>
-      </group>
-      <Blob r={2.4} />
-    </group>
   );
 }
 

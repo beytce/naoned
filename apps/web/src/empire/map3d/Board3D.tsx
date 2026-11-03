@@ -48,6 +48,7 @@ import { C } from "../../art/plateau/props.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import type { EmpirePayload } from "../types.js";
 import { DISTANCE, orthoFrom } from "./camera.js";
+import { Fleet3D } from "./fleet3d.js";
 import {
   Instanced,
   type KitModel,
@@ -176,9 +177,15 @@ const Board3D = memo(
         data-board3d
       >
         <Lights sc={sc} />
-        <Zones zones={touch} onReady={(fn) => (hitter.current = fn)} />
+        <Zones
+          zones={touch}
+          onReady={(fn) => {
+            hitter.current = fn;
+          }}
+        />
         <Suspense fallback={null}>
           <World sc={sc} live={live} />
+          <Fleet3D p={p} live={live} />
           <ShadowsOnce sc={sc} />
         </Suspense>
         {FX && <Effects near={near} />}
@@ -187,7 +194,10 @@ const Board3D = memo(
       </Canvas>
     );
   }),
-  (a, b) => a.p.view?.map === b.p.view?.map && a.p.view?.porta?.cell === b.p.view?.porta?.cell,
+  (a, b) =>
+    a.p.view?.map === b.p.view?.map &&
+    a.p.view?.porta?.cell === b.p.view?.porta?.cell &&
+    a.p.view?.vehicles === b.p.view?.vehicles,
 );
 
 export default Board3D;

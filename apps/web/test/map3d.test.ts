@@ -82,7 +82,8 @@ describe("the 3D map's scene", () => {
     ]);
     for (const a of z)
       for (const b of z)
-        if (a !== b) expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(a.r + b.r - 1e-9);
+        if (a !== b)
+          expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(a.r + b.r - 1e-9);
     // Venice and Padua, 10 apart: 5 each; the Remise alone: as large as a touch goes.
     expect(z.find((x) => x.id === "city:padova")?.r).toBeCloseTo(5.0249, 3);
     expect(z.find((x) => x.id === "depot")?.r).toBe(7);

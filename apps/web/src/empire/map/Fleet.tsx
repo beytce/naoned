@@ -6,11 +6,13 @@ import { TILT } from "../../art/plateau/geom.js";
 import { d } from "../../game/format.js";
 import { fr } from "../../i18n.js";
 import { regionName } from "../World.js";
+import { MAP_3D } from "../map3d/flag.js";
 import type { EmpirePayload } from "../types.js";
 import {
   CHART,
   type MapPlace,
   bringsTo,
+  fleetSpots,
   hopSeconds,
   lastPlace,
   leaguesOf,
@@ -23,9 +25,6 @@ import {
 const t = fr.empire.hops;
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
-
-/** A vehicle's orbit around the place it stands at, in chart units (after Hades' Star). */
-const orbitOf = (place: string) => (place === "home" ? 6.2 : place.startsWith("city:") ? 4.6 : 4.2);
 
 interface Drag {
   id: string;
@@ -145,16 +144,8 @@ export function Fleet({
   });
 
   if (!view) return null;
-  // The standing vehicles of a place share its orbit.
-  const slots = new Map<string, number>();
-  const placed = poses.map(({ v, pose }) => {
-    if (pose.hop || !pose.place) return { v, pose, x: pose.x, y: pose.y };
-    const i = slots.get(pose.place) ?? 0;
-    slots.set(pose.place, i + 1);
-    const a = ((-55 + i * 38) * Math.PI) / 180;
-    const r = orbitOf(pose.place);
-    return { v, pose, x: pose.x + r * Math.cos(a), y: pose.y + r * Math.sin(a) };
-  });
+  // The standing vehicles of a place share its orbit (the 3D board stands them alike).
+  const placed = fleetSpots(p, clock, MAP_3D);
 
   const startDrag = (id: string) => (e: React.PointerEvent) => {
     if (e.button !== 0 && e.pointerType === "mouse") return;

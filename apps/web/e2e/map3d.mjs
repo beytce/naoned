@@ -228,9 +228,10 @@ try {
       });
     await shot("2b-fondaco-touche");
     await page.keyboard.press("Escape");
-    /** A vehicle of the house dragged from its medal to a town's mark, then sent at once. */
-    const send = async (pg, code) => {
-      const car = await pg.locator("[data-vehicle]").first().boundingBox();
+    /** A vehicle of the house (its id, or the first) dragged from its medal to a town, sent at once. */
+    const send = async (pg, code, id) => {
+      const medal = pg.locator(id ? `[data-vehicle="${id}"]` : "[data-vehicle]").first();
+      const car = await medal.boundingBox();
       const town = await pg.locator(`[data-map=empire] [data-city=${code}]`).first().boundingBox();
       if (!car || !town) throw new Error("no vehicle or no town to send it to");
       const [cx, cy] = [car.x + car.width / 2, car.y + car.height / 2];
@@ -242,13 +243,17 @@ try {
       await pg.mouse.up();
       await pg.locator("[data-vehicle-panel] [data-hop-action=go]").click();
       await pg.locator("[data-vehicle][data-moving]").first().waitFor({ timeout: 5_000 });
+      return medal.getAttribute("data-vehicle");
     };
-    // 3. A mule sent to Padua: it walks there on the board, its medal above it.
+    // 3. A mule sent to Padua: it walks there on the board, its medal above it. The workshops
+    // folded first (Recentrer), the camera a little nearer.
+    await page.getByRole("button", { name: /recentrer/i }).click();
+    await page.waitForTimeout(900);
     await page.keyboard.press("+");
     await page.keyboard.press("+");
     await page.waitForTimeout(800);
     await send(page, "padova");
-    await page.waitForTimeout(2200);
+    await page.waitForTimeout(900);
     await shot("3-mule");
     if ((await page.locator("[data-map=empire] canvas").count()) !== 1)
       faults.push("the 3D board lost while a mule walks");
@@ -268,12 +273,19 @@ try {
     const t0 = Date.now();
     const vp = await rec.newPage();
     await open3d("", vp);
-    await vp.keyboard.press("+");
-    await vp.keyboard.press("+");
+    for (let i = 0; i < 3; i++) await vp.keyboard.press("+");
     await vp.waitForTimeout(800);
     const tGo = Date.now();
-    await send(vp, "venezia");
-    await vp.waitForTimeout(13_000);
+    // To and fro between the two towns, a hop after the other, for 13 s.
+    let id = null;
+    for (let k = 0; Date.now() - tGo < 13_000; k++) {
+      id = await send(vp, k % 2 === 0 ? "venezia" : "padova", id);
+      await vp
+        .locator(`[data-vehicle="${id}"][data-moving]`)
+        .waitFor({ state: "detached", timeout: 10_000 })
+        .catch(() => {});
+      await vp.keyboard.press("Escape");
+    }
     const video = vp.video();
     await rec.close();
     if (video) {

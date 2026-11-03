@@ -707,3 +707,29 @@ export function dockOrders(p: EmpirePayload, v: Mine, sort: OrderSort = "dear"):
   };
   return out.sort((a, b) => Number(b.ready) - Number(a.ready) || by(a, b));
 }
+
+/** A vehicle's orbit around the place it stands at, in chart units (after Hades' Star). */
+const orbitOf = (place: string) => (place === "home" ? 6.2 : place.startsWith("city:") ? 4.6 : 4.2);
+
+/**
+ * Where each vehicle of the house is at a time, on the chart: on its hop under way, or standing
+ * in orbit around its place, the standing ones of a place sharing its orbit (Fleet's medals and
+ * the 3D board's animals stand alike).
+ */
+export function fleetSpots(
+  p: EmpirePayload,
+  t: number,
+  /** On the 3D board, the orbit turned to the south: in front of the buildings, never behind. */
+  south = false,
+): { v: Mine; pose: ReturnType<typeof vehiclePose>; x: number; y: number }[] {
+  const slots = new Map<string, number>();
+  return (p.view?.vehicles.mine ?? []).map((v) => {
+    const pose = vehiclePose(p, v, t);
+    if (pose.hop || !pose.place) return { v, pose, x: pose.x, y: pose.y };
+    const i = slots.get(pose.place) ?? 0;
+    slots.set(pose.place, i + 1);
+    const a = (((south ? 55 : -55) + i * 38) * Math.PI) / 180;
+    const r = orbitOf(pose.place) * (south && pose.place.startsWith("city:") ? 1.5 : 1);
+    return { v, pose, x: pose.x + r * Math.cos(a), y: pose.y + r * Math.sin(a) };
+  });
+}
