@@ -38,6 +38,7 @@ import { OrdersPanel } from "./map/OrdersPanel.js";
 import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
 import { RoundButtons } from "./map/RoundButtons.js";
+import { Trips } from "./map/Trips.js";
 import { VehiclePanel } from "./map/VehiclePanel.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
 import { inTutorial, nextStep } from "./next.js";
@@ -254,17 +255,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       window.removeEventListener("blur", off);
     };
   }, []);
-  /** « Y envoyer un véhicule »: the one chosen, else the first standing free at a counter. */
-  const sendable = (city: string) => {
-    const mine = p.view?.vehicles.mine ?? [];
-    const free = (v: (typeof mine)[number]) => v.legs.length === 0 && !v.at.startsWith("city:");
-    const v = mine.find((x) => x.id === vehicle) ?? mine.find(free);
-    if (!v) return undefined;
-    return () => {
-      setVehicle(v.id);
-      setTarget({ kind: "vehicle", id: v.id });
-      void act({ type: "empireMove", vehicleId: v.id, to: `city:${city}` });
-    };
+  /** « Livrer » from a city: the orders chosen go; the camera stays on the city. */
+  const deliver = (city: string, orderIds: string[]) => {
+    void act({ type: "empireDeliverCity", city, orderIds }).then(() => setTarget(null));
   };
   const join = async () => {
     setBusy(true);
@@ -360,6 +353,16 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onHouse={() => setSheet("house")}
         onProduction={() => setSheet("production")}
       />
+      <Trips
+        p={p}
+        now={now}
+        busy={busy}
+        act={act}
+        onFocus={(id) => {
+          setVehicle(id);
+          setTarget({ kind: "vehicle", id });
+        }}
+      />
 
       {/* The foot of the map: the round buttons, a place's panel, or the bar of placing. */}
       <BottomSlot
@@ -399,7 +402,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             p={p}
             busy={busy}
             city={target.code}
-            onSend={sendable(target.code)}
+            onDeliver={(ids) => deliver(target.code, ids)}
             onClose={() => setTarget(null)}
           />
         ) : target ? (

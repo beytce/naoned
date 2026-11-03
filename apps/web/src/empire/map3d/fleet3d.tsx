@@ -39,7 +39,16 @@ const wheelGeo = new CylinderGeometry(WHEEL_R, WHEEL_R, 0.32, 14);
 wheelGeo.rotateZ(Math.PI / 2);
 
 /** Every vehicle of the house, placed at each frame by the server's clock. */
-export function Fleet3D({ p, live }: { p: EmpirePayload; live: boolean }) {
+export function Fleet3D({
+  p,
+  live,
+  actors: shared,
+}: {
+  p: EmpirePayload;
+  live: boolean;
+  /** The animals by vehicle, for the board's touches (a ray finds the one under a finger). */
+  actors?: React.MutableRefObject<Map<string, Group>>;
+}) {
   const mine = p.view?.vehicles.mine ?? [];
   const actors = useRef(new Map<string, Actor>());
   // The server's clock, smooth between its answers (as Fleet's).
@@ -77,6 +86,8 @@ export function Fleet3D({ p, live }: { p: EmpirePayload; live: boolean }) {
           onReady={(a) => {
             if (a) actors.current.set(v.id, a);
             else actors.current.delete(v.id);
+            if (a) shared?.current.set(v.id, a.group);
+            else shared?.current.delete(v.id);
           }}
         />
       ))}

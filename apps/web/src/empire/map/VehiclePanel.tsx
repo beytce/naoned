@@ -162,7 +162,8 @@ export function VehiclePanel({
                 Icon.check(),
                 () => void act({ type: "empireDepartNow", vehicleId: v.id }),
                 false,
-                "gold",
+                // Gold only when it brings something: an empty hold never shines.
+                carried > 0 ? "gold" : undefined,
               )}
               {button(
                 "cancel",

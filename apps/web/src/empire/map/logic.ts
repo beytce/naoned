@@ -14,7 +14,7 @@ import { d } from "../../game/format.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { fr } from "../../i18n.js";
 import { affordable, queueEnd, readyLots } from "../logic.js";
-import type { EmpireAction, EmpirePayload } from "../types.js";
+import type { EmpireAction, EmpireOrderView, EmpirePayload } from "../types.js";
 
 /**
  * The empire's map, pure (the map at the centre of the game, step 1): how the camera covers the
@@ -816,4 +816,90 @@ export function roadOf(
   const road = roadBetween(a, b, s);
   known.set(key, road);
   return road;
+}
+
+/** Why « Livrer » cannot go: no stock for any order, every vehicle away, out of reach, none. */
+export type DeliveryBlock = "stock" | "busy" | "reach" | "none";
+
+/**
+ * What a city's « Livrer » would do (decision of the owner, 3 November 2026), as the engine does it
+ * (`empireDeliverCity`): the orders chosen (every one by default) that the stock of a counter serving
+ * the city covers, the best paid first, on the smallest free vehicle docked there that takes them
+ * all (else the one that takes most); or why not, and when the first vehicle comes back.
+ */
+export function deliveryPlan(
+  p: EmpirePayload,
+  city: string,
+  chosen: Set<string> | null = null,
+): {
+  /** Each order, the stock of it at the best counter, and whether that alone covers it. */
+  orders: { o: EmpireOrderView; have: number; covered: boolean }[];
+  picks: string[];
+  vehicle: Mine | null;
+  pay: bigint;
+  reason: DeliveryBlock | null;
+  /** The first vehicle free again (server time), when every one is away. */
+  freeAt: number | null;
+} {
+  const view = p.view;
+  const at = view?.orders.find((x) => x.city === city);
+  const none = { orders: [], picks: [], vehicle: null, pay: 0n, freeAt: null };
+  if (!view || !at) return { ...none, reason: "reach" };
+  const posts = at.posts ?? view.stores.map((s) => s.post);
+  const stockAt = (post: string, good: string) =>
+    view.stores.find((s) => s.post === post)?.goods[good] ?? 0;
+  const asked = [...at.orders]
+    .filter((o) => !chosen || chosen.has(o.id))
+    .sort((a, b) => (BigInt(b.pay) > BigInt(a.pay) ? 1 : BigInt(b.pay) < BigInt(a.pay) ? -1 : 0));
+  const best = (good: string) => Math.max(0, ...posts.map((post) => stockAt(post, good)));
+  const orders = at.orders.map((o) => ({ o, have: best(o.good), covered: best(o.good) >= o.qty }));
+  if (asked.length === 0) return { ...none, orders, reason: "none" };
+  const docked = (v: Mine) =>
+    v.legs.length === 0 &&
+    !(v as { porta?: unknown }).porta &&
+    (v.repairUntil ?? 0) <= p.now &&
+    posts.includes(v.at);
+  let pick: { v: Mine; ids: string[] } | null = null;
+  for (const v of view.vehicles.mine.filter(docked)) {
+    let room = v.capacity - v.loads.length;
+    const left = new Map<string, number>();
+    const ids: string[] = [];
+    for (const o of asked) {
+      if (room <= 0) break;
+      const have = left.get(o.good) ?? stockAt(v.at, o.good);
+      if (have < o.qty) continue;
+      left.set(o.good, have - o.qty);
+      ids.push(o.id);
+      room--;
+    }
+    if (ids.length === 0) continue;
+    if (
+      !pick ||
+      ids.length > pick.ids.length ||
+      (ids.length === pick.ids.length && v.capacity < pick.v.capacity)
+    )
+      pick = { v, ids };
+  }
+  if (pick) {
+    const pay = pick.ids.reduce(
+      (sum, id) => sum + BigInt(at.orders.find((o) => o.id === id)?.pay ?? 0),
+      0n,
+    );
+    return { orders, picks: pick.ids, vehicle: pick.v, pay, reason: null, freeAt: null };
+  }
+  const anyDocked = view.vehicles.mine.some(docked);
+  const away = view.vehicles.mine.filter((v) => v.legs.length > 0);
+  const freeAt = anyDocked
+    ? null
+    : away.length
+      ? Math.min(...away.map((v) => v.legs.at(-1)?.arrivesAt ?? Number.POSITIVE_INFINITY))
+      : null;
+  return {
+    orders,
+    picks: [],
+    vehicle: null,
+    pay: 0n,
+    reason: anyDocked ? "stock" : "busy",
+    freeAt,
+  };
 }

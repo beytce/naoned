@@ -117,6 +117,8 @@ export interface EmpireView {
     fillBps: number;
     /** When the next order comes; null while the city is full. */
     nextAt: number | null;
+    /** The house's counters that serve it. */
+    posts?: string[];
   }[];
   /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
   moves: {

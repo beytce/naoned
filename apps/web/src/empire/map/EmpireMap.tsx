@@ -462,7 +462,8 @@ export const EmpireMap = forwardRef<
   };
   /** A place touched, by its mark or its hexagon on the 3D board: what it does. */
   const touchPlace = (id: string) => {
-    if (id === "home") {
+    if (id.startsWith("vehicle:")) onTarget({ kind: "vehicle", id: id.slice(8) });
+    else if (id === "home") {
       if (!sendTo("home"))
         opened === "home" ? onTarget({ kind: "casa" }) : deploy("veneto", homeAt(p), "home");
     } else if (id.startsWith("city:")) {

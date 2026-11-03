@@ -10,6 +10,7 @@ import {
 } from "../state.js";
 import { citiesCovered } from "./map.js";
 import type { EmpireSettings } from "./settings.js";
+import { postsServing } from "./stores.js";
 
 /**
  * The cities' orders (decision of the owner, 1 November 2026, after Hades' Star's shipments): each
@@ -31,6 +32,8 @@ export interface CityOrders {
   fillBps: number;
   /** When the next order comes; null while the city is full. */
   nextAt: number | null;
+  /** The house's counters that serve it (a vehicle docked there may bring its orders). */
+  posts: string[];
 }
 
 const sizeOf = (size: number) => Math.min(5, Math.max(1, size));
@@ -154,6 +157,7 @@ export function ordersOf(
         fillBps: Math.min(10_000, Math.floor((rec.list.length * 10_000) / Math.max(1, cap))),
         // Full, the next one waits for a place: it comes an interval after one is freed.
         nextAt: full ? null : rec.next,
+        posts: postsServing(h, s, c.code),
       };
     });
 }

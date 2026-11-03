@@ -420,62 +420,81 @@ try {
     await shot("14-commandes");
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
-    // A cart touched at its counter (after Hades' Star's shipment list): « Charger » lists the
-    // orders of the cities the counter serves, sorted; a touch loads one.
-    // A touch on the cart (its pointer down, then up anywhere: the header may cover it).
-    const tapBox = await page.locator("[data-vehicle]").first().boundingBox();
-    const tap = {
-      clientX: (tapBox?.x ?? 0) + (tapBox?.width ?? 0) / 2,
-      clientY: (tapBox?.y ?? 0) + (tapBox?.height ?? 0) / 2,
-      pointerId: 1,
-      isPrimary: true,
-      button: 0,
-    };
-    await page.locator("[data-vehicle]").first().dispatchEvent("pointerdown", tap);
-    await page.evaluate((t) => window.dispatchEvent(new PointerEvent("pointerup", t)), tap);
-    await page.locator("[data-vehicle-panel] [data-hop-action=load]").click();
-    await page.locator("[data-vehicle-panel] [data-load-pane]").waitFor();
-    if ((await page.locator("[data-load-pane] [data-order]").count()) === 0)
-      faults.push(`${label}: no order to load at Venice's counter`);
-    await shot("14b-charger");
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(300);
-    // A vehicle dragged to Padua (after Hades' Star): a dotted line follows, the dark label tells
-    // where and how long; let go, it waits ten seconds to leave, « Partir » sends it at once.
-    const cartBox = await page.locator("[data-vehicle]").first().boundingBox();
-    const paduaBox = await page.locator("button[data-city=padova]").first().boundingBox();
-    if (!cartBox || !paduaBox) faults.push(`${label}: no vehicle or no Padua on the map`);
-    else {
-      const cx = cartBox.x + cartBox.width / 2;
-      const cy = cartBox.y + cartBox.height / 2;
-      const px = paduaBox.x + paduaBox.width / 2;
-      const py = paduaBox.y + paduaBox.height / 2;
-      await page.mouse.move(cx, cy);
-      await page.mouse.down();
-      await page.mouse.move((cx + px) / 2, (cy + py) / 2, { steps: 6 });
-      await page.mouse.move(px, py, { steps: 6 });
-      if ((await page.locator("[data-drag-label]").count()) === 0)
-        faults.push(`${label}: no label while dragging a vehicle`);
-      if ((await page.locator("[data-snap]").count()) === 0)
-        faults.push(`${label}: the drag does not snap to Padua`);
-      await shot("15-glisser");
-      await page.mouse.up();
-      await page.locator("[data-vehicle-panel] [data-hop-action=go]").waitFor();
-      await shot("16-depart");
-      // Its trade modules (1 November): a place a level of its model, the others still closed.
-      await page.locator("[data-vehicle-panel] [data-hop-action=modules]").click();
-      if ((await page.locator("[data-vehicle-modules] [data-vehicle-slot][data-open]").count()) < 1)
-        faults.push(`${label}: no place for a trade module on the vehicle`);
-      await shot("16b-modules");
-      await page.locator("[data-vehicle-panel] [data-hop-action=go]").click();
-      await page.locator("[data-vehicle][data-moving]").first().waitFor({ timeout: 5_000 });
-      await shot("17-en-route");
-      await page
-        .locator("[data-vehicle-panel] [data-hop-state]")
-        .getByText(/À quai/)
-        .waitFor({ timeout: 60_000 });
-      await shot("18-arrivee");
+    if (!MAP3D) {
+      // On the SVG board (the fallback), a cart touched at its counter by its medal: « Charger »
+      // lists the orders of the cities the counter serves, sorted; a touch loads one.
+      const tapBox = await page.locator("[data-vehicle]").first().boundingBox();
+      const tap = {
+        clientX: (tapBox?.x ?? 0) + (tapBox?.width ?? 0) / 2,
+        clientY: (tapBox?.y ?? 0) + (tapBox?.height ?? 0) / 2,
+        pointerId: 1,
+        isPrimary: true,
+        button: 0,
+      };
+      await page.locator("[data-vehicle]").first().dispatchEvent("pointerdown", tap);
+      await page.evaluate((t) => window.dispatchEvent(new PointerEvent("pointerup", t)), tap);
+      await page.locator("[data-vehicle-panel] [data-hop-action=load]").click();
+      await page.locator("[data-vehicle-panel] [data-load-pane]").waitFor();
+      if ((await page.locator("[data-load-pane] [data-order]").count()) === 0)
+        faults.push(`${label}: no order to load at Venice's counter`);
+      await shot("14b-charger");
       await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+    } else if ((await page.locator("[data-vehicle]").count()) > 0)
+      // On the 3D board, no medal over the animals (decision of the owner, 3 November).
+      faults.push(`${label}: a vehicle's medal on the 3D board`);
+    // « Livrer » from Padua (decision of the owner, 3 November): its orders bought at the market,
+    // one gold button loads them on a free vehicle, which leaves at once; its token under the
+    // house's name tells where and how long, offers to call it back a few seconds, and it comes
+    // back alone.
+    const wants = await page.evaluate(async () => {
+      const v = await (await fetch("/api/empire", { credentials: "same-origin" })).json();
+      return (v.view?.orders.find((o) => o.city === "padova")?.orders ?? []).map((o) => ({
+        good: o.good,
+        qty: o.qty,
+      }));
+    });
+    for (const w of wants)
+      await page.evaluate(
+        (a) =>
+          fetch("/api/empire/actions", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "empireBuy", good: a.good, qty: a.qty }),
+          }),
+        w,
+      );
+    await page.reload();
+    await page
+      .locator(MAP3D ? "[data-map=empire][data-three]" : "[data-map=empire]")
+      .waitFor({ timeout: 60_000 });
+    await page.waitForTimeout(1_500);
+    await press("[data-city=padova]");
+    await page.locator("[data-orders-panel=padova] [data-order]").first().waitFor();
+    if ((await page.locator("[data-orders-panel=padova] [data-picked]").count()) === 0)
+      faults.push(`${label}: no order of Padua chosen by its stock`);
+    await shot("15-livrer");
+    const deliver = page.locator("[data-orders-panel=padova] [data-deliver] button");
+    if ((await deliver.count()) === 0) faults.push(`${label}: no « Livrer » for Padua`);
+    else {
+      await deliver.click();
+      await page.locator("[data-trip]").first().waitFor({ timeout: 5_000 });
+      if ((await page.locator("[data-recall]").count()) === 0)
+        faults.push(`${label}: no « Rappeler » just after leaving`);
+      await shot("16-en-route");
+      await page.waitForTimeout(6_000);
+      if ((await page.locator("[data-recall]").count()) > 0)
+        faults.push(`${label}: « Rappeler » still offered after five seconds`);
+      // There and back, alone (a second a unit in this journey).
+      await page
+        .locator("[data-trip]")
+        .getByText(/Retour/)
+        .first()
+        .waitFor({ timeout: 90_000 });
+      await shot("17-retour");
+      await page.locator("[data-trip]").first().waitFor({ state: "detached", timeout: 90_000 });
+      await shot("18-rentree");
     }
     // Far out, the zoom stops at the house's whole map, the page alive (1 November: it crashed).
     await page.mouse.move(width / 2, height / 2);
