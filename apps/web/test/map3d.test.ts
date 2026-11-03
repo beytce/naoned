@@ -6,6 +6,7 @@ import { PALETTE, linear, recolour, swatchOf } from "../src/empire/map3d/recolor
 import {
   type SceneInput,
   TILE_R,
+  outlineOf,
   road,
   scene3d,
   sceneKey,
@@ -135,6 +136,19 @@ describe("the 3D map's scene, on the small tiles", () => {
       }) as unknown as EmpirePayload;
     expect(sceneKey(pay({ x: 178, y: 154 }))).toBe(sceneKey(pay({ x: 178, y: 154 })));
     expect(sceneKey(pay({ x: 178, y: 154 }))).not.toBe(sceneKey(pay({ x: 160, y: 154 })));
+  });
+
+  it("draws a sector's outline round its seven small tiles, never between them", () => {
+    const seven = [0, 1, 2, 3, 4, 5, 6].map((k) => {
+      const [x, y] = slotPoint("2,4", k, S);
+      return { x, y };
+    });
+    const sides = outlineOf(seven);
+    expect(sides).toHaveLength(18);
+    const [cx, cy] = slotPoint("2,4", 0, S);
+    // Every side away from the middle tile (none of its six is left).
+    for (const [a, b] of sides)
+      expect(Math.hypot((a[0] + b[0]) / 2 - cx, (a[1] + b[1]) / 2 - cy)).toBeGreaterThan(TILE_R);
   });
 
   it("walks a road from one end to the other, bent to one side", () => {

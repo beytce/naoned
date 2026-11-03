@@ -63,10 +63,12 @@ import {
   type SceneInput,
   TILE_R,
   type Zone,
+  outlineOf,
   scene3d,
   sceneInputOf,
   sceneKey,
   sitesOf,
+  tileCorners,
   zones,
 } from "./scene.js";
 
@@ -588,11 +590,27 @@ function World({
   // The lagoon: one surface over every small tile of sea, finely cut for its ripples.
   const lagoon = useMemo(() => (wet.length ? lagoonGeometry(wet, TILE_R - 0.2) : null), [wet]);
   useEffect(() => () => lagoon?.dispose(), [lagoon]);
-  const fogEdges = useMemo(() => {
-    const g = new EdgesGeometry(hexSlab(TILE_R - 0.45, 0.01, 0));
-    g.rotateY(SLOT_TURN);
-    return g;
-  }, []);
+  const edges = useMemo(() => {
+    const fogTiles = sc.tiles.filter((t) => t.kind === "fog");
+    const mist = segmentsGeometry(
+      fogTiles.flatMap((t) => {
+        const c = tileCorners(t.x, t.y, TILE_R - 0.45);
+        return c.map((a, i) => [a, c[(i + 1) % 6] as [number, number]] as [Pt, Pt]);
+      }),
+    );
+    const cells = [...new Set(fogTiles.map((t) => t.cell))].filter((c) => buyable.get(c) === true);
+    const gold = cells.length
+      ? segmentsGeometry(cells.flatMap((c) => outlineOf(fogTiles.filter((t) => t.cell === c))))
+      : null;
+    return { mist, gold };
+  }, [sc, buyable]);
+  useEffect(
+    () => () => {
+      edges.mist.dispose();
+      edges.gold?.dispose();
+    },
+    [edges],
+  );
 
   // The dressing, model by model, in one draw each.
   const decor = useMemo(() => {
@@ -714,21 +732,16 @@ function World({
       {lagoon && <mesh geometry={lagoon} material={water} position-y={WATER_Y} receiveShadow />}
       {/* The unknown: thick tiles of glass, empty, their edge drawn faintly. */}
       <Instanced geo={slabs.glass} items={fog} material={glass} cast={false} receive={false} />
-      {/* A sector to buy: its glass tiles edged in gold (bright when the Casa may buy it). */}
-      {sc.tiles
-        .filter((t) => t.kind === "fog")
-        .map((t) => {
-          const b = buyable.get(t.cell);
-          return (
-            <lineSegments key={t.key} geometry={fogEdges} position={[t.x, 0.05, t.y]}>
-              <lineBasicMaterial
-                color={b === undefined ? C.mist : C.gold}
-                transparent
-                opacity={b === undefined ? 0.45 : b ? 0.9 : 0.4}
-              />
-            </lineSegments>
-          );
-        })}
+      {/* The unknown's tiles edged faintly, in one draw; a sector the Casa may buy now, its outline
+          in gold (one gold a sector, never one a tile: the gold says « yours to do »). */}
+      <lineSegments geometry={edges.mist} position-y={0.05}>
+        <lineBasicMaterial color={C.mist} transparent opacity={0.3} />
+      </lineSegments>
+      {edges.gold && (
+        <lineSegments geometry={edges.gold} position-y={0.08}>
+          <lineBasicMaterial color={C.gold} transparent opacity={0.95} />
+        </lineSegments>
+      )}
       {/* The dressing and the towns. */}
       <group ref={small}>
         {decor
@@ -948,6 +961,19 @@ function Dock({ x, z, rot }: { x: number; z: number; rot: number }) {
       ))}
     </group>
   );
+}
+
+type Pt = [number, number];
+
+/** Segments on the ground (chart points), as one geometry of lines. */
+function segmentsGeometry(segs: [Pt, Pt][]): BufferGeometry {
+  const pos = new Float32Array(segs.length * 6);
+  segs.forEach(([a, b], i) => {
+    pos.set([a[0], 0, a[1], b[0], 0, b[1]], i * 6);
+  });
+  const g = new BufferGeometry();
+  g.setAttribute("position", new BufferAttribute(pos, 3));
+  return g;
 }
 
 /** The lagoon's surface: each sea tile cut in small triangles, merged into one geometry. */

@@ -7,7 +7,14 @@
  * seed by tile: the same board at every call. Chart units (x east, y south); the renderer lays y
  * along its z axis. Pure and deterministic: no three.js here, it is tested as is.
  */
-import { type EmpireSettings, SLOT_STEP, roadBetween, slotAt, slotPoint } from "@comptoirs/engine";
+import {
+  type EmpireSettings,
+  SLOT_STEP,
+  SLOT_TURN,
+  roadBetween,
+  slotAt,
+  slotPoint,
+} from "@comptoirs/engine";
 import { HEX_SIZE, cellCentre, neighbours } from "../../art/hexmap.js";
 import { DRESS } from "../../art/plateau/board.js";
 import { hashOf, rng } from "../../art/plateau/geom.js";
@@ -489,4 +496,35 @@ export function zones(places: { id: string; x: number; y: number }[]): Zone[] {
     const r = Math.min(ZONE_MAX, Math.max(ZONE_MIN, nearest / 2));
     return { id: p.id, x: p.x, y: p.y, r, h: zoneHeight(p.id) };
   });
+}
+
+/** A small tile's corners (chart units), turned as the engine's lattice (SLOT_TURN). */
+export function tileCorners(x: number, y: number, r = TILE_R): [number, number][] {
+  return Array.from({ length: 6 }, (_, i) => {
+    const a = (-(90 + 60 * i) * Math.PI) / 180 - SLOT_TURN;
+    return [x + r * Math.cos(a), y + r * Math.sin(a)] as [number, number];
+  });
+}
+
+/**
+ * The outline of a group of small tiles (a sector's seven): their sides that no other tile of the
+ * group shares, as segments.
+ */
+export function outlineOf(
+  tiles: { x: number; y: number }[],
+): [[number, number], [number, number]][] {
+  const key = ([x, y]: [number, number]) => `${Math.round(x * 100)},${Math.round(y * 100)}`;
+  const sides = new Map<string, { seg: [[number, number], [number, number]]; n: number }>();
+  for (const t of tiles) {
+    const c = tileCorners(t.x, t.y);
+    for (let i = 0; i < 6; i++) {
+      const a = c[i] as [number, number];
+      const b = c[(i + 1) % 6] as [number, number];
+      const k = [key(a), key(b)].sort().join(" ");
+      const had = sides.get(k);
+      if (had) had.n++;
+      else sides.set(k, { seg: [a, b], n: 1 });
+    }
+  }
+  return [...sides.values()].filter((x) => x.n === 1).map((x) => x.seg);
 }
