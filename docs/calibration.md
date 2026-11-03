@@ -2368,3 +2368,70 @@ La Remise ne ralentit donc pas la fin de partie. Ce qui la ralentissait, c'étai
   - le prochain palier, la première bande et les bruts des jeunes, déjà à arbitrer.
 
 **À trancher par le porteur** : la borne de la part des commandes (85 %), ou un prix de l'antiquaire relevé pour compenser les reliques déchiffrées.
+
+## Les voyages longs et les petites tuiles (3 novembre 2026, proposition à décider)
+
+**La demande du porteur** (3 novembre, après la carte en 3D) : des villes plus éloignées les unes des autres, chacune sur une petite tuile (sept par secteur), au moins une tuile de campagne entre deux lieux ; des voyages de **5 minutes ou plus** du fondaco à la ville la plus proche (environ 3 secondes aujourd'hui), pour que la mule fasse vraiment le voyage sur la carte. Rien n'est appliqué au jeu : cette section propose, le porteur décide.
+
+### La carte en petites tuiles (moteur, `packages/engine/src/empire/slots.ts`, testé)
+
+- Chaque secteur (hexagone de 24 unités) est coupé en **sept petites tuiles** : une au milieu, six autour, à `SLOT_STEP` = √3/√7 ≈ 0,65 secteur l'une de l'autre, sur un réseau tourné de `SLOT_TURN` ≈ 19,1° : les petites tuiles de tous les secteurs font **un seul pavage, sans trou**.
+- `placeCities` pose chaque ville sur une tuile de son secteur, la plus proche de son ancien point, en écartant les villes voisines (y compris d'un secteur à l'autre) et en gardant **une tuile libre pour le premier fondaco** dans le secteur de départ.
+- **Une limite géométrique** : des tuiles qui ne se touchent pas couvrent au plus un tiers du plateau. Une règle parfaite (aucune ville voisine d'une autre, une tuile libre de fondaco partout) est donc impossible là où la carte est dense. Le placement réduit les voisinages au minimum : **6 paires de villes sur 69** restent sur des tuiles voisines, toutes en Vénétie et en Lombardie (Trévise–Venise, Brescia–Milan, Mantoue–Padoue, Bergame–Vicence, Trieste–Udine, Ravenne–Rimini).
+- Distances obtenues (le premier fondaco sur la tuile libre de « 2,4 », point (178 ; 154)) :
+
+  | | Aujourd'hui | Petites tuiles |
+  | --- | --- | --- |
+  | Fondaco → Venise | 14 | 27 |
+  | Fondaco → Padoue | 24 | 28 |
+  | Ville → ville la plus proche (médiane) | 17 | 27 |
+  | Ville → ville la plus proche (minimum) | 0 (Venise et Padoue sur le même point) | 15 |
+
+- **La vitesse** : 26,6 unités en 5 minutes. Le moteur compte la vitesse en entiers (`moves.unitsPerSecond`, au moins 1) : la proposition est un réglage nouveau, `moves.secondsPerUnit` = **11** (4 min 52 s jusqu'à Venise ; Trévise, à 42 unités, en 7 min 40 ; une ville à 120 unités en 22 min).
+
+### Le modèle du simulateur
+
+Le simulateur ne compte pas le temps des trajets : il suppose qu'une session charge ses véhicules **10 fois** (`roundsPerSession`, « un saut dure quelques secondes »). Avec des voyages de 5 minutes et plus, un véhicule fait **une tournée par session** (chargé au fondaco, il dessert ses villes en une file d'arrêts et rentre avant la session suivante, des heures plus tard) : les scénarios posent `roundsPerSession: 1`. C'est le cœur du changement : au départ, 2 mules de 2 places, soit 4 places par session au lieu de 40, pour environ 22 commandes.
+
+### Les essais (24 mois, cohortes de 200 ; `apps/simulator/src/scenario-voyages.ts` écrit les scénarios)
+
+| Essai | Réglage | Cibles sur 9 |
+| --- | --- | --- |
+| Référence du jour (`7076aa7`) | — | 5 et 4 (graines 1 et 2 ; la 3 arrêtée à la limite de 2 h de la session) ; la dernière revalidation notée plus haut : 6, 5 et 5 |
+| B, `scenarios/voyages-longs.json` | petites tuiles, une tournée par session | **2, 2 et 2** |
+| C, `scenarios/voyages-longs-commandes.json` | B, et les commandes **5 fois moins nombreuses, 5 fois plus grosses, 5 fois plus lentes à venir** : plafonds 1, 1, 2, 2, 3 ; une commande toutes les 1 200, 720, 450, 325, 255 minutes ; lot de 400 ducats | **4, 4 et 4** |
+| C1 (graine 1) | C avec un facteur 4 | 3 |
+| C2 (graine 1) | C, et une place de plus par mule (3) | 4 |
+| C3 (graine 1) | C, plafonds arrondis vers le haut (1, 1, 2, 3, 3) | 4 |
+
+Cible par cible (graine 1) :
+
+| Cible | Référence | B | C |
+| --- | --- | --- | --- |
+| Calendrier de la Casa (cohorte 0) | ✓ (graine 2 : ✗, paliers 18 et 19) | ✗, 12 paliers hors bornes | ✗, paliers 18 et 19 |
+| Tournées avec un objectif à moins de 24 h | ✓ 99,8 % | ✗ 86,8 % | ✓ 94,9 % |
+| Prochain palier en jours de revenu (2 à 7) | ✗ 1,2 à 4,1 | ✗ 8,6 à 14,1 | ✗ 3,9 à 12,1 |
+| Cohorte du mois 12 hors de la 1re bande (4 à 6 mois) | ✗ 1,8 | ✗ 7,9 | ✗ 2,8 |
+| Indice des prix | ✓ | ✓ | ✓ |
+| Puits ÷ sources des jeunes Maisons (0,6–0,8) | ✓ 0,72 | ✗ 0,96 | ✗ 0,96 |
+| Part de la Terraferme | ✓ | ✓ | ✓ |
+| Bruts des jeunes Maisons à Venise (≥ 10 %) | ✗ 3,1 % | ✗ 9,0 % | ✗ 6,3 % |
+| Part des commandes (60 à 85 %) | ✗ 85,3 % | ✗ 43,6 % | ✓ 67,7 % |
+
+**Lecture.**
+- Sans compensation (B), les voyages longs cassent l'économie : les commandes tombent à 44 % des recettes, la Casa prend des semaines de retard.
+- Avec des commandes plus grosses et plus rares (C), la valeur d'une heure et celle d'une ville pleine ne changent pas, tout tient en une tournée par session : on retrouve **presque la référence** (4 cibles sur 9 sur les 3 graines, contre 5 et 4). C gagne la part des commandes (67,7 %, la référence la dépasse) et rapproche la sortie de la première bande ; il perd l'épargne des jeunes Maisons (elles dépensent presque tout, 0,96) et ralentit la fin de partie (jusqu'à 12 jours de revenu pour un palier).
+- Aucune variante ne fait mieux que C ; C2 (une place de plus par mule) l'égale avec de meilleures tournées (98,6 %), au prix d'un changement de véhicule.
+
+### Proposition (à décider par le porteur, rien n'est appliqué)
+
+1. **Retenir C** : les villes sur les petites tuiles, `moves.secondsPerUnit` = 11 (nouveau réglage, en entiers), les commandes en cargaisons 5 fois plus grosses et plus rares (plafonds 1, 1, 2, 2, 3 ; intervalles × 5 ; lot de 400 ducats).
+2. Ensuite, si le porteur le veut, une passe dédiée à la fin de partie (le palier jusqu'à 12 jours de revenu) et à l'épargne des jeunes Maisons, par exemple la variante C2.
+3. **Ce que la carte en petites tuiles change au jeu** (à trancher) :
+   - le premier fondaco n'a plus qu'**une place** dans le secteur de départ (les deux autres tuiles hors du voisinage des villes sont prises par Venise et Padoue) ;
+   - Venise (taille 5) ne peut pas couvrir 2 ou 3 tuiles dans son secteur : elle s'étendrait sur sa lagune ;
+   - un fondaco posé plus tard ne pourra l'être que sur une tuile qui ne touche aucune ville : quelques secteurs très denses n'en auront pas ;
+   - les 6 paires de villes voisines ci-dessus restent ;
+   - les règles stables : au commerce, un changement s'annonce dans les notes du chapitre avant de s'appliquer.
+
+Reproduire : `cd apps/simulator && npx tsx src/scenario-voyages.ts && npx tsx src/empire-cli.ts --scenario scenarios/voyages-longs-commandes.json` (environ 30 minutes par graine).
