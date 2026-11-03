@@ -509,7 +509,7 @@ export const EmpireMap = forwardRef<
       {/* The board in 3D, under every layer, its camera the map's. */}
       {MAP_3D && (
         <Suspense fallback={null}>
-          <Board3D ref={onBoard3d} p={p} orbit={orbit3d} />
+          <Board3D ref={onBoard3d} p={p} orbit={orbit3d} onReady={onThreeReady} />
         </Suspense>
       )}
       {/* The night, far behind: a glow over the lagoon and its scattered lights. */}

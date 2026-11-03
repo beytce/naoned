@@ -448,6 +448,17 @@ export interface Zone {
   x: number;
   y: number;
   r: number;
+  /** How high it stands (chart units): as high as what is drawn there, its roof and its flag. */
+  h: number;
+}
+
+/** How high a place's touch stands: the fondaco to its flag, a town to its monument. */
+function zoneHeight(id: string): number {
+  if (id === "home") return 16;
+  if (id.startsWith("city:")) return 14;
+  if (id === "depot" || id === "camp" || id === "porta" || id === "arsenal") return 9;
+  // A fondaco of another region (drawn smaller).
+  return 11;
 }
 
 /** A place's touch reaches at most this far, at least this far (chart units). */
@@ -467,6 +478,6 @@ export function zones(places: { id: string; x: number; y: number }[]): Zone[] {
     );
     // A hexagon's flat sides lie at r·cos 30° from its middle: half the way, to its corners.
     const r = Math.min(ZONE_MAX, Math.max(ZONE_MIN, nearest / 2));
-    return { id: p.id, x: p.x, y: p.y, r };
+    return { id: p.id, x: p.x, y: p.y, r, h: zoneHeight(p.id) };
   });
 }

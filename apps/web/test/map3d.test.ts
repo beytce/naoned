@@ -115,6 +115,9 @@ describe("the 3D map's scene, on the small tiles", () => {
     // Venice and Padua, 10 apart: 5 each; the Remise alone: as large as a touch goes.
     expect(z.find((x) => x.id === "city:padova")?.r).toBeCloseTo(5.0249, 3);
     expect(z.find((x) => x.id === "depot")?.r).toBe(7);
+    // As high as what stands there: the fondaco to its flag, a town to its monument.
+    expect(z.find((x) => x.id === "home")?.h).toBeGreaterThan(14);
+    expect(z.find((x) => x.id === "city:venezia")?.h).toBeGreaterThan(12);
   });
 
   it("walks a road from one end to the other, bent to one side", () => {

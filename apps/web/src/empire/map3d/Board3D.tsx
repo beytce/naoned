@@ -16,6 +16,7 @@ import {
   Suspense,
   forwardRef,
   memo,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -183,6 +184,13 @@ const Board3D = memo(
     // The touches of the places (step 2 of § 7): hexagons that never overlap.
     const touch = useMemo(() => zones(placesOf(p)), [p]);
     const hitter = useRef<((x: number, y: number) => string | null) | null>(null);
+    const setHitter = useCallback((fn: (x: number, y: number) => string | null) => {
+      hitter.current = fn;
+    }, []);
+    // The map told once the scene's models are in (not before: it would take the touches early).
+    const readyRef = useRef(onReady);
+    readyRef.current = onReady;
+    const ready = useCallback(() => readyRef.current?.(), []);
     useImperativeHandle(ref, () => ({
       view(cam, v) {
         const was = last.current;
@@ -225,18 +233,13 @@ const Board3D = memo(
         data-board3d
       >
         <Lights sc={sc} />
-        <Zones
-          zones={touch}
-          onReady={(fn) => {
-            hitter.current = fn;
-            onReady?.();
-          }}
-        />
+        <Zones zones={touch} onReady={setHitter} />
         <Suspense fallback={null}>
           <World sc={sc} live={live} small={small} buyable={buyable} />
           <Fleet3D p={p} live={live} />
           {orbit && <Workshops3D spots={orbit} />}
           <ShadowsOnce sc={sc} k={orbit ? JSON.stringify(orbit) : ""} />
+          <Ready onReady={ready} />
         </Suspense>
         {/* A device that cannot keep 18 frames a second loses the ambient occlusion for good. */}
         <PerformanceMonitor bounds={() => [18, 26]} flipflops={2} onDecline={() => setLow(true)} />
@@ -279,10 +282,10 @@ function placesOf(p: EmpirePayload): { id: string; x: number; y: number }[] {
   return out;
 }
 
-const zoneGeo = new CylinderGeometry(1, 1, 9, 6);
-zoneGeo.translate(0, 3.5, 0);
-const zoneMat = new MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
-zoneMat.colorWrite = false;
+/** A touch's prism: a unit high, from a little under the ground (scaled to each place's height). */
+const zoneGeo = new CylinderGeometry(1, 1, 1, 6);
+zoneGeo.translate(0, 0.5, 0);
+const zoneMat = new MeshBasicMaterial();
 
 /**
  * The places' touches, invisible hexagonal prisms; `onReady` receives the ray that finds the one
@@ -315,12 +318,14 @@ function Zones({
   return (
     <group ref={group}>
       {list.map((z) => (
+        // Never drawn (a ray finds what is not drawn): as high as the place's roof and flag.
         <mesh
           key={z.id}
           geometry={zoneGeo}
           material={zoneMat}
-          position={[z.x, 0, z.y]}
-          scale={[z.r, 1, z.r]}
+          visible={false}
+          position={[z.x, -1, z.y]}
+          scale={[z.r, z.h + 1, z.r]}
           userData={{ id: z.id }}
         />
       ))}
@@ -375,6 +380,12 @@ function ShadowsOnce({ sc, k }: { sc: Scene3D; k: string }) {
     gl.shadowMap.needsUpdate = true;
     invalidate();
   }, [gl, sc, k]);
+  return null;
+}
+
+/** Mounted once everything before it in its Suspense is in: the scene takes the touches. */
+function Ready({ onReady }: { onReady: () => void }) {
+  useEffect(() => onReady(), [onReady]);
   return null;
 }
 
