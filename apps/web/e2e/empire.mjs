@@ -36,6 +36,9 @@ async function startServer() {
       APP_URL: url,
       WEB_DIST: join(here, "..", "dist"),
       WORLD_KIND: "empire",
+      // The long voyages (five minutes and more) quickened for the journey: a second a unit, a
+      // hop to Padua in some thirty seconds (development only, refused in production).
+      WORLD_SETTINGS_OVERRIDE: JSON.stringify({ empire: { moves: { secondsPerUnit: 1 } } }),
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -139,7 +142,7 @@ try {
     await shot("1c-fondaco");
     const cellLit = page.locator("[data-cell]").first();
     const box = await cellLit.boundingBox();
-    if (box) await cellLit.click({ position: { x: box.width * 0.78, y: box.height * 0.55 } });
+    if (box) await cellLit.click({ position: { x: box.width * 0.5, y: box.height * 0.8 } });
     await page.locator("[data-picked-reach]").waitFor();
     await page.getByRole("button", { name: /poser ici · gratuit/i }).click();
     await page.locator("[data-placing-bar=home]").waitFor({ state: "hidden" });
@@ -470,7 +473,7 @@ try {
       await page
         .locator("[data-vehicle-panel] [data-hop-state]")
         .getByText(/À quai/)
-        .waitFor({ timeout: 20_000 });
+        .waitFor({ timeout: 60_000 });
       await shot("18-arrivee");
       await page.keyboard.press("Escape");
     }
