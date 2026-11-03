@@ -65,9 +65,17 @@ async function magicLink(email) {
   throw new Error("no magic link in the server's log");
 }
 
+// MAP3D=1: the same journey on the 3D board (?map=3d, docs/plateau-reprise.md § 7): WebGL in
+// software in a container without a GPU; a place is touched through the scene (a ray), so its
+// mark is pressed at its middle with the mouse rather than clicked.
+const MAP3D = process.env.MAP3D === "1";
+
 const server = await startServer();
 const browser = await chromium.launch({
   ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
+  ...(MAP3D
+    ? { args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] }
+    : {}),
 });
 const faults = [];
 try {
@@ -75,6 +83,14 @@ try {
     const label = `${width}x${height}`;
     const page = await browser.newPage({ viewport: { width, height }, locale: "fr-FR" });
     page.on("pageerror", (e) => faults.push(`${label}: ${e.message}`));
+    /** A place of the map touched: its mark clicked, or on the 3D board, the scene at its middle. */
+    const press = async (sel) => {
+      const mark = page.locator(sel).first();
+      if (!MAP3D) return mark.click();
+      await mark.waitFor();
+      const b = await mark.boundingBox();
+      if (b) await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+    };
     const shot = async (name) => {
       await page.waitForTimeout(400);
       await assertNoOverflow(page).catch((e) => faults.push(`${label} ${name}: ${e.message}`));
@@ -84,7 +100,9 @@ try {
     await page.goto(server.url);
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
-    await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);
+    await page.goto(
+      `${server.url}/connexion?token=${await magicLink(email)}${MAP3D ? "&map=3d" : ""}`,
+    );
     await page.waitForSelector("input[autocomplete=nickname]");
     await page.fill("input", `Casa_${width}`);
     await page.keyboard.press("Enter");
@@ -169,7 +187,7 @@ try {
     await page.keyboard.press("ArrowLeft");
     await page.waitForTimeout(350);
     // The fondaco touched: its workshops deploy around it, and its reach shows.
-    await page.locator("[data-region=veneto]").click();
+    await press("[data-region=veneto]");
     await page.locator("[data-orbit-open=home] [data-workshop]").first().waitFor();
     if ((await page.locator("[data-reach-of=home]").count()) !== 1)
       faults.push(`${label}: no reach drawn around the fondaco touched`);
@@ -309,7 +327,10 @@ try {
     await page.locator("[data-round=recenter]").click();
     await page.locator("[data-map=empire]:not([data-orbit])").waitFor();
     await page.waitForTimeout(300);
-    if ((await page.locator("[data-plateau] .plateau-fog").count()) < 6)
+    if (MAP3D) {
+      if ((await page.locator("[data-map=empire] canvas").count()) !== 1)
+        faults.push(`${label}: no 3D board under the map`);
+    } else if ((await page.locator("[data-plateau] .plateau-fog").count()) < 6)
       faults.push(`${label}: no silhouettes around Venice's sector`);
     if ((await page.locator("[data-city=milano], [data-region=lombardia]").count()) > 0)
       faults.push(`${label}: Lombardy seen through the dark at the Casa 1`);
@@ -346,7 +367,7 @@ try {
     await page.waitForTimeout(500);
     if ((await page.locator("[data-orbit-open]").count()) > 0)
       faults.push(`${label}: the workshops deployed by a zoom`);
-    await page.locator("[data-region=veneto]").click();
+    await press("[data-region=veneto]");
     await page.locator("[data-orbit-open=home] [data-workshop]").first().waitFor();
 
     // The next step opens the Production on the brickworks of the Casa 2.
@@ -389,7 +410,7 @@ try {
       faults.push(`${label}: vehicles at the market`);
     // The cities' orders (after Hades' Star): Padua's ring, its orders touched; a cart chosen
     // lights the towns within its reach.
-    await page.locator("[data-city=padova]").first().click();
+    await press("[data-city=padova]");
     await page.locator("[data-orders-panel=padova] [data-order]").first().waitFor();
     if ((await page.locator("[data-city=padova] [data-fill-ring]").count()) === 0)
       faults.push(`${label}: no ring of orders around Padua`);
