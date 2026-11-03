@@ -6,6 +6,8 @@
 //   C, scenarios/voyages-longs-commandes.json: B, and the orders five times fewer, five times
 //      larger and five times slower to come (the same worth an hour, the same worth a full town).
 //   npx tsx src/scenario-voyages.ts
+// Historical (3 November 2026): it reads the game's settings, which carry the decision since; run
+// it on the settings of before (`git checkout 9a7d9c5`) to write the scenarios again.
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
