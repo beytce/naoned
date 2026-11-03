@@ -56,12 +56,13 @@ import {
   unlockedOf,
 } from "./map.js";
 import { researchCost, researchMinutesOf } from "./modules.js";
-import { holdOf } from "./moves.js";
+import { holdOf, placePoint } from "./moves.js";
 import { type CityOrders, ordersOf } from "./orders.js";
 import { type PortaView, portaViewOf } from "./porta/view.js";
 import { bandOf } from "./power.js";
 import { regionOf } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
+import { roadBetween } from "./slots.js";
 import { staffHireCost, staffSlots } from "./staff.js";
 import { storesOf } from "./stores.js";
 import { isContesaWeek, terraWeekStart } from "./terra.js";
@@ -158,7 +159,8 @@ export interface EmpireView {
       at: string;
       /** The orders aboard (each a place of its hold), and its stops to come (hop by hop). */
       loads: (EmpireOrder & { from: string })[];
-      legs: EmpireLeg[];
+      /** Each with the road it walks (the small tiles), the very one its time was reckoned on. */
+      legs: (EmpireLeg & { road?: [number, number][] })[];
       /** Its places for trade modules (a level of its model), and what is fitted there. */
       slots: number;
     }[];
@@ -760,6 +762,18 @@ const plainSite = (cost: Deniers, minutes: number, level: number): EmpireSite =>
   cutBps: 0,
 });
 
+/**
+ * A hop's road on the small tiles, reckoned on the whole map as `hopMs` times it (the house's view
+ * holds only what it sees: a road reckoned there would be another), to a tenth of a unit.
+ */
+function legRoad(h: EmpireHouse, s: EmpireSettings, l: EmpireLeg): [number, number][] | undefined {
+  if (!s.map.tiles) return undefined;
+  const a = placePoint(h, s, l.from);
+  const b = placePoint(h, s, l.to);
+  if (!a || !b) return undefined;
+  return roadBetween(a, b, s).map(([x, y]) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
+}
+
 function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s: EmpireSettings) {
   const hold = houseEffect(house, "capacity", s);
   // A model's places of hold, the house's effect counted (as a vehicle's, holdOf).
@@ -771,7 +785,7 @@ function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s
       at: v.at ?? "home",
       // The orders aboard, each a place of its hold (after Hades' Star's shipments).
       loads: v.loads ?? [],
-      legs: v.legs ?? [],
+      legs: (v.legs ?? []).map((l) => ({ ...l, road: legRoad(house, s, l) })),
       // Its places for trade modules, one a level of its model, and what is fitted there.
       slots: vehicleSlotsOf(house, v.type),
       fitted: v.fitted ?? [],

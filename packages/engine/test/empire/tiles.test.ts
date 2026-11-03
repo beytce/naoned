@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   type EmpireSettingsInput,
   empireHouseAt,
+  empireView,
   hopMs,
   parseEmpireSettings,
+  roadBetween,
+  roadLength,
   slotPoint,
 } from "../../src/index.js";
 import type { EmpireHouse } from "../../src/state.js";
@@ -23,7 +26,10 @@ const [px, py] = tile("0,1", 3);
 const empire: EmpireSettingsInput = {
   ...testEmpire,
   casa: testEmpire.casa.map((c) => ({ ...c, materials: {}, buildMinutes: 0, costDucats: 0 })),
-  start: { capitalDucats: 1_000_000, workshops: [] },
+  start: { capitalDucats: 1_000_000, workshops: [], vehicles: ["cart"] },
+  vehicles: {
+    cart: { casa: 1, capacity: 30, places: 3, costDucats: 100, regions: ["veneto"], speedBps: 0 },
+  },
   counters: { maxLevel: 10, bookStepBps: 0, costTimes: 4 },
   map: {
     ...testEmpire.map,
@@ -79,6 +85,26 @@ describe("a fondaco on the small tiles", () => {
     expect(
       error(w.try({ type: "empirePlaceCounter", playerId: "a", cell: "0,0", x: fx, y: fy })),
     ).toBe("");
+  });
+});
+
+describe("a hop's road in the house's view", () => {
+  it("is the very road the engine times, on the whole map (never the part the house sees)", () => {
+    const w = world();
+    expect(placeHome(w, "0,0", tile("0,0", 5)).ok).toBe(true);
+    const v = house(w).vehicles?.[0];
+    expect(
+      error(
+        w.try({ type: "empireMove", playerId: "a", vehicleId: v?.id ?? "", to: "city:venezia" }),
+      ),
+    ).toBe("");
+    const s = parseEmpireSettings(empire);
+    const leg = empireView(w.ctx, w.state, "a", w.now)?.vehicles.mine[0]?.legs[0];
+    const want = roadBetween(tile("0,0", 5), [vx, vy], s);
+    expect(leg?.road?.[0]).toEqual(want[0]);
+    expect(leg?.road?.at(-1)).toEqual(want.at(-1));
+    expect(roadLength(leg?.road ?? [])).toBeCloseTo(roadLength(want), 0);
+    expect(leg && leg.arrivesAt - leg.departAt).toBe(hopMs(s, tile("0,0", 5), [vx, vy]));
   });
 });
 

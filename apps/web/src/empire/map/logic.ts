@@ -584,7 +584,7 @@ export function vehiclePose(
       Math.max(0, (t - leg.departAt) / Math.max(1, leg.arrivesAt - leg.departAt)),
     );
     // Along its road (the small tiles), as far as its time says; straight on the old map.
-    const on = alongRoad(roadOf(p, a, b), k);
+    const on = alongRoad(leg.road ?? roadOf(p, a, b), k);
     return {
       x: on.x,
       y: on.y,

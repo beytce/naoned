@@ -230,7 +230,7 @@ export function Fleet({
               const a = placePoint(p, l.from);
               const b = placePoint(p, l.to);
               if (!a || !b) return [];
-              const road = roadOf(p, a, b);
+              const road = l.road ?? roadOf(p, a, b);
               if (i > 0 || !pose.hop) return [road];
               const k = pose.hop.k;
               const total = road.length > 1 ? road : [a, b];

@@ -151,7 +151,14 @@ export interface EmpireView {
       /** The orders aboard, each a place of its hold, and the counter they were loaded at. */
       loads: (EmpireOrderView & { from: string })[];
       /** Its stops to come, hop by hop: each leaves when the one before arrives. */
-      legs: { from: string; to: string; departAt: number; arrivesAt: number }[];
+      /** Each with the road it walks on the small tiles (the server's, the very one it times). */
+      legs: {
+        from: string;
+        to: string;
+        departAt: number;
+        arrivesAt: number;
+        road?: [number, number][];
+      }[];
       /** Its places for trade modules (a level of its model), and what is fitted there. */
       slots: number;
     }[];
