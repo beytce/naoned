@@ -213,10 +213,13 @@ export const venice1450Empire: EmpireSettingsInput = {
     reach: { base: 36, perLevel: 8 },
     postSpacing: 8,
     // The first fondaco is no town (1 November 2026): put down by the player in Venice's sector,
-    // at this point until then, six units from Venice, the very towns in reach as on Venice (a
-    // point keeping as many but others slowed the end of the first cohort: calibration.md).
-    home: { x: 162, y: 135 },
+    // at this point until then: the small tile kept free there, two tiles from Venice and from
+    // Padua (3 November, the small tiles: calibration.md).
+    home: { x: 178, y: 154 },
     cityClearance: 4,
+    // The small tiles (decision of the owner, 3 November 2026): seven to a sector, the towns on
+    // theirs (venice1450.map.ts), a fondaco on a tile of its own, never next to a town's.
+    tiles: true,
     costStepBps: 2_500,
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
     // fell short of their share, calibration.md).
@@ -273,22 +276,24 @@ export const venice1450Empire: EmpireSettingsInput = {
       speedBps: 0,
     },
   },
-  // The cities' orders (1 November, after Hades' Star's shipments): a town fills over a day, one
-  // order every four hours up to three for a market town, every 51 minutes up to fourteen for a
-  // capital; a lot worth some eighty ducats of a good the house's workshops make, one place of a
-  // hold, paid its reference and 15 % (calibration.md, the orders as shipments).
+  // The cities' orders (1 November, after Hades' Star's shipments; 3 November, the long voyages):
+  // a town fills over a day, one order every twenty hours up to one for a market town, every 255
+  // minutes up to three for a capital; a lot worth some four hundred ducats of a good the house's
+  // workshops make, one place of a hold, paid its reference and 15 %. Five times fewer, larger and
+  // slower than before: the same worth an hour, a hold's round a session (calibration.md).
   orders: {
-    cap: [3, 5, 8, 11, 14],
-    everyMinutes: [240, 144, 90, 65, 51],
-    lotDucats: 80,
+    cap: [1, 1, 2, 2, 3],
+    everyMinutes: [1_200, 720, 450, 325, 255],
+    lotDucats: 400,
     // A lot of a finished good worth three of a raw one (calibration.md, the orders as shipments).
     tierTimes: { raw: 1, intermediate: 2, finished: 3, luxury: 5 },
     lots: {},
     premiumBps: 1_500,
   },
-  // A hop: ten seconds to leave (left at once, or taken back), then eight units of the chart a
-  // second, three to ten seconds across a counter's reach; fifteen stops queued at most.
-  moves: { departSeconds: 10, unitsPerSecond: 8, maxStops: 15 },
+  // A hop: ten seconds to leave (left at once, or taken back), then eleven seconds a unit of the
+  // chart (3 November, the long voyages): five minutes from the first fondaco to Venice, seven to
+  // eight to Treviso, twenty to the far towns; fifteen stops queued at most.
+  moves: { departSeconds: 10, unitsPerSecond: 8, secondsPerUnit: 11, maxStops: 15 },
   // A model raised at the Remise or the Arsenal: its price, 500 ducats at the least, doubled at
   // each level; +10 % a level on land, +5 % at sea (at +10 %, the ships took the trade from the
   // miners and the traders: decision of the owner, calibration.md).

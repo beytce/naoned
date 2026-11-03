@@ -5,6 +5,7 @@ import { levelCost } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { counterCostOf, empireSettings, openSite, ownHouse } from "./house.js";
 import type { EmpireSettings } from "./settings.js";
+import { tileFault } from "./slots.js";
 
 /**
  * The map at the centre of the game (step 2): a hex grid over the Mediterranean, in axial cells
@@ -113,6 +114,14 @@ export function placeHome(tx: Tx, playerId: PlayerId, cell: string, x: number, y
   if (!revealedOf(h, s).has(cell)) fail("hidden_cell");
   if (!Number.isInteger(x) || !Number.isInteger(y)) fail("unknown_cell");
   if (cellAtPoint(x, y, s) !== cell) fail("unknown_cell");
+  if (s.map.tiles) {
+    const others = standingPosts(h, s)
+      .slice(1)
+      .map((p): [number, number] => [p.x, p.y]);
+    const towns = s.map.cities.map((t) => citySpot(t, s));
+    const fault = tileFault(s, cell, [x, y], towns, others);
+    if (fault) fail(fault);
+  }
   const clear = s.map.cityClearance;
   if (clear > 0 && s.map.cities.some((t) => within(citySpot(t, s), [x, y], clear))) fail("on_city");
   const others = standingPosts(h, s).slice(1);
@@ -444,7 +453,18 @@ export function placeCounter(
   const [cx, cy] = pointOf(cell, s);
   const at: [number, number] = [x ?? cx, y ?? cy];
   if (!Number.isInteger(at[0]) || !Number.isInteger(at[1])) fail("unknown_cell");
-  if (cellAtPoint(at[0], at[1], s) !== cell) fail("unknown_cell");
+  if (cellAtPoint(at[0], at[1], s) !== cell && !s.map.tiles) fail("unknown_cell");
+  if (s.map.tiles) {
+    const fondaci: [number, number][] = [
+      ...standingPosts(h, s).map((p): [number, number] => [p.x, p.y]),
+      ...h.builds
+        .filter((b) => b.kind === "post" && b.x !== undefined && b.y !== undefined)
+        .map((b): [number, number] => [b.x ?? 0, b.y ?? 0]),
+    ];
+    const towns = s.map.cities.map((t) => citySpot(t, s));
+    const fault = tileFault(s, cell, at, towns, fondaci);
+    if (fault) fail(fault);
+  }
   if (s.map.postSpacing > 0) {
     const others: [number, number][] = [
       ...standingPosts(h, s).map((p): [number, number] => [p.x, p.y]),

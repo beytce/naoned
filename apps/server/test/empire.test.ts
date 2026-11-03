@@ -214,18 +214,19 @@ describe("the map (the map at the centre, step 2)", () => {
     // Milan's cell, far in the unknown at the Casa 1.
     const far = await act(cookie, { type: "empirePlaceCounter", cell: "-3,9" });
     expect(far.json().error).toMatch(/hidden_cell|unknown_cell/);
-    // Venice's own sector: a counter put there, apart from Venice, reveals the six around it.
+    // Venice's own sector, on the small tiles (3 November): full, its one free tile the first
+    // fondaco's; a counter refused there, beside the fondaco as on a town.
     const cell = Object.keys(map.cells)[0];
     const near = await act(cookie, { type: "empirePlaceCounter", cell, ...map.home });
     expect(near.json().error).toBe("post_too_close");
-    const put = await act(cookie, {
+    const venice = map.cities.find((c: { code: string }) => c.code === "venezia");
+    const onTown = await act(cookie, {
       type: "empirePlaceCounter",
       cell,
-      x: map.home.x,
-      y: map.home.y + 12,
+      x: venice.x,
+      y: venice.y,
     });
-    expect(put.json().error).toBeUndefined();
-    expect(put.json().view.map.sites).toEqual([expect.objectContaining({ kind: "post", cell })]);
+    expect(onTown.json().error).toBe("on_city");
     const city = await act(cookie, {
       type: "empireDeliver",
       good: "bread",

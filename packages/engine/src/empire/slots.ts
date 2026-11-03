@@ -181,3 +181,24 @@ export function townClashes(
     }
   return out;
 }
+
+/**
+ * Where a fondaco may be put down on the small tiles: on a tile's middle (its point rounded to the
+ * chart's units), in the cell asked, the tile touching no town's and no other fondaco's. The error
+ * to fail with, or null.
+ */
+export function tileFault(
+  s: EmpireSettings,
+  cell: string,
+  at: [number, number],
+  towns: [number, number][],
+  fondaci: [number, number][],
+): "unknown_cell" | "on_city" | "post_too_close" | null {
+  const t = slotAt(at[0], at[1], s);
+  const [mx, my] = slotPoint(t.cell, t.k, s);
+  if (t.cell !== cell || Math.round(mx) !== at[0] || Math.round(my) !== at[1])
+    return "unknown_cell";
+  if (towns.some((p) => slotsTouch(p, at, s))) return "on_city";
+  if (fondaci.some((p) => slotsTouch(p, at, s))) return "post_too_close";
+  return null;
+}

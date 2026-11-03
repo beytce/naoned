@@ -128,7 +128,13 @@ export interface EmpireView {
   /** The orders of the cities its counters serve (after Hades' Star's shipments). */
   orders: CityOrders[];
   /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
-  moves: { departSeconds: number; unitsPerSecond: number; maxStops: number };
+  moves: {
+    departSeconds: number;
+    unitsPerSecond: number;
+    /** The long voyages: seconds a unit of the chart, when set (it rules then). */
+    secondsPerUnit?: number;
+    maxStops: number;
+  };
   /** The vehicles one may buy, those of the house, and its voyages under way. */
   vehicles: {
     shop: {
@@ -297,6 +303,8 @@ export interface EmpireMapView {
   postSpacing: number;
   /** No fondaco closer than this to a town. */
   cityClearance: number;
+  /** The small tiles: a fondaco is put down on a tile's middle (slots.ts). */
+  tiles: boolean;
   /** A land vehicle between two counters: so many units an hour. */
   transferUnitsPerHour: number;
   /** The cities the house's counters serve. */
@@ -691,6 +699,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     reach: s.map.reach,
     postSpacing: s.map.postSpacing,
     cityClearance: s.map.cityClearance,
+    tiles: s.map.tiles,
     transferUnitsPerHour: s.map.transferUnitsPerHour,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
     unlocked: unlockedOf(house, s),
