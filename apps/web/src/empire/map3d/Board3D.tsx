@@ -105,6 +105,8 @@ export interface Board3DProps {
   p: EmpirePayload;
   /** The workshops of the fondaco touched, deployed around it: their tiles stand in 3D. */
   orbit?: OrbitSpot[] | null;
+  /** The scene takes the touches from now on (its places' zones in). */
+  onReady?: () => void;
 }
 
 /** Whether the device asks for less motion (read live). */
@@ -126,7 +128,7 @@ export function useLive() {
  * then asks no frame at rest).
  */
 const Board3D = memo(
-  forwardRef<Board3DHandle, Board3DProps>(function Board3D({ p, orbit = null }, ref) {
+  forwardRef<Board3DHandle, Board3DProps>(function Board3D({ p, orbit = null, onReady }, ref) {
     const map = p.view?.map;
     // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its map and its Porta
     const input = useMemo<SceneInput | null>(
@@ -227,6 +229,7 @@ const Board3D = memo(
           zones={touch}
           onReady={(fn) => {
             hitter.current = fn;
+            onReady?.();
           }}
         />
         <Suspense fallback={null}>

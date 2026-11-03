@@ -397,8 +397,13 @@ export const EmpireMap = forwardRef<
   }, [opened, base, view?.house, view?.workshopSlots, view?.regions]);
   // The 3D board in: its camera set from the map's at once (a stable callback: never again at a
   // tick of the clock, which would ask the board a frame each second).
+  // Until the 3D board is in (its code and its models fetched), the marks take the touches as on
+  // the SVG map; then the scene does (a ray), the marks letting the finger through.
+  const [threeReady, setThreeReady] = useState(false);
+  const onThreeReady = useCallback(() => setThreeReady(true), []);
   const onBoard3d = useCallback((h: Board3DHandle | null) => {
     board3d.current = h;
+    if (!h) setThreeReady(false);
     if (h) camRef.current.repaint();
   }, []);
   // On the 3D board, the ground's point under a touch, by the camera's ray (camera.ts).
@@ -495,7 +500,7 @@ export const EmpireMap = forwardRef<
       ref={root}
       className="absolute inset-0 touch-none select-none overflow-hidden bg-[#08111F]"
       data-map="empire"
-      data-three={MAP_3D ? "" : undefined}
+      data-three={MAP_3D && threeReady ? "" : undefined}
       data-orbit={opened ?? undefined}
       data-placing={placing?.kind}
       data-aiming={targets ? "" : undefined}

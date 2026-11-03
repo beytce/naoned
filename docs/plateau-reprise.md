@@ -106,7 +106,7 @@ Le porteur veut le rendu « pâte à modeler » de ses références : un vrai di
 
 ### L'ouvrir
 
-- `?map=3d` dans l'adresse (lu au chargement du jeu ; par exemple `…/connexion?token=…&map=3d`), ou un build avec `VITE_MAP=3d`. Le plateau 3D est un fragment de code à part (`Board3D-*.js`), chargé seulement alors, hors du cache de la PWA comme les modèles.
+- **La carte 3D est la carte du jeu par défaut depuis le 3 novembre 2026** (§ 8) ; la carte SVG, en repli : sans WebGL, ou avec `?map=svg`. Avant la bascule : `?map=3d` dans l'adresse, ou un build avec `VITE_MAP=3d`. Le plateau 3D est un fragment de code à part (`Board3D-*.js`), chargé seulement alors, hors du cache de la PWA comme les modèles.
 - Pour le développement : `&fx=0` (sans effets), `&perf=1` (sonde d'images, `window.__m3d`), `&tone=agx`.
 
 ### L'architecture : la même carte, son sol en 3D
@@ -225,6 +225,10 @@ Demande du porteur, sur ses références (des diorama où chaque tuile porte une
 
 ### Reste
 
-1. **La bascule** de la 3D par défaut (`VITE_MAP=3d`) et le retrait de la carte SVG : décision du porteur, après des mesures sur de vrais téléphones.
+1. **La bascule est faite** (décision du porteur, 3 novembre 2026) : la carte 3D est celle du jeu par défaut.
+   - La carte SVG ne reste qu'en **repli** : sur un appareil sans WebGL, ou demandée par `?map=svg` (ou un build `VITE_MAP=svg`) ; `map3d/flag.ts`.
+   - Tant que le plateau 3D charge (son code, ses modèles), les repères prennent les touchers comme sur la carte SVG ; ensuite, la scène (`data-three`).
+   - Parcours : `e2e:empire` en 3D par défaut, `MAP3D=0` pour le repli SVG ; la Porta (`e2e/porta.mjs`) touche ses lieux au milieu de leur repère.
+   - À suivre : des mesures sur de vrais téléphones (`?perf=1`), et le retrait du plateau SVG (`art/plateau/board.ts`) quand le repli ne servira plus.
 2. Des monuments pour les autres grandes villes (Milan, Florence, Constantinople…).
 3. Kenney (domaine à autoriser), un cheval CC0 pour les combattants, la provenance de l'âne à revérifier.

@@ -68,10 +68,10 @@ async function magicLink(email) {
   throw new Error("no magic link in the server's log");
 }
 
-// MAP3D=1: the same journey on the 3D board (?map=3d, docs/plateau-reprise.md § 7): WebGL in
-// software in a container without a GPU; a place is touched through the scene (a ray), so its
-// mark is pressed at its middle with the mouse rather than clicked.
-const MAP3D = process.env.MAP3D === "1";
+// The journey on the 3D board, the game's map by default (3 November 2026): WebGL in software in a
+// container without a GPU; a place is touched through the scene (a ray), so its mark is pressed at
+// its middle with the mouse rather than clicked. MAP3D=0: on the SVG board, the fallback (?map=svg).
+const MAP3D = process.env.MAP3D !== "0";
 
 const server = await startServer();
 const browser = await chromium.launch({
@@ -104,7 +104,7 @@ try {
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
     await page.goto(
-      `${server.url}/connexion?token=${await magicLink(email)}${MAP3D ? "&map=3d" : ""}`,
+      `${server.url}/connexion?token=${await magicLink(email)}${MAP3D ? "" : "&map=svg"}`,
     );
     await page.waitForSelector("input[autocomplete=nickname]");
     await page.fill("input", `Casa_${width}`);
