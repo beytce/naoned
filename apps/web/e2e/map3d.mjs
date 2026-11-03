@@ -118,9 +118,9 @@ try {
   await found(page, server.url);
   const open3d = async (extra = "", pg = page) => {
     await pg.goto(`${server.url}/?map=3d${extra}`);
-    await pg.waitForSelector("[data-map=empire3d] canvas", { timeout: 20_000 });
+    await pg.waitForSelector("[data-map=empire] canvas", { timeout: 20_000 });
     await pg
-      .waitForSelector("[data-map=empire3d] [data-city]", { timeout: 30_000 })
+      .waitForSelector("[data-map=empire] [data-city]", { timeout: 30_000 })
       .catch(async (e) => {
         await pg.screenshot({ path: join(OUT, "stuck.png") });
         throw new Error(`${e.message}\n${faults.join("\n")}`);

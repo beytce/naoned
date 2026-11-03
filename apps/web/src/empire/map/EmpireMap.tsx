@@ -1,6 +1,8 @@
 import { cellsWithin } from "@comptoirs/engine";
 import {
+  Suspense,
   forwardRef,
+  lazy,
   memo,
   useCallback,
   useEffect,
@@ -25,6 +27,8 @@ import { clock } from "../../ui.js";
 import { EmpireOrbit } from "../Orbit.js";
 import { regionName } from "../World.js";
 import { bestQuote } from "../logic.js";
+import type { Board3DHandle } from "../map3d/Board3D.js";
+import { MAP_3D } from "../map3d/flag.js";
 import { pt } from "../porta/texts.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { Fleet } from "./Fleet.js";
@@ -87,6 +91,9 @@ const orbitOn = (at: [number, number], from: Camera) => (v: Viewport) => {
   const py = keep(sy, 96, v.h - 104);
   return { s, tx: px - at[0] * s, ty: py - at[1] * TILT * s };
 };
+
+/** The board in 3D (?map=3d, docs/plateau-reprise.md § 7): its own chunk, fetched only then. */
+const Board3D = lazy(() => import("../map3d/Board3D.js"));
 
 /** The chart is never drawn larger than this across (px): a phone's GPU keeps up with it. */
 const MAX_RASTER = 4_096;
@@ -151,6 +158,8 @@ export const EmpireMap = forwardRef<
   const mist = useRef<HTMLDivElement>(null);
   const ground = useRef<HTMLDivElement>(null);
   const pins = useRef<HTMLDivElement>(null);
+  // The board in 3D, under the layers: its camera follows the map's at each paint.
+  const board3d = useRef<Board3DHandle | null>(null);
   // The counter whose workshops are deployed around it, opened at its touch (never by a zoom).
   const [opened, setOpened] = useState<string | null>(null);
   const openedNow = useRef<string | null>(null);
@@ -172,6 +181,7 @@ export const EmpireMap = forwardRef<
   const ref0 = useRef(sectorOn({ w: window.innerWidth, h: window.innerHeight }).s);
 
   const paint = useCallback((cam: Camera, v: Viewport) => {
+    board3d.current?.view(cam, v);
     const { s, tx, ty } = cam;
     const k = s / drawn.current;
     // The planes of the depth: the night at a sixth of the move, the mists at half.
@@ -364,22 +374,36 @@ export const EmpireMap = forwardRef<
       data-aiming={targets ? "" : undefined}
       onContextMenu={rightClick}
     >
+      {/* The board in 3D, under every layer, its camera the map's. */}
+      {MAP_3D && (
+        <Suspense fallback={null}>
+          <Board3D
+            ref={(h) => {
+              board3d.current = h;
+              if (h) camera.repaint();
+            }}
+            p={p}
+          />
+        </Suspense>
+      )}
       {/* The night, far behind: a glow over the lagoon and its scattered lights. */}
-      <div ref={back} className="pointer-events-none absolute -inset-[40%]" aria-hidden="true">
-        <div className="absolute inset-0 [background:radial-gradient(ellipse_at_45%_40%,#1B3558_0%,#0E1E36_45%,#070E1A_100%)]" />
-        <svg className="absolute inset-0 h-full w-full opacity-70" aria-hidden="true">
-          <defs>
-            <pattern id="night-lights" width="140" height="140" patternUnits="userSpaceOnUse">
-              <circle cx="12" cy="20" r="1" fill="#BFE3FF" opacity="0.5" />
-              <circle cx="80" cy="44" r="0.7" fill="#F3D492" opacity="0.6" />
-              <circle cx="46" cy="96" r="1.2" fill="#BFE3FF" opacity="0.35" />
-              <circle cx="118" cy="120" r="0.8" fill="#BFE3FF" opacity="0.5" />
-              <circle cx="104" cy="8" r="0.6" fill="#F3D492" opacity="0.4" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#night-lights)" />
-        </svg>
-      </div>
+      {!MAP_3D && (
+        <div ref={back} className="pointer-events-none absolute -inset-[40%]" aria-hidden="true">
+          <div className="absolute inset-0 [background:radial-gradient(ellipse_at_45%_40%,#1B3558_0%,#0E1E36_45%,#070E1A_100%)]" />
+          <svg className="absolute inset-0 h-full w-full opacity-70" aria-hidden="true">
+            <defs>
+              <pattern id="night-lights" width="140" height="140" patternUnits="userSpaceOnUse">
+                <circle cx="12" cy="20" r="1" fill="#BFE3FF" opacity="0.5" />
+                <circle cx="80" cy="44" r="0.7" fill="#F3D492" opacity="0.6" />
+                <circle cx="46" cy="96" r="1.2" fill="#BFE3FF" opacity="0.35" />
+                <circle cx="118" cy="120" r="0.8" fill="#BFE3FF" opacity="0.5" />
+                <circle cx="104" cy="8" r="0.6" fill="#F3D492" opacity="0.4" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#night-lights)" />
+          </svg>
+        </div>
+      )}
 
       {/* The chart, under the finger: drawn at `base`, moved and scaled by the GPU. */}
       <div
@@ -391,10 +415,12 @@ export const EmpireMap = forwardRef<
       </div>
 
       {/* The mists, between the chart and the places, drifting slowly. */}
-      <div ref={mist} className="pointer-events-none absolute -inset-[50%]" aria-hidden="true">
-        <div className="mist-drift absolute left-[30%] top-[35%] h-[30%] w-[45%] [background:radial-gradient(closest-side,rgb(191_227_255/0.06),transparent)]" />
-        <div className="mist-drift absolute left-[55%] top-[55%] h-[22%] w-[35%] [background:radial-gradient(closest-side,rgb(125_181_150/0.06),transparent)] [animation-delay:-14s]" />
-      </div>
+      {!MAP_3D && (
+        <div ref={mist} className="pointer-events-none absolute -inset-[50%]" aria-hidden="true">
+          <div className="mist-drift absolute left-[30%] top-[35%] h-[30%] w-[45%] [background:radial-gradient(closest-side,rgb(191_227_255/0.06),transparent)]" />
+          <div className="mist-drift absolute left-[55%] top-[55%] h-[22%] w-[35%] [background:radial-gradient(closest-side,rgb(125_181_150/0.06),transparent)] [animation-delay:-14s]" />
+        </div>
+      )}
 
       {/* The places, moved with the chart, kept at their size on screen. */}
       <div
@@ -652,17 +678,19 @@ const Chart = memo(function Chart({
   };
   const reachBase = map.reach?.base ?? 0;
   const seatSeen = (code: string) => seen.has(seatCellOf(p, code));
-  const shapes = board({
-    cells: map.cells,
-    revealed: map.revealed,
-    unlocked: map.unlocked,
-    cities: map.cities,
-    home: map.home,
-    posts: map.posts,
-    depot: map.depot,
-    camp: map.camp,
-    porta: view.porta?.cell ?? null,
-  });
+  const shapes = MAP_3D
+    ? null
+    : board({
+        cells: map.cells,
+        revealed: map.revealed,
+        unlocked: map.unlocked,
+        cities: map.cities,
+        home: map.home,
+        posts: map.posts,
+        depot: map.depot,
+        camp: map.camp,
+        porta: view.porta?.cell ?? null,
+      });
   return (
     <svg
       viewBox={`0 0 ${CHART.w} ${CHART.h * TILT}`}
@@ -671,8 +699,9 @@ const Chart = memo(function Chart({
       className="block"
       aria-hidden="true"
     >
-      {/* The board: a thick tile per sector seen, its dressing, its towns and buildings. */}
-      <PlateauShapes shapes={shapes} />
+      {/* The board: a thick tile per sector seen, its dressing, its towns and buildings (drawn
+          in 3D under the map when it is, docs/plateau-reprise.md § 7). */}
+      {shapes && <PlateauShapes shapes={shapes} />}
       <g transform={`scale(1 ${TILT})`}>
         {ROUTES.filter((r) => seatSeen(r.from) && seatSeen(r.to)).map((r) => {
           const lit =

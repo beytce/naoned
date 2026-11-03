@@ -1,17 +1,12 @@
 /**
- * The 3D map prototype (?map=3d, or VITE_MAP=3d at build): the empire's map as a little living
- * diorama in real time 3D (three.js through React Three Fiber), after the owner's references (thick
- * hexagonal tiles of clay, blue roofs, pines, rocks, under one light). Built from the house's own
- * map (`p.view.map`) through `scene3d`, the same grid and seeds as the night board's SVG. The SVG map
- * stays the default; this one is lazy (its own chunk) and touches nothing else of the game.
- *
- * What it does: tiles, lagoon, unknown, dressing, Venice and Padua, the fondaco (gold roof, tower,
- * flag), the Remise; a mule and a cart on their rounds, smoke, ripples, the flag; pan and pinch
- * bounded to the region; a touch on the fondaco or a town lights it and calls `onTarget`, as the
- * SVG map; the towns' names and order rings in HTML above it.
+ * The empire's map in 3D (docs/plateau-reprise.md, § 7): the board as a little living diorama in
+ * real time (three.js through React Three Fiber), after the owner's references: thick hexagonal
+ * tiles of clay, blue roofs, pines, rocks, under one light. It lies under the map's own layers
+ * (EmpireMap): its camera is the map's (useCamera), turned into an orthographic camera that sees
+ * the ground exactly where the SVG map drew it (camera.ts), so the places, the rings, the vehicles'
+ * medals, the orbit and the timers lie on it to the pixel. Built from the house's map (`p.view.map`)
+ * through `scene3d`, with the night board's grid and seeds.
  */
-import { venice1450Empire } from "@comptoirs/engine";
-import { Html, MapControls, OrthographicCamera } from "@react-three/drei";
 import {
   Canvas,
   type ThreeEvent,
@@ -26,7 +21,6 @@ import {
   Suspense,
   forwardRef,
   memo,
-  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -42,17 +36,14 @@ import {
   EdgesGeometry,
   Fog,
   type OrthographicCamera as OrthoCam,
-  Vector3,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { HEX_SIZE } from "../../art/hexmap.js";
 import { C } from "../../art/plateau/props.js";
-import { fr } from "../../i18n.js";
-import type { EmpireMapHandle } from "../map/EmpireMap.js";
-import type { Target } from "../map/logic.js";
+import type { Camera, Viewport } from "../../game/map/geometry.js";
 import type { EmpirePayload } from "../types.js";
+import { DISTANCE, orthoFrom } from "./camera.js";
 import {
-  FILES,
   Instanced,
   type KitModel,
   type KitName,
@@ -61,39 +52,34 @@ import {
   hexSlab,
   useKit,
 } from "./kit.js";
-import { Cart, Flag, Mule, Smoke, useWater } from "./life.js";
-import { type Scene3D, type SceneInput, scene3d, wider } from "./scene.js";
+import { Flag, Smoke, useWater } from "./life.js";
+import { type Scene3D, type SceneInput, scene3d } from "./scene.js";
 
 Cache.enabled = true;
-const t = fr.empire;
 
-/** What the map uses of drei's MapControls (three-stdlib's, not a dependency of the web). */
-interface MapControlsImpl {
-  target: Vector3;
-  object: OrthoCam;
-  update(): void;
-}
-
-/** The board's tilt: the ground seen at the night board's TILT (sin of the camera's height). */
-const ELEVATION = Math.asin(0.58);
 const NIGHT = "#16263E";
 /** The tiles: a clay slab on a night-blue base. */
 const SLAB = 3;
 const BASE = 7;
 /** The lagoon lies this far below the land; its bed further down. */
 const WATER_Y = -2.2;
-/** The camera's zoom (screen pixels per chart unit), at most. */
-const MAX_ZOOM = 42;
-/** Closer than this, the tilt-shift blurs the far and the near. */
+/** The unknown's silhouettes: thin slabs, their top this far under the land's. */
+const FOG_Y = -0.8;
+/** Closer than this (px per unit), the tilt-shift blurs the far and the near. */
 const NEAR_ZOOM = 22;
 
-export interface Map3DProps {
+/** What the map tells the board: where its camera is. */
+export interface Board3DHandle {
+  /** The map's camera moved (at each frame of a gesture): the board's follows. */
+  view(cam: Camera, v: Viewport): void;
+}
+
+export interface Board3DProps {
   p: EmpirePayload;
-  onTarget: (target: Target | null) => void;
 }
 
 /** Whether the device asks for less motion (read live). */
-function useLive() {
+export function useLive() {
   const q = "(prefers-reduced-motion: reduce)";
   const [live, setLive] = useState(() => !(window.matchMedia?.(q).matches ?? false));
   useEffect(() => {
@@ -107,236 +93,111 @@ function useLive() {
 }
 
 /**
- * Drawn again only when the house's state changes, not at each tick of the game's clock (the
- * canvas then asks no frame at rest); the latest `onTarget` is kept aside.
+ * Drawn again only when the house's map changes, never at a tick of the game's clock (the canvas
+ * then asks no frame at rest).
  */
-export const Map3D = memo(
-  forwardRef<EmpireMapHandle, Map3DProps>(function Map3D(props, ref) {
-    const target = useRef(props.onTarget);
-    target.current = props.onTarget;
-    const onTarget = useCallback((x: Target | null) => target.current(x), []);
-    return <Map3DView ref={ref} p={props.p} onTarget={onTarget} />;
-  }),
-  (a, b) => a.p === b.p,
-);
-
-const Map3DView = forwardRef<EmpireMapHandle, Map3DProps>(function Map3DView({ p, onTarget }, ref) {
-  const map = p.view?.map;
-  const wide = new URLSearchParams(window.location.search).get("scene") === "veneto";
-  const input = useMemo<SceneInput | null>(() => {
-    if (!map) return null;
-    const own: SceneInput = {
-      cells: map.cells,
-      revealed: map.revealed,
-      unlocked: map.unlocked,
-      cities: map.cities,
-      home: map.home?.placed === false ? null : map.home,
-      posts: map.posts,
-      depot: map.depot,
-    };
-    return wide ? wider(own, venice1450Empire.map as unknown as Parameters<typeof wider>[1]) : own;
-  }, [map, wide]);
-  const sc = useMemo(() => (input ? scene3d(input) : null), [input]);
-  const live = useLive();
-  const root = useRef<HTMLDivElement>(null);
-  const controls = useRef<MapControlsImpl | null>(null);
-  const [picked, setPicked] = useState<string | null>(null);
-  const [near, setNear] = useState(false);
-  // The point the scene is laid around (chart units): its middle.
-  const origin = useMemo<[number, number]>(
-    () =>
-      sc ? [(sc.bounds.minX + sc.bounds.maxX) / 2, (sc.bounds.minY + sc.bounds.maxY) / 2] : [0, 0],
-    [sc],
-  );
-  const pick = (id: string | null, target: Target | null) => {
-    setPicked(id);
-    onTarget(target);
-    invalidate();
-  };
-
-  // The camera's moves, from the game's keys and buttons (as the SVG map's handle).
-  const fit = () => {
-    const el = root.current;
-    if (!el || !sc) return 10;
-    const w = el.clientWidth || 390;
-    const h = el.clientHeight || 844;
-    return Math.min((w * 0.95) / (Math.sqrt(3) * HEX_SIZE), (h * 0.62) / (2 * HEX_SIZE * 0.58));
-  };
-  const farZoom = () => {
-    const el = root.current;
-    if (!el || !sc) return 4;
-    const w = sc.bounds.maxX - sc.bounds.minX;
-    const h = (sc.bounds.maxY - sc.bounds.minY) * 0.58;
-    return Math.min((el.clientWidth || 390) / w, (el.clientHeight || 844) / h) * 0.9;
-  };
-  const lookAt = (x: number, z: number, zoom?: number) => {
-    const c = controls.current;
-    if (!c) return;
-    const cam = c.object as OrthoCam;
-    const d = new Vector3().subVectors(cam.position, c.target);
-    c.target.set(x, 0, z);
-    cam.position.copy(c.target).add(d);
-    if (zoom) {
-      cam.zoom = zoom;
-      cam.updateProjectionMatrix();
-    }
-    c.update();
-    onMove();
-    invalidate();
-  };
-  const homeAt = (): [number, number] =>
-    sc?.home ? [sc.home.x - origin[0], sc.home.y - origin[1]] : [0, 0];
-  useImperativeHandle(ref, () => ({
-    toggle() {
-      const cam = controls.current?.object as OrthoCam | undefined;
-      const [x, z] = homeAt();
-      if (cam && cam.zoom > fit() * 1.5) lookAt(0, 0, fit());
-      else lookAt(x, z, fit() * 2.6);
-    },
-    home() {
-      const [x, z] = homeAt();
-      lookAt(x, z, fit() * 2.6);
-    },
-    far() {
-      lookAt(0, 0, Math.max(farZoom(), 1));
-    },
-    info() {},
-    pan(dx, dy) {
-      const c = controls.current;
-      if (!c) return;
-      const cam = c.object as OrthoCam;
-      const el = root.current;
-      const step = ((el?.clientWidth ?? 390) * 0.12) / cam.zoom;
-      lookAt(c.target.x + dx * step, c.target.z + dy * step);
-    },
-    zoom(k) {
-      const c = controls.current;
-      if (!c) return;
-      const cam = c.object as OrthoCam;
-      cam.zoom = Math.min(MAX_ZOOM, Math.max(farZoom(), cam.zoom * k));
-      cam.updateProjectionMatrix();
-      onMove();
+const Board3D = memo(
+  forwardRef<Board3DHandle, Board3DProps>(function Board3D({ p }, ref) {
+    const map = p.view?.map;
+    const input = useMemo<SceneInput | null>(
+      () =>
+        map
+          ? {
+              cells: map.cells,
+              revealed: map.revealed,
+              unlocked: map.unlocked,
+              cities: map.cities,
+              home: map.home?.placed === false ? null : map.home,
+              posts: map.posts,
+              depot: map.depot,
+              camp: map.camp,
+              porta: p.view?.porta?.cell ?? null,
+            }
+          : null,
+      [map, p.view?.porta?.cell],
+    );
+    const sc = useMemo(() => (input ? scene3d(input) : null), [input]);
+    const live = useLive();
+    const [near, setNear] = useState(false);
+    // The map's camera, kept until the canvas has its own, then applied to it at each move.
+    const last = useRef<{ cam: Camera; v: Viewport } | null>(null);
+    const camera = useRef<OrthoCam | null>(null);
+    const apply = () => {
+      const c = camera.current;
+      const l = last.current;
+      if (!c || !l) return;
+      const o = orthoFrom(l.cam, l.v);
+      c.position.set(...o.position);
+      c.zoom = o.zoom;
+      c.lookAt(...o.target);
+      c.updateProjectionMatrix();
+      const isNear = o.zoom > NEAR_ZOOM;
+      setNear((was) => (was === isNear ? was : isNear));
       invalidate();
-    },
-  }));
-
-  // The camera's zoom on the HTML above (the rings grow with the map).
-  const onMove = () => {
-    const c = controls.current;
-    if (!c || !sc) return;
-    const cam = c.object as OrthoCam;
-    // Bounded to the region: the camera's target stays over the ground seen.
-    const hx = (sc.bounds.maxX - sc.bounds.minX) / 2;
-    const hz = (sc.bounds.maxY - sc.bounds.minY) / 2;
-    const tx = Math.min(hx, Math.max(-hx, c.target.x));
-    const tz = Math.min(hz, Math.max(-hz, c.target.z));
-    if (tx !== c.target.x || tz !== c.target.z) {
-      const dx = tx - c.target.x;
-      const dz = tz - c.target.z;
-      c.target.x = tx;
-      c.target.z = tz;
-      cam.position.x += dx;
-      cam.position.z += dz;
-    }
-    root.current?.style.setProperty("--z", cam.zoom.toFixed(2));
-    // Far out, the names give way (as on the SVG map), the rings stay.
-    if (root.current) root.current.toggleAttribute("data-far", cam.zoom < fit() * 0.6);
-    const isNear = cam.zoom > NEAR_ZOOM;
-    setNear((was) => (was === isNear ? was : isNear));
-  };
-
-  if (!sc || !input) return <div className="absolute inset-0 bg-[#16263E]" data-map="empire3d" />;
-  const z0 = fit();
-  const dist = 400;
-  const camPos: [number, number, number] = [
-    0,
-    dist * Math.sin(ELEVATION),
-    dist * Math.cos(ELEVATION),
-  ];
-  return (
-    <div
-      ref={root}
-      className="group absolute inset-0 touch-none select-none overflow-hidden"
-      style={{ background: NIGHT, ["--z" as string]: z0.toFixed(2) }}
-      data-map="empire3d"
-      data-live={live ? "" : undefined}
-    >
+    };
+    useImperativeHandle(ref, () => ({
+      view(cam, v) {
+        last.current = { cam, v };
+        apply();
+      },
+    }));
+    if (!sc) return null;
+    return (
       <Canvas
+        className="!absolute inset-0"
         frameloop="demand"
         shadows="soft"
         dpr={[1, 1.5]}
+        orthographic
+        camera={{ near: 1, far: 2000, position: [0, DISTANCE, DISTANCE] }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
-        onCreated={({ gl, scene }) => {
+        onCreated={({ gl, scene, camera: c }) => {
           gl.shadowMap.autoUpdate = false;
           gl.shadowMap.needsUpdate = true;
           scene.background = new Color(NIGHT);
-          scene.fog = new Fog(NIGHT, dist - 30, dist + 160);
+          scene.fog = new Fog(NIGHT, DISTANCE - 30, DISTANCE + 160);
+          camera.current = c as OrthoCam;
+          apply();
         }}
-        onPointerMissed={(e) => {
-          if (e.type === "click") pick(null, null);
-        }}
+        data-board3d
       >
-        <OrthographicCamera
-          makeDefault
-          position={camPos}
-          zoom={z0}
-          near={1}
-          far={2000}
-          onUpdate={(c) => c.lookAt(0, 0, 0)}
-        />
-        <MapControls
-          ref={controls as never}
-          enableRotate={false}
-          enableDamping={false}
-          screenSpacePanning={false}
-          minZoom={Math.max(1, farZoom())}
-          maxZoom={MAX_ZOOM}
-          zoomToCursor
-          onChange={onMove}
-        />
-        <Lights sc={sc} origin={origin} />
+        <Lights sc={sc} />
         <Suspense fallback={null}>
-          {SHEET ? <KitSheet /> : null}
-          {!SHEET && (
-            <World
-              sc={sc}
-              origin={origin}
-              live={live}
-              picked={picked}
-              follow={FOLLOW ? (at) => lookAt(at.x, at.z) : undefined}
-              onPick={(id) => {
-                if (id === "home") pick("home", { kind: "casa" });
-                else if (id.startsWith("city:")) {
-                  const code = id.slice(5);
-                  pick(id, { kind: "city", code });
-                }
-              }}
-            />
-          )}
+          <World sc={sc} live={live} />
           <ShadowsOnce sc={sc} />
         </Suspense>
-        <Labels p={p} sc={sc} origin={origin} picked={picked} onPick={pick} />
         {FX && <Effects near={near} />}
         <Ticker live={live} />
         {PERF && <Probe />}
       </Canvas>
-    </div>
-  );
-});
+    );
+  }),
+  (a, b) => a.p.view?.map === b.p.view?.map && a.p.view?.porta?.cell === b.p.view?.porta?.cell,
+);
 
-export default Map3D;
+export default Board3D;
 
 /** One light from the upper left, a soft sky: clay under a single sun. */
-function Lights({ sc, origin }: { sc: Scene3D; origin: [number, number] }) {
+function Lights({ sc }: { sc: Scene3D }) {
   const w = sc.bounds.maxX - sc.bounds.minX;
   const h = sc.bounds.maxY - sc.bounds.minY;
   const half = Math.max(w, h) * 0.75;
-  void origin;
+  const cx = (sc.bounds.minX + sc.bounds.maxX) / 2;
+  const cz = (sc.bounds.minY + sc.bounds.maxY) / 2;
+  const light = useRef<import("three").DirectionalLight>(null);
+  useEffect(() => {
+    const l = light.current;
+    if (!l) return;
+    // The light over the middle of what is seen, its shadows' box around it.
+    l.target.position.set(cx, 0, cz);
+    l.target.updateMatrixWorld();
+  }, [cx, cz]);
   return (
     <>
       <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
       <directionalLight
-        position={[-70, 120, -60]}
+        ref={light}
+        position={[cx - 70, 120, cz - 60]}
         intensity={2.4}
         color="#FFF3DD"
         castShadow
@@ -437,46 +298,9 @@ function Probe() {
 
 /** The effects (ambient occlusion, tilt-shift, tone mapping): ?fx=0 without, to measure them. */
 const FX = new URLSearchParams(window.location.search).get("fx") !== "0";
-/** The camera following the mule (?suivre=mule, for the captures and the video). */
-const FOLLOW = new URLSearchParams(window.location.search).get("suivre") === "mule";
-/** A sheet of every model, to choose them (?map=3d&kit=1, for development). */
-const SHEET = new URLSearchParams(window.location.search).get("kit") === "1";
-function KitSheet() {
+/** The board, its dressing, its towns and buildings. Chart units: x east, z south. */
+function World({ sc, live }: { sc: Scene3D; live: boolean }) {
   const kit = useKit();
-  const names = Object.keys(FILES) as KitName[];
-  return (
-    <group position={[0, 0, 0]}>
-      {names.map((n, i) => (
-        <group key={n} position={[((i % 4) - 1.5) * 10, 0, Math.floor(i / 4) * 11 - 22]}>
-          <mesh geometry={kit(n, { roof: C.roofGold }).geo} material={clayShared} scale={7} />
-          <Html position={[0, -0.5, 3.5]} center>
-            <span className="whitespace-nowrap bg-night px-1 text-xs text-cream">{n}</span>
-          </Html>
-        </group>
-      ))}
-    </group>
-  );
-}
-
-/** The board, its dressing, its towns and buildings, and what moves on it. */
-function World({
-  sc,
-  origin,
-  live,
-  picked,
-  onPick,
-  follow,
-}: {
-  sc: Scene3D;
-  origin: [number, number];
-  live: boolean;
-  picked: string | null;
-  onPick: (id: string) => void;
-  follow?: (at: Vector3) => void;
-}) {
-  const kit = useKit();
-  const [ox, oy] = origin;
-  const at = (x: number, y: number): [number, number] => [x - ox, y - oy];
   const water = useWater(live);
 
   const slabs = useMemo(() => {
@@ -484,21 +308,20 @@ function World({
     const base = hexSlab(HEX_SIZE - 0.9, BASE, 0.5);
     base.translate(0, -SLAB + 0.2, 0);
     const fog = hexSlab(HEX_SIZE - 1.6, 1.4, 0.4);
-    fog.translate(0, -BASE - 1, 0);
+    // Its top just under the ground: the map's outlines (the sectors to buy) lie on it.
+    fog.translate(0, FOG_Y, 0);
     const bed = hexSlab(HEX_SIZE, BASE - 1, 0.2);
     bed.translate(0, -SLAB - 1.2, 0);
     return { top, base, fog, bed };
   }, []);
-  // The tiles by kind, laid around the origin (kept while the board stays the same).
+  // The tiles by kind (kept while the board stays the same).
   const { own, seen, wet, fog, solid } = useMemo(() => {
     const of = (kind: string) =>
-      sc.tiles
-        .filter((tl) => tl.kind === kind)
-        .map((tl) => ({ x: tl.x - ox, y: 0, z: tl.y - oy, s: 1 }));
+      sc.tiles.filter((tl) => tl.kind === kind).map((tl) => ({ x: tl.x, y: 0, z: tl.y, s: 1 }));
     const own = of("own");
     const seen = of("seen");
     return { own, seen, wet: of("water"), fog: of("fog"), solid: [...own, ...seen] };
-  }, [sc, ox, oy]);
+  }, [sc]);
   // The lagoon: one surface over every sea tile, finely cut for its ripples.
   const lagoon = useMemo(() => (wet.length ? lagoonGeometry(wet) : null), [wet]);
   const fogEdges = useMemo(() => new EdgesGeometry(hexSlab(HEX_SIZE - 1.6, 0.01, 0)), []);
@@ -510,13 +333,12 @@ function World({
       { model: KitModel; items: Parameters<typeof Instanced>[0]["items"] }
     >();
     const add = (key: string, model: KitModel, x: number, y: number, s: number, rot: number) => {
-      const [px, pz] = [x - ox, y - oy];
       let g = groups.get(key);
       if (!g) {
         g = { model, items: [] };
         groups.set(key, g);
       }
-      g.items.push({ x: px, y: 0, z: pz, s, rot });
+      g.items.push({ x, y: 0, z: y, s, rot });
     };
     const muted = {
       roof: C.roofMuted,
@@ -581,22 +403,9 @@ function World({
       );
     }
     return [...groups.entries()];
-  }, [sc, kit, ox, oy]);
+  }, [sc, kit]);
 
   const docks = sc.props.filter((pr) => pr.kind === "dock");
-  const home = sc.home ? at(sc.home.x, sc.home.y) : null;
-  const depot = sc.depot ? at(sc.depot.x, sc.depot.y) : null;
-
-  // The rounds: the mule from the fondaco to Padua and back; the cart to the Remise or a field.
-  const rounds = useMemo(() => roundsOf(sc, origin), [sc, origin]);
-  const tap = (id: string) => (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    if (e.delta > 8) return;
-    onPick(id);
-  };
-  const towns = sc.towns.map((tw) => ({ id: `city:${tw.code}`, at: at(tw.x, tw.y), r: 6 }));
-  const targets = [...(home ? [{ id: "home", at: home, r: 7 }] : []), ...towns];
-
   return (
     <group>
       {/* The tiles: one's own in sand-gold, the others seen in mist-blue, on night-blue bases. */}
@@ -615,7 +424,7 @@ function World({
         receive={false}
       />
       {fog.map((f) => (
-        <lineSegments key={`${f.x},${f.z}`} geometry={fogEdges} position={[f.x, -BASE - 1, f.z]}>
+        <lineSegments key={`${f.x},${f.z}`} geometry={fogEdges} position={[f.x, FOG_Y + 0.05, f.z]}>
           <lineBasicMaterial color={C.mist} transparent opacity={0.35} />
         </lineSegments>
       ))}
@@ -623,15 +432,22 @@ function World({
       {decor.map(([key, g]) => (
         <Instanced key={key} geo={g.model.geo} items={g.items} />
       ))}
-      {docks.map((d) => {
-        const [x, z] = at(d.x, d.y);
-        return <Dock key={`${d.x},${d.y}`} x={x} z={z} rot={d.rot} />;
-      })}
+      {/* The lanes from the fondaci to the towns: beaten earth. */}
+      {sc.lanes.map((l) => (
+        <Track key={l.map((q) => q.join(",")).join(" ")} path={l} />
+      ))}
+      {docks.map((d) => (
+        <Dock key={`${d.x},${d.y}`} x={d.x} z={d.y} rot={d.rot} />
+      ))}
       {/* The fondaco: its hall under a gold roof, its tower, its flag, its chimney's smoke. */}
-      {home && <Fondaco x={home[0]} z={home[1]} live={live} />}
+      {sc.home && <Fondaco x={sc.home.x} z={sc.home.y} live={live} />}
+      {/* The fondaci of the other regions, smaller. */}
+      {sc.posts.map((pt) => (
+        <Fondaco key={`${pt.x},${pt.y}`} x={pt.x} z={pt.y} live={live} k={0.62} />
+      ))}
       {/* The Remise: a market hall, its crates. */}
-      {depot && (
-        <group position={[depot[0], 0, depot[1]]}>
+      {sc.depot && (
+        <group position={[sc.depot.x, 0, sc.depot.y]}>
           <mesh
             geometry={kit("market").geo}
             material={clayShared}
@@ -648,34 +464,58 @@ function World({
           />
         </group>
       )}
-      {rounds.mule && <Track path={rounds.mule} />}
-      {rounds.cart && <Track path={rounds.cart} />}
-      {rounds.mule && <Mule path={rounds.mule} live={live} follow={follow} />}
-      {rounds.cart && <Cart path={rounds.cart} live={live} />}
-      {/* What a touch reaches: the fondaco and the towns, larger than they look; the one touched
-          lights up in lapis. */}
-      {targets.map((tg) => (
-        <group key={tg.id} position={[tg.at[0], 0, tg.at[1]]}>
-          {/* biome-ignore lint/a11y/useKeyWithClickEvents: a 3D object; the keys reach it by its name in HTML (Labels) or by the game's keys. */}
-          <mesh onClick={tap(tg.id)} position-y={3} name={tg.id}>
-            <cylinderGeometry args={[tg.r, tg.r, 7, 18]} />
-            <meshBasicMaterial transparent opacity={0} depthWrite={false} colorWrite={false} />
-          </mesh>
-          {picked === tg.id && <Halo r={tg.r} live={live} />}
+      {/* The Campo: its fields, its watchtower. */}
+      {sc.camp && (
+        <group position={[sc.camp.x, 0, sc.camp.y]}>
+          <mesh geometry={kit("grain").geo} material={clayShared} scale={7} receiveShadow />
+          <mesh
+            geometry={kit("tower").geo}
+            material={clayShared}
+            scale={3}
+            position={[3, 0, -2]}
+            castShadow
+          />
         </group>
-      ))}
+      )}
+      {/* The Porta: an old gate of stone, its arch glowing cinnabar (the lands of Rome). */}
+      {sc.porta && <Porta x={sc.porta.x} z={sc.porta.y} />}
+    </group>
+  );
+}
+
+/** The Porta: two stone towers and a glowing arch between them. */
+function Porta({ x, z }: { x: number; z: number }) {
+  const kit = useKit();
+  const stone = kit("tower", { roof: C.rockSeen });
+  return (
+    <group position={[x, 0, z]}>
+      <mesh geometry={stone.geo} material={clayShared} scale={3} position={[-3, 0, 0]} castShadow />
+      <mesh geometry={stone.geo} material={clayShared} scale={3} position={[3, 0, 0]} castShadow />
+      <mesh position={[0, 2.2, 0.2]}>
+        <torusGeometry args={[1.9, 0.45, 8, 16, Math.PI]} />
+        <meshStandardMaterial color={C.rockSeen} roughness={0.95} />
+      </mesh>
+      <mesh position={[0, 1.6, 0.1]}>
+        <planeGeometry args={[3, 3.2]} />
+        <meshStandardMaterial
+          color="#E06A4A"
+          emissive="#E06A4A"
+          emissiveIntensity={0.9}
+          roughness={1}
+        />
+      </mesh>
     </group>
   );
 }
 
 /** The fondaco: the house's hall (KayKit's large house, its roof in gold), a tower, the flag. */
-function Fondaco({ x, z, live }: { x: number; z: number; live: boolean }) {
+function Fondaco({ x, z, live, k = 1 }: { x: number; z: number; live: boolean; k?: number }) {
   const kit = useKit();
   const hall = kit("homeB", { roof: C.roofGold });
   const tower = kit("tower", { roof: C.roofGold });
   const s = 7.6;
   return (
-    <group position={[x, 0, z]} name="fondaco">
+    <group position={[x, 0, z]} scale={k} name="fondaco">
       <mesh geometry={hall.geo} material={clayShared} scale={s} castShadow receiveShadow />
       <mesh
         geometry={tower.geo}
@@ -705,22 +545,6 @@ function Dock({ x, z, rot }: { x: number; z: number; rot: number }) {
         </mesh>
       ))}
     </group>
-  );
-}
-
-/** The ring under what is touched: lapis, breathing slowly. */
-function Halo({ r, live }: { r: number; live: boolean }) {
-  return (
-    <mesh rotation-x={-Math.PI / 2} position-y={0.12} name="halo">
-      <ringGeometry args={[r - 0.9, r, 48]} />
-      <meshBasicMaterial
-        color={C.water}
-        transparent
-        opacity={live ? 0.9 : 1}
-        depthWrite={false}
-        toneMapped={false}
-      />
-    </mesh>
   );
 }
 
@@ -786,27 +610,21 @@ function lagoonGeometry(tiles: { x: number; z: number }[]): BufferGeometry {
   return g;
 }
 
-/** The mule's and the cart's paths, laid on the ground (y), around the scene's origin. */
-function roundsOf(sc: Scene3D, origin: [number, number]) {
-  const to3 = (pts: [number, number][] | null) =>
-    pts?.map(([x, y]) => [x - origin[0], 0.05, y - origin[1]] as [number, number, number]) ?? null;
-  return { mule: to3(sc.roads.mule), cart: to3(sc.roads.cart) };
-}
-
-/** A road on the ground: a ribbon of beaten earth along the path. */
-function Track({ path }: { path: [number, number, number][] }) {
+/** A lane on the ground: a ribbon of beaten earth along it. */
+function Track({ path }: { path: [number, number][] }) {
   const geo = useMemo(() => {
     const half = 1.1;
+    const y = 0.04;
     const pos: number[] = [];
     for (let i = 0; i < path.length - 1; i++) {
-      const [x0, , z0] = path[i] as [number, number, number];
-      const [x1, , z1] = path[i + 1] as [number, number, number];
+      const [x0, z0] = path[i] as [number, number];
+      const [x1, z1] = path[i + 1] as [number, number];
       const d = Math.hypot(x1 - x0, z1 - z0) || 1;
       const nx = (-(z1 - z0) / d) * half;
       const nz = ((x1 - x0) / d) * half;
-      const y = 0.04;
-      pos.push(x0 + nx, y, z0 + nz, x1 - nx, y, z1 - nz, x1 + nx, y, z1 + nz);
-      pos.push(x0 + nx, y, z0 + nz, x0 - nx, y, z0 - nz, x1 - nx, y, z1 - nz);
+      // Counter-clockwise seen from above: the ribbon faces the sky.
+      pos.push(x0 + nx, y, z0 + nz, x1 + nx, y, z1 + nz, x1 - nx, y, z1 - nz);
+      pos.push(x0 + nx, y, z0 + nz, x1 - nx, y, z1 - nz, x0 - nx, y, z0 - nz);
     }
     const g = new BufferGeometry();
     g.setAttribute("position", new BufferAttribute(new Float32Array(pos), 3));
@@ -823,111 +641,5 @@ function Track({ path }: { path: [number, number, number][] }) {
         polygonOffsetFactor={-2}
       />
     </mesh>
-  );
-}
-
-/** The towns' names and order rings, and the fondaco's name, in HTML above the board. */
-function Labels({
-  p,
-  sc,
-  origin,
-  picked,
-  onPick,
-}: {
-  p: EmpirePayload;
-  sc: Scene3D;
-  origin: [number, number];
-  picked: string | null;
-  onPick: (id: string | null, target: Target | null) => void;
-}) {
-  return (
-    <>
-      {sc.towns.map((tw) => {
-        const orders = p.view?.orders.find((o) => o.city === tw.code);
-        const fill = orders ? Math.min(1, orders.fillBps / 10_000) : 0;
-        const id = `city:${tw.code}`;
-        const name = t.cityNames[tw.code] ?? tw.code.charAt(0).toUpperCase() + tw.code.slice(1);
-        return (
-          <Html
-            key={tw.code}
-            position={[tw.x - origin[0], 0, tw.y - origin[1]]}
-            center
-            zIndexRange={[20, 0]}
-          >
-            <button
-              type="button"
-              data-city={tw.code}
-              data-fill={orders ? orders.fillBps : undefined}
-              data-picked={picked === id ? "" : undefined}
-              aria-label={name}
-              // The HTML lies inside the canvas's own box: kept from it (no pan, no « missed »).
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onPick(id, { kind: "city", code: tw.code });
-              }}
-              className="relative flex items-center justify-center"
-              style={{
-                width: "max(44px, calc(var(--z) * 9px))",
-                height: "max(44px, calc(var(--z) * 9px))",
-              }}
-            >
-              {/* The ring grows and shrinks with the map; the touch keeps 44 px at least. */}
-              {orders && (
-                <span
-                  className="pointer-events-none absolute"
-                  style={{ width: "calc(var(--z) * 11px)", height: "calc(var(--z) * 11px)" }}
-                >
-                  <OrderRing fill={fill} />
-                </span>
-              )}
-              <span
-                className="absolute left-1/2 top-full -translate-x-1/2 whitespace-nowrap rounded px-1.5 font-display text-xs font-bold text-cream transition-opacity group-data-[far]:opacity-0"
-                style={{ background: "rgb(11 22 38 / 0.72)", textShadow: "0 1px 2px #0B1626" }}
-              >
-                {name}
-              </span>
-            </button>
-          </Html>
-        );
-      })}
-    </>
-  );
-}
-
-/** The ring of a town's orders, laid flat on the ground: lagoon as it fills, gold when full. */
-function OrderRing({ fill }: { fill: number }) {
-  const full = fill >= 1;
-  const r = 44;
-  const round = 2 * Math.PI * r;
-  return (
-    <svg
-      viewBox="0 0 100 100"
-      className="pointer-events-none absolute inset-0 h-full w-full"
-      style={{ transform: "scaleY(0.58)" }}
-      aria-hidden="true"
-      data-fill-ring
-      data-full={full ? "" : undefined}
-    >
-      <circle
-        cx="50"
-        cy="50"
-        r={r}
-        fill={full ? "rgb(244 197 84 / 0.14)" : "rgb(110 224 184 / 0.10)"}
-        stroke="rgb(14 26 43 / 0.5)"
-        strokeWidth="7"
-      />
-      <circle
-        cx="50"
-        cy="50"
-        r={r}
-        fill="none"
-        stroke={full ? C.gold : C.green}
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeDasharray={`${round * fill} ${round}`}
-        transform="rotate(-90 50 50)"
-      />
-    </svg>
   );
 }

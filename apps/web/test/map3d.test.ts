@@ -1,9 +1,8 @@
-import { venice1450Empire } from "@comptoirs/engine";
 import { describe, expect, it } from "vitest";
 import { HEX_SIZE, cellCentre } from "../src/art/hexmap.js";
 import { C } from "../src/art/plateau/props.js";
 import { PALETTE, linear, recolour, swatchOf } from "../src/empire/map3d/recolor.js";
-import { type SceneInput, road, scene3d, wider } from "../src/empire/map3d/scene.js";
+import { type SceneInput, road, scene3d } from "../src/empire/map3d/scene.js";
 
 /** The house's map at its start, as the server sends it (a session of e2e/map3d.mjs). */
 const start: SceneInput = {
@@ -18,7 +17,6 @@ const start: SceneInput = {
   posts: [],
   depot: null,
 };
-const map = venice1450Empire.map as unknown as Parameters<typeof wider>[1];
 
 describe("the 3D map's scene", () => {
   it("lays a tile per sector seen and the unknown around it", () => {
@@ -53,30 +51,26 @@ describe("the 3D map's scene", () => {
     expect(a.props.some((p) => p.kind === "mountain")).toBe(false);
   });
 
-  it("sees the Veneto wider out of the game's own map, its sea a lagoon", () => {
-    const s = scene3d(wider(start, map));
-    expect(s.tiles.filter((t) => t.kind === "own").length).toBe(3);
-    expect(s.tiles.some((t) => t.kind === "water")).toBe(true);
-    expect(s.tiles.some((t) => t.kind === "seen")).toBe(true);
-    expect(s.depot).not.toBeNull();
-    expect(s.towns.some((t) => t.code === "treviso")).toBe(true);
-    // A seen sector's town is muted, one's own is not.
-    expect(s.towns.find((t) => t.code === "venezia")?.muted).toBe(false);
+  it("lays the lanes the vehicles walk, the dressing kept off them", () => {
+    const s = scene3d(start);
+    // From the fondaco to each town, straight (logic.ts, vehiclePose).
+    expect(s.lanes).toHaveLength(2);
+    for (const lane of s.lanes) {
+      expect(lane[0]).toEqual([178, 146]);
+      const end = lane[lane.length - 1] as [number, number];
+      expect(s.towns.some((t) => Math.hypot(t.x - end[0], t.y - end[1]) < 1e-9)).toBe(true);
+    }
+    for (const p of s.props)
+      for (const lane of s.lanes)
+        for (const [x, y] of lane) expect(Math.hypot(p.x - x, p.y - y)).toBeGreaterThan(3);
   });
 
-  it("walks the mule from the fondaco to Padua, the dressing off its road", () => {
-    const s = scene3d(start);
-    const mule = s.roads.mule ?? [];
-    expect(mule.length).toBeGreaterThan(10);
-    const [ax, ay] = mule[0] as [number, number];
-    const [bx, by] = mule[mule.length - 1] as [number, number];
-    expect(Math.hypot(ax - 178, ay - 146)).toBeCloseTo(4);
-    expect(Math.hypot(bx - 155, by - 141)).toBeCloseTo(4.5);
-    // It does not cross Venice.
-    for (const [x, y] of mule) expect(Math.hypot(x - 165, y - 140)).toBeGreaterThan(4);
-    for (const p of s.props)
-      for (const [x, y] of [...mule, ...(s.roads.cart ?? [])])
-        expect(Math.hypot(p.x - x, p.y - y)).toBeGreaterThan(3);
+  it("puts the Campo and the Porta where the SVG board has them", () => {
+    const s = scene3d({ ...start, camp: "2,4", porta: "2,4" });
+    const [x, y] = cellCentre("2,4");
+    expect(s.camp).toEqual({ x, y: y + 7 });
+    expect(s.porta).toEqual({ x: x + 9, y: y - 9 });
+    expect(scene3d(start).camp).toBeNull();
   });
 
   it("walks a road from one end to the other, bent to one side", () => {

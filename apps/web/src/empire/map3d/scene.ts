@@ -17,6 +17,9 @@ export interface SceneInput {
   home: { x: number; y: number } | null;
   posts: { x: number; y: number }[];
   depot: string | null;
+  /** The Campo's sector, and the Porta's (docs/plan-porta.md). */
+  camp?: string | null;
+  porta?: string | null;
 }
 
 export type TileKind = "own" | "seen" | "water" | "fog";
@@ -61,8 +64,10 @@ export interface Scene3D {
   home: { x: number; y: number } | null;
   posts: { x: number; y: number }[];
   depot: { x: number; y: number } | null;
-  /** The rounds walked (the dressing keeps off them): the mule's, to Padua; the cart's. */
-  roads: { mule: [number, number][] | null; cart: [number, number][] | null };
+  /** The lanes walked from the fondaci to the towns (the dressing keeps off them). */
+  lanes: [number, number][][];
+  camp: { x: number; y: number } | null;
+  porta: { x: number; y: number } | null;
   /** The ground seen, in chart units: the camera keeps over it. */
   bounds: { minX: number; maxX: number; minY: number; maxY: number };
 }
@@ -71,6 +76,8 @@ export interface Scene3D {
 const CLEAR = { town: 7, home: 8, depot: 6 } as const;
 /** The dressing keeps this far off a road (chart units). */
 const ROAD_CLEAR = 3.2;
+/** A lane is drawn from a fondaco to a town at most this far (chart units). */
+const LANE_MAX = 60;
 
 export function scene3d(m: SceneInput): Scene3D {
   const own = new Set(m.unlocked);
@@ -133,30 +140,29 @@ export function scene3d(m: SceneInput): Scene3D {
     stands.push([depot.x, depot.y, CLEAR.depot]);
   }
 
-  // The rounds: the mule from the fondaco to Padua and back; the cart from the Remise to the
-  // fondaco, or from the fondaco down to the south of its sector. The dressing keeps off them.
-  const between = (a: [number, number], b: [number, number], shortA: number, shortB: number) => {
-    const d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-    const u: [number, number] = [(b[0] - a[0]) / d, (b[1] - a[1]) / d];
-    const a2: [number, number] = [a[0] + u[0] * shortA, a[1] + u[1] * shortA];
-    const b2: [number, number] = [b[0] - u[0] * shortB, b[1] - u[1] * shortB];
-    // Bent to the side farther from the towns.
-    const clearance = (pts: [number, number][]) =>
-      Math.min(
-        99,
-        ...pts.slice(2, -2).flatMap(([x, y]) => towns.map((tw) => Math.hypot(tw.x - x, tw.y - y))),
-      );
-    const left = road(a2, b2, 0.22);
-    const right = road(a2, b2, -0.22);
-    return clearance(left) >= clearance(right) ? left : right;
-  };
-  const padova = towns.find((tw) => tw.code === "padova") ?? towns[0];
-  const roads: Scene3D["roads"] = { mule: null, cart: null };
-  if (home && padova) roads.mule = between([home.x, home.y], [padova.x, padova.y], 4, 4.5);
-  if (home && depot) roads.cart = between([depot.x, depot.y], [home.x, home.y], 5, 6);
-  else if (home) roads.cart = between([home.x, home.y], [home.x + 2, home.y + 15], 5, 0);
-  for (const r of [roads.mule, roads.cart])
-    for (const [x, y] of r ?? []) stands.push([x, y, ROAD_CLEAR]);
+  // The lanes the vehicles walk, straight from a fondaco to a town (logic.ts, `vehiclePose`):
+  // beaten earth on the board, the dressing kept off them, so that a mule is never hidden.
+  const lanes: [number, number][][] = [];
+  const fondaci = [...(home ? [home] : []), ...m.posts];
+  for (const f of fondaci)
+    for (const tw of towns) {
+      const d = Math.hypot(tw.x - f.x, tw.y - f.y);
+      if (d > LANE_MAX || d < 1) continue;
+      lanes.push(road([f.x, f.y], [tw.x, tw.y], 0, Math.max(2, Math.ceil(d / 2.5))));
+    }
+  for (const l of lanes) for (const [x, y] of l) stands.push([x, y, ROAD_CLEAR]);
+  let camp: Scene3D["camp"] = null;
+  if (m.camp) {
+    const [x, y] = cellCentre(m.camp);
+    camp = { x, y: y + 7 };
+    stands.push([camp.x, camp.y, CLEAR.depot]);
+  }
+  let porta: Scene3D["porta"] = null;
+  if (m.porta) {
+    const [x, y] = cellCentre(m.porta);
+    porta = { x: x + 9, y: y - 9 };
+    stands.push([porta.x, porta.y, CLEAR.depot]);
+  }
 
   // The dressing of each land sector seen, drawn as the SVG board draws it.
   const props: Prop[] = [];
@@ -271,7 +277,7 @@ export function scene3d(m: SceneInput): Scene3D {
     minY: Math.min(...ys) - pad,
     maxY: Math.max(...ys) + pad,
   };
-  return { tiles, props, towns, home, posts: m.posts, depot, roads, bounds };
+  return { tiles, props, towns, home, posts: m.posts, depot, camp, porta, lanes, bounds };
 }
 
 /** The sector under a point, among those seen. */
@@ -309,35 +315,4 @@ export function road(
     out.push([a[0] + dx * t + nx * off, a[1] + dy * t + ny * off]);
   }
   return out;
-}
-
-/**
- * The Veneto seen wider, for the prototype's second view (?map=3d&scene=veneto): the game's own
- * map (the engine's cells and towns), every sector within two of the house's seen, the sea among
- * them a lagoon, the house's sector and the Veneto's two nearest its own, a Remise put down.
- */
-export function wider(
-  m: SceneInput,
-  map: {
-    cells: Record<string, { region: string; coast?: boolean }>;
-    cities: (SceneInput["cities"][number] & { cell: string })[];
-  },
-): SceneInput {
-  const start = m.revealed[0] ?? "2,4";
-  const ring = new Set([start]);
-  for (let i = 0; i < 2; i++) for (const k of [...ring]) for (const n of neighbours(k)) ring.add(n);
-  const revealed = [...ring].sort();
-  const cells: SceneInput["cells"] = {};
-  for (const k of revealed)
-    if (map.cells[k]) cells[k] = map.cells[k] as SceneInput["cells"][string];
-  const veneto = revealed.filter((k) => cells[k]?.region === "veneto" && k !== start).slice(0, 2);
-  const unlocked = [...new Set([...m.unlocked, ...veneto])];
-  return {
-    ...m,
-    cells,
-    revealed,
-    unlocked,
-    cities: map.cities.filter((c) => ring.has(c.cell)),
-    depot: m.depot ?? veneto[0] ?? null,
-  };
 }

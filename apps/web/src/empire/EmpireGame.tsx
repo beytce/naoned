@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { type Account, ApiError } from "../api.js";
 import { BuildingArt } from "../art/buildings.js";
@@ -65,16 +65,6 @@ type SheetId =
   | `region:${string}`
   | `workshop:${string}`
   | `new:${string}`;
-
-/**
- * The 3D map prototype (docs/plateau-reprise.md, § Prototype 3D): only with « ?map=3d » in the
- * address, or a build with VITE_MAP=3d; its own chunk, fetched only then. The SVG map stays.
- */
-const MAP_3D =
-  typeof window !== "undefined" &&
-  (new URLSearchParams(window.location.search).get("map") === "3d" ||
-    (import.meta.env as Record<string, string | undefined>).VITE_MAP === "3d");
-const Map3D = lazy(() => import("./map3d/Map3D.js"));
 
 const t = fr.empire;
 const unknownError = fr.errors.unknown ?? "";
@@ -331,50 +321,37 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-night">
-      {MAP_3D ? (
-        <Suspense fallback={<div className="absolute inset-0 bg-[#16263E]" />}>
-          <Map3D
-            ref={map}
-            p={p}
-            onTarget={(x) => {
-              if (placing) return;
-              setTarget(x);
-            }}
-          />
-        </Suspense>
-      ) : (
-        <EmpireMap
-          ref={map}
-          p={p}
-          now={now}
-          busy={busy}
-          act={act}
-          onTarget={(x) => {
-            if (placing) return;
-            // A vehicle chosen: its panel; anything else: the vehicle stays chosen behind it.
-            if (x?.kind === "vehicle") setVehicle(x.id);
-            if (!x) {
-              setVehicle(null);
-              setAiming(false);
-            }
-            setTarget(x);
-          }}
-          selected={vehicle}
-          aiming={aiming}
-          onMove={(vehicleId, to) => {
+      <EmpireMap
+        ref={map}
+        p={p}
+        now={now}
+        busy={busy}
+        act={act}
+        onTarget={(x) => {
+          if (placing) return;
+          // A vehicle chosen: its panel; anything else: the vehicle stays chosen behind it.
+          if (x?.kind === "vehicle") setVehicle(x.id);
+          if (!x) {
+            setVehicle(null);
             setAiming(false);
-            setVehicle(vehicleId);
-            setTarget({ kind: "vehicle", id: vehicleId });
-            void act({ type: "empireMove", vehicleId, to });
-          }}
-          onArrive={settle}
-          placing={placing}
-          picked={picked}
-          onPick={setPicked}
-          onCamp={() => setSheet("company:terra")}
-          houseName={account.pseudo ?? ""}
-        />
-      )}
+          }
+          setTarget(x);
+        }}
+        selected={vehicle}
+        aiming={aiming}
+        onMove={(vehicleId, to) => {
+          setAiming(false);
+          setVehicle(vehicleId);
+          setTarget({ kind: "vehicle", id: vehicleId });
+          void act({ type: "empireMove", vehicleId, to });
+        }}
+        onArrive={settle}
+        placing={placing}
+        picked={picked}
+        onPick={setPicked}
+        onCamp={() => setSheet("company:terra")}
+        houseName={account.pseudo ?? ""}
+      />
 
       <Hud
         p={p}
