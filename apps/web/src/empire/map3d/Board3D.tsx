@@ -55,6 +55,7 @@ import {
   useKit,
 } from "./kit.js";
 import { Flag, Smoke, useWater } from "./life.js";
+import { MADE, Mill } from "./props3d.js";
 import {
   type Scene3D,
   type SceneInput,
@@ -79,7 +80,7 @@ const NEAR_ZOOM = 22;
 /** Farther than this (px per unit), the small dressing is not drawn (a level of detail). */
 const LOD_ZOOM = 3.6;
 /** The small dressing, by its models' keys. */
-const SMALL = /^(pine|rock)/;
+const SMALL = /^(pine|rock|made:(tuft|pebble|sand|barrel))/;
 
 /** What the map tells the board: where its camera is. */
 export interface Board3DHandle {
@@ -453,6 +454,17 @@ function Probe() {
 
 /** The effects (ambient occlusion, tilt-shift, tone mapping): ?fx=0 without, to measure them. */
 const FX = new URLSearchParams(window.location.search).get("fx") !== "0";
+/** The props made in code, by the scene's kind (props3d.tsx). */
+const MADE_KINDS: Partial<Record<string, keyof typeof MADE>> = {
+  field: "field",
+  mine: "mine",
+  barrel: "barrel",
+  tuft: "tuft",
+  pebble: "pebble",
+  sand: "sand",
+  cart: "cart",
+};
+
 /** The unknown's glass (decision of the owner, 3 November: transparent, but in relief). */
 const glass = new MeshStandardMaterial({
   color: C.mist,
@@ -532,6 +544,17 @@ function World({
       wall: C.snowSeen,
     };
     for (const pr of sc.props) {
+      // The models made in code (props3d.tsx), each in one draw.
+      const made = MADE_KINDS[pr.kind];
+      if (made) {
+        let g = groups.get(`made:${pr.kind}`);
+        if (!g) {
+          g = { model: { geo: MADE[made], h: 1 }, items: [] };
+          groups.set(`made:${pr.kind}`, g);
+        }
+        g.items.push({ x: pr.x, y: 0, z: pr.y, s: pr.s, rot: pr.rot });
+        continue;
+      }
       const over = pr.muted ? muted : {};
       const name: KitName | null =
         pr.kind === "pine"
@@ -580,19 +603,32 @@ function World({
           3.4 * h.s,
           h.rot,
         );
-      add(
-        `church:${town.muted}`,
-        kit("church", over),
-        town.campanile.x,
-        town.campanile.y,
-        4.4 * town.campanile.s,
-        0,
-      );
+      // Its monument: Venice's campanile, Padua's domes (made in code), a church else.
+      if (town.monument === "church")
+        add(
+          `church:${town.muted}`,
+          kit("church", over),
+          town.campanile.x,
+          town.campanile.y,
+          4.4 * town.campanile.s,
+          0,
+        );
+      else
+        add(
+          `made:${town.monument}`,
+          { geo: MADE[town.monument], h: 1 },
+          town.campanile.x,
+          town.campanile.y,
+          town.monument === "campanile" ? 0.8 : 0.75,
+          town.monument === "campanile" ? 0 : -0.35,
+        );
     }
     return [...groups.entries()];
   }, [sc, kit]);
 
   const docks = sc.props.filter((pr) => pr.kind === "dock");
+  const mills = sc.props.filter((pr) => pr.kind === "mill");
+  const smokes = sc.props.filter((pr) => pr.kind === "smoke");
   return (
     <group>
       {/* The small tiles: one's own in sand-gold, the others seen in mist-blue, on night-blue
@@ -639,6 +675,13 @@ function World({
       ))}
       {docks.map((d) => (
         <Dock key={`${d.x},${d.y}`} x={d.x} z={d.y} rot={d.rot} />
+      ))}
+      {/* The farms' mills, their sails turning; their chimneys' smoke. */}
+      {mills.map((m) => (
+        <Mill key={`${m.x},${m.y}`} x={m.x} z={m.y} rot={m.rot} s={m.s} live={live} />
+      ))}
+      {smokes.map((m) => (
+        <Smoke key={`${m.x},${m.y}`} at={[m.x, 3.2, m.y]} live={live} />
       ))}
       {/* The fondaco: its hall under a gold roof, its tower, its flag, its chimney's smoke. */}
       {sc.home && <Fondaco x={sc.home.x} z={sc.home.y} live={live} />}

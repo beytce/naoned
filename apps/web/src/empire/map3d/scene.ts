@@ -74,7 +74,22 @@ export interface Tile {
 /** A small tile's size across its corners, and how far it is turned (the engine's lattice). */
 export const TILE_R = (SLOT_STEP * HEX_SIZE) / Math.sqrt(3);
 
-export type PropKind = "pine" | "rock" | "mountain" | "plots" | "dock" | "house" | "mill";
+export type PropKind =
+  | "pine"
+  | "rock"
+  | "mountain"
+  | "plots"
+  | "dock"
+  | "house"
+  | "mill"
+  | "field"
+  | "mine"
+  | "barrel"
+  | "tuft"
+  | "pebble"
+  | "sand"
+  | "cart"
+  | "smoke";
 
 /** A thing of the dressing: where, how big (a share of the model's own size), turned how. */
 export interface Prop {
@@ -95,9 +110,10 @@ export interface Town {
   y: number;
   size: number;
   muted: boolean;
-  /** Its houses around, and its campanile. */
+  /** Its houses around, and its monument (Venice's campanile, Padua's domes, a church else). */
   houses: { x: number; y: number; rot: number; variant: number; s: number }[];
   campanile: { x: number; y: number; s: number };
+  monument: "campanile" | "basilica" | "church";
 }
 
 export interface Scene3D {
@@ -122,6 +138,10 @@ const LANE_MAX = 60;
 
 const S = { map: { hexSize: HEX_SIZE } } as EmpireSettings;
 const tileKey = (cell: string, k: number) => `${cell}#${k}`;
+/** The small tiles' lattice turned (the engine's SLOT_TURN), in degrees. */
+const SLOT_TURN_DEG = (Math.atan(Math.sqrt(3) / 5) * 180) / Math.PI;
+/** The towns with a monument of their own (decision of the owner, 3 November 2026). */
+const MONUMENTS: Record<string, Town["monument"]> = { venezia: "campanile", padova: "basilica" };
 
 export function scene3d(m: SceneInput): Scene3D {
   const own = new Set(m.unlocked);
@@ -167,6 +187,7 @@ export function scene3d(m: SceneInput): Scene3D {
       muted: !own.has(t.cell),
       houses,
       campanile: { x: c.x + 0.6, y: c.y - 0.8, s: 0.8 + size * 0.07 },
+      monument: MONUMENTS[c.code] ?? "church",
     });
   }
   const home = m.home ? { x: m.home.x, y: m.home.y } : null;
@@ -178,24 +199,6 @@ export function scene3d(m: SceneInput): Scene3D {
   const depot = sites.depot && { x: sites.depot.x, y: sites.depot.y };
   const camp = sites.camp && { x: sites.camp.x, y: sites.camp.y };
   const porta = sites.porta && { x: sites.porta.x, y: sites.porta.y };
-
-  // The small tiles: seven a sector seen, land, sea or unknown; the free ones of the land drawn a
-  // kind after their region.
-  const tiles: Tile[] = [];
-  const props: Prop[] = [];
-  const add = (cell: string, kind: TileKind) => {
-    for (let k = 0; k < 7; k++) {
-      const [x, y] = middle(cell, k);
-      const key = tileKey(cell, k);
-      let theme: Theme =
-        kind === "water" ? "water" : kind === "fog" ? "fog" : (held.get(key) ?? "plain");
-      if ((kind === "own" || kind === "seen") && !held.has(key))
-        theme = drawTheme(m, cell, k, kind === "own");
-      tiles.push({ key, cell, k, x, y, kind, theme });
-    }
-  };
-  for (const cell of m.revealed) add(cell, land(cell) ? (own.has(cell) ? "own" : "seen") : "water");
-  for (const cell of new Set(m.revealed.flatMap(neighbours))) if (!seen.has(cell)) add(cell, "fog");
 
   // The roads the vehicles walk, tile after tile, from a fondaco to a town (the engine's
   // `roadBetween`, as logic.ts's `vehiclePose` follows them).
@@ -210,6 +213,27 @@ export function scene3d(m: SceneInput): Scene3D {
       if (d > LANE_MAX || d < 1) continue;
       lanes.push(roadBetween([f.x, f.y], [tw.x, tw.y], ways));
     }
+  // A tile a road crosses holds nothing tall: a plain or rocks, the road through it.
+  const crossed = (x: number, y: number) =>
+    lanes.some((l) => l.some(([lx, ly]) => Math.hypot(lx - x, ly - y) < TILE_R * 0.6));
+  // The small tiles: seven a sector seen, land, sea or unknown; the free ones of the land drawn a
+  // kind after their region.
+  const tiles: Tile[] = [];
+  const props: Prop[] = [];
+  const add = (cell: string, kind: TileKind) => {
+    for (let k = 0; k < 7; k++) {
+      const [x, y] = middle(cell, k);
+      const key = tileKey(cell, k);
+      let theme: Theme =
+        kind === "water" ? "water" : kind === "fog" ? "fog" : (held.get(key) ?? "plain");
+      if ((kind === "own" || kind === "seen") && !held.has(key))
+        theme = crossed(x, y) ? lowTheme(m, cell, k) : drawTheme(m, cell, k, kind === "own");
+      tiles.push({ key, cell, k, x, y, kind, theme });
+    }
+  };
+  for (const cell of m.revealed) add(cell, land(cell) ? (own.has(cell) ? "own" : "seen") : "water");
+  for (const cell of new Set(m.revealed.flatMap(neighbours))) if (!seen.has(cell)) add(cell, "fog");
+
   const onLane = (x: number, y: number) =>
     lanes.some((l) => l.some(([lx, ly]) => Math.hypot(lx - x, ly - y) < ROAD_CLEAR));
 
@@ -229,40 +253,56 @@ export function scene3d(m: SceneInput): Scene3D {
       if (onLane(p[0], p[1]) && kind !== "mountain") return;
       props.push({ kind, x: p[0], y: p[1], s, rot, variant, muted });
     };
+    // The little things of the ground: tufts of grass, pebbles, now and then a patch of sand.
+    const ground = (tufts: number, pebbles: number) => {
+      for (let i = 0; i < tufts; i++) put("tuft", inside(TILE_R * 0.8), 0.9 + r() * 0.5, 0);
+      for (let i = 0; i < pebbles; i++) put("pebble", inside(TILE_R * 0.8), 0.7 + r() * 0.6, 0);
+    };
+    const across = SLOT_TURN_DEG + Math.floor(r() * 6) * 60;
     switch (t.theme) {
       case "forest": {
         // A dense wood: pines close together, of every size.
-        const n = 9 + Math.floor(r() * 5);
-        for (let i = 0; i < n; i++) put("pine", inside(TILE_R * 0.72), 0.45 + r() * 0.3, i % 2);
+        const n = 11 + Math.floor(r() * 6);
+        for (let i = 0; i < n; i++) put("pine", inside(TILE_R * 0.74), 0.42 + r() * 0.34, i % 2);
+        ground(3, 1);
         break;
       }
       case "mountain":
-        put("mountain", [t.x, t.y], 0.55 + r() * 0.1, Math.floor(r() * 3));
-        put("rock", inside(TILE_R * 0.75), 0.4 + r() * 0.2, 0);
+        put("mountain", [t.x, t.y - 1], 0.58 + r() * 0.1, Math.floor(r() * 3));
+        // A mine at its foot, now and then, its rails toward the eye.
+        if (r() > 0.45) put("mine", [t.x + 1.5, t.y + 3.6], 0.62, 0, 0);
+        ground(1, 3);
         break;
       case "field":
-        put("plots", [t.x - 2.2, t.y - 1], 0.42, 0, 0);
-        put("plots", [t.x + 2.4, t.y + 1.8], 0.38, 0, 0);
-        put("pine", inside(TILE_R * 0.75), 0.45, 0);
+        put("field", [t.x, t.y], 1, 0, (across * Math.PI) / 180);
+        ground(2, 1);
         break;
       case "rocks":
-        for (let i = 0; i < 3; i++) put("rock", inside(TILE_R * 0.6), 0.45 + r() * 0.3, i % 3);
+        for (let i = 0; i < 3; i++) put("rock", inside(TILE_R * 0.6), 0.5 + r() * 0.3, i % 3);
         put("pine", inside(TILE_R * 0.7), 0.5, 1);
+        ground(3, 4);
         break;
       case "farm":
         put(
           "house",
-          [t.x - 1, t.y - 1.5],
-          0.4,
+          [t.x - 1.2, t.y - 2],
+          0.42,
           r() > 0.5 ? 1 : 0,
-          Math.floor(r() * 6) * (Math.PI / 3),
+          ((SLOT_TURN_DEG + 180) * Math.PI) / 180,
         );
-        put("plots", [t.x + 2.5, t.y + 2], 0.34, 0, 0);
-        put("mill", [t.x - 3.5, t.y + 3], 0.5, 0, 0);
+        put("smoke", [t.x - 0.4, t.y - 2.6], 1, 0, 0);
+        put("mill", [t.x + 3.4, t.y - 1.8], 0.62, 0, (Math.round(r() * 2) * Math.PI) / 3);
+        put("barrel", [t.x + 0.8, t.y + 1.2], 1, 0);
+        put("barrel", [t.x + 1.7, t.y + 1.6], 0.9, 0);
+        put("cart", [t.x - 3.2, t.y + 2.4], 0.8, 0);
+        put("sand", [t.x, t.y + 0.5], 1, 0);
+        ground(3, 2);
         break;
       case "plain":
+        put("sand", inside(TILE_R * 0.3), 0.8 + r() * 0.3, 0);
         for (let i = 0; i < 2; i++) put("pine", inside(TILE_R * 0.7), 0.45 + r() * 0.2, i % 2);
-        put("rock", inside(TILE_R * 0.7), 0.35, 0);
+        put("rock", inside(TILE_R * 0.7), 0.4, 0);
+        ground(5, 3);
         break;
       default:
         break;
@@ -331,6 +371,12 @@ export function sitesOf(
     return { cell, k, x, y };
   };
   return { depot: one(m.depot, -9, 9), camp: one(m.camp, 0, 7), porta: one(m.porta, 9, -9) };
+}
+
+/** A kind for a tile a road crosses: a plain, or rocks now and then. */
+function lowTheme(m: SceneInput, cell: string, k: number): Theme {
+  const [, , ro] = DRESS[m.cells[cell]?.region ?? ""] ?? [0, 3, 1, 1];
+  return rng(hashOf(`${cell}#${k}:low`))() < ro * 0.15 ? "rocks" : "plain";
 }
 
 /**
