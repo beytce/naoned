@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bringsTo,
   dockOrders,
+  fleetSpots,
   hopSeconds,
   lastPlace,
   nearestPlace,
@@ -101,6 +102,35 @@ describe("a vehicle's pose", () => {
     const after = vehiclePose(p, v, 16_000);
     expect(after.place).toBe("city:padova");
     expect(lastPlace(v)).toBe("city:padova");
+  });
+});
+
+describe("the fleet's spots, shared by the medals and the 3D board", () => {
+  it("stands two vehicles of a place apart on its orbit, a vehicle on its hop on its line", () => {
+    const legs = [{ from: "home", to: "city:padova", departAt: 10_000, arrivesAt: 15_000 }];
+    const base = payload(cart());
+    const view = base.view as NonNullable<EmpirePayload["view"]>;
+    const p = {
+      ...base,
+      view: {
+        ...view,
+        vehicles: {
+          ...view.vehicles,
+          mine: [cart({ id: "a" }), cart({ id: "b" }), cart({ id: "c", legs })],
+        },
+      },
+    } as EmpirePayload;
+    const [a, b, c] = fleetSpots(p, 12_500);
+    // Around the fondaco at (0, 0), 6.2 away, 38° apart.
+    expect(Math.hypot(a?.x ?? 0, a?.y ?? 0)).toBeCloseTo(6.2);
+    expect(Math.hypot(b?.x ?? 0, b?.y ?? 0)).toBeCloseTo(6.2);
+    expect(Math.hypot((a?.x ?? 0) - (b?.x ?? 0), (a?.y ?? 0) - (b?.y ?? 0))).toBeGreaterThan(3);
+    expect([c?.x, c?.y]).toEqual([0, 20]);
+    expect(c?.pose.hop?.k).toBeCloseTo(0.5);
+    // On the 3D board, in front of the fondaco (south, y > 0), never behind it.
+    const [a3, b3] = fleetSpots(p, 12_500, true);
+    expect(a3?.y ?? 0).toBeGreaterThan(0);
+    expect(b3?.y ?? 0).toBeGreaterThan(0);
   });
 });
 

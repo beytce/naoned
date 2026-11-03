@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { GoodsMark, goodsColour } from "../art/goods.js";
+import { PlateauShapes } from "../art/plateau/Plateau.js";
+import { workshopTile } from "../art/plateau/workshops.js";
 import { Place, SunCorona } from "../game/map/Orbit.js";
 import { fr } from "../i18n.js";
 import { clock } from "../ui.js";
@@ -7,9 +9,48 @@ import { buildingName, recipeOf, workshopStatus } from "./logic.js";
 import type { EmpireAction, EmpirePayload, EmpireWorkshop } from "./types.js";
 
 const ORBIT = 36;
+/** The orbit lies on the board, tilted like it (docs/plan-plateau.md). */
+const FLAT = 0.72;
 const RING = 30;
 const RING_C = 2 * Math.PI * RING;
 const t = () => fr.empire.orbit;
+
+/**
+ * A fondaco's places in orbit (its workshops, its sites, its free place), as Orbit draws them: each
+ * at a point of the orbit's square, in hundredths of its width (the 3D board stands their tiles
+ * there, EmpireMap converts them to the chart).
+ */
+export function orbitOf(p: EmpirePayload, region: string) {
+  const view = p.view;
+  const home = region === "veneto";
+  const counter = view?.regions.find((r) => r.code === region);
+  const workshops = (view?.house.workshops ?? []).filter((w) => (w.region ?? "veneto") === region);
+  const sites = (view?.house.builds ?? []).filter(
+    (b) => b.kind === "newWorkshop" && (b.region ?? "veneto") === region,
+  );
+  const slots = home ? (view?.workshopSlots ?? 0) : (counter?.workshopSlots ?? 0);
+  const free = Math.max(0, slots - workshops.length - sites.length);
+  const places = workshops.length + sites.length + (free > 0 ? 1 : 0);
+  const at = (i: number) => {
+    const a = ((-90 + (360 / Math.max(1, places)) * i) * Math.PI) / 180;
+    return { x: 50 + ORBIT * Math.cos(a), y: 50 + ORBIT * FLAT * Math.sin(a) };
+  };
+  const spots: { kind: "workshop" | "site" | "free"; type: string; x: number; y: number }[] = [
+    ...workshops.map((w, i) => ({ kind: "workshop" as const, type: w.type, ...at(i) })),
+    ...sites.map((b, i) => ({
+      kind: "site" as const,
+      type: b.workshopType ?? "",
+      ...at(workshops.length + i),
+    })),
+    ...(free > 0
+      ? [{ kind: "free" as const, type: "", ...at(workshops.length + sites.length) }]
+      : []),
+  ];
+  return { workshops, sites, free, places, at, spots };
+}
+
+/** The orbit's square, at most this wide on the screen (its `max-w-[24rem]`), in px. */
+export const ORBIT_MAX_PX_CSS = 384;
 
 /**
  * The house up close (lot B of the UX audit, on the monthly game's orbit): the Casa a gold sun
@@ -27,6 +68,7 @@ export function EmpireOrbit({
   onFree,
   region = "veneto",
   bare = false,
+  on3d = false,
 }: {
   p: EmpirePayload;
   now: number;
@@ -42,23 +84,15 @@ export function EmpireOrbit({
    * bubble stays in the middle where it was.
    */
   bare?: boolean;
+  /** Over the 3D board: the workshops' tiles and the sun stand in 3D under it (§ 7, step 5). */
+  on3d?: boolean;
 }) {
   const view = p.view;
   const [hop, setHop] = useState(0);
   if (!view) return null;
   const home = region === "veneto";
   const counter = view.regions.find((r) => r.code === region);
-  const workshops = view.house.workshops.filter((w) => (w.region ?? "veneto") === region);
-  const sites = view.house.builds.filter(
-    (b) => b.kind === "newWorkshop" && (b.region ?? "veneto") === region,
-  );
-  const slots = home ? view.workshopSlots : (counter?.workshopSlots ?? 0);
-  const free = Math.max(0, slots - workshops.length - sites.length);
-  const places = workshops.length + sites.length + (free > 0 ? 1 : 0);
-  const at = (i: number) => {
-    const a = ((-90 + (360 / Math.max(1, places)) * i) * Math.PI) / 180;
-    return { x: 50 + ORBIT * Math.cos(a), y: 50 + ORBIT * Math.sin(a) };
-  };
+  const { workshops, sites, free, places, at } = orbitOf(p, region);
   const stars = workshops.map((ws, i) => ({ ws, ...at(i) }));
   const links: { from: (typeof stars)[number]; to: (typeof stars)[number]; colour: string }[] = [];
   for (const from of stars) {
@@ -81,16 +115,17 @@ export function EmpireOrbit({
         className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
         aria-hidden="true"
       >
-        <circle
+        <ellipse
           cx="50"
           cy="50"
-          r={ORBIT}
+          rx={ORBIT}
+          ry={ORBIT * FLAT}
           fill="none"
           stroke="rgb(var(--line))"
           strokeWidth="0.3"
           strokeDasharray="0.8 1.6"
         />
-        <SunCorona perHour={BigInt(view.incomePerDay) / 24n} />
+        {!on3d && <SunCorona perHour={BigInt(view.incomePerDay) / 24n} />}
         <g className="orbit-links">
           {stars.map((s) => (
             <line
@@ -157,6 +192,7 @@ export function EmpireOrbit({
           now={now}
           hop={hop}
           busy={busy}
+          on3d={on3d}
           onCollect={() => {
             setHop((n) => n + 1);
             void act({ type: "empireRelaunch", workshopId: s.ws.id });
@@ -217,6 +253,7 @@ function Star({
   busy,
   onCollect,
   onOpen,
+  on3d = false,
 }: {
   p: EmpirePayload;
   ws: EmpireWorkshop;
@@ -228,6 +265,7 @@ function Star({
   busy: boolean;
   onCollect: () => void;
   onOpen: () => void;
+  on3d?: boolean;
 }) {
   const s = workshopStatus(p, ws, now);
   const good = Object.keys(recipeOf(p, ws)?.outputs ?? {})[0] ?? "";
@@ -254,7 +292,12 @@ function Star({
       >
         <span className="relative flex h-16 w-16 items-center justify-center">
           {s.state === "ready" && <span className="marker-halo absolute -inset-3 rounded-full" />}
-          <svg viewBox="-34 -34 68 68" className="absolute inset-0 -rotate-90" aria-hidden="true">
+          <svg
+            viewBox="-34 -34 68 68"
+            className="absolute inset-0 -rotate-90"
+            style={{ transform: `translateY(18%) scaleY(${FLAT}) rotate(-90deg)` }}
+            aria-hidden="true"
+          >
             {waiting ? (
               <circle
                 r={RING}
@@ -280,11 +323,15 @@ function Star({
           </svg>
           <span
             key={hop}
-            className={`flex h-12 w-12 items-center justify-center rounded-full bg-night-2 ring-1 ring-line ${hop > 0 && s.state === "ready" ? "star-hop" : ""}`}
+            className={`relative flex h-16 w-16 items-end justify-center ${hop > 0 && s.state === "ready" ? "star-hop" : ""}`}
             style={{ animationDelay: `${rank * 70}ms` }}
           >
-            <span data-goods-from={good} className="flex">
-              <GoodsMark code={good} size={30} />
+            {on3d ? <span className="block h-20 w-20" /> : <WorkshopTile type={ws.type} />}
+            <span
+              data-goods-from={good}
+              className="absolute -bottom-1 -left-1 flex rounded-full bg-night/80 p-0.5"
+            >
+              <GoodsMark code={good} size={18} />
             </span>
           </span>
           {s.state === "ready" && (
@@ -306,5 +353,15 @@ function Star({
         </span>
       </button>
     </Place>
+  );
+}
+
+/** A workshop on its tile of the board, its model on it. */
+function WorkshopTile({ type }: { type: string }) {
+  const { shapes, viewBox } = workshopTile(type);
+  return (
+    <svg viewBox={viewBox} className="h-20 w-20 -translate-y-2 overflow-visible" aria-hidden="true">
+      <PlateauShapes shapes={shapes} />
+    </svg>
   );
 }

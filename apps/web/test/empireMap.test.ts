@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { seatOf } from "../src/art/mediterranean.js";
+import { TILT } from "../src/art/plateau/geom.js";
 import {
   CHART,
   actionsOf,
@@ -132,10 +133,14 @@ describe("the map's camera (the map at the centre, step 1)", () => {
       expect(CHART.h * s).toBeGreaterThanOrEqual(view.h - 0.01);
       const c = coverClamp({ s, tx: 500, ty: 500 }, view);
       expect(c.tx).toBeLessThanOrEqual(0);
-      expect(c.ty).toBeLessThanOrEqual(0);
+      // The board is tilted (docs/plan-plateau.md): shorter than the screen, it floats in the
+      // middle of the night; taller, it never leaves a border.
+      const h = CHART.h * TILT * s;
+      if (h <= view.h) expect(c.ty).toBeCloseTo((view.h - h) / 2);
+      else expect(c.ty).toBeLessThanOrEqual(0);
       const far = coverClamp({ s, tx: -99999, ty: -99999 }, view);
       expect(far.tx + CHART.w * s).toBeGreaterThanOrEqual(view.w - 0.01);
-      expect(far.ty + CHART.h * s).toBeGreaterThanOrEqual(view.h - 0.01);
+      if (h > view.h) expect(far.ty + h).toBeGreaterThanOrEqual(view.h - 0.01);
     }
   });
 
@@ -163,8 +168,9 @@ describe("the camera far out", () => {
         const [x, y] = seatOf(code);
         expect(x * cam.s + cam.tx).toBeGreaterThan(20);
         expect(x * cam.s + cam.tx).toBeLessThan(view.w - 20);
-        expect(y * cam.s + cam.ty).toBeGreaterThan(20);
-        expect(y * cam.s + cam.ty).toBeLessThan(view.h - 20);
+        // The board is tilted (docs/plan-plateau.md): a point lies at y·TILT on it.
+        expect(y * TILT * cam.s + cam.ty).toBeGreaterThan(20);
+        expect(y * TILT * cam.s + cam.ty).toBeLessThan(view.h - 20);
       }
     }
   });

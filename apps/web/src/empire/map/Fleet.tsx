@@ -2,14 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { GoodsMark } from "../../art/goods.js";
 import { P } from "../../art/palette.js";
+import { TILT } from "../../art/plateau/geom.js";
 import { d } from "../../game/format.js";
 import { fr } from "../../i18n.js";
 import { regionName } from "../World.js";
+import { MAP_3D } from "../map3d/flag.js";
 import type { EmpirePayload } from "../types.js";
 import {
   CHART,
   type MapPlace,
   bringsTo,
+  fleetSpots,
   hopSeconds,
   lastPlace,
   leaguesOf,
@@ -22,9 +25,6 @@ import {
 const t = fr.empire.hops;
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
-
-/** A vehicle's orbit around the place it stands at, in chart units (after Hades' Star). */
-const orbitOf = (place: string) => (place === "home" ? 6.2 : place.startsWith("city:") ? 4.6 : 4.2);
 
 interface Drag {
   id: string;
@@ -144,16 +144,8 @@ export function Fleet({
   });
 
   if (!view) return null;
-  // The standing vehicles of a place share its orbit.
-  const slots = new Map<string, number>();
-  const placed = poses.map(({ v, pose }) => {
-    if (pose.hop || !pose.place) return { v, pose, x: pose.x, y: pose.y };
-    const i = slots.get(pose.place) ?? 0;
-    slots.set(pose.place, i + 1);
-    const a = ((-55 + i * 38) * Math.PI) / 180;
-    const r = orbitOf(pose.place);
-    return { v, pose, x: pose.x + r * Math.cos(a), y: pose.y + r * Math.sin(a) };
-  });
+  // The standing vehicles of a place share its orbit (the 3D board stands them alike).
+  const placed = fleetSpots(p, clock, MAP_3D);
 
   const startDrag = (id: string) => (e: React.PointerEvent) => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
@@ -208,75 +200,79 @@ export function Fleet({
       <svg
         className="pointer-events-none absolute left-0 top-0 overflow-visible"
         width={CHART.w * base}
-        height={CHART.h * base}
-        viewBox={`0 0 ${CHART.w} ${CHART.h}`}
+        height={CHART.h * TILT * base}
+        viewBox={`0 0 ${CHART.w} ${CHART.h * TILT}`}
         aria-hidden="true"
         data-ways
       >
-        {chosen && (
-          <circle
-            cx={chosen.x}
-            cy={chosen.y}
-            r={11}
-            fill={P.info}
-            fillOpacity="0.06"
-            stroke={P.info}
-            strokeOpacity="0.28"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-            data-chosen-halo
-          />
-        )}
-        {placed.map(({ v, pose, x, y }) => {
-          const legs = v.legs.filter((l) => l.arrivesAt > clock);
-          if (legs.length === 0) return null;
-          const pts: [number, number][] = [[x, y]];
-          for (const l of legs) {
-            const b = placePoint(p, l.to);
-            if (b) pts.push(b);
-          }
-          const on = v.id === selected;
-          return (
-            <g key={v.id} data-way={v.id}>
-              {pts.slice(1).map((b, i) => {
-                const a = pts[i] ?? b;
-                return (
-                  <line
-                    // biome-ignore lint/suspicious/noArrayIndexKey: a stop is its place in the way
-                    key={i}
-                    x1={a[0]}
-                    y1={a[1]}
-                    x2={b[0]}
-                    y2={b[1]}
-                    stroke={on ? P.info : P.cream}
-                    strokeOpacity={(on ? 0.95 : 0.4) * (i === 0 ? 1 : 0.5)}
-                    strokeWidth={on ? 1.8 : 1.2}
-                    strokeDasharray="1 4"
-                    strokeLinecap="round"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                );
-              })}
-              {pose.hop && <circle cx={pose.hop.to[0]} cy={pose.hop.to[1]} r={1.1} fill={P.info} />}
-            </g>
-          );
-        })}
-        {drag && (
-          <g data-drag-line>
-            <line
-              x1={drag.from[0]}
-              y1={drag.from[1]}
-              x2={drag.at[0]}
-              y2={drag.at[1]}
-              stroke={drag.cancel ? P.vermilion : P.gold}
-              strokeWidth="2"
-              strokeDasharray="1 4"
-              strokeLinecap="round"
+        <g transform={`scale(1 ${TILT})`}>
+          {chosen && (
+            <circle
+              cx={chosen.x}
+              cy={chosen.y}
+              r={11}
+              fill={P.info}
+              fillOpacity="0.06"
+              stroke={P.info}
+              strokeOpacity="0.28"
+              strokeWidth="1"
               vectorEffect="non-scaling-stroke"
+              data-chosen-halo
             />
-            {drag.snap && <Snap at={[drag.snap.x, drag.snap.y]} />}
-          </g>
-        )}
+          )}
+          {placed.map(({ v, pose, x, y }) => {
+            const legs = v.legs.filter((l) => l.arrivesAt > clock);
+            if (legs.length === 0) return null;
+            const pts: [number, number][] = [[x, y]];
+            for (const l of legs) {
+              const b = placePoint(p, l.to);
+              if (b) pts.push(b);
+            }
+            const on = v.id === selected;
+            return (
+              <g key={v.id} data-way={v.id}>
+                {pts.slice(1).map((b, i) => {
+                  const a = pts[i] ?? b;
+                  return (
+                    <line
+                      // biome-ignore lint/suspicious/noArrayIndexKey: a stop is its place in the way
+                      key={i}
+                      x1={a[0]}
+                      y1={a[1]}
+                      x2={b[0]}
+                      y2={b[1]}
+                      stroke={on ? P.info : P.cream}
+                      strokeOpacity={(on ? 0.95 : 0.4) * (i === 0 ? 1 : 0.5)}
+                      strokeWidth={on ? 1.8 : 1.2}
+                      strokeDasharray="1 4"
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  );
+                })}
+                {pose.hop && (
+                  <circle cx={pose.hop.to[0]} cy={pose.hop.to[1]} r={1.1} fill={P.info} />
+                )}
+              </g>
+            );
+          })}
+          {drag && (
+            <g data-drag-line>
+              <line
+                x1={drag.from[0]}
+                y1={drag.from[1]}
+                x2={drag.at[0]}
+                y2={drag.at[1]}
+                stroke={drag.cancel ? P.vermilion : P.gold}
+                strokeWidth="2"
+                strokeDasharray="1 4"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
+              {drag.snap && <Snap at={[drag.snap.x, drag.snap.y]} />}
+            </g>
+          )}
+        </g>
       </svg>
 
       {/* The seconds left, written in the middle of the way of each vehicle under way. */}
@@ -293,7 +289,7 @@ export function Fleet({
           <div
             key={`s${v.id}`}
             className="map-pin pointer-events-none"
-            style={{ left: ((x + b[0]) / 2) * base, top: ((y + b[1]) / 2) * base }}
+            style={{ left: ((x + b[0]) / 2) * base, top: ((y + b[1]) / 2) * TILT * base }}
             data-way-seconds={v.id}
           >
             <span className="rounded bg-night/80 px-1 font-display text-[0.625rem] font-bold tabular-nums text-info">
@@ -317,7 +313,7 @@ export function Fleet({
             aria-pressed={on}
             onPointerDown={startDrag(v.id)}
             className="map-place pointer-events-auto touch-none"
-            style={{ left: x * base, top: y * base }}
+            style={{ left: x * base, top: y * TILT * base }}
           >
             {on && (
               <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[0.6rem] leading-none text-gold">
@@ -344,7 +340,7 @@ export function Fleet({
         <div
           key={a.key}
           className="map-pin pointer-events-none"
-          style={{ left: a.x * base, top: a.y * base }}
+          style={{ left: a.x * base, top: a.y * TILT * base }}
           data-arrival
         >
           <span className="hop-ring absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-gold" />
@@ -359,7 +355,7 @@ export function Fleet({
             style={
               {
                 "--dx": `${Math.round(a.dx * base)}px`,
-                "--dy": `${Math.round(a.dy * base)}px`,
+                "--dy": `${Math.round(a.dy * TILT * base)}px`,
               } as React.CSSProperties
             }
             data-arrival-jump

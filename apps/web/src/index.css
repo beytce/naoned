@@ -1473,3 +1473,69 @@ button.map-place {
 [data-dragging] .mist-drift {
   animation-play-state: paused;
 }
+
+/* The night board (docs/plan-plateau.md): the few things that move on it, slowly. */
+.plateau-wave {
+  animation: plateau-wave 5s ease-in-out infinite alternate;
+}
+@keyframes plateau-wave {
+  from {
+    transform: translateX(-1px);
+  }
+  to {
+    transform: translateX(1px);
+  }
+}
+.plateau-fog {
+  animation: plateau-fog 6s ease-in-out infinite;
+}
+@keyframes plateau-fog {
+  0%,
+  100% {
+    stroke-opacity: 0.1;
+  }
+  50% {
+    stroke-opacity: 0.22;
+  }
+}
+.plateau-flag {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: plateau-flag 1.6s ease-in-out infinite;
+}
+@keyframes plateau-flag {
+  0%,
+  100% {
+    transform: skewY(0);
+  }
+  50% {
+    transform: skewY(-8deg) scaleX(0.92);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plateau-wave,
+  .plateau-fog,
+  .plateau-flag {
+    animation: none;
+  }
+}
+/* The purse: night-blue leather, stitched in gold (the night board). */
+.purse {
+  background: repeating-linear-gradient(115deg, rgb(255 255 255 / 0.03) 0 2px, transparent 2px 5px),
+    radial-gradient(ellipse at 30% 20%, #2e486e, #16263e 70%);
+  outline: 1px dashed rgb(244 197 84 / 0.5);
+  outline-offset: -4px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+
+/* The 3D board (?map=3d, docs/plateau-reprise.md § 7): a place is touched through its hexagon in
+   the scene (a ray), never through its mark, which stays for the keyboard and the names. */
+[data-three] .map-place > button,
+[data-three] [data-arsenal-mark] {
+  pointer-events: none !important;
+}
+/* On the 3D board, a vehicle's medal lies on the ground just in front of its animal, which stands
+   and walks above it, seen whole. */
+[data-three] [data-vehicle] {
+  transform: translate(-50%, -50%) scale(var(--chartk, 1)) translateY(22px);
+}

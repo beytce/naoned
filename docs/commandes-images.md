@@ -1,5 +1,7 @@
 # Commandes d'images (lot D, 31 octobre 2026)
 
+> **1er novembre 2026** : une nouvelle direction (« Îles de la nuit ») et de nouveaux textes sont proposés dans `docs/direction-artistique-2026-11.md` ; leur bloc STYLE remplace la bible ci-dessous dès sa validation.
+
 Les illustrations du jeu peuvent venir d'un générateur d'images gratuit. Le porteur génère, dépose les fichiers dans `apps/web/art-src/`, lance le script ; le jeu les montre à la place des dessins SVG, qui restent en secours tant qu'une image manque.
 
 ## Le chemin d'une image

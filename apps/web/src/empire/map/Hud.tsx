@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { Coin } from "../../art/icons.js";
 import { P } from "../../art/palette.js";
+import { CartWheel, DucatCoin, FavourCoin, WaxSeal } from "../../art/plateau/coins.js";
 import { d } from "../../game/format.js";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
@@ -37,9 +37,9 @@ export function Hud({
   const fleet = fleetOf(p, now);
   const ring = 2 * Math.PI * 21;
   const signs: Record<string, ReactNode> = {
-    ducats: <Coin size={22} />,
-    favour: <Favour />,
-    seals: <Seal />,
+    ducats: <DucatCoin />,
+    favour: <FavourCoin />,
+    seals: <WaxSeal />,
   };
   return (
     <>
@@ -91,7 +91,7 @@ export function Hud({
           id="fleet"
           label={t.scene.fleetShort}
           value={`${fleet.free} / ${fleet.total}`}
-          sign={<span className="text-cream [&_svg]:h-4 [&_svg]:w-4">{Icon.cart()}</span>}
+          sign={<CartWheel />}
         />
         <button
           type="button"
@@ -131,7 +131,7 @@ function Count({
   return (
     <button
       type="button"
-      className="pointer-events-auto relative flex min-h-8 items-center gap-2"
+      className="purse pointer-events-auto relative flex min-h-9 items-center gap-2 rounded-full py-0.5 pl-3 pr-0.5"
       data-hud={id}
       aria-label={label}
       onClick={() => setSaid(!said)}
@@ -152,30 +152,7 @@ function Count({
         <span className="sr-only">{label} : </span>
         {value}
       </span>
-      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night/80 ring-1 ring-line shadow-md shadow-black/40">
-        {sign}
-      </span>
+      <span className="flex h-8 w-8 items-center justify-center">{sign}</span>
     </button>
-  );
-}
-
-function Favour() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-      <path
-        d="M12 3 L14.4 9 L21 9.4 L15.9 13.4 L17.7 20 L12 16.3 L6.3 20 L8.1 13.4 L3 9.4 L9.6 9 Z"
-        fill={P.lagoon}
-      />
-    </svg>
-  );
-}
-
-function Seal() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-      <circle cx="12" cy="12" r="8" fill={P.vermilion} />
-      <circle cx="12" cy="12" r="5" fill="none" stroke={P.vermilionDeep} strokeWidth="1.4" />
-      <path d="M12 8.5 L13 11 L15.5 12 L13 13 L12 15.5 L11 13 L8.5 12 L11 11 Z" fill={P.goldSoft} />
-    </svg>
   );
 }

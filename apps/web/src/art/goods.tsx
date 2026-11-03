@@ -1,4 +1,6 @@
 import { venice1450 } from "@comptoirs/engine/src/themes/venice1450.js";
+import { useId } from "react";
+import { shade } from "./plateau/geom.js";
 
 /**
  * The goods' code, the same everywhere in the game (map, warehouse, Rialto, workshops): the colour
@@ -100,6 +102,7 @@ export function GoodsMark({
   /** Read by a screen reader; without it, the mark is decoration. */
   title?: string;
 }) {
+  const id = useId();
   const colour = goodsColour(code);
   const shape = TIER_SHAPE[goodsTier(code)];
   const glyph = size >= 20 && covered ? GLYPH[code] : undefined;
@@ -115,19 +118,49 @@ export function GoodsMark({
       aria-hidden={title ? undefined : true}
     >
       {covered ? (
-        <path d={shape} fill={colour} stroke="rgb(0 0 0 / 0.35)" strokeWidth="1" />
+        <>
+          {/* Struck in relief (the night board): a shadow, a gradient, a bevel, a glint. */}
+          <defs>
+            <radialGradient id={`${id}g`} cx="35%" cy="28%" r="80%">
+              <stop offset="0" stopColor={shade(colour, 1.35)} />
+              <stop offset=".55" stopColor={colour} />
+              <stop offset="1" stopColor={shade(colour, 0.62)} />
+            </radialGradient>
+          </defs>
+          <path d={shape} fill="rgb(0 0 0 / 0.4)" transform="translate(0 1.4)" />
+          <path d={shape} fill={`url(#${id}g)`} stroke={shade(colour, 0.5)} strokeWidth="1" />
+          <path
+            d={shape}
+            fill="none"
+            stroke="#FFFFFF"
+            strokeOpacity=".45"
+            strokeWidth=".8"
+            transform="scale(0.82)"
+          />
+        </>
       ) : (
         <path d={shape} fill="none" stroke={colour} strokeWidth="3" />
       )}
       {glyph && (
+        <g transform="scale(0.78)" fill="none" strokeLinecap="round" strokeLinejoin="round">
+          <path
+            d={glyph}
+            stroke="#FFFFFF"
+            strokeOpacity=".35"
+            strokeWidth="2.2"
+            transform="translate(-.5 -.6)"
+          />
+          <path d={glyph} stroke="#0B1A2E" strokeWidth="2.2" />
+        </g>
+      )}
+      {covered && size >= 20 && (
         <path
-          d={glyph}
-          transform="scale(0.78)"
+          d="M-10 -5 A11 11 0 0 1 -4 -10.5"
           fill="none"
-          stroke="#0B1A2E"
-          strokeWidth="2.2"
+          stroke="#FFFFFF"
+          strokeOpacity=".7"
+          strokeWidth="1.6"
           strokeLinecap="round"
-          strokeLinejoin="round"
         />
       )}
     </svg>

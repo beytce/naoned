@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "e2e": "node e2e/layout.mjs",
     "e2e:tutorial": "node e2e/tutorial.mjs",
-    "e2e:empire": "node e2e/empire.mjs"
+    "e2e:empire": "node e2e/empire.mjs",
+    "e2e:map3d": "node e2e/map3d.mjs"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*",
@@ -18,12 +19,21 @@
     "@fontsource/cinzel": "5.2.6",
     "@fontsource/space-grotesk": "5.3.0",
     "@fontsource/space-mono": "5.3.0",
+    "@react-three/drei": "9.122.0",
+    "@react-three/fiber": "8.18.0",
+    "@react-three/postprocessing": "2.19.1",
+    "postprocessing": "6.39.6",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "three": "0.170.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "4.5.1",
+    "@gltf-transform/extensions": "4.5.1",
+    "@gltf-transform/functions": "4.5.1",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
+    "@types/three": "0.170.0",
     "@vitejs/plugin-react": "4.3.4",
     "autoprefixer": "10.4.20",
     "playwright-core": "1.48.2",

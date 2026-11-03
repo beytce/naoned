@@ -1,6 +1,7 @@
 import { cellsWithin } from "@comptoirs/engine";
 import { cellCentre } from "../../art/hexmap.js";
 import { WORLD_VIEW, seatOf } from "../../art/mediterranean.js";
+import { TILT } from "../../art/plateau/geom.js";
 import { d } from "../../game/format.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { fr } from "../../i18n.js";
@@ -41,13 +42,14 @@ export function coverClamp(cam: Camera, view: Viewport): Camera {
   return {
     s: cam.s,
     tx: fit(cam.tx, CHART.w * cam.s, view.w),
-    ty: fit(cam.ty, CHART.h * cam.s, view.h),
+    ty: fit(cam.ty, CHART.h * TILT * cam.s, view.h),
   };
 }
 
 /** The camera at a scale, centred on a chart point. */
 export function centredOn(at: [number, number], s: number, view: Viewport): Camera {
-  return coverClamp({ s, tx: view.w / 2 - at[0] * s, ty: view.h / 2 - at[1] * s }, view);
+  // The board is tilted (docs/plan-plateau.md): a chart point lies at y·TILT on it.
+  return coverClamp({ s, tx: view.w / 2 - at[0] * s, ty: view.h / 2 - at[1] * TILT * s }, view);
 }
 
 /** The orbit's width on screen (px) from which Venice's house shows: more on a large screen. */
@@ -78,7 +80,7 @@ export function farCamera(p: EmpirePayload, view: Viewport): Camera {
   const y0 = Math.min(...seen.map((s) => s[1])) - margin;
   const y1 = Math.max(...seen.map((s) => s[1])) + margin;
   const cover = coverScale(view);
-  const fit = Math.min(view.w / (x1 - x0), view.h / (y1 - y0));
+  const fit = Math.min(view.w / (x1 - x0), view.h / ((y1 - y0) * TILT));
   const far = (nearPx(view) - 30) / ORBIT_UNITS;
   return centredOn(
     [(x0 + x1) / 2, (y0 + y1) / 2],
@@ -704,4 +706,30 @@ export function dockOrders(p: EmpirePayload, v: Mine, sort: OrderSort = "dear"):
     return a.id.localeCompare(b.id);
   };
   return out.sort((a, b) => Number(b.ready) - Number(a.ready) || by(a, b));
+}
+
+/** A vehicle's orbit around the place it stands at, in chart units (after Hades' Star). */
+const orbitOf = (place: string) => (place === "home" ? 6.2 : place.startsWith("city:") ? 4.6 : 4.2);
+
+/**
+ * Where each vehicle of the house is at a time, on the chart: on its hop under way, or standing
+ * in orbit around its place, the standing ones of a place sharing its orbit (Fleet's medals and
+ * the 3D board's animals stand alike).
+ */
+export function fleetSpots(
+  p: EmpirePayload,
+  t: number,
+  /** On the 3D board, the orbit turned to the south: in front of the buildings, never behind. */
+  south = false,
+): { v: Mine; pose: ReturnType<typeof vehiclePose>; x: number; y: number }[] {
+  const slots = new Map<string, number>();
+  return (p.view?.vehicles.mine ?? []).map((v) => {
+    const pose = vehiclePose(p, v, t);
+    if (pose.hop || !pose.place) return { v, pose, x: pose.x, y: pose.y };
+    const i = slots.get(pose.place) ?? 0;
+    slots.set(pose.place, i + 1);
+    const a = (((south ? 55 : -55) + i * 38) * Math.PI) / 180;
+    const r = orbitOf(pose.place) * (south && pose.place.startsWith("city:") ? 1.5 : 1);
+    return { v, pose, x: pose.x + r * Math.cos(a), y: pose.y + r * Math.sin(a) };
+  });
 }

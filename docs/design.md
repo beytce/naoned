@@ -2,6 +2,18 @@
 
 Le jeu s'appelle **Fondaco**, du nom des entrepôts où les marchands étrangers logeaient et commerçaient à Venise. Ambiance : Venise au Quattrocento, des ducats, la lagune. L'identité suit le guide « Fondaco — identité & palettes ».
 
+## Direction « Plateau de nuit » (2 novembre 2026)
+
+Décision du porteur : la carte de l'empire et ce qui s'y pose suivent le « Plateau de nuit » (toile de design validée, `docs/direction-artistique-2026-11/plateau/`, plan `docs/plan-plateau.md`). Elle remplace la direction Lagune pour la carte ; l'interface autour (feuilles, boutons, une seule action en or, typographie) garde ses règles ci-dessous.
+
+- **Un monde de tuiles.** Chaque secteur vu est une tuile hexagonale épaisse à deux strates (terre, puis socle bleu nuit), coins adoucis, vue inclinée (`TILT` = 0,58, `art/plateau/geom.ts`) : le sol est aplati, les volumes sont debout. Une seule lumière, du haut à gauche ; chaque face est ombrée par elle, chaque modèle porte son ombre au sol.
+- **Les couleurs, peu nombreuses** (`C`, `art/plateau/props.ts`) : vos secteurs sable-or `#E2C27A` ; les secteurs vus gris-bleu `#9FB3CC`, leurs décors en retrait ; la mer en lagune lapis translucide, d'un seul tenant ; l'inconnu en pointillés gris-bleu qui respirent ; sapins lagune, rochers et montagnes gris-bleu, murs blancs, toits bleus ; l'or seulement pour ce qui est à vous (toit du fondaco, fanions) et pour l'action.
+- **Des modèles low-poly** (sapin, rocher, montagne, maison, tour, ville, fondaco, grange de la Remise, Campo, Porta, four, moulin, glaisière, scierie…), dessinés en SVG par le moteur, déterministes (graine par case). Le décor d'un secteur vient de sa région (`DRESS`, `art/plateau/board.ts`).
+- **Les repères** gardent leur rôle sans leur bulle : la zone tactile, le nom, et pour une ville l'anneau de ses commandes posé au sol (lagune qui se remplit, or quand il est plein).
+- **De près**, le fondaco garde ses ateliers en orbite, chacun sur sa petite tuile avec son modèle (`art/plateau/workshops.ts`), l'orbite inclinée comme le plateau.
+- **Les pièces frappées** : ducat, faveur, sceau et roue de la bourse (`art/plateau/coins.tsx`) sur cuir bleu nuit surpiqué d'or (`.purse`) ; les marchandises (`GoodsMark`) en relief.
+- **Le mouvement** reste lent et rare (vaguelettes, brouillard, fanion), coupé quand l'appareil demande moins d'animations.
+
 ## Direction Lagune : la règle (25 octobre 2026)
 
 Décision du porteur : **tout ajout suit cette direction**. Les maquettes de chaque page sont sur la planche de design (lien dans `docs/propositions-design-2026-10-25.md`, page « Lagune · toutes les pages », avec le système et la navigation).
