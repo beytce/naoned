@@ -42,6 +42,15 @@ export function sceneInputOf(p: EmpirePayload): SceneInput {
   };
 }
 
+/**
+ * What the board is built from, as a string: the same for two payloads of the same map (the server
+ * sends a new object at each refresh, every 30 seconds and at each action), so that the scene is
+ * built again only when the map did change.
+ */
+export function sceneKey(p: EmpirePayload): string {
+  return JSON.stringify(sceneInputOf(p));
+}
+
 export type TileKind = "own" | "seen" | "water" | "fog";
 
 /** What a small tile holds: one thing each, after the owner's references. */

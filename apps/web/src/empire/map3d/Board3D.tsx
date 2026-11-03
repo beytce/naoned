@@ -65,6 +65,7 @@ import {
   type Zone,
   scene3d,
   sceneInputOf,
+  sceneKey,
   sitesOf,
   zones,
 } from "./scene.js";
@@ -132,16 +133,17 @@ export function useLive() {
 const Board3D = memo(
   forwardRef<Board3DHandle, Board3DProps>(function Board3D({ p, orbit = null, onReady }, ref) {
     const map = p.view?.map;
-    // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its map and its Porta
-    const input = useMemo<SceneInput | null>(
-      () => (map ? sceneInputOf(p) : null),
-      [map, p.view?.porta?.cell],
-    );
+    // Built again only when the map did change (never at a refresh of the same one).
+    const key = sceneKey(p);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its key
+    const input = useMemo<SceneInput | null>(() => (map ? sceneInputOf(p) : null), [key]);
     const sc = useMemo(() => (input ? scene3d(input) : null), [input]);
     const casa = p.view?.house.casa ?? 1;
+    const buyKey = JSON.stringify(map?.buyable ?? []);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: the sectors to buy by their key
     const buyable = useMemo(
       () => new Map((map?.buyable ?? []).map((b) => [b.cell, casa >= b.casa])),
-      [map?.buyable, casa],
+      [buyKey, casa],
     );
     const live = useLive();
     const [near, setNear] = useState(false);
@@ -183,7 +185,8 @@ const Board3D = memo(
     const gl = useRef<import("three").WebGLRenderer | null>(null);
     const [low, setLow] = useState(false);
     // The touches of the places (step 2 of § 7): hexagons that never overlap.
-    const touch = useMemo(() => zones(placesOf(p)), [p]);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its key
+    const touch = useMemo(() => zones(placesOf(p)), [key]);
     const hitter = useRef<((x: number, y: number) => string | null) | null>(null);
     const setHitter = useCallback((fn: (x: number, y: number) => string | null) => {
       hitter.current = fn;
@@ -251,10 +254,12 @@ const Board3D = memo(
       </Canvas>
     );
   }),
+  // Drawn again only when what it shows did change, by content (each refresh brings new objects).
   (a, b) =>
-    a.p.view?.map === b.p.view?.map &&
-    a.p.view?.porta?.cell === b.p.view?.porta?.cell &&
-    a.p.view?.vehicles === b.p.view?.vehicles &&
+    sceneKey(a.p) === sceneKey(b.p) &&
+    JSON.stringify(a.p.view?.map.buyable ?? []) === JSON.stringify(b.p.view?.map.buyable ?? []) &&
+    JSON.stringify(a.p.view?.vehicles.mine ?? []) ===
+      JSON.stringify(b.p.view?.vehicles.mine ?? []) &&
     a.p.view?.house.casa === b.p.view?.house.casa &&
     JSON.stringify(a.orbit ?? null) === JSON.stringify(b.orbit ?? null),
 );
@@ -558,6 +563,7 @@ function World({
   }, [sc]);
   // The lagoon: one surface over every small tile of sea, finely cut for its ripples.
   const lagoon = useMemo(() => (wet.length ? lagoonGeometry(wet, TILE_R - 0.2) : null), [wet]);
+  useEffect(() => () => lagoon?.dispose(), [lagoon]);
   const fogEdges = useMemo(() => {
     const g = new EdgesGeometry(hexSlab(TILE_R - 0.45, 0.01, 0));
     g.rotateY(SLOT_TURN);
@@ -1004,6 +1010,7 @@ function Track({ path }: { path: [number, number][] }) {
     g.computeVertexNormals();
     return g;
   }, [path]);
+  useEffect(() => () => geo.dispose(), [geo]);
   return (
     <mesh geometry={geo} receiveShadow renderOrder={1}>
       <meshStandardMaterial

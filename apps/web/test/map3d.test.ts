@@ -3,7 +3,15 @@ import { describe, expect, it } from "vitest";
 import { HEX_SIZE } from "../src/art/hexmap.js";
 import { C } from "../src/art/plateau/props.js";
 import { PALETTE, linear, recolour, swatchOf } from "../src/empire/map3d/recolor.js";
-import { type SceneInput, TILE_R, road, scene3d, zones } from "../src/empire/map3d/scene.js";
+import {
+  type SceneInput,
+  TILE_R,
+  road,
+  scene3d,
+  sceneKey,
+  zones,
+} from "../src/empire/map3d/scene.js";
+import type { EmpirePayload } from "../src/empire/types.js";
 
 /** The house's map at its start, as the server sends it (the towns and the fondaco on tiles). */
 const start: SceneInput = {
@@ -118,6 +126,15 @@ describe("the 3D map's scene, on the small tiles", () => {
     // As high as what stands there: the fondaco to its flag, a town to its monument.
     expect(z.find((x) => x.id === "home")?.h).toBeGreaterThan(14);
     expect(z.find((x) => x.id === "city:venezia")?.h).toBeGreaterThan(12);
+  });
+
+  it("keeps one key for two refreshes of the same map, another once it changes", () => {
+    const pay = (home: { x: number; y: number }) =>
+      ({
+        view: { map: structuredClone({ ...start, home }), porta: null },
+      }) as unknown as EmpirePayload;
+    expect(sceneKey(pay({ x: 178, y: 154 }))).toBe(sceneKey(pay({ x: 178, y: 154 })));
+    expect(sceneKey(pay({ x: 178, y: 154 }))).not.toBe(sceneKey(pay({ x: 160, y: 154 })));
   });
 
   it("walks a road from one end to the other, bent to one side", () => {
