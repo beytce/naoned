@@ -146,6 +146,11 @@ const Board3D = memo(
       [buyKey, casa],
     );
     const live = useLive();
+    // Until when a vehicle of the house is on its way (or waiting to leave): frames till then.
+    // (on this device's clock).
+    const moving =
+      Math.max(0, ...(p.view?.vehicles.mine ?? []).flatMap((v) => v.legs.map((l) => l.arrivesAt))) -
+      (p.now - Date.now());
     const [near, setNear] = useState(false);
     // The map's camera, kept until the canvas has its own, then applied to it at each move.
     const last = useRef<{ cam: Camera; v: Viewport } | null>(null);
@@ -163,6 +168,7 @@ const Board3D = memo(
       setNear((was) => (was === isNear ? was : isNear));
       // Far out, the small dressing (pines, rocks) gives way: the towns and mountains stay.
       const show = o.zoom >= LOD_ZOOM;
+      wake();
       if (small.current && small.current.visible !== show) {
         small.current.visible = show;
         // Their shadows go with them (the still shadows drawn again once).
@@ -228,6 +234,7 @@ const Board3D = memo(
         onCreated={({ gl: renderer, scene, camera: c }) => {
           gl.current = renderer;
           watchContext(renderer);
+          wake();
           renderer.shadowMap.autoUpdate = false;
           renderer.shadowMap.needsUpdate = true;
           scene.background = new Color(NIGHT);
@@ -249,7 +256,7 @@ const Board3D = memo(
         {/* A device that cannot keep 18 frames a second loses the ambient occlusion for good. */}
         <PerformanceMonitor bounds={() => [18, 26]} flipflops={2} onDecline={() => setLow(true)} />
         {FX && <Effects near={near} ao={!low} aoRef={ao} />}
-        <Ticker live={live} />
+        <Ticker live={live} until={moving} />
         {PERF && <Probe />}
       </Canvas>
     );
@@ -416,20 +423,37 @@ function Ready({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-/** While something moves, frames at 30 per second; none when the tab is hidden or still. */
-function Ticker({ live }: { live: boolean }) {
+/** After the last touch or move of the camera, the board stays alive this long (ms). */
+const AWAKE_MS = 10_000;
+let awakeUntil = 0;
+/** The player did something: the board's life (smoke, water, sails) goes on a while. */
+function wake() {
+  awakeUntil = Date.now() + AWAKE_MS;
+}
+
+/**
+ * The frames asked, at most 30 a second by the clock (never « one in two », which depends on the
+ * screen's rate): while a vehicle is on its way, and a little while after the player's last touch
+ * (the board's life). At rest, none: the phone keeps cool. Asking for less motion, one a second
+ * while a vehicle walks (its place still true), none else.
+ */
+function Ticker({ live, until }: { live: boolean; until: number }) {
   useEffect(() => {
-    if (!live) return;
     let raf = 0;
-    let odd = false;
-    const loop = () => {
-      odd = !odd;
-      if (odd && !document.hidden) invalidate();
+    let last = 0;
+    const step = live ? 33 : 1_000;
+    const loop = (t: number) => {
+      const now = Date.now();
+      const busy = now < until + 1_000 || (live && now < awakeUntil);
+      if (busy && !document.hidden && t - last >= step) {
+        last = t;
+        invalidate();
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [live]);
+  }, [live, until]);
   return null;
 }
 
