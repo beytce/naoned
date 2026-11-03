@@ -3,7 +3,7 @@
 //   pnpm --filter @comptoirs/web build && pnpm --filter @comptoirs/web e2e:map3d
 // Shots and the video in OUT (docs/direction-artistique-2026-11/carte-3d by default); PERF=1 also
 // measures the frames with the CPU slowed four times (perf.json); DUMP=<file> writes the map seen.
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -67,13 +67,16 @@ async function magicLink(email) {
   throw new Error("no magic link in the server's log");
 }
 
-/** A house founded, its first fondaco put down (as in e2e/empire.mjs). */
+const poseFaults = [];
+
+/** A house founded, its first fondaco put down (as in e2e/empire.mjs), on the 3D board. */
 async function found(page, url) {
   const email = `map3d_${Date.now()}@example.org`;
   await page.goto(url);
   await page.fill("input[type=email]", email);
   await page.keyboard.press("Enter");
-  await page.goto(`${url}/connexion?token=${await magicLink(email)}`);
+  // On the 3D board from the first page (the flag is read when the game loads).
+  await page.goto(`${url}/connexion?token=${await magicLink(email)}&map=3d`);
   await page.waitForSelector("input[autocomplete=nickname]");
   await page.fill("input", "Casa_3D");
   await page.keyboard.press("Enter");
@@ -85,10 +88,30 @@ async function found(page, url) {
       .getByRole("button", { name: /suivant|commencer/i })
       .click();
   await page.locator("[data-placing-bar=home]").waitFor();
+  await page.waitForSelector("[data-map=empire] canvas", { timeout: 20_000 });
+  // The point put down comes from the camera's ray to the 3D ground: it must be the point the
+  // tilted SVG cell itself reads under the finger (its own matrix), within a unit.
   const cell = page.locator("[data-cell]").first();
   const box = await cell.boundingBox();
-  if (box) await cell.click({ position: { x: box.width * 0.78, y: box.height * 0.55 } });
+  const at = box ? { x: box.x + box.width * 0.78, y: box.y + box.height * 0.55 } : null;
+  const svgPoint = at
+    ? await cell.evaluate((el, q) => {
+        const m = el.getScreenCTM().inverse();
+        const pt = new DOMPoint(q.x, q.y).matrixTransform(m);
+        return [pt.x, pt.y];
+      }, at)
+    : null;
+  let sent = null;
+  page.on("request", (r) => {
+    if (r.method() !== "POST" || !r.url().includes("/api/empire")) return;
+    const body = r.postDataJSON?.();
+    if (body?.type === "empirePlaceHome") sent = body;
+  });
+  if (at) await page.mouse.click(at.x, at.y);
   await page.getByRole("button", { name: /poser ici · gratuit/i }).click();
+  await page.waitForTimeout(500);
+  if (!sent || !svgPoint || Math.hypot(sent.x - svgPoint[0], sent.y - svgPoint[1]) > 1.01)
+    poseFaults.push(`the fondaco put down by the ray at ${JSON.stringify(sent)}, not ${svgPoint}`);
   await page.locator("[data-placing-bar=home]").waitFor({ state: "hidden" });
 }
 
@@ -129,6 +152,13 @@ try {
     await pg.waitForTimeout(3000);
   };
   const shot = (name) => page.screenshot({ path: join(OUT, `${name}.png`) });
+  /** A touch at a mark's middle: on the 3D board, it reaches the place through the scene. */
+  const tapOn = async (sel) => {
+    const b = await page.locator(`[data-map=empire] ${sel}`).first().boundingBox();
+    if (!b) throw new Error(`no ${sel} on the map`);
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+  };
+  faults.push(...poseFaults);
   if (process.env.PEEK) {
     if (process.env.REDUCED) await page.emulateMedia({ reducedMotion: "reduce" });
     await open3d(process.env.PEEK === "1" ? "" : `&${process.env.PEEK}`);
@@ -154,78 +184,119 @@ try {
       console.log("frames", await page.evaluate(() => window.__m3d?.at.length));
     }
   } else {
-    // 1. The start: the house's sector across the screen, as the game opens it.
+    // 1. The start: the house's sector across the screen, as the game opens it, on the 3D board.
     await open3d();
-    if ((await page.locator("[data-map=empire]").count()) !== 0)
-      faults.push("the SVG map drawn under the 3D one");
+    if ((await page.locator("[data-map=empire] [data-plateau]").count()) !== 0)
+      faults.push("the SVG board drawn under the 3D one");
     for (const code of ["venezia", "padova"])
-      if ((await page.locator(`[data-map=empire3d] [data-city=${code}]`).count()) !== 1)
-        faults.push(`${code} without its name on the 3D map`);
+      if ((await page.locator(`[data-map=empire] [data-city=${code}]`).count()) !== 1)
+        faults.push(`${code} without its mark on the 3D map`);
     await shot("1-depart");
-    // A town touched (its name): lit, and its panel at the foot, as on the SVG map.
-    await page.locator("[data-map=empire3d] [data-city=padova]").click();
+    // A town touched on the board (its hexagon, by a ray): its panel at the foot.
+    await tapOn("[data-city=padova]");
     await page
       .locator("[data-bottom-slot='panel:city']")
       .waitFor({ timeout: 5_000 })
       .catch(() => {
-        faults.push("Padua touched: no city panel");
+        faults.push("Padua touched through the 3D board: no city panel");
       });
-    await page
-      .locator("[data-city=padova][data-picked]")
-      .waitFor({ timeout: 3_000 })
-      .catch(() => faults.push("Padua touched: not lit"));
     await shot("1b-padoue");
-    // A touch on the night: nothing chosen, the round buttons back.
-    await page.mouse.click(20, H * 0.3);
+    // Closed: nothing chosen, the round buttons back.
+    await page.keyboard.press("Escape");
     await page
       .locator("[data-bottom-slot='idle']")
       .waitFor({ timeout: 5_000 })
       .catch(() => {
-        faults.push("a touch on the night: the panel stays");
+        faults.push("the city panel closed: the round buttons not back");
       });
-    // 2. Up close on the fondaco (Recentrer); a touch on it, at the middle of the screen, reaches it
-    // through the 3D scene (raycast).
-    await page.getByRole("button", { name: /recentrer/i }).click();
+    // 2. The fondaco touched on the board: its workshops deploy around it, up close; touched
+    // again, the Casa's panel.
+    await tapOn("[data-home]");
+    await page
+      .locator("[data-orbit-open=home] [data-workshop]")
+      .first()
+      .waitFor({ timeout: 5_000 })
+      .catch(() => faults.push("the fondaco touched through the 3D board: no workshops"));
     await page.waitForTimeout(1500);
     await shot("2-fondaco");
-    await page.mouse.click(W / 2, H / 2);
+    await tapOn("[data-home]");
     await page
       .locator("[data-bottom-slot='panel:casa']")
       .waitFor({ timeout: 5_000 })
       .catch(() => {
-        faults.push("the fondaco touched: no panel of the Casa");
+        faults.push("the fondaco touched again: no panel of the Casa");
       });
-    await page.waitForTimeout(600);
     await shot("2b-fondaco-touche");
-    // 3. The mule walking, the camera after it.
-    await open3d("&suivre=mule");
+    await page.keyboard.press("Escape");
+    /** A vehicle of the house dragged from its medal to a town's mark, then sent at once. */
+    const send = async (pg, code) => {
+      const car = await pg.locator("[data-vehicle]").first().boundingBox();
+      const town = await pg.locator(`[data-map=empire] [data-city=${code}]`).first().boundingBox();
+      if (!car || !town) throw new Error("no vehicle or no town to send it to");
+      const [cx, cy] = [car.x + car.width / 2, car.y + car.height / 2];
+      const [tx, ty] = [town.x + town.width / 2, town.y + town.height / 2];
+      await pg.mouse.move(cx, cy);
+      await pg.mouse.down();
+      await pg.mouse.move((cx + tx) / 2, (cy + ty) / 2, { steps: 6 });
+      await pg.mouse.move(tx, ty, { steps: 6 });
+      await pg.mouse.up();
+      await pg.locator("[data-vehicle-panel] [data-hop-action=go]").click();
+      await pg.locator("[data-vehicle][data-moving]").first().waitFor({ timeout: 5_000 });
+    };
+    // 3. A mule sent to Padua: it walks there on the board, its medal above it.
     await page.keyboard.press("+");
     await page.keyboard.press("+");
-    await page.waitForTimeout(2500);
+    await page.waitForTimeout(800);
+    await send(page, "padova");
+    await page.waitForTimeout(2200);
     await shot("3-mule");
-    // 4. Out: the Veneto seen wider (the game's own map around the house), all of it on screen.
-    await open3d("&scene=veneto");
-    await shot("4b-venetie");
-    for (let i = 0; i < 4; i++) await page.keyboard.press("-");
-    await page.waitForTimeout(1200);
+    if ((await page.locator("[data-map=empire] canvas").count()) !== 1)
+      faults.push("the 3D board lost while a mule walks");
+    await page.keyboard.press("Escape");
+    // 4. Out, as far as the map goes: the whole house's map on the board.
+    for (let i = 0; i < 6; i++) await page.keyboard.press("-");
+    await page.waitForTimeout(1500);
     await shot("4-dezoom");
 
-    // The video: 13 s of the mule on its round.
+    // The video: a second mule sent to Venice, 13 s from its leaving (the recording cut by ffmpeg).
     const rec = await browser.newContext({
       viewport: { width: W, height: H },
       locale: "fr-FR",
       storageState: await ctx.storageState(),
       recordVideo: { dir: join(OUT, "video-tmp"), size: { width: W, height: H } },
     });
+    const t0 = Date.now();
     const vp = await rec.newPage();
-    await open3d("&suivre=mule", vp);
+    await open3d("", vp);
     await vp.keyboard.press("+");
     await vp.keyboard.press("+");
+    await vp.waitForTimeout(800);
+    const tGo = Date.now();
+    await send(vp, "venezia");
     await vp.waitForTimeout(13_000);
     const video = vp.video();
     await rec.close();
     if (video) {
-      renameSync(await video.path(), join(OUT, "mule.webm"));
+      const raw = await video.path();
+      const from = Math.max(0, (tGo - t0) / 1000 - 0.3);
+      const cut = spawnSync("ffmpeg", [
+        "-y",
+        "-loglevel",
+        "error",
+        "-ss",
+        from.toFixed(2),
+        "-i",
+        raw,
+        "-t",
+        "13",
+        "-c:v",
+        "libvpx",
+        "-b:v",
+        "1500k",
+        "-an",
+        join(OUT, "mule.webm"),
+      ]);
+      if (cut.status !== 0) renameSync(raw, join(OUT, "mule.webm"));
       rmSync(join(OUT, "video-tmp"), { recursive: true, force: true });
     }
 

@@ -316,3 +316,33 @@ export function road(
   }
   return out;
 }
+
+/** A place's touch on the 3D board: a hexagon around it (chart units). */
+export interface Zone {
+  /** As the map names places: « home », a post's id, « city:<code> », « depot », « camp »… */
+  id: string;
+  x: number;
+  y: number;
+  r: number;
+}
+
+/** A place's touch reaches at most this far, at least this far (chart units). */
+const ZONE_MAX = 7;
+const ZONE_MIN = 2.5;
+
+/**
+ * The places' touches: a hexagon each, as large as it may be without meeting its neighbour's (half
+ * the way to the nearest place, between ZONE_MIN and ZONE_MAX). Two touches never overlap, unless
+ * two places stand closer than twice ZONE_MIN.
+ */
+export function zones(places: { id: string; x: number; y: number }[]): Zone[] {
+  return places.map((p) => {
+    const nearest = Math.min(
+      Number.POSITIVE_INFINITY,
+      ...places.filter((q) => q !== p).map((q) => Math.hypot(q.x - p.x, q.y - p.y)),
+    );
+    // A hexagon's flat sides lie at r·cos 30° from its middle: half the way, to its corners.
+    const r = Math.min(ZONE_MAX, Math.max(ZONE_MIN, nearest / 2));
+    return { id: p.id, x: p.x, y: p.y, r };
+  });
+}

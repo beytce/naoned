@@ -1527,3 +1527,10 @@ button.map-place {
   outline-offset: -4px;
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.1);
 }
+
+/* The 3D board (?map=3d, docs/plateau-reprise.md § 7): a place is touched through its hexagon in
+   the scene (a ray), never through its mark, which stays for the keyboard and the names. */
+[data-three] .map-place > button,
+[data-three] [data-arsenal-mark] {
+  pointer-events: none !important;
+}

@@ -28,8 +28,8 @@ export function useCamera({
   onPaint: (cam: Camera, view: Viewport) => void;
   /** A double touch on the sea, at its point on the screen. */
   onDoubleTap?: (at: Point) => void;
-  /** A touch on the sea, not on a place. */
-  onTap?: () => void;
+  /** A touch on the sea, not on a place (an HTML one), at its point on the screen. */
+  onTap?: (at: Point) => void;
   /** A finger held still half a second (true), then lifted (false): the information layer. */
   onHold?: (on: boolean) => void;
   /** The camera at rest again, after a gesture or a glide. */
@@ -277,7 +277,7 @@ export function useCamera({
       if ((e.target as HTMLElement | null)?.closest("button")) return;
       const t = performance.now();
       if (t - lastTap < 300) live.current.onDoubleTap?.(local(e));
-      else live.current.onTap?.();
+      else live.current.onTap?.(local(e));
       lastTap = t;
     };
     // A hold shows the layer, never the phone's menu.

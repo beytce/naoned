@@ -28,6 +28,7 @@ import { EmpireOrbit } from "../Orbit.js";
 import { regionName } from "../World.js";
 import { bestQuote } from "../logic.js";
 import type { Board3DHandle } from "../map3d/Board3D.js";
+import { groundAt } from "../map3d/camera.js";
 import { MAP_3D } from "../map3d/flag.js";
 import { pt } from "../porta/texts.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
@@ -160,6 +161,8 @@ export const EmpireMap = forwardRef<
   const pins = useRef<HTMLDivElement>(null);
   // The board in 3D, under the layers: its camera follows the map's at each paint.
   const board3d = useRef<Board3DHandle | null>(null);
+  // A place touched (its mark, or its hexagon on the 3D board): the latest handler.
+  const touchRef = useRef<((id: string) => void) | null>(null);
   // The counter whose workshops are deployed around it, opened at its touch (never by a zoom).
   const [opened, setOpened] = useState<string | null>(null);
   const openedNow = useRef<string | null>(null);
@@ -263,8 +266,14 @@ export const EmpireMap = forwardRef<
     },
     // A finger held still: the information layer, while it stays down.
     onHold: (on) => showInfo(on),
-    // The sea touched: the panel and the deployed workshops fold away.
-    onTap: () => {
+    // The sea touched: the panel and the deployed workshops fold away. On the 3D board, a ray
+    // through the scene first: a place touched is touched (docs/plateau-reprise.md § 7, step 2).
+    onTap: (at) => {
+      const id = board3d.current?.hit(at.x, at.y) ?? null;
+      if (id && touchRef.current) {
+        touchRef.current(id);
+        return;
+      }
       onTarget(null);
       setOpened(null);
     },
@@ -312,6 +321,15 @@ export const EmpireMap = forwardRef<
   // of the owner, 1 November 2026); the placing shows the reach it would have.
   const chosenAt = selected ? view?.vehicles.mine.find((v) => v.id === selected)?.at : undefined;
   const reachShown = opened ?? (chosenAt && !chosenAt.startsWith("city:") ? chosenAt : null);
+  // On the 3D board, the ground's point under a touch, by the camera's ray (camera.ts).
+  const groundOf = useCallback((cx: number, cy: number): [number, number] | null => {
+    const r = root.current?.getBoundingClientRect();
+    const c = camRef.current;
+    if (!r || !c) return null;
+    return groundAt(c.cam(), c.view(), cx - r.left, cy - r.top);
+  }, []);
+  const camRef = useRef(camera);
+  camRef.current = camera;
   // The chart changes with the house's map and the placing, never with the clock.
   // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its view's map
   const chart = useMemo(
@@ -325,6 +343,7 @@ export const EmpireMap = forwardRef<
           onPick={onPick}
           onSector={(cell) => onTarget({ kind: "sector", cell })}
           reachShown={reachShown}
+          ground={MAP_3D ? groundOf : undefined}
         />
       ) : null,
     [view?.map, view?.regions, base, placing, picked, onPick, reachShown],
@@ -348,6 +367,26 @@ export const EmpireMap = forwardRef<
     onMove?.(selected, place);
     return true;
   };
+  /** A place touched, by its mark or its hexagon on the 3D board: what it does. */
+  const touchPlace = (id: string) => {
+    if (id === "home") {
+      if (!sendTo("home"))
+        opened === "home" ? onTarget({ kind: "casa" }) : deploy("veneto", homeAt(p), "home");
+    } else if (id.startsWith("city:")) {
+      if (!sendTo(id)) onTarget({ kind: "city", code: id.slice(5) });
+    } else if (id === "depot") onTarget({ kind: "depot" });
+    else if (id === "porta") onTarget({ kind: "porta" });
+    else if (id === "arsenal") onTarget({ kind: "arsenal" });
+    else if (id === "camp") onCamp?.();
+    else {
+      const post = map.posts.find((x) => x.id === id);
+      if (post && !sendTo(post.id))
+        opened === post.id
+          ? onTarget({ kind: "region", code: post.region })
+          : deploy(post.region, [post.x, post.y], post.id);
+    }
+  };
+  touchRef.current = touchPlace;
   /** A point of the screen on the chart. */
   const toChart = (cx: number, cy: number): [number, number] => {
     const r = root.current?.getBoundingClientRect();
@@ -369,6 +408,7 @@ export const EmpireMap = forwardRef<
       ref={root}
       className="absolute inset-0 touch-none select-none overflow-hidden bg-[#08111F]"
       data-map="empire"
+      data-three={MAP_3D ? "" : undefined}
       data-orbit={opened ?? undefined}
       data-placing={placing?.kind}
       data-aiming={targets ? "" : undefined}
@@ -468,14 +508,7 @@ export const EmpireMap = forwardRef<
           })()}
         <Names p={p} />
         {/* The first fondaco stays itself when its workshops deploy: touched again, its Casa. */}
-        <HomeMark
-          p={p}
-          name={houseName}
-          onClick={() =>
-            sendTo("home") ||
-            (opened === "home" ? onTarget({ kind: "casa" }) : deploy("veneto", homeAt(p), "home"))
-          }
-        />
+        <HomeMark p={p} name={houseName} onClick={() => touchPlace("home")} />
         {/* Venice is a town as the others, with its orders (the fondaco is no town). */}
         {map.cities.map((c) => (
           <CityMark
@@ -489,7 +522,7 @@ export const EmpireMap = forwardRef<
             wanted={wanted?.get(c.code)}
             dim={wanted !== null && !wanted.has(c.code)}
             hidden={underOrbit(c.x, c.y)}
-            onClick={() => sendTo(`city:${c.code}`) || onTarget({ kind: "city", code: c.code })}
+            onClick={() => touchPlace(`city:${c.code}`)}
           />
         ))}
         {map.posts.map((x) => {
@@ -499,12 +532,7 @@ export const EmpireMap = forwardRef<
               {/* A counter touched: its workshops deploy around it; touched again, its panel. */}
               <button
                 type="button"
-                onClick={() =>
-                  sendTo(x.id) ||
-                  (opened === x.id
-                    ? onTarget({ kind: "region", code: x.region })
-                    : deploy(x.region, [px, py], x.id))
-                }
+                onClick={() => touchPlace(x.id)}
                 aria-label={t.world.postName[x.region] ?? t.placing.postCard}
                 className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
               >
@@ -556,7 +584,7 @@ export const EmpireMap = forwardRef<
                 {/* The Campo touched: the Terraferma opens (1 November: it did nothing before). */}
                 <button
                   type="button"
-                  onClick={() => onCamp?.()}
+                  onClick={() => touchPlace("camp")}
                   data-camp-mark
                   aria-label={t.placing.campCard}
                   className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
@@ -576,7 +604,7 @@ export const EmpireMap = forwardRef<
               <div data-at={`${px - 9},${py + 9}`} className="map-place">
                 <button
                   type="button"
-                  onClick={() => onTarget({ kind: "depot" })}
+                  onClick={() => touchPlace("depot")}
                   data-depot-mark
                   className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
                 >
@@ -596,7 +624,7 @@ export const EmpireMap = forwardRef<
               <div data-at={`${px + 9},${py - 9}`} className="map-place">
                 <button
                   type="button"
-                  onClick={() => onTarget({ kind: "porta" })}
+                  onClick={() => touchPlace("porta")}
                   data-porta-mark
                   className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
                 >
@@ -615,7 +643,7 @@ export const EmpireMap = forwardRef<
               <div data-at={`${px},${py}`} className="map-pin">
                 <button
                   type="button"
-                  onClick={() => onTarget({ kind: "arsenal" })}
+                  onClick={() => touchPlace("arsenal")}
                   data-arsenal-mark
                   className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
                 >
@@ -645,6 +673,7 @@ const Chart = memo(function Chart({
   onPick,
   onSector,
   reachShown = null,
+  ground,
 }: {
   p: EmpirePayload;
   base: number;
@@ -655,6 +684,8 @@ const Chart = memo(function Chart({
   onSector?: (cell: string) => void;
   /** The fondaco whose reach shows (« home », a post's id), or none. */
   reachShown?: string | null;
+  /** The ground's point under a touch, on the 3D board (the camera's ray). */
+  ground?: (clientX: number, clientY: number) => [number, number] | null;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -666,6 +697,12 @@ const Chart = memo(function Chart({
   const placingFondaco = placing?.kind === "post" || placing?.kind === "home";
   // A touch on a lit cell: its point on the chart, where the counter goes (the map that grows).
   const pick = (cell: string, e: { clientX: number; clientY: number; currentTarget: Element }) => {
+    // On the 3D board, the ray from the camera down to the ground (docs/plateau-reprise.md § 7).
+    const g = e.clientX !== 0 ? ground?.(e.clientX, e.clientY) : null;
+    if (g) {
+      onPick?.({ cell, x: Math.round(g[0]), y: Math.round(g[1]) });
+      return;
+    }
     // The cell lies in the tilted ground: its own matrix gives the chart's point.
     const m = (e.currentTarget as SVGGraphicsElement).getScreenCTM?.()?.inverse();
     if (!m || e.clientX === 0) {

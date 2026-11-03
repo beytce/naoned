@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { HEX_SIZE, cellCentre } from "../src/art/hexmap.js";
 import { C } from "../src/art/plateau/props.js";
 import { PALETTE, linear, recolour, swatchOf } from "../src/empire/map3d/recolor.js";
-import { type SceneInput, road, scene3d } from "../src/empire/map3d/scene.js";
+import { type SceneInput, road, scene3d, zones } from "../src/empire/map3d/scene.js";
 
 /** The house's map at its start, as the server sends it (a session of e2e/map3d.mjs). */
 const start: SceneInput = {
@@ -71,6 +71,21 @@ describe("the 3D map's scene", () => {
     expect(s.camp).toEqual({ x, y: y + 7 });
     expect(s.porta).toEqual({ x: x + 9, y: y - 9 });
     expect(scene3d(start).camp).toBeNull();
+  });
+
+  it("gives each place a touch of its own, never over its neighbour's", () => {
+    const z = zones([
+      { id: "home", x: 178, y: 146 },
+      { id: "city:venezia", x: 165, y: 140 },
+      { id: "city:padova", x: 155, y: 141 },
+      { id: "depot", x: 300, y: 300 },
+    ]);
+    for (const a of z)
+      for (const b of z)
+        if (a !== b) expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(a.r + b.r - 1e-9);
+    // Venice and Padua, 10 apart: 5 each; the Remise alone: as large as a touch goes.
+    expect(z.find((x) => x.id === "city:padova")?.r).toBeCloseTo(5.0249, 3);
+    expect(z.find((x) => x.id === "depot")?.r).toBe(7);
   });
 
   it("walks a road from one end to the other, bent to one side", () => {

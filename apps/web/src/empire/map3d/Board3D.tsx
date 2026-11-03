@@ -32,13 +32,18 @@ import {
   BufferGeometry,
   Cache,
   Color,
+  CylinderGeometry,
   DoubleSide,
   EdgesGeometry,
   Fog,
+  type Group,
+  MeshBasicMaterial,
   type OrthographicCamera as OrthoCam,
+  Raycaster,
+  Vector2,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { HEX_SIZE } from "../../art/hexmap.js";
+import { HEX_SIZE, cellCentre } from "../../art/hexmap.js";
 import { C } from "../../art/plateau/props.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import type { EmpirePayload } from "../types.js";
@@ -53,7 +58,7 @@ import {
   useKit,
 } from "./kit.js";
 import { Flag, Smoke, useWater } from "./life.js";
-import { type Scene3D, type SceneInput, scene3d } from "./scene.js";
+import { type Scene3D, type SceneInput, type Zone, scene3d, zones } from "./scene.js";
 
 Cache.enabled = true;
 
@@ -72,6 +77,11 @@ const NEAR_ZOOM = 22;
 export interface Board3DHandle {
   /** The map's camera moved (at each frame of a gesture): the board's follows. */
   view(cam: Camera, v: Viewport): void;
+  /**
+   * The place under a point of the screen (relative to the board), by a ray through the scene:
+   * « home », a post's id, « city:<code> », « depot », « camp », « porta », « arsenal », or null.
+   */
+  hit(x: number, y: number): string | null;
 }
 
 export interface Board3DProps {
@@ -135,11 +145,15 @@ const Board3D = memo(
       setNear((was) => (was === isNear ? was : isNear));
       invalidate();
     };
+    // The touches of the places (step 2 of § 7): hexagons that never overlap.
+    const touch = useMemo(() => zones(placesOf(p)), [p]);
+    const hitter = useRef<((x: number, y: number) => string | null) | null>(null);
     useImperativeHandle(ref, () => ({
       view(cam, v) {
         last.current = { cam, v };
         apply();
       },
+      hit: (x, y) => hitter.current?.(x, y) ?? null,
     }));
     if (!sc) return null;
     return (
@@ -162,6 +176,7 @@ const Board3D = memo(
         data-board3d
       >
         <Lights sc={sc} />
+        <Zones zones={touch} onReady={(fn) => (hitter.current = fn)} />
         <Suspense fallback={null}>
           <World sc={sc} live={live} />
           <ShadowsOnce sc={sc} />
@@ -176,6 +191,75 @@ const Board3D = memo(
 );
 
 export default Board3D;
+
+/** The places as the map names them, at their point (as EmpireMap's marks stand). */
+function placesOf(p: EmpirePayload): { id: string; x: number; y: number }[] {
+  const map = p.view?.map;
+  if (!map) return [];
+  const out: { id: string; x: number; y: number }[] = [];
+  if (map.home && map.home.placed !== false) out.push({ id: "home", x: map.home.x, y: map.home.y });
+  for (const pt of map.posts) out.push({ id: pt.id, x: pt.x, y: pt.y });
+  for (const c of map.cities) out.push({ id: `city:${c.code}`, x: c.x, y: c.y });
+  const cell = (id: string, k: string | null | undefined, dx: number, dy: number) => {
+    if (!k) return;
+    const [x, y] = cellCentre(k);
+    out.push({ id, x: x + dx, y: y + dy });
+  };
+  cell("depot", map.depot, -9, 9);
+  cell("camp", map.camp, 0, 7);
+  cell("porta", p.view?.porta?.cell, 9, -9);
+  cell("arsenal", map.arsenal, 0, 0);
+  return out;
+}
+
+const zoneGeo = new CylinderGeometry(1, 1, 9, 6);
+zoneGeo.translate(0, 3.5, 0);
+const zoneMat = new MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+zoneMat.colorWrite = false;
+
+/**
+ * The places' touches, invisible hexagonal prisms; `onReady` receives the ray that finds the one
+ * under a point of the screen (the map's gestures call it on a tap, useCamera's `onTap`).
+ */
+function Zones({
+  zones: list,
+  onReady,
+}: {
+  zones: Zone[];
+  onReady: (hit: (x: number, y: number) => string | null) => void;
+}) {
+  const group = useRef<Group>(null);
+  const camera = useThree((s) => s.camera);
+  const size = useThree((s) => s.size);
+  const raycaster = useMemo(() => new Raycaster(), []);
+  useEffect(() => {
+    onReady((x, y) => {
+      const g = group.current;
+      if (!g) return null;
+      camera.updateMatrixWorld();
+      raycaster.setFromCamera(
+        new Vector2((x / size.width) * 2 - 1, 1 - (y / size.height) * 2),
+        camera,
+      );
+      const hit = raycaster.intersectObjects(g.children, false)[0];
+      return (hit?.object.userData.id as string | undefined) ?? null;
+    });
+  }, [camera, size, raycaster, onReady]);
+  return (
+    <group ref={group}>
+      {list.map((z) => (
+        <mesh
+          key={z.id}
+          geometry={zoneGeo}
+          material={zoneMat}
+          position={[z.x, 0, z.y]}
+          scale={[z.r, 1, z.r]}
+          userData={{ id: z.id }}
+        />
+      ))}
+    </group>
+  );
+}
 
 /** One light from the upper left, a soft sky: clay under a single sun. */
 function Lights({ sc }: { sc: Scene3D }) {
