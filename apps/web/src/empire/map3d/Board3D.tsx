@@ -85,8 +85,18 @@ export interface Board3DHandle {
   hit(x: number, y: number): string | null;
 }
 
+/** A workshop's place deployed around a fondaco, on the chart (EmpireMap, from Orbit's). */
+export interface OrbitSpot {
+  kind: "workshop" | "site" | "free";
+  type: string;
+  x: number;
+  y: number;
+}
+
 export interface Board3DProps {
   p: EmpirePayload;
+  /** The workshops of the fondaco touched, deployed around it: their tiles stand in 3D. */
+  orbit?: OrbitSpot[] | null;
 }
 
 /** Whether the device asks for less motion (read live). */
@@ -108,7 +118,7 @@ export function useLive() {
  * then asks no frame at rest).
  */
 const Board3D = memo(
-  forwardRef<Board3DHandle, Board3DProps>(function Board3D({ p }, ref) {
+  forwardRef<Board3DHandle, Board3DProps>(function Board3D({ p, orbit = null }, ref) {
     const map = p.view?.map;
     const input = useMemo<SceneInput | null>(
       () =>
@@ -186,7 +196,8 @@ const Board3D = memo(
         <Suspense fallback={null}>
           <World sc={sc} live={live} />
           <Fleet3D p={p} live={live} />
-          <ShadowsOnce sc={sc} />
+          {orbit && <Workshops3D spots={orbit} />}
+          <ShadowsOnce sc={sc} k={orbit ? JSON.stringify(orbit) : ""} />
         </Suspense>
         {FX && <Effects near={near} />}
         <Ticker live={live} />
@@ -197,7 +208,8 @@ const Board3D = memo(
   (a, b) =>
     a.p.view?.map === b.p.view?.map &&
     a.p.view?.porta?.cell === b.p.view?.porta?.cell &&
-    a.p.view?.vehicles === b.p.view?.vehicles,
+    a.p.view?.vehicles === b.p.view?.vehicles &&
+    JSON.stringify(a.orbit ?? null) === JSON.stringify(b.orbit ?? null),
 );
 
 export default Board3D;
@@ -310,13 +322,14 @@ function Lights({ sc }: { sc: Scene3D }) {
 }
 
 /** The still shadows: drawn once the models are in, and again only when the board changes. */
-function ShadowsOnce({ sc }: { sc: Scene3D }) {
+function ShadowsOnce({ sc, k }: { sc: Scene3D; k: string }) {
   const gl = useThree((s) => s.gl);
   useEffect(() => {
     void sc;
+    void k;
     gl.shadowMap.needsUpdate = true;
     invalidate();
-  }, [gl, sc]);
+  }, [gl, sc, k]);
   return null;
 }
 
@@ -573,6 +586,91 @@ function World({ sc, live }: { sc: Scene3D; live: boolean }) {
       )}
       {/* The Porta: an old gate of stone, its arch glowing cinnabar (the lands of Rome). */}
       {sc.porta && <Porta x={sc.porta.x} z={sc.porta.y} />}
+    </group>
+  );
+}
+
+/** Each workshop's model on its tile (after art/plateau/workshops.ts): a KayKit model, its size. */
+function workshopModel(type: string): { name: KitName; s: number } {
+  switch (type) {
+    case "brickworks":
+    case "glassworks":
+      return { name: "forge", s: 6.2 };
+    case "clay_pit":
+    case "sand_pit":
+      return { name: "mine", s: 6.2 };
+    case "lumber_camp":
+      return { name: "woodcut", s: 6.4 };
+    case "sawmill":
+      return { name: "sawmill", s: 6.6 };
+    case "farm":
+      return { name: "grain", s: 6.6 };
+    case "mill":
+      return { name: "windmill", s: 6 };
+    case "palazzo":
+      return { name: "church", s: 6.4 };
+    default:
+      return { name: "homeA", s: 5.4 };
+  }
+}
+
+const WS_TILE_R = 4.4;
+
+/**
+ * The workshops of the fondaco touched, each on its little tile of clay where its star stands in
+ * the orbit above (its arc, its name and its buttons stay in HTML): a site shows its crates, the
+ * free place its bare tile.
+ */
+function Workshops3D({ spots }: { spots: OrbitSpot[] }) {
+  const kit = useKit();
+  const tile = useMemo(() => {
+    const top = hexSlab(WS_TILE_R, 1.2, 0.4);
+    top.translate(0, 1.2, 0);
+    return top;
+  }, []);
+  return (
+    <group>
+      {spots.map((o) => {
+        const m = workshopModel(o.type);
+        return (
+          <group key={`${o.x},${o.y}`} position={[o.x, 0, o.y]}>
+            <mesh
+              geometry={tile}
+              material={claySolid(o.kind === "free" ? C.mist : C.land)}
+              castShadow
+              receiveShadow
+            />
+            {o.kind === "workshop" && (
+              <mesh
+                geometry={kit(m.name).geo}
+                material={clayShared}
+                scale={m.s}
+                position-y={1.2}
+                castShadow
+                receiveShadow
+              />
+            )}
+            {o.kind === "site" && (
+              <>
+                <mesh
+                  geometry={kit("crate").geo}
+                  material={clayShared}
+                  scale={1.8}
+                  position={[-1, 1.2, 0]}
+                  castShadow
+                />
+                <mesh
+                  geometry={kit("crateB").geo}
+                  material={clayShared}
+                  scale={1.4}
+                  position={[1.2, 1.2, 0.6]}
+                  castShadow
+                />
+              </>
+            )}
+          </group>
+        );
+      })}
     </group>
   );
 }

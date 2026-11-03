@@ -41,6 +41,11 @@ export const FILES = {
   tower: "building_tower_A_blue",
   market: "building_market_blue",
   grain: "building_grain",
+  forge: "building_blacksmith_blue",
+  mine: "building_mine_blue",
+  sawmill: "building_lumbermill_blue",
+  windmill: "building_windmill_blue",
+  woodcut: "trees_A_cut",
   crate: "crate_A_small",
   crateB: "crate_B_small",
 } as const;

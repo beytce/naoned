@@ -24,7 +24,7 @@ import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
 import { clock } from "../../ui.js";
-import { EmpireOrbit } from "../Orbit.js";
+import { EmpireOrbit, ORBIT_MAX_PX_CSS, orbitOf } from "../Orbit.js";
 import { regionName } from "../World.js";
 import { bestQuote } from "../logic.js";
 import type { Board3DHandle } from "../map3d/Board3D.js";
@@ -321,6 +321,20 @@ export const EmpireMap = forwardRef<
   // of the owner, 1 November 2026); the placing shows the reach it would have.
   const chosenAt = selected ? view?.vehicles.mine.find((v) => v.id === selected)?.at : undefined;
   const reachShown = opened ?? (chosenAt && !chosenAt.startsWith("city:") ? chosenAt : null);
+  // The workshops deployed, on the 3D board: their tiles where the orbit draws them, on the chart
+  // (the orbit's square is ORBIT_UNITS wide on the chart, at most 24rem on the screen).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its house's workshops
+  const orbit3d = useMemo(() => {
+    if (!MAP_3D || !opened) return null;
+    const [cx, cy] = openedAt.current;
+    const wide = Math.min(ORBIT_UNITS, ORBIT_MAX_PX_CSS / base);
+    return orbitOf(p, openedRegion.current).spots.map((o) => ({
+      kind: o.kind,
+      type: o.type,
+      x: cx + ((o.x - 50) / 100) * wide,
+      y: cy + ((o.y - 50) / 100) * (wide / TILT),
+    }));
+  }, [opened, base, view?.house, view?.workshopSlots, view?.regions]);
   // On the 3D board, the ground's point under a touch, by the camera's ray (camera.ts).
   const groundOf = useCallback((cx: number, cy: number): [number, number] | null => {
     const r = root.current?.getBoundingClientRect();
@@ -423,6 +437,7 @@ export const EmpireMap = forwardRef<
               if (h) camera.repaint();
             }}
             p={p}
+            orbit={orbit3d}
           />
         </Suspense>
       )}
@@ -490,6 +505,7 @@ export const EmpireMap = forwardRef<
                     act={act}
                     region={region}
                     bare
+                    on3d={MAP_3D}
                     onWorkshop={(id) => onTarget({ kind: "workshop", id })}
                     onCasa={() =>
                       onTarget(

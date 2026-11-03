@@ -7,7 +7,7 @@ Tous les modèles de ce dossier sont sous licence **CC0 1.0** (domaine public : 
 - Auteur : **Kay Lousberg** (https://www.kaylousberg.com), https://kaylousberg.itch.io/kaykit-medieval-hexagon
 - Source : https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0 (`addons/kaykit_medieval_hexagon_pack/Assets/gltf/`)
 - Licence : CC0 1.0, voir `kaykit/LICENSE.txt` (copie conforme)
-- 16 modèles copiés **tels quels** (`.gltf`, `.bin`, l'atlas `hexagons_medieval.png`) : sapins, rochers, montagnes, maisons, église, tour, marché, champ de blé, caisses. Le jeu ne lit pas l'atlas : il recolore chaque sommet selon la case de l'atlas visée par ses UV, dans la palette du « Plateau de nuit » (`apps/web/src/empire/map3d/recolor.ts`).
+- 21 modèles copiés **tels quels** (`.gltf`, `.bin`, l'atlas `hexagons_medieval.png`) : sapins, rochers, montagnes, maisons, église, tour, marché, champ de blé, caisses ; et pour les ateliers du fondaco : forge, mine, scierie, moulin, coupe de bois. Le jeu ne lit pas l'atlas : il recolore chaque sommet selon la case de l'atlas visée par ses UV, dans la palette du « Plateau de nuit » (`apps/web/src/empire/map3d/recolor.ts`).
 
 ## `quaternius/` — Quaternius « Ultimate Animated Animals », l'âne
 
