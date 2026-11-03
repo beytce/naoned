@@ -19,6 +19,7 @@ import {
   nearestPlace,
   placeName,
   placePoint,
+  roadOf,
   vehiclePose,
 } from "./logic.js";
 
@@ -223,24 +224,29 @@ export function Fleet({
           {placed.map(({ v, pose, x, y }) => {
             const legs = v.legs.filter((l) => l.arrivesAt > clock);
             if (legs.length === 0) return null;
-            const pts: [number, number][] = [[x, y]];
-            for (const l of legs) {
+            // Each stop's road (the small tiles: tile after tile), the one under way from where
+            // the vehicle is.
+            const ways = legs.flatMap((l, i): [number, number][][] => {
+              const a = placePoint(p, l.from);
               const b = placePoint(p, l.to);
-              if (b) pts.push(b);
-            }
+              if (!a || !b) return [];
+              const road = roadOf(p, a, b);
+              if (i > 0 || !pose.hop) return [road];
+              const k = pose.hop.k;
+              const total = road.length > 1 ? road : [a, b];
+              const ahead = total.filter((_, j) => j / Math.max(1, total.length - 1) > k);
+              return [[[x, y], ...ahead]];
+            });
             const on = v.id === selected;
             return (
               <g key={v.id} data-way={v.id}>
-                {pts.slice(1).map((b, i) => {
-                  const a = pts[i] ?? b;
+                {ways.map((way, i) => {
                   return (
-                    <line
+                    <polyline
                       // biome-ignore lint/suspicious/noArrayIndexKey: a stop is its place in the way
                       key={i}
-                      x1={a[0]}
-                      y1={a[1]}
-                      x2={b[0]}
-                      y2={b[1]}
+                      points={way.map(([px, py]) => `${px},${py}`).join(" ")}
+                      fill="none"
                       stroke={on ? P.info : P.cream}
                       strokeOpacity={(on ? 0.95 : 0.4) * (i === 0 ? 1 : 0.5)}
                       strokeWidth={on ? 1.8 : 1.2}

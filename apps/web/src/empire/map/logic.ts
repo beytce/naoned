@@ -1,4 +1,12 @@
-import { type EmpireSettings, cellsWithin, slotPoint, tileFault } from "@comptoirs/engine";
+import {
+  type EmpireSettings,
+  alongRoad,
+  cellsWithin,
+  roadBetween,
+  roadLength,
+  slotPoint,
+  tileFault,
+} from "@comptoirs/engine";
 import { cellCentre } from "../../art/hexmap.js";
 import { WORLD_VIEW, seatOf } from "../../art/mediterranean.js";
 import { TILT } from "../../art/plateau/geom.js";
@@ -520,7 +528,7 @@ export function placeName(p: EmpirePayload, place: string, regionName: (r: strin
 
 /** A hop's seconds between two points, as the engine reckons them (a second at the least). */
 export function hopSeconds(p: EmpirePayload, a: [number, number], b: [number, number]): number {
-  const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const d = roadLength(roadOf(p, a, b));
   // The long voyages (3 November): seconds a unit, when the world sets it (as the engine's hopMs).
   const per = p.view?.moves.secondsPerUnit;
   if (per) return Math.max(1, Math.round(d * per));
@@ -564,10 +572,12 @@ export function vehiclePose(
       1,
       Math.max(0, (t - leg.departAt) / Math.max(1, leg.arrivesAt - leg.departAt)),
     );
+    // Along its road (the small tiles), as far as its time says; straight on the old map.
+    const on = alongRoad(roadOf(p, a, b), k);
     return {
-      x: a[0] + (b[0] - a[0]) * k,
-      y: a[1] + (b[1] - a[1]) * k,
-      angle: Math.atan2(b[1] - a[1], b[0] - a[0]),
+      x: on.x,
+      y: on.y,
+      angle: on.angle,
       hop: { from: a, to: b, k, endsAt: leg.arrivesAt },
       place: null,
       leavesAt: null,
@@ -764,4 +774,35 @@ export function snapToTile(
     .sort((a, b) => Math.hypot(a[0] - x, a[1] - y) - Math.hypot(b[0] - x, b[1] - y));
   const at = free[0];
   return at ? { cell, x: at[0], y: at[1] } : { cell, x, y };
+}
+
+/** The roads already reckoned, for each map the house has seen (a road is the same every time). */
+const roads = new WeakMap<object, Map<string, [number, number][]>>();
+
+/**
+ * The road a vehicle walks from a point to another (3 November: the mules walk roads, tile after
+ * tile, as the engine times them, slots.ts `roadBetween`); straight on a map without the small
+ * tiles. Reckoned on the map the house sees (its towns, its land).
+ */
+export function roadOf(
+  p: EmpirePayload,
+  a: [number, number],
+  b: [number, number],
+): [number, number][] {
+  const map = p.view?.map;
+  if (!map?.tiles) return [a, b];
+  let known = roads.get(map);
+  if (!known) {
+    known = new Map();
+    roads.set(map, known);
+  }
+  const key = `${a[0]},${a[1]}>${b[0]},${b[1]}`;
+  const hit = known.get(key);
+  if (hit) return hit;
+  const s = {
+    map: { hexSize: map.hexSize, tiles: true, cities: map.cities, cells: map.cells },
+  } as unknown as EmpireSettings;
+  const road = roadBetween(a, b, s);
+  known.set(key, road);
+  return road;
 }

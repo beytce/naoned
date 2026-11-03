@@ -7,7 +7,7 @@
  * seed by tile: the same board at every call. Chart units (x east, y south); the renderer lays y
  * along its z axis. Pure and deterministic: no three.js here, it is tested as is.
  */
-import { type EmpireSettings, SLOT_STEP, slotAt, slotPoint } from "@comptoirs/engine";
+import { type EmpireSettings, SLOT_STEP, roadBetween, slotAt, slotPoint } from "@comptoirs/engine";
 import { HEX_SIZE, cellCentre, neighbours } from "../../art/hexmap.js";
 import { DRESS } from "../../art/plateau/board.js";
 import { hashOf, rng } from "../../art/plateau/geom.js";
@@ -197,14 +197,18 @@ export function scene3d(m: SceneInput): Scene3D {
   for (const cell of m.revealed) add(cell, land(cell) ? (own.has(cell) ? "own" : "seen") : "water");
   for (const cell of new Set(m.revealed.flatMap(neighbours))) if (!seen.has(cell)) add(cell, "fog");
 
-  // The lanes the vehicles walk, straight from a fondaco to a town (logic.ts, `vehiclePose`).
+  // The roads the vehicles walk, tile after tile, from a fondaco to a town (the engine's
+  // `roadBetween`, as logic.ts's `vehiclePose` follows them).
   const lanes: [number, number][][] = [];
   const fondaci = [...(home ? [home] : []), ...m.posts];
+  const ways = {
+    map: { hexSize: HEX_SIZE, tiles: true, cities: m.cities, cells: m.cells },
+  } as unknown as EmpireSettings;
   for (const f of fondaci)
     for (const tw of towns) {
       const d = Math.hypot(tw.x - f.x, tw.y - f.y);
       if (d > LANE_MAX || d < 1) continue;
-      lanes.push(road([f.x, f.y], [tw.x, tw.y], 0, Math.max(2, Math.ceil(d / 2.5))));
+      lanes.push(roadBetween([f.x, f.y], [tw.x, tw.y], ways));
     }
   const onLane = (x: number, y: number) =>
     lanes.some((l) => l.some(([lx, ly]) => Math.hypot(lx - x, ly - y) < ROAD_CLEAR));
