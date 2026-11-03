@@ -156,7 +156,12 @@ const Board3D = memo(
       const isNear = o.zoom > NEAR_ZOOM;
       setNear((was) => (was === isNear ? was : isNear));
       // Far out, the small dressing (pines, rocks) gives way: the towns and mountains stay.
-      if (small.current) small.current.visible = o.zoom >= LOD_ZOOM;
+      const show = o.zoom >= LOD_ZOOM;
+      if (small.current && small.current.visible !== show) {
+        small.current.visible = show;
+        // Their shadows go with them (the still shadows drawn again once).
+        if (gl.current) gl.current.shadowMap.needsUpdate = true;
+      }
       invalidate();
     };
     // During a gesture, no ambient occlusion (the frames come quicker); back once it rests.
@@ -171,6 +176,7 @@ const Board3D = memo(
       }, 220);
     };
     const small = useRef<Group>(null);
+    const gl = useRef<import("three").WebGLRenderer | null>(null);
     const [low, setLow] = useState(false);
     // The touches of the places (step 2 of § 7): hexagons that never overlap.
     const touch = useMemo(() => zones(placesOf(p)), [p]);
@@ -205,9 +211,10 @@ const Board3D = memo(
         orthographic
         camera={{ near: 1, far: 2000, position: [0, DISTANCE, DISTANCE] }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
-        onCreated={({ gl, scene, camera: c }) => {
-          gl.shadowMap.autoUpdate = false;
-          gl.shadowMap.needsUpdate = true;
+        onCreated={({ gl: renderer, scene, camera: c }) => {
+          gl.current = renderer;
+          renderer.shadowMap.autoUpdate = false;
+          renderer.shadowMap.needsUpdate = true;
           scene.background = new Color(NIGHT);
           scene.fog = new Fog(NIGHT, DISTANCE - 30, DISTANCE + 160);
           camera.current = c as OrthoCam;

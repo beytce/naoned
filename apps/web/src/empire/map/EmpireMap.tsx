@@ -302,16 +302,22 @@ export const EmpireMap = forwardRef<
   };
   useImperativeHandle(ref, () => ({
     toggle: () => {
+      unfollow.current();
       if (openedNow.current) setOpened(null);
       camera.easeTo(openedNow.current ? sectorOn : farOn);
     },
-    home: () => deploy("veneto", homeAt(p), "home"),
+    home: () => {
+      unfollow.current();
+      deploy("veneto", homeAt(p), "home");
+    },
     far: () => {
+      unfollow.current();
       setOpened(null);
       camera.easeTo(farOn);
     },
     info: showInfo,
     pan: (dx, dy) => {
+      unfollow.current();
       const v = camera.view();
       camera.panBy(-dx * v.w * PAN_STEP, -dy * v.h * PAN_STEP);
     },
@@ -333,6 +339,8 @@ export const EmpireMap = forwardRef<
   // finger takes the map again (decision of the owner, 3 November).
   const latest = useRef(p);
   latest.current = p;
+  // The camera's commands of the player (Recentrer, the keys' pan, home, far) end the following.
+  const unfollow = useRef<() => void>(() => {});
   const followed =
     MAP_3D && selected ? view?.vehicles.mine.find((v) => v.id === selected) : undefined;
   const followKey =
@@ -346,6 +354,7 @@ export const EmpireMap = forwardRef<
     const stop = () => {
       on = false;
     };
+    unfollow.current = stop;
     root.current?.addEventListener("pointerdown", stop, { once: true });
     root.current?.addEventListener("wheel", stop, { once: true });
     const step = () => {

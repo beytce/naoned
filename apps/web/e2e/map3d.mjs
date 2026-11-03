@@ -262,7 +262,33 @@ try {
     if ((await page.locator("[data-map=empire] canvas").count()) !== 1)
       faults.push("the 3D board lost while a mule walks");
     await page.keyboard.press("Escape");
-    // 4. Out, as far as the map goes: the whole house's map on the board.
+    // 4. A sector bought next to Venice's (the first of Veneto's the Casa 1 may buy): seven tiles
+    // more on the board, the glass of the unknown giving way.
+    let bought = false;
+    for (const cell of ["2,3", "1,4", "1,5", "3,4", "3,3"]) {
+      const edge = page.locator(`[data-buyable="${cell}"]`);
+      if ((await edge.count()) === 0) continue;
+      await edge.dispatchEvent("click");
+      await page
+        .locator("[data-action-panel=sector]")
+        .waitFor({ timeout: 3_000 })
+        .catch(() => {});
+      const buy = page.locator("[data-map-action=unlock]:not([disabled])");
+      if ((await buy.count()) > 0) {
+        await buy.first().click();
+        bought = true;
+        break;
+      }
+      await page.keyboard.press("Escape");
+    }
+    if (!bought) faults.push("no sector of Veneto to buy next to Venice's");
+    await page.waitForTimeout(3000);
+    await page.keyboard.press("Escape");
+    // Recentrer: the camera leaves the mule it followed, out over the house's sectors.
+    await page.getByRole("button", { name: /recentrer/i }).click();
+    await page.waitForTimeout(1800);
+    await shot("4b-secteur");
+    // Out, as far as the map goes: the whole house's map on the board.
     for (let i = 0; i < 6; i++) await page.keyboard.press("-");
     await page.waitForTimeout(1500);
     await shot("4-dezoom");
