@@ -7,14 +7,8 @@
  * medals, the orbit and the timers lie on it to the pixel. Built from the house's map (`p.view.map`)
  * through `scene3d`, with the night board's grid and seeds.
  */
-import {
-  Canvas,
-  type ThreeEvent,
-  addAfterEffect,
-  addEffect,
-  invalidate,
-  useThree,
-} from "@react-three/fiber";
+import { PerformanceMonitor } from "@react-three/drei";
+import { Canvas, addAfterEffect, addEffect, invalidate, useThree } from "@react-three/fiber";
 import { EffectComposer, N8AO, TiltShift2, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import {
@@ -73,6 +67,10 @@ const WATER_Y = -2.2;
 const FOG_Y = -0.8;
 /** Closer than this (px per unit), the tilt-shift blurs the far and the near. */
 const NEAR_ZOOM = 22;
+/** Farther than this (px per unit), the small dressing is not drawn (a level of detail). */
+const LOD_ZOOM = 3.6;
+/** The small dressing, by its models' keys. */
+const SMALL = /^(pine|rock)/;
 
 /** What the map tells the board: where its camera is. */
 export interface Board3DHandle {
@@ -154,14 +152,42 @@ const Board3D = memo(
       c.updateProjectionMatrix();
       const isNear = o.zoom > NEAR_ZOOM;
       setNear((was) => (was === isNear ? was : isNear));
+      // Far out, the small dressing (pines, rocks) gives way: the towns and mountains stay.
+      if (small.current) small.current.visible = o.zoom >= LOD_ZOOM;
       invalidate();
     };
+    // During a gesture, no ambient occlusion (the frames come quicker); back once it rests.
+    const ao = useRef<{ enabled: boolean } | null>(null);
+    const resting = useRef(0);
+    const moved = () => {
+      if (ao.current) ao.current.enabled = false;
+      window.clearTimeout(resting.current);
+      resting.current = window.setTimeout(() => {
+        if (ao.current) ao.current.enabled = true;
+        invalidate();
+      }, 220);
+    };
+    const small = useRef<Group>(null);
+    const [low, setLow] = useState(false);
     // The touches of the places (step 2 of § 7): hexagons that never overlap.
     const touch = useMemo(() => zones(placesOf(p)), [p]);
     const hitter = useRef<((x: number, y: number) => string | null) | null>(null);
     useImperativeHandle(ref, () => ({
       view(cam, v) {
+        const was = last.current;
+        // The map repaints its camera at each of its renders (each tick of the clock): no frame
+        // unless the camera or the screen did change.
+        if (
+          was &&
+          was.cam.s === cam.s &&
+          was.cam.tx === cam.tx &&
+          was.cam.ty === cam.ty &&
+          was.v.w === v.w &&
+          was.v.h === v.h
+        )
+          return;
         last.current = { cam, v };
+        if (was) moved();
         apply();
       },
       hit: (x, y) => hitter.current?.(x, y) ?? null,
@@ -194,12 +220,14 @@ const Board3D = memo(
           }}
         />
         <Suspense fallback={null}>
-          <World sc={sc} live={live} />
+          <World sc={sc} live={live} small={small} />
           <Fleet3D p={p} live={live} />
           {orbit && <Workshops3D spots={orbit} />}
           <ShadowsOnce sc={sc} k={orbit ? JSON.stringify(orbit) : ""} />
         </Suspense>
-        {FX && <Effects near={near} />}
+        {/* A device that cannot keep 18 frames a second loses the ambient occlusion for good. */}
+        <PerformanceMonitor bounds={() => [18, 26]} flipflops={2} onDecline={() => setLow(true)} />
+        {FX && <Effects near={near} ao={!low} aoRef={ao} />}
         <Ticker live={live} />
         {PERF && <Probe />}
       </Canvas>
@@ -350,17 +378,31 @@ function Ticker({ live }: { live: boolean }) {
   return null;
 }
 
-function Effects({ near }: { near: boolean }) {
+function Effects({
+  near,
+  ao,
+  aoRef,
+}: {
+  near: boolean;
+  ao: boolean;
+  aoRef: React.MutableRefObject<{ enabled: boolean } | null>;
+}) {
   return (
     <EffectComposer multisampling={0} enableNormalPass={false}>
-      <N8AO
-        halfRes
-        quality="performance"
-        aoRadius={5}
-        distanceFalloff={1.2}
-        intensity={2.6}
-        color={NIGHT}
-      />
+      {/* The ambient occlusion, off on a slow device for good, and during a gesture. */}
+      {ao ? (
+        <N8AO
+          ref={aoRef as never}
+          halfRes
+          quality="performance"
+          aoRadius={5}
+          distanceFalloff={1.2}
+          intensity={2.6}
+          color={NIGHT}
+        />
+      ) : (
+        <></>
+      )}
       <TiltShift2 blur={near ? 0.12 : 0} taper={0.6} />
       <ToneMapping mode={TONE} />
     </EffectComposer>
@@ -406,7 +448,16 @@ function Probe() {
 /** The effects (ambient occlusion, tilt-shift, tone mapping): ?fx=0 without, to measure them. */
 const FX = new URLSearchParams(window.location.search).get("fx") !== "0";
 /** The board, its dressing, its towns and buildings. Chart units: x east, z south. */
-function World({ sc, live }: { sc: Scene3D; live: boolean }) {
+function World({
+  sc,
+  live,
+  small,
+}: {
+  sc: Scene3D;
+  live: boolean;
+  /** The small dressing's group (pines, rocks), hidden far out. */
+  small: React.RefObject<Group>;
+}) {
   const kit = useKit();
   const water = useWater(live);
 
@@ -536,9 +587,18 @@ function World({ sc, live }: { sc: Scene3D; live: boolean }) {
         </lineSegments>
       ))}
       {/* The dressing and the towns. */}
-      {decor.map(([key, g]) => (
-        <Instanced key={key} geo={g.model.geo} items={g.items} />
-      ))}
+      <group ref={small}>
+        {decor
+          .filter(([key]) => SMALL.test(key))
+          .map(([key, g]) => (
+            <Instanced key={key} geo={g.model.geo} items={g.items} />
+          ))}
+      </group>
+      {decor
+        .filter(([key]) => !SMALL.test(key))
+        .map(([key, g]) => (
+          <Instanced key={key} geo={g.model.geo} items={g.items} />
+        ))}
       {/* The lanes from the fondaci to the towns: beaten earth. */}
       {sc.lanes.map((l) => (
         <Track key={l.map((q) => q.join(",")).join(" ")} path={l} />

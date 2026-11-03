@@ -335,6 +335,12 @@ export const EmpireMap = forwardRef<
       y: cy + ((o.y - 50) / 100) * (wide / TILT),
     }));
   }, [opened, base, view?.house, view?.workshopSlots, view?.regions]);
+  // The 3D board in: its camera set from the map's at once (a stable callback: never again at a
+  // tick of the clock, which would ask the board a frame each second).
+  const onBoard3d = useCallback((h: Board3DHandle | null) => {
+    board3d.current = h;
+    if (h) camRef.current.repaint();
+  }, []);
   // On the 3D board, the ground's point under a touch, by the camera's ray (camera.ts).
   const groundOf = useCallback((cx: number, cy: number): [number, number] | null => {
     const r = root.current?.getBoundingClientRect();
@@ -431,14 +437,7 @@ export const EmpireMap = forwardRef<
       {/* The board in 3D, under every layer, its camera the map's. */}
       {MAP_3D && (
         <Suspense fallback={null}>
-          <Board3D
-            ref={(h) => {
-              board3d.current = h;
-              if (h) camera.repaint();
-            }}
-            p={p}
-            orbit={orbit3d}
-          />
+          <Board3D ref={onBoard3d} p={p} orbit={orbit3d} />
         </Suspense>
       )}
       {/* The night, far behind: a glow over the lagoon and its scattered lights. */}

@@ -9,7 +9,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import {
   Box3,
   BufferAttribute,
-  type BufferGeometry,
+  BufferGeometry,
   ExtrudeGeometry,
   type InstancedMesh,
   type Material,
@@ -21,36 +21,18 @@ import {
   Vector3,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import models from "./models.json";
 import { type Role, recolour } from "./recolor.js";
 
-const BASE = "/models/kaykit/";
+/**
+ * The KayKit models packed in one file (scripts/pack-models.mjs, from art-src/models/kaykit), each
+ * under a node named by its key (models.json).
+ */
+const PACK = "/models/kaykit.glb";
 
-/** The models the map uses, by their file's name. */
-export const FILES = {
-  pineA: "tree_single_A",
-  pineB: "tree_single_B",
-  rockA: "rock_single_A",
-  rockC: "rock_single_C",
-  rockE: "rock_single_E",
-  mountainA: "mountain_A",
-  mountainB: "mountain_B",
-  mountainC: "mountain_C",
-  homeA: "building_home_A_blue",
-  homeB: "building_home_B_blue",
-  church: "building_church_blue",
-  tower: "building_tower_A_blue",
-  market: "building_market_blue",
-  grain: "building_grain",
-  forge: "building_blacksmith_blue",
-  mine: "building_mine_blue",
-  sawmill: "building_lumbermill_blue",
-  windmill: "building_windmill_blue",
-  woodcut: "trees_A_cut",
-  crate: "crate_A_small",
-  crateB: "crate_B_small",
-} as const;
-export type KitName = keyof typeof FILES;
-const URLS = Object.values(FILES).map((f) => `${BASE}${f}.gltf`);
+/** The models the map uses, by their key, and their file's name in the KayKit pack. */
+export const FILES = models;
+export type KitName = keyof typeof models;
 
 export interface KitModel {
   /** The geometry, one unit across its widest side, its foot on the ground. */
@@ -69,9 +51,18 @@ function merged(root: Object3D): BufferGeometry {
   root.traverse((o) => {
     const m = o as Mesh;
     if (!m.isMesh) return;
-    const g = m.geometry.clone().applyMatrix4(m.matrixWorld);
-    for (const name of Object.keys(g.attributes))
-      if (!["position", "normal", "uv"].includes(name)) g.deleteAttribute(name);
+    // Floats again (the pack is quantized: normalized integers), only position, normal and UV.
+    const g = new BufferGeometry();
+    for (const name of ["position", "normal", "uv"]) {
+      const a = m.geometry.getAttribute(name) as BufferAttribute | undefined;
+      if (!a) continue;
+      const f = new Float32Array(a.count * a.itemSize);
+      for (let i = 0; i < a.count; i++)
+        for (let c = 0; c < a.itemSize; c++) f[i * a.itemSize + c] = a.getComponent(i, c);
+      g.setAttribute(name, new BufferAttribute(f, a.itemSize));
+    }
+    if (m.geometry.index) g.setIndex(m.geometry.index.clone());
+    g.applyMatrix4(m.matrixWorld);
     parts.push(g.index ? g.toNonIndexed() : g);
   });
   const g = mergeGeometries(parts, false) as BufferGeometry;
@@ -86,12 +77,14 @@ function merged(root: Object3D): BufferGeometry {
 
 /** Every model, loaded once (it suspends until then), and its recoloured variants on demand. */
 export function useKit() {
-  const gltfs = useGLTF(URLS, false, false) as unknown as { scene: Object3D }[];
+  const gltf = useGLTF(PACK, false, false) as unknown as { scene: Object3D };
   return useMemo(() => {
     const base = new Map<KitName, BufferGeometry>();
-    (Object.keys(FILES) as KitName[]).forEach((name, i) => {
-      base.set(name, merged((gltfs[i] as { scene: Object3D }).scene));
-    });
+    gltf.scene.updateMatrixWorld(true);
+    for (const name of Object.keys(FILES) as KitName[]) {
+      const node = gltf.scene.getObjectByName(name);
+      if (node) base.set(name, merged(node));
+    }
     const cache = new Map<string, KitModel>();
     /** A model in the palette, some of its roles swapped (`over`). */
     return (name: KitName, over: Partial<Record<Role, string>> = {}): KitModel => {
@@ -106,9 +99,9 @@ export function useKit() {
       cache.set(key, model);
       return model;
     };
-  }, [gltfs]);
+  }, [gltf]);
 }
-useGLTF.preload(URLS, false, false);
+useGLTF.preload(PACK, false, false);
 
 export interface Placed {
   x: number;

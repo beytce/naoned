@@ -1,0 +1,23 @@
+{
+  "pineA": "tree_single_A",
+  "pineB": "tree_single_B",
+  "rockA": "rock_single_A",
+  "rockC": "rock_single_C",
+  "rockE": "rock_single_E",
+  "mountainA": "mountain_A",
+  "mountainB": "mountain_B",
+  "mountainC": "mountain_C",
+  "homeA": "building_home_A_blue",
+  "homeB": "building_home_B_blue",
+  "church": "building_church_blue",
+  "tower": "building_tower_A_blue",
+  "market": "building_market_blue",
+  "grain": "building_grain",
+  "forge": "building_blacksmith_blue",
+  "mine": "building_mine_blue",
+  "sawmill": "building_lumbermill_blue",
+  "windmill": "building_windmill_blue",
+  "woodcut": "trees_A_cut",
+  "crate": "crate_A_small",
+  "crateB": "crate_B_small"
+}

@@ -111,7 +111,7 @@ export default defineConfig({
           "**/og.jpg",
           // The 3D map prototype (?map=3d): its models and its code, fetched only when asked.
           "**/models/**",
-          "**/assets/Map3D-*.js",
+          "**/assets/Board3D-*.js",
         ],
         // The API is never served from the cache.
         navigateFallbackDenylist: [/^\/api\//],

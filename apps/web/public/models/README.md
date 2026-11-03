@@ -2,12 +2,13 @@
 
 Tous les modèles de ce dossier sont sous licence **CC0 1.0** (domaine public : usage personnel et commercial permis, sans attribution obligatoire). Nous créditons quand même leurs auteurs.
 
-## `kaykit/` — KayKit « Medieval Hexagon Pack » 1.0
+## `kaykit.glb` — KayKit « Medieval Hexagon Pack » 1.0
 
 - Auteur : **Kay Lousberg** (https://www.kaylousberg.com), https://kaylousberg.itch.io/kaykit-medieval-hexagon
 - Source : https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0 (`addons/kaykit_medieval_hexagon_pack/Assets/gltf/`)
-- Licence : CC0 1.0, voir `kaykit/LICENSE.txt` (copie conforme)
-- 21 modèles copiés **tels quels** (`.gltf`, `.bin`, l'atlas `hexagons_medieval.png`) : sapins, rochers, montagnes, maisons, église, tour, marché, champ de blé, caisses ; et pour les ateliers du fondaco : forge, mine, scierie, moulin, coupe de bois. Le jeu ne lit pas l'atlas : il recolore chaque sommet selon la case de l'atlas visée par ses UV, dans la palette du « Plateau de nuit » (`apps/web/src/empire/map3d/recolor.ts`).
+- Licence : CC0 1.0, voir `kaykit-LICENSE.txt` (copie conforme)
+- 21 modèles, copiés **tels quels** dans `apps/web/art-src/models/kaykit/` (`.gltf`, `.bin`, l'atlas `hexagons_medieval.png`, la licence) : sapins, rochers, montagnes, maisons, église, tour, marché, champ de blé, caisses ; et pour les ateliers du fondaco : forge, mine, scierie, moulin, coupe de bois.
+- Le jeu sert un seul fichier, `kaykit.glb`, fait par `apps/web/scripts/pack-models.mjs` : chaque modèle sous un nœud nommé par sa clé (`apps/web/src/empire/map3d/models.json`), sans l'atlas (le jeu ne le lit pas), les sommets soudés et quantifiés (`KHR_mesh_quantization`, lu tel quel par three.js). Une requête au lieu de 44 ; 755 Ko (262 Ko compressé). Le jeu ne lit pas l'atlas : il recolore chaque sommet selon la case de l'atlas visée par ses UV, dans la palette du « Plateau de nuit » (`apps/web/src/empire/map3d/recolor.ts`).
 
 ## `quaternius/` — Quaternius « Ultimate Animated Animals », l'âne
 

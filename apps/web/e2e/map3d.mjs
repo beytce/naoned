@@ -125,6 +125,7 @@ try {
   const ctx = await browser.newContext({ viewport: { width: W, height: H }, locale: "fr-FR" });
   const page = await ctx.newPage();
   page.on("pageerror", (e) => faults.push(e.message));
+  if (process.env.DEBUG) page.on("console", (m) => console.log(`[${m.type()}] ${m.text()}`));
   page.on(
     "console",
     (m) =>
