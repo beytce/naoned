@@ -30,6 +30,7 @@ import { bestQuote } from "../logic.js";
 import type { Board3DHandle } from "../map3d/Board3D.js";
 import { groundAt } from "../map3d/camera.js";
 import { MAP_3D } from "../map3d/flag.js";
+import { sceneInputOf, sitesOf } from "../map3d/scene.js";
 import { pt } from "../porta/texts.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { Fleet } from "./Fleet.js";
@@ -388,6 +389,13 @@ export const EmpireMap = forwardRef<
     onMove?.(selected, place);
     return true;
   };
+  // On the 3D board, the Remise, the Campo and the Porta stand on small tiles (§ 8): their marks
+  // with them.
+  const sites3d = MAP_3D ? sitesOf(sceneInputOf(p)) : null;
+  const siteAt = (id: "depot" | "camp" | "porta", x: number, y: number) => {
+    const at = sites3d?.[id];
+    return at ? `${at.x},${at.y}` : `${x},${y}`;
+  };
   /** A place touched, by its mark or its hexagon on the 3D board: what it does. */
   const touchPlace = (id: string) => {
     if (id === "home") {
@@ -596,7 +604,7 @@ export const EmpireMap = forwardRef<
           (() => {
             const [px, py] = cellCentre(map.camp);
             return (
-              <div data-at={`${px},${py + 7}`} className="map-place">
+              <div data-at={siteAt("camp", px, py + 7)} className="map-place">
                 {/* The Campo touched: the Terraferma opens (1 November: it did nothing before). */}
                 <button
                   type="button"
@@ -617,7 +625,7 @@ export const EmpireMap = forwardRef<
           (() => {
             const [px, py] = cellCentre(map.depot);
             return (
-              <div data-at={`${px - 9},${py + 9}`} className="map-place">
+              <div data-at={siteAt("depot", px - 9, py + 9)} className="map-place">
                 <button
                   type="button"
                   onClick={() => touchPlace("depot")}
@@ -637,7 +645,7 @@ export const EmpireMap = forwardRef<
             // The Porta: the gate to the lands of Rome (docs/plan-porta.md § 3).
             const [px, py] = cellCentre(p.view.porta.cell);
             return (
-              <div data-at={`${px + 9},${py - 9}`} className="map-place">
+              <div data-at={siteAt("porta", px + 9, py - 9)} className="map-place">
                 <button
                   type="button"
                   onClick={() => touchPlace("porta")}
@@ -782,9 +790,9 @@ const Chart = memo(function Chart({
                 key={`b${b.cell}`}
                 d={hexPath(b.cell, 1.6)}
                 fill={P.gold}
-                fillOpacity={view.house.casa >= b.casa ? 0.06 : 0.02}
+                fillOpacity={MAP_3D ? 0 : view.house.casa >= b.casa ? 0.06 : 0.02}
                 stroke={P.gold}
-                strokeOpacity={view.house.casa >= b.casa ? 0.75 : 0.3}
+                strokeOpacity={MAP_3D ? 0 : view.house.casa >= b.casa ? 0.75 : 0.3}
                 strokeWidth="1.4"
                 strokeDasharray="4 3"
                 vectorEffect="non-scaling-stroke"

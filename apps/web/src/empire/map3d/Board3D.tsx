@@ -1,3 +1,4 @@
+import { SLOT_TURN } from "@comptoirs/engine";
 /**
  * The empire's map in 3D (docs/plateau-reprise.md, § 7): the board as a little living diorama in
  * real time (three.js through React Three Fiber), after the owner's references: thick hexagonal
@@ -32,6 +33,7 @@ import {
   Fog,
   type Group,
   MeshBasicMaterial,
+  MeshStandardMaterial,
   type OrthographicCamera as OrthoCam,
   Raycaster,
   Vector2,
@@ -53,7 +55,16 @@ import {
   useKit,
 } from "./kit.js";
 import { Flag, Smoke, useWater } from "./life.js";
-import { type Scene3D, type SceneInput, type Zone, scene3d, zones } from "./scene.js";
+import {
+  type Scene3D,
+  type SceneInput,
+  TILE_R,
+  type Zone,
+  scene3d,
+  sceneInputOf,
+  sitesOf,
+  zones,
+} from "./scene.js";
 
 Cache.enabled = true;
 
@@ -63,8 +74,6 @@ const SLAB = 3;
 const BASE = 7;
 /** The lagoon lies this far below the land; its bed further down. */
 const WATER_Y = -2.2;
-/** The unknown's silhouettes: thin slabs, their top this far under the land's. */
-const FOG_Y = -0.8;
 /** Closer than this (px per unit), the tilt-shift blurs the far and the near. */
 const NEAR_ZOOM = 22;
 /** Farther than this (px per unit), the small dressing is not drawn (a level of detail). */
@@ -118,24 +127,17 @@ export function useLive() {
 const Board3D = memo(
   forwardRef<Board3DHandle, Board3DProps>(function Board3D({ p, orbit = null }, ref) {
     const map = p.view?.map;
+    // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its map and its Porta
     const input = useMemo<SceneInput | null>(
-      () =>
-        map
-          ? {
-              cells: map.cells,
-              revealed: map.revealed,
-              unlocked: map.unlocked,
-              cities: map.cities,
-              home: map.home?.placed === false ? null : map.home,
-              posts: map.posts,
-              depot: map.depot,
-              camp: map.camp,
-              porta: p.view?.porta?.cell ?? null,
-            }
-          : null,
+      () => (map ? sceneInputOf(p) : null),
       [map, p.view?.porta?.cell],
     );
     const sc = useMemo(() => (input ? scene3d(input) : null), [input]);
+    const casa = p.view?.house.casa ?? 1;
+    const buyable = useMemo(
+      () => new Map((map?.buyable ?? []).map((b) => [b.cell, casa >= b.casa])),
+      [map?.buyable, casa],
+    );
     const live = useLive();
     const [near, setNear] = useState(false);
     // The map's camera, kept until the canvas has its own, then applied to it at each move.
@@ -220,7 +222,7 @@ const Board3D = memo(
           }}
         />
         <Suspense fallback={null}>
-          <World sc={sc} live={live} small={small} />
+          <World sc={sc} live={live} small={small} buyable={buyable} />
           <Fleet3D p={p} live={live} />
           {orbit && <Workshops3D spots={orbit} />}
           <ShadowsOnce sc={sc} k={orbit ? JSON.stringify(orbit) : ""} />
@@ -237,6 +239,7 @@ const Board3D = memo(
     a.p.view?.map === b.p.view?.map &&
     a.p.view?.porta?.cell === b.p.view?.porta?.cell &&
     a.p.view?.vehicles === b.p.view?.vehicles &&
+    a.p.view?.house.casa === b.p.view?.house.casa &&
     JSON.stringify(a.orbit ?? null) === JSON.stringify(b.orbit ?? null),
 );
 
@@ -250,14 +253,17 @@ function placesOf(p: EmpirePayload): { id: string; x: number; y: number }[] {
   if (map.home && map.home.placed !== false) out.push({ id: "home", x: map.home.x, y: map.home.y });
   for (const pt of map.posts) out.push({ id: pt.id, x: pt.x, y: pt.y });
   for (const c of map.cities) out.push({ id: `city:${c.code}`, x: c.x, y: c.y });
+  // The Remise, the Campo and the Porta on their small tiles, as the scene stands them.
+  const sites = sitesOf(sceneInputOf(p));
+  for (const id of ["depot", "camp", "porta"] as const) {
+    const at = sites[id];
+    if (at) out.push({ id, x: at.x, y: at.y });
+  }
   const cell = (id: string, k: string | null | undefined, dx: number, dy: number) => {
     if (!k) return;
     const [x, y] = cellCentre(k);
     out.push({ id, x: x + dx, y: y + dy });
   };
-  cell("depot", map.depot, -9, 9);
-  cell("camp", map.camp, 0, 7);
-  cell("porta", p.view?.porta?.cell, 9, -9);
   cell("arsenal", map.arsenal, 0, 0);
   return out;
 }
@@ -447,42 +453,61 @@ function Probe() {
 
 /** The effects (ambient occlusion, tilt-shift, tone mapping): ?fx=0 without, to measure them. */
 const FX = new URLSearchParams(window.location.search).get("fx") !== "0";
+/** The unknown's glass (decision of the owner, 3 November: transparent, but in relief). */
+const glass = new MeshStandardMaterial({
+  color: C.mist,
+  roughness: 0.85,
+  metalness: 0,
+  transparent: true,
+  opacity: 0.16,
+  depthWrite: false,
+});
+
 /** The board, its dressing, its towns and buildings. Chart units: x east, z south. */
 function World({
   sc,
   live,
   small,
+  buyable,
 }: {
   sc: Scene3D;
   live: boolean;
+  /** The sectors to buy, and whether the Casa may buy each now. */
+  buyable: Map<string, boolean>;
   /** The small dressing's group (pines, rocks), hidden far out. */
   small: React.RefObject<Group>;
 }) {
   const kit = useKit();
   const water = useWater(live);
 
+  // The small tiles (§ 8): seven a sector, each a slab of clay on a night-blue base, a thin joint
+  // between them; the unknown in slabs of glass, empty; the sea in small tiles of lagoon.
   const slabs = useMemo(() => {
-    const top = hexSlab(HEX_SIZE - 0.5, SLAB, 0.9);
-    const base = hexSlab(HEX_SIZE - 0.9, BASE, 0.5);
+    const top = hexSlab(TILE_R - 0.45, SLAB, 0.7);
+    const base = hexSlab(TILE_R - 0.75, BASE, 0.4);
     base.translate(0, -SLAB + 0.2, 0);
-    const fog = hexSlab(HEX_SIZE - 1.6, 1.4, 0.4);
-    // Its top just under the ground: the map's outlines (the sectors to buy) lie on it.
-    fog.translate(0, FOG_Y, 0);
-    const bed = hexSlab(HEX_SIZE, BASE - 1, 0.2);
+    const glass = hexSlab(TILE_R - 0.45, SLAB + BASE - 2, 0.7);
+    const bed = hexSlab(TILE_R - 0.2, BASE - 1, 0.2);
     bed.translate(0, -SLAB - 1.2, 0);
-    return { top, base, fog, bed };
+    return { top, base, glass, bed };
   }, []);
-  // The tiles by kind (kept while the board stays the same).
+  // The tiles by kind (kept while the board stays the same), turned as the engine's lattice.
   const { own, seen, wet, fog, solid } = useMemo(() => {
     const of = (kind: string) =>
-      sc.tiles.filter((tl) => tl.kind === kind).map((tl) => ({ x: tl.x, y: 0, z: tl.y, s: 1 }));
+      sc.tiles
+        .filter((tl) => tl.kind === kind)
+        .map((tl) => ({ x: tl.x, y: 0, z: tl.y, s: 1, rot: SLOT_TURN }));
     const own = of("own");
     const seen = of("seen");
     return { own, seen, wet: of("water"), fog: of("fog"), solid: [...own, ...seen] };
   }, [sc]);
-  // The lagoon: one surface over every sea tile, finely cut for its ripples.
-  const lagoon = useMemo(() => (wet.length ? lagoonGeometry(wet) : null), [wet]);
-  const fogEdges = useMemo(() => new EdgesGeometry(hexSlab(HEX_SIZE - 1.6, 0.01, 0)), []);
+  // The lagoon: one surface over every small tile of sea, finely cut for its ripples.
+  const lagoon = useMemo(() => (wet.length ? lagoonGeometry(wet, TILE_R - 0.2) : null), [wet]);
+  const fogEdges = useMemo(() => {
+    const g = new EdgesGeometry(hexSlab(TILE_R - 0.45, 0.01, 0));
+    g.rotateY(SLOT_TURN);
+    return g;
+  }, []);
 
   // The dressing, model by model, in one draw each.
   const decor = useMemo(() => {
@@ -523,7 +548,9 @@ function World({
                   : "homeA"
                 : pr.kind === "plots"
                   ? "grain"
-                  : null;
+                  : pr.kind === "mill"
+                    ? "windmill"
+                    : null;
       if (!name) continue;
       // Sizes across, in chart units (after the SVG board's scales).
       const across =
@@ -535,7 +562,9 @@ function World({
               ? 26 * pr.s
               : pr.kind === "house"
                 ? 10 * pr.s
-                : 14 * pr.s;
+                : pr.kind === "mill"
+                  ? 9 * pr.s
+                  : 14 * pr.s;
       const over2 =
         pr.kind === "mountain" ? { ...over, wall: pr.muted ? C.snowSeen : C.snow } : over;
       add(`${name}:${pr.muted}`, kit(name, over2), pr.x, pr.y, across, pr.rot);
@@ -566,26 +595,31 @@ function World({
   const docks = sc.props.filter((pr) => pr.kind === "dock");
   return (
     <group>
-      {/* The tiles: one's own in sand-gold, the others seen in mist-blue, on night-blue bases. */}
+      {/* The small tiles: one's own in sand-gold, the others seen in mist-blue, on night-blue
+          bases. */}
       <Instanced geo={slabs.top} items={own} material={claySolid(C.land)} />
       <Instanced geo={slabs.top} items={seen} material={claySolid(C.mist)} />
       <Instanced geo={slabs.base} items={solid} material={claySolid(C.soil)} cast={false} />
       {/* The lagoon: its bed, its translucent water. */}
       <Instanced geo={slabs.bed} items={wet} material={claySolid(C.mistSoil)} cast={false} />
       {lagoon && <mesh geometry={lagoon} material={water} position-y={WATER_Y} receiveShadow />}
-      {/* The unknown: low silhouettes, their edge drawn faintly. */}
-      <Instanced
-        geo={slabs.fog}
-        items={fog}
-        material={claySolid(C.mistSoil, { opacity: 0.85 })}
-        cast={false}
-        receive={false}
-      />
-      {fog.map((f) => (
-        <lineSegments key={`${f.x},${f.z}`} geometry={fogEdges} position={[f.x, FOG_Y + 0.05, f.z]}>
-          <lineBasicMaterial color={C.mist} transparent opacity={0.35} />
-        </lineSegments>
-      ))}
+      {/* The unknown: thick tiles of glass, empty, their edge drawn faintly. */}
+      <Instanced geo={slabs.glass} items={fog} material={glass} cast={false} receive={false} />
+      {/* A sector to buy: its glass tiles edged in gold (bright when the Casa may buy it). */}
+      {sc.tiles
+        .filter((t) => t.kind === "fog")
+        .map((t) => {
+          const b = buyable.get(t.cell);
+          return (
+            <lineSegments key={t.key} geometry={fogEdges} position={[t.x, 0.05, t.y]}>
+              <lineBasicMaterial
+                color={b === undefined ? C.mist : C.gold}
+                transparent
+                opacity={b === undefined ? 0.45 : b ? 0.9 : 0.4}
+              />
+            </lineSegments>
+          );
+        })}
       {/* The dressing and the towns. */}
       <group ref={small}>
         {decor
@@ -801,14 +835,15 @@ function Dock({ x, z, rot }: { x: number; z: number; rot: number }) {
 }
 
 /** The lagoon's surface: each sea tile cut in small triangles, merged into one geometry. */
-function lagoonGeometry(tiles: { x: number; z: number }[]): BufferGeometry {
-  const rings = 6;
+function lagoonGeometry(tiles: { x: number; z: number }[], radius: number): BufferGeometry {
+  const rings = 4;
   const parts: BufferGeometry[] = [];
   for (const tl of tiles) {
     const pos: number[] = [];
+    // A small tile's corners, turned as the engine's lattice (SLOT_TURN).
     const corner = (i: number, f: number): [number, number] => {
-      const a = (Math.PI / 180) * (90 + 60 * i);
-      return [tl.x + HEX_SIZE * f * Math.cos(a), tl.z - HEX_SIZE * f * Math.sin(a)];
+      const a = (-(90 + 60 * i) * Math.PI) / 180 - SLOT_TURN;
+      return [tl.x + radius * f * Math.cos(a), tl.z + radius * f * Math.sin(a)];
     };
     for (let i = 0; i < 6; i++)
       for (let k = 0; k < rings; k++) {
