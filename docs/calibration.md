@@ -2423,7 +2423,11 @@ Cible par cible (graine 1) :
 - Avec des commandes plus grosses et plus rares (C), la valeur d'une heure et celle d'une ville pleine ne changent pas, tout tient en une tournée par session : on retrouve **presque la référence** (4 cibles sur 9 sur les 3 graines, contre 5 et 4). C gagne la part des commandes (67,7 %, la référence la dépasse) et rapproche la sortie de la première bande ; il perd l'épargne des jeunes Maisons (elles dépensent presque tout, 0,96) et ralentit la fin de partie (jusqu'à 12 jours de revenu pour un palier).
 - Aucune variante ne fait mieux que C ; C2 (une place de plus par mule) l'égale avec de meilleures tournées (98,6 %), au prix d'un changement de véhicule.
 
-### Proposition (à décider par le porteur, rien n'est appliqué)
+### Décision du porteur (3 novembre 2026) : C retenu, appliqué
+
+Le porteur a validé la proposition C et ses conséquences (points 1 à 5 ci-dessous). Appliqué au jeu : villes sur les petites tuiles (`venice1450.map.ts`, écrit par `apps/web/scripts/hexmap.ts` à travers `placeCities`), `map.tiles` (la pose d'un fondaco sur une tuile libre, `tileFault`), `map.home` en (178 ; 154), `moves.secondsPerUnit` = 11, les commandes en cargaisons (plafonds 1, 1, 2, 2, 3 ; intervalles × 5 ; lot de 400 ducats), et le simulateur à une tournée par session (`roundsPerSession` = 1, `defaults.ts`).
+
+### Proposition (validée le 3 novembre)
 
 1. **Retenir C** : les villes sur les petites tuiles, `moves.secondsPerUnit` = 11 (nouveau réglage, en entiers), les commandes en cargaisons 5 fois plus grosses et plus rares (plafonds 1, 1, 2, 2, 3 ; intervalles × 5 ; lot de 400 ducats).
 2. Ensuite, si le porteur le veut, une passe dédiée à la fin de partie (le palier jusqu'à 12 jours de revenu) et à l'épargne des jeunes Maisons, par exemple la variante C2.

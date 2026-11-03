@@ -96,8 +96,9 @@ export const DEFAULT_MODEL: SimModel = {
     favourValueDucats: 10,
     sealValueDucats: 40,
   },
-  // A hop is a few seconds (1 November, after Hades' Star): a session loads its carts many times.
-  roundsPerSession: 10,
+  // A hop is five minutes and more (3 November, the long voyages; it was a few seconds): a session
+  // loads its carts once, they make their round of the towns and are back by the next.
+  roundsPerSession: 1,
   sessionsPerDay: {
     assidu: [8, 12, 18, 22],
     median: [8, 20],
