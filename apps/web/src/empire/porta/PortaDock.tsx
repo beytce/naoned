@@ -317,7 +317,7 @@ function Steps({
             ))}
           </ul>
           {line && (
-            <div className="flex flex-col gap-2.5 rounded-2xl bg-night p-3.5">
+            <div className="flex flex-col gap-2.5 glass-chip rounded-[1.25rem] p-3.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="label text-cream-dim">{pt.brings}</span>
                 <span className="text-xs text-cream">
@@ -525,7 +525,7 @@ function Lobby({
         </p>
       )}
       {lobby.code && (
-        <div className="flex items-center gap-3 rounded-2xl bg-night px-4 py-3">
+        <div className="flex items-center gap-3 glass-chip rounded-[1.25rem] px-4 py-3">
           <span className="flex flex-1 flex-col">
             <span className="label text-cream-dim">{pt.lobbyCodeTitle}</span>
             <span className="font-display text-3xl font-extrabold tabular-nums tracking-[0.12em]">

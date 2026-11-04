@@ -15,7 +15,7 @@ const TONES: Record<Tone, { face: string }> = {
   lagoon: { face: "bg-lagoon text-on-lagoon" },
   vermilion: { face: "bg-vermilion text-cream" },
   ghost: {
-    face: "bg-transparent text-cream ring-1 ring-inset ring-edge group-hover:ring-cream/40 group-active:bg-night-3",
+    face: "glass-chip text-cream group-active:brightness-95",
   },
 };
 
@@ -692,7 +692,7 @@ export function CloseButton({
       type="button"
       aria-label="Fermer"
       onClick={onClick}
-      className={`flex h-11 w-11 items-center justify-center rounded-full text-cream-dim ring-1 ring-inset ring-edge transition hover:text-cream active:scale-95 ${className}`}
+      className={`glass-chip flex h-11 w-11 items-center justify-center rounded-full text-cream-dim transition hover:text-cream active:scale-95 ${className}`}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
         <path
@@ -893,12 +893,12 @@ export function Sheet({
         ref={panel}
         aria-modal="true"
         tabIndex={-1}
-        className={`relative m-0 w-full max-w-md ${docked ? "max-h-[calc(92dvh-var(--tabbar))] pb-6" : "max-h-[92dvh] pb-[max(1.5rem,env(safe-area-inset-bottom))]"} ${leaving ? "sheet-out" : "animate-sheet lg:animate-pop"} overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:rounded-3xl lg:border lg:p-7 ${size === "wide" ? "lg:max-w-3xl" : "lg:max-w-lg"}`}
+        className={`relative m-0 w-full max-w-md ${docked ? "max-h-[calc(92dvh-var(--tabbar))] pb-6" : "max-h-[92dvh] pb-[max(1.5rem,env(safe-area-inset-bottom))]"} ${leaving ? "sheet-out" : "animate-sheet lg:animate-pop"} overflow-y-auto overscroll-contain glass-thick rounded-t-[2rem] px-5 pt-3 text-cream focus:outline-none lg:rounded-[2rem] lg:p-7 ${size === "wide" ? "lg:max-w-3xl" : "lg:max-w-lg"}`}
       >
         {/* Sticky from the dialog's own edge, over its padding (a sticky box stops under it). */}
         <div
           data-sheet-head
-          className={`sticky -top-3 z-10 -mx-5 -mt-3 bg-night-2/90 px-5 pt-3 backdrop-blur lg:-top-7 lg:-mx-7 lg:-mt-7 lg:px-7 lg:pt-7 ${head.title ? "mb-4 border-b border-line/60 pb-3" : "mb-4 lg:mb-0"}`}
+          className={`sticky -top-3 z-10 -mx-5 -mt-3 bg-night-2/60 px-5 pt-3 backdrop-blur-xl lg:-top-7 lg:-mx-7 lg:-mt-7 lg:px-7 lg:pt-7 ${head.title ? "mb-4 border-b border-line/60 pb-3" : "mb-4 lg:mb-0"}`}
         >
           <div
             className={`mx-auto h-1.5 w-12 rounded-full bg-line lg:hidden ${head.title ? "mb-3" : ""}`}

@@ -167,13 +167,13 @@ export function ArmsScene({
       </div>
 
       <header className="absolute inset-x-0 top-0 flex items-center gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="flex min-h-12 min-w-0 flex-1 flex-col justify-center rounded-full bg-night/85 px-4 py-1 shadow-lg shadow-black/40">
+        <div className="glass flex min-h-12 min-w-0 flex-1 flex-col justify-center rounded-full px-4 py-1">
           <p className="truncate font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
             {pt.arms}
           </p>
           <p className="truncate text-xs text-cream-dim">{pt.armsSub}</p>
         </div>
-        <CloseButton onClick={onClose} className="shrink-0 bg-night/85" />
+        <CloseButton onClick={onClose} className="glass shrink-0" />
       </header>
 
       <div ref={dockRef} className="pointer-events-none absolute inset-x-0 bottom-0">
