@@ -145,6 +145,14 @@ export interface House {
   voyagesDone: number;
   /** What the cities paid it for orders, by mules or by voyages. */
   ordersValue: Deniers;
+  /**
+   * Each city's orders waiting, as the engine keeps them (`cityOrdersAt`): the next one's hour, its
+   * number, the list (a full city asks no more; an order it cannot bring blocks its place).
+   */
+  cityOrders: Map<
+    string,
+    { next: number; seq: number; list: { good: string; qty: number; pay: Deniers }[] }
+  >;
   voyageMargin: Deniers;
   /** The Porta (docs/plan-porta.md): its level, its arms, its battles and relics. */
   porta?: SimPorta;

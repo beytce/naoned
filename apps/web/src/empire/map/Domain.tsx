@@ -83,7 +83,7 @@ export function DomainLabels({
                     ? void act({ type: "empireRelaunch", workshopId: ws.id })
                     : onWorkshop(ws.id)
                 }
-                className="pointer-events-auto flex min-h-14 w-20 translate-y-9 flex-col items-center justify-end gap-0.5 active:scale-95"
+                className="pointer-events-auto flex min-h-11 min-w-11 translate-y-10 flex-col items-center justify-end active:scale-95"
               >
                 <span
                   className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums shadow-md shadow-black/50 ${
@@ -96,9 +96,6 @@ export function DomainLabels({
                 >
                   <GoodsMark code={good} size={14} />
                   {line}
-                </span>
-                <span className="max-w-full truncate text-xs text-cream [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
-                  {buildingName(p, ws.type)}
                 </span>
               </button>
             </div>

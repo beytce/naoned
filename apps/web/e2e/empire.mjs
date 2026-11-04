@@ -222,8 +222,12 @@ try {
     await page.locator('[data-next-step="relaunch"]').waitFor();
     if ((await page.locator("[data-workshop]").count()) !== 3)
       faults.push(`${label}: not three workshops`);
+    // Named by their text on the orbit, by their label in the domain (its tiles show the rest).
+    const names = await page
+      .locator("[data-workshop]")
+      .evaluateAll((els) => els.map((e) => `${e.textContent} ${e.getAttribute("aria-label")}`));
     for (const name of [/carrière d'argile/i, /camp de bûcherons/i, /scierie/i])
-      if ((await page.locator("[data-workshop]").filter({ hasText: name }).count()) !== 1)
+      if (names.filter((x) => name.test(x)).length !== 1)
         faults.push(`${label}: a workshop unnamed on the orbit`);
     if (
       MAP3D
