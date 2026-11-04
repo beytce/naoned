@@ -482,6 +482,7 @@ function playerView(u: PlayerUnit, playerId: string) {
     owner: u.owner,
     mine,
     role: u.role,
+    model: u.model,
     x: round(u.x),
     y: round(u.y),
     hp: Math.ceil(u.hp),

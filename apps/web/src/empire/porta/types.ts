@@ -140,6 +140,8 @@ export interface PlayerUnitView {
   owner: string;
   mine: boolean;
   role: "combat" | "transport";
+  /** The combat vehicle's model, the transport's type (its figurine). */
+  model?: string;
   x: number;
   y: number;
   hp: number;

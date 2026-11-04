@@ -33,8 +33,9 @@ export interface PlayerUnit extends Vec {
   id: string;
   side: "player";
   owner: PlayerId;
-  /** The house's vehicle it is. */
+  /** The house's vehicle it is, and its model (its figurine on the screen). */
   vehicleId: string;
+  model?: string;
   role: "combat" | "transport";
   hp: number;
   maxHp: number;

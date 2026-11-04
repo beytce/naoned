@@ -426,3 +426,25 @@ describe("the incendiary (2 November)", () => {
     expect(relicsLeft(b)).toBe(before);
   });
 });
+
+describe("the vehicles' models in the battle (their figurines, docs/plan-porta-3d.md)", () => {
+  it("are told for each player's unit: the combat vehicle's model, the transport's type", () => {
+    const b = createBattle(
+      {
+        seed: 3,
+        tier: 1,
+        players: [
+          {
+            id: "a",
+            combat: { vehicleId: "a-cv", stats: rider({ model: "carro" }) },
+            transport: { vehicleId: "a-tr", hold: 50, type: "mule" },
+          },
+        ],
+      },
+      s,
+    );
+    const mine = b.units.filter((u) => u.side === "player");
+    expect(mine.find((u) => u.role === "combat")?.model).toBe("carro");
+    expect(mine.find((u) => u.role === "transport")?.model).toBe("mule");
+  });
+});
