@@ -3,12 +3,14 @@ import {
   atoutOpen,
   dailyFor,
   dayStartIn,
+  empireSettings,
   hourIn,
   hourWithin,
   incantoLots,
   letterOf,
   nextSkirmishCall,
   nextWaveAt,
+  ordersOf,
   seasonActs,
   seasonEnd,
   waveOrdersCovered,
@@ -81,6 +83,11 @@ export const NOTIFICATION_KINDS = [
   "broglio",
   // The parts of a house (R9): parts bought, a seat on the council, a dividend, the buyback.
   "shares",
+  // The empire (audit of 4 November 2026, the owner's decision): asked for, off by default. A
+  // workshop's queue run dry (its lots wait), a site ended, a city full of orders.
+  "empire_full",
+  "empire_site",
+  "empire_orders",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -103,7 +110,12 @@ const TERRA_NEWS: ReadonlySet<string> = new Set([
  * Kinds sent only to whoever asked for them (off by default): their name in `push_off` turns
  * them on.
  */
-export const OPT_IN: ReadonlySet<NotificationKind> = new Set(["skirmish_call"]);
+export const OPT_IN: ReadonlySet<NotificationKind> = new Set([
+  "skirmish_call",
+  "empire_full",
+  "empire_site",
+  "empire_orders",
+]);
 /** A call to skirmish is told this long before its hour. */
 const CALL_NOTICE_MS = 15 * 60_000;
 /** A wave is told only to whoever has been away this long, with at least this many orders covered. */
@@ -584,6 +596,7 @@ export class Notifier {
         });
       }
     }
+    notices.push(...this.empireNews(people, since, now));
     await this.send(notices, now);
     await this.weekResults(now);
     await this.morning(now);
@@ -592,6 +605,44 @@ export class Notifier {
     await this.streak(now);
     await this.sfidaNews(since, now);
     await this.sera(now);
+  }
+
+  /**
+   * The empire's news since the last scan, one of each kind per house at most: a workshop whose
+   * queue ran dry (its lots wait to be gathered, production stopped: CADRAGE-v3's rule 3), a site
+   * ended, a city now full of orders. Sent only to whoever asked (OPT_IN).
+   */
+  private empireNews(people: Set<string>, since: number, now: number): Notice[] {
+    const houses = this.world.current.empire?.houses;
+    if (!houses) return [];
+    const within = (t: number) => t > since && t <= now;
+    const s = empireSettings(this.world.ctx);
+    const out: Notice[] = [];
+    for (const [id, h] of Object.entries(houses)) {
+      if (!people.has(id)) continue;
+      const dry = h.workshops.filter(
+        (w) => w.job && within(w.job.startedAt + w.job.batches * w.job.batchMs),
+      );
+      if (dry.length > 0)
+        out.push({ accountId: id, kind: "empire_full", data: { workshops: dry.length } });
+      const done = h.builds.filter((b) => within(b.endsAt));
+      if (done.length > 0)
+        out.push({ accountId: id, kind: "empire_site", data: { kind: done[0]?.kind } });
+      const fullNow = ordersOf(this.world.ctx, h, id, s, now).filter(
+        (c) => c.orders.length >= c.cap && c.cap > 0,
+      );
+      if (fullNow.length > 0) {
+        const before = new Set(
+          ordersOf(this.world.ctx, h, id, s, since)
+            .filter((c) => c.orders.length >= c.cap)
+            .map((c) => c.city),
+        );
+        const newly = fullNow.filter((c) => !before.has(c.city));
+        if (newly.length > 0)
+          out.push({ accountId: id, kind: "empire_orders", data: { city: newly[0]?.city } });
+      }
+    }
+    return out;
   }
 
   /**

@@ -32,6 +32,9 @@ const ICON = {
   doge: NavIcon.top,
   broglio: NavIcon.bell,
   shares: NavIcon.bell,
+  empire_full: NavIcon.bell,
+  empire_site: NavIcon.bell,
+  empire_orders: NavIcon.bell,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",

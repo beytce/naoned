@@ -12,7 +12,7 @@ import {
 import type { NotificationKind, PushSettings as Settings } from "./types.js";
 
 /** Profile section: push on this device, and which kinds of notices to receive. */
-export function PushSettings() {
+export function PushSettings({ only }: { only?: (kind: NotificationKind) => boolean } = {}) {
   const t = fr.game.notices.push;
   const [settings, setSettings] = useState<Settings | null>(null);
   const [on, setOn] = useState(false);
@@ -86,18 +86,20 @@ export function PushSettings() {
         )}
         {message && <p className="mt-3 text-sm text-vermilion">{message}</p>}
         <div className="mt-4 space-y-2">
-          {settings.kinds.map((kind) => (
-            <Switch
-              key={kind}
-              checked={
-                settings.optIn?.includes(kind)
-                  ? settings.off.includes(kind)
-                  : !settings.off.includes(kind)
-              }
-              onChange={() => toggleKind(kind)}
-              label={t.kinds[kind]}
-            />
-          ))}
+          {settings.kinds
+            .filter((k) => !only || only(k))
+            .map((kind) => (
+              <Switch
+                key={kind}
+                checked={
+                  settings.optIn?.includes(kind)
+                    ? settings.off.includes(kind)
+                    : !settings.off.includes(kind)
+                }
+                onChange={() => toggleKind(kind)}
+                label={t.kinds[kind]}
+              />
+            ))}
         </div>
       </Panel>
     </section>

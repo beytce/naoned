@@ -184,6 +184,18 @@ export function pushTextEn(
         body: `Customs sells ${goods.length > 0 ? goods.join(", ") : "the goods from overseas"} at the Market: first come, best prices.`,
       };
     }
+    case "empire_full":
+      return {
+        title: "Your queues are full",
+        body:
+          Number(data.workshops) > 1
+            ? `${data.workshops} workshops finished their queue: their lots are waiting for you.`
+            : "A workshop finished its queue: its lots are waiting for you.",
+      };
+    case "empire_site":
+      return { title: "Site finished", body: "A site of your House is complete." };
+    case "empire_orders":
+      return { title: "Orders waiting", body: "A town has all its orders ready to deliver." };
     case "harvest":
       return {
         title: "Harvest ready",

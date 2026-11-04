@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Lorenzo } from "../art/scenes.js";
 import { PalettePicker } from "../game/Profil.js";
+import { PushSettings } from "../game/PushSettings.js";
 import { d, hourOf } from "../game/format.js";
 import { GOLD } from "../game/gold.js";
 import { fr } from "../i18n.js";
@@ -225,6 +226,10 @@ export function HouseSheet({
       <div className="mt-6">
         {/* The palettes of the monthly profile; the Pass's own stays out of the empire. */}
         <PalettePicker pass={false} offered={false} />
+      </div>
+      {/* The empire's notices, asked for, three kinds (decision of the owner, 4 November). */}
+      <div className="mt-6" data-house-push>
+        <PushSettings only={(k) => k.startsWith("empire_")} />
       </div>
     </Sheet>
   );

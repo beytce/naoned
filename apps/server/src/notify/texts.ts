@@ -191,6 +191,23 @@ export function pushText(
         body: `La Douane vend au Marché ${goods.length > 0 ? goods.join(", ") : "les marchandises d'outre-mer"} : premiers arrivés, meilleurs prix.`,
       };
     }
+    case "empire_full":
+      return {
+        title: "Vos files sont pleines",
+        body:
+          Number(data.workshops) > 1
+            ? `${data.workshops} ateliers ont fini leur file : leurs lots vous attendent.`
+            : "Un atelier a fini sa file : ses lots vous attendent.",
+      };
+    case "empire_site":
+      return { title: "Chantier terminé", body: "Un chantier de votre Maison est achevé." };
+    case "empire_orders": {
+      const city = cities[String(data.city)] ?? String(data.city ?? "Une ville");
+      return {
+        title: "Commandes en attente",
+        body: `${city} a toutes ses commandes prêtes à livrer.`,
+      };
+    }
     case "harvest":
       return {
         title: "Récolte prête",
