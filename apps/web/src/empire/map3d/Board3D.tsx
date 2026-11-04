@@ -1069,7 +1069,7 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
                 <mesh
                   geometry={kit(model.name).geo}
                   material={clayShared}
-                  scale={model.s * 1.7}
+                  scale={model.s * 1.5}
                   castShadow
                   receiveShadow
                 />

@@ -2488,4 +2488,4 @@ Cible par cible (graine 1) :
 
 `venice1450.empire.ts` : `orders.firstLotBps` = 2 500, `madeWeight` = 3, `distanceBps` = 100, `distanceMaxBps` = 1 500 ; `moves.returnHome` et `recallSeconds` = 5 ; `map.water` (la tuile de lagune de Venise). **À annoncer** dans les notes du chapitre avant de s'appliquer : brouillon dans `docs/notes-chapitre-2026-11-carte.md`.
 
-Reproduire : `cd apps/simulator && npx tsx src/empire-cli.ts` (A ; le jeu tel qu'appliqué donne E) ; environ 50 minutes par graine.
+Reproduire : `cd apps/simulator && npx tsx src/empire-cli.ts` donne E (le jeu tel qu'appliqué) ; environ 50 minutes par graine.
