@@ -4,7 +4,7 @@ import { type Account, ApiError } from "../api.js";
 import { BuildingArt } from "../art/buildings.js";
 import { GoodsMark } from "../art/goods.js";
 import { d, hourOf, minutesLabel } from "../game/format.js";
-import { FxLayer, flyCoins, flyGoods } from "../game/fx.js";
+import { FxLayer, flyCoins, flyGoods, pressResult } from "../game/fx.js";
 import { GOLD } from "../game/gold.js";
 import { connectLive } from "../game/live.js";
 import { useOnline } from "../game/online.js";
@@ -218,9 +218,12 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     setBusy(true);
     try {
       const answer = await empireApi.act(a);
-      if (!answer.error) feel(p, answer);
+      // The gold slab pressed is struck, or shakes (game/fx.tsx), the moment the answer comes.
+      pressResult(!answer.error);
+      if (!answer.error) feel(p, answer, a);
       take(answer);
     } catch (err) {
+      pressResult(false);
       setToast(
         err instanceof ApiError
           ? (t.errors[err.code] ?? unknownError)
@@ -230,8 +233,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       setBusy(false);
     }
   };
-  // A hop arrived by the clock: the house's state settled, quietly (no wait, no error told).
+  // A hop arrived by the clock: the house's state settled, quietly (no wait, no error told);
+  // but a delivery paid is felt: coins to the purse, their sound (audit of 4 November, motion M1).
   const settling = useRef(false);
+  const shown = useRef(p);
+  shown.current = p;
   const settle = useCallback(() => {
     if (settling.current) return;
     settling.current = true;
@@ -239,7 +245,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       empireApi
         .act({ type: "empireSettle" })
         .then((answer) => {
-          if (!answer.error) take(answer);
+          if (answer.error) return;
+          feel(shown.current, answer);
+          take(answer);
         })
         .catch(() => undefined)
         .finally(() => {
@@ -690,14 +698,27 @@ const terraCalls = (p: EmpirePayload, now: number) => {
  * The gesture answers (lot A of the UX audit): the goods gained fly to the resource bar, the
  * ducats to the purse, with the sound and the touch of the monthly game.
  */
-function feel(before: EmpirePayload, after: EmpirePayload) {
+/**
+ * What an answer is felt as (audit of 4 November, motion M3): goods gathered fly to the store with
+ * their sound, coins earned to the purse with theirs; a purchase (goods in, ducats out) is a stamp,
+ * not a harvest; a vehicle that leaves, its cart. Each once, at the answer.
+ */
+function feel(before: EmpirePayload, after: EmpirePayload, action?: EmpireAction) {
   const gains: Record<string, number> = {};
   for (const [g, n] of Object.entries(after.stock)) {
     const more = n - (before.stock[g] ?? 0);
     if (more > 0 && !g.includes(":")) gains[g] = more;
   }
   const coins = BigInt(after.cash) - BigInt(before.cash);
-  if (Object.keys(gains).length > 0) {
+  const goods = Object.keys(gains).length > 0;
+  if (action?.type === "empireDeliverCity" || action?.type === "empireMove") {
+    sound("cart");
+    haptic("tap");
+  } else if (goods && coins < 0n) {
+    flyGoods(gains);
+    sound("stamp");
+    haptic("tap");
+  } else if (goods) {
     flyGoods(gains);
     sound("harvest");
   }
@@ -705,7 +726,7 @@ function feel(before: EmpirePayload, after: EmpirePayload) {
     flyCoins(coins);
     sound("coin");
   }
-  if (coins > 0n || Object.keys(gains).length > 0) haptic("success");
+  if (coins > 0n || (goods && coins >= 0n)) haptic("success");
 }
 
 /** A trait to take or a path to choose waits in the family. */
