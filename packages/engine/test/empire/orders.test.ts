@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { empireView, lotOf, ordersOf, parseEmpireSettings } from "../../src/index.js";
+import {
+  distanceBonusBps,
+  empireView,
+  lotOf,
+  ordersOf,
+  parseEmpireSettings,
+  weightedGoods,
+} from "../../src/index.js";
 import type { EmpireHouse, WorldState } from "../../src/state.js";
 import { HOUR, MIN as MINUTE, World, makeContext } from "../helpers.js";
 import { ordersEmpire } from "./ordersFixture.js";
@@ -123,5 +130,62 @@ describe("a full city", () => {
     expect(city(w, "padova")?.orders).toHaveLength(1);
     w.advance(MINUTE);
     expect(city(w, "padova")?.orders).toHaveLength(2);
+  });
+});
+
+// After the map's audit (decision of the owner, 3 November 2026): a first delivery possible in the
+// first session (each city's first order smaller), orders drawn mostly among what the house makes
+// now, and a premium for the long roads (CADRAGE-v3 § 3.4). Off unless set.
+describe("a city's first order", () => {
+  it("is a share of a lot when set, paid as much less", () => {
+    const small = { ...empire, orders: { ...empire.orders, firstLotBps: 2_500 } };
+    const w = new World(makeContext({ empire: small }));
+    w.do({ type: "empireJoin", playerId: "a" });
+    const first = view(w)?.orders.find((c) => c.city === "venezia")?.orders[0];
+    const full = first?.good === "wheat" ? 10 : 3;
+    expect(first?.qty).toBe(Math.max(1, Math.round(full / 4)));
+    w.advance(HOUR);
+    const second = view(w)?.orders.find((c) => c.city === "venezia")?.orders[1];
+    expect(second?.qty).toBe(second?.good === "wheat" ? 10 : 3);
+  });
+});
+
+describe("the goods drawn", () => {
+  it("weigh what the house makes now so many times more", () => {
+    expect(weightedGoods(["a", "b", "c"], new Set(["b"]), 3)).toEqual(["a", "b", "b", "b", "c"]);
+    expect(weightedGoods(["a", "b"], new Set(), 3)).toEqual(["a", "b"]);
+  });
+});
+
+describe("the premium of the long roads", () => {
+  it("grows with the way from the fondaco, up to its cap", () => {
+    const far = parseEmpireSettings({
+      ...empire,
+      orders: { ...empire.orders, distanceBps: 100, distanceMaxBps: 1_500 },
+    });
+    expect(distanceBonusBps(far, 0)).toBe(0);
+    expect(distanceBonusBps(far, 42)).toBe(420);
+    expect(distanceBonusBps(far, 1_000)).toBe(1_500);
+    expect(distanceBonusBps(s, 42)).toBe(0);
+  });
+
+  it("pays a farther city's order more for the same good", () => {
+    const far = {
+      ...empire,
+      orders: { ...empire.orders, distanceBps: 100, distanceMaxBps: 1_500 },
+    };
+    const w = new World(makeContext({ empire: far }));
+    w.do({ type: "empireJoin", playerId: "a" });
+    w.advance(48 * HOUR);
+    const all = view(w)?.orders.flatMap((c) => c.orders) ?? [];
+    const perUnit = (city: string, good: string) => {
+      const o = all.find((x) => x.city === city && x.good === good);
+      return o ? Number(o.pay) / o.qty : null;
+    };
+    for (const good of ["wheat", "bread"]) {
+      const v = perUnit("venezia", good);
+      const p = perUnit("padova", good);
+      if (v !== null && p !== null) expect(p).toBeGreaterThan(v);
+    }
   });
 });

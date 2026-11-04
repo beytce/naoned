@@ -114,6 +114,16 @@ export const empireSettingsSchema = z.object({
       tierTimes: z.record(z.string(), positive).prefault({}),
       lots: z.record(z.string(), positive).prefault({}),
       premiumBps: bps.prefault(1_500),
+      /**
+       * After the map's audit (decision of the owner, 3 November 2026): each city's first order a
+       * share of its lot (a first delivery in the first session), the goods the house makes now
+       * drawn so many times more often, and a premium a ten units of the road from the nearest
+       * fondaco (CADRAGE-v3 § 3.4), up to its cap.
+       */
+      firstLotBps: bps.prefault(10_000),
+      madeWeight: positive.prefault(1),
+      distanceBps: bps.prefault(0),
+      distanceMaxBps: bps.prefault(0),
     })
     .nullable()
     .prefault(null),
