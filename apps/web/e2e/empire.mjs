@@ -219,7 +219,7 @@ try {
     if (!/2\s*\/\s*2/.test(await page.locator("[data-hud=fleet]").innerText()))
       faults.push(`${label}: the fleet not « 2 / 2 » in the corner`);
     // The new player's road: the next step says what to do, its gold button does it.
-    await page.locator('[data-next-step="relaunch"]').waitFor();
+    await page.locator('[data-next-step="relaunch"]').first().waitFor();
     if ((await page.locator("[data-workshop]").count()) !== 3)
       faults.push(`${label}: not three workshops`);
     // Named by their text on the orbit, by their label in the domain (its tiles show the rest).
@@ -239,9 +239,13 @@ try {
     )
       faults.push(`${label}: no « Bâtir » on the free place`);
     await shot("2-maison");
-    await page.getByRole("button", { name: /tout relancer/i }).click();
+    await page.waitForTimeout(500);
+    await page
+      .getByRole("button", { name: /tout relancer/i })
+      .first()
+      .click();
     // The Casa 2 asks bricks, made nowhere: the next step names the brickworks.
-    await page.locator('[data-next-step="build"]').waitFor();
+    await page.locator('[data-next-step="build"]').first().waitFor();
     await shot("3-relance");
 
     // A workshop touched: its panel, then its details (its place on the ring, to move it).
@@ -264,7 +268,12 @@ try {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
 
-    // The Production, behind the « + »: the buildings, then the vehicles and the fleet.
+    // The Production, behind the « + » (on the 3D board, in the domain's bar, the workshop's panel
+    // closed first): the buildings, then the vehicles and the fleet.
+    if (MAP3D && (await page.locator("[data-domain-bar]").count()) === 0) {
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+    }
     await page.locator("[data-production]").click();
     await page.waitForSelector('[aria-modal="true"]');
     await page.waitForTimeout(450);
@@ -400,8 +409,10 @@ try {
     await page.locator(WS).first().waitFor();
 
     // The next step opens the Production on the brickworks of the Casa 2.
+    await page.waitForTimeout(500);
     await page
       .locator("[data-next-step=build]")
+      .first()
       .getByRole("button", { name: /briqueterie/i })
       .click();
     await page.waitForSelector('[aria-modal="true"]');
@@ -413,7 +424,7 @@ try {
       .click();
     await page.waitForTimeout(800);
     // Then the next step waits for the site.
-    await page.locator('[data-next-step="wait"]').waitFor();
+    await page.locator('[data-next-step="wait"]').first().waitFor();
     await shot("12-attente");
     // Buying at the market goes into a counter's stock: ten units of a good, into Venice's.
     if (MAP3D) await page.locator("[data-domain-back]").click();

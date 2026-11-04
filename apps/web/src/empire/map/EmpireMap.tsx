@@ -113,12 +113,15 @@ const orbitOn = (at: [number, number], from: Camera) => (v: Viewport) => {
  * A fondaco's domain across the screen (its nineteen tiles and their shore), a little above the
  * middle: the bar at the foot under it.
  */
-const domainFrame = (at: [number, number]) => (v: Viewport) => {
-  // The two rings of workshops across (their shore a little cut on a phone).
-  const across = 5 * STEP;
-  const s = Math.min((v.w * 0.98) / across, Math.max(80, v.h - 300) / (across * TILT));
-  return { s, tx: v.w / 2 - at[0] * s, ty: (v.h - 120) / 2 - at[1] * TILT * s };
-};
+const domainFrame =
+  (at: [number, number], rings = 2) =>
+  (v: Viewport) => {
+    // The rings of workshops across (their shore a little cut on a phone): closer while the first
+    // ring holds them all.
+    const across = (rings <= 1 ? 3.4 : 5) * STEP;
+    const s = Math.min((v.w * 0.98) / across, Math.max(80, v.h - 300) / (across * TILT));
+    return { s, tx: v.w / 2 - at[0] * s, ty: (v.h - 120) / 2 - at[1] * TILT * s };
+  };
 
 /** The board in 3D (?map=3d, docs/plateau-reprise.md § 7): its own chunk, fetched only then. */
 const Board3D = lazy(() => import("../map3d/Board3D.js"));
@@ -336,7 +339,10 @@ export const EmpireMap = forwardRef<
     // At rest: the chart drawn again at the camera's scale, when it has moved far from it.
     onRest: (cam, v) => {
       // Pinched out of a domain, far enough: back to the map.
-      if (domainRef.current && cam.s < domainFrame(openedAt.current)(v).s * 0.55) {
+      if (
+        domainRef.current &&
+        cam.s < domainFrame(openedAt.current, domainRings(openedRegion.current))(v).s * 0.55
+      ) {
         setOpened(null);
         return;
       }
@@ -344,12 +350,20 @@ export const EmpireMap = forwardRef<
       if (Math.abs(want / drawn.current - 1) > 0.12) setBase(want);
     },
   });
+  /** How many rings of a fondaco's domain hold something (its workshops, sites, free place). */
+  const domainRings = (region: string) =>
+    Math.max(
+      1,
+      ...domainOf(p, region, [0, 0])
+        .filter((t) => t.kind !== "land" && t.kind !== "shore")
+        .map((t) => t.ring),
+    );
   /** A counter touched: its workshops deploy around its bubble, the camera zooming around it. */
   const deploy = (region: string, at: [number, number], id = region) => {
     setOpened(id);
     openedRegion.current = region;
     openedAt.current = at;
-    camera.easeTo(MAP_3D ? domainFrame(at) : orbitOn(at, camera.cam()));
+    camera.easeTo(MAP_3D ? domainFrame(at, domainRings(region)) : orbitOn(at, camera.cam()));
   };
   /** « Maison » (3D): back over the first fondaco; already there, its domain. */
   const goHouse = () => {
