@@ -490,7 +490,6 @@ export const EmpireMap = forwardRef<
   const onThreeReady = useCallback(() => setThreeReady(true), []);
   const onBoard3d = useCallback((h: Board3DHandle | null) => {
     board3d.current = h;
-    if (!h) setThreeReady(false);
     if (h) camRef.current.repaint();
   }, []);
   // On the 3D board, the ground's point under a touch, by the camera's ray (camera.ts).

@@ -241,27 +241,34 @@ const Board3D = memo(
     const readyRef = useRef(onReady);
     readyRef.current = onReady;
     const ready = useCallback(() => readyRef.current?.(), []);
-    useImperativeHandle(ref, () => ({
-      view(cam, v) {
-        const was = last.current;
-        // The map repaints its camera at each of its renders (each tick of the clock): no frame
-        // unless the camera or the screen did change.
-        if (
-          was &&
-          was.cam.s === cam.s &&
-          was.cam.tx === cam.tx &&
-          was.cam.ty === cam.ty &&
-          was.v.w === v.w &&
-          was.v.h === v.h
-        )
-          return;
-        last.current = { cam, v };
-        if (was) moved();
-        apply();
-      },
-      // An animal under the finger first (a target of 44 px around it), else a place.
-      hit: (x, y) => animalAt(x, y) ?? hitter.current?.(x, y) ?? null,
-    }));
+    // Made once (its methods read refs): a handle made again at each render would tell the map the
+    // board gone, then back.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: refs only
+    useImperativeHandle(
+      ref,
+      () => ({
+        view(cam, v) {
+          const was = last.current;
+          // The map repaints its camera at each of its renders (each tick of the clock): no frame
+          // unless the camera or the screen did change.
+          if (
+            was &&
+            was.cam.s === cam.s &&
+            was.cam.tx === cam.tx &&
+            was.cam.ty === cam.ty &&
+            was.v.w === v.w &&
+            was.v.h === v.h
+          )
+            return;
+          last.current = { cam, v };
+          if (was) moved();
+          apply();
+        },
+        // An animal under the finger first (a target of 44 px around it), else a place.
+        hit: (x, y) => animalAt(x, y) ?? hitter.current?.(x, y) ?? null,
+      }),
+      [],
+    );
     if (!sc) return null;
     return (
       <Canvas
