@@ -200,8 +200,10 @@ try {
       // The domain: the Casa on the fondaco's tile, the map's marks put away.
       if ((await page.locator("[data-domain-casa]").count()) !== 1)
         faults.push(`${label}: no Casa on the domain's fondaco`);
-      if ((await page.locator("[data-domain-bar=veneto]").count()) !== 1)
-        faults.push(`${label}: no bar at the domain's foot`);
+      await page
+        .locator("[data-domain-bar=veneto]")
+        .waitFor({ timeout: 5_000 })
+        .catch(() => faults.push(`${label}: no bar at the domain's foot`));
       if (await page.locator("[data-city=padova]").first().isVisible())
         faults.push(`${label}: Padua's mark shown in the domain`);
     } else {
@@ -519,12 +521,22 @@ try {
     await page.waitForTimeout(1_500);
     await press("[data-city=padova]");
     await page.locator("[data-orders-panel=padova] [data-order]").first().waitFor();
-    if ((await page.locator("[data-orders-panel=padova] [data-picked]").count()) === 0)
+    // Chosen by its stock (when the purse could buy it: the button shows then).
+    if (
+      (await page.locator("[data-orders-panel=padova] [data-deliver]").count()) > 0 &&
+      (await page.locator("[data-orders-panel=padova] [data-picked]").count()) === 0
+    )
       faults.push(`${label}: no order of Padua chosen by its stock`);
     await shot("15-livrer");
     const deliver = page.locator("[data-orders-panel=padova] [data-deliver] button");
-    if ((await deliver.count()) === 0) faults.push(`${label}: no « Livrer » for Padua`);
-    else {
+    if ((await deliver.count()) === 0) {
+      // The purse too short for the lot at the market (the whole delivery is map3d.mjs's): the
+      // sheet says why instead.
+      if ((await page.locator("[data-orders-panel=padova] [data-why]").count()) === 0)
+        faults.push(`${label}: neither « Livrer » nor why for Padua`);
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+    } else {
       await deliver.click();
       await page.locator("[data-trip]").first().waitFor({ timeout: 5_000 });
       if ((await page.locator("[data-recall]").count()) === 0)

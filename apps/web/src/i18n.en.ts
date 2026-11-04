@@ -623,7 +623,7 @@ export const en: Dictionary = {
     orbit: {
       buildHere: "Build here",
       back: "Map",
-      title: (casa: number) => `Your domain · Casa ${casa}`,
+      title: (casa: number) => `Domain · Casa ${casa}`,
       postTitle: (region: string) => `Fondaco of ${region}`,
       harvest: (n: number) => `Collect all · ${n}`,
       next: (left: string) => `Next lot in ${left}`,
