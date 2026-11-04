@@ -14,6 +14,16 @@ Décision du porteur : la carte de l'empire et ce qui s'y pose suivent le « Pla
 - **Les pièces frappées** : ducat, faveur, sceau et roue de la bourse (`art/plateau/coins.tsx`) sur cuir bleu nuit surpiqué d'or (`.purse`) ; les marchandises (`GoodsMark`) en relief.
 - **Le mouvement** reste lent et rare (vaguelettes, brouillard, fanion), coupé quand l'appareil demande moins d'animations.
 
+## Direction Jour et le verre (4 novembre 2026)
+
+Décisions du porteur : la carte et toute l'interface passent « de jour » (références : un city-builder aux panneaux crème, une île de cases hexagonales en relief, une île pastel entourée de cases « + »), puis les interfaces et menus « un peu Liquid Glass ». Elles remplacent le « Plateau de nuit » pour la carte ; les règles qui ne parlent pas de couleur restent (une seule action en or, le dock, rien qui lévite). Captures : `docs/direction-artistique-2026-11/jour/`.
+
+- **La palette Jour** (`[data-palette="jour"]`, le défaut) : fond bleu-gris très clair, panneaux crème, encre brune, or moutarde pour le bouton (`--face*`) distinct de l'or plus sombre des montants. Les autres palettes restent au choix.
+- **Le plateau** (`art/plateau/props.ts`, `C`) : ciel et brume pastel, vos terres crème-beurre, les terres vues en sauge pâle, terre chaude sous les cases, toits de terre cuite, lumière douce, occlusion légère, pas de flou de bascule.
+- **Le « + »** : l'inconnu est fait de plaques fines au niveau de la mer ; un secteur que la Casa peut acheter est une plaque crème au « + » doré, un secteur encore fermé un « + » gris ; rien d'autre ne marque l'inconnu.
+- **Le HUD** : le médaillon de la Casa, une barre de comptes côte à côte (la colonne du 2 novembre est abandonnée), un plateau de médaillons ronds au pied.
+- **Le verre** (`index.css`, `.glass`, `.glass-thick`, `.glass-chip`) : les surfaces de l'interface sont du verre posé sur la carte (translucide, la carte floutée et ravivée derrière, un reflet sur leur moitié haute, un liseré clair, une ombre douce). Trois épaisseurs : `.glass` pour les barres, pastilles et boutons ronds ; `.glass-thick` pour le dock et les feuilles ; `.glass-chip` pour ce qui est posé sur du verre (cartes de choix, jetons, portes), sans flou propre. La sélection s'y marque par un contour (`outline`), le verre tenant l'ombre. Le bouton d'or reste opaque. La part de couleur propre du verre (`--glass-a`, `--glass-thick-a`) est réglée par palette pour que le texte garde 4,5:1 sur la carte la plus sombre et la plus claire (`test/theme.test.ts`). Sans `backdrop-filter`, ou pour qui demande moins de transparence, les surfaces redeviennent pleines.
+
 ## Le dock : une scène, un dock, une décision (4 novembre 2026)
 
 Décision du porteur : tout menu qui porte un choix (améliorer, équiper, partir, livrer) suit le dock (`apps/web/src/dock.tsx`, détail et état dans `docs/plan-dock.md`).
