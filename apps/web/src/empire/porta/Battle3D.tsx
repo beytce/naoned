@@ -149,15 +149,38 @@ disc.rotateX(-Math.PI / 2);
 const ball = new SphereGeometry(0.35, 10, 8);
 const bubble = new SphereGeometry(1, 20, 14);
 const halo = new TorusGeometry(1, 0.09, 6, 36);
+// The relic's loading, clockwise from the top, by fortieths (made at their first use, then kept).
+const rings = new Map<number, RingGeometry>();
+const loadingRing = (steps: number) => {
+  let g = rings.get(steps);
+  if (!g) {
+    g = new RingGeometry(1.9, 2.3, steps, 1, Math.PI / 2, (-Math.PI * 2 * steps) / 40);
+    g.rotateX(-Math.PI / 2);
+    rings.set(steps, g);
+  }
+  return g;
+};
 halo.rotateX(Math.PI / 2);
-const glow = (hex: string, opacity: number) =>
-  new MeshBasicMaterial({
-    color: hex,
-    transparent: true,
-    opacity,
-    depthWrite: false,
-    side: DoubleSide,
-  });
+/**
+ * A glowing material, one for each colour and opacity, made once and kept (audit of 4 November,
+ * 3D M1): a material made at each render is never freed by React Three Fiber.
+ */
+const glows = new Map<string, MeshBasicMaterial>();
+const glow = (hex: string, opacity: number) => {
+  const key = `${hex}/${opacity}`;
+  let m = glows.get(key);
+  if (!m) {
+    m = new MeshBasicMaterial({
+      color: hex,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+      side: DoubleSide,
+    });
+    glows.set(key, m);
+  }
+  return m;
+};
 const M = {
   gold: glow(C.gold, 0.9),
   goldSoft: glow(C.gold, 0.25),
@@ -679,13 +702,15 @@ function Loading({ rarity, doneAt, t }: { rarity: Rarity; doneAt: number; t: num
   // The loading's time: from its rarity (docs/plan-porta.md § 6.3).
   const total = { common: 10_000, rare: 20_000, precious: 35_000, legendary: 60_000 }[rarity];
   const done = Math.max(0, Math.min(1, 1 - (doneAt - t) / total));
-  const geo = useMemo(() => {
-    const g = new RingGeometry(1.9, 2.3, 40, 1, Math.PI / 2, -Math.PI * 2 * Math.max(0.02, done));
-    g.rotateX(-Math.PI / 2);
-    return g;
-  }, [done]);
-  useEffect(() => () => geo.dispose(), [geo]);
-  return <mesh geometry={geo} material={glow(RARITY_HEX[rarity], 0.95)} position-y={0.14} />;
+  // The ring by steps of a fortieth, each made once and kept: no geometry made again at each beat.
+  const steps = Math.max(1, Math.round(40 * Math.max(0.02, done)));
+  return (
+    <mesh
+      geometry={loadingRing(steps)}
+      material={glow(RARITY_HEX[rarity], 0.95)}
+      position-y={0.14}
+    />
+  );
 }
 
 /**
