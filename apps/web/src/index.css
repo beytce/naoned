@@ -1655,3 +1655,18 @@ button.map-place {
     animation: none;
   }
 }
+
+/* A delivery's road before it leaves (OrdersPanel): the gold dots run toward the town. */
+.plan-road {
+  animation: plan-road 1.2s linear infinite;
+}
+@keyframes plan-road {
+  to {
+    stroke-dashoffset: -7;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plan-road {
+    animation: none;
+  }
+}

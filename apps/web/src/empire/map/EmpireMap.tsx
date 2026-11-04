@@ -169,6 +169,8 @@ export const EmpireMap = forwardRef<
     onDomain?: (region: string | null) => void;
     /** The workshop whose dock is open: ringed on its tile, or its star (docs/plan-dock.md). */
     chosenWorkshop?: string | null;
+    /** The road a delivery would take, drawn before the vehicle leaves (docs/plan-dock.md). */
+    road?: { from: string; to: string } | null;
   }
 >(function EmpireMap(
   {
@@ -188,6 +190,7 @@ export const EmpireMap = forwardRef<
     houseName = "",
     onDomain,
     chosenWorkshop = null,
+    road = null,
   },
   ref,
 ) {
@@ -868,6 +871,7 @@ export const EmpireMap = forwardRef<
           onArrive={() => onArrive?.()}
           toChart={toChart}
           unitsPerPx={() => 1 / camera.cam().s}
+          planned={road}
         />
         {map.camp &&
           (() => {

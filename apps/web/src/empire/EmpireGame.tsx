@@ -6,6 +6,7 @@ import { GoodsMark } from "../art/goods.js";
 import { d, hourOf, minutesLabel } from "../game/format.js";
 import { FxLayer, flyCoins, flyGoods } from "../game/fx.js";
 import { connectLive } from "../game/live.js";
+import { Icon } from "../game/map/icons.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { sound } from "../sound.js";
@@ -119,6 +120,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [picked, setPicked] = useState<Picked | null>(null);
   // The vehicle chosen (after Hades' Star), and picking where to send it.
   const [vehicle, setVehicle] = useState<string | null>(null);
+  // The road a delivery would take, drawn on the map while the town's dock is open.
+  const [road, setRoad] = useState<{ from: string; to: string } | null>(null);
+  // A vehicle just sent: a small note to follow it, for a few seconds.
+  const [sent, setSent] = useState<{ id: string; name: string } | null>(null);
+  useEffect(() => {
+    if (!sent) return;
+    const t = setTimeout(() => setSent(null), 8_000);
+    return () => clearTimeout(t);
+  }, [sent]);
   const [aiming, setAiming] = useState(false);
   const map = useRef<EmpireMapHandle>(null);
   useAwayRecap(p);
@@ -272,8 +282,12 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     };
   }, []);
   /** « Livrer » from a city: the orders chosen go; the camera stays on the city. */
-  const deliver = (city: string, orderIds: string[]) => {
-    void act({ type: "empireDeliverCity", city, orderIds }).then(() => setTarget(null));
+  const deliver = (city: string, orderIds: string[], vehicleId: string | null) => {
+    const v = p.view?.vehicles.mine.find((x) => x.id === vehicleId);
+    void act({ type: "empireDeliverCity", city, orderIds }).then(() => {
+      setTarget(null);
+      if (v) setSent({ id: v.id, name: t.vehicleNames[v.type] ?? v.type });
+    });
   };
   const join = async () => {
     setBusy(true);
@@ -387,6 +401,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         houseName={account.pseudo ?? ""}
         onDomain={setDomain}
         chosenWorkshop={target?.kind === "workshop" ? target.id : null}
+        road={target?.kind === "city" ? road : null}
       />
 
       <Hud
@@ -406,6 +421,33 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           setTarget({ kind: "vehicle", id });
         }}
       />
+
+      {/* A vehicle just sent from a town: a note to follow it, never a sheet (docs/plan-dock.md). */}
+      {sent && !target && sheet === null && (
+        <output
+          className="dock-in pointer-events-auto absolute inset-x-3 bottom-28 z-30 mx-auto flex min-h-14 max-w-md items-center gap-3 rounded-2xl bg-night-2/95 py-1.5 pl-4 pr-1.5 shadow-xl shadow-black/40"
+          data-sent={sent.id}
+        >
+          <span className="text-gold [&_svg]:h-6 [&_svg]:w-6">{Icon.cart()}</span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm font-semibold">{t.orders.sent(sent.name)}</span>
+            {(p.view?.orders ?? []).some((o) => o.orders.length > 0) && (
+              <span className="truncate text-xs text-cream-dim">{t.orders.sentMore}</span>
+            )}
+          </span>
+          <Slab
+            tone="ghost"
+            size="sm"
+            onClick={() => {
+              setVehicle(sent.id);
+              setTarget({ kind: "vehicle", id: sent.id });
+              setSent(null);
+            }}
+          >
+            {t.orders.follow}
+          </Slab>
+        </output>
+      )}
 
       {/* The foot of the map: the round buttons, a place's panel, or the bar of placing. */}
       <BottomSlot
@@ -451,10 +493,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         ) : target?.kind === "city" && p.view?.orders.some((o) => o.city === target.code) ? (
           <OrdersPanel
             p={p}
+            now={now}
             busy={busy}
             city={target.code}
-            onDeliver={(ids) => deliver(target.code, ids)}
+            onDeliver={(ids, vehicleId) => deliver(target.code, ids, vehicleId)}
             onClose={() => setTarget(null)}
+            onCity={(code) => setTarget({ kind: "city", code })}
+            onWorkshop={(id) => setTarget({ kind: "workshop", id })}
+            onOpen={open}
+            onPlan={setRoad}
           />
         ) : target?.kind === "workshop" ? (
           <WorkshopDock

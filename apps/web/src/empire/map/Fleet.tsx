@@ -67,6 +67,7 @@ export function Fleet({
   onArrive,
   toChart,
   unitsPerPx,
+  planned = null,
 }: {
   p: EmpirePayload;
   now: number;
@@ -78,6 +79,8 @@ export function Fleet({
   onArrive: () => void;
   toChart: (clientX: number, clientY: number) => [number, number];
   unitsPerPx: () => number;
+  /** A delivery's road before it leaves: dotted gold, from the vehicle's counter to the town. */
+  planned?: { from: string; to: string } | null;
 }) {
   const view = p.view;
   const mine = view?.vehicles.mine ?? [];
@@ -267,6 +270,27 @@ export function Fleet({
               </g>
             );
           })}
+          {planned &&
+            (() => {
+              const a = placePoint(p, planned.from);
+              const b = placePoint(p, planned.to);
+              if (!a || !b) return null;
+              const road = roadOf(p, a, b);
+              const way = road.length > 1 ? road : [a, b];
+              return (
+                <polyline
+                  points={way.map(([px, py]) => `${px},${py}`).join(" ")}
+                  fill="none"
+                  stroke={P.gold}
+                  strokeWidth="2.2"
+                  strokeDasharray="2 5"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                  className="plan-road"
+                  data-planned-road={planned.to}
+                />
+              );
+            })()}
           {drag && (
             <g data-drag-line>
               <line
