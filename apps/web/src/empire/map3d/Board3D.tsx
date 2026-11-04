@@ -481,6 +481,9 @@ function Ready({ onReady }: { onReady: () => void }) {
   return null;
 }
 
+/** The gold outline of a sector to buy, its width on the ground (chart units). */
+const GOLD_RIBBON = 0.75;
+
 /** After the last touch or move of the camera, the board stays alive this long (ms). */
 const AWAKE_MS = 10_000;
 let awakeUntil = 0;
@@ -671,7 +674,10 @@ function World({
     );
     const cells = [...new Set(fogTiles.map((t) => t.cell))].filter((c) => buyable.get(c) === true);
     const gold = cells.length
-      ? segmentsGeometry(cells.flatMap((c) => outlineOf(fogTiles.filter((t) => t.cell === c))))
+      ? ribbonGeometry(
+          cells.flatMap((c) => outlineOf(fogTiles.filter((t) => t.cell === c))),
+          GOLD_RIBBON,
+        )
       : null;
     return { mist, gold };
   }, [sc, buyable]);
@@ -810,9 +816,15 @@ function World({
         <lineBasicMaterial color={C.mist} transparent opacity={0.3} />
       </lineSegments>
       {edges.gold && (
-        <lineSegments geometry={edges.gold} position-y={0.08}>
-          <lineBasicMaterial color={C.gold} transparent opacity={0.95} />
-        </lineSegments>
+        <mesh geometry={edges.gold} position-y={0.12} renderOrder={2}>
+          <meshBasicMaterial
+            color={C.gold}
+            transparent
+            opacity={0.95}
+            depthWrite={false}
+            side={DoubleSide}
+          />
+        </mesh>
       )}
       {/* The dressing and the towns. */}
       <group ref={small}>
@@ -1181,6 +1193,56 @@ function segmentsGeometry(segs: [Pt, Pt][]): BufferGeometry {
   const pos = new Float32Array(segs.length * 6);
   segs.forEach(([a, b], i) => {
     pos.set([a[0], 0, a[1], b[0], 0, b[1]], i * 6);
+  });
+  const g = new BufferGeometry();
+  g.setAttribute("position", new BufferAttribute(pos, 3));
+  return g;
+}
+
+/**
+ * Segments as flat ribbons on the ground, `width` across (audit of 4 November, 3D M9): a WebGL
+ * line is always one pixel, whatever the zoom, and the gold of a sector to buy was lost in it.
+ * Each ribbon runs half its width past its ends, so that the corners close without a gap.
+ */
+export function ribbonGeometry(segs: [Pt, Pt][], width: number): BufferGeometry {
+  const pos = new Float32Array(segs.length * 18);
+  const h = width / 2;
+  segs.forEach(([a, b], i) => {
+    const dx = b[0] - a[0];
+    const dz = b[1] - a[1];
+    const len = Math.hypot(dx, dz) || 1;
+    const ux = dx / len;
+    const uz = dz / len;
+    // Along (u) and across (n), the ribbon's four corners.
+    const nx = -uz * h;
+    const nz = ux * h;
+    const ax = a[0] - ux * h;
+    const az = a[1] - uz * h;
+    const bx = b[0] + ux * h;
+    const bz = b[1] + uz * h;
+    pos.set(
+      [
+        ax + nx,
+        0,
+        az + nz,
+        ax - nx,
+        0,
+        az - nz,
+        bx + nx,
+        0,
+        bz + nz,
+        bx + nx,
+        0,
+        bz + nz,
+        ax - nx,
+        0,
+        az - nz,
+        bx - nx,
+        0,
+        bz - nz,
+      ],
+      i * 18,
+    );
   });
   const g = new BufferGeometry();
   g.setAttribute("position", new BufferAttribute(pos, 3));
