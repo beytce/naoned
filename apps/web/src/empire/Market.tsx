@@ -103,16 +103,21 @@ export function MarketSheet({
                   <GoodsMark code={q.good} size={28} covered={n > 0} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-cream">{goodName(p, q.good)}</span>
-                    <span className="block text-xs text-cream-dim">
-                      {n > 0 ? (post === "home" ? t.held(n) : t.heldAt(n)) : " "}
+                    <span className="block truncate text-xs text-cream-dim">
+                      {n > 0 ? (post === "home" ? t.held(n) : t.heldAt(n)) : t.trend[trend]}
                     </span>
                   </span>
-                  <span className="text-right">
+                  {/* The price and its arrow only: the good's name keeps its room at 320 px. */}
+                  <span className="shrink-0 text-right">
                     <span className="block font-display font-bold tabular-nums text-cream">
                       {d(q.price)}
                     </span>
-                    <span className={`block text-xs ${TONE[trend]}`} data-trend={trend}>
-                      {ARROW[trend]} {t.trend[trend]}
+                    <span
+                      className={`block text-xs ${TONE[trend]}`}
+                      data-trend={trend}
+                      title={t.trend[trend]}
+                    >
+                      {ARROW[trend]}
                     </span>
                   </span>
                 </button>
@@ -132,7 +137,13 @@ export function MarketSheet({
                       void act({ type: "empireBuy", good: q.good, qty: 10, post: at?.post });
                     }}
                   >
-                    {armed === q.good ? t.confirm(d(ten)) : t.buy(10, d(ten))}
+                    {/* The verb above, the price below: the good's name keeps its room at 320 px. */}
+                    <span className="flex flex-col items-center leading-tight">
+                      <span>{armed === q.good ? t.confirm : t.buy(10)}</span>
+                      <span className="text-xs font-semibold tabular-nums opacity-80">
+                        {d(ten)}
+                      </span>
+                    </span>
                   </Slab>
                 </span>
               </li>

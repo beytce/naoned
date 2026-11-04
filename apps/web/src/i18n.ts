@@ -309,6 +309,8 @@ const frDict = {
       inStock: (have: number) => `${have} en stock`,
       pick: "Toucher une commande pour la retirer ou l'ajouter.",
       blockStock: "Rien en stock pour ces commandes : produisez-les d'abord.",
+      blockShort: (missing: number, good: string, have: number, qty: number) =>
+        `Il manque ${missing} ${good.toLowerCase()} : ${have} en stock sur ${qty}.`,
       blockBusy: (at: string) => `Toutes vos mules sont en route : la première rentre à ${at}.`,
       blockBusyNone: "Vous n'avez aucun véhicule à quai.",
       blockNone: "Choisissez au moins une commande.",
@@ -372,8 +374,8 @@ const frDict = {
       to: "Pour le fondaco",
       venice: "Votre fondaco",
       post: (region: string, n: number) => `${region} ${n}`,
-      buy: (n: number, cost: string) => `Acheter ${n} · ${cost}`,
-      confirm: (cost: string) => `Confirmer · ${cost}`,
+      buy: (n: number) => `Acheter ${n}`,
+      confirm: "Confirmer",
       heldAt: (n: number) => `${n} au fondaco`,
       trend: { up: "au-dessus du cours", down: "sous le cours", flat: "au cours" } as Record<
         string,
@@ -607,7 +609,7 @@ const frDict = {
       casa: (n: number) => `Tout est prêt pour la Casa ${n}.`,
       casaWhy: "Chaque Casa ouvre des places d'ateliers, des régions et de nouveaux métiers.",
       casaAction: (n: number) => `Bâtir la Casa ${n}`,
-      build: (name: string) => `Bâtissez cet atelier : ${name}.`,
+      build: (name: string) => `${name} : bâtissez cet atelier.`,
       buildWhy: (casa: number, good: string) =>
         `La Casa ${casa} demande des ${good.toLowerCase()}, et aucun de vos ateliers n'en fabrique.`,
       buildAction: (name: string) => `Bâtir : ${name}`,
@@ -624,7 +626,7 @@ const frDict = {
       sell: (n: number, good: string) => `Vendez ${n} ${good.toLowerCase()} à la Dogana.`,
       sellWhy: "Il vous manque des ducats, et ce stock ne sert ni à la Casa ni à vos ateliers.",
       sellAction: "Vendre",
-      claim: "Un objectif du Carnet (onglet Compagnie) est rempli.",
+      claim: "Un objectif du Carnet est rempli.",
       claimWhy: "Encaissez-le : il donne de la Faveur.",
       claimAction: "Encaisser",
       wait: (at: string) => `Tout tourne. Prochain lot à ${at}.`,
