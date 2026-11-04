@@ -288,7 +288,11 @@ try {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
 
-    // The round buttons: the Market, the Company, the Family.
+    // The round buttons: the Market, the Company, the Family (on the 3D board, out of the domain).
+    if (MAP3D) {
+      await page.locator("[data-domain-back]").click();
+      await page.locator("[data-round=market]").waitFor();
+    }
     for (const [round, name, ready] of [
       ["market", "6-marche", "[data-market]"],
       ["company", "7-compagnie", "[data-carnet]"],
@@ -355,12 +359,8 @@ try {
     await page.waitForTimeout(400);
 
     // Out to the map (step 3): Venice's sector seen, the six around it in silhouette, Lombardy
-    // still in the dark. On the 3D board, out of the domain first (its chevron).
-    if (MAP3D) {
-      await page.locator("[data-domain-back]").click();
-      await page.locator("[data-round=recenter]").waitFor();
-    }
-    await page.locator("[data-round=recenter]").click();
+    // still in the dark. (On the 3D board, out of the domain already: over the fondaco.)
+    if (!MAP3D) await page.locator("[data-round=recenter]").click();
     await page.locator("[data-map=empire]:not([data-orbit])").waitFor();
     await page.waitForTimeout(300);
     if (MAP3D) {
@@ -451,8 +451,16 @@ try {
       faults.push(`${label}: vehicles at the market`);
     // The cities' orders (after Hades' Star): Padua's ring, its orders touched; a cart chosen
     // lights the towns within its reach.
+    await page.waitForTimeout(800);
     await press("[data-city=padova]");
-    await page.locator("[data-orders-panel=padova] [data-order]").first().waitFor();
+    await page
+      .locator("[data-orders-panel=padova] [data-order]")
+      .first()
+      .waitFor({ timeout: 8_000 })
+      .catch(async (e) => {
+        await shot("13x-padoue");
+        throw e;
+      });
     // On the SVG board, its ring of orders; on the 3D board, its crates in the scene.
     if (!MAP3D && (await page.locator("[data-city=padova] [data-fill-ring]").count()) === 0)
       faults.push(`${label}: no ring of orders around Padua`);

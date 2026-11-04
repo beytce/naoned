@@ -398,9 +398,11 @@ export const EmpireMap = forwardRef<
     },
     house: () => goHouse(),
     leave: () => {
+      // Back to the whole sector around (its towns in sight), as the game opens it.
       const at = openedAt.current;
+      const home = openedRegion.current === "veneto";
       setOpened(null);
-      camera.easeTo((v) => centredOn(at, sectorOn(v).s, v));
+      camera.easeTo(home ? sectorOn : (v) => centredOn(at, sectorOn(v).s, v));
     },
     info: showInfo,
     pan: (dx, dy) => {
