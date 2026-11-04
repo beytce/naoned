@@ -11,6 +11,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { type AnimationAction, type AnimationMixer, CylinderGeometry, type Group } from "three";
 import { C } from "../../art/plateau/props.js";
+import { damp, dampAngle } from "../../motion.js";
 import { fleetSpots } from "../map/logic.js";
 import type { EmpirePayload } from "../types.js";
 import { claySolid, useKit } from "./kit.js";
@@ -62,13 +63,24 @@ export function Fleet3D({
       const [gx, gy] = [x, y];
       a.group.position.set(gx, 0, gy);
       // The model looks along +z; the chart's heading (x east, y south) turned to it.
-      a.group.rotation.y = Math.atan2(Math.cos(pose.angle), Math.sin(pose.angle));
+      // It turns toward it by the shortest way, never in one frame (audit of 4 November, motion
+      // M6); asking for less motion, at once.
+      const heading = Math.atan2(Math.cos(pose.angle), Math.sin(pose.angle));
+      a.group.rotation.y = live
+        ? dampAngle(a.group.rotation.y, heading, 12, Math.min(dt, 0.1))
+        : heading;
       const moving = pose.hop !== null;
       // Touched on the board only on its way (at rest, its place takes the touch).
       a.group.userData.moving = moving;
       if (a.walking && a.resting) {
-        a.walking.weight = moving ? 1 : 0;
-        a.resting.weight = moving ? 0 : 1;
+        // From its walk to its rest and back in a quarter of a second, not a jump between poses.
+        const w = live
+          ? damp(a.walking.weight, moving ? 1 : 0, 10, Math.min(dt, 0.1))
+          : moving
+            ? 1
+            : 0;
+        a.walking.weight = w;
+        a.resting.weight = 1 - w;
       }
       if (a.wheels && a.last) {
         const d = Math.hypot(gx - a.last[0], gy - a.last[1]);
