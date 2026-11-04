@@ -123,7 +123,7 @@ export function Dock({
       aria-label={label}
       data-dock=""
       {...attrs}
-      className={`dock-in pointer-events-auto relative mx-auto flex max-h-[55dvh] w-full max-w-md flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-[1.75rem] border-t border-line bg-night-2 px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-2 text-cream shadow-[0_-12px_40px_rgb(0_0_0/0.45)] lg:mb-4 lg:rounded-3xl lg:border ${className}`}
+      className={`dock-in pointer-events-auto relative mx-auto flex max-h-[55dvh] w-full max-w-md flex-col gap-3 overflow-y-auto overscroll-contain glass-thick rounded-t-[2rem] px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-2 text-cream lg:mb-4 lg:rounded-[2rem] ${className}`}
     >
       <span aria-hidden="true" className="mx-auto h-1 w-10 shrink-0 rounded-full bg-line" />
       {children}
@@ -156,7 +156,7 @@ export function PlaceHeader({
             haptic("tap");
             back();
           }}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full ring-1 ring-inset ring-edge text-cream active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
+          className="glass-chip flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-cream active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
           data-dock-back
         >
           {Icon.chevronLeft()}
@@ -177,7 +177,7 @@ export function PlaceHeader({
               haptic("tap");
               siblings.onPrev();
             }}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-night-3 text-info active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
+            className="glass-chip flex h-11 w-11 items-center justify-center rounded-full text-info active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
             data-sibling="prev"
           >
             {Icon.chevronLeft()}
@@ -192,7 +192,7 @@ export function PlaceHeader({
               haptic("tap");
               siblings.onNext();
             }}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-night-3 text-info active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
+            className="glass-chip flex h-11 w-11 items-center justify-center rounded-full text-info active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
             data-sibling="next"
           >
             {Icon.chevronRight()}
@@ -242,7 +242,7 @@ export function StepRail({
           state === "done"
             ? "bg-lagoon/15 text-lagoon"
             : state === "now"
-              ? "bg-night-3 text-cream ring-[1.5px] ring-inset ring-info"
+              ? "glass-chip text-cream outline outline-[1.5px] -outline-offset-[1.5px] outline-info"
               : "text-cream-dim"
         }`;
         return (
@@ -297,13 +297,15 @@ export function ChoiceCard({
   attrs?: Record<`data-${string}`, string | undefined>;
   label?: string;
 }) {
+  // Glass (Liquid Glass): the choice a pane on the dock's glass; chosen, a lapis outline (an
+  // outline, not a ring: the glass owns the box-shadow).
   const ring = selected
     ? danger
-      ? "bg-vermilion/10 ring-2 ring-vermilion"
-      : "bg-night-3 ring-2 ring-info"
+      ? "glass-chip !bg-vermilion/10 outline outline-2 -outline-offset-2 outline-vermilion"
+      : "glass-chip outline outline-2 -outline-offset-2 outline-info"
     : danger
-      ? "bg-vermilion/5 ring-[1.5px] ring-vermilion/60"
-      : "bg-night ring-1 ring-line";
+      ? "glass-chip !bg-vermilion/5 outline outline-[1.5px] -outline-offset-[1.5px] outline-vermilion/60"
+      : "glass-chip";
   return (
     <button
       type="button"
@@ -315,7 +317,7 @@ export function ChoiceCard({
         onClick();
       }}
       {...attrs}
-      className={`relative flex min-h-11 rounded-2xl text-left text-cream ring-inset transition active:scale-[0.98] disabled:active:scale-100 ${ring} ${locked !== undefined ? "opacity-55" : disabled ? "opacity-45" : ""} ${className}`}
+      className={`relative flex min-h-11 rounded-[1.25rem] text-left text-cream transition active:scale-[0.98] disabled:active:scale-100 ${ring} ${locked !== undefined ? "opacity-55" : disabled ? "opacity-45" : ""} ${className}`}
     >
       {selected && (
         <span
@@ -351,8 +353,8 @@ export function CostChips({
       {chips.map((c) => {
         const key = c.kind === "good" ? c.code : c.kind;
         const look = c.ok
-          ? "bg-night-3"
-          : "bg-vermilion/10 ring-[1.5px] ring-inset ring-vermilion text-vermilion";
+          ? "glass-chip"
+          : "glass-chip !bg-vermilion/10 outline outline-[1.5px] -outline-offset-[1.5px] outline-vermilion text-vermilion";
         return (
           <li
             key={key}
@@ -410,7 +412,7 @@ export interface CompareRow {
 /** Before → after, the gain in lagoon: a raise shows what it brings before what it costs. */
 export function CompareRows({ rows }: { rows: CompareRow[] }) {
   return (
-    <dl className="rounded-2xl bg-night px-3.5 py-1" data-compare>
+    <dl className="glass-chip rounded-[1.25rem] px-3.5 py-1" data-compare>
       {rows.map((r, i) => {
         const tone = compareTone(r.before, r.after, r.lower);
         const show = (n: number) =>
@@ -511,7 +513,7 @@ export function DockDoor({
       }}
       disabled={disabled}
       {...attrs}
-      className="relative flex h-24 flex-col items-center justify-center gap-1.5 rounded-2xl bg-night-3 text-cream transition active:scale-[0.97] disabled:opacity-40 [&>svg]:h-7 [&>svg]:w-7"
+      className="glass-chip relative flex h-24 flex-col items-center justify-center gap-1.5 rounded-[1.25rem] text-cream transition active:scale-[0.97] disabled:opacity-40 [&>svg]:h-7 [&>svg]:w-7"
     >
       {badge !== undefined && (
         <span

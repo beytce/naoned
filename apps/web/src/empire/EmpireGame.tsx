@@ -423,7 +423,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       {/* A vehicle just sent from a town: a note to follow it, never a sheet (docs/plan-dock.md). */}
       {sent && !target && sheet === null && (
         <output
-          className="dock-in pointer-events-auto absolute inset-x-3 bottom-28 z-30 mx-auto flex min-h-14 max-w-md items-center gap-3 rounded-2xl bg-night-2/95 py-1.5 pl-4 pr-1.5 shadow-xl shadow-black/40"
+          className="dock-in pointer-events-auto absolute inset-x-3 bottom-28 z-30 glass mx-auto flex min-h-14 max-w-md items-center gap-3 rounded-[1.5rem] py-1.5 pl-4 pr-1.5"
           data-sent={sent.id}
         >
           <span className="text-gold [&_svg]:h-6 [&_svg]:w-6">{Icon.cart()}</span>

@@ -41,6 +41,11 @@
     --info-deep: 60 140 200;
     --glow-a: 110 200 245;
     --glow-b: 110 224 184;
+    /* The glass (Liquid Glass, 4 November 2026): how much of the surface's own colour it keeps
+       over the map; the night palettes keep more, so that their light text still reads. */
+    --glass-a: 0.86;
+    --glass-thick-a: 0.93;
+    --glass-shine: 0.14;
   }
   /* Noyer & Ducat: the fondaco's walnut and leather by lamplight. */
   [data-palette="noyer"] {
@@ -97,6 +102,8 @@
     --info-deep: 78 106 168;
     --glow-a: var(--lagoon);
     --glow-b: var(--gold);
+    --glass-a: 0.93;
+    --glass-thick-a: 0.95;
   }
   [data-palette="parchemin"] {
     color-scheme: light;
@@ -124,6 +131,51 @@
     --info-deep: 28 56 120;
     --glow-a: var(--lagoon);
     --glow-b: var(--gold);
+    --glass-a: 0.6;
+    --glass-thick-a: 0.95;
+    --glass-shine: 0.5;
+  }
+  /*
+   * Jour, the default since 4 November 2026 (decision of the owner, docs/design.md § Direction
+   * Jour): a pastel day after the references of a clean city-builder — a pale blue-grey ground,
+   * cream panels edged in sand, a dark-brown ink, a mustard gold for the one action. The gold that
+   * writes amounts is darker than the gold of the button's face (--face*), so that both read.
+   */
+  [data-palette="jour"] {
+    color-scheme: light;
+    --night: 234 239 236;
+    --night-2: 248 243 230;
+    --night-3: 255 252 244;
+    --night-4: 238 229 208;
+    --line: 222 210 182;
+    --edge: 138 120 90;
+    --cream: 46 38 25;
+    --cream-dim: 92 80 62;
+    --muted: 104 92 74;
+    --ink: 255 252 244;
+    --on-lagoon: 255 252 244;
+    --gold: 124 89 12;
+    --gold-deep: 92 66 8;
+    --gold-soft: 166 126 40;
+    --face-soft: 250 226 146;
+    --face: 238 196 86;
+    --face-deep: 208 158 52;
+    --face-ink: 46 38 25;
+    --lagoon: 38 116 86;
+    --rumour: 104 64 168;
+    --lagoon-deep: 26 86 62;
+    --lagoon-soft: 150 206 180;
+    --vermilion: 172 54 36;
+    --vermilion-deep: 128 38 24;
+    --info: 36 102 150;
+    --info-deep: 26 76 116;
+    --glow-a: 150 206 214;
+    --glow-b: 238 214 150;
+    --veil: 46 38 25;
+    --veil-a: 0.3;
+    --glass-a: 0.5;
+    --glass-thick-a: 0.7;
+    --glass-shine: 0.55;
   }
   body {
     @apply bg-night font-sans text-cream antialiased;
@@ -990,11 +1042,11 @@ body[data-coaching] button[data-slab="gold"]:not([data-coach-lit]) .slab-face {
 body[data-coaching] button[data-slab="ghost"][data-coach-lit] .slab-face {
   background: linear-gradient(
     180deg,
-    rgb(var(--gold-soft)) 0%,
-    rgb(var(--gold)) 42%,
-    rgb(var(--gold-deep)) 100%
+    rgb(var(--face-soft, var(--gold-soft))) 0%,
+    rgb(var(--face, var(--gold))) 42%,
+    rgb(var(--face-deep, var(--gold-deep))) 100%
   );
-  color: rgb(var(--ink));
+  color: rgb(var(--face-ink, var(--ink)));
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 -2px 0 rgb(0 0 0 / 0.14), 0 10px 24px
     -8px rgb(var(--gold) / 0.6);
 }
@@ -1173,9 +1225,18 @@ body[data-coach-top] [data-toast] {
    drift between the chart and the eye. */
 .map-name {
   white-space: nowrap;
-  border-radius: 0.25rem;
-  padding: 0 0.3rem;
-  background: rgb(11 22 38 / 0.65);
+  border-radius: 9999px;
+  padding: 0.1rem 0.55rem;
+  /* A pill of glass (Liquid Glass): more opaque than the HUD's, a name must read at a glance. */
+  background: linear-gradient(
+      180deg,
+      rgb(255 255 255 / var(--glass-shine)) 0%,
+      rgb(255 255 255 / 0) 60%
+    ), rgb(var(--night-3) / calc(var(--glass-a) + 0.2));
+  -webkit-backdrop-filter: blur(10px) saturate(1.6);
+  backdrop-filter: blur(10px) saturate(1.6);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), inset 0 0 0 1px rgb(255 255 255 / 0.3), 0 2px
+    8px -2px rgb(40 50 60 / 0.25);
   color: rgb(var(--cream));
   font-family: Cinzel, serif;
   /* Never under 12 px (the project's rule, after the map's audit of 3 November 2026). */
@@ -1521,12 +1582,31 @@ button.map-place {
   }
 }
 /* The purse: night-blue leather, stitched in gold (the night board). */
-.purse {
-  background: repeating-linear-gradient(115deg, rgb(255 255 255 / 0.03) 0 2px, transparent 2px 5px),
-    radial-gradient(ellipse at 30% 20%, #2e486e, #16263e 70%);
-  outline: 1px dashed rgb(244 197 84 / 0.5);
-  outline-offset: -4px;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.1);
+/* The HUD (Direction Jour, after the owner's reference), in glass (Liquid Glass): its bar of
+   counts, the tray at the foot, the round medals with their rim of gold. */
+.hud-bar,
+.hud-tray {
+  background: linear-gradient(
+      180deg,
+      rgb(255 255 255 / var(--glass-shine)) 0%,
+      rgb(255 255 255 / 0) 55%
+    ), rgb(var(--night-3) / var(--glass-a));
+  -webkit-backdrop-filter: blur(18px) saturate(1.7);
+  backdrop-filter: blur(18px) saturate(1.7);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / calc(var(--glass-shine) + 0.2)), inset 0 0 0 1px
+    rgb(255 255 255 / 0.28), 0 8px 24px -6px rgb(40 50 60 / 0.28), 0 2px 6px rgb(40 50 60 / 0.1);
+}
+.hud-medal {
+  background: radial-gradient(
+      circle at 35% 25%,
+      rgb(255 255 255 / var(--glass-shine)),
+      transparent 60%
+    ), rgb(var(--night-3) / var(--glass-a));
+  -webkit-backdrop-filter: blur(12px) saturate(1.6);
+  backdrop-filter: blur(12px) saturate(1.6);
+  box-shadow: inset 0 0 0 1.5px rgb(var(--face, var(--gold)) / 0.8), inset 0 2px 0
+    rgb(255 255 255 / 0.6), 0 4px 12px -2px rgb(40 50 60 / 0.25);
 }
 
 /* The 3D board (?map=3d, docs/plateau-reprise.md § 7): a place is touched through its hexagon in
@@ -1668,5 +1748,90 @@ button.map-place {
 @media (prefers-reduced-motion: reduce) {
   .plan-road {
     animation: none;
+  }
+}
+
+/* The veil behind a sheet: black on the night palettes, a light brown wash by day. */
+.sheet-veil {
+  background: rgb(var(--veil, 0 0 0) / var(--veil-a, 0.6));
+}
+
+/*
+ * Liquid Glass (decision of the owner, 4 November 2026; docs/design.md § Le verre): the surfaces
+ * of the interface are glass over the map — translucent, the map blurred and brightened behind,
+ * a specular light on their upper half, a fine bright rim, a soft deep shadow. Three thicknesses:
+ * .glass (bars, pills, round buttons), .glass-thick (the dock, the sheets: more of their own colour,
+ * for reading), .glass-chip (what lies on glass: cards, chips, doors; no blur of its own). The
+ * gold button stays opaque, its own face (it is the action). Without backdrop-filter, or for those who ask for
+ * less transparency, the surfaces are solid again.
+ */
+.glass,
+.glass-thick,
+.glass-chip {
+  --g-rim: rgb(255 255 255 / calc(var(--glass-shine) + 0.2));
+}
+.glass {
+  background: linear-gradient(
+      180deg,
+      rgb(255 255 255 / var(--glass-shine)) 0%,
+      rgb(255 255 255 / 0) 55%
+    ), rgb(var(--night-3) / var(--glass-a));
+  -webkit-backdrop-filter: blur(18px) saturate(1.7);
+  backdrop-filter: blur(18px) saturate(1.7);
+  box-shadow:
+    inset 0 1px 0 var(--g-rim), inset 0 0 0 1px rgb(255 255 255 / 0.28),
+    0 8px 24px -6px rgb(40 50 60 / 0.28), 0 2px 6px rgb(40 50 60 / 0.1);
+}
+.glass-thick {
+  background: linear-gradient(
+      180deg,
+      rgb(255 255 255 / calc(var(--glass-shine) * 0.8)) 0%,
+      rgb(255 255 255 / 0) 30%
+    ), rgb(var(--night-2) / var(--glass-thick-a));
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  backdrop-filter: blur(28px) saturate(1.8);
+  box-shadow: inset 0 1px 0 var(--g-rim), inset 0 0 0 1px rgb(255 255 255 / 0.25), 0 -10px 40px -8px
+    rgb(40 50 60 / 0.3);
+}
+.glass-chip {
+  background: linear-gradient(
+      180deg,
+      rgb(255 255 255 / calc(var(--glass-shine) * 0.7)) 0%,
+      rgb(255 255 255 / 0) 60%
+    ), rgb(var(--night-3) / 0.55);
+  box-shadow: inset 0 1px 0 var(--g-rim), inset 0 0 0 1px rgb(255 255 255 / 0.3), 0 2px 8px -2px
+    rgb(40 50 60 / 0.16);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .hud-bar,
+  .hud-tray,
+  .hud-medal,
+  .map-name {
+    background: rgb(var(--night-3));
+  }
+  .glass-thick {
+    background: rgb(var(--night-2));
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-thick,
+  .hud-bar,
+  .hud-tray,
+  .hud-medal,
+  .map-name {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass,
+  .hud-bar,
+  .hud-tray,
+  .hud-medal,
+  .map-name {
+    background: rgb(var(--night-3));
+  }
+  .glass-thick {
+    background: rgb(var(--night-2));
   }
 }

@@ -4,6 +4,19 @@ import { describe, expect, it } from "vitest";
 import { MAP_TEXT } from "../src/art/palette.js";
 
 /** The variables of each palette, read from index.css as "r g b" triples. */
+/** Each palette's glass: how much of its own colour it keeps (--glass-a, --glass-thick-a). */
+function glassOf(): Record<string, Record<string, number>> {
+  const css = readFileSync(join(__dirname, "..", "src", "index.css"), "utf8");
+  const out: Record<string, Record<string, number>> = {};
+  for (const m of css.matchAll(/\[data-palette="(\w+)"\]\s*\{([^}]*)\}/g)) {
+    const vars: Record<string, number> = {};
+    for (const v of (m[2] ?? "").matchAll(/--(glass[\w-]*):\s*([\d.]+);/g))
+      vars[v[1] ?? ""] = Number(v[2]);
+    out[m[1] ?? ""] = vars;
+  }
+  return out;
+}
+
 function palettes(): Record<string, Record<string, [number, number, number]>> {
   const css = readFileSync(join(__dirname, "..", "src", "index.css"), "utf8");
   const out: Record<string, Record<string, [number, number, number]>> = {};
@@ -32,9 +45,20 @@ const contrast = (a: [number, number, number], b: [number, number, number]) => {
 describe("the palettes", () => {
   const all = palettes();
 
-  it("are the blue Lagune, the dark Noyer, the light Parchemin and the Pass's gold", () => {
-    expect(Object.keys(all).sort()).toEqual(["lagune", "noyer", "or", "parchemin"]);
+  it("are the pastel Jour, the blue Lagune, the dark Noyer, the light Parchemin and the Pass's gold", () => {
+    expect(Object.keys(all).sort()).toEqual(["jour", "lagune", "noyer", "or", "parchemin"]);
   });
+
+  // The gold button's face (a palette may light it apart from the gold of the amounts): its
+  // words read on it.
+  for (const [name, vars] of Object.entries(all)) {
+    it(`${name}: the gold button's words read on its face`, () => {
+      const face = vars.face ?? vars.gold;
+      const ink = vars["face-ink"] ?? vars.ink;
+      if (!face || !ink) throw new Error(`${name}: no face or ink`);
+      expect(contrast(ink, face)).toBeGreaterThanOrEqual(4.5);
+    });
+  }
 
   // WCAG AA for text (4.5:1): every colour that writes text, on every surface it sits on.
   for (const [name, vars] of Object.entries(all)) {
@@ -91,4 +115,45 @@ describe("the map's writing", () => {
     expect(MAP_TEXT.troops).toBeLessThanOrEqual(MAP_TEXT.merchant);
     expect(MAP_TEXT.mine).toBeLessThanOrEqual(MAP_TEXT.city);
   });
+});
+
+// The glass over the map (Liquid Glass, 4 November 2026): blurred, the map behind melts into an
+// average of its colours; the worst case is the glass over the map's darkest and lightest colours.
+// The text on it still reads at 4.5:1 (the night palettes take the glass of Lagune, their root).
+describe("the glass over the map", () => {
+  const all = palettes();
+  const glass = glassOf();
+  const map: [number, number, number][] = [
+    [95, 175, 126], // pines
+    [199, 154, 110], // the tiles' earth
+    [255, 255, 255], // snow, walls
+    [207, 228, 230], // the sky
+  ];
+  const mix = (
+    a: [number, number, number],
+    b: [number, number, number],
+    k: number,
+  ): [number, number, number] =>
+    [0, 1, 2].map((i) => (a[i] ?? 0) * k + (b[i] ?? 0) * (1 - k)) as never;
+  for (const [name, vars] of Object.entries(all)) {
+    const g = { ...glass.lagune, ...glass[name] };
+    for (const [layer, surface, alpha, texts] of [
+      ["glass", "night-3", g["glass-a"], ["cream"]],
+      ["glass-thick", "night-2", g["glass-thick-a"], ["cream", "cream-dim", "gold"]],
+    ] as const) {
+      it(`${name}: text reads on its ${layer}`, () => {
+        const s = vars[surface];
+        if (!s || alpha === undefined) throw new Error(`${name}: no ${surface} or alpha`);
+        const low: string[] = [];
+        for (const behind of map)
+          for (const text of texts) {
+            const t = vars[text];
+            if (!t) throw new Error(`${name}: no ${text}`);
+            const r = contrast(t, mix(s, behind, alpha));
+            if (r < 4.5) low.push(`${text} over ${behind.join(",")}: ${r.toFixed(2)}`);
+          }
+        expect(low).toEqual([]);
+      });
+    }
+  }
 });

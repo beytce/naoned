@@ -201,7 +201,7 @@ export function PortaScene({
       />
       <header className="absolute inset-x-0 top-0 flex items-center gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div
-          className="flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-full bg-night/85 py-1 pl-4 pr-1 shadow-lg shadow-black/40"
+          className="glass flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-full py-1 pl-4 pr-1"
           data-porta-level
         >
           <span className="min-w-0 flex-1">
@@ -240,7 +240,7 @@ export function PortaScene({
             {Icon.trophy()}
           </RoundIcon>
         </div>
-        <CloseButton onClick={onClose} className="shrink-0 bg-night/85" />
+        <CloseButton onClick={onClose} className="glass shrink-0" />
       </header>
       {back && (
         <output
@@ -327,7 +327,7 @@ function RoundIcon({
       aria-pressed={on}
       onClick={onClick}
       data-porta-round={attr}
-      className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition active:scale-95 [&_svg]:h-5 [&_svg]:w-5 ${on ? "bg-info text-night" : "bg-night-3 text-cream"}`}
+      className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition active:scale-95 [&_svg]:h-5 [&_svg]:w-5 ${on ? "bg-info text-ink" : "glass-chip text-cream"}`}
     >
       {children}
       {badge !== undefined && (

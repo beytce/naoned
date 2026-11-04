@@ -25,8 +25,8 @@ export function CityPill({ p, code }: { p: EmpirePayload; code: string }) {
   const share = at.cap > 0 ? Math.min(1, n / at.cap) : 0;
   return (
     <span
-      className={`city-pill pointer-events-auto absolute bottom-full left-1/2 flex items-center gap-1.5 whitespace-nowrap rounded-full py-1 pl-1 pr-2.5 shadow-lg shadow-black/50 ${
-        ready ? "city-pill-ready bg-gold text-ink" : "bg-night/90 text-cream ring-1 ring-line"
+      className={`city-pill pointer-events-auto absolute bottom-full left-1/2 flex items-center gap-1.5 whitespace-nowrap rounded-full py-1 pl-1 pr-2.5 ${
+        ready ? "city-pill-ready gold-face" : "glass text-cream"
       }`}
       data-city-pill={code}
       data-ready={ready ? "" : undefined}

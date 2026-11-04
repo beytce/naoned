@@ -304,7 +304,7 @@ function Fit({
         </ul>
       )}
       {fitted?.upgradeCost && (
-        <div className="flex items-center gap-3 rounded-2xl bg-night px-3.5 py-2.5">
+        <div className="flex items-center gap-3 glass-chip rounded-[1.25rem] px-3.5 py-2.5">
           <span className="flex flex-1 flex-col">
             <span className="text-sm font-bold">
               {pt.raiseTo(pt.component[fitted.code] ?? fitted.code, fitted.level + 1)}

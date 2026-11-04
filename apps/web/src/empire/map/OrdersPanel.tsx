@@ -166,8 +166,10 @@ export function OrdersPanel({
                       selected={on}
                       onClick={() => (covered ? toggle(o.id) : setLack(o.id))}
                       className={`h-32 w-full flex-col items-center justify-center gap-1 ${
-                        covered ? "" : "border-2 border-dashed border-edge !bg-night !ring-0"
-                      } ${on ? "!bg-gold/10 !ring-gold" : ""}`}
+                        covered
+                          ? ""
+                          : "border-2 border-dashed border-edge !bg-transparent !shadow-none"
+                      } ${on ? "!bg-gold/10 !outline-gold" : ""}`}
                       attrs={{
                         "data-order": o.id,
                         "data-picked": on ? "" : undefined,
@@ -206,7 +208,10 @@ export function OrdersPanel({
                 </p>
               </div>
             ) : why ? (
-              <p className="rounded-2xl bg-night px-3 py-2.5 text-sm text-cream-dim" data-why>
+              <p
+                className="glass-chip rounded-[1.25rem] px-3 py-2.5 text-sm text-cream-dim"
+                data-why
+              >
                 {why}
               </p>
             ) : null}
@@ -249,7 +254,7 @@ function Lack({
           {goodName(p, good)} ×{qty} · <span className="text-gold">{d(pay)}</span>
         </p>
       </div>
-      <div className="flex flex-col gap-2 rounded-2xl bg-night p-3.5">
+      <div className="flex flex-col gap-2 glass-chip rounded-[1.25rem] p-3.5">
         <div className="flex gap-1" aria-hidden="true">
           {Array.from({ length: pips }, (_, i) => (
             <span
@@ -265,7 +270,7 @@ function Lack({
         </div>
       </div>
       <p className="label text-cream-dim">{t().twoWays}</p>
-      <div className="flex min-h-16 items-center gap-3 rounded-2xl bg-night-3 px-3.5 py-2.5">
+      <div className="flex min-h-16 items-center gap-3 glass-chip rounded-[1.25rem] px-3.5 py-2.5">
         {maker && maker.s.state === "running" ? (
           <TimeRing progress={maker.s.progress} size={36} />
         ) : (

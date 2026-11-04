@@ -161,7 +161,10 @@ function Front({
   return (
     <>
       {r && (
-        <div className="flex items-center gap-2 rounded-2xl bg-night px-3 py-2.5" data-machine>
+        <div
+          className="flex items-center gap-2 glass-chip rounded-[1.25rem] px-3 py-2.5"
+          data-machine
+        >
           <ul className="flex min-w-0 gap-2">
             {Object.entries(r.inputs).map(([g, n]) => (
               <li key={g} className="flex w-14 flex-col items-center gap-0.5">
@@ -344,7 +347,7 @@ function Upgrade({
   const site = v.house.builds.find((b) => b.workshopId === ws.id && b.kind === "upgrade");
   if (site)
     return (
-      <div className="flex items-center gap-4 rounded-2xl bg-night p-4" data-dock-site>
+      <div className="flex items-center gap-4 glass-chip rounded-[1.25rem] p-4" data-dock-site>
         <TimeRing progress={progressOf(site, now)} size={64} tone="gold" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold">{t().levelTo(site.level)}</p>
@@ -360,7 +363,7 @@ function Upgrade({
   const up = v.upgrades[ws.id] ?? null;
   if (!up)
     return (
-      <div className="rounded-2xl bg-night p-4 text-center" data-dock-maxed>
+      <div className="glass-chip rounded-[1.25rem] p-4 text-center" data-dock-maxed>
         <p className="text-sm font-bold">{t().maxed}</p>
         <p className="mt-1 text-xs text-cream-dim">{t().atCasa}</p>
       </div>
