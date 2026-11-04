@@ -25,80 +25,97 @@ const pole = new CylinderGeometry(0.07, 0.07, 1, 6).translate(0, 0.5, 0);
 const banner = new PlaneGeometry(1, 1.3).translate(0.5, -0.65, 0);
 const barrel = new CylinderGeometry(0.32, 0.4, 2, 10).rotateX(Math.PI / 2 - 0.25);
 
-/** A figurine of a role, its mixers stepped while `live`. */
-export const Figure = forwardRef<FigureHandle, { role: Role; live: boolean }>(function Figure(
-  { role, live },
-  ref,
-) {
-  const group = useRef<Group>(null);
-  const hero = useMini(role.character, role.side, role.show, role.height);
-  const crew = useCrew(role);
-  const last = useRef<Act>("stand");
-  const act = (a: Act) => {
-    const once = a === "strike" || a === "hit" || a === "die" || a === "cheer";
-    if (a === last.current && !once) return;
-    last.current = a;
-    const anim =
-      a === "walk"
-        ? role.move
-        : a === "strike"
-          ? role.attack
-          : a === "hit"
-            ? "Hit_A"
-            : a === "die"
-              ? "Death_A"
-              : a === "cheer"
-                ? "Cheer"
-                : role.idle;
-    hero.play(anim, { once });
-    for (const m of crew) m.play(a === "walk" || a === "stand" ? "Idle" : anim, { once });
-    mountAct.current?.(a);
-  };
-  const mountAct = useRef<((a: Act) => void) | null>(null);
-  // Its mount tells how it acts (a stable callback: its effect runs once).
-  const setMountAct = useCallback((f: (a: Act) => void) => {
-    mountAct.current = f;
-  }, []);
-  useImperativeHandle(ref, () => ({ group: group.current, act }));
-  useFrame((_, dt) => {
-    if (!live) return;
-    const d = Math.min(dt, 0.1);
-    hero.mixer.update(d);
-    for (const m of crew) m.mixer.update(d);
-  });
-  return (
-    <group ref={group}>
-      {role.mount === "horse" ? (
-        <MountedHorse role={role} hero={hero} live={live} onAct={setMountAct} />
-      ) : role.mount === "cart" ? (
-        <Cart hero={hero} crew={crew} live={live} onAct={setMountAct} />
-      ) : role.mount === "bombard" ? (
-        <Bombard hero={hero} />
-      ) : (
-        <primitive object={hero.root} />
-      )}
-      {role.banner && <Banner height={role.height} />}
-      {role.torch && <Torch height={role.height} live={live} />}
-    </group>
-  );
-});
+/**
+ * A figurine of a role, its mixers stepped while `live`: its crew made only when it has one (a
+ * figurine of the battle is drawn by the dozen).
+ */
+export const Figure = forwardRef<FigureHandle, { role: Role; live: boolean }>(
+  function Figure(props, ref) {
+    const n = props.role.crew?.length ?? 0;
+    return n >= 2 ? (
+      <CrewOf2 {...props} ref={ref} />
+    ) : n === 1 ? (
+      <CrewOf1 {...props} ref={ref} />
+    ) : (
+      <FigureBody {...props} crew={NONE} ref={ref} />
+    );
+  },
+);
+const NONE: Mini[] = [];
 
-/** The crew on a cart (its role's `crew`), each a figurine of the house. */
-function useCrew(role: Role): Mini[] {
-  const a = useMini(
-    role.crew?.[0]?.character ?? "Rogue",
-    role.side,
-    role.crew?.[0]?.show ?? [],
-    role.height,
-  );
-  const b = useMini(
-    role.crew?.[1]?.character ?? "Rogue",
-    role.side,
-    role.crew?.[1]?.show ?? [],
-    role.height,
-  );
-  return useMemo(() => [a, b].slice(0, role.crew?.length ?? 0), [a, b, role.crew?.length]);
-}
+const CrewOf1 = forwardRef<FigureHandle, { role: Role; live: boolean }>(
+  function CrewOf1(props, ref) {
+    const c = props.role.crew?.[0];
+    const a = useMini(c?.character ?? "Rogue", props.role.side, c?.show ?? [], props.role.height);
+    const crew = useMemo(() => [a], [a]);
+    return <FigureBody {...props} crew={crew} ref={ref} />;
+  },
+);
+
+const CrewOf2 = forwardRef<FigureHandle, { role: Role; live: boolean }>(
+  function CrewOf2(props, ref) {
+    const [c0, c1] = props.role.crew ?? [];
+    const a = useMini(c0?.character ?? "Rogue", props.role.side, c0?.show ?? [], props.role.height);
+    const b = useMini(c1?.character ?? "Rogue", props.role.side, c1?.show ?? [], props.role.height);
+    const crew = useMemo(() => [a, b], [a, b]);
+    return <FigureBody {...props} crew={crew} ref={ref} />;
+  },
+);
+
+const FigureBody = forwardRef<FigureHandle, { role: Role; live: boolean; crew: Mini[] }>(
+  function FigureBody({ role, live, crew }, ref) {
+    const group = useRef<Group>(null);
+    const hero = useMini(role.character, role.side, role.show, role.height);
+    const last = useRef<Act>("stand");
+    const act = (a: Act) => {
+      const once = a === "strike" || a === "hit" || a === "die" || a === "cheer";
+      if (a === last.current && !once) return;
+      last.current = a;
+      const anim =
+        a === "walk"
+          ? role.move
+          : a === "strike"
+            ? role.attack
+            : a === "hit"
+              ? "Hit_A"
+              : a === "die"
+                ? "Death_A"
+                : a === "cheer"
+                  ? "Cheer"
+                  : role.idle;
+      hero.play(anim, { once });
+      for (const m of crew) m.play(a === "walk" || a === "stand" ? "Idle" : anim, { once });
+      mountAct.current?.(a);
+    };
+    const mountAct = useRef<((a: Act) => void) | null>(null);
+    // Its mount tells how it acts (a stable callback: its effect runs once).
+    const setMountAct = useCallback((f: (a: Act) => void) => {
+      mountAct.current = f;
+    }, []);
+    useImperativeHandle(ref, () => ({ group: group.current, act }));
+    useFrame((_, dt) => {
+      if (!live) return;
+      const d = Math.min(dt, 0.1);
+      hero.mixer.update(d);
+      for (const m of crew) m.mixer.update(d);
+    });
+    return (
+      <group ref={group}>
+        {role.mount === "horse" ? (
+          <MountedHorse role={role} hero={hero} live={live} onAct={setMountAct} />
+        ) : role.mount === "cart" ? (
+          <Cart hero={hero} crew={crew} live={live} onAct={setMountAct} />
+        ) : role.mount === "bombard" ? (
+          <Bombard hero={hero} />
+        ) : (
+          <primitive object={hero.root} />
+        )}
+        {role.banner && <Banner height={role.height} />}
+        {role.torch && <Torch height={role.height} live={live} />}
+      </group>
+    );
+  },
+);
 
 /** A rider on its horse: the horse walks, gallops, falls; the rider sits, strikes. */
 function MountedHorse({
