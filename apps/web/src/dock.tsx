@@ -163,7 +163,7 @@ export function PlaceHeader({
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h3 className="truncate font-place text-sm font-bold uppercase tracking-[0.14em] text-cream">
+        <h3 className="line-clamp-2 font-place text-sm font-bold uppercase leading-tight tracking-[0.12em] text-cream">
           {title}
         </h3>
         {sub && <p className="truncate text-xs text-cream-dim">{sub}</p>}

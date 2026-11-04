@@ -33,7 +33,7 @@ export function qualityName(p: EmpirePayload, code: string): string {
   return quality ? `${goodName(p, good)} ${t.qualities[quality] ?? quality}` : goodName(p, good);
 }
 
-const memberName = (m: EmpireStaffMember) =>
+export const memberName = (m: EmpireStaffMember) =>
   m.family ?? t.memberLine(t.roles[m.role] ?? m.role, t.rarities[m.rarity] ?? m.rarity, m.level);
 
 /** A workshop's identity: its module places, its neighbourhood, its master, its place on the ring. */

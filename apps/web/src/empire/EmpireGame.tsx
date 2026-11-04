@@ -13,7 +13,7 @@ import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { suppliable } from "./Company.js";
 import { CompanySheet } from "./CompanyTab.js";
 import { HelpSheet, HouseSheet, Intro, NextStepCard } from "./Guide.js";
-import { ArteSection, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
+import { ArteSection, FamilySheet, Knowledge } from "./Identity.js";
 import { MarketSheet } from "./Market.js";
 import { CasaMoment } from "./Moment.js";
 import { NewWorkshopSheet } from "./NewWorkshop.js";
@@ -41,6 +41,7 @@ import { ProductionSheet } from "./map/Production.js";
 import { RoundButtons } from "./map/RoundButtons.js";
 import { Trips } from "./map/Trips.js";
 import { VehiclePanel } from "./map/VehiclePanel.js";
+import { WorkshopDock } from "./map/WorkshopDock.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
 import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
@@ -292,6 +293,12 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // A panel's action that opens a sheet: the panel gives way to it.
   const open = (id: string) => {
     setTarget(null);
+    // A workshop from the list: its dock on the map (docs/plan-dock.md), not a sheet.
+    if (id.startsWith("workshop:")) {
+      setSheet(null);
+      setTarget({ kind: "workshop", id: id.slice("workshop:".length) });
+      return;
+    }
     if (id.startsWith("place:")) {
       const [, kind = "post", region] = id.split(":");
       setSheet(null);
@@ -379,6 +386,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onCamp={() => setSheet("company:terra")}
         houseName={account.pseudo ?? ""}
         onDomain={setDomain}
+        chosenWorkshop={target?.kind === "workshop" ? target.id : null}
       />
 
       <Hud
@@ -446,6 +454,17 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             busy={busy}
             city={target.code}
             onDeliver={(ids) => deliver(target.code, ids)}
+            onClose={() => setTarget(null)}
+          />
+        ) : target?.kind === "workshop" ? (
+          <WorkshopDock
+            p={p}
+            now={now}
+            busy={busy}
+            act={act}
+            workshopId={target.id}
+            onWorkshop={(id) => setTarget({ kind: "workshop", id })}
+            onOpen={open}
             onClose={() => setTarget(null)}
           />
         ) : target ? (
@@ -756,15 +775,14 @@ function WorkshopsSheet({
 }: SheetProps & { now: number; sheet: SheetId | null; onOpen: (s: SheetId) => void }) {
   const view = p.view;
   if (!view) return null;
-  const focus = sheet?.startsWith("workshop:") ? sheet.slice("workshop:".length) : null;
-  const list = focus ? view.house.workshops.filter((w) => w.id === focus) : view.house.workshops;
-  const one = list[0];
+  // All the workshops; one of them opens its dock on the map (docs/plan-dock.md).
+  const list = view.house.workshops;
   return (
     <Sheet
-      open={sheet === "workshops" || focus !== null}
+      open={sheet === "workshops"}
       onClose={onClose}
       kicker={t.region}
-      title={focus && one ? buildingName(p, one.type) : t.tabs.workshops}
+      title={t.tabs.workshops}
       summary={t.workshop.queueRule}
     >
       <ul className="space-y-3">
@@ -795,15 +813,14 @@ function WorkshopsSheet({
                         : t.workshop.idle}
                   </p>
                 </div>
-                {!focus && (
-                  <button
-                    type="button"
-                    className="text-xs text-gold underline"
-                    onClick={() => onOpen(`workshop:${ws.id}`)}
-                  >
-                    {t.workshop.open}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="min-h-11 px-2 text-xs font-semibold text-info"
+                  onClick={() => onOpen(`workshop:${ws.id}`)}
+                  data-open-workshop={ws.id}
+                >
+                  {t.workshop.open}
+                </button>
               </div>
               {/* The night queue as a ribbon: its share of the 12 hours still to run. */}
               {end && end > now && <Ribbon value={Math.min(1, (end - now) / (12 * 3_600_000))} />}
@@ -846,7 +863,6 @@ function WorkshopsSheet({
                   <Badge>{t.workshop.atCasaShort}</Badge>
                 )}
               </div>
-              {focus && <WorkshopIdentity p={p} ws={ws} busy={busy} act={act} />}
             </li>
           );
         })}
