@@ -68,7 +68,7 @@ import {
 } from "./kit.js";
 import { Flag, Smoke, useWater } from "./life.js";
 import { useBoardPaused } from "./pause.js";
-import { FONDACO, MADE, Mill } from "./props3d.js";
+import { FONDACO, Gondola, MADE, Mill } from "./props3d.js";
 import {
   type Scene3D,
   type SceneInput,
@@ -857,6 +857,17 @@ function World({
       ))}
       {docks.map((d) => (
         <Dock key={`${d.x},${d.y}`} x={d.x} z={d.y} rot={d.rot} />
+      ))}
+      {/* A gondola moored at the end of each landing, out on the lagoon, rocking. */}
+      {docks.map((d) => (
+        <Gondola
+          key={`g${d.x},${d.y}`}
+          x={d.x + Math.cos(d.rot) * 7.5 - Math.sin(d.rot) * 1.8}
+          z={d.y + Math.sin(d.rot) * 7.5 + Math.cos(d.rot) * 1.8}
+          y={WATER_Y + 0.15}
+          rot={d.rot}
+          live={live}
+        />
       ))}
       {/* The farms' mills, their sails turning; their chimneys' smoke. */}
       {mills.map((m) => (

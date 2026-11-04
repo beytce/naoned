@@ -69,6 +69,36 @@ function fence(len: number): [BufferGeometry, string, number, number, number, nu
   return parts;
 }
 
+/**
+ * A gondola moored by a landing, rocking on the lagoon while the board lives (still when less
+ * motion is asked).
+ */
+export function Gondola({
+  x,
+  z,
+  y,
+  rot,
+  live,
+}: { x: number; z: number; y: number; rot: number; live: boolean }) {
+  const g = useRef<Group>(null);
+  const t0 = useRef(Math.random() * 10);
+  useFrame((_, dt) => {
+    if (!live || !g.current) return;
+    t0.current += Math.min(dt, 0.1);
+    const t = t0.current;
+    g.current.rotation.x = Math.sin(t * 1.3) * 0.05;
+    g.current.rotation.z = Math.sin(t * 0.9) * 0.03;
+    g.current.position.y = Math.sin(t * 1.1) * 0.08;
+  });
+  return (
+    <group position={[x, y, z]} rotation-y={-rot}>
+      <group ref={g}>
+        <mesh geometry={MADE.gondola} material={clay} castShadow />
+      </group>
+    </group>
+  );
+}
+
 /** The fondaco's points (its own units): the flag on its tower, the smoke over its chimney. */
 export const FONDACO = { flag: [-2.65, 6.85, -1.55], smoke: [2, 6.4, -0.8] } as const;
 
@@ -290,6 +320,28 @@ export const MADE = (() => {
     ]);
     return build(parts);
   })();
+  // A gondola (audit of 4 November, Blender A4: « des gondoles qui passent »): its long black hull
+  // rising at both ends, the silver ferro at the prow, a red cushion, its gondolier standing at
+  // the stern with his oar. About 6 units long along x, its waterline at y = 0.
+  const gondola = (() => {
+    const hull = new SphereGeometry(1, 16, 8).scale(3, 0.42, 0.55);
+    const parts: [BufferGeometry, string, number, number, number, number?][] = [
+      [hull, C.door, 0, 0.1, 0],
+      // Its ends rising out of the water.
+      [new ConeGeometry(0.28, 1.3, 6).rotateZ(-Math.PI / 2.6), C.door, 2.9, 0.55, 0],
+      [new ConeGeometry(0.26, 1.1, 6).rotateZ(Math.PI / 2.6), C.door, -2.8, 0.5, 0],
+      // The ferro, the cushion.
+      [slab(0.08, 0.7, 0.32), C.snow, 3.35, 0.55, 0],
+      [slab(1.1, 0.22, 0.6), C.brick, 0.4, 0.28, 0],
+      // The gondolier: legs, his white body, his face, his gold-banded hat; the oar.
+      [slab(0.3, 0.8, 0.3), C.door, -2.1, 0.3, 0],
+      [slab(0.38, 0.75, 0.34), C.wall, -2.1, 1.1, 0],
+      [new SphereGeometry(0.2, 8, 6).translate(0, 2.05, 0), C.land, -2.1, 0, 0],
+      [new CylinderGeometry(0.3, 0.3, 0.06, 10).translate(0, 2.22, 0), C.gold, -2.1, 0, 0],
+      [slab(0.07, 3, 0.07).rotateZ(0.5), C.wood, -1.7, -0.6, 0.35],
+    ];
+    return build(parts);
+  })();
   return {
     field,
     barrel,
@@ -303,6 +355,7 @@ export const MADE = (() => {
     mill,
     sails,
     fondaco,
+    gondola,
   };
 })();
 
