@@ -103,6 +103,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const skew = useRef(first.now - Date.now());
   const [now, setNow] = useState(first.now);
   const [sheet, setSheet] = useState<SheetId | null>(first.view?.away ? "away" : null);
+  const sheetNow = useRef(sheet);
+  sheetNow.current = sheet;
   // The Porta's battle on screen (docs/plan-porta.md § 6).
   const [fighting, setFighting] = useState(false);
   // A battle closed to look at the map stays closed until the next.
@@ -231,7 +233,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.key === "Escape") {
         if (keys.current.aiming) setAiming(false);
-        else if (domainNow.current && !targetNow.current) map.current?.leave();
+        // A sheet open closes by itself; the domain is left only from the map.
+        else if (domainNow.current && !targetNow.current && !sheetNow.current) map.current?.leave();
         else {
           setTarget(null);
           setVehicle(null);
