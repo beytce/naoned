@@ -934,10 +934,10 @@ const beamMat = new MeshBasicMaterial({
   depthWrite: false,
   side: DoubleSide,
 });
-const crateGeo = new BoxGeometry(1.3, 1.1, 1.3);
-crateGeo.translate(0, 0.55, 0);
-const crateLow = new BoxGeometry(1.3, 0.35, 1.3);
-crateLow.translate(0, 0.18, 0);
+const crateGeo = new BoxGeometry(2, 1.7, 2);
+crateGeo.translate(0, 0.85, 0);
+const crateLow = new BoxGeometry(2, 0.5, 2);
+crateLow.translate(0, 0.25, 0);
 
 /**
  * The towns tell their orders by the scenery (decision of the owner, 3 November 2026): a crate an
@@ -964,7 +964,8 @@ function Towns3D({ looks }: { looks: CityLook[] }) {
               key={i}
               geometry={k.covered ? crateGeo : crateLow}
               material={claySolid(goodsColour(k.good))}
-              position={[(i - (c.crates.length - 1) / 2) * 1.6, 0, TILE_R * 0.62]}
+              // On its quay, east of the town (its name lies under it, to the south).
+              position={[TILE_R * 0.62, 0, (i - (c.crates.length - 1) / 2) * 2.3 - 0.6]}
               castShadow
             />
           ))}
