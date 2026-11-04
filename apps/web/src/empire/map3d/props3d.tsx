@@ -69,6 +69,9 @@ function fence(len: number): [BufferGeometry, string, number, number, number, nu
   return parts;
 }
 
+/** The fondaco's points (its own units): the flag on its tower, the smoke over its chimney. */
+export const FONDACO = { flag: [-2.65, 6.85, -1.55], smoke: [2, 6.4, -0.8] } as const;
+
 /** The made models, built once. */
 export const MADE = (() => {
   // A field: six slabs of tilled clay on a bed of sand, a fence on two sides.
@@ -184,7 +187,123 @@ export const MADE = (() => {
       ];
     }),
   );
-  return { field, barrel, tuft, pebble, sand, cart, mine, campanile, basilica, mill, sails };
+  // The fondaco (audit of 4 November 2026, Blender B3 and A1: the game's first model of its own,
+  // after the Fondaco dei Tedeschi): a hall of Istrian stone on its quay, an arcade on the water,
+  // a string course, its windows and its central loggia, a cornice crowned with merlons, a low
+  // roof of gold (the house's sign), a corner tower and a Venetian funnel chimney. About 6.6 units
+  // across, its foot at y = 0; the flag and the smoke are placed by FONDACO's points.
+  const fondaco = (() => {
+    const W = 6.4;
+    const D = 4.2;
+    const H = 3.6;
+    const base = 0.5;
+    const front = D / 2 + 0.06;
+    const parts: [BufferGeometry, string, number, number, number, number?][] = [
+      // The quay and its steps down to the water.
+      [slab(W + 0.8, base, D + 1.2), C.snow, 0, 0, 0.2],
+      [slab(2.4, 0.25, 0.6), C.snow, 0, 0, D / 2 + 1],
+      // The hall.
+      [slab(W, H, D), C.wall, 0, base, 0],
+      // The string course and the cornice, in whiter stone.
+      [slab(W + 0.2, 0.16, D + 0.2), C.snow, 0, base + 1.75, 0],
+      [slab(W + 0.3, 0.22, D + 0.3), C.snow, 0, base + H, 0],
+    ];
+    // The arcade on the water: five arches, their piers in stone.
+    const arches = 5;
+    const step = (W - 0.6) / arches;
+    for (let i = 0; i < arches; i++) {
+      const x = -W / 2 + 0.3 + step * (i + 0.5);
+      parts.push([slab(step * 0.62, 1.05, 0.12), C.door, x, base, front]);
+      parts.push([
+        new CylinderGeometry(step * 0.31, step * 0.31, 0.12, 10, 1, false, 0, Math.PI)
+          .rotateX(Math.PI / 2)
+          .rotateZ(Math.PI / 2),
+        C.door,
+        x,
+        base + 1.05,
+        front,
+      ]);
+    }
+    for (let i = 0; i <= arches; i++)
+      parts.push([slab(0.16, 1.55, 0.16), C.snow, -W / 2 + 0.3 + step * i, base, front + 0.02]);
+    // The upper floor: its windows, the loggia of three taller ones in the middle.
+    for (let i = 0; i < 7; i++) {
+      const x = -W / 2 + 0.55 + ((W - 1.1) * i) / 6;
+      const loggia = i >= 2 && i <= 4;
+      parts.push([
+        slab(0.42, loggia ? 1.1 : 0.7, 0.1),
+        C.door,
+        x,
+        base + (loggia ? 2.1 : 2.35),
+        front,
+      ]);
+    }
+    // Side windows, two a side.
+    for (const side of [-1, 1])
+      for (const z of [-0.9, 0.9])
+        parts.push([slab(0.1, 0.7, 0.42), C.door, side * (W / 2 + 0.05), base + 2.35, z]);
+    // The merlons along the cornice, all round.
+    const top = base + H + 0.22;
+    for (let x = -W / 2 + 0.25; x <= W / 2 - 0.2; x += 0.72) {
+      parts.push([slab(0.34, 0.42, 0.22), C.snow, x, top, D / 2 + 0.05]);
+      parts.push([slab(0.34, 0.42, 0.22), C.snow, x, top, -D / 2 - 0.05]);
+    }
+    for (let z = -D / 2 + 0.5; z <= D / 2 - 0.4; z += 0.72) {
+      parts.push([slab(0.22, 0.42, 0.34), C.snow, W / 2 + 0.05, top, z]);
+      parts.push([slab(0.22, 0.42, 0.34), C.snow, -W / 2 - 0.05, top, z]);
+    }
+    // The low roof of gold.
+    parts.push([
+      new ConeGeometry(3.9, 1.9, 4)
+        .rotateY(Math.PI / 4)
+        .scale(1, 1, 0.7)
+        .translate(0, 0.95, 0),
+      C.roofGold,
+      0,
+      base + H + 0.05,
+      0,
+    ]);
+    // The corner tower at the back, its gold cap.
+    parts.push([slab(1.25, H + 2.4, 1.25), C.brick, -W / 2 + 0.55, base, -D / 2 + 0.55]);
+    parts.push([slab(1.4, 0.18, 1.4), C.snow, -W / 2 + 0.55, base + H + 2.4, -D / 2 + 0.55]);
+    parts.push([
+      new ConeGeometry(0.95, 1.2, 4).rotateY(Math.PI / 4).translate(0, 0.6, 0),
+      C.roofGold,
+      -W / 2 + 0.55,
+      base + H + 2.58,
+      -D / 2 + 0.55,
+    ]);
+    // The funnel chimney (camino a canna), on the right of the roof.
+    parts.push([
+      new CylinderGeometry(0.16, 0.2, 1.5, 8).translate(0, 0.75, 0),
+      C.brick,
+      2,
+      base + H,
+      -0.8,
+    ]);
+    parts.push([
+      new CylinderGeometry(0.42, 0.18, 0.55, 8).translate(0, 0.27, 0),
+      C.brick,
+      2,
+      base + H + 1.5,
+      -0.8,
+    ]);
+    return build(parts);
+  })();
+  return {
+    field,
+    barrel,
+    tuft,
+    pebble,
+    sand,
+    cart,
+    mine,
+    campanile,
+    basilica,
+    mill,
+    sails,
+    fondaco,
+  };
 })();
 
 /** A mill whose sails turn (slowly, a turn in eight seconds) while the board lives. */

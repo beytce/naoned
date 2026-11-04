@@ -68,7 +68,7 @@ import {
 } from "./kit.js";
 import { Flag, Smoke, useWater } from "./life.js";
 import { useBoardPaused } from "./pause.js";
-import { MADE, Mill } from "./props3d.js";
+import { FONDACO, MADE, Mill } from "./props3d.js";
 import {
   type Scene3D,
   type SceneInput,
@@ -1157,27 +1157,18 @@ function Fondaco({ x, z, live, k = 1 }: { x: number; z: number; live: boolean; k
   );
 }
 
+/**
+ * The fondaco: the house's own model (props3d.tsx, `MADE.fondaco`, audit of 4 November: a hall of
+ * Istrian stone on its quay, an arcade on the water, a gold roof and a corner tower, after the
+ * Fondaco dei Tedeschi), its flag on the tower and its chimney's smoke. Some twice a house, known
+ * by its tile of gold (decision of the owner, 3 November).
+ */
 function FondacoModel({ live, k = 1 }: { live: boolean; k?: number }) {
-  const kit = useKit();
-  const hall = kit("homeB", { roof: C.roofGold });
-  const tower = kit("tower", { roof: C.roofGold });
-  // The scale of the board (decision of the owner, 3 November): a fondaco some twice a house,
-  // known by its tile of gold rather than by its size.
-  const s = 5.8;
-  const ts = 2.6;
   return (
     <group scale={k} name="fondaco">
-      <mesh geometry={hall.geo} material={clayShared} scale={s} castShadow receiveShadow />
-      <mesh
-        geometry={tower.geo}
-        material={clayShared}
-        scale={ts}
-        position={[-3.4, 0, -1.8]}
-        castShadow
-        receiveShadow
-      />
-      <Flag at={[-3.4, tower.h * ts - 0.3, -1.8]} live={live} s={0.75} />
-      <Smoke at={[1.7, hall.h * s * 0.95, -0.9]} live={live} />
+      <mesh geometry={MADE.fondaco} material={clayShared} castShadow receiveShadow />
+      <Flag at={[...FONDACO.flag]} live={live} s={0.75} />
+      <Smoke at={[...FONDACO.smoke]} live={live} />
     </group>
   );
 }
