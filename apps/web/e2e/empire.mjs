@@ -320,9 +320,12 @@ try {
     if (under) faults.push(`${label}: a round button still under the open sheet`);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
-    // The corner's counts say what they are when touched.
-    await page.locator("[data-hud=favour]").click();
-    await page.locator("[data-hud=favour] [role=note]").waitFor();
+    // The corner's counts say what they are when touched; the Favour and the Seals are away while
+    // the house has none (audit of 4 November, UX M7).
+    await page.locator("[data-hud=ducats]").click();
+    await page.locator("[data-hud=ducats] [role=note]").waitFor();
+    if ((await page.locator("[data-hud=favour], [data-hud=seals]").count()) > 0)
+      faults.push(`${label}: a Favour or Seals count at zero in the corner`);
 
     // The Market: a good touched opens its sheet, to sell or deliver.
     await page.locator("[data-round=market]").click();

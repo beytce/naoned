@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { P } from "../../art/palette.js";
 import { CartWheel, DucatCoin, FavourCoin, WaxSeal } from "../../art/plateau/coins.js";
-import { d } from "../../game/format.js";
+import { d, whole } from "../../game/format.js";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
 import { MAP_3D } from "../map3d/flag.js";
@@ -70,7 +70,9 @@ export function Hud({
           <span className="block max-w-[9rem] truncate font-display text-lg font-extrabold leading-tight text-cream">
             {name}
           </span>
-          <span className="block text-xs text-cream-dim">{t.hud.income(d(view.incomePerDay))}</span>
+          <span className="block text-xs text-cream-dim">
+            {t.hud.income(whole(view.incomePerDay))}
+          </span>
         </span>
       </button>
 

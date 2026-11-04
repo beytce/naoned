@@ -10,7 +10,7 @@ import {
 import { cellCentre } from "../../art/hexmap.js";
 import { WORLD_VIEW, seatOf } from "../../art/mediterranean.js";
 import { TILT } from "../../art/plateau/geom.js";
-import { d } from "../../game/format.js";
+import { amount } from "../../game/format.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { fr } from "../../i18n.js";
 import { affordable, queueEnd, readyLots } from "../logic.js";
@@ -137,12 +137,18 @@ export function fleetOf(p: EmpirePayload, now: number): { free: number; total: n
 }
 
 /** The counts of the top right corner, in their order: ducats, Favour, Seals. */
+/**
+ * The purse of the corner: the ducats in whole ones (never to the denier), the Favour and the
+ * Seals only once the house has some (audit of 4 November, UX M7: no mute « 0 » from the start).
+ */
 export function hudOf(p: EmpirePayload): { id: "ducats" | "favour" | "seals"; value: string }[] {
   const h = p.view?.house;
+  const favour = h?.favour ?? 0;
+  const seals = h?.seals ?? 0;
   return [
-    { id: "ducats", value: d(p.cash) },
-    { id: "favour", value: String(h?.favour ?? 0) },
-    { id: "seals", value: String(h?.seals ?? 0) },
+    { id: "ducats" as const, value: amount(p.cash) },
+    ...(favour > 0 ? [{ id: "favour" as const, value: String(favour) }] : []),
+    ...(seals > 0 ? [{ id: "seals" as const, value: String(seals) }] : []),
   ];
 }
 
