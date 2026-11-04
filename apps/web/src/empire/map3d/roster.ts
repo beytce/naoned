@@ -128,7 +128,10 @@ export const ROLES: Record<string, Role> = {
 };
 
 /** The role of a unit of the battle: Rome's by its kind, the house's by its vehicle's model. */
-export function roleOf(unit: { side: "rome"; kind: string } | { side: "player"; model?: string }) {
-  if (unit.side === "rome") return ROLES[unit.kind] ?? ROLES.crossbowman;
-  return ROLES[unit.model ?? "cavaliere"] ?? ROLES.cavaliere;
+export function roleOf(
+  unit: { side: "rome"; kind: string } | { side: "player"; model?: string },
+): Role {
+  const fallback = (ROLES.cavaliere ?? Object.values(ROLES)[0]) as Role;
+  if (unit.side === "rome") return ROLES[unit.kind] ?? ROLES.crossbowman ?? fallback;
+  return ROLES[unit.model ?? "cavaliere"] ?? fallback;
 }

@@ -216,6 +216,14 @@ try {
   await city.click();
   await page.waitForTimeout(8_000);
   await shot("6-bataille-en-route");
+  // Up close on the vehicles (a wheel over them): the figurines.
+  const unit = await page.locator("[data-battle-city]").first().boundingBox();
+  if (unit) {
+    await page.mouse.move(unit.x, unit.y + 40);
+    for (let i = 0; i < 6; i++) await page.mouse.wheel(0, -240);
+    await page.waitForTimeout(1_500);
+    await shot("6b-bataille-pres");
+  }
 } finally {
   await browser.close();
   server.stop();

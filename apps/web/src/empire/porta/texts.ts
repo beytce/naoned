@@ -137,6 +137,8 @@ export const pt = {
   timer: "Fermeture",
   gate: "Porte",
   leaveGate: "Sortir par la porte",
+  cityRelics: (rs: Rarity[]) =>
+    rs.length === 0 ? "Ville vide" : `Ville : ${rs.length} relique${rs.length > 1 ? "s" : ""}`,
   selectHint: "Touchez un de vos véhicules, puis l'endroit où il doit aller.",
   moveHint: "Touchez la destination.",
   loading: (r: Rarity) => `Charge une relique ${pt.rarity[r].toLowerCase()}`,

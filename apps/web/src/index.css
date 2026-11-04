@@ -1568,3 +1568,36 @@ button.map-place {
     animation: none;
   }
 }
+/* The battle's diorama (docs/plan-porta-3d.md): the night closing in its last minute, the blows'
+   damage rising and fading. */
+.battle-closing {
+  background: radial-gradient(ellipse at center, transparent 45%, rgb(8 17 31 / 0.75) 100%);
+  animation: battle-closing 2s ease-in-out infinite alternate;
+}
+@keyframes battle-closing {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.battle-damage {
+  animation: battle-damage 0.9s ease-out forwards;
+}
+@keyframes battle-damage {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-26px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .battle-closing,
+  .battle-damage {
+    animation: none;
+  }
+}
