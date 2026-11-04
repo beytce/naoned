@@ -105,8 +105,11 @@ export interface EmpireView {
         opens: string[];
       })
     | null;
-  /** Each workshop's next level: null at the Casa's, or at the top. */
-  upgrades: Record<string, EmpireSite | null>;
+  /**
+   * Each workshop's next level: null at the Casa's, or at the top. With its lot before and after,
+   * in basis points of the recipe's base lot (lotYieldBps): what the raise brings, shown first.
+   */
+  upgrades: Record<string, (EmpireSite & { yieldBps: number; nextYieldBps: number }) | null>;
   /** A new workshop in Venetia: null without a free place. */
   newWorkshop: EmpireSite | null;
   /** A new workshop's site anywhere (its region's places aside). */
@@ -414,13 +417,17 @@ export function empireView(
     upgrades[ws.id] =
       l > workshopTop(house, ws.type, s)
         ? null
-        : site(
-            levelCost(l, s),
-            buildMinutesOf(l, s),
-            l,
-            share((h) => h.workshops.some((w) => w.level >= l)),
-            s,
-          );
+        : {
+            ...site(
+              levelCost(l, s),
+              buildMinutesOf(l, s),
+              l,
+              share((h) => h.workshops.some((w) => w.level >= l)),
+              s,
+            ),
+            yieldBps: lotYieldBps(ws.level, s),
+            nextYieldBps: lotYieldBps(l, s),
+          };
   }
   // Venetia's places, the Casa's: the regions' are their counters'.
   const pending = house.builds.filter((b) => b.kind === "newWorkshop" && !b.region).length;
