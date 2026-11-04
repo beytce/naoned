@@ -20,3 +20,10 @@ Tous les modèles de ce dossier sont sous licence **CC0 1.0** (domaine public : 
 ## Pas encore là
 
 - Kenney « Hexagon Kit » (CC0) : kenney.nl est refusé par le réseau du conteneur. Les tuiles sont donc construites dans le code (prismes hexagonaux arrondis).
+
+## `minis.glb` — les figurines de la Porta (4 novembre 2026)
+
+- **KayKit « Adventurers Character Pack » 1.0**, Kay Lousberg (https://www.kaylousberg.com), CC0 1.0. Source : https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0, commit `672074b73ba276876a19e8816ecdc5241817ab47` (`addons/kaykit_character_pack_adventures/Characters/gltf/` : Knight, Barbarian, Mage, Rogue, Rogue_Hooded). Licence : `kaykit-adventurers-LICENSE.txt` (copie conforme).
+- **Quaternius « Ultimate Animated Animals »**, le cheval (`Horse.gltf`), CC0 1.0 : même provenance que l'âne ci-dessus (`laoniutoushx/TD-demo-2024-04-03`, `Asserts/Models/ulitimate animals/glTF/Horse.gltf`), à revérifier de même contre l'archive officielle.
+- Les originaux (18 Mo) ne sont pas gardés dans le dépôt : les copier dans `apps/web/art-src/models/kaykit-adventurers/` et `apps/web/art-src/models/quaternius/`, puis `node apps/web/scripts/pack-minis.mjs`.
+- Transformation : la texture de chaque personnage cuite dans les couleurs de ses sommets (la CSP du jeu refuse la texture d'un `.glb`), quatorze animations du squelette commun gardées une fois (attente, marche, course, coups, tirs, sort, parade, coup reçu, mort, acclamation, assis), les quatre du cheval renommées `Horse_…` ; 2,2 Mo (860 Ko compressé). Le jeu repeint les figurines selon leur camp (`apps/web/src/empire/map3d/minis.tsx`, `tint`).

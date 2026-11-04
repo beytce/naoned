@@ -145,7 +145,7 @@ describe("a battle entered and settled", () => {
     enter(w, rider, cart);
     const entrant = portaEntrant(house(w), "a", s);
     expect(entrant.combat.stats.weapons).toHaveLength(1);
-    expect(entrant.transport).toEqual({ vehicleId: cart, hold: 50 });
+    expect(entrant.transport).toEqual({ vehicleId: cart, hold: 50, type: "cart" });
     const b = createBattle({ seed: 1, tier: 1, players: [entrant] }, s);
     expect(b.units.filter((u) => u.side === "player")).toHaveLength(2);
   });

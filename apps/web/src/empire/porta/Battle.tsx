@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CloseButton, Slab } from "../../ui.js";
+import { MAP_3D } from "../map3d/flag.js";
+import { BattleDiorama } from "./BattleDiorama.js";
 import { portaApi, useBattle } from "./api.js";
 import { errorText, pt } from "./texts.js";
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
+
+/**
+ * The battle in the lands of Rome: a diorama in 3D (BattleDiorama.tsx, docs/plan-porta-3d.md),
+ * on a disc of SVG without WebGL.
+ */
+export function BattleScreen({ onClose }: { onClose: () => void }) {
+  return MAP_3D ? <BattleDiorama onClose={onClose} /> : <BattleSvg onClose={onClose} />;
+}
 
 /**
  * The battle in the lands of Rome (docs/plan-porta.md § 6), in the Lagune: the map is a disc of
@@ -61,7 +71,8 @@ function HpBar({ hp, max, y = -0.45 }: { hp: number; max: number; y?: number }) 
   );
 }
 
-export function BattleScreen({ onClose }: { onClose: () => void }) {
+/** The battle on a disc of SVG (the fallback of a device without WebGL). */
+export function BattleSvg({ onClose }: { onClose: () => void }) {
   const battle = useBattle(true);
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

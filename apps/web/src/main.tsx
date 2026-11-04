@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App.js";
 import "@fontsource-variable/archivo/wdth.css";
@@ -52,8 +52,18 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
 
 const root = document.getElementById("root");
 if (!root) throw new Error("#root missing");
+// The figurines' lab (?lab=minis, docs/plan-porta-3d.md): the lands of Rome's figurines in a row.
+const MinisLab = lazy(() => import("./empire/map3d/MinisLab.js"));
+const lab = new URLSearchParams(window.location.search).get("lab") === "minis";
+
 createRoot(root).render(
   <StrictMode>
-    <App />
+    {lab ? (
+      <Suspense fallback={null}>
+        <MinisLab />
+      </Suspense>
+    ) : (
+      <App />
+    )}
   </StrictMode>,
 );

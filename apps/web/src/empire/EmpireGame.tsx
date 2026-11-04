@@ -44,8 +44,10 @@ import { VehiclePanel } from "./map/VehiclePanel.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
 import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
+import { ArmsScene } from "./porta/ArmsScene.js";
 import { ArmsSheet } from "./porta/ArmsSheet.js";
 import { BattleScreen } from "./porta/Battle.js";
+import { PortaScene } from "./porta/PortaScene.js";
 import { PortaSheet } from "./porta/PortaSheet.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
@@ -601,8 +603,12 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         />
       )}
       <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
-      <ArmsSheet p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
-      <PortaSheet
+      {MAP_3D ? (
+        <ArmsScene p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+      ) : (
+        <ArmsSheet p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+      )}
+      <PortaPlace
         p={p}
         now={now}
         open={sheet === "porta"}
@@ -1009,4 +1015,9 @@ function useAwayRecap(p: EmpirePayload) {
       // Without storage, no recap next time.
     }
   }, [p.now]);
+}
+
+/** The Porta: its scene in 3D (docs/plan-porta-3d.md), its sheet without WebGL. */
+function PortaPlace(props: Parameters<typeof PortaSheet>[0]) {
+  return MAP_3D ? <PortaScene {...props} /> : <PortaSheet {...props} />;
 }

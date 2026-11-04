@@ -182,7 +182,11 @@ export function portaEntrant(h: EmpireHouse, playerId: PlayerId, s: EmpireSettin
   return {
     id: playerId,
     combat: { vehicleId: b.combatId, stats: armStats(h, b.combatId, s) },
-    transport: { vehicleId: b.transportId, hold: capacityOf(h, transport.type, s) },
+    transport: {
+      vehicleId: b.transportId,
+      hold: capacityOf(h, transport.type, s),
+      type: transport.type,
+    },
   };
 }
 

@@ -205,7 +205,10 @@ try {
   await shot("4-porta");
 
   // A battle alone, tier 1.
-  await page.getByRole("button", { name: /partir seul/i }).click();
+  await page
+    .getByRole("button", { name: /entrer · palier 1|partir seul/i })
+    .first()
+    .click();
   await page.waitForSelector("[data-battle-timer]", { timeout: 15_000 });
   await page.waitForTimeout(1_500);
   await shot("5-bataille");
@@ -216,6 +219,14 @@ try {
   await city.click();
   await page.waitForTimeout(8_000);
   await shot("6-bataille-en-route");
+  // Up close on the vehicles (a wheel over them): the figurines.
+  const unit = await page.locator("[data-battle-city]").first().boundingBox();
+  if (unit) {
+    await page.mouse.move(unit.x, unit.y + 40);
+    for (let i = 0; i < 6; i++) await page.mouse.wheel(0, -240);
+    await page.waitForTimeout(1_500);
+    await shot("6b-bataille-pres");
+  }
 } finally {
   await browser.close();
   server.stop();

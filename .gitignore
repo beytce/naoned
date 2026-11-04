@@ -6,3 +6,7 @@ out/
 .data/
 e2e-shots/
 e2e-shots-en/
+
+# The Porta figurines originals (18 MB), fetched as public/models/README.md says.
+apps/web/art-src/models/kaykit-adventurers/
+apps/web/art-src/models/quaternius/

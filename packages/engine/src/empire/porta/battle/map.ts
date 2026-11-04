@@ -9,7 +9,7 @@ import type { Battle, City, PlayerUnit, RomeUnit, Vec } from "./types.js";
 export interface BattleEntrant {
   id: PlayerId;
   combat: { vehicleId: string; stats: ArmStats };
-  transport: { vehicleId: string; hold: number };
+  transport: { vehicleId: string; hold: number; type?: string };
 }
 
 export interface BattleInput {
@@ -175,6 +175,7 @@ export function createBattle(input: BattleInput, s: EmpireSettings): Battle {
       ...base,
       id: `p${i}c`,
       vehicleId: pl.combat.vehicleId,
+      model: st.model,
       role: "combat",
       x: round2(gate.x + 0.4),
       y,
@@ -191,6 +192,7 @@ export function createBattle(input: BattleInput, s: EmpireSettings): Battle {
       ...base,
       id: `p${i}t`,
       vehicleId: pl.transport.vehicleId,
+      ...(pl.transport.type ? { model: pl.transport.type } : {}),
       role: "transport",
       x: gate.x,
       y,

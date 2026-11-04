@@ -40,6 +40,21 @@ export const pt = {
         : `${min} à ${max} joueurs`,
   entry: (n: number) => `Entrée : ${n} pains`,
   solo: "Partir seul",
+  enter: (n: number) => `Entrer · palier ${n}`,
+  enterGroup: (n: number) => `File · palier ${n}`,
+  group: "Groupe",
+  notReady: "Choisissez un véhicule de combat et un transport à quai.",
+  hurt: "abîmé",
+  backTitle: "Retour des terres de Rome",
+  backNone: "Aucune relique rapportée.",
+  backCost: (lost: number, hurt: number) =>
+    [
+      lost > 0 ? `${lost} véhicule${lost > 1 ? "s" : ""} perdu${lost > 1 ? "s" : ""}` : "",
+      hurt > 0 ? `${hurt} abîmé${hurt > 1 ? "s" : ""}, en réparation` : "",
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  backOk: "Fermer",
   public: "File publique",
   invite: "Inviter",
   join: "Rejoindre",
@@ -112,6 +127,7 @@ export const pt = {
   buy: "Acheter",
   raiseModel: "Améliorer le modèle",
   raiseComponent: "Améliorer",
+  componentsTab: "Composants",
   hp: (n: number) => `${n} PV`,
   slots: (n: number) => (n > 1 ? `${n} places` : "1 place"),
   empty: "Place libre",
@@ -137,6 +153,8 @@ export const pt = {
   timer: "Fermeture",
   gate: "Porte",
   leaveGate: "Sortir par la porte",
+  cityRelics: (rs: Rarity[]) =>
+    rs.length === 0 ? "Ville vide" : `Ville : ${rs.length} relique${rs.length > 1 ? "s" : ""}`,
   selectHint: "Touchez un de vos véhicules, puis l'endroit où il doit aller.",
   moveHint: "Touchez la destination.",
   loading: (r: Rarity) => `Charge une relique ${pt.rarity[r].toLowerCase()}`,

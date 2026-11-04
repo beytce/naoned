@@ -44,13 +44,17 @@ export function scaleBounds(view: Viewport): { min: number; max: number } {
 }
 
 /** The camera kept on the chart: it always covers the screen, centred when smaller. */
-export function coverClamp(cam: Camera, view: Viewport): Camera {
+export function coverClamp(
+  cam: Camera,
+  view: Viewport,
+  extent: { w: number; h: number } = CHART,
+): Camera {
   const fit = (t: number, size: number, screen: number) =>
     size <= screen ? (screen - size) / 2 : Math.min(0, Math.max(screen - size, t));
   return {
     s: cam.s,
-    tx: fit(cam.tx, CHART.w * cam.s, view.w),
-    ty: fit(cam.ty, CHART.h * TILT * cam.s, view.h),
+    tx: fit(cam.tx, extent.w * cam.s, view.w),
+    ty: fit(cam.ty, extent.h * TILT * cam.s, view.h),
   };
 }
 

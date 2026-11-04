@@ -22,6 +22,7 @@ export function useCamera({
   onHold,
   onRest,
   bounds,
+  extent,
 }: {
   root: RefObject<HTMLElement | null>;
   initial: (view: Viewport) => Camera;
@@ -36,13 +37,15 @@ export function useCamera({
   onRest?: (cam: Camera, view: Viewport) => void;
   /** The zoom's range on this screen, when not the chart's own (`scaleBounds`). */
   bounds?: (view: Viewport) => { min: number; max: number };
+  /** The ground the camera keeps over, when not the chart (the battle's island). */
+  extent?: { w: number; h: number };
 }) {
   const cam = useRef<Camera | null>(null);
   const anim = useRef<{ from: Camera; to: Camera; t0: number; ms: number } | null>(null);
   const velocity = useRef<Point | null>(null);
   const frame = useRef(0);
-  const live = useRef({ onPaint, onDoubleTap, onTap, onHold, onRest, initial, bounds });
-  live.current = { onPaint, onDoubleTap, onTap, onHold, onRest, initial, bounds };
+  const live = useRef({ onPaint, onDoubleTap, onTap, onHold, onRest, initial, bounds, extent });
+  live.current = { onPaint, onDoubleTap, onTap, onHold, onRest, initial, bounds, extent };
   const rangeOf = useCallback((v: Viewport) => live.current.bounds?.(v) ?? scaleBounds(v), []);
   // The screen's size, read when it changes (never in a frame), and one paint per frame.
   const size = useRef<Viewport | null>(null);
@@ -84,7 +87,7 @@ export function useCamera({
       // A scale clamped keeps the screen's middle where it was.
       const k = s / c.s;
       const kept = { s, tx: v.w / 2 - (v.w / 2 - c.tx) * k, ty: v.h / 2 - (v.h / 2 - c.ty) * k };
-      cam.current = coverClamp(kept, v);
+      cam.current = coverClamp(kept, v, live.current.extent);
       paintSoon();
     },
     [view, paintSoon, rangeOf],

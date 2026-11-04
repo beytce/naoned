@@ -191,3 +191,9 @@ Décisions du porteur après l'audit des quatre experts (`docs/audit-carte-2026-
 - **La tournée à plusieurs villes** d'une même mule (toucher une autre ville pendant le départ).
 - **L'itinéraire libre** : le bouton « Déplacer » de la feuille d'un véhicule reste pour l'instant ; à trancher.
 - **Le refus d'une commande** et le lot à la mesure de l'atelier (le tirage pondéré a été retenu).
+
+## La Porta en diorama (4 novembre 2026), hors du chantier
+
+- **Les sons et les vibrations** de la bataille : les flèches, les coups, une relique chargée, la fermeture.
+- **Des figurines simplifiées de loin** dans les grosses batailles (palier 6), si la mesure sur téléphone le demande.
+- **Un modèle propre de bombarde et de hallebarde** (aujourd'hui une bombarde faite en code et la hache du barbare).
