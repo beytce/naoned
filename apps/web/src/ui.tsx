@@ -734,8 +734,8 @@ export function useLeaving(open: boolean, ms: number): boolean {
  * A sheet pulled down by the finger: it follows (resisting a little), then closes past a third of
  * its height or on a quick flick, or springs back. Only from the top of its scroll, on a phone.
  */
-function useDragToClose(
-  panel: { current: HTMLDialogElement | null },
+export function useDragToClose(
+  panel: { current: HTMLElement | null },
   open: boolean,
   onClose: () => void,
 ) {

@@ -1634,3 +1634,24 @@ button.map-place {
     animation: none;
   }
 }
+
+/* The dock (src/dock.tsx, docs/plan-dock.md): a decision rises from the foot; a new view of the
+   same dock fades in its place. */
+.dock-in {
+  animation: slot-in var(--t-base) var(--ease-out) both;
+}
+.dock-view {
+  animation: dock-view var(--t-quick) var(--ease-out) both;
+}
+@keyframes dock-view {
+  from {
+    transform: translate3d(12px, 0, 0);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dock-in,
+  .dock-view {
+    animation: none;
+  }
+}
