@@ -1,4 +1,5 @@
 import { affordable, readyLots, recipeOf, wantsRelaunch } from "./logic.js";
+import { deliveryPlan } from "./map/logic.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
 /**
@@ -10,6 +11,15 @@ import type { EmpireAction, EmpirePayload } from "./types.js";
 export type NextStep =
   | { kind: "collect"; lots: number; action: EmpireAction }
   | { kind: "relaunch"; action: EmpireAction }
+  | {
+      kind: "deliver";
+      city: string;
+      good: string;
+      qty: number;
+      have: number;
+      pay: bigint;
+      action: EmpireAction;
+    }
   | { kind: "casa"; level: number; action: EmpireAction }
   | { kind: "build"; good: string; type: string; recipe: string; casa: number }
   | { kind: "upgrade"; workshopId: string; type: string; level: number; action: EmpireAction }
@@ -45,6 +55,21 @@ export function nextStep(p: EmpirePayload, now: number): NextStep {
   if (lots > 0) return { kind: "collect", lots, action: { type: "empireRelaunchAll" } };
   // 2. A workshop that could run more.
   if (wantsRelaunch(p, now)) return { kind: "relaunch", action: { type: "empireRelaunchAll" } };
+  // 2b. A city's orders the stock covers and a vehicle free: « Livrer » (after the map's audit).
+  for (const c of view.orders ?? []) {
+    const plan = deliveryPlan(p, c.city);
+    const first = plan.orders.find((x) => x.o.id === plan.picks[0]);
+    if (plan.vehicle && first)
+      return {
+        kind: "deliver",
+        city: c.city,
+        good: first.o.good,
+        qty: first.o.qty,
+        have: first.have,
+        pay: plan.pay,
+        action: { type: "empireDeliverCity", city: c.city, orderIds: plan.picks },
+      };
+  }
 
   const next = view.nextCasa;
   const lacking = next
@@ -110,13 +135,15 @@ export function nextStep(p: EmpirePayload, now: number): NextStep {
       .filter((x) => x.q && x.n > 0)
       .sort((a, b) => (a.value < b.value ? 1 : a.value > b.value ? -1 : 0));
     const best = sales[0];
+    // On a world of orders, the cities' orders go by « Livrer » (step 2b): the market sells.
+    const asked = Boolean(best?.q?.asked) && (view.orders ?? []).length === 0;
     if (best?.q)
       return {
         kind: "sell",
         good: best.good,
         qty: best.n,
-        deliver: best.q.asked,
-        action: best.q.asked
+        deliver: asked,
+        action: asked
           ? { type: "empireDeliver", good: best.good, qty: best.n }
           : { type: "empireSell", good: best.good, qty: best.n },
       };
@@ -133,6 +160,8 @@ export function nextStep(p: EmpirePayload, now: number): NextStep {
       return job.startedAt + (readyLots(w, now) + 1) * job.batchMs;
     }),
     ...builds.map((b) => b.endsAt),
+    // A vehicle back at its fondaco.
+    ...(view.vehicles?.mine ?? []).map((v) => v.legs.at(-1)?.arrivesAt ?? null),
   ].filter((t): t is number => t !== null && t > now);
   return { kind: "wait", at: times.length > 0 ? Math.min(...times) : null };
 }

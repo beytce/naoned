@@ -688,6 +688,9 @@ export const en: Dictionary = {
       upgradeWhy: "The next Casa asks for higher workshops.",
       upgradeAction: (n: number) => `Raise to level ${n}`,
       deliver: (n: number, good: string) => `Deliver ${n} ${good.toLowerCase()} to the cities.`,
+      deliverCity: (city: string, qty: number, good: string, have: number) =>
+        `${city} awaits ${qty} ${good.toLowerCase()}: you have ${have}.`,
+      deliverCityWhy: (pay: string) => `A mule leaves, delivers and comes back alone: ${pay}.`,
       deliverWhy: "The cities order it: it is the best price, and you are short of ducats.",
       deliverAction: "Deliver",
       sell: (n: number, good: string) => `Sell ${n} ${good.toLowerCase()} to the Dogana.`,

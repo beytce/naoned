@@ -193,3 +193,42 @@ describe("Lorenzo's tutorial (31 October 2026)", () => {
     expect(inTutorial(at(9))).toBe(false);
   });
 });
+
+describe("Lorenzo and the cities' orders (after the map's audit, 3 November 2026)", () => {
+  const withOrders = (stock: Record<string, number>) => {
+    const p = house({ workshops: [running("clay", "clay_pit", "dig_clay", NOW)], stock });
+    const view = p.view as unknown as Record<string, unknown>;
+    view.stores = [{ post: "home", region: "veneto", goods: stock }];
+    view.orders = [
+      {
+        city: "padova",
+        region: "veneto",
+        size: 3,
+        cap: 2,
+        fillBps: 5_000,
+        nextAt: null,
+        posts: ["home"],
+        orders: [{ id: "o1", city: "padova", good: "clay", qty: 40, pay: "60000" }],
+      },
+    ];
+    view.vehicles = {
+      mine: [{ id: "m", type: "mule", busyUntil: 0, capacity: 2, at: "home", loads: [], legs: [] }],
+    };
+    return p;
+  };
+
+  it("proposes a delivery the stock covers, which « Livrer » makes", () => {
+    expect(nextStep(withOrders({ clay: 52 }), NOW)).toMatchObject({
+      kind: "deliver",
+      city: "padova",
+      good: "clay",
+      qty: 40,
+      have: 52,
+      action: { type: "empireDeliverCity", city: "padova", orderIds: ["o1"] },
+    });
+  });
+
+  it("proposes none the stock does not cover", () => {
+    expect(nextStep(withOrders({ clay: 10 }), NOW).kind).not.toBe("deliver");
+  });
+});

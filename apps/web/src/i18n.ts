@@ -612,6 +612,9 @@ const frDict = {
       upgradeWhy: "La Casa suivante demande des ateliers plus hauts.",
       upgradeAction: (n: number) => `Monter au niveau ${n}`,
       deliver: (n: number, good: string) => `Livrez ${n} ${good.toLowerCase()} aux villes.`,
+      deliverCity: (city: string, qty: number, good: string, have: number) =>
+        `${city} attend ${qty} ${good.toLowerCase()} : vous en avez ${have}.`,
+      deliverCityWhy: (pay: string) => `Une mule part, livre et rentre seule : ${pay}.`,
       deliverWhy:
         "Les villes en commandent : c'est le meilleur prix, et il vous manque des ducats.",
       deliverAction: "Livrer",
