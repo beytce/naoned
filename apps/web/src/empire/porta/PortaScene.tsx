@@ -12,6 +12,8 @@ import { Figure } from "../map3d/figure.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
 import { useDonkey } from "../map3d/life.js";
 import { preloadMinis } from "../map3d/minis.js";
+import { Pace } from "../map3d/pace.js";
+import { useCoverBoard } from "../map3d/pause.js";
 import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { portaApi } from "./api.js";
@@ -79,6 +81,7 @@ export function PortaScene({
   onBattle: () => void;
 }) {
   const v = p.view?.porta;
+  useCoverBoard(open && !!v);
   const [state, setState] = useState<PortaState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tier, setTier] = useState(1);
@@ -515,6 +518,7 @@ function SceneView(props: {
       <Guard3D>
         <Canvas
           orthographic
+          frameloop="demand"
           dpr={[1, 1.5]}
           camera={{ position: [0, 46, 44], zoom: 1 }}
           gl={{ antialias: true }}
@@ -523,6 +527,7 @@ function SceneView(props: {
           }}
         >
           <Fit />
+          <Pace fps={live() ? 30 : 0} />
           <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
           <directionalLight position={[-60, 110, 40]} intensity={2.2} color="#FFF3DD" />
           <Suspense fallback={null}>

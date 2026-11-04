@@ -5,6 +5,7 @@ import { CloseButton, Slab } from "../../ui.js";
 import { useCamera } from "../map/useCamera.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { groundAt } from "../map3d/camera.js";
+import { useCoverBoard } from "../map3d/pause.js";
 import type { Battle3DHandle } from "./Battle3D.js";
 import { portaApi, useBattle } from "./api.js";
 import { CASE, RARITY_HEX, extentOf, fromChart, toChart } from "./chart.js";
@@ -42,6 +43,7 @@ const fit = (b: { radius: number; gate: { x: number; y: number } }) => (v: Viewp
  */
 export function BattleDiorama({ onClose }: { onClose: () => void }) {
   const battle = useBattle(true);
+  useCoverBoard(true);
   if (!battle)
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-night" data-battle>

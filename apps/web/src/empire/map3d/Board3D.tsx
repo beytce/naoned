@@ -67,6 +67,7 @@ import {
   useKit,
 } from "./kit.js";
 import { Flag, Smoke, useWater } from "./life.js";
+import { useBoardPaused } from "./pause.js";
 import { MADE, Mill } from "./props3d.js";
 import {
   type Scene3D,
@@ -164,6 +165,12 @@ const Board3D = memo(
       [buyKey, casa],
     );
     const live = useLive();
+    // Asleep under a scene in 3D that covers the screen: no frame, until it closes.
+    const paused = useBoardPaused();
+    useEffect(() => {
+      // Awake again: one frame at once, the board as it stands now.
+      if (!paused) invalidate();
+    }, [paused]);
     // Until when a vehicle of the house is on its way (or waiting to leave): frames till then.
     // (on this device's clock).
     const moving =
@@ -271,7 +278,7 @@ const Board3D = memo(
     return (
       <Canvas
         className="!absolute inset-0"
-        frameloop="demand"
+        frameloop={paused ? "never" : "demand"}
         shadows="soft"
         dpr={[1, 1.5]}
         orthographic
@@ -306,7 +313,7 @@ const Board3D = memo(
         {/* A device that cannot keep 18 frames a second loses the ambient occlusion for good. */}
         <PerformanceMonitor bounds={() => [18, 26]} flipflops={2} onDecline={() => setLow(true)} />
         {FX && <Effects near={near} ao={!low} aoRef={ao} />}
-        <Ticker live={live} until={moving} />
+        {!paused && <Ticker live={live} until={moving} />}
         {PERF && <Probe />}
       </Canvas>
     );

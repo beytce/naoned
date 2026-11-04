@@ -46,6 +46,7 @@ import {
 } from "../map3d/kit.js";
 import { Smoke, useDonkey, useWater } from "../map3d/life.js";
 import { preloadMinis } from "../map3d/minis.js";
+import { Pace } from "../map3d/pace.js";
 import { roleOf } from "../map3d/roster.js";
 import { CASE, RARITY_HEX, extentOf, fromChart, toChart } from "./chart.js";
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
@@ -272,7 +273,7 @@ const Battle3D = memo(
     return (
       <Canvas
         className="!absolute inset-0"
-        frameloop={live ? "always" : "demand"}
+        frameloop="demand"
         dpr={[1, 1.5]}
         orthographic
         camera={{ near: 1, far: 2000, position: [0, DISTANCE, DISTANCE] }}
@@ -284,6 +285,8 @@ const Battle3D = memo(
         }}
         data-battle3d
       >
+        {/* A battle of ten minutes at 30 frames a second, not 60: the phone keeps cool. */}
+        <Pace fps={live ? 30 : 0} rest={30} />
         <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
         <directionalLight position={[-70, 120, -60]} intensity={2.3} color="#FFF3DD" />
         <Suspense fallback={null}>

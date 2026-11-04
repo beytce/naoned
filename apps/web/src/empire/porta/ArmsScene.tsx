@@ -11,6 +11,8 @@ import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { Figure } from "../map3d/figure.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
 import { preloadMinis } from "../map3d/minis.js";
+import { Pace } from "../map3d/pace.js";
+import { useCoverBoard } from "../map3d/pause.js";
 import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { pt } from "./texts.js";
@@ -67,6 +69,7 @@ export function ArmsScene({
   const [socket, setSocket] = useState<{ vehicleId: string; slot: number } | null>(null);
   const [tab, setTab] = useState<"models" | "components">("models");
   const labels = useRef<HTMLDivElement>(null);
+  useCoverBoard(open && !!v);
   if (!open || !v) return null;
   const nameOf = (id: string | null) => {
     const c = id ? v.inventory.find((x) => x.id === id) : undefined;
@@ -84,6 +87,7 @@ export function ArmsScene({
         <Guard3D>
           <Canvas
             orthographic
+            frameloop="demand"
             dpr={[1, 1.5]}
             camera={{ position: [0, 40, 44], zoom: 1 }}
             gl={{ antialias: true }}
@@ -92,6 +96,7 @@ export function ArmsScene({
             }}
           >
             <Fit n={Math.max(1, v.vehicles.length)} />
+            <Pace fps={live() ? 30 : 0} />
             <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
             <directionalLight position={[-50, 100, 40]} intensity={2.2} color="#FFF3DD" />
             <Suspense fallback={null}>
