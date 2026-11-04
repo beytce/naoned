@@ -620,6 +620,13 @@ export const en: Dictionary = {
       income: "Daily income",
     },
     orbit: {
+      buildHere: "Build here",
+      back: "Map",
+      title: (casa: number) => `Your domain · Casa ${casa}`,
+      postTitle: (region: string) => `Fondaco of ${region}`,
+      harvest: (n: number) => `Collect all · ${n}`,
+      next: (left: string) => `Next lot in ${left}`,
+      nothing: "Start a workshop to produce.",
       build: "Build",
       ready: "Ready · touch",
       idle: "To launch",

@@ -72,6 +72,10 @@ async function magicLink(email) {
 // container without a GPU; a place is touched through the scene (a ray), so its mark is pressed at
 // its middle with the mouse rather than clicked. MAP3D=0: on the SVG board, the fallback (?map=svg).
 const MAP3D = process.env.MAP3D !== "0";
+// The fondaco's workshops: on the 3D board in its domain (decision of the owner, 3 November 2026),
+// on the SVG board in orbit around it.
+const WS = MAP3D ? "[data-domain-layer] [data-workshop]" : "[data-orbit-open=home] [data-workshop]";
+const OPEN = MAP3D ? "[data-domain-layer]" : "[data-orbit-open]";
 
 const server = await startServer();
 const browser = await chromium.launch({
@@ -152,7 +156,7 @@ try {
       .first()
       .waitFor({ state: "attached", timeout: 3_000 })
       .catch(() => faults.push(`${label}: no burst on the fondaco put down`));
-    if ((await page.locator("[data-orbit-open]").count()) > 0)
+    if ((await page.locator(OPEN).count()) > 0)
       faults.push(`${label}: the workshops shown before Venice is touched`);
     await shot("1c-secteur");
     // The information layer (chantier 4): a finger held on the map, then Alt; every name shows.
@@ -191,15 +195,25 @@ try {
     await page.waitForTimeout(350);
     // The fondaco touched: its workshops deploy around it, and its reach shows.
     await press("[data-region=veneto]");
-    await page.locator("[data-orbit-open=home] [data-workshop]").first().waitFor();
-    if ((await page.locator("[data-reach-of=home]").count()) !== 1)
-      faults.push(`${label}: no reach drawn around the fondaco touched`);
-    // The bubble stays itself in the middle of its workshops: no second sun.
-    if (
-      (await page.locator("[data-home]").count()) !== 1 ||
-      (await page.locator("[data-casa-sun]").count()) > 0
-    )
-      faults.push(`${label}: Venice's bubble replaced when its workshops deploy`);
+    await page.locator(WS).first().waitFor();
+    if (MAP3D) {
+      // The domain: the Casa on the fondaco's tile, the map's marks put away.
+      if ((await page.locator("[data-domain-casa]").count()) !== 1)
+        faults.push(`${label}: no Casa on the domain's fondaco`);
+      if ((await page.locator("[data-domain-bar=veneto]").count()) !== 1)
+        faults.push(`${label}: no bar at the domain's foot`);
+      if (await page.locator("[data-city=padova]").first().isVisible())
+        faults.push(`${label}: Padua's mark shown in the domain`);
+    } else {
+      if ((await page.locator("[data-reach-of=home]").count()) !== 1)
+        faults.push(`${label}: no reach drawn around the fondaco touched`);
+      // The bubble stays itself in the middle of its workshops: no second sun.
+      if (
+        (await page.locator("[data-home]").count()) !== 1 ||
+        (await page.locator("[data-casa-sun]").count()) > 0
+      )
+        faults.push(`${label}: Venice's bubble replaced when its workshops deploy`);
+    }
     // The corners: the ducats, and the two mules at home among two.
     await page.locator("[data-hud=ducats]").waitFor();
     if (!/2\s*\/\s*2/.test(await page.locator("[data-hud=fleet]").innerText()))
@@ -212,10 +226,12 @@ try {
       if ((await page.locator("[data-workshop]").filter({ hasText: name }).count()) !== 1)
         faults.push(`${label}: a workshop unnamed on the orbit`);
     if (
-      (await page
-        .locator("[data-orbit-empire]")
-        .getByText(/^bâtir$/i)
-        .count()) !== 1
+      MAP3D
+        ? (await page.locator("[data-domain-free]").count()) !== 1
+        : (await page
+            .locator("[data-orbit-empire]")
+            .getByText(/^bâtir$/i)
+            .count()) !== 1
     )
       faults.push(`${label}: no « Bâtir » on the free place`);
     await shot("2-maison");
@@ -326,7 +342,11 @@ try {
     await page.waitForTimeout(400);
 
     // Out to the map (step 3): Venice's sector seen, the six around it in silhouette, Lombardy
-    // still in the dark.
+    // still in the dark. On the 3D board, out of the domain first (its chevron).
+    if (MAP3D) {
+      await page.locator("[data-domain-back]").click();
+      await page.locator("[data-round=recenter]").waitFor();
+    }
     await page.locator("[data-round=recenter]").click();
     await page.locator("[data-map=empire]:not([data-orbit])").waitFor();
     await page.waitForTimeout(300);
@@ -338,7 +358,9 @@ try {
     if ((await page.locator("[data-city=milano], [data-region=lombardia]").count()) > 0)
       faults.push(`${label}: Lombardy seen through the dark at the Casa 1`);
     await shot("9-carte");
-    // A counter put down from the Production: the cells light up, one is picked, it is put.
+    // A counter put down from the Production: the cells light up, one is picked, it is put. On
+    // the 3D board, the Production is in the domain.
+    if (MAP3D) await press("[data-region=veneto]");
     await page.locator("[data-production]").click();
     await page.locator("[data-place=post] button").click();
     await page.locator("[data-placing-bar=post]").waitFor();
@@ -368,10 +390,10 @@ try {
       for (let i = 0; i < 8; i++) await page.mouse.wheel(0, -300);
     }
     await page.waitForTimeout(500);
-    if ((await page.locator("[data-orbit-open]").count()) > 0)
+    if ((await page.locator(OPEN).count()) > 0)
       faults.push(`${label}: the workshops deployed by a zoom`);
     await press("[data-region=veneto]");
-    await page.locator("[data-orbit-open=home] [data-workshop]").first().waitFor();
+    await page.locator(WS).first().waitFor();
 
     // The next step opens the Production on the brickworks of the Casa 2.
     await page
@@ -390,6 +412,7 @@ try {
     await page.locator('[data-next-step="wait"]').waitFor();
     await shot("12-attente");
     // Buying at the market goes into a counter's stock: ten units of a good, into Venice's.
+    if (MAP3D) await page.locator("[data-domain-back]").click();
     await page.locator("[data-round=market]").click();
     await page.waitForSelector("[data-market]");
     if ((await page.locator("[data-market-buy] button:enabled").count()) === 0)

@@ -213,17 +213,17 @@ try {
       .catch(() => {
         faults.push("the city panel closed: the round buttons not back");
       });
-    // 2. The fondaco touched on the board: its workshops deploy around it, up close; touched
-    // again, the Casa's panel.
+    // 2. The fondaco touched on the board: the camera plunges into its domain, its workshops on
+    // the tiles around it; its Casa touched, the Casa's panel.
     await tapOn("[data-home]");
     await page
-      .locator("[data-orbit-open=home] [data-workshop]")
+      .locator("[data-domain-layer] [data-workshop]")
       .first()
       .waitFor({ timeout: 5_000 })
       .catch(() => faults.push("the fondaco touched through the 3D board: no workshops"));
     await page.waitForTimeout(1500);
     await shot("2-fondaco");
-    await tapOn("[data-home]");
+    await page.locator("[data-domain-casa]").click();
     await page
       .locator("[data-bottom-slot='panel:casa']")
       .waitFor({ timeout: 5_000 })
@@ -232,6 +232,12 @@ try {
       });
     await shot("2b-fondaco-touche");
     await page.keyboard.press("Escape");
+    // Out of the domain (Échap again): the map's marks back.
+    await page.keyboard.press("Escape");
+    await page
+      .locator("[data-map=empire]:not([data-domain])")
+      .waitFor({ timeout: 5_000 })
+      .catch(() => faults.push("Échap does not leave the domain"));
     /**
      * « Livrer » from a town (decision of the owner, 3 November): its orders bought at the market,
      * the town touched, its gold button; the vehicle's token touched, the camera after it. Returns

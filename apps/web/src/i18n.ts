@@ -541,6 +541,13 @@ const frDict = {
       income: "Revenu du jour",
     },
     orbit: {
+      buildHere: "Bâtir ici",
+      back: "Carte",
+      title: (casa: number) => `Votre domaine · Casa ${casa}`,
+      postTitle: (region: string) => `Fondaco de ${region}`,
+      harvest: (n: number) => `Tout récolter · ${n}`,
+      next: (left: string) => `Prochain lot dans ${left}`,
+      nothing: "Lancez un atelier pour produire.",
       build: "Bâtir",
       ready: "Prêt · touchez",
       idle: "À lancer",

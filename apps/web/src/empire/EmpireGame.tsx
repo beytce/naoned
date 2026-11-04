@@ -32,6 +32,7 @@ import {
 } from "./logic.js";
 import { ActionPanel } from "./map/ActionPanel.js";
 import { BottomSlot } from "./map/BottomSlot.js";
+import { DomainBar } from "./map/Domain.js";
 import { EmpireMap, type EmpireMapHandle, type Picked } from "./map/EmpireMap.js";
 import { Hud } from "./map/Hud.js";
 import { OrdersPanel } from "./map/OrdersPanel.js";
@@ -114,6 +115,10 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [vehicle, setVehicle] = useState<string | null>(null);
   const [aiming, setAiming] = useState(false);
   const map = useRef<EmpireMapHandle>(null);
+  // A fondaco's domain plunged into (3D): its bar at the foot instead of the round buttons.
+  const [domain, setDomain] = useState<string | null>(null);
+  const domainNow = useRef(domain);
+  domainNow.current = domain;
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // The good opened from the resource bar, and the recipe the next step points at.
@@ -214,6 +219,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   };
   // On a computer (after Hades' Star's keys): Échap lets go, the comma and the period go from a
   // vehicle to the one before or after.
+  const targetNow = useRef(target);
+  targetNow.current = target;
   const keys = useRef({ cycle, aiming });
   keys.current = { cycle, aiming };
   useEffect(() => {
@@ -222,6 +229,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.key === "Escape") {
         if (keys.current.aiming) setAiming(false);
+        else if (domainNow.current && !targetNow.current) map.current?.leave();
         else {
           setTarget(null);
           setVehicle(null);
@@ -281,6 +289,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       const [, kind = "post", region] = id.split(":");
       setSheet(null);
       setPicked(null);
+      // Out of a domain first: the map's sectors to pick from.
+      if (domainNow.current) map.current?.leave();
       setPlacing({
         kind:
           kind === "camp" || kind === "depot" || kind === "porta" || kind === "home"
@@ -311,6 +321,23 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   };
   const step = nextStep(p, now);
   const tutorial = inTutorial(p);
+  // Lorenzo, the tutorial's card (on the map's foot, and over a domain's bar).
+  const lorenzo = tutorial && (
+    <div className="w-full px-3 pb-2 lg:max-w-md">
+      <NextStepCard
+        compact
+        p={p}
+        now={now}
+        step={step}
+        busy={busy}
+        act={act}
+        onBuild={(recipe) => {
+          setHighlight(recipe);
+          setSheet("production");
+        }}
+      />
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-night">
@@ -344,6 +371,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onPick={setPicked}
         onCamp={() => setSheet("company:terra")}
         houseName={account.pseudo ?? ""}
+        onDomain={setDomain}
       />
 
       <Hud
@@ -366,7 +394,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
 
       {/* The foot of the map: the round buttons, a place's panel, or the bar of placing. */}
       <BottomSlot
-        id={placing ? "placing" : target ? `panel:${target.kind}` : "idle"}
+        id={
+          placing
+            ? "placing"
+            : target
+              ? `panel:${target.kind}`
+              : domain
+                ? `domain:${domain}`
+                : "idle"
+        }
         hidden={sheet !== null || good !== null}
       >
         {placing ? (
@@ -415,26 +451,24 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             onOpen={open}
             onClose={() => setTarget(null)}
           />
+        ) : domain ? (
+          <div className="flex w-full flex-col items-center">
+            {lorenzo}
+            <DomainBar
+              p={p}
+              now={now}
+              busy={busy}
+              region={domain}
+              act={act}
+              onBack={() => map.current?.leave()}
+              onProduction={() => setSheet("production")}
+            />
+          </div>
         ) : (
           <>
             {/* Lorenzo, the tutorial's: until the Casa 2 he says the next gesture, and its gold
                 button does it; then he withdraws behind the « ? », and the player plays. */}
-            {tutorial && (
-              <div className="w-full px-3 pb-2 lg:max-w-md">
-                <NextStepCard
-                  compact
-                  p={p}
-                  now={now}
-                  step={step}
-                  busy={busy}
-                  act={act}
-                  onBuild={(recipe) => {
-                    setHighlight(recipe);
-                    setSheet("production");
-                  }}
-                />
-              </div>
-            )}
+            {lorenzo}
             <RoundButtons
               onRecenter={() => map.current?.toggle()}
               onHelp={tutorial ? undefined : () => setSheet("help")}

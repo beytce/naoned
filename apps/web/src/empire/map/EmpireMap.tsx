@@ -24,16 +24,19 @@ import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
 import { clock } from "../../ui.js";
-import { EmpireOrbit, ORBIT_MAX_PX_CSS, orbitOf } from "../Orbit.js";
+import { EmpireOrbit } from "../Orbit.js";
 import { regionName } from "../World.js";
+import { workshopStatus } from "../logic.js";
 import { bestQuote } from "../logic.js";
-import type { Board3DHandle } from "../map3d/Board3D.js";
+import type { Board3DHandle, DomainScene } from "../map3d/Board3D.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { groundAt } from "../map3d/camera.js";
+import { STEP, domainOf } from "../map3d/domain.js";
 import { MAP_3D } from "../map3d/flag.js";
 import { sceneInputOf, sitesOf } from "../map3d/scene.js";
 import { pt } from "../porta/texts.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
+import { DomainLabels } from "./Domain.js";
 import { Fleet } from "./Fleet.js";
 import {
   CHART,
@@ -64,6 +67,8 @@ export interface EmpireMapHandle {
   home(): void;
   /** Out to the map. */
   far(): void;
+  /** Out of a fondaco's domain, back to the map around it. */
+  leave(): void;
   /** The information layer shown (Alt held) or not. */
   info(on: boolean): void;
   /** The map moved a step (a key: -1, 0 or 1 on each axis), or zoomed by a factor. */
@@ -96,6 +101,16 @@ const orbitOn = (at: [number, number], from: Camera) => (v: Viewport) => {
   const px = keep(sx, 8, v.w - 8);
   const py = keep(sy, 96, v.h - 104);
   return { s, tx: px - at[0] * s, ty: py - at[1] * TILT * s };
+};
+
+/**
+ * A fondaco's domain across the screen (its nineteen tiles and their shore), a little above the
+ * middle: the bar at the foot under it.
+ */
+const domainFrame = (at: [number, number]) => (v: Viewport) => {
+  const across = 5.6 * STEP;
+  const s = Math.min((v.w * 0.96) / across, Math.max(80, v.h - 260) / (across * TILT));
+  return { s, tx: v.w / 2 - at[0] * s, ty: (v.h - 120) / 2 - at[1] * TILT * s };
 };
 
 /** The board in 3D (?map=3d, docs/plateau-reprise.md § 7): its own chunk, fetched only then. */
@@ -139,6 +154,8 @@ export const EmpireMap = forwardRef<
     onArrive?: () => void;
     /** The house's name, under its first fondaco. */
     houseName?: string;
+    /** A fondaco's domain plunged into (its region), or left (null): on the 3D board. */
+    onDomain?: (region: string | null) => void;
   }
 >(function EmpireMap(
   {
@@ -156,6 +173,7 @@ export const EmpireMap = forwardRef<
     onMove,
     onArrive,
     houseName = "",
+    onDomain,
   },
   ref,
 ) {
@@ -174,6 +192,13 @@ export const EmpireMap = forwardRef<
   openedNow.current = opened;
   const openedRegion = useRef("veneto");
   const openedAt = useRef<[number, number]>([0, 0]);
+  // On the 3D board, a fondaco touched is its domain plunged into (decision of the owner,
+  // 3 November 2026): a little scene of its own, the map's marks put away.
+  const domainOn = MAP_3D && opened !== null;
+  const domainRef = useRef(domainOn);
+  domainRef.current = domainOn;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: told when it changes
+  useEffect(() => onDomain?.(domainOn ? openedRegion.current : null), [domainOn, opened]);
   const view = p.view;
   const casa = view?.house.casa ?? 1;
   const farOn = (v: Viewport) => farCamera(p, v);
@@ -280,6 +305,8 @@ export const EmpireMap = forwardRef<
     // The sea touched: the panel and the deployed workshops fold away. On the 3D board, a ray
     // through the scene first: a place touched is touched (docs/plateau-reprise.md § 7, step 2).
     onTap: (at) => {
+      // In a domain, the sea around touched does nothing (its labels take the touches).
+      if (domainRef.current) return;
       const id = board3d.current?.hit(at.x, at.y) ?? null;
       if (id && touchRef.current) {
         touchRef.current(id);
@@ -289,7 +316,12 @@ export const EmpireMap = forwardRef<
       setOpened(null);
     },
     // At rest: the chart drawn again at the camera's scale, when it has moved far from it.
-    onRest: (cam) => {
+    onRest: (cam, v) => {
+      // Pinched out of a domain, far enough: back to the map.
+      if (domainRef.current && cam.s < domainFrame(openedAt.current)(v).s * 0.55) {
+        setOpened(null);
+        return;
+      }
       const want = Math.min(MAX_RASTER / CHART.w, cam.s);
       if (Math.abs(want / drawn.current - 1) > 0.12) setBase(want);
     },
@@ -299,7 +331,7 @@ export const EmpireMap = forwardRef<
     setOpened(id);
     openedRegion.current = region;
     openedAt.current = at;
-    camera.easeTo(orbitOn(at, camera.cam()));
+    camera.easeTo(MAP_3D ? domainFrame(at) : orbitOn(at, camera.cam()));
   };
   useImperativeHandle(ref, () => ({
     toggle: () => {
@@ -315,6 +347,11 @@ export const EmpireMap = forwardRef<
       unfollow.current();
       setOpened(null);
       camera.easeTo(farOn);
+    },
+    leave: () => {
+      const at = openedAt.current;
+      setOpened(null);
+      camera.easeTo((v) => centredOn(at, sectorOn(v).s, v));
     },
     info: showInfo,
     pan: (dx, dy) => {
@@ -382,20 +419,21 @@ export const EmpireMap = forwardRef<
   }, [followKey]);
   const chosenAt = selected ? view?.vehicles.mine.find((v) => v.id === selected)?.at : undefined;
   const reachShown = opened ?? (chosenAt && !chosenAt.startsWith("city:") ? chosenAt : null);
-  // The workshops deployed, on the 3D board: their tiles where the orbit draws them, on the chart
-  // (the orbit's square is ORBIT_UNITS wide on the chart, at most 24rem on the screen).
+  // The domain plunged into: its tiles around the fondaco, each workshop's state (domain.ts).
   // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its house's workshops
-  const orbit3d = useMemo(() => {
-    if (!MAP_3D || !opened) return null;
-    const [cx, cy] = openedAt.current;
-    const wide = Math.min(ORBIT_UNITS, ORBIT_MAX_PX_CSS / base);
-    return orbitOf(p, openedRegion.current).spots.map((o) => ({
-      kind: o.kind,
-      type: o.type,
-      x: cx + ((o.x - 50) / 100) * wide,
-      y: cy + ((o.y - 50) / 100) * (wide / TILT),
-    }));
-  }, [opened, base, view?.house, view?.workshopSlots, view?.regions]);
+  const domainTiles = useMemo(
+    () => (domainOn ? domainOf(p, openedRegion.current, openedAt.current) : null),
+    [domainOn, opened, view?.house, view?.workshopSlots, view?.regions],
+  );
+  const domainScene: DomainScene | null = domainTiles
+    ? {
+        key: opened ?? "",
+        tiles: domainTiles,
+        states: Object.fromEntries(
+          (view?.house.workshops ?? []).map((w) => [w.id, workshopStatus(p, w, now).state]),
+        ),
+      }
+    : null;
   // The 3D board in: its camera set from the map's at once (a stable callback: never again at a
   // tick of the clock, which would ask the board a frame each second).
   // Until the 3D board is in (its code and its models fetched), the marks take the touches as on
@@ -504,6 +542,7 @@ export const EmpireMap = forwardRef<
       data-map="empire"
       data-three={MAP_3D && threeReady ? "" : undefined}
       data-orbit={opened ?? undefined}
+      data-domain={domainOn ? "" : undefined}
       data-placing={placing?.kind}
       data-aiming={targets ? "" : undefined}
       onContextMenu={rightClick}
@@ -512,7 +551,7 @@ export const EmpireMap = forwardRef<
       {MAP_3D && (
         <Guard3D>
           <Suspense fallback={null}>
-            <Board3D ref={onBoard3d} p={p} orbit={orbit3d} onReady={onThreeReady} />
+            <Board3D ref={onBoard3d} p={p} domain={domainScene} onReady={onThreeReady} />
           </Suspense>
         </Guard3D>
       )}
@@ -558,8 +597,33 @@ export const EmpireMap = forwardRef<
         className="map-layer pointer-events-none absolute left-0 top-0 origin-top-left"
         style={{ width: CHART.w * base, height: CHART.h * TILT * base }}
       >
-        {/* The workshops of the counter touched, deployed around it (the map's own size). */}
+        {/* A fondaco's domain (3D): its labels over its tiles, the map's marks put away. */}
+        {domainOn && domainTiles && (
+          <DomainLabels
+            p={p}
+            now={now}
+            base={base}
+            tiles={domainTiles}
+            busy={busy}
+            act={act}
+            onWorkshop={(id) => onTarget({ kind: "workshop", id })}
+            onCasa={() =>
+              onTarget(
+                openedRegion.current === "veneto"
+                  ? { kind: "casa" }
+                  : { kind: "region", code: openedRegion.current },
+              )
+            }
+            onFree={() =>
+              openedRegion.current === "veneto"
+                ? onTarget({ kind: "free" })
+                : onTarget({ kind: "region", code: openedRegion.current })
+            }
+          />
+        )}
+        {/* The workshops of the counter touched, deployed around it (the SVG map's orbit). */}
         {opened &&
+          !MAP_3D &&
           (() => {
             const [ox, oy] = openedAt.current;
             const region = openedRegion.current;
@@ -580,7 +644,6 @@ export const EmpireMap = forwardRef<
                     act={act}
                     region={region}
                     bare
-                    on3d={MAP_3D}
                     onWorkshop={(id) => onTarget({ kind: "workshop", id })}
                     onCasa={() =>
                       onTarget(

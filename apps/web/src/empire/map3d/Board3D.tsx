@@ -9,7 +9,14 @@ import { SLOT_TURN } from "@comptoirs/engine";
  * through `scene3d`, with the night board's grid and seeds.
  */
 import { PerformanceMonitor } from "@react-three/drei";
-import { Canvas, addAfterEffect, addEffect, invalidate, useThree } from "@react-three/fiber";
+import {
+  Canvas,
+  addAfterEffect,
+  addEffect,
+  invalidate,
+  useFrame,
+  useThree,
+} from "@react-three/fiber";
 import { EffectComposer, N8AO, TiltShift2, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import {
@@ -37,6 +44,7 @@ import {
   MeshStandardMaterial,
   type OrthographicCamera as OrthoCam,
   Raycaster,
+  TorusGeometry,
   Vector2,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
@@ -45,6 +53,7 @@ import { C } from "../../art/plateau/props.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import type { EmpirePayload } from "../types.js";
 import { DISTANCE, orthoFrom } from "./camera.js";
+import type { DomainTile } from "./domain.js";
 import { give3dUp } from "./flag.js";
 import { Fleet3D } from "./fleet3d.js";
 import {
@@ -98,20 +107,19 @@ export interface Board3DHandle {
   hit(x: number, y: number): string | null;
 }
 
-/** A workshop's place deployed around a fondaco, on the chart (EmpireMap, from Orbit's). */
-export interface OrbitSpot {
-  kind: "workshop" | "site" | "free";
-  type: string;
-  x: number;
-  y: number;
-}
-
 export interface Board3DProps {
   p: EmpirePayload;
-  /** The workshops of the fondaco touched, deployed around it: their tiles stand in 3D. */
-  orbit?: OrbitSpot[] | null;
   /** The scene takes the touches from now on (its places' zones in). */
   onReady?: () => void;
+  /** A fondaco's domain plunged into: its little scene instead of the map's (domain.ts). */
+  domain?: DomainScene | null;
+}
+
+/** The domain's scene: its tiles, and each workshop's state (ready, running, waiting). */
+export interface DomainScene {
+  key: string;
+  tiles: DomainTile[];
+  states: Record<string, "ready" | "running" | "idle" | "blocked">;
 }
 
 /** Whether the device asks for less motion (read live). */
@@ -133,7 +141,7 @@ export function useLive() {
  * then asks no frame at rest).
  */
 const Board3D = memo(
-  forwardRef<Board3DHandle, Board3DProps>(function Board3D({ p, orbit = null, onReady }, ref) {
+  forwardRef<Board3DHandle, Board3DProps>(function Board3D({ p, onReady, domain = null }, ref) {
     const map = p.view?.map;
     // Built again only when the map did change (never at a refresh of the same one).
     const key = sceneKey(p);
@@ -196,6 +204,25 @@ const Board3D = memo(
     // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its key
     const touch = useMemo(() => zones(placesOf(p)), [key]);
     const hitter = useRef<((x: number, y: number) => string | null) | null>(null);
+    const animals = useRef(new Map<string, Group>());
+    /** The vehicle whose animal stands under a point of the screen: « vehicle:<id> ». */
+    const animalAt = (x: number, y: number): string | null => {
+      const c = camera.current;
+      const l = last.current;
+      if (!c || !l) return null;
+      let best: { id: string; d: number } | null = null;
+      for (const [id, g] of animals.current) {
+        // Its body's middle, a little above the ground.
+        const at = g.position.clone();
+        at.y += 1.6;
+        at.project(c);
+        const sx = ((at.x + 1) / 2) * l.v.w;
+        const sy = ((1 - at.y) / 2) * l.v.h;
+        const d = Math.hypot(sx - x, sy - y);
+        if (d < 26 && (!best || d < best.d)) best = { id, d };
+      }
+      return best ? `vehicle:${best.id}` : null;
+    };
     const setHitter = useCallback((fn: (x: number, y: number) => string | null) => {
       hitter.current = fn;
     }, []);
@@ -221,7 +248,8 @@ const Board3D = memo(
         if (was) moved();
         apply();
       },
-      hit: (x, y) => hitter.current?.(x, y) ?? null,
+      // An animal under the finger first (a target of 44 px around it), else a place.
+      hit: (x, y) => animalAt(x, y) ?? hitter.current?.(x, y) ?? null,
     }));
     if (!sc) return null;
     return (
@@ -249,10 +277,13 @@ const Board3D = memo(
         <Lights sc={sc} />
         <Zones zones={touch} onReady={setHitter} />
         <Suspense fallback={null}>
-          <World sc={sc} live={live} small={small} buyable={buyable} />
-          <Fleet3D p={p} live={live} />
-          {orbit && <Workshops3D spots={orbit} />}
-          <ShadowsOnce sc={sc} k={orbit ? JSON.stringify(orbit) : ""} />
+          {/* The map, or a fondaco's domain plunged into (the map's dressing put away). */}
+          <group visible={!domain}>
+            <World sc={sc} live={live} small={small} buyable={buyable} />
+            <Fleet3D p={p} live={live} actors={animals} />
+          </group>
+          {domain && <Domain3D key={domain.key} scene={domain} live={live} />}
+          <ShadowsOnce sc={sc} k={domain ? JSON.stringify(domain) : ""} />
           <Ready onReady={ready} />
         </Suspense>
         {/* A device that cannot keep 18 frames a second loses the ambient occlusion for good. */}
@@ -270,7 +301,7 @@ const Board3D = memo(
     JSON.stringify(a.p.view?.vehicles.mine ?? []) ===
       JSON.stringify(b.p.view?.vehicles.mine ?? []) &&
     a.p.view?.house.casa === b.p.view?.house.casa &&
-    JSON.stringify(a.orbit ?? null) === JSON.stringify(b.orbit ?? null),
+    JSON.stringify(a.domain ?? null) === JSON.stringify(b.domain ?? null),
 );
 
 export default Board3D;
@@ -837,63 +868,155 @@ function workshopModel(type: string): { name: KitName; s: number } {
   }
 }
 
-const WS_TILE_R = 4.4;
+/** The domain's tiles rise from the board when it opens (seconds). */
+const RISE = 0.45;
 
 /**
- * The workshops of the fondaco touched, each on its little tile of clay where its star stands in
- * the orbit above (its arc, its name and its buttons stay in HTML): a site shows its crates, the
- * free place its bare tile.
+ * A fondaco's domain (decision of the owner, 3 November 2026): the fondaco on the one tile of gold,
+ * raised; its workshops on the tiles around, each telling its state by itself (a ready one ringed
+ * in lagoon-green, its crates out; a running one smoking; a waiting one still); a site its crates;
+ * the place to build bare; the lagoon beyond. The tiles rise one ring after the other.
  */
-function Workshops3D({ spots }: { spots: OrbitSpot[] }) {
+function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
   const kit = useKit();
-  const tile = useMemo(() => {
-    const top = hexSlab(WS_TILE_R, 1.2, 0.4);
-    top.translate(0, 1.2, 0);
-    return top;
+  const water = useWater(live);
+  const group = useRef<Group>(null);
+  const t0 = useRef<number | null>(null);
+  useFrame(({ clock }) => {
+    const g = group.current;
+    if (!g) return;
+    if (t0.current === null) t0.current = clock.elapsedTime;
+    const k = Math.min(1, (clock.elapsedTime - t0.current) / RISE);
+    for (const child of g.children) {
+      const ring = (child.userData.ring as number | undefined) ?? 0;
+      const u = Math.min(1, Math.max(0, k * 1.6 - ring * 0.22));
+      const e = 1 - (1 - u) ** 3;
+      child.scale.setScalar(Math.max(0.001, e));
+    }
+    if (k < 1) invalidate();
+  });
+  const slabs = useMemo(() => {
+    const top = hexSlab(TILE_R - 0.45, SLAB, 0.7);
+    const base = hexSlab(TILE_R - 0.75, BASE, 0.4);
+    base.translate(0, -SLAB + 0.2, 0);
+    const gold = hexSlab(TILE_R - 0.45, SLAB + 1.2, 0.7);
+    return { top, base, gold };
   }, []);
+  const shore = scene.tiles.filter((t) => t.kind === "shore");
+  const lagoon = useMemo(
+    () =>
+      shore.length
+        ? lagoonGeometry(
+            shore.map((t) => ({ x: t.x, z: t.y })),
+            TILE_R - 0.2,
+          )
+        : null,
+    [shore],
+  );
+  useEffect(() => () => lagoon?.dispose(), [lagoon]);
+  const ring = useMemo(() => {
+    const g = new TorusGeometry(TILE_R - 1.2, 0.28, 6, 36);
+    g.rotateX(Math.PI / 2);
+    return g;
+  }, []);
+  const lagoonGreen = useMemo(
+    () => new MeshBasicMaterial({ color: "#6EE0B8", transparent: true, opacity: 0.9 }),
+    [],
+  );
   return (
-    <group>
-      {spots.map((o) => {
-        const m = workshopModel(o.type);
-        return (
-          <group key={`${o.x},${o.y}`} position={[o.x, 0, o.y]}>
-            <mesh
-              geometry={tile}
-              material={claySolid(o.kind === "free" ? C.mist : C.land)}
-              castShadow
-              receiveShadow
-            />
-            {o.kind === "workshop" && (
-              <mesh
-                geometry={kit(m.name).geo}
-                material={clayShared}
-                scale={m.s}
-                position-y={1.2}
-                castShadow
-                receiveShadow
-              />
-            )}
-            {o.kind === "site" && (
-              <>
+    <group ref={group}>
+      {lagoon && (
+        <mesh geometry={lagoon} material={water} position-y={WATER_Y} userData={{ ring: 3 }} />
+      )}
+      {scene.tiles
+        .filter((t) => t.kind !== "shore")
+        .map((t) => {
+          const key = `${t.x},${t.y}`;
+          const state = t.kind === "workshop" ? scene.states[t.id] : undefined;
+          const model = t.kind === "workshop" || t.kind === "site" ? workshopModel(t.type) : null;
+          return (
+            <group key={key} position={[t.x, 0, t.y]} userData={{ ring: t.ring }}>
+              {t.kind === "fondaco" ? (
                 <mesh
-                  geometry={kit("crate").geo}
-                  material={clayShared}
-                  scale={1.8}
-                  position={[-1, 1.2, 0]}
+                  geometry={slabs.gold}
+                  material={claySolid(C.roofGold)}
+                  rotation-y={SLOT_TURN}
                   castShadow
+                  receiveShadow
                 />
+              ) : (
                 <mesh
-                  geometry={kit("crateB").geo}
-                  material={clayShared}
-                  scale={1.4}
-                  position={[1.2, 1.2, 0.6]}
-                  castShadow
+                  geometry={slabs.top}
+                  material={claySolid(t.kind === "free" ? C.mist : C.land)}
+                  rotation-y={SLOT_TURN}
+                  receiveShadow
                 />
-              </>
-            )}
-          </group>
-        );
-      })}
+              )}
+              <mesh geometry={slabs.base} material={claySolid(C.soil)} rotation-y={SLOT_TURN} />
+              {t.kind === "fondaco" && (
+                <group position-y={1.2}>
+                  <FondacoModel live={live} k={0.62} />
+                </group>
+              )}
+              {t.kind === "workshop" && model && (
+                <mesh
+                  geometry={kit(model.name).geo}
+                  material={clayShared}
+                  scale={model.s * 1.05}
+                  castShadow
+                  receiveShadow
+                />
+              )}
+              {state === "ready" && (
+                <>
+                  <mesh geometry={ring} material={lagoonGreen} position-y={0.12} />
+                  <mesh
+                    geometry={kit("crate").geo}
+                    material={clayShared}
+                    scale={1.6}
+                    position={[TILE_R * 0.45, 0, TILE_R * 0.35]}
+                    castShadow
+                  />
+                  <mesh
+                    geometry={kit("crateB").geo}
+                    material={clayShared}
+                    scale={1.3}
+                    position={[TILE_R * 0.62, 0, TILE_R * 0.02]}
+                    castShadow
+                  />
+                </>
+              )}
+              {state === "running" && (
+                <Smoke at={[TILE_R * 0.25, 3.6, -TILE_R * 0.2]} live={live} />
+              )}
+              {t.kind === "site" && (
+                <>
+                  <mesh
+                    geometry={kit("crate").geo}
+                    material={clayShared}
+                    scale={1.8}
+                    position={[-1, 0, 0]}
+                    castShadow
+                  />
+                  <mesh
+                    geometry={kit("crateB").geo}
+                    material={clayShared}
+                    scale={1.4}
+                    position={[1.2, 0, 0.6]}
+                    castShadow
+                  />
+                </>
+              )}
+            </group>
+          );
+        })}
+      {/* The lagoon's bed, under its water. */}
+      <Instanced
+        geo={slabs.base}
+        items={shore.map((t) => ({ x: t.x, y: -SLAB - 1.2, z: t.y, s: 1, rot: SLOT_TURN }))}
+        material={claySolid(C.mistSoil)}
+        cast={false}
+      />
     </group>
   );
 }
@@ -925,12 +1048,20 @@ function Porta({ x, z }: { x: number; z: number }) {
 
 /** The fondaco: the house's hall (KayKit's large house, its roof in gold), a tower, the flag. */
 function Fondaco({ x, z, live, k = 1 }: { x: number; z: number; live: boolean; k?: number }) {
+  return (
+    <group position={[x, 0, z]}>
+      <FondacoModel live={live} k={k} />
+    </group>
+  );
+}
+
+function FondacoModel({ live, k = 1 }: { live: boolean; k?: number }) {
   const kit = useKit();
   const hall = kit("homeB", { roof: C.roofGold });
   const tower = kit("tower", { roof: C.roofGold });
   const s = 7.6;
   return (
-    <group position={[x, 0, z]} scale={k} name="fondaco">
+    <group scale={k} name="fondaco">
       <mesh geometry={hall.geo} material={clayShared} scale={s} castShadow receiveShadow />
       <mesh
         geometry={tower.geo}

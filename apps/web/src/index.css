@@ -1539,3 +1539,8 @@ button.map-place {
 [data-three] [data-vehicle] {
   transform: translate(-50%, -50%) scale(var(--chartk, 1)) translateY(22px);
 }
+/* A fondaco's domain plunged into (3D, decision of the owner, 3 November 2026): only its labels
+   over its little scene; the map's marks, names and ways put away. */
+[data-domain] .map-layer > :not([data-domain-layer]) {
+  display: none !important;
+}
