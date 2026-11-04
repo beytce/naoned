@@ -139,9 +139,16 @@ function Count({
       type="button"
       className="purse pointer-events-auto relative flex min-h-9 items-center gap-2 rounded-full py-0.5 pl-3 pr-0.5"
       data-hud={id}
-      aria-label={label}
+      // Its name and its value both read (audit of 4 November, UX M8: the label alone hid the sum).
+      aria-label={`${label} : ${value}`}
       onClick={() => setSaid(!said)}
     >
+      {/* A change of the purse told to a screen reader, as the coins fly to it on the screen. */}
+      {gold && (
+        <span className="sr-only" aria-live="polite">
+          {`${label} : ${value}`}
+        </span>
+      )}
       {said && (
         <span
           role="note"
@@ -155,7 +162,6 @@ function Count({
         className={`font-display text-base font-extrabold tabular-nums [text-shadow:0_1px_4px_rgb(0_0_0/0.8)] ${gold ? "text-gold" : "text-cream"}`}
         data-fx={gold ? "purse" : undefined}
       >
-        <span className="sr-only">{label} : </span>
         {value}
       </span>
       <span className="flex h-8 w-8 items-center justify-center">{sign}</span>
