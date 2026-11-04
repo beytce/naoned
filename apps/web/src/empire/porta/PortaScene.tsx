@@ -7,6 +7,7 @@ import { d } from "../../game/format.js";
 import { CloseButton, Slab } from "../../ui.js";
 import { affordable } from "../logic.js";
 import { Guard3D } from "../map3d/Guard.js";
+import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { Figure } from "../map3d/figure.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
 import { useDonkey } from "../map3d/life.js";
@@ -523,7 +524,7 @@ function SceneView(props: {
           <directionalLight position={[-60, 110, 40]} intensity={2.2} color="#FFF3DD" />
           <Suspense fallback={null}>
             <Scene {...props} docked={docked} />
-            <Anchors root={labels} />
+            <AnchorLayer root={labels} anchors={ANCHOR} />
           </Suspense>
         </Canvas>
       </Guard3D>
@@ -605,22 +606,8 @@ function Fit() {
   return null;
 }
 
-/** Every label at its anchor's point on the screen, each frame. */
-function Anchors({ root }: { root: React.RefObject<HTMLDivElement> }) {
-  const { camera, size } = useThree();
-  const p = useMemo(() => new Vector3(), []);
-  useFrame(() => {
-    for (const el of root.current?.querySelectorAll<HTMLElement>("[data-anchor]") ?? []) {
-      const at = ANCHOR.get(el.dataset.anchor ?? "");
-      if (!at) continue;
-      p.set(...at).project(camera);
-      el.style.transform = `translate(${((p.x + 1) / 2) * size.width}px, ${((1 - p.y) / 2) * size.height}px)`;
-    }
-  });
-  return null;
-}
 /** The anchors' points, set by the scene as it lays its parts out. */
-const ANCHOR = new Map<string, [number, number, number]>();
+const ANCHOR: Anchors = new Map();
 
 const tile = hexSlab(4.9, 2, 0.5);
 const arch = new MeshBasicMaterial({ color: "#E06A4A", transparent: true, opacity: 0.85 });

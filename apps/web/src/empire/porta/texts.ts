@@ -127,6 +127,7 @@ export const pt = {
   buy: "Acheter",
   raiseModel: "Améliorer le modèle",
   raiseComponent: "Améliorer",
+  componentsTab: "Composants",
   hp: (n: number) => `${n} PV`,
   slots: (n: number) => (n > 1 ? `${n} places` : "1 place"),
   empty: "Place libre",

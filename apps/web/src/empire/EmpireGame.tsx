@@ -44,6 +44,7 @@ import { VehiclePanel } from "./map/VehiclePanel.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
 import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
+import { ArmsScene } from "./porta/ArmsScene.js";
 import { ArmsSheet } from "./porta/ArmsSheet.js";
 import { BattleScreen } from "./porta/Battle.js";
 import { PortaScene } from "./porta/PortaScene.js";
@@ -602,7 +603,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         />
       )}
       <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
-      <ArmsSheet p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+      {MAP_3D ? (
+        <ArmsScene p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+      ) : (
+        <ArmsSheet p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+      )}
       <PortaPlace
         p={p}
         now={now}
