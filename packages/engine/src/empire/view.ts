@@ -341,7 +341,7 @@ export interface EmpireMapView {
   depotSite: { cost: Deniers; minutes: number; casa: number } | null;
 }
 
-/** What a house finds after an absence of half a day or more. */
+/** What a house finds after an absence of `away.afterMinutes` or more (half a day by default). */
 function awayOf(
   ctx: WorldContext,
   before: EmpireHouse | undefined,
@@ -349,7 +349,7 @@ function awayOf(
   now: number,
   s: EmpireSettings,
 ): EmpireView["away"] {
-  if (!before || now - before.lastActionAt < 12 * HOUR_MS) return null;
+  if (!before || now - before.lastActionAt < s.away.afterMinutes * 60_000) return null;
   const ready: Record<string, number> = {};
   for (const ws of house.workshops) {
     const job = ws.job;

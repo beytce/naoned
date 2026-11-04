@@ -325,6 +325,9 @@ export const venice1450Empire: EmpireSettingsInput = {
     placesPerLevel: 1,
   },
   localTripsPerDay: 4,
+  // The merchant's return told after two and a half hours away (owner's decision, 4 November
+  // 2026): what was made meanwhile, felt at each of the day's visits.
+  away: { afterMinutes: 150 },
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
   // The knowledge (CADRAGE-v3 § 3.5): four branches, four knowledges and two capstones each,
   // from 30 minutes to 10 days; one place from the Casa 4, two from the 12.
