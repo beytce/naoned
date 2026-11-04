@@ -38,7 +38,7 @@ export const pt = {
       : min === 1
         ? `seul ou jusqu'à ${max}`
         : `${min} à ${max} joueurs`,
-  entry: (n: number) => `Entrée : ${n} pains`,
+  entry: (n: number) => (n > 0 ? `Entrée : ${n} pain${n > 1 ? "s" : ""}` : "Entrée : gratuite"),
   solo: "Partir seul",
   enter: (n: number) => `Entrer · palier ${n}`,
   enterGroup: (n: number) => `File · palier ${n}`,

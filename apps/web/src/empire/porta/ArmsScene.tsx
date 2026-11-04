@@ -9,6 +9,7 @@ import { affordable } from "../logic.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { Figure } from "../map3d/figure.js";
+import { frameBand, useCovers } from "../map3d/frame.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
 import { preloadMinis } from "../map3d/minis.js";
 import { Pace } from "../map3d/pace.js";
@@ -69,6 +70,9 @@ export function ArmsScene({
   const [socket, setSocket] = useState<{ vehicleId: string; slot: number } | null>(null);
   const [tab, setTab] = useState<"models" | "components">("models");
   const labels = useRef<HTMLDivElement>(null);
+  const head = useRef<HTMLElement>(null);
+  const foot = useRef<HTMLElement>(null);
+  const covers = useCovers(head, foot);
   useCoverBoard(open && !!v);
   if (!open || !v) return null;
   const nameOf = (id: string | null) => {
@@ -95,7 +99,7 @@ export function ArmsScene({
               scene.background = new Color("#16263E");
             }}
           >
-            <Fit n={Math.max(1, v.vehicles.length)} />
+            <Fit n={Math.max(1, v.vehicles.length)} covers={covers} />
             <Pace fps={live() ? 30 : 0} />
             <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
             <directionalLight position={[-50, 100, 40]} intensity={2.2} color="#FFF3DD" />
@@ -158,7 +162,10 @@ export function ArmsScene({
         </div>
       </div>
 
-      <header className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header
+        ref={head}
+        className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]"
+      >
         <div className="rounded-2xl bg-night/80 px-3 py-1.5 shadow-lg shadow-black/40">
           <p className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
             {pt.arms}
@@ -168,7 +175,10 @@ export function ArmsScene({
         <CloseButton onClick={onClose} />
       </header>
 
-      <footer className="absolute inset-x-0 bottom-0 max-h-[52%] overflow-y-auto bg-gradient-to-t from-night via-night/95 to-night/70 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+      <footer
+        ref={foot}
+        className="absolute inset-x-0 bottom-0 max-h-[52%] overflow-y-auto bg-gradient-to-t from-night via-night/95 to-night/70 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3"
+      >
         {socket && chosen ? (
           <section data-arms-fit>
             <div className="flex items-center justify-between">
@@ -376,15 +386,18 @@ export function ArmsScene({
 const ownerAtRemise = (v: PortaView, vehicleId: string) =>
   v.vehicles.find((x) => x.id === vehicleId)?.place === "remise";
 
-function Fit({ n }: { n: number }) {
-  const { camera, size } = useThree();
+/** The pedestals framed in the band between the scene's head and its sheet (frame.ts). */
+function Fit({ n, covers }: { n: number; covers: { top: number; bottom: number } }) {
+  const { camera, size, invalidate } = useThree();
   useEffect(() => {
     const across = Math.max(30, n * 13 + 10);
-    camera.zoom = Math.max(2, Math.min(size.width / across, (size.height * 0.45) / 22));
+    const room = Math.max(120, size.height - covers.top - covers.bottom);
+    camera.zoom = Math.max(2, Math.min(size.width / across, (room * 0.9) / 22));
     camera.position.set(0, 40, 44);
     camera.lookAt(0, 0, -6);
-    camera.updateProjectionMatrix();
-  }, [camera, size, n]);
+    frameBand(camera, size.width, size.height, covers.top, covers.bottom);
+    invalidate();
+  }, [camera, size, n, covers, invalidate]);
   return null;
 }
 

@@ -9,6 +9,7 @@ import { affordable } from "../logic.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { Figure } from "../map3d/figure.js";
+import { frameBand, useCovers } from "../map3d/frame.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
 import { useDonkey } from "../map3d/life.js";
 import { preloadMinis } from "../map3d/minis.js";
@@ -82,6 +83,9 @@ export function PortaScene({
 }) {
   const v = p.view?.porta;
   useCoverBoard(open && !!v);
+  const head = useRef<HTMLElement>(null);
+  const foot = useRef<HTMLElement>(null);
+  const covers = useCovers(head, foot);
   const [state, setState] = useState<PortaState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tier, setTier] = useState(1);
@@ -184,9 +188,13 @@ export function PortaScene({
         onDark={() => setDark((x) => !x)}
         onChoose={(id, role) => (role === "combat" ? setCombatId(id) : setTransportId(id))}
         onStall={() => setPane(pane === "stall" ? null : "stall")}
+        covers={covers}
       />
 
-      <header className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header
+        ref={head}
+        className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]"
+      >
         <div
           className="rounded-2xl bg-night/80 px-3 py-1.5 shadow-lg shadow-black/40"
           data-porta-level
@@ -246,7 +254,10 @@ export function PortaScene({
         </output>
       )}
 
-      <footer className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-night via-night/95 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-8">
+      <footer
+        ref={foot}
+        className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-night via-night/95 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-8"
+      >
         {/* The vehicles away at the Remise: sent for at a touch. */}
         {away.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1.5" data-porta-quay>
@@ -502,6 +513,7 @@ function SceneView(props: {
   onDark: () => void;
   onChoose: (id: string, role: "combat" | "transport") => void;
   onStall: () => void;
+  covers: { top: number; bottom: number };
 }) {
   const { v } = props;
   const labels = useRef<HTMLDivElement>(null);
@@ -526,7 +538,7 @@ function SceneView(props: {
             scene.background = new Color("#16263E");
           }}
         >
-          <Fit />
+          <Fit covers={props.covers} />
           <Pace fps={live() ? 30 : 0} />
           <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
           <directionalLight position={[-60, 110, 40]} intensity={2.2} color="#FFF3DD" />
@@ -602,15 +614,18 @@ function SceneView(props: {
 }
 
 /** The camera framed on the scene, whatever the screen. */
-function Fit() {
-  const { camera, size } = useThree();
+/** The gate and its quay framed in the band between the scene's head and its foot (frame.ts). */
+function Fit({ covers }: { covers: { top: number; bottom: number } }) {
+  const { camera, size, invalidate } = useThree();
   useEffect(() => {
     const across = 52;
-    const zoom = Math.min(size.width / across, (size.height - 240) / (across * 0.75));
+    const room = Math.max(120, size.height - covers.top - covers.bottom);
+    const zoom = Math.min(size.width / across, (room * 0.95) / (across * 0.75));
     camera.zoom = Math.max(2, zoom);
     camera.lookAt(0, 0, -1);
-    camera.updateProjectionMatrix();
-  }, [camera, size]);
+    frameBand(camera, size.width, size.height, covers.top, covers.bottom);
+    invalidate();
+  }, [camera, size, covers, invalidate]);
   return null;
 }
 
