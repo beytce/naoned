@@ -1264,6 +1264,15 @@ button.map-place::after {
 button.map-place {
   position: absolute;
 }
+/* A place's name keeps its size on the screen whatever the zoom (audit of 4 November, UI U-3):
+   the place grows and shrinks with the chart, its name is scaled back to 12 px, never 4 px far
+   out nor blurred up close. */
+.map-place .map-name {
+  display: inline-block;
+  /* The layer is scaled by k (--inv is 1/k), the place by --chartk: the name, by neither. */
+  transform: scale(calc(var(--inv, 1) / var(--chartk, 1)));
+  transform-origin: top center;
+}
 [data-far] .map-place .map-name {
   opacity: 0;
   transition: opacity var(--t-quick, 150ms);
