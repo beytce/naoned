@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { type Account, ApiError } from "../api.js";
 import { BuildingArt } from "../art/buildings.js";
@@ -44,10 +44,8 @@ import { VehiclePanel } from "./map/VehiclePanel.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
 import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
-import { ArmsScene } from "./porta/ArmsScene.js";
 import { ArmsSheet } from "./porta/ArmsSheet.js";
 import { BattleScreen } from "./porta/Battle.js";
-import { PortaScene } from "./porta/PortaScene.js";
 import { PortaSheet } from "./porta/PortaSheet.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
@@ -70,6 +68,24 @@ type SheetId =
   | `region:${string}`
   | `workshop:${string}`
   | `new:${string}`;
+
+// The Porta's scenes in 3D, loaded only once their place is first opened: three.js and the
+// figurines no longer weigh on the start of the game (audit of 4 November, 3D B1).
+const ArmsScene = lazy(() =>
+  import("./porta/ArmsScene.js").then((m) => ({ default: m.ArmsScene })),
+);
+const PortaScene = lazy(() =>
+  import("./porta/PortaScene.js").then((m) => ({ default: m.PortaScene })),
+);
+
+/** True from the first time `on` is, and then for good (a scene kept mounted once loaded). */
+function useOnce(on: boolean) {
+  const [was, setWas] = useState(on);
+  useEffect(() => {
+    if (on) setWas(true);
+  }, [on]);
+  return was || on;
+}
 
 const t = fr.empire;
 const unknownError = fr.errors.unknown ?? "";
@@ -604,7 +620,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       )}
       <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
       {MAP_3D ? (
-        <ArmsScene p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+        <LazyArms p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
       ) : (
         <ArmsSheet p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
       )}
@@ -1019,5 +1035,21 @@ function useAwayRecap(p: EmpirePayload) {
 
 /** The Porta: its scene in 3D (docs/plan-porta-3d.md), its sheet without WebGL. */
 function PortaPlace(props: Parameters<typeof PortaSheet>[0]) {
-  return MAP_3D ? <PortaScene {...props} /> : <PortaSheet {...props} />;
+  const opened = useOnce(props.open);
+  if (!MAP_3D) return <PortaSheet {...props} />;
+  return opened ? (
+    <Suspense fallback={null}>
+      <PortaScene {...props} />
+    </Suspense>
+  ) : null;
+}
+
+/** The Remise's workshop of arms in 3D, loaded at its first opening. */
+function LazyArms(props: Parameters<typeof ArmsSheet>[0]) {
+  const opened = useOnce(props.open);
+  return opened ? (
+    <Suspense fallback={null}>
+      <ArmsScene {...props} />
+    </Suspense>
+  ) : null;
 }

@@ -45,38 +45,20 @@ import {
   useKit,
 } from "../map3d/kit.js";
 import { Smoke, useDonkey, useWater } from "../map3d/life.js";
+import { preloadMinis } from "../map3d/minis.js";
 import { roleOf } from "../map3d/roster.js";
+import { CASE, RARITY_HEX, extentOf, fromChart, toChart } from "./chart.js";
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
 
-/** Chart units a case of the battle's map (a small tile is about one case across). */
-export const CASE = 10;
+preloadMinis();
+
+export { CASE, RARITY_HEX, extentOf, fromChart, toChart };
+
 const NIGHT = "#16263E";
 const SLAB = 2.4;
 /** The figurines are drawn this much larger than on the board: a battle is read from afar. */
 const FIG = 2.2;
 const TILE_R = CASE / Math.sqrt(3);
-
-/** The battle's points (cases, around the disc's middle) on the chart (units, from its corner). */
-export const toChart = (b: { radius: number }, x: number, y: number): [number, number] => [
-  (x + b.radius + 1.5) * CASE,
-  (y + b.radius + 1.5) * CASE,
-];
-export const fromChart = (b: { radius: number }, X: number, Y: number): [number, number] => [
-  X / CASE - b.radius - 1.5,
-  Y / CASE - b.radius - 1.5,
-];
-/** The island's chart, its whole square. */
-export const extentOf = (b: { radius: number }) => {
-  const w = (2 * b.radius + 3) * CASE;
-  return { w, h: w };
-};
-
-export const RARITY_HEX: Record<Rarity, string> = {
-  common: "#C9B89A",
-  rare: "#6EE0B8",
-  precious: "#6EC8F5",
-  legendary: "#F2C24F",
-};
 
 export interface Battle3DHandle {
   view(cam: Camera, v: Viewport): void;

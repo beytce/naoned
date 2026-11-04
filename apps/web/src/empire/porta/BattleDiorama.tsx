@@ -6,8 +6,8 @@ import { useCamera } from "../map/useCamera.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { groundAt } from "../map3d/camera.js";
 import type { Battle3DHandle } from "./Battle3D.js";
-import { CASE, RARITY_HEX, extentOf, fromChart, toChart } from "./Battle3D.js";
 import { portaApi, useBattle } from "./api.js";
+import { CASE, RARITY_HEX, extentOf, fromChart, toChart } from "./chart.js";
 import { errorText, pt } from "./texts.js";
 import type { BattleOrder, BattleSnapshot, PlayerUnitView, Rarity } from "./types.js";
 

@@ -11,10 +11,11 @@ import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { Figure } from "../map3d/figure.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
 import { useDonkey } from "../map3d/life.js";
+import { preloadMinis } from "../map3d/minis.js";
 import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
-import { RARITY_HEX } from "./Battle3D.js";
 import { portaApi } from "./api.js";
+import { RARITY_HEX } from "./chart.js";
 import { errorText, pt } from "./texts.js";
 import {
   COMPONENT_KINDS,
@@ -24,6 +25,8 @@ import {
   RARITIES,
   type Rarity,
 } from "./types.js";
+
+preloadMinis();
 
 /** The Porta's own small scene (chart units): the gate to the north, the steps, the quay, the stall. */
 const GATE: [number, number, number] = [0, 0, -16];

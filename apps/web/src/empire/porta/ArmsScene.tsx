@@ -10,10 +10,13 @@ import { Guard3D } from "../map3d/Guard.js";
 import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { Figure } from "../map3d/figure.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
+import { preloadMinis } from "../map3d/minis.js";
 import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { pt } from "./texts.js";
 import type { ComponentKind, PortaView } from "./types.js";
+
+preloadMinis();
 
 const live = () => !(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
 /** Each kind of place by its colour (the sockets round a vehicle). */

@@ -28,7 +28,11 @@ import { C } from "../../art/plateau/props.js";
 import { claySolid } from "./kit.js";
 
 const MINIS = "/models/minis.glb";
-useGLTF.preload(MINIS, false, false);
+/**
+ * The figurines' file (2 MB), fetched by the Porta's scenes when their module loads, not by the
+ * map's (audit of 4 November, 3D B1): the modules sharing one chunk, a preload here would go with it.
+ */
+export const preloadMinis = () => useGLTF.preload(MINIS, false, false);
 
 export type Character = "Knight" | "Barbarian" | "Mage" | "Rogue" | "Rogue_Hooded";
 export type Side = "house" | "rome";
