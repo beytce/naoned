@@ -190,8 +190,19 @@ try {
   // The Remise's arms.
   await press(page, "[data-depot-mark]");
   await page.locator("[data-map-action=arms]").click();
-  await page.waitForSelector("[data-arms-models]");
+  // The vehicle in the middle (docs/plan-dock.md), a place touched, then the shop.
+  await page.waitForSelector("[data-arms-dock=vehicle]");
+  await page.waitForTimeout(800);
   await shot("1-armes");
+  await page.locator("[data-dock-socket]").first().click();
+  await page.waitForSelector("[data-arms-fit]");
+  await page.waitForTimeout(600);
+  await shot("1b-equiper");
+  await page.locator("[data-dock-back]").click();
+  await page.locator("[data-arms-shop]").click();
+  await page.waitForSelector("[data-arms-models]");
+  await page.waitForTimeout(600);
+  await shot("1c-acheter");
   await page.keyboard.press("Escape");
 
   await page.waitForTimeout(MIN + 2_000);

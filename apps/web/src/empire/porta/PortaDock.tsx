@@ -160,6 +160,7 @@ export function PortaDock({
   ) : (
     <Steps
       v={v}
+      goods={p.goods}
       now={now}
       off={off}
       act={act}
@@ -191,6 +192,7 @@ export function PortaDock({
 
 function Steps({
   v,
+  goods,
   now,
   off,
   act,
@@ -206,6 +208,7 @@ function Steps({
   onChoose,
 }: {
   v: PortaView;
+  goods: Record<string, string>;
   now: number;
   off: boolean;
   act: (a: EmpireAction) => Promise<void>;
@@ -222,6 +225,7 @@ function Steps({
 }) {
   const crew = crewOf(v, now);
   const line = v.tiers.find((x) => x.tier === tier);
+  const entryName = fr.themeNames.resource[v.entryGood] ?? goods[v.entryGood] ?? v.entryGood;
   const [mode, setMode] = useState<Mode>(line?.minPlayers === 1 ? "solo" : "public");
   const [code, setCode] = useState<string | null>(null);
   // A tier for several: never alone.
@@ -317,7 +321,7 @@ function Steps({
               <div className="flex items-center justify-between gap-2">
                 <span className="label text-cream-dim">{pt.brings}</span>
                 <span className="text-xs text-cream">
-                  {pt.entryOf(line.bread, fr.themeNames.resource[v.entryGood] ?? v.entryGood)}
+                  {line.bread > 0 ? pt.entryOf(line.bread, entryName) : pt.freeEntry}
                 </span>
               </div>
               <ul className="flex gap-4">
@@ -424,7 +428,7 @@ function Steps({
           >
             <span data-porta-go>
               {mode === "solo"
-                ? pt.go(line?.bread ?? 0)
+                ? pt.go(line?.bread ?? 0, entryName)
                 : mode === "invite"
                   ? pt.goGroup
                   : pt.goQueue}
