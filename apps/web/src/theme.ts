@@ -1,7 +1,8 @@
 import { store } from "./game/store.js";
 
-/** The palettes of the identity guide, two dark and a light one; the first one is the default. */
+/** The palettes of the identity guide; the first one (Jour, 4 November 2026) is the default. */
 export const PALETTES = [
+  { id: "jour", name: "Jour & Ducat", swatch: ["#EAEFEC", "#EEC456", "#267456", "#246696"] },
   { id: "lagune", name: "Lagune & Ducat", swatch: ["#16263E", "#F4C554", "#6EE0B8", "#6EC8F5"] },
   { id: "noyer", name: "Noyer & Ducat", swatch: ["#1E1611", "#E8B24C", "#7DB596", "#E36A4A"] },
   {
@@ -24,7 +25,7 @@ export function needsPass(id: PaletteId): boolean {
   return PALETTES.some((p) => p.id === id && "pass" in p && p.pass);
 }
 
-export const DEFAULT_PALETTE: PaletteId = "lagune";
+export const DEFAULT_PALETTE: PaletteId = "jour";
 
 export function currentPalette(): PaletteId {
   // Only a palette the player picked is kept: a device that merely remembered the old default

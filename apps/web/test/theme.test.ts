@@ -32,9 +32,20 @@ const contrast = (a: [number, number, number], b: [number, number, number]) => {
 describe("the palettes", () => {
   const all = palettes();
 
-  it("are the blue Lagune, the dark Noyer, the light Parchemin and the Pass's gold", () => {
-    expect(Object.keys(all).sort()).toEqual(["lagune", "noyer", "or", "parchemin"]);
+  it("are the pastel Jour, the blue Lagune, the dark Noyer, the light Parchemin and the Pass's gold", () => {
+    expect(Object.keys(all).sort()).toEqual(["jour", "lagune", "noyer", "or", "parchemin"]);
   });
+
+  // The gold button's face (a palette may light it apart from the gold of the amounts): its
+  // words read on it.
+  for (const [name, vars] of Object.entries(all)) {
+    it(`${name}: the gold button's words read on its face`, () => {
+      const face = vars.face ?? vars.gold;
+      const ink = vars["face-ink"] ?? vars.ink;
+      if (!face || !ink) throw new Error(`${name}: no face or ink`);
+      expect(contrast(ink, face)).toBeGreaterThanOrEqual(4.5);
+    });
+  }
 
   // WCAG AA for text (4.5:1): every colour that writes text, on every surface it sits on.
   for (const [name, vars] of Object.entries(all)) {

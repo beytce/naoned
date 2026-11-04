@@ -125,6 +125,43 @@
     --glow-a: var(--lagoon);
     --glow-b: var(--gold);
   }
+  /*
+   * Jour, the default since 4 November 2026 (decision of the owner, docs/design.md § Direction
+   * Jour): a pastel day after the references of a clean city-builder — a pale blue-grey ground,
+   * cream panels edged in sand, a dark-brown ink, a mustard gold for the one action. The gold that
+   * writes amounts is darker than the gold of the button's face (--face*), so that both read.
+   */
+  [data-palette="jour"] {
+    color-scheme: light;
+    --night: 234 239 236;
+    --night-2: 248 243 230;
+    --night-3: 255 252 244;
+    --night-4: 238 229 208;
+    --line: 222 210 182;
+    --edge: 138 120 90;
+    --cream: 46 38 25;
+    --cream-dim: 92 80 62;
+    --muted: 104 92 74;
+    --ink: 255 252 244;
+    --on-lagoon: 255 252 244;
+    --gold: 124 89 12;
+    --gold-deep: 92 66 8;
+    --gold-soft: 166 126 40;
+    --face-soft: 250 226 146;
+    --face: 238 196 86;
+    --face-deep: 208 158 52;
+    --face-ink: 46 38 25;
+    --lagoon: 38 116 86;
+    --rumour: 104 64 168;
+    --lagoon-deep: 26 86 62;
+    --lagoon-soft: 150 206 180;
+    --vermilion: 172 54 36;
+    --vermilion-deep: 128 38 24;
+    --info: 36 102 150;
+    --info-deep: 26 76 116;
+    --glow-a: 150 206 214;
+    --glow-b: 238 214 150;
+  }
   body {
     @apply bg-night font-sans text-cream antialiased;
     -webkit-tap-highlight-color: transparent;
@@ -990,11 +1027,11 @@ body[data-coaching] button[data-slab="gold"]:not([data-coach-lit]) .slab-face {
 body[data-coaching] button[data-slab="ghost"][data-coach-lit] .slab-face {
   background: linear-gradient(
     180deg,
-    rgb(var(--gold-soft)) 0%,
-    rgb(var(--gold)) 42%,
-    rgb(var(--gold-deep)) 100%
+    rgb(var(--face-soft, var(--gold-soft))) 0%,
+    rgb(var(--face, var(--gold))) 42%,
+    rgb(var(--face-deep, var(--gold-deep))) 100%
   );
-  color: rgb(var(--ink));
+  color: rgb(var(--face-ink, var(--ink)));
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 -2px 0 rgb(0 0 0 / 0.14), 0 10px 24px
     -8px rgb(var(--gold) / 0.6);
 }
