@@ -11,7 +11,12 @@ import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./typ
  * on a disc of SVG without WebGL.
  */
 export function BattleScreen({ onClose }: { onClose: () => void }) {
-  return MAP_3D ? <BattleDiorama onClose={onClose} /> : <BattleSvg onClose={onClose} />;
+  const [flat, setFlat] = useState(!MAP_3D);
+  return flat ? (
+    <BattleSvg onClose={onClose} />
+  ) : (
+    <BattleDiorama onClose={onClose} onFail={() => setFlat(true)} />
+  );
 }
 
 /**

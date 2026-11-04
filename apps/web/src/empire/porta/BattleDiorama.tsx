@@ -41,7 +41,14 @@ const fit = (b: { radius: number; gate: { x: number; y: number } }) => (v: Viewp
  * dotted), a round button for each of its components with its cooldown, the gold « Sortir » at the
  * gate; the blows' damage rising over their targets, the towns' relics in pips over them.
  */
-export function BattleDiorama({ onClose }: { onClose: () => void }) {
+export function BattleDiorama({
+  onClose,
+  onFail,
+}: {
+  onClose: () => void;
+  /** The 3D failed: the battle goes on in 2D. */
+  onFail: () => void;
+}) {
   const battle = useBattle(true);
   useCoverBoard(true);
   if (!battle)
@@ -50,10 +57,14 @@ export function BattleDiorama({ onClose }: { onClose: () => void }) {
         <span className="h-10 w-10 animate-spin rounded-full border-2 border-gold/30 border-t-gold" />
       </div>
     );
-  return <Field battle={battle} onClose={onClose} />;
+  return <Field battle={battle} onClose={onClose} onFail={onFail} />;
 }
 
-function Field({ battle, onClose }: { battle: BattleSnapshot; onClose: () => void }) {
+function Field({
+  battle,
+  onClose,
+  onFail,
+}: { battle: BattleSnapshot; onClose: () => void; onFail: () => void }) {
   const root = useRef<HTMLDivElement>(null);
   const layer = useRef<HTMLDivElement>(null);
   const board = useRef<Battle3DHandle | null>(null);
@@ -133,7 +144,7 @@ function Field({ battle, onClose }: { battle: BattleSnapshot; onClose: () => voi
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-[#16263E]" data-battle={battle.id}>
       <div ref={root} className="absolute inset-0 touch-none select-none">
-        <Guard3D>
+        <Guard3D onFail={onFail}>
           <Suspense fallback={null}>
             <Battle3D ref={onBoard} battle={battle} selected={sel?.id ?? null} live={live()} />
           </Suspense>
