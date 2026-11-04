@@ -90,8 +90,8 @@ export function VehiclePanel({
         tone === "gold"
           ? "bg-gold text-ink ring-gold"
           : on
-            ? "bg-gold/15 text-gold ring-gold"
-            : "bg-night-3 text-cream ring-lagoon/60"
+            ? "bg-info/10 text-cream ring-info"
+            : "bg-night-3 text-cream ring-info/60"
       }`}
     >
       {icon}
@@ -99,7 +99,7 @@ export function VehiclePanel({
   );
   return (
     <section
-      className="pointer-events-auto w-full border-t border-lagoon/50 bg-night-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-xl shadow-black/50 lg:mb-4 lg:w-[30rem] lg:rounded-2xl lg:border"
+      className="pointer-events-auto w-full border-t border-line bg-night-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-xl shadow-black/50 lg:mb-4 lg:w-[30rem] lg:rounded-2xl lg:border"
       data-vehicle-panel={v.id}
     >
       <div className="flex items-start gap-2">
@@ -109,7 +109,7 @@ export function VehiclePanel({
               {fr.empire.vehicleNames[v.type] ?? v.type}
             </h3>
             <span
-              className="ml-auto rounded-full bg-night-3 px-2 py-0.5 font-display text-xs font-bold tabular-nums text-cream ring-1 ring-lagoon/60"
+              className="ml-auto rounded-full bg-night-3 px-2 py-0.5 font-display text-xs font-bold tabular-nums text-cream ring-1 ring-info/60"
               data-hold
             >
               {t.hold(carried, v.capacity)}
@@ -120,9 +120,9 @@ export function VehiclePanel({
               {state.line}
             </p>
             {state.left > 0 && (
-              <span className="relative h-4 w-20 overflow-hidden rounded-full bg-night-3 ring-1 ring-lagoon/50">
+              <span className="relative h-4 w-20 overflow-hidden rounded-full bg-night-3 ring-1 ring-info/50">
                 <span
-                  className="absolute inset-y-0 left-0 bg-lagoon/60 transition-[width] duration-1000 ease-linear"
+                  className="absolute inset-y-0 left-0 bg-info/60 transition-[width] duration-1000 ease-linear"
                   style={{
                     width: `${Math.min(100, (state.left / Math.max(1, state.span)) * 100)}%`,
                   }}
@@ -274,7 +274,7 @@ function LoadPane({
             data-sort={k}
             onClick={() => onSort(k)}
             className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ring-1 transition active:scale-95 ${
-              sort === k ? "bg-gold/15 text-gold ring-gold" : "text-cream-dim ring-lagoon/50"
+              sort === k ? "bg-info/10 text-cream ring-info" : "text-cream-dim ring-info/50"
             }`}
           >
             {t.sorts[k]}
@@ -301,7 +301,7 @@ function LoadPane({
                     orderId: o.id,
                   })
                 }
-                className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm ring-1 ring-lagoon/40 transition active:scale-[0.98] ${
+                className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm ring-1 ring-line transition active:scale-[0.98] ${
                   off ? "opacity-45" : "bg-night-3 text-cream hover:ring-gold"
                 }`}
               >

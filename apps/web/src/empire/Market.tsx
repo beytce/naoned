@@ -76,7 +76,7 @@ export function MarketSheet({
                 onClick={() => setPost(x.post)}
                 aria-pressed={x.post === (at?.post ?? "home")}
                 data-market-post={x.post}
-                className={`min-h-9 rounded-full px-3 text-xs font-semibold transition active:scale-95 ${x.post === (at?.post ?? "home") ? "bg-gold/15 text-gold ring-1 ring-gold" : "text-cream-dim ring-1 ring-line"}`}
+                className={`min-h-9 rounded-full px-3 text-xs font-semibold transition active:scale-95 ${x.post === (at?.post ?? "home") ? "bg-info/10 text-cream ring-1 ring-info" : "text-cream-dim ring-1 ring-line"}`}
               >
                 {x.post === "home" ? t.venice : t.post(regionName(x.region), nth(i))}
               </button>

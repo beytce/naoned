@@ -121,7 +121,7 @@ export function DomainLabels({
                 type="button"
                 onClick={onFree}
                 data-domain-free
-                className="pointer-events-auto min-h-11 rounded-full border border-lagoon/80 bg-night/85 px-3 text-xs font-semibold text-lagoon shadow-lg shadow-black/50 active:scale-95"
+                className="pointer-events-auto min-h-11 rounded-full border border-dashed border-cream/60 bg-night/85 px-3 text-xs font-semibold text-cream shadow-lg shadow-black/50 active:scale-95"
               >
                 + {t.buildHere}
               </button>
@@ -183,7 +183,7 @@ export function DomainBar({
         <button
           type="button"
           onClick={onProduction}
-          className="flex h-11 items-center rounded-full px-2 text-sm text-lagoon active:scale-95"
+          className="flex h-11 items-center rounded-full px-2 font-display text-sm font-bold text-info active:scale-95"
           data-production
         >
           {fr.empire.scene.production}
