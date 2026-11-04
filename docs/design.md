@@ -14,6 +14,16 @@ Décision du porteur : la carte de l'empire et ce qui s'y pose suivent le « Pla
 - **Les pièces frappées** : ducat, faveur, sceau et roue de la bourse (`art/plateau/coins.tsx`) sur cuir bleu nuit surpiqué d'or (`.purse`) ; les marchandises (`GoodsMark`) en relief.
 - **Le mouvement** reste lent et rare (vaguelettes, brouillard, fanion), coupé quand l'appareil demande moins d'animations.
 
+## Le dock : une scène, un dock, une décision (4 novembre 2026)
+
+Décision du porteur : tout menu qui porte un choix (améliorer, équiper, partir, livrer) suit le dock (`apps/web/src/dock.tsx`, détail et état dans `docs/plan-dock.md`).
+
+- **Le lieu reste en vue** au-dessus (la scène 3D, ou `PlainGround` sans WebGL) et réagit au choix : sélection en lapis, route tracée en or, caméra qui glisse.
+- **Le dock** porte une décision à la fois, au plus 55 % de l'écran, sa poignée, fermé en le tirant vers le bas, par Échap ou par le bouton retour ; en-tête de lieu (`PlaceHeader`) avec ‹ n/N › vers les voisins ; étapes en rail (`StepRail`).
+- **Les choix sont des cartes** (`ChoiceCard` : anneau lapis et coche une fois choisie, cadenas et raison si fermée, cinabre pour la Porta noire), jamais une liste déroulante ni une case à cocher.
+- **Une amélioration montre son effet avant son coût** : `CompareRows` (gain en vert d'eau), puis `CostChips` (« j'ai / il faut », ce qui manque en cinabre).
+- **Une seule action en or**, en bas du dock, qui dit le choix fait (« Poser les Apprentis », « Franchir la Porta », « Livrer 2 · 1 450 d »).
+
 ## Direction Lagune : la règle (25 octobre 2026)
 
 Décision du porteur : **tout ajout suit cette direction**. Les maquettes de chaque page sont sur la planche de design (lien dans `docs/propositions-design-2026-10-25.md`, page « Lagune · toutes les pages », avec le système et la navigation).
