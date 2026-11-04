@@ -6,6 +6,7 @@
  * does not pull it.
  */
 const FAILED = "fondaco:map3d-failed";
+const SVG = "fondaco:map-svg";
 
 function webgl(): boolean {
   try {
@@ -28,9 +29,21 @@ function failed(): boolean {
   }
 }
 
+/** « ?map=svg » asked once: kept for the tab (a reload, a redirect keep it). */
+function askedSvg(): boolean {
+  const asked = new URLSearchParams(window.location.search).get("map");
+  try {
+    if (asked === "svg") window.sessionStorage.setItem(SVG, "1");
+    if (asked === "3d") window.sessionStorage.removeItem(SVG);
+    return window.sessionStorage.getItem(SVG) === "1";
+  } catch {
+    return asked === "svg";
+  }
+}
+
 export const MAP_3D =
   typeof window !== "undefined" &&
-  new URLSearchParams(window.location.search).get("map") !== "svg" &&
+  !askedSvg() &&
   (import.meta.env as Record<string, string | undefined>).VITE_MAP !== "svg" &&
   !failed() &&
   webgl();
