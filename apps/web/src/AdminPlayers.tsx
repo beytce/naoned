@@ -120,7 +120,7 @@ const field =
   "min-w-0 rounded-lg bg-night-2 px-2.5 py-1.5 text-sm text-cream ring-1 ring-line tabular-nums focus:outline-none focus:ring-info";
 const input = `${field} w-full`;
 const button =
-  "shrink-0 rounded-lg px-3 py-1.5 font-display text-xs font-bold uppercase transition disabled:opacity-40";
+  "shrink-0 rounded-lg px-3 py-1.5 font-display text-xs font-bold uppercase transition disabled:opacity-70";
 const primary = `${button} bg-info text-ink hover:brightness-110`;
 const ghost = `${button} bg-night-4 text-cream hover:bg-night-2 ring-1 ring-line`;
 

@@ -246,7 +246,7 @@ export function PortaSheet({
                     disabled={!x.open}
                     onClick={() => setTier(x.tier)}
                     aria-pressed={tier === x.tier}
-                    className={`w-full rounded-xl border px-2 py-2 text-left text-xs disabled:opacity-40 ${tier === x.tier ? "border-info text-cream" : "border-line text-cream-dim"}`}
+                    className={`w-full rounded-xl border px-2 py-2 text-left text-xs disabled:opacity-70 ${tier === x.tier ? "border-info text-cream" : "border-line text-cream-dim"}`}
                   >
                     <span className="block font-semibold">{pt.tier(x.tier)}</span>
                     {pt.players(x.minPlayers, x.maxPlayers)}

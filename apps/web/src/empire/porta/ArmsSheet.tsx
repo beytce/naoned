@@ -121,7 +121,7 @@ export function ArmsSheet({
                       // biome-ignore lint/suspicious/noArrayIndexKey: a place is its index
                       <li key={i} data-place-kind={kind ?? undefined}>
                         {kind && (
-                          <span className="mb-0.5 block text-[0.6875rem] font-semibold uppercase tracking-wider text-cream-dim">
+                          <span className="mb-0.5 block text-xs font-semibold uppercase tracking-wider text-cream-dim">
                             {pt.kind[kind]}
                           </span>
                         )}

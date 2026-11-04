@@ -386,7 +386,7 @@ function UnitCard({
       onClick={onChoose}
       disabled={u.outcome !== "in"}
       data-battle-unit={u.id}
-      className={`min-h-[3.25rem] min-w-0 flex-1 rounded-xl border px-2.5 py-1.5 text-left disabled:opacity-40 ${chosen ? "border-info bg-info/10" : "border-line bg-night/80"}`}
+      className={`min-h-[3.25rem] min-w-0 flex-1 rounded-xl border px-2.5 py-1.5 text-left disabled:opacity-70 ${chosen ? "border-info bg-info/10" : "border-line bg-night/80"}`}
     >
       <span className="flex items-center justify-between gap-2 text-xs font-semibold text-cream">
         <span>{u.role === "combat" ? pt.combat : pt.transport}</span>

@@ -10,6 +10,9 @@ import { fr } from "./i18n.js";
 
 type Tone = "gold" | "lagoon" | "vermilion" | "ghost";
 
+/** A slab that cannot be touched now: a thin line, its words muted but readable. */
+const OFF = { face: "bg-transparent text-muted ring-1 ring-inset ring-line" };
+
 /** The gold's depth for what is inside (game/gold.ts): a panel, a guide, a moment, a scene. */
 export function GoldLayer({
   depth,
@@ -87,13 +90,17 @@ export function Slab(props: {
         disabled={props.disabled}
         data-coach={props.coach}
         aria-label={props.label}
-        className={`inline-flex min-h-11 items-center justify-center px-2 font-display font-bold text-info transition hover:brightness-110 active:opacity-70 disabled:pointer-events-none disabled:opacity-35 ${props.size === "lg" ? "text-base" : "text-sm"} ${props.className ?? ""}`}
+        className={`inline-flex min-h-11 items-center justify-center px-2 font-display font-bold text-info transition hover:brightness-110 active:opacity-70 disabled:pointer-events-none disabled:opacity-70 ${props.size === "lg" ? "text-base" : "text-sm"} ${props.className ?? ""}`}
       >
         {props.children}
       </button>
     );
   const gold = asked && mine && !props.disabled;
-  const tone = TONES[gold ? "gold" : asked ? "ghost" : (props.tone ?? "gold")];
+  // Out of reach: its words stay readable (muted, never a faded 35 %), the line thinner
+  // (audit of 4 November, UI U-5).
+  const tone = props.disabled
+    ? OFF
+    : TONES[gold ? "gold" : asked ? "ghost" : (props.tone ?? "gold")];
   return (
     <button
       type={props.type ?? "button"}
@@ -108,7 +115,7 @@ export function Slab(props: {
       data-coach={props.coach}
       data-slab={gold ? "gold" : asked ? "ghost" : (props.tone ?? "gold")}
       aria-label={props.label}
-      className={`group relative isolate inline-flex font-display font-extrabold disabled:pointer-events-none disabled:opacity-35 ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
+      className={`group relative isolate inline-flex font-display font-extrabold disabled:pointer-events-none ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
     >
       <span
         className={`slab-face press relative flex w-full items-center justify-center overflow-hidden rounded-full text-center leading-tight group-hover:brightness-105 ${props.busy ? "slab-busy" : gold && props.shine ? "slab-shine" : ""} ${size} ${tone.face}`}
@@ -233,7 +240,7 @@ export function HudChip(props: {
         haptic("tap");
         props.onClick?.();
       }}
-      className={`pointer-events-auto flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full bg-night/85 px-3.5 font-display text-sm font-bold shadow-[0_4px_14px_rgb(0_0_0/0.45)] ring-1 ring-inset backdrop-blur transition active:scale-95 disabled:opacity-35 ${tone}`}
+      className={`pointer-events-auto flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full bg-night/85 px-3.5 font-display text-sm font-bold shadow-[0_4px_14px_rgb(0_0_0/0.45)] ring-1 ring-inset backdrop-blur transition active:scale-95 disabled:opacity-70 ${tone}`}
     >
       <span className="shrink-0">{props.icon}</span>
       <span>{props.children}</span>
@@ -619,7 +626,7 @@ export function Qty(props: {
     props.onChange(Math.max(1, Math.min(Math.max(1, props.max), Math.round(v))));
   // The slab is drawn inside: its slant would cut 3 px off each side of a 44 px button's touch.
   const btn =
-    "group grid h-11 w-11 place-items-center font-display text-lg transition active:scale-95 disabled:opacity-35";
+    "group grid h-11 w-11 place-items-center font-display text-lg transition active:scale-95 disabled:opacity-70";
   const face =
     "slab col-start-1 row-start-1 h-full w-full bg-night-4 ring-1 ring-inset ring-edge group-hover:ring-cream-dim/40";
   return (

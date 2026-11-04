@@ -161,7 +161,7 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
           )}
         </div>
         <div className="text-right">
-          <p className="text-[0.6875rem] uppercase tracking-wider text-cream-dim">{pt.timer}</p>
+          <p className="text-xs uppercase tracking-wider text-cream-dim">{pt.timer}</p>
           <p
             className={`font-display text-xl font-extrabold tabular-nums ${battle.endsAtMs - battle.timeMs < 60_000 ? "text-vermilion" : "text-cream"}`}
             data-battle-timer
@@ -345,7 +345,7 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
                   onClick={() => setSelected(u.id)}
                   disabled={u.outcome !== "in"}
                   data-battle-unit={u.id}
-                  className={`min-w-[8.5rem] rounded-xl border px-2 py-1.5 text-left text-xs disabled:opacity-40 ${u.id === sel?.id ? "border-info text-cream" : "border-line text-cream-dim"}`}
+                  className={`min-w-[8.5rem] rounded-xl border px-2 py-1.5 text-left text-xs disabled:opacity-70 ${u.id === sel?.id ? "border-info text-cream" : "border-line text-cream-dim"}`}
                 >
                   <span className="block font-semibold">
                     {u.role === "combat" ? pt.combat : pt.transport} · {u.hp}/{u.maxHp}

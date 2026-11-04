@@ -89,7 +89,7 @@ function Titles({ profile }: { profile: Profile }) {
             aria-label={label}
             disabled={to === at}
             onClick={() => setAt(to)}
-            className="h-11 w-11 rounded-full transition hover:text-cream active:scale-95 disabled:opacity-30"
+            className="h-11 w-11 rounded-full transition hover:text-cream active:scale-95 disabled:opacity-70"
           >
             {glyph}
           </button>

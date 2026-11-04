@@ -130,7 +130,7 @@ export function ActionPanel({
                 void act(a.action).finally(() => setPending(null));
               } else if (a.open) onOpen(a.open);
             }}
-            className={`flex w-[4.75rem] flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-cream active:scale-95 disabled:opacity-40 ${pending === a.id ? "animate-pulse" : ""}`}
+            className={`flex w-[4.75rem] flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-cream active:scale-95 disabled:opacity-70 ${pending === a.id ? "animate-pulse" : ""}`}
           >
             <span
               className={`flex h-12 w-12 items-center justify-center rounded-lg border [&_svg]:h-6 [&_svg]:w-6 ${a.action && !a.disabled ? "border-info text-info" : "border-line text-cream"}`}
