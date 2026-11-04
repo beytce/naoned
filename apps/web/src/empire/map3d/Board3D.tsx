@@ -975,7 +975,8 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
     const g = group.current;
     if (!g) return;
     if (t0.current === null) t0.current = clock.elapsedTime;
-    const k = Math.min(1, (clock.elapsedTime - t0.current) / RISE);
+    // Asking for less motion: the tiles are there at once, no rise (audit of 4 November, B3).
+    const k = live ? Math.min(1, (clock.elapsedTime - t0.current) / RISE) : 1;
     for (const child of g.children) {
       const ring = (child.userData.ring as number | undefined) ?? 0;
       const u = Math.min(1, Math.max(0, k * 1.6 - ring * 0.22));
