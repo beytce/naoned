@@ -245,6 +245,12 @@ export const en: Dictionary = {
       text: "A fondaco near Venice, three workshops and five hundred ducats. Nothing you build will ever be reset.",
       action: "Found the House",
     },
+    milestones: {
+      label: "Your next milestones",
+      casa: (n: number) => `Casa ${n}`,
+      order: (city: string, pay: string) => `${city} · ${pay}`,
+      carnet: (done: number, of: number) => `Ledger ${done}/${of}`,
+    },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
       venezia: "Venice",

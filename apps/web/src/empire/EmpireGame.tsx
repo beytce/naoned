@@ -37,6 +37,7 @@ import { BottomSlot } from "./map/BottomSlot.js";
 import { DomainBar } from "./map/Domain.js";
 import { EmpireMap, type EmpireMapHandle, type Picked } from "./map/EmpireMap.js";
 import { Hud } from "./map/Hud.js";
+import { Milestones } from "./map/Milestones.js";
 import { OrdersPanel } from "./map/OrdersPanel.js";
 import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
@@ -517,8 +518,17 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         ) : (
           <>
             {/* Lorenzo, the tutorial's: until the Casa 2 he says the next gesture, and its gold
-                button does it; then he withdraws behind the « ? », and the player plays. */}
+                button does it; then he withdraws behind the « ? », and the three milestones keep
+                the way in sight (audit of 4 November, UX B2), each opening its place. */}
             {lorenzo}
+            {!tutorial && (
+              <Milestones
+                p={p}
+                onCasa={() => setSheet("casa")}
+                onCity={(code) => setTarget({ kind: "city", code })}
+                onCarnet={() => setSheet("company")}
+              />
+            )}
             <RoundButtons
               onRecenter={() => (MAP_3D ? map.current?.house() : map.current?.toggle())}
               onHelp={tutorial ? undefined : () => setSheet("help")}

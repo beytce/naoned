@@ -162,6 +162,12 @@ const frDict = {
       text: "Un fondaco près de Venise, trois ateliers et cinq cents ducats. Rien de ce que vous bâtirez ne sera jamais remis à zéro.",
       action: "Fonder la Maison",
     },
+    milestones: {
+      label: "Vos prochains jalons",
+      casa: (n: number) => `Casa ${n}`,
+      order: (city: string, pay: string) => `${city} · ${pay}`,
+      carnet: (done: number, of: number) => `Carnet ${done}/${of}`,
+    },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
       venezia: "Venise",
