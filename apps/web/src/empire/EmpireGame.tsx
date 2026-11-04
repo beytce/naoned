@@ -43,6 +43,7 @@ import { ProductionSheet } from "./map/Production.js";
 import { RoundButtons } from "./map/RoundButtons.js";
 import { Trips } from "./map/Trips.js";
 import { VehiclePanel } from "./map/VehiclePanel.js";
+import { measureBand } from "./map/band.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
 import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
@@ -139,6 +140,16 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [aiming, setAiming] = useState(false);
   const map = useRef<EmpireMapHandle>(null);
   useAwayRecap(p);
+  // The screen's useful band (map/band.ts), measured after each change of what covers it.
+  useEffect(() => {
+    measureBand();
+    const id = window.setTimeout(measureBand, 320);
+    window.addEventListener("resize", measureBand);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("resize", measureBand);
+    };
+  });
   // A fondaco's domain plunged into (3D): its bar at the foot instead of the round buttons.
   const [domain, setDomain] = useState<string | null>(null);
   const domainNow = useRef(domain);

@@ -39,6 +39,7 @@ import type { EmpireAction, EmpirePayload } from "../types.js";
 import { CityPill } from "./CityPill.js";
 import { DomainLabels } from "./Domain.js";
 import { Fleet } from "./Fleet.js";
+import { bandOf } from "./band.js";
 import {
   CHART,
   ORBIT_UNITS,
@@ -90,7 +91,8 @@ const PAN_STEP = 0.12;
 const sectorOn = (v: Viewport) =>
   centredOn(
     seatOf("veneto"),
-    Math.min((v.w * 0.95) / (Math.sqrt(3) * HEX_SIZE), (v.h * 0.62) / (2 * HEX_SIZE)),
+    // Its height within the useful band (band.ts): its towns never under the HUD.
+    Math.min((v.w * 0.95) / (Math.sqrt(3) * HEX_SIZE), (bandOf(v).h * 0.8) / (2 * HEX_SIZE)),
     v,
   );
 /**
@@ -120,8 +122,10 @@ const domainFrame =
     // The rings of workshops across (their shore a little cut on a phone): closer while the first
     // ring holds them all.
     const across = (rings <= 1 ? 3.4 : 5) * STEP;
-    const s = Math.min((v.w * 0.98) / across, Math.max(80, v.h - 300) / (across * TILT));
-    return { s, tx: v.w / 2 - at[0] * s, ty: (v.h - 120) / 2 - at[1] * TILT * s };
+    // In the useful band (band.ts): the fondaco never under the HUD nor the domain's bar.
+    const b = bandOf(v);
+    const s = Math.min((v.w * 0.98) / across, Math.max(80, b.h - 40) / (across * TILT));
+    return { s, tx: v.w / 2 - at[0] * s, ty: b.mid - at[1] * TILT * s };
   };
 
 /** The board in 3D (?map=3d, docs/plateau-reprise.md § 7): its own chunk, fetched only then. */

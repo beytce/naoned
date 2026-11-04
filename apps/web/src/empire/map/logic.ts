@@ -15,6 +15,7 @@ import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { fr } from "../../i18n.js";
 import { affordable, queueEnd, readyLots } from "../logic.js";
 import type { EmpireAction, EmpireOrderView, EmpirePayload } from "../types.js";
+import { bandOf } from "./band.js";
 
 /**
  * The empire's map, pure (the map at the centre of the game, step 1): how the camera covers the
@@ -60,8 +61,10 @@ export function coverClamp(
 
 /** The camera at a scale, centred on a chart point. */
 export function centredOn(at: [number, number], s: number, view: Viewport): Camera {
-  // The board is tilted (docs/plan-plateau.md): a chart point lies at y·TILT on it.
-  return coverClamp({ s, tx: view.w / 2 - at[0] * s, ty: view.h / 2 - at[1] * TILT * s }, view);
+  // The board is tilted (docs/plan-plateau.md): a chart point lies at y·TILT on it; centred in
+  // the screen's useful band (between the HUD and the foot's panel, band.ts).
+  const { mid } = bandOf(view);
+  return coverClamp({ s, tx: view.w / 2 - at[0] * s, ty: mid - at[1] * TILT * s }, view);
 }
 
 /** The orbit's width on screen (px) from which Venice's house shows: more on a large screen. */
