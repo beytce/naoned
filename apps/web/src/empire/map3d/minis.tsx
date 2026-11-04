@@ -165,7 +165,16 @@ export function useMini(character: Character, side: Side, show: string[], height
       m.castShadow = false;
       m.frustumCulled = false;
     });
-    const box = new Box3().setFromObject(root);
+    // Scaled by its body, never by what it wears on its head nor by a prop hidden (audit of
+    // 4 November, Blender M6: with her hat, the Mage was a fifth smaller than the Rogue).
+    root.updateMatrixWorld(true);
+    const box = new Box3();
+    root.traverse((o) => {
+      const m = o as SkinnedMesh;
+      if (m.isSkinnedMesh && m.visible && !/_(Helmet|Hat)$/.test(m.name.replace(/_\d+$/, "")))
+        box.expandByObject(m);
+    });
+    if (box.isEmpty()) box.setFromObject(root);
     const size = box.getSize(new Vector3());
     const k = height / Math.max(0.001, size.y);
     root.scale.multiplyScalar(k);
