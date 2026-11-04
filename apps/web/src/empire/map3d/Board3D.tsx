@@ -31,6 +31,7 @@ import {
   useState,
 } from "react";
 import {
+  BoxGeometry,
   BufferAttribute,
   BufferGeometry,
   Cache,
@@ -48,9 +49,11 @@ import {
   Vector2,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { goodsColour } from "../../art/goods.js";
 import { HEX_SIZE, cellCentre } from "../../art/hexmap.js";
 import { C } from "../../art/plateau/props.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
+import type { CityLook } from "../map/logic.js";
 import type { EmpirePayload } from "../types.js";
 import { DISTANCE, orthoFrom } from "./camera.js";
 import type { DomainTile } from "./domain.js";
@@ -115,6 +118,8 @@ export interface Board3DProps {
   onReady?: () => void;
   /** A fondaco's domain plunged into: its little scene instead of the map's (domain.ts). */
   domain?: DomainScene | null;
+  /** The towns' orders and state, told by the scenery (logic.ts, `cityLooks`). */
+  cities?: CityLook[];
 }
 
 /** The domain's scene: its tiles, and each workshop's state (ready, running, waiting). */
@@ -143,7 +148,10 @@ export function useLive() {
  * then asks no frame at rest).
  */
 const Board3D = memo(
-  forwardRef<Board3DHandle, Board3DProps>(function Board3D({ p, onReady, domain = null }, ref) {
+  forwardRef<Board3DHandle, Board3DProps>(function Board3D(
+    { p, onReady, domain = null, cities = [] },
+    ref,
+  ) {
     const map = p.view?.map;
     // Built again only when the map did change (never at a refresh of the same one).
     const key = sceneKey(p);
@@ -284,6 +292,7 @@ const Board3D = memo(
           <group visible={!domain}>
             <World sc={sc} live={live} small={small} buyable={buyable} />
             <Fleet3D p={p} live={live} actors={animals} />
+            <Towns3D looks={cities} />
           </group>
           {domain && <Domain3D key={domain.key} scene={domain} live={live} />}
           <ShadowsOnce sc={sc} k={domain ? JSON.stringify(domain) : ""} />
@@ -304,7 +313,8 @@ const Board3D = memo(
     JSON.stringify(a.p.view?.vehicles.mine ?? []) ===
       JSON.stringify(b.p.view?.vehicles.mine ?? []) &&
     a.p.view?.house.casa === b.p.view?.house.casa &&
-    JSON.stringify(a.domain ?? null) === JSON.stringify(b.domain ?? null),
+    JSON.stringify(a.domain ?? null) === JSON.stringify(b.domain ?? null) &&
+    JSON.stringify(a.cities ?? []) === JSON.stringify(b.cities ?? []),
 );
 
 export default Board3D;
@@ -885,6 +895,76 @@ function workshopModel(type: string): { name: KitName; s: number } {
     default:
       return { name: "homeA", s: 5.4 };
   }
+}
+
+/** A town's tile edged (a flat ring of a hexagon, on its top). */
+const edgeGeo = (() => {
+  const outer = tileCorners(0, 0, TILE_R - 0.35);
+  const inner = tileCorners(0, 0, TILE_R - 1.05);
+  const pos: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    const a = outer[i] as [number, number];
+    const b = outer[(i + 1) % 6] as [number, number];
+    const c = inner[(i + 1) % 6] as [number, number];
+    const d = inner[i] as [number, number];
+    // Facing the sky (counter-clockwise seen from above, z south).
+    pos.push(a[0], 0, a[1], c[0], 0, c[1], b[0], 0, b[1]);
+    pos.push(a[0], 0, a[1], d[0], 0, d[1], c[0], 0, c[1]);
+  }
+  const g = new BufferGeometry();
+  g.setAttribute("position", new BufferAttribute(new Float32Array(pos), 3));
+  g.computeVertexNormals();
+  return g;
+})();
+const edgeGold = new MeshBasicMaterial({ color: C.gold, side: DoubleSide });
+const edgeLagoon = new MeshBasicMaterial({ color: "#6EE0B8", side: DoubleSide });
+const beamGeo = new CylinderGeometry(0.9, 1.6, 40, 10, 1, true);
+beamGeo.translate(0, 20, 0);
+const beamMat = new MeshBasicMaterial({
+  color: C.gold,
+  transparent: true,
+  opacity: 0.22,
+  depthWrite: false,
+  side: DoubleSide,
+});
+const crateGeo = new BoxGeometry(1.3, 1.1, 1.3);
+crateGeo.translate(0, 0.55, 0);
+const crateLow = new BoxGeometry(1.3, 0.35, 1.3);
+crateLow.translate(0, 0.18, 0);
+
+/**
+ * The towns tell their orders by the scenery (decision of the owner, 3 November 2026): a crate an
+ * order on their quay, tinted by its chain, full when the stock covers it, low else; their tile
+ * edged in gold when « Livrer » would go now (and a beam of light seen from afar), in lagoon-green
+ * when they are full.
+ */
+function Towns3D({ looks }: { looks: CityLook[] }) {
+  return (
+    <group>
+      {looks.map((c) => (
+        <group key={c.code} position={[c.x, 0, c.y]}>
+          {c.state !== "open" && (
+            <mesh
+              geometry={edgeGeo}
+              material={c.state === "deliverable" ? edgeGold : edgeLagoon}
+              position-y={0.07}
+            />
+          )}
+          {c.state === "deliverable" && <mesh geometry={beamGeo} material={beamMat} />}
+          {c.crates.map((k, i) => (
+            <mesh
+              // biome-ignore lint/suspicious/noArrayIndexKey: an order is its place on the quay
+              key={i}
+              geometry={k.covered ? crateGeo : crateLow}
+              material={claySolid(goodsColour(k.good))}
+              position={[(i - (c.crates.length - 1) / 2) * 1.6, 0, TILE_R * 0.62]}
+              castShadow
+            />
+          ))}
+        </group>
+      ))}
+    </group>
+  );
 }
 
 /** The domain's tiles rise from the board when it opens (seconds). */

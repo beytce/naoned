@@ -311,6 +311,8 @@ export interface EmpireMapView {
   cityClearance: number;
   /** The small tiles: a fondaco is put down on a tile's middle (slots.ts). */
   tiles: boolean;
+  /** The small tiles of lagoon (`<cell>#<k>`). */
+  water: string[];
   /** A land vehicle between two counters: so many units an hour. */
   transferUnitsPerHour: number;
   /** The cities the house's counters serve. */
@@ -717,6 +719,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     postSpacing: s.map.postSpacing,
     cityClearance: s.map.cityClearance,
     tiles: s.map.tiles,
+    water: s.map.water,
     transferUnitsPerHour: s.map.transferUnitsPerHour,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
     unlocked: unlockedOf(house, s),

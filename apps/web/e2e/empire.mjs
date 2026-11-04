@@ -438,7 +438,8 @@ try {
     // lights the towns within its reach.
     await press("[data-city=padova]");
     await page.locator("[data-orders-panel=padova] [data-order]").first().waitFor();
-    if ((await page.locator("[data-city=padova] [data-fill-ring]").count()) === 0)
+    // On the SVG board, its ring of orders; on the 3D board, its crates in the scene.
+    if (!MAP3D && (await page.locator("[data-city=padova] [data-fill-ring]").count()) === 0)
       faults.push(`${label}: no ring of orders around Padua`);
     await shot("14-commandes");
     await page.keyboard.press("Escape");

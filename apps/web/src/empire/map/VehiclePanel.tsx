@@ -127,13 +127,13 @@ export function VehiclePanel({
                     width: `${Math.min(100, (state.left / Math.max(1, state.span)) * 100)}%`,
                   }}
                 />
-                <span className="relative block text-center font-display text-[0.625rem] font-bold leading-4 text-cream">
+                <span className="relative block text-center font-display text-xs font-bold leading-4 text-cream">
                   {secs > 120 ? t.minutes(Math.ceil(secs / 60)) : t.seconds(secs)}
                 </span>
               </span>
             )}
           </div>
-          {more > 0 && <p className="text-[0.6875rem] text-cream-dim">{t.stops(more)}</p>}
+          {more > 0 && <p className="text-xs text-cream-dim">{t.stops(more)}</p>}
         </div>
         <CloseButton onClick={onClose} />
       </div>
@@ -273,7 +273,7 @@ function LoadPane({
             aria-pressed={sort === k}
             data-sort={k}
             onClick={() => onSort(k)}
-            className={`shrink-0 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold ring-1 transition active:scale-95 ${
+            className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ring-1 transition active:scale-95 ${
               sort === k ? "bg-gold/15 text-gold ring-gold" : "text-cream-dim ring-lagoon/50"
             }`}
           >
@@ -281,7 +281,7 @@ function LoadPane({
           </button>
         ))}
       </fieldset>
-      <p className="mt-1 text-[0.6875rem] text-cream-dim">{full ? t.holdFull : t.tapToLoad}</p>
+      <p className="mt-1 text-xs text-cream-dim">{full ? t.holdFull : t.tapToLoad}</p>
       <ul className="mt-1 max-h-64 space-y-1 overflow-y-auto" data-load>
         {list.length === 0 && <li className="text-xs text-cream-dim">{t.nothingOrdered}</li>}
         {list.map((o) => {
@@ -350,7 +350,7 @@ function ModulesPane({
   const max = 5;
   return (
     <div className="mt-2 space-y-1.5" data-vehicle-modules>
-      <p className="text-[0.6875rem] text-cream-dim">{t.fittedNote}</p>
+      <p className="text-xs text-cream-dim">{t.fittedNote}</p>
       {researched.length === 0 && <p className="text-xs text-cream-dim">{t.noModule}</p>}
       <ul className="space-y-1.5">
         {Array.from({ length: max }, (_, i) => {

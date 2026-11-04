@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deliveryPlan } from "../src/empire/map/logic.js";
+import { cityLooks, deliveryPlan } from "../src/empire/map/logic.js";
 import type { EmpirePayload } from "../src/empire/types.js";
 
 // « Livrer » from a city (decision of the owner, 3 November 2026): what the button would do, as the
@@ -92,5 +92,25 @@ describe("the delivery a city's « Livrer » would make", () => {
   it("says the city is out of every counter's reach", () => {
     const p = payload({ wood: 100 }, [{ id: "m", capacity: 3 }]);
     expect(deliveryPlan(p, "verona").reason).toBe("reach");
+  });
+});
+
+describe("the towns as the 3D board tells them", () => {
+  const withCity = (p: EmpirePayload) => {
+    (p.view as unknown as { map: unknown }).map = {
+      cities: [{ code: "padova", region: "veneto", x: 10, y: 20 }],
+    };
+    return p;
+  };
+  it("shows a crate an order, full where the stock covers it, the town gold when it may go", () => {
+    const p = withCity(payload({ clay: 30 }, [{ id: "m", capacity: 3 }]));
+    const [look] = cityLooks(p);
+    expect(look?.crates.map((c) => c.covered)).toEqual([false, true, false]);
+    expect(look?.state).toBe("deliverable");
+  });
+
+  it("is lagoon-green when full and nothing may go", () => {
+    const p = withCity(payload({}, [{ id: "m", capacity: 3 }]));
+    expect(cityLooks(p)[0]?.state).toBe("full");
   });
 });

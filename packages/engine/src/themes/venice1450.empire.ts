@@ -220,6 +220,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     // The small tiles (decision of the owner, 3 November 2026): seven to a sector, the towns on
     // theirs (venice1450.map.ts), a fondaco on a tile of its own, never next to a town's.
     tiles: true,
+    // Venice on its lagoon (decision of the owner, 3 November 2026): the small tile east of it.
+    water: ["2,4#1"],
     costStepBps: 2_500,
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
     // fell short of their share, calibration.md).

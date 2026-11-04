@@ -772,7 +772,7 @@ export function snapToTile(
 ): { cell: string; x: number; y: number } {
   const map = p.view?.map;
   if (!map?.tiles) return { cell, x, y };
-  const s = { map: { hexSize: map.hexSize } } as EmpireSettings;
+  const s = { map: { hexSize: map.hexSize, water: map.water ?? [] } } as EmpireSettings;
   const towns = map.cities.map((c): [number, number] => [c.x, c.y]);
   const fondaci: [number, number][] = [
     ...(map.home?.placed === false ? [] : [[map.home.x, map.home.y] as [number, number]]),
@@ -902,4 +902,41 @@ export function deliveryPlan(
     reason: anyDocked ? "stock" : "busy",
     freeAt,
   };
+}
+
+/** What a town shows on the 3D board: a crate an order, and whether it waits for you. */
+export interface CityLook {
+  code: string;
+  x: number;
+  y: number;
+  /** Its orders, each a crate of its good: full when the stock covers it, hollow else. */
+  crates: { good: string; covered: boolean }[];
+  /** « deliverable »: « Livrer » would go now (gold); « full »: no new order (lagoon-green). */
+  state: "deliverable" | "full" | "open";
+}
+
+/**
+ * The towns as the board tells them (decision of the owner, 3 November 2026: the information in
+ * the scenery, no HTML ring): their orders as crates on their quay, their tile edged in gold when
+ * « Livrer » would go now, in lagoon-green when full.
+ */
+export function cityLooks(p: EmpirePayload): CityLook[] {
+  const view = p.view;
+  if (!view) return [];
+  return view.orders.flatMap((o) => {
+    const c = view.map.cities.find((x) => x.code === o.city);
+    if (!c || c.x === undefined || c.y === undefined) return [];
+    const plan = deliveryPlan(p, o.city);
+    const state =
+      plan.vehicle !== null ? "deliverable" : o.orders.length >= o.cap ? "full" : "open";
+    return [
+      {
+        code: o.city,
+        x: c.x,
+        y: c.y,
+        crates: plan.orders.map(({ o: x, covered }) => ({ good: x.good, covered })),
+        state,
+      },
+    ];
+  });
 }

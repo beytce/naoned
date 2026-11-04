@@ -516,6 +516,8 @@ export const empireSettingsSchema = z.object({
        * middle of a small tile (slots.ts), never next to a town's nor to another fondaco's.
        */
       tiles: z.boolean().prefault(false),
+      /** Small tiles of lagoon (`<cell>#<k>`): water on the board, never a fondaco on them. */
+      water: z.array(z.string()).prefault([]),
       /** A land vehicle between two counters: so many of the chart's units an hour. */
       transferUnitsPerHour: positive.prefault(20),
       revealRadius: positive.prefault(2),

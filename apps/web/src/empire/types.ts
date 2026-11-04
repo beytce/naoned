@@ -300,6 +300,8 @@ export interface EmpireMapView {
   cityClearance?: number;
   /** The small tiles: a fondaco is put down on a tile's middle (engine, slots.ts). */
   tiles?: boolean;
+  /** The small tiles of lagoon (`<cell>#<k>`). */
+  water?: string[];
   transferUnitsPerHour: number;
   /** The sectors it may buy next, and the price of the next. */
   buyable: { cell: string; region: string; coast: boolean; casa: number }[];

@@ -31,6 +31,8 @@ export interface SceneInput {
   /** The Campo's sector, and the Porta's (docs/plan-porta.md). */
   camp?: string | null;
   porta?: string | null;
+  /** The small tiles of lagoon (`<cell>#<k>`): water among the land. */
+  water?: string[];
 }
 
 /** The scene's input out of the house's view (the 3D board, its touches, the map's marks). */
@@ -46,6 +48,7 @@ export function sceneInputOf(p: EmpirePayload): SceneInput {
     depot: map?.depot ?? null,
     camp: map?.camp ?? null,
     porta: p.view?.porta?.cell ?? null,
+    water: map?.water ?? [],
   };
 }
 
@@ -242,10 +245,13 @@ export function scene3d(m: SceneInput): Scene3D {
   // kind after their region.
   const tiles: Tile[] = [];
   const props: Prop[] = [];
-  const add = (cell: string, kind: TileKind) => {
+  const wet = new Set(m.water ?? []);
+  const add = (cell: string, kindOf: TileKind) => {
     for (let k = 0; k < 7; k++) {
       const [x, y] = middle(cell, k);
       const key = tileKey(cell, k);
+      // A small tile of lagoon among the land (Venice's): water as the sea's.
+      const kind: TileKind = kindOf !== "fog" && wet.has(key) ? "water" : kindOf;
       let theme: Theme =
         kind === "water" ? "water" : kind === "fog" ? "fog" : (held.get(key) ?? "plain");
       if ((kind === "own" || kind === "seen") && !held.has(key))

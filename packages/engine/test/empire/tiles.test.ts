@@ -114,6 +114,16 @@ describe("a fondaco of before the small tiles", () => {
   });
 });
 
+describe("a small tile of lagoon", () => {
+  it("takes no fondaco, and the house's view tells it", () => {
+    const wet = { ...empire, map: { ...empire.map, water: ["0,0#5"] } };
+    const w = new World(makeContext({ empire: wet }));
+    w.do({ type: "empireJoin", playerId: "a" });
+    expect(error(placeHome(w, "0,0", tile("0,0", 5)))).toBe("unknown_cell");
+    expect(empireView(w.ctx, w.state, "a", w.now)?.map.water).toEqual(["0,0#5"]);
+  });
+});
+
 describe("the sea along the coasts", () => {
   it("is seen from the start next to a coast seen, nothing of it to buy", () => {
     const w = world();

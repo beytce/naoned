@@ -44,6 +44,7 @@ import {
   type Placing,
   type Target,
   centredOn,
+  cityLooks,
   farCamera,
   fleetSpots,
   nearestPlace,
@@ -552,7 +553,13 @@ export const EmpireMap = forwardRef<
       {MAP_3D && (
         <Guard3D>
           <Suspense fallback={null}>
-            <Board3D ref={onBoard3d} p={p} domain={domainScene} onReady={onThreeReady} />
+            <Board3D
+              ref={onBoard3d}
+              p={p}
+              domain={domainScene}
+              cities={cityLooks(p)}
+              onReady={onThreeReady}
+            />
           </Suspense>
         </Guard3D>
       )}
@@ -713,7 +720,7 @@ export const EmpireMap = forwardRef<
           const [px, py] = cellCentre(x.cell);
           return (
             <div key={`s${x.cell}`} data-at={`${px},${py}`} className="map-pin" data-site={x.cell}>
-              <span className="whitespace-nowrap rounded-full bg-night-3 px-2 py-0.5 font-display text-[0.6875rem] font-bold tabular-nums text-info ring-1 ring-info/70">
+              <span className="whitespace-nowrap rounded-full bg-night-3 px-2 py-0.5 font-display text-xs font-bold tabular-nums text-info ring-1 ring-info/70">
                 {clock(x.endsAt - now)}
               </span>
             </div>
@@ -1210,7 +1217,7 @@ function CityMark({
           className="relative flex items-center justify-center"
           style={{ width: ring, height: ring }}
         >
-          {orders && (
+          {orders && !MAP_3D && (
             <svg
               className="absolute inset-0"
               width={ring}
@@ -1258,7 +1265,7 @@ function CityMark({
         <span className="map-name">{t.cityNames[code] ?? code}</span>
         {/* The information layer: its orders on its cap, however far. */}
         {orders && (
-          <span className="info-only rounded-full bg-night/85 px-1.5 font-display text-[0.625rem] font-bold tabular-nums text-gold ring-1 ring-gold/60">
+          <span className="info-only rounded-full bg-night/85 px-1.5 font-display text-xs font-bold tabular-nums text-gold ring-1 ring-gold/60">
             {t.orders.infoCount(waiting, orders.cap)}
           </span>
         )}
@@ -1279,7 +1286,7 @@ function WantedHalo({ n }: { n: number }) {
         aria-hidden="true"
       />
       <span
-        className="pointer-events-none absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gold px-1.5 font-display text-[0.625rem] font-bold leading-4 text-ink ring-2 ring-night"
+        className="pointer-events-none absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gold px-1.5 font-display text-xs font-bold leading-4 text-ink ring-2 ring-night"
         data-wanted-badge
       >
         +{n}

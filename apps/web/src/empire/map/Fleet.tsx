@@ -305,7 +305,7 @@ export function Fleet({
               style={{ left: ((x + b[0]) / 2) * base, top: ((y + b[1]) / 2) * TILT * base }}
               data-way-seconds={v.id}
             >
-              <span className="rounded bg-night/80 px-1 font-display text-[0.625rem] font-bold tabular-nums text-info">
+              <span className="rounded bg-night/80 px-1 font-display text-xs font-bold tabular-nums text-info">
                 {t.seconds(secs)}
               </span>
             </div>
@@ -331,7 +331,7 @@ export function Fleet({
               style={{ left: x * base, top: y * TILT * base }}
             >
               {on && (
-                <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[0.6rem] leading-none text-gold">
+                <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-xs leading-none text-gold">
                   ▼
                 </span>
               )}
@@ -343,7 +343,7 @@ export function Fleet({
                 </span>
               </span>
               {/* The information layer: its hold. */}
-              <span className="info-only absolute left-1/2 top-full mt-0.5 -translate-x-1/2 whitespace-nowrap rounded-full bg-night/85 px-1.5 font-display text-[0.625rem] font-bold tabular-nums text-cream ring-1 ring-lagoon/60">
+              <span className="info-only absolute left-1/2 top-full mt-0.5 -translate-x-1/2 whitespace-nowrap rounded-full bg-night/85 px-1.5 font-display text-xs font-bold tabular-nums text-cream ring-1 ring-lagoon/60">
                 {fr.empire.hops.hold(v.loads.length, v.capacity)}
               </span>
             </button>

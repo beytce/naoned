@@ -137,13 +137,13 @@ export function ActionPanel({
             >
               {a.good ? <GoodsMark code={a.good} size={26} /> : ICONS[a.icon]()}
             </span>
-            <span className="line-clamp-2 text-center text-[0.6875rem] font-semibold leading-tight">
+            <span className="line-clamp-2 text-center text-xs font-semibold leading-tight">
               {(t.scene.actions[a.words.key] ?? (() => portaWords[a.words.key] ?? a.words.key))(
                 a.words.n ?? 0,
               )}
             </span>
             {a.cost && (
-              <span className="flex items-center gap-1 text-[0.6875rem] tabular-nums text-gold">
+              <span className="flex items-center gap-1 text-xs tabular-nums text-gold">
                 <Coin size={11} />
                 {d(a.cost)}
               </span>
