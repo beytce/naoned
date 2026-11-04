@@ -203,12 +203,25 @@ try {
   await page.locator("[data-map-action=porta]").click();
   await page.waitForSelector("[data-porta-battle]");
   await shot("4-porta");
+  // The dock in three steps (docs/plan-dock.md): the crew, the tier, how to go.
+  await page.locator("[data-porta-next]").click();
+  await page.waitForSelector("[data-porta-tiers]");
+  await page.waitForTimeout(600);
+  await shot("4b-palier");
+  await page.locator("[data-porta-next]").click();
+  await page.waitForSelector("[data-porta-mode=solo]");
+  await page.waitForTimeout(600);
+  await shot("4c-partir");
+  // The antiquarian, behind its round button, and back.
+  await page.locator("[data-porta-round=stall]").click();
+  await page.waitForSelector("[data-porta-antiquarian]");
+  await page.waitForTimeout(600);
+  await shot("4d-antiquaire");
+  await page.locator("[data-porta-round=stall]").click();
+  await page.waitForSelector("[data-porta-mode=solo]");
 
   // A battle alone, tier 1.
-  await page
-    .getByRole("button", { name: /entrer · palier 1|partir seul/i })
-    .first()
-    .click();
+  await page.locator("[data-porta-go]").click();
   await page.waitForSelector("[data-battle-timer]", { timeout: 15_000 });
   await page.waitForTimeout(1_500);
   await shot("5-bataille");
