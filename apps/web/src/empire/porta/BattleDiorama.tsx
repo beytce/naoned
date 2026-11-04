@@ -247,7 +247,7 @@ function Field({
         </div>
       </div>
 
-      <header className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="pointer-events-auto rounded-2xl bg-night/80 px-3 py-1.5 shadow-lg shadow-black/40">
           <p className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
             {pt.tier(battle.tier)}
@@ -267,7 +267,7 @@ function Field({
         </div>
       </header>
 
-      <footer className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-night via-night/90 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6">
+      <footer className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-night via-night/90 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6">
         {battle.over || allOut ? (
           <div className="flex items-center justify-between gap-3" data-battle-over>
             <p className="text-sm text-cream">{battle.over ? pt.over : pt.out}</p>

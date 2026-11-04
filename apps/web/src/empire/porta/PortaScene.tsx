@@ -597,7 +597,7 @@ function SceneView(props: {
                 onClick={() => props.onChoose(x.id, x.role)}
                 aria-pressed={chosen}
                 data-porta-vehicle={x.id}
-                className={`pointer-events-auto -translate-x-1/2 translate-y-2 min-h-11 rounded-full px-2.5 text-xs font-semibold shadow-lg ${chosen ? "bg-info text-ink" : "bg-night/85 text-cream ring-1 ring-line"}`}
+                className={`pointer-events-auto -translate-x-1/2 translate-y-2 min-h-11 rounded-full px-2.5 text-xs font-semibold shadow-lg ${chosen ? "bg-night/85 text-cream ring-2 ring-info" : "bg-night/85 text-cream ring-1 ring-line"}`}
               >
                 {x.role === "combat" ? (pt.model[x.model] ?? x.model) : x.model}
                 {x.repairUntil !== null && x.repairUntil > Date.now() ? ` · ${pt.hurt}` : ""}
