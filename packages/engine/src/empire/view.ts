@@ -42,6 +42,7 @@ import {
 import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import {
   buyableOf,
+  cellsWithin,
   citiesCovered,
   citiesFound,
   citySpot,
@@ -676,6 +677,15 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
   });
 }
 
+/** The cells of sea next to the coast cells seen. */
+function seaAlong(seen: Set<string>, s: EmpireSettings): string[] {
+  const out: string[] = [];
+  for (const k of seen)
+    if (s.map.cells[k]?.coast)
+      for (const n of cellsWithin(k, 1)) if (!(n in s.map.cells) && !seen.has(n)) out.push(n);
+  return out;
+}
+
 /** The map as the house sees it: its cells, its counters, its Arsenal, the cities it found. */
 function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
   const seen = revealedOf(house, s);
@@ -685,7 +695,9 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
         .filter(([k]) => seen.has(k))
         .map(([k, c]) => [k, { region: c.region, coast: c.coast }]),
     ),
-    revealed: [...seen].sort(),
+    // The sea along the coasts seen, seen too (decision of the owner, 3 November 2026: Venice on
+    // its lagoon from the first screen); nothing to buy there, only the board's dressing.
+    revealed: [...new Set([...seen, ...seaAlong(seen, s)])].sort(),
     posts: standingPosts(house, s)
       .slice(1)
       .map((p) => ({ ...p, reach: reachOf(p.level, s) })),

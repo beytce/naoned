@@ -114,6 +114,17 @@ describe("a fondaco of before the small tiles", () => {
   });
 });
 
+describe("the sea along the coasts", () => {
+  it("is seen from the start next to a coast seen, nothing of it to buy", () => {
+    const w = world();
+    const map = empireView(w.ctx, w.state, "a", w.now)?.map;
+    const s = parseEmpireSettings(empire);
+    const sea = (map?.revealed ?? []).filter((k) => !(k in s.map.cells));
+    expect(sea.length).toBeGreaterThan(0);
+    expect(sea.some((k) => (map?.buyable ?? []).some((b) => b.cell === k))).toBe(false);
+  });
+});
+
 describe("a hop's road in the house's view", () => {
   it("is the very road the engine times, on the whole map (never the part the house sees)", () => {
     const w = world();

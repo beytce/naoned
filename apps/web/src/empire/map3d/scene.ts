@@ -181,12 +181,18 @@ export function scene3d(m: SceneInput): Scene3D {
     held.set(tileKey(t.cell, t.k), "town");
     const size = c.size ?? 1;
     const r = rng(hashOf(c.code));
-    const n = Math.min(5, 1 + size);
+    // Two houses a size (decision of the owner, 3 November: the towns larger, up to ten for
+    // Venice), in two rings round the monument.
+    const n = Math.min(10, 2 * size);
     const s = 0.75 + size * 0.06;
     const houses: Town["houses"] = [];
+    const inner = Math.ceil(n / 2);
     for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + r();
-      const d = 2.4 + r() * (0.4 + size * 0.3);
+      const ring = i < inner ? 0 : 1;
+      const m = ring ? n - inner : inner;
+      const j = ring ? i - inner : i;
+      const a = (j / Math.max(1, m)) * Math.PI * 2 + r() * 0.5 + ring * 0.6;
+      const d = ring ? 3.6 + r() * 0.5 : 2.2 + r() * 0.4;
       houses.push({
         x: c.x + Math.cos(a) * d,
         y: c.y + Math.sin(a) * d * 0.85,

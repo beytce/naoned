@@ -108,8 +108,9 @@ const orbitOn = (at: [number, number], from: Camera) => (v: Viewport) => {
  * middle: the bar at the foot under it.
  */
 const domainFrame = (at: [number, number]) => (v: Viewport) => {
-  const across = 5.6 * STEP;
-  const s = Math.min((v.w * 0.96) / across, Math.max(80, v.h - 260) / (across * TILT));
+  // The two rings of workshops across (their shore a little cut on a phone).
+  const across = 5 * STEP;
+  const s = Math.min((v.w * 0.98) / across, Math.max(80, v.h - 300) / (across * TILT));
   return { s, tx: v.w / 2 - at[0] * s, ty: (v.h - 120) / 2 - at[1] * TILT * s };
 };
 

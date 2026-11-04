@@ -64,6 +64,8 @@ export function Fleet3D({
       // The model looks along +z; the chart's heading (x east, y south) turned to it.
       a.group.rotation.y = Math.atan2(Math.cos(pose.angle), Math.sin(pose.angle));
       const moving = pose.hop !== null;
+      // Touched on the board only on its way (at rest, its place takes the touch).
+      a.group.userData.moving = moving;
       if (a.walking && a.resting) {
         a.walking.weight = moving ? 1 : 0;
         a.resting.weight = moving ? 0 : 1;
@@ -106,7 +108,8 @@ function Vehicle3D({
   onReady: (a: Actor | null) => void;
 }) {
   const kit = useKit();
-  const donkey = useDonkey(body === "cart" ? 3.2 : 3.6);
+  // A mule smaller than a house (the board's scale, 3 November).
+  const donkey = useDonkey(body === "cart" ? 2.2 : 2.4);
   const group = useRef<Group>(null);
   const wheels = useRef<Group>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: built once, its parts kept

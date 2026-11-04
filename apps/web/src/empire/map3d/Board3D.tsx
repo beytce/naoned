@@ -86,6 +86,8 @@ Cache.enabled = true;
 const NIGHT = "#16263E";
 /** The tiles: a clay slab on a night-blue base. */
 const SLAB = 3;
+/** A fondaco's tile of gold stands this much above the others. */
+const RAISE = 1.2;
 const BASE = 7;
 /** The lagoon lies this far below the land; its bed further down. */
 const WATER_Y = -2.2;
@@ -212,6 +214,7 @@ const Board3D = memo(
       if (!c || !l) return null;
       let best: { id: string; d: number } | null = null;
       for (const [id, g] of animals.current) {
+        if (!g.userData.moving) continue;
         // Its body's middle, a little above the ground.
         const at = g.position.clone();
         at.y += 1.6;
@@ -606,17 +609,32 @@ function World({
     const glass = hexSlab(TILE_R - 0.45, SLAB + BASE - 2, 0.7);
     const bed = hexSlab(TILE_R - 0.2, BASE - 1, 0.2);
     bed.translate(0, -SLAB - 1.2, 0);
-    return { top, base, glass, bed };
+    const raised = hexSlab(TILE_R - 0.45, SLAB + RAISE, 0.7);
+    return { top, base, glass, bed, raised };
   }, []);
   // The tiles by kind (kept while the board stays the same), turned as the engine's lattice.
-  const { own, seen, wet, fog, solid } = useMemo(() => {
+  const { own, seen, wet, fog, solid, gold } = useMemo(() => {
+    const place = (tl: { x: number; y: number }) => ({
+      x: tl.x,
+      y: 0,
+      z: tl.y,
+      s: 1,
+      rot: SLOT_TURN,
+    });
     const of = (kind: string) =>
-      sc.tiles
-        .filter((tl) => tl.kind === kind)
-        .map((tl) => ({ x: tl.x, y: 0, z: tl.y, s: 1, rot: SLOT_TURN }));
+      sc.tiles.filter((tl) => tl.kind === kind && tl.theme !== "fondaco").map(place);
     const own = of("own");
     const seen = of("seen");
-    return { own, seen, wet: of("water"), fog: of("fog"), solid: [...own, ...seen] };
+    // The fondaci's tiles: the only ones of gold, raised (decision of the owner, 3 November).
+    const gold = sc.tiles.filter((tl) => tl.theme === "fondaco").map(place);
+    return {
+      own,
+      seen,
+      wet: of("water"),
+      fog: of("fog"),
+      solid: [...own, ...seen, ...gold],
+      gold,
+    };
   }, [sc]);
   // The lagoon: one surface over every small tile of sea, finely cut for its ripples.
   const lagoon = useMemo(() => (wet.length ? lagoonGeometry(wet, TILE_R - 0.2) : null), [wet]);
@@ -757,6 +775,7 @@ function World({
           bases. */}
       <Instanced geo={slabs.top} items={own} material={claySolid(C.land)} />
       <Instanced geo={slabs.top} items={seen} material={claySolid(C.mist)} />
+      <Instanced geo={slabs.raised} items={gold} material={claySolid(C.roofGold)} />
       <Instanced geo={slabs.base} items={solid} material={claySolid(C.soil)} cast={false} />
       {/* The lagoon: its bed, its translucent water. */}
       <Instanced geo={slabs.bed} items={wet} material={claySolid(C.mistSoil)} cast={false} />
@@ -899,7 +918,7 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
     const top = hexSlab(TILE_R - 0.45, SLAB, 0.7);
     const base = hexSlab(TILE_R - 0.75, BASE, 0.4);
     base.translate(0, -SLAB + 0.2, 0);
-    const gold = hexSlab(TILE_R - 0.45, SLAB + 1.2, 0.7);
+    const gold = hexSlab(TILE_R - 0.45, SLAB + RAISE, 0.7);
     return { top, base, gold };
   }, []);
   const shore = scene.tiles.filter((t) => t.kind === "shore");
@@ -954,15 +973,15 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
               )}
               <mesh geometry={slabs.base} material={claySolid(C.soil)} rotation-y={SLOT_TURN} />
               {t.kind === "fondaco" && (
-                <group position-y={1.2}>
-                  <FondacoModel live={live} k={0.62} />
+                <group position-y={RAISE}>
+                  <FondacoModel live={live} k={0.8} />
                 </group>
               )}
               {t.kind === "workshop" && model && (
                 <mesh
                   geometry={kit(model.name).geo}
                   material={clayShared}
-                  scale={model.s * 1.05}
+                  scale={model.s * 1.35}
                   castShadow
                   receiveShadow
                 />
@@ -1049,7 +1068,7 @@ function Porta({ x, z }: { x: number; z: number }) {
 /** The fondaco: the house's hall (KayKit's large house, its roof in gold), a tower, the flag. */
 function Fondaco({ x, z, live, k = 1 }: { x: number; z: number; live: boolean; k?: number }) {
   return (
-    <group position={[x, 0, z]}>
+    <group position={[x, RAISE, z]}>
       <FondacoModel live={live} k={k} />
     </group>
   );
@@ -1059,20 +1078,23 @@ function FondacoModel({ live, k = 1 }: { live: boolean; k?: number }) {
   const kit = useKit();
   const hall = kit("homeB", { roof: C.roofGold });
   const tower = kit("tower", { roof: C.roofGold });
-  const s = 7.6;
+  // The scale of the board (decision of the owner, 3 November): a fondaco some twice a house,
+  // known by its tile of gold rather than by its size.
+  const s = 5.8;
+  const ts = 2.6;
   return (
     <group scale={k} name="fondaco">
       <mesh geometry={hall.geo} material={clayShared} scale={s} castShadow receiveShadow />
       <mesh
         geometry={tower.geo}
         material={clayShared}
-        scale={3.4}
-        position={[-4.4, 0, -2.4]}
+        scale={ts}
+        position={[-3.4, 0, -1.8]}
         castShadow
         receiveShadow
       />
-      <Flag at={[-4.4, tower.h * 3.4 - 0.3, -2.4]} live={live} s={0.9} />
-      <Smoke at={[2.2, hall.h * s * 0.95, -1.2]} live={live} />
+      <Flag at={[-3.4, tower.h * ts - 0.3, -1.8]} live={live} s={0.75} />
+      <Smoke at={[1.7, hall.h * s * 0.95, -0.9]} live={live} />
     </group>
   );
 }
