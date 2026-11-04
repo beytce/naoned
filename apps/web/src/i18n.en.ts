@@ -451,7 +451,8 @@ export const en: Dictionary = {
       to: "For the fondaco",
       venice: "Your fondaco",
       post: (region: string, n: number) => `${region} ${n}`,
-      buy: (n: number, cost: string) => `+${n} · ${cost}`,
+      buy: (n: number, cost: string) => `Buy ${n} · ${cost}`,
+      confirm: (cost: string) => `Confirm · ${cost}`,
       heldAt: (n: number) => `${n} at the fondaco`,
       none: "No price has come from Venice yet.",
       trend: { up: "above its rate", down: "below its rate", flat: "at its rate" } as Record<

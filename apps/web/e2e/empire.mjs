@@ -441,6 +441,8 @@ try {
         .first();
       const good = await row.getAttribute("data-market-buy");
       await row.locator("button").click();
+      // A weighty purchase asks a second touch (audit of 4 November, UX B1).
+      if ((await row.getAttribute("data-confirm")) !== null) await row.locator("button").click();
       await page
         .locator(`[data-market-good=${good}]`)
         .getByText(/en stock/)

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GoodsMark } from "../art/goods.js";
 import { d } from "../game/format.js";
 import { fr } from "../i18n.js";
@@ -11,6 +11,9 @@ import type { EmpireAction, EmpirePayload } from "./types.js";
 const t = fr.empire.market;
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
+const CONFIRM_MS = 4000;
+/** A purchase that takes more than a quarter of the purse is confirmed. */
+export const weighty = (cash: string, cost: string) => BigInt(cost) * 4n > BigInt(cash);
 const ARROW = { up: "▲", down: "▼", flat: "=" } as const;
 const TONE = { up: "text-lagoon", down: "text-vermilion", flat: "text-cream-dim" } as const;
 
@@ -37,6 +40,14 @@ export function MarketSheet({
   act: (a: EmpireAction) => Promise<void>;
 }) {
   const [post, setPost] = useState("home");
+  // A purchase of more than a quarter of the purse asks a second touch (audit of 4 November,
+  // UX B1): the first arms it for a few seconds, the second buys.
+  const [armed, setArmed] = useState<string | null>(null);
+  useEffect(() => {
+    if (!armed) return;
+    const id = setTimeout(() => setArmed(null), CONFIRM_MS);
+    return () => clearTimeout(id);
+  }, [armed]);
   if (!p.view) return null;
   const view = p.view;
   // The counter the purchases go to (the map that grows): its region's market, its own stock.
@@ -105,17 +116,23 @@ export function MarketSheet({
                     </span>
                   </span>
                 </button>
-                <span data-market-buy={q.good}>
+                <span data-market-buy={q.good} data-confirm={armed === q.good || undefined}>
                   <Slab
                     size="sm"
                     tone="ghost"
                     busy={busy}
                     disabled={!affordable(p.cash, ten)}
-                    onClick={() =>
-                      void act({ type: "empireBuy", good: q.good, qty: 10, post: at?.post })
-                    }
+                    className={armed === q.good ? "rounded-full ring-2 ring-vermilion" : ""}
+                    onClick={() => {
+                      if (armed !== q.good && weighty(p.cash, ten)) {
+                        setArmed(q.good);
+                        return;
+                      }
+                      setArmed(null);
+                      void act({ type: "empireBuy", good: q.good, qty: 10, post: at?.post });
+                    }}
                   >
-                    {t.buy(10, d(ten))}
+                    {armed === q.good ? t.confirm(d(ten)) : t.buy(10, d(ten))}
                   </Slab>
                 </span>
               </li>

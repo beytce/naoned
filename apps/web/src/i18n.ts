@@ -372,7 +372,8 @@ const frDict = {
       to: "Pour le fondaco",
       venice: "Votre fondaco",
       post: (region: string, n: number) => `${region} ${n}`,
-      buy: (n: number, cost: string) => `+${n} · ${cost}`,
+      buy: (n: number, cost: string) => `Acheter ${n} · ${cost}`,
+      confirm: (cost: string) => `Confirmer · ${cost}`,
       heldAt: (n: number) => `${n} au fondaco`,
       trend: { up: "au-dessus du cours", down: "sous le cours", flat: "au cours" } as Record<
         string,
