@@ -1,6 +1,8 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { TILT } from "../../art/plateau/geom.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
+import { haptic } from "../../haptics.js";
+import { sound } from "../../sound.js";
 import { CloseButton, Slab } from "../../ui.js";
 import { useCamera } from "../map/useCamera.js";
 import { Guard3D } from "../map3d/Guard.js";
@@ -74,7 +76,43 @@ export function BattleDiorama({
         <span className="h-10 w-10 animate-spin rounded-full border-2 border-info/30 border-t-info" />
       </div>
     );
-  return <Field battle={battle} onClose={onClose} onFail={onFail} />;
+  return (
+    <>
+      <BattleFeel battle={battle} />
+      <Field battle={battle} onClose={onClose} onFail={onFail} />
+    </>
+  );
+}
+
+/**
+ * What the battle sounds and feels like (audit of 4 November, motion M4): a relic taken rings
+ * like a coin, a vehicle of mine lost shakes the phone, one out through the gate rolls its cart,
+ * the battle's end strikes the bell. Each once, at the snapshot that brings it.
+ */
+function BattleFeel({ battle }: { battle: BattleSnapshot }) {
+  const before = useRef<BattleSnapshot | null>(null);
+  useEffect(() => {
+    const was = before.current;
+    before.current = battle;
+    if (!was || was.id !== battle.id) return;
+    const mineNow = battle.units.filter(isMine);
+    const mineWas = new Map(was.units.filter(isMine).map((u) => [u.id, u]));
+    for (const u of mineNow) {
+      const w = mineWas.get(u.id);
+      if (!w) continue;
+      if (u.cargo.length > w.cargo.length) {
+        sound("coin");
+        haptic(u.cargo.at(-1) === "legendary" ? "alarm" : "success");
+      }
+      if (w.outcome === "in" && (u.outcome === "dead" || u.outcome === "lost")) haptic("alarm");
+      if (w.outcome === "in" && u.outcome === "exited") sound("cart");
+    }
+    if (!was.over && battle.over) {
+      sound("bell");
+      haptic("success");
+    }
+  }, [battle]);
+  return null;
 }
 
 function Field({

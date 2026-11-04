@@ -4,6 +4,8 @@ import { Color, type Group, MeshBasicMaterial, Vector3 } from "three";
 import { Coin } from "../../art/icons.js";
 import { C } from "../../art/plateau/props.js";
 import { d } from "../../game/format.js";
+import { haptic } from "../../haptics.js";
+import { sound } from "../../sound.js";
 import { CloseButton, Slab } from "../../ui.js";
 import { affordable } from "../logic.js";
 import { Guard3D } from "../map3d/Guard.js";
@@ -146,6 +148,9 @@ export function PortaScene({
         (x) => x.repairUntil !== null && x.repairUntil > now,
       ).length;
       setBack({ gained, lost, hurt });
+      // The return told (audit of 4 November, motion M4): the bell, and the best relic felt.
+      sound(gained.length > 0 ? "bell" : "cart");
+      haptic(gained.includes("legendary") ? "alarm" : gained.length > 0 ? "success" : "tap");
     } catch {
       // Nothing to tell.
     }
@@ -221,13 +226,13 @@ export function PortaScene({
 
       {back && (
         <output
-          className="porta-back absolute inset-x-4 top-28 mx-auto block max-w-sm rounded-2xl bg-night/90 p-3 text-center shadow-xl"
+          className="porta-back orbit-in absolute inset-x-4 top-28 mx-auto block max-w-sm rounded-2xl bg-night/90 p-4 text-center shadow-xl ring-1 ring-edge"
           data-porta-back
         >
           <p className="font-place text-sm font-bold uppercase tracking-[0.12em] text-gold">
             {pt.backTitle}
           </p>
-          <p className="mt-2 flex flex-wrap justify-center gap-1">
+          <p className="mt-3 flex flex-wrap justify-center gap-2">
             {back.gained.length === 0 ? (
               <span className="text-xs text-cream-dim">{pt.backNone}</span>
             ) : (
@@ -235,8 +240,9 @@ export function PortaScene({
                 <span
                   // biome-ignore lint/suspicious/noArrayIndexKey: relics of a rarity are alike
                   key={i}
-                  className="porta-relic h-4 w-4 rounded-sm ring-1 ring-night"
-                  style={{ background: RARITY_HEX[r], animationDelay: `${i * 120}ms` }}
+                  // Each relic laid down in turn, larger the rarer (a legendary one glows).
+                  className={`porta-relic rounded-md ring-1 ring-night ${r === "legendary" ? "h-8 w-8 shadow-[0_0_16px_rgb(242_194_79/0.7)]" : r === "precious" ? "h-7 w-7" : "h-6 w-6"}`}
+                  style={{ background: RARITY_HEX[r], animationDelay: `${300 + i * 220}ms` }}
                 />
               ))
             )}
