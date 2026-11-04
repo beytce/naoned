@@ -52,7 +52,7 @@ export function BottomSlot({
           <GoldLayer depth={0}>{leaving.node}</GoldLayer>
         </div>
       )}
-      <div key={id} className="slot-in relative flex flex-col items-center">
+      <div key={id} className="slot-in relative flex flex-col items-center lg:items-end lg:pr-4">
         <GoldLayer depth={hidden ? 0 : GOLD.panel}>{children}</GoldLayer>
       </div>
     </div>
