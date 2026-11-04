@@ -50,6 +50,7 @@ export function DomainLabels({
                 onClick={onCasa}
                 className="pointer-events-auto flex min-h-11 min-w-11 translate-y-9 flex-col items-center justify-center rounded-full bg-night/85 px-3 py-1 text-xs font-bold text-cream ring-1 ring-edge shadow-lg shadow-black/50 active:scale-95"
                 data-domain-casa
+                data-goods-to="store"
               >
                 Casa {view.house.casa}
               </button>
@@ -76,6 +77,7 @@ export function DomainLabels({
                 type="button"
                 data-workshop={ws.id}
                 data-ready={s.state === "ready" ? "" : undefined}
+                data-harvest-from={s.state === "ready" ? good : undefined}
                 disabled={busy && s.state === "ready"}
                 aria-label={`${buildingName(p, ws.type)} · ${line}`}
                 onClick={() =>
