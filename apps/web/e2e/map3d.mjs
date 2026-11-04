@@ -280,7 +280,7 @@ try {
     };
     // 3. A mule sent to Padua: it walks there on the board, no medal above it. The workshops
     // folded first (Recentrer), the camera a little nearer.
-    await page.getByRole("button", { name: /recentrer/i }).click();
+    await page.locator("[data-round=recenter]").click();
     await page.waitForTimeout(900);
     await page.waitForTimeout(800);
     await send(page, "padova");
@@ -317,7 +317,7 @@ try {
     await page.waitForTimeout(3000);
     await page.keyboard.press("Escape");
     // Recentrer: the camera leaves the mule it followed, out over the house's sectors.
-    await page.getByRole("button", { name: /recentrer/i }).click();
+    await page.locator("[data-round=recenter]").click();
     await page.waitForTimeout(1800);
     await shot("4b-secteur");
     // Out, as far as the map goes: the whole house's map on the board.

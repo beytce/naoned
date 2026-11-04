@@ -248,6 +248,7 @@ const frDict = {
       toRemise: "Aller à la Remise",
       free: "Une place libre",
       help: "Conseil",
+      loading: "Le plateau se prépare…",
       recenter: "Recentrer",
       production: "Production",
       buildings: "Bâtiments",

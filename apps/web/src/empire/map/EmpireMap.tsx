@@ -45,6 +45,7 @@ import {
   type Target,
   centredOn,
   cityLooks,
+  edgeArrow,
   farCamera,
   fleetSpots,
   nearestPlace,
@@ -70,6 +71,10 @@ export interface EmpireMapHandle {
   far(): void;
   /** Out of a fondaco's domain, back to the map around it. */
   leave(): void;
+  /**
+   * « Maison » (3D): the camera back over the first fondaco; already there, its domain plunged into.
+   */
+  house(): void;
   /** The information layer shown (Alt held) or not. */
   info(on: boolean): void;
   /** The map moved a step (a key: -1, 0 or 1 on each axis), or zoomed by a factor. */
@@ -184,6 +189,7 @@ export const EmpireMap = forwardRef<
   const mist = useRef<HTMLDivElement>(null);
   const ground = useRef<HTMLDivElement>(null);
   const pins = useRef<HTMLDivElement>(null);
+  const arrows = useRef<HTMLDivElement>(null);
   // The board in 3D, under the layers: its camera follows the map's at each paint.
   const board3d = useRef<Board3DHandle | null>(null);
   // A place touched (its mark, or its hexagon on the 3D board): the latest handler.
@@ -238,13 +244,23 @@ export const EmpireMap = forwardRef<
         : Math.max(0.3, drawn.current / ref0.current);
       layer.style.setProperty("--chartk", String(grown));
     }
+    // The arrows at the screen's edge toward the fondaco and the vehicles out of sight (3D).
+    for (const el of arrows.current?.querySelectorAll<HTMLElement>("[data-arrow]") ?? []) {
+      const [ax = 0, ay = 0] = (el.dataset.chart ?? "0,0").split(",").map(Number);
+      const a = edgeArrow([ax * s + tx, ay * TILT * s + ty], v);
+      el.style.display = a ? "" : "none";
+      if (a) {
+        el.style.transform = `translate(${a.x - 22}px, ${a.y - 22}px)`;
+        const tip = el.firstElementChild as HTMLElement | null;
+        if (tip) tip.style.transform = `rotate(${a.angle}rad)`;
+      }
+    }
     // Far, the places' names give way (after Hades' Star: a planet's name shows near).
     const far = s / ref0.current < 0.62;
     if (root.current && (root.current.dataset.far === "1") !== far) {
       if (far) root.current.dataset.far = "1";
       else delete root.current.dataset.far;
     }
-    void v;
   }, []);
 
   // A counter put down or raised: its ring fills with gold, then a burst and a wave (900 ms).
@@ -335,6 +351,22 @@ export const EmpireMap = forwardRef<
     openedAt.current = at;
     camera.easeTo(MAP_3D ? domainFrame(at) : orbitOn(at, camera.cam()));
   };
+  /** « Maison » (3D): back over the first fondaco; already there, its domain. */
+  const goHouse = () => {
+    unfollow.current();
+    const at = homeAt(p);
+    const v = camera.view();
+    const c = camera.cam();
+    const want = centredOn(at, sectorOn(v).s, v);
+    const here =
+      Math.abs(c.s / want.s - 1) < 0.15 &&
+      Math.hypot(c.tx - want.tx, c.ty - want.ty) < Math.min(v.w, v.h) * 0.12;
+    if (here || openedNow.current === "home") deploy("veneto", at, "home");
+    else {
+      setOpened(null);
+      camera.easeTo(() => want);
+    }
+  };
   useImperativeHandle(ref, () => ({
     toggle: () => {
       unfollow.current();
@@ -350,6 +382,7 @@ export const EmpireMap = forwardRef<
       setOpened(null);
       camera.easeTo(farOn);
     },
+    house: () => goHouse(),
     leave: () => {
       const at = openedAt.current;
       setOpened(null);
@@ -395,8 +428,19 @@ export const EmpireMap = forwardRef<
       on = false;
     };
     unfollow.current = stop;
-    root.current?.addEventListener("pointerdown", stop, { once: true });
-    root.current?.addEventListener("wheel", stop, { once: true });
+    // A finger that drags the map ends it; a pinch or the wheel (a zoom) does not.
+    const fingers = new Map<number, [number, number]>();
+    const down = (e: PointerEvent) => fingers.set(e.pointerId, [e.clientX, e.clientY]);
+    const drag = (e: PointerEvent) => {
+      const from = fingers.get(e.pointerId);
+      if (from && fingers.size === 1 && Math.hypot(e.clientX - from[0], e.clientY - from[1]) > 12)
+        stop();
+    };
+    const up = (e: PointerEvent) => fingers.delete(e.pointerId);
+    root.current?.addEventListener("pointerdown", down);
+    window.addEventListener("pointermove", drag);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
     const step = () => {
       if (!on) return;
       const t = Date.now() + skew;
@@ -415,8 +459,10 @@ export const EmpireMap = forwardRef<
     return () => {
       on = false;
       cancelAnimationFrame(raf);
-      root.current?.removeEventListener("pointerdown", stop);
-      root.current?.removeEventListener("wheel", stop);
+      root.current?.removeEventListener("pointerdown", down);
+      window.removeEventListener("pointermove", drag);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
     };
   }, [followKey]);
   const chosenAt = selected ? view?.vehicles.mine.find((v) => v.id === selected)?.at : undefined;
@@ -507,7 +553,17 @@ export const EmpireMap = forwardRef<
       if (!sendTo("home"))
         opened === "home" ? onTarget({ kind: "casa" }) : deploy("veneto", homeAt(p), "home");
     } else if (id.startsWith("city:")) {
-      if (!sendTo(id)) onTarget({ kind: "city", code: id.slice(5) });
+      if (!sendTo(id)) {
+        onTarget({ kind: "city", code: id.slice(5) });
+        // The town over its sheet, never hidden under it (after the map's audit, 3 November).
+        const c = map.cities.find((x) => x.code === id.slice(5));
+        if (c) {
+          const cam = camera.cam();
+          const v = camera.view();
+          const y = c.y * TILT * cam.s + cam.ty;
+          if (y > v.h * 0.4) camera.easeTo({ ...cam, ty: cam.ty - (y - v.h * 0.3) }, 380);
+        }
+      }
     } else if (id === "depot") onTarget({ kind: "depot" });
     else if (id === "porta") onTarget({ kind: "porta" });
     else if (id === "arsenal") onTarget({ kind: "arsenal" });
@@ -599,6 +655,60 @@ export const EmpireMap = forwardRef<
         </div>
       )}
 
+      {/* Until the 3D board is in: the night and a word, never a bare screen of floating names. */}
+      {MAP_3D && !threeReady && (
+        <div
+          className="pointer-events-none absolute inset-0 z-[15] flex flex-col items-center justify-center gap-3 bg-[#16263E]"
+          data-board-loading
+        >
+          <span className="h-10 w-10 animate-spin rounded-full border-2 border-gold/30 border-t-gold" />
+          <span className="font-place text-sm uppercase tracking-[0.14em] text-cream-dim">
+            {t.scene.loading}
+          </span>
+        </div>
+      )}
+      {/* The fondaco and the vehicles on their way out of sight: an arrow at the edge each (3D). */}
+      {MAP_3D && !domainOn && (
+        <div ref={arrows} className="pointer-events-none absolute inset-0 z-10" data-arrows>
+          {[
+            ...(map.home && map.home.placed !== false
+              ? [{ id: "home", x: map.home.x, y: map.home.y }]
+              : []),
+            ...fleetSpots(p, now, true)
+              .filter((f) => f.pose.hop)
+              .map((f) => ({ id: `vehicle:${f.v.id}`, x: f.x, y: f.y })),
+          ].map((a) => (
+            <button
+              key={a.id}
+              type="button"
+              data-arrow={a.id}
+              data-chart={`${a.x},${a.y}`}
+              style={{ display: "none" }}
+              aria-label={a.id === "home" ? t.nav.home : (t.vehicleNames.mule ?? "")}
+              onClick={() =>
+                a.id === "home" ? goHouse() : onTarget({ kind: "vehicle", id: a.id.slice(8) })
+              }
+              className="pointer-events-auto absolute left-0 top-0 flex h-11 w-11 items-center justify-center rounded-full bg-night/85 shadow-lg shadow-black/50 ring-1 ring-gold/60 active:scale-95"
+            >
+              <span className="flex items-center justify-center text-gold">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <path
+                    d="M5 3 L13 9 L5 15"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+              <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-night ring-1 ring-gold/60 [&_svg]:h-4 [&_svg]:w-4">
+                {a.id === "home" ? Icon.home() : null}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
       {/* The places, moved with the chart, kept at their size on screen. */}
       <div
         ref={pins}

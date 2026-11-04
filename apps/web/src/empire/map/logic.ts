@@ -940,3 +940,34 @@ export function cityLooks(p: EmpirePayload): CityLook[] {
     ];
   });
 }
+
+/** The screen's margins an arrow keeps (px): the HUD above, the bar below. */
+export const EDGE = { top: 132, bottom: 150, side: 30 };
+
+/**
+ * An arrow at the screen's edge toward a place out of sight (after the map's audit, 3 November
+ * 2026): where it stands on the edge and where it points (radians, 0 to the east); null when the
+ * place is on the screen.
+ */
+export function edgeArrow(
+  at: [number, number],
+  v: Viewport,
+  inset = EDGE,
+): { x: number; y: number; angle: number } | null {
+  const [x, y] = at;
+  const left = inset.side;
+  const right = v.w - inset.side;
+  const top = inset.top;
+  const bottom = v.h - inset.bottom;
+  if (x >= left && x <= right && y >= top && y <= bottom) return null;
+  // From the middle of the free part of the screen toward the place, cut at its edge.
+  const cx = (left + right) / 2;
+  const cy = (top + bottom) / 2;
+  const dx = x - cx;
+  const dy = y - cy;
+  const k = Math.min(
+    dx === 0 ? Number.POSITIVE_INFINITY : (dx > 0 ? right - cx : left - cx) / dx,
+    dy === 0 ? Number.POSITIVE_INFINITY : (dy > 0 ? bottom - cy : top - cy) / dy,
+  );
+  return { x: cx + dx * k, y: cy + dy * k, angle: Math.atan2(dy, dx) };
+}

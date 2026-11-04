@@ -42,6 +42,7 @@ import { RoundButtons } from "./map/RoundButtons.js";
 import { Trips } from "./map/Trips.js";
 import { VehiclePanel } from "./map/VehiclePanel.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
+import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
 import { ArmsSheet } from "./porta/ArmsSheet.js";
 import { BattleScreen } from "./porta/Battle.js";
@@ -471,7 +472,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
                 button does it; then he withdraws behind the « ? », and the player plays. */}
             {lorenzo}
             <RoundButtons
-              onRecenter={() => map.current?.toggle()}
+              onRecenter={() => (MAP_3D ? map.current?.house() : map.current?.toggle())}
               onHelp={tutorial ? undefined : () => setSheet("help")}
               onMarket={() => setSheet("market")}
               onCompany={() => setSheet("company")}

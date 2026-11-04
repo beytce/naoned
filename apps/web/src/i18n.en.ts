@@ -328,6 +328,7 @@ export const en: Dictionary = {
       toRemise: "Go to the Remise",
       free: "A free place",
       help: "Advice",
+      loading: "The board is being laid…",
       recenter: "Recentre",
       production: "Production",
       buildings: "Buildings",
