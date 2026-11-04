@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
+import { MAP_3D } from "../map3d/flag.js";
 
 const t = fr.empire;
 
@@ -33,8 +34,9 @@ export function RoundButtons({
       data-round-buttons
     >
       <div className="flex gap-2.5">
-        <Round label={t.scene.recenter} onClick={onRecenter} id="recenter">
-          {Icon.locate()}
+        {/* On the 3D board, « Maison »: back to the fondaco, its domain at a second touch. */}
+        <Round label={MAP_3D ? t.nav.home : t.scene.recenter} onClick={onRecenter} id="recenter">
+          {MAP_3D ? Icon.home() : Icon.locate()}
         </Round>
         {onHelp && (
           <Round label={t.scene.help} onClick={onHelp} id="help">

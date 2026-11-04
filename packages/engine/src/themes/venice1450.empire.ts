@@ -220,6 +220,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     // The small tiles (decision of the owner, 3 November 2026): seven to a sector, the towns on
     // theirs (venice1450.map.ts), a fondaco on a tile of its own, never next to a town's.
     tiles: true,
+    // Venice on its lagoon (decision of the owner, 3 November 2026): the small tile east of it.
+    water: ["2,4#1"],
     costStepBps: 2_500,
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
     // fell short of their share, calibration.md).
@@ -289,11 +291,27 @@ export const venice1450Empire: EmpireSettingsInput = {
     tierTimes: { raw: 1, intermediate: 2, finished: 3, luxury: 5 },
     lots: {},
     premiumBps: 1_500,
+    // After the map's audit (calibration.md, 4 November 2026): each city's first order a quarter of
+    // its lot (a first delivery in the first session), the goods made now drawn three times more
+    // often, +1 % a ten units of the road from the nearest fondaco, up to +15 %.
+    firstLotBps: 2_500,
+    madeWeight: 3,
+    distanceBps: 100,
+    distanceMaxBps: 1_500,
   },
   // A hop: ten seconds to leave (left at once, or taken back), then eleven seconds a unit of the
   // chart (3 November, the long voyages): five minutes from the first fondaco to Venice, seven to
   // eight to Treviso, twenty to the far towns; fifteen stops queued at most.
-  moves: { departSeconds: 10, unitsPerSecond: 8, secondsPerUnit: 11, maxStops: 15 },
+  // The vehicles come back alone to their fondaco, and may be called back five seconds after they
+  // left (decision of the owner, 3 November 2026, after the map's audit).
+  moves: {
+    departSeconds: 10,
+    unitsPerSecond: 8,
+    secondsPerUnit: 11,
+    maxStops: 15,
+    returnHome: true,
+    recallSeconds: 5,
+  },
   // A model raised at the Remise or the Arsenal: its price, 500 ducats at the least, doubled at
   // each level; +10 % a level on land, +5 % at sea (at +10 %, the ships took the trade from the
   // miners and the traders: decision of the owner, calibration.md).

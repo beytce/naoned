@@ -117,7 +117,11 @@ export interface EmpireView {
     fillBps: number;
     /** When the next order comes; null while the city is full. */
     nextAt: number | null;
+    /** The house's counters that serve it. */
+    posts?: string[];
   }[];
+  /** The last deliveries brought (played again on the player's return). */
+  delivered?: { city: string; pay: string; at: number }[];
   /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
   moves: {
     departSeconds: number;
@@ -125,6 +129,9 @@ export interface EmpireView {
     /** The long voyages: seconds a unit of the chart, when set (it rules then). */
     secondsPerUnit?: number;
     maxStops: number;
+    /** A vehicle comes back alone once at a city; called back this long after it left (s). */
+    returnHome?: boolean;
+    recallSeconds?: number;
   };
   vehicles: {
     shop: {
@@ -151,7 +158,14 @@ export interface EmpireView {
       /** The orders aboard, each a place of its hold, and the counter they were loaded at. */
       loads: (EmpireOrderView & { from: string })[];
       /** Its stops to come, hop by hop: each leaves when the one before arrives. */
-      legs: { from: string; to: string; departAt: number; arrivesAt: number }[];
+      /** Each with the road it walks on the small tiles (the server's, the very one it times). */
+      legs: {
+        from: string;
+        to: string;
+        departAt: number;
+        arrivesAt: number;
+        road?: [number, number][];
+      }[];
       /** Its places for trade modules (a level of its model), and what is fitted there. */
       slots: number;
     }[];
@@ -288,6 +302,8 @@ export interface EmpireMapView {
   cityClearance?: number;
   /** The small tiles: a fondaco is put down on a tile's middle (engine, slots.ts). */
   tiles?: boolean;
+  /** The small tiles of lagoon (`<cell>#<k>`). */
+  water?: string[];
   transferUnitsPerHour: number;
   /** The sectors it may buy next, and the price of the next. */
   buyable: { cell: string; region: string; coast: boolean; casa: number }[];
@@ -358,6 +374,8 @@ export type EmpireAction =
   | { type: "empireBuy"; good: string; qty: number; post?: string }
   | { type: "empireMove"; vehicleId: string; to: string }
   | { type: "empireDepartNow"; vehicleId: string }
+  | { type: "empireDeliverCity"; city: string; orderIds?: string[] }
+  | { type: "empireRecall"; vehicleId: string }
   | { type: "empireSettle" }
   | { type: "empireCancelStop"; vehicleId: string }
   | { type: "empireFitVehicle"; vehicleId: string; slot: number; module: string | null }

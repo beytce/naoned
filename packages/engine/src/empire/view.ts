@@ -42,6 +42,7 @@ import {
 import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import {
   buyableOf,
+  cellsWithin,
   citiesCovered,
   citiesFound,
   citySpot,
@@ -56,12 +57,13 @@ import {
   unlockedOf,
 } from "./map.js";
 import { researchCost, researchMinutesOf } from "./modules.js";
-import { holdOf } from "./moves.js";
+import { holdOf, placePoint } from "./moves.js";
 import { type CityOrders, ordersOf } from "./orders.js";
 import { type PortaView, portaViewOf } from "./porta/view.js";
 import { bandOf } from "./power.js";
 import { regionOf } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
+import { roadBetween } from "./slots.js";
 import { staffHireCost, staffSlots } from "./staff.js";
 import { storesOf } from "./stores.js";
 import { isContesaWeek, terraWeekStart } from "./terra.js";
@@ -127,6 +129,8 @@ export interface EmpireView {
   stores: { post: string; region: string; goods: Record<string, number> }[];
   /** The orders of the cities its counters serve (after Hades' Star's shipments). */
   orders: CityOrders[];
+  /** The last deliveries brought (the board plays them again on the player's return). */
+  delivered: { city: string; pay: string; at: number }[];
   /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
   moves: {
     departSeconds: number;
@@ -134,6 +138,9 @@ export interface EmpireView {
     /** The long voyages: seconds a unit of the chart, when set (it rules then). */
     secondsPerUnit?: number;
     maxStops: number;
+    /** A vehicle comes back alone once at a city; called back this long after it left (s). */
+    returnHome?: boolean;
+    recallSeconds?: number;
   };
   /** The vehicles one may buy, those of the house, and its voyages under way. */
   vehicles: {
@@ -158,7 +165,8 @@ export interface EmpireView {
       at: string;
       /** The orders aboard (each a place of its hold), and its stops to come (hop by hop). */
       loads: (EmpireOrder & { from: string })[];
-      legs: EmpireLeg[];
+      /** Each with the road it walks (the small tiles), the very one its time was reckoned on. */
+      legs: (EmpireLeg & { road?: [number, number][] })[];
       /** Its places for trade modules (a level of its model), and what is fitted there. */
       slots: number;
     }[];
@@ -305,6 +313,8 @@ export interface EmpireMapView {
   cityClearance: number;
   /** The small tiles: a fondaco is put down on a tile's middle (slots.ts). */
   tiles: boolean;
+  /** The small tiles of lagoon (`<cell>#<k>`). */
+  water: string[];
   /** A land vehicle between two counters: so many units an hour. */
   transferUnitsPerHour: number;
   /** The cities the house's counters serve. */
@@ -467,6 +477,7 @@ export function empireView(
       : null,
     stores: storesOf(state.inventories[playerId], house, s),
     orders: ordersOf(ctx, house, playerId, s, now),
+    delivered: (house.delivered ?? []).map((d) => ({ ...d, pay: d.pay.toString() })),
     moves: s.moves,
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
@@ -671,6 +682,15 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
   });
 }
 
+/** The cells of sea next to the coast cells seen. */
+function seaAlong(seen: Set<string>, s: EmpireSettings): string[] {
+  const out: string[] = [];
+  for (const k of seen)
+    if (s.map.cells[k]?.coast)
+      for (const n of cellsWithin(k, 1)) if (!(n in s.map.cells) && !seen.has(n)) out.push(n);
+  return out;
+}
+
 /** The map as the house sees it: its cells, its counters, its Arsenal, the cities it found. */
 function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
   const seen = revealedOf(house, s);
@@ -680,7 +700,9 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
         .filter(([k]) => seen.has(k))
         .map(([k, c]) => [k, { region: c.region, coast: c.coast }]),
     ),
-    revealed: [...seen].sort(),
+    // The sea along the coasts seen, seen too (decision of the owner, 3 November 2026: Venice on
+    // its lagoon from the first screen); nothing to buy there, only the board's dressing.
+    revealed: [...new Set([...seen, ...seaAlong(seen, s)])].sort(),
     posts: standingPosts(house, s)
       .slice(1)
       .map((p) => ({ ...p, reach: reachOf(p.level, s) })),
@@ -700,6 +722,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     postSpacing: s.map.postSpacing,
     cityClearance: s.map.cityClearance,
     tiles: s.map.tiles,
+    water: s.map.water,
     transferUnitsPerHour: s.map.transferUnitsPerHour,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
     unlocked: unlockedOf(house, s),
@@ -760,6 +783,18 @@ const plainSite = (cost: Deniers, minutes: number, level: number): EmpireSite =>
   cutBps: 0,
 });
 
+/**
+ * A hop's road on the small tiles, reckoned on the whole map as `hopMs` times it (the house's view
+ * holds only what it sees: a road reckoned there would be another), to a tenth of a unit.
+ */
+function legRoad(h: EmpireHouse, s: EmpireSettings, l: EmpireLeg): [number, number][] | undefined {
+  if (!s.map.tiles) return undefined;
+  const a = placePoint(h, s, l.from);
+  const b = placePoint(h, s, l.to);
+  if (!a || !b) return undefined;
+  return roadBetween(a, b, s).map(([x, y]) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
+}
+
 function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s: EmpireSettings) {
   const hold = houseEffect(house, "capacity", s);
   // A model's places of hold, the house's effect counted (as a vehicle's, holdOf).
@@ -771,7 +806,7 @@ function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s
       at: v.at ?? "home",
       // The orders aboard, each a place of its hold (after Hades' Star's shipments).
       loads: v.loads ?? [],
-      legs: v.legs ?? [],
+      legs: (v.legs ?? []).map((l) => ({ ...l, road: legRoad(house, s, l) })),
       // Its places for trade modules, one a level of its model, and what is fitted there.
       slots: vehicleSlotsOf(house, v.type),
       fitted: v.fitted ?? [],

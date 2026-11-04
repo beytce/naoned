@@ -72,6 +72,10 @@ async function magicLink(email) {
 // container without a GPU; a place is touched through the scene (a ray), so its mark is pressed at
 // its middle with the mouse rather than clicked. MAP3D=0: on the SVG board, the fallback (?map=svg).
 const MAP3D = process.env.MAP3D !== "0";
+// The fondaco's workshops: on the 3D board in its domain (decision of the owner, 3 November 2026),
+// on the SVG board in orbit around it.
+const WS = MAP3D ? "[data-domain-layer] [data-workshop]" : "[data-orbit-open=home] [data-workshop]";
+const OPEN = MAP3D ? "[data-domain-layer]" : "[data-orbit-open]";
 
 const server = await startServer();
 const browser = await chromium.launch({
@@ -152,7 +156,7 @@ try {
       .first()
       .waitFor({ state: "attached", timeout: 3_000 })
       .catch(() => faults.push(`${label}: no burst on the fondaco put down`));
-    if ((await page.locator("[data-orbit-open]").count()) > 0)
+    if ((await page.locator(OPEN).count()) > 0)
       faults.push(`${label}: the workshops shown before Venice is touched`);
     await shot("1c-secteur");
     // The information layer (chantier 4): a finger held on the map, then Alt; every name shows.
@@ -191,37 +195,59 @@ try {
     await page.waitForTimeout(350);
     // The fondaco touched: its workshops deploy around it, and its reach shows.
     await press("[data-region=veneto]");
-    await page.locator("[data-orbit-open=home] [data-workshop]").first().waitFor();
-    if ((await page.locator("[data-reach-of=home]").count()) !== 1)
-      faults.push(`${label}: no reach drawn around the fondaco touched`);
-    // The bubble stays itself in the middle of its workshops: no second sun.
-    if (
-      (await page.locator("[data-home]").count()) !== 1 ||
-      (await page.locator("[data-casa-sun]").count()) > 0
-    )
-      faults.push(`${label}: Venice's bubble replaced when its workshops deploy`);
+    await page.locator(WS).first().waitFor();
+    if (MAP3D) {
+      // The domain: the Casa on the fondaco's tile, the map's marks put away.
+      if ((await page.locator("[data-domain-casa]").count()) !== 1)
+        faults.push(`${label}: no Casa on the domain's fondaco`);
+      await page
+        .locator("[data-domain-bar=veneto]")
+        .waitFor({ timeout: 5_000 })
+        .catch(() => faults.push(`${label}: no bar at the domain's foot`));
+      if (await page.locator("[data-city=padova]").first().isVisible())
+        faults.push(`${label}: Padua's mark shown in the domain`);
+    } else {
+      if ((await page.locator("[data-reach-of=home]").count()) !== 1)
+        faults.push(`${label}: no reach drawn around the fondaco touched`);
+      // The bubble stays itself in the middle of its workshops: no second sun.
+      if (
+        (await page.locator("[data-home]").count()) !== 1 ||
+        (await page.locator("[data-casa-sun]").count()) > 0
+      )
+        faults.push(`${label}: Venice's bubble replaced when its workshops deploy`);
+    }
     // The corners: the ducats, and the two mules at home among two.
     await page.locator("[data-hud=ducats]").waitFor();
     if (!/2\s*\/\s*2/.test(await page.locator("[data-hud=fleet]").innerText()))
       faults.push(`${label}: the fleet not « 2 / 2 » in the corner`);
     // The new player's road: the next step says what to do, its gold button does it.
-    await page.locator('[data-next-step="relaunch"]').waitFor();
+    await page.locator('[data-next-step="relaunch"]').first().waitFor();
     if ((await page.locator("[data-workshop]").count()) !== 3)
       faults.push(`${label}: not three workshops`);
+    // Named by their text on the orbit, by their label in the domain (its tiles show the rest).
+    const names = await page
+      .locator("[data-workshop]")
+      .evaluateAll((els) => els.map((e) => `${e.textContent} ${e.getAttribute("aria-label")}`));
     for (const name of [/carrière d'argile/i, /camp de bûcherons/i, /scierie/i])
-      if ((await page.locator("[data-workshop]").filter({ hasText: name }).count()) !== 1)
+      if (names.filter((x) => name.test(x)).length !== 1)
         faults.push(`${label}: a workshop unnamed on the orbit`);
     if (
-      (await page
-        .locator("[data-orbit-empire]")
-        .getByText(/^bâtir$/i)
-        .count()) !== 1
+      MAP3D
+        ? (await page.locator("[data-domain-free]").count()) !== 1
+        : (await page
+            .locator("[data-orbit-empire]")
+            .getByText(/^bâtir$/i)
+            .count()) !== 1
     )
       faults.push(`${label}: no « Bâtir » on the free place`);
     await shot("2-maison");
-    await page.getByRole("button", { name: /tout relancer/i }).click();
+    await page.waitForTimeout(500);
+    await page
+      .getByRole("button", { name: /tout relancer/i })
+      .first()
+      .click();
     // The Casa 2 asks bricks, made nowhere: the next step names the brickworks.
-    await page.locator('[data-next-step="build"]').waitFor();
+    await page.locator('[data-next-step="build"]').first().waitFor();
     await shot("3-relance");
 
     // A workshop touched: its panel, then its details (its place on the ring, to move it).
@@ -244,7 +270,12 @@ try {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
 
-    // The Production, behind the « + »: the buildings, then the vehicles and the fleet.
+    // The Production, behind the « + » (on the 3D board, in the domain's bar, the workshop's panel
+    // closed first): the buildings, then the vehicles and the fleet.
+    if (MAP3D && (await page.locator("[data-domain-bar]").count()) === 0) {
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+    }
     await page.locator("[data-production]").click();
     await page.waitForSelector('[aria-modal="true"]');
     await page.waitForTimeout(450);
@@ -259,7 +290,11 @@ try {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
 
-    // The round buttons: the Market, the Company, the Family.
+    // The round buttons: the Market, the Company, the Family (on the 3D board, out of the domain).
+    if (MAP3D) {
+      await page.locator("[data-domain-back]").click();
+      await page.locator("[data-round=market]").waitFor();
+    }
     for (const [round, name, ready] of [
       ["market", "6-marche", "[data-market]"],
       ["company", "7-compagnie", "[data-carnet]"],
@@ -326,8 +361,8 @@ try {
     await page.waitForTimeout(400);
 
     // Out to the map (step 3): Venice's sector seen, the six around it in silhouette, Lombardy
-    // still in the dark.
-    await page.locator("[data-round=recenter]").click();
+    // still in the dark. (On the 3D board, out of the domain already: over the fondaco.)
+    if (!MAP3D) await page.locator("[data-round=recenter]").click();
     await page.locator("[data-map=empire]:not([data-orbit])").waitFor();
     await page.waitForTimeout(300);
     if (MAP3D) {
@@ -338,7 +373,9 @@ try {
     if ((await page.locator("[data-city=milano], [data-region=lombardia]").count()) > 0)
       faults.push(`${label}: Lombardy seen through the dark at the Casa 1`);
     await shot("9-carte");
-    // A counter put down from the Production: the cells light up, one is picked, it is put.
+    // A counter put down from the Production: the cells light up, one is picked, it is put. On
+    // the 3D board, the Production is in the domain.
+    if (MAP3D) await press("[data-region=veneto]");
     await page.locator("[data-production]").click();
     await page.locator("[data-place=post] button").click();
     await page.locator("[data-placing-bar=post]").waitFor();
@@ -368,14 +405,16 @@ try {
       for (let i = 0; i < 8; i++) await page.mouse.wheel(0, -300);
     }
     await page.waitForTimeout(500);
-    if ((await page.locator("[data-orbit-open]").count()) > 0)
+    if ((await page.locator(OPEN).count()) > 0)
       faults.push(`${label}: the workshops deployed by a zoom`);
     await press("[data-region=veneto]");
-    await page.locator("[data-orbit-open=home] [data-workshop]").first().waitFor();
+    await page.locator(WS).first().waitFor();
 
     // The next step opens the Production on the brickworks of the Casa 2.
+    await page.waitForTimeout(500);
     await page
       .locator("[data-next-step=build]")
+      .first()
       .getByRole("button", { name: /briqueterie/i })
       .click();
     await page.waitForSelector('[aria-modal="true"]');
@@ -387,9 +426,10 @@ try {
       .click();
     await page.waitForTimeout(800);
     // Then the next step waits for the site.
-    await page.locator('[data-next-step="wait"]').waitFor();
+    await page.locator('[data-next-step="wait"]').first().waitFor();
     await shot("12-attente");
     // Buying at the market goes into a counter's stock: ten units of a good, into Venice's.
+    if (MAP3D) await page.locator("[data-domain-back]").click();
     await page.locator("[data-round=market]").click();
     await page.waitForSelector("[data-market]");
     if ((await page.locator("[data-market-buy] button:enabled").count()) === 0)
@@ -413,69 +453,107 @@ try {
       faults.push(`${label}: vehicles at the market`);
     // The cities' orders (after Hades' Star): Padua's ring, its orders touched; a cart chosen
     // lights the towns within its reach.
+    await page.waitForTimeout(800);
     await press("[data-city=padova]");
-    await page.locator("[data-orders-panel=padova] [data-order]").first().waitFor();
-    if ((await page.locator("[data-city=padova] [data-fill-ring]").count()) === 0)
+    await page
+      .locator("[data-orders-panel=padova] [data-order]")
+      .first()
+      .waitFor({ timeout: 8_000 })
+      .catch(async (e) => {
+        await shot("13x-padoue");
+        throw e;
+      });
+    // On the SVG board, its ring of orders; on the 3D board, its crates in the scene.
+    if (!MAP3D && (await page.locator("[data-city=padova] [data-fill-ring]").count()) === 0)
       faults.push(`${label}: no ring of orders around Padua`);
     await shot("14-commandes");
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
-    // A cart touched at its counter (after Hades' Star's shipment list): « Charger » lists the
-    // orders of the cities the counter serves, sorted; a touch loads one.
-    // A touch on the cart (its pointer down, then up anywhere: the header may cover it).
-    const tapBox = await page.locator("[data-vehicle]").first().boundingBox();
-    const tap = {
-      clientX: (tapBox?.x ?? 0) + (tapBox?.width ?? 0) / 2,
-      clientY: (tapBox?.y ?? 0) + (tapBox?.height ?? 0) / 2,
-      pointerId: 1,
-      isPrimary: true,
-      button: 0,
-    };
-    await page.locator("[data-vehicle]").first().dispatchEvent("pointerdown", tap);
-    await page.evaluate((t) => window.dispatchEvent(new PointerEvent("pointerup", t)), tap);
-    await page.locator("[data-vehicle-panel] [data-hop-action=load]").click();
-    await page.locator("[data-vehicle-panel] [data-load-pane]").waitFor();
-    if ((await page.locator("[data-load-pane] [data-order]").count()) === 0)
-      faults.push(`${label}: no order to load at Venice's counter`);
-    await shot("14b-charger");
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(300);
-    // A vehicle dragged to Padua (after Hades' Star): a dotted line follows, the dark label tells
-    // where and how long; let go, it waits ten seconds to leave, « Partir » sends it at once.
-    const cartBox = await page.locator("[data-vehicle]").first().boundingBox();
-    const paduaBox = await page.locator("button[data-city=padova]").first().boundingBox();
-    if (!cartBox || !paduaBox) faults.push(`${label}: no vehicle or no Padua on the map`);
-    else {
-      const cx = cartBox.x + cartBox.width / 2;
-      const cy = cartBox.y + cartBox.height / 2;
-      const px = paduaBox.x + paduaBox.width / 2;
-      const py = paduaBox.y + paduaBox.height / 2;
-      await page.mouse.move(cx, cy);
-      await page.mouse.down();
-      await page.mouse.move((cx + px) / 2, (cy + py) / 2, { steps: 6 });
-      await page.mouse.move(px, py, { steps: 6 });
-      if ((await page.locator("[data-drag-label]").count()) === 0)
-        faults.push(`${label}: no label while dragging a vehicle`);
-      if ((await page.locator("[data-snap]").count()) === 0)
-        faults.push(`${label}: the drag does not snap to Padua`);
-      await shot("15-glisser");
-      await page.mouse.up();
-      await page.locator("[data-vehicle-panel] [data-hop-action=go]").waitFor();
-      await shot("16-depart");
-      // Its trade modules (1 November): a place a level of its model, the others still closed.
-      await page.locator("[data-vehicle-panel] [data-hop-action=modules]").click();
-      if ((await page.locator("[data-vehicle-modules] [data-vehicle-slot][data-open]").count()) < 1)
-        faults.push(`${label}: no place for a trade module on the vehicle`);
-      await shot("16b-modules");
-      await page.locator("[data-vehicle-panel] [data-hop-action=go]").click();
-      await page.locator("[data-vehicle][data-moving]").first().waitFor({ timeout: 5_000 });
-      await shot("17-en-route");
-      await page
-        .locator("[data-vehicle-panel] [data-hop-state]")
-        .getByText(/À quai/)
-        .waitFor({ timeout: 60_000 });
-      await shot("18-arrivee");
+    if (!MAP3D) {
+      // On the SVG board (the fallback), a cart touched at its counter by its medal: « Charger »
+      // lists the orders of the cities the counter serves, sorted; a touch loads one.
+      const tapBox = await page.locator("[data-vehicle]").first().boundingBox();
+      const tap = {
+        clientX: (tapBox?.x ?? 0) + (tapBox?.width ?? 0) / 2,
+        clientY: (tapBox?.y ?? 0) + (tapBox?.height ?? 0) / 2,
+        pointerId: 1,
+        isPrimary: true,
+        button: 0,
+      };
+      await page.locator("[data-vehicle]").first().dispatchEvent("pointerdown", tap);
+      await page.evaluate((t) => window.dispatchEvent(new PointerEvent("pointerup", t)), tap);
+      await page.locator("[data-vehicle-panel] [data-hop-action=load]").click();
+      await page.locator("[data-vehicle-panel] [data-load-pane]").waitFor();
+      if ((await page.locator("[data-load-pane] [data-order]").count()) === 0)
+        faults.push(`${label}: no order to load at Venice's counter`);
+      await shot("14b-charger");
       await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+    } else if ((await page.locator("[data-vehicle]").count()) > 0)
+      // On the 3D board, no medal over the animals (decision of the owner, 3 November).
+      faults.push(`${label}: a vehicle's medal on the 3D board`);
+    // « Livrer » from Padua (decision of the owner, 3 November): its orders bought at the market,
+    // one gold button loads them on a free vehicle, which leaves at once; its token under the
+    // house's name tells where and how long, offers to call it back a few seconds, and it comes
+    // back alone.
+    const wants = await page.evaluate(async () => {
+      const v = await (await fetch("/api/empire", { credentials: "same-origin" })).json();
+      return (v.view?.orders.find((o) => o.city === "padova")?.orders ?? []).map((o) => ({
+        good: o.good,
+        qty: o.qty,
+      }));
+    });
+    for (const w of wants)
+      await page.evaluate(
+        (a) =>
+          fetch("/api/empire/actions", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "empireBuy", good: a.good, qty: a.qty }),
+          }),
+        w,
+      );
+    await page.reload();
+    await page
+      .locator(MAP3D ? "[data-map=empire][data-three]" : "[data-map=empire]")
+      .waitFor({ timeout: 60_000 });
+    await page.waitForTimeout(1_500);
+    await press("[data-city=padova]");
+    await page.locator("[data-orders-panel=padova] [data-order]").first().waitFor();
+    // Chosen by its stock (when the purse could buy it: the button shows then).
+    if (
+      (await page.locator("[data-orders-panel=padova] [data-deliver]").count()) > 0 &&
+      (await page.locator("[data-orders-panel=padova] [data-picked]").count()) === 0
+    )
+      faults.push(`${label}: no order of Padua chosen by its stock`);
+    await shot("15-livrer");
+    const deliver = page.locator("[data-orders-panel=padova] [data-deliver] button");
+    if ((await deliver.count()) === 0) {
+      // The purse too short for the lot at the market (the whole delivery is map3d.mjs's): the
+      // sheet says why instead.
+      if ((await page.locator("[data-orders-panel=padova] [data-why]").count()) === 0)
+        faults.push(`${label}: neither « Livrer » nor why for Padua`);
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+    } else {
+      await deliver.click();
+      await page.locator("[data-trip]").first().waitFor({ timeout: 5_000 });
+      if ((await page.locator("[data-recall]").count()) === 0)
+        faults.push(`${label}: no « Rappeler » just after leaving`);
+      await shot("16-en-route");
+      await page.waitForTimeout(6_000);
+      if ((await page.locator("[data-recall]").count()) > 0)
+        faults.push(`${label}: « Rappeler » still offered after five seconds`);
+      // There and back, alone (a second a unit in this journey).
+      await page
+        .locator("[data-trip]")
+        .getByText(/Retour/)
+        .first()
+        .waitFor({ timeout: 90_000 });
+      await shot("17-retour");
+      await page.locator("[data-trip]").first().waitFor({ state: "detached", timeout: 90_000 });
+      await shot("18-rentree");
     }
     // Far out, the zoom stops at the house's whole map, the page alive (1 November: it crashed).
     await page.mouse.move(width / 2, height / 2);

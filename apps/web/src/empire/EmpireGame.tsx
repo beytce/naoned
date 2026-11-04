@@ -32,14 +32,17 @@ import {
 } from "./logic.js";
 import { ActionPanel } from "./map/ActionPanel.js";
 import { BottomSlot } from "./map/BottomSlot.js";
+import { DomainBar } from "./map/Domain.js";
 import { EmpireMap, type EmpireMapHandle, type Picked } from "./map/EmpireMap.js";
 import { Hud } from "./map/Hud.js";
 import { OrdersPanel } from "./map/OrdersPanel.js";
 import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
 import { RoundButtons } from "./map/RoundButtons.js";
+import { Trips } from "./map/Trips.js";
 import { VehiclePanel } from "./map/VehiclePanel.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
+import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
 import { ArmsSheet } from "./porta/ArmsSheet.js";
 import { BattleScreen } from "./porta/Battle.js";
@@ -100,6 +103,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const skew = useRef(first.now - Date.now());
   const [now, setNow] = useState(first.now);
   const [sheet, setSheet] = useState<SheetId | null>(first.view?.away ? "away" : null);
+  const sheetNow = useRef(sheet);
+  sheetNow.current = sheet;
   // The Porta's battle on screen (docs/plan-porta.md § 6).
   const [fighting, setFighting] = useState(false);
   // A battle closed to look at the map stays closed until the next.
@@ -113,6 +118,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [vehicle, setVehicle] = useState<string | null>(null);
   const [aiming, setAiming] = useState(false);
   const map = useRef<EmpireMapHandle>(null);
+  useAwayRecap(p);
+  // A fondaco's domain plunged into (3D): its bar at the foot instead of the round buttons.
+  const [domain, setDomain] = useState<string | null>(null);
+  const domainNow = useRef(domain);
+  domainNow.current = domain;
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // The good opened from the resource bar, and the recipe the next step points at.
@@ -213,6 +223,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   };
   // On a computer (after Hades' Star's keys): Échap lets go, the comma and the period go from a
   // vehicle to the one before or after.
+  const targetNow = useRef(target);
+  targetNow.current = target;
   const keys = useRef({ cycle, aiming });
   keys.current = { cycle, aiming };
   useEffect(() => {
@@ -221,6 +233,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.key === "Escape") {
         if (keys.current.aiming) setAiming(false);
+        // A sheet open closes by itself; the domain is left only from the map.
+        else if (domainNow.current && !targetNow.current && !sheetNow.current) map.current?.leave();
         else {
           setTarget(null);
           setVehicle(null);
@@ -254,17 +268,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       window.removeEventListener("blur", off);
     };
   }, []);
-  /** « Y envoyer un véhicule »: the one chosen, else the first standing free at a counter. */
-  const sendable = (city: string) => {
-    const mine = p.view?.vehicles.mine ?? [];
-    const free = (v: (typeof mine)[number]) => v.legs.length === 0 && !v.at.startsWith("city:");
-    const v = mine.find((x) => x.id === vehicle) ?? mine.find(free);
-    if (!v) return undefined;
-    return () => {
-      setVehicle(v.id);
-      setTarget({ kind: "vehicle", id: v.id });
-      void act({ type: "empireMove", vehicleId: v.id, to: `city:${city}` });
-    };
+  /** « Livrer » from a city: the orders chosen go; the camera stays on the city. */
+  const deliver = (city: string, orderIds: string[]) => {
+    void act({ type: "empireDeliverCity", city, orderIds }).then(() => setTarget(null));
   };
   const join = async () => {
     setBusy(true);
@@ -288,6 +294,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       const [, kind = "post", region] = id.split(":");
       setSheet(null);
       setPicked(null);
+      // Out of a domain first: the map's sectors to pick from.
+      if (domainNow.current) map.current?.leave();
       setPlacing({
         kind:
           kind === "camp" || kind === "depot" || kind === "porta" || kind === "home"
@@ -318,6 +326,23 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   };
   const step = nextStep(p, now);
   const tutorial = inTutorial(p);
+  // Lorenzo, the tutorial's card (on the map's foot, and over a domain's bar).
+  const lorenzo = tutorial && (
+    <div className="w-full px-3 pb-2 lg:max-w-md">
+      <NextStepCard
+        compact
+        p={p}
+        now={now}
+        step={step}
+        busy={busy}
+        act={act}
+        onBuild={(recipe) => {
+          setHighlight(recipe);
+          setSheet("production");
+        }}
+      />
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-night">
@@ -351,6 +376,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onPick={setPicked}
         onCamp={() => setSheet("company:terra")}
         houseName={account.pseudo ?? ""}
+        onDomain={setDomain}
       />
 
       <Hud
@@ -360,10 +386,28 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onHouse={() => setSheet("house")}
         onProduction={() => setSheet("production")}
       />
+      <Trips
+        p={p}
+        now={now}
+        busy={busy}
+        act={act}
+        onFocus={(id) => {
+          setVehicle(id);
+          setTarget({ kind: "vehicle", id });
+        }}
+      />
 
       {/* The foot of the map: the round buttons, a place's panel, or the bar of placing. */}
       <BottomSlot
-        id={placing ? "placing" : target ? `panel:${target.kind}` : "idle"}
+        id={
+          placing
+            ? "placing"
+            : target
+              ? `panel:${target.kind}`
+              : domain
+                ? `domain:${domain}`
+                : "idle"
+        }
         hidden={sheet !== null || good !== null}
       >
         {placing ? (
@@ -399,7 +443,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             p={p}
             busy={busy}
             city={target.code}
-            onSend={sendable(target.code)}
+            onDeliver={(ids) => deliver(target.code, ids)}
             onClose={() => setTarget(null)}
           />
         ) : target ? (
@@ -412,28 +456,26 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             onOpen={open}
             onClose={() => setTarget(null)}
           />
+        ) : domain ? (
+          <div className="flex w-full flex-col items-center">
+            {lorenzo}
+            <DomainBar
+              p={p}
+              now={now}
+              busy={busy}
+              region={domain}
+              act={act}
+              onBack={() => map.current?.leave()}
+              onProduction={() => setSheet("production")}
+            />
+          </div>
         ) : (
           <>
             {/* Lorenzo, the tutorial's: until the Casa 2 he says the next gesture, and its gold
                 button does it; then he withdraws behind the « ? », and the player plays. */}
-            {tutorial && (
-              <div className="w-full px-3 pb-2 lg:max-w-md">
-                <NextStepCard
-                  compact
-                  p={p}
-                  now={now}
-                  step={step}
-                  busy={busy}
-                  act={act}
-                  onBuild={(recipe) => {
-                    setHighlight(recipe);
-                    setSheet("production");
-                  }}
-                />
-              </div>
-            )}
+            {lorenzo}
             <RoundButtons
-              onRecenter={() => map.current?.toggle()}
+              onRecenter={() => (MAP_3D ? map.current?.house() : map.current?.toggle())}
               onHelp={tutorial ? undefined : () => setSheet("help")}
               onMarket={() => setSheet("market")}
               onCompany={() => setSheet("company")}
@@ -926,4 +968,45 @@ function AwaySheet({ p, open, busy, onClose, act }: SheetProps & { open: boolean
       </Slab>
     </Sheet>
   );
+}
+
+/** When the player last saw the house (server time), for the deliveries made while away. */
+const SEEN = "fondaco:seen";
+
+/**
+ * Back from away (decision of the owner, 3 November 2026): the deliveries brought meanwhile played
+ * again in three seconds, their ducats flying from each town to the purse.
+ */
+function useAwayRecap(p: EmpirePayload) {
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current || !p.view) return;
+    done.current = true;
+    let last = 0;
+    try {
+      last = Number(window.localStorage.getItem(SEEN) ?? 0);
+    } catch {
+      return;
+    }
+    const missed = (p.view.delivered ?? []).filter((x) => x.at > last && x.at <= p.now).slice(-6);
+    // Played once (never cut by the next refresh of the house).
+    missed.forEach((x, i) =>
+      window.setTimeout(
+        () =>
+          flyCoins(BigInt(x.pay), {
+            note: fr.empire.cityNames[x.city] ?? x.city,
+            from: `[data-city=${x.city}]`,
+          }),
+        900 + (i * 2_400) / Math.max(1, missed.length),
+      ),
+    );
+  }, [p]);
+  useEffect(() => {
+    if (!done.current) return;
+    try {
+      window.localStorage.setItem(SEEN, String(p.now));
+    } catch {
+      // Without storage, no recap next time.
+    }
+  }, [p.now]);
 }

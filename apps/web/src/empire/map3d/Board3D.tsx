@@ -9,13 +9,21 @@ import { SLOT_TURN } from "@comptoirs/engine";
  * through `scene3d`, with the night board's grid and seeds.
  */
 import { PerformanceMonitor } from "@react-three/drei";
-import { Canvas, addAfterEffect, addEffect, invalidate, useThree } from "@react-three/fiber";
+import {
+  Canvas,
+  addAfterEffect,
+  addEffect,
+  invalidate,
+  useFrame,
+  useThree,
+} from "@react-three/fiber";
 import { EffectComposer, N8AO, TiltShift2, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import {
   Suspense,
   forwardRef,
   memo,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -23,6 +31,7 @@ import {
   useState,
 } from "react";
 import {
+  BoxGeometry,
   BufferAttribute,
   BufferGeometry,
   Cache,
@@ -36,14 +45,19 @@ import {
   MeshStandardMaterial,
   type OrthographicCamera as OrthoCam,
   Raycaster,
+  TorusGeometry,
   Vector2,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { goodsColour } from "../../art/goods.js";
 import { HEX_SIZE, cellCentre } from "../../art/hexmap.js";
 import { C } from "../../art/plateau/props.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
+import type { CityLook } from "../map/logic.js";
 import type { EmpirePayload } from "../types.js";
 import { DISTANCE, orthoFrom } from "./camera.js";
+import type { DomainTile } from "./domain.js";
+import { give3dUp } from "./flag.js";
 import { Fleet3D } from "./fleet3d.js";
 import {
   Instanced,
@@ -61,9 +75,12 @@ import {
   type SceneInput,
   TILE_R,
   type Zone,
+  outlineOf,
   scene3d,
   sceneInputOf,
+  sceneKey,
   sitesOf,
+  tileCorners,
   zones,
 } from "./scene.js";
 
@@ -72,6 +89,8 @@ Cache.enabled = true;
 const NIGHT = "#16263E";
 /** The tiles: a clay slab on a night-blue base. */
 const SLAB = 3;
+/** A fondaco's tile of gold stands this much above the others. */
+const RAISE = 1.2;
 const BASE = 7;
 /** The lagoon lies this far below the land; its bed further down. */
 const WATER_Y = -2.2;
@@ -93,20 +112,21 @@ export interface Board3DHandle {
   hit(x: number, y: number): string | null;
 }
 
-/** A workshop's place deployed around a fondaco, on the chart (EmpireMap, from Orbit's). */
-export interface OrbitSpot {
-  kind: "workshop" | "site" | "free";
-  type: string;
-  x: number;
-  y: number;
-}
-
 export interface Board3DProps {
   p: EmpirePayload;
-  /** The workshops of the fondaco touched, deployed around it: their tiles stand in 3D. */
-  orbit?: OrbitSpot[] | null;
   /** The scene takes the touches from now on (its places' zones in). */
   onReady?: () => void;
+  /** A fondaco's domain plunged into: its little scene instead of the map's (domain.ts). */
+  domain?: DomainScene | null;
+  /** The towns' orders and state, told by the scenery (logic.ts, `cityLooks`). */
+  cities?: CityLook[];
+}
+
+/** The domain's scene: its tiles, and each workshop's state (ready, running, waiting). */
+export interface DomainScene {
+  key: string;
+  tiles: DomainTile[];
+  states: Record<string, "ready" | "running" | "idle" | "blocked">;
 }
 
 /** Whether the device asks for less motion (read live). */
@@ -128,20 +148,29 @@ export function useLive() {
  * then asks no frame at rest).
  */
 const Board3D = memo(
-  forwardRef<Board3DHandle, Board3DProps>(function Board3D({ p, orbit = null, onReady }, ref) {
+  forwardRef<Board3DHandle, Board3DProps>(function Board3D(
+    { p, onReady, domain = null, cities = [] },
+    ref,
+  ) {
     const map = p.view?.map;
-    // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its map and its Porta
-    const input = useMemo<SceneInput | null>(
-      () => (map ? sceneInputOf(p) : null),
-      [map, p.view?.porta?.cell],
-    );
+    // Built again only when the map did change (never at a refresh of the same one).
+    const key = sceneKey(p);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its key
+    const input = useMemo<SceneInput | null>(() => (map ? sceneInputOf(p) : null), [key]);
     const sc = useMemo(() => (input ? scene3d(input) : null), [input]);
     const casa = p.view?.house.casa ?? 1;
+    const buyKey = JSON.stringify(map?.buyable ?? []);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: the sectors to buy by their key
     const buyable = useMemo(
       () => new Map((map?.buyable ?? []).map((b) => [b.cell, casa >= b.casa])),
-      [map?.buyable, casa],
+      [buyKey, casa],
     );
     const live = useLive();
+    // Until when a vehicle of the house is on its way (or waiting to leave): frames till then.
+    // (on this device's clock).
+    const moving =
+      Math.max(0, ...(p.view?.vehicles.mine ?? []).flatMap((v) => v.legs.map((l) => l.arrivesAt))) -
+      (p.now - Date.now());
     const [near, setNear] = useState(false);
     // The map's camera, kept until the canvas has its own, then applied to it at each move.
     const last = useRef<{ cam: Camera; v: Viewport } | null>(null);
@@ -159,6 +188,7 @@ const Board3D = memo(
       setNear((was) => (was === isNear ? was : isNear));
       // Far out, the small dressing (pines, rocks) gives way: the towns and mountains stay.
       const show = o.zoom >= LOD_ZOOM;
+      wake();
       if (small.current && small.current.visible !== show) {
         small.current.visible = show;
         // Their shadows go with them (the still shadows drawn again once).
@@ -181,28 +211,64 @@ const Board3D = memo(
     const gl = useRef<import("three").WebGLRenderer | null>(null);
     const [low, setLow] = useState(false);
     // The touches of the places (step 2 of § 7): hexagons that never overlap.
-    const touch = useMemo(() => zones(placesOf(p)), [p]);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its key
+    const touch = useMemo(() => zones(placesOf(p)), [key]);
     const hitter = useRef<((x: number, y: number) => string | null) | null>(null);
-    useImperativeHandle(ref, () => ({
-      view(cam, v) {
-        const was = last.current;
-        // The map repaints its camera at each of its renders (each tick of the clock): no frame
-        // unless the camera or the screen did change.
-        if (
-          was &&
-          was.cam.s === cam.s &&
-          was.cam.tx === cam.tx &&
-          was.cam.ty === cam.ty &&
-          was.v.w === v.w &&
-          was.v.h === v.h
-        )
-          return;
-        last.current = { cam, v };
-        if (was) moved();
-        apply();
-      },
-      hit: (x, y) => hitter.current?.(x, y) ?? null,
-    }));
+    const animals = useRef(new Map<string, Group>());
+    /** The vehicle whose animal stands under a point of the screen: « vehicle:<id> ». */
+    const animalAt = (x: number, y: number): string | null => {
+      const c = camera.current;
+      const l = last.current;
+      if (!c || !l) return null;
+      let best: { id: string; d: number } | null = null;
+      for (const [id, g] of animals.current) {
+        if (!g.userData.moving) continue;
+        // Its body's middle, a little above the ground.
+        const at = g.position.clone();
+        at.y += 1.6;
+        at.project(c);
+        const sx = ((at.x + 1) / 2) * l.v.w;
+        const sy = ((1 - at.y) / 2) * l.v.h;
+        const d = Math.hypot(sx - x, sy - y);
+        if (d < 26 && (!best || d < best.d)) best = { id, d };
+      }
+      return best ? `vehicle:${best.id}` : null;
+    };
+    const setHitter = useCallback((fn: (x: number, y: number) => string | null) => {
+      hitter.current = fn;
+    }, []);
+    // The map told once the scene's models are in (not before: it would take the touches early).
+    const readyRef = useRef(onReady);
+    readyRef.current = onReady;
+    const ready = useCallback(() => readyRef.current?.(), []);
+    // Made once (its methods read refs): a handle made again at each render would tell the map the
+    // board gone, then back.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: refs only
+    useImperativeHandle(
+      ref,
+      () => ({
+        view(cam, v) {
+          const was = last.current;
+          // The map repaints its camera at each of its renders (each tick of the clock): no frame
+          // unless the camera or the screen did change.
+          if (
+            was &&
+            was.cam.s === cam.s &&
+            was.cam.tx === cam.tx &&
+            was.cam.ty === cam.ty &&
+            was.v.w === v.w &&
+            was.v.h === v.h
+          )
+            return;
+          last.current = { cam, v };
+          if (was) moved();
+          apply();
+        },
+        // An animal under the finger first (a target of 44 px around it), else a place.
+        hit: (x, y) => animalAt(x, y) ?? hitter.current?.(x, y) ?? null,
+      }),
+      [],
+    );
     if (!sc) return null;
     return (
       <Canvas
@@ -215,6 +281,8 @@ const Board3D = memo(
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
         onCreated={({ gl: renderer, scene, camera: c }) => {
           gl.current = renderer;
+          watchContext(renderer);
+          wake();
           renderer.shadowMap.autoUpdate = false;
           renderer.shadowMap.needsUpdate = true;
           scene.background = new Color(NIGHT);
@@ -225,33 +293,35 @@ const Board3D = memo(
         data-board3d
       >
         <Lights sc={sc} />
-        <Zones
-          zones={touch}
-          onReady={(fn) => {
-            hitter.current = fn;
-            onReady?.();
-          }}
-        />
+        <Zones zones={touch} onReady={setHitter} />
         <Suspense fallback={null}>
-          <World sc={sc} live={live} small={small} buyable={buyable} />
-          <Fleet3D p={p} live={live} />
-          {orbit && <Workshops3D spots={orbit} />}
-          <ShadowsOnce sc={sc} k={orbit ? JSON.stringify(orbit) : ""} />
+          {/* The map, or a fondaco's domain plunged into (the map's dressing put away). */}
+          <group visible={!domain}>
+            <World sc={sc} live={live} small={small} buyable={buyable} />
+            <Fleet3D p={p} live={live} actors={animals} />
+            <Towns3D looks={cities} />
+          </group>
+          {domain && <Domain3D key={domain.key} scene={domain} live={live} />}
+          <ShadowsOnce sc={sc} k={domain ? JSON.stringify(domain) : ""} />
+          <Ready onReady={ready} />
         </Suspense>
         {/* A device that cannot keep 18 frames a second loses the ambient occlusion for good. */}
         <PerformanceMonitor bounds={() => [18, 26]} flipflops={2} onDecline={() => setLow(true)} />
         {FX && <Effects near={near} ao={!low} aoRef={ao} />}
-        <Ticker live={live} />
+        <Ticker live={live} until={moving} />
         {PERF && <Probe />}
       </Canvas>
     );
   }),
+  // Drawn again only when what it shows did change, by content (each refresh brings new objects).
   (a, b) =>
-    a.p.view?.map === b.p.view?.map &&
-    a.p.view?.porta?.cell === b.p.view?.porta?.cell &&
-    a.p.view?.vehicles === b.p.view?.vehicles &&
+    sceneKey(a.p) === sceneKey(b.p) &&
+    JSON.stringify(a.p.view?.map.buyable ?? []) === JSON.stringify(b.p.view?.map.buyable ?? []) &&
+    JSON.stringify(a.p.view?.vehicles.mine ?? []) ===
+      JSON.stringify(b.p.view?.vehicles.mine ?? []) &&
     a.p.view?.house.casa === b.p.view?.house.casa &&
-    JSON.stringify(a.orbit ?? null) === JSON.stringify(b.orbit ?? null),
+    JSON.stringify(a.domain ?? null) === JSON.stringify(b.domain ?? null) &&
+    JSON.stringify(a.cities ?? []) === JSON.stringify(b.cities ?? []),
 );
 
 export default Board3D;
@@ -279,10 +349,10 @@ function placesOf(p: EmpirePayload): { id: string; x: number; y: number }[] {
   return out;
 }
 
-const zoneGeo = new CylinderGeometry(1, 1, 9, 6);
-zoneGeo.translate(0, 3.5, 0);
-const zoneMat = new MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
-zoneMat.colorWrite = false;
+/** A touch's prism: a unit high, from a little under the ground (scaled to each place's height). */
+const zoneGeo = new CylinderGeometry(1, 1, 1, 6);
+zoneGeo.translate(0, 0.5, 0);
+const zoneMat = new MeshBasicMaterial();
 
 /**
  * The places' touches, invisible hexagonal prisms; `onReady` receives the ray that finds the one
@@ -315,12 +385,14 @@ function Zones({
   return (
     <group ref={group}>
       {list.map((z) => (
+        // Never drawn (a ray finds what is not drawn): as high as the place's roof and flag.
         <mesh
           key={z.id}
           geometry={zoneGeo}
           material={zoneMat}
-          position={[z.x, 0, z.y]}
-          scale={[z.r, 1, z.r]}
+          visible={false}
+          position={[z.x, -1, z.y]}
+          scale={[z.r, z.h + 1, z.r]}
           userData={{ id: z.id }}
         />
       ))}
@@ -378,20 +450,63 @@ function ShadowsOnce({ sc, k }: { sc: Scene3D; k: string }) {
   return null;
 }
 
-/** While something moves, frames at 30 per second; none when the tab is hidden or still. */
-function Ticker({ live }: { live: boolean }) {
+/**
+ * A context lost (a phone's browser takes it back in the background, or under pressure): three.js
+ * gets it back; the still shadows are drawn again and a frame asked. Lost twice in a minute, the
+ * map goes on in SVG.
+ */
+function watchContext(renderer: import("three").WebGLRenderer) {
+  const el = renderer.domElement;
+  let lostAt = 0;
+  el.addEventListener("webglcontextlost", (e) => {
+    e.preventDefault();
+    const now = Date.now();
+    if (lostAt && now - lostAt < 60_000) give3dUp("context lost twice");
+    lostAt = now;
+  });
+  el.addEventListener("webglcontextrestored", () => {
+    renderer.shadowMap.needsUpdate = true;
+    invalidate();
+  });
+}
+
+/** Mounted once everything before it in its Suspense is in: the scene takes the touches. */
+function Ready({ onReady }: { onReady: () => void }) {
+  useEffect(() => onReady(), [onReady]);
+  return null;
+}
+
+/** After the last touch or move of the camera, the board stays alive this long (ms). */
+const AWAKE_MS = 10_000;
+let awakeUntil = 0;
+/** The player did something: the board's life (smoke, water, sails) goes on a while. */
+function wake() {
+  awakeUntil = Date.now() + AWAKE_MS;
+}
+
+/**
+ * The frames asked, at most 30 a second by the clock (never « one in two », which depends on the
+ * screen's rate): while a vehicle is on its way, and a little while after the player's last touch
+ * (the board's life). At rest, none: the phone keeps cool. Asking for less motion, one a second
+ * while a vehicle walks (its place still true), none else.
+ */
+function Ticker({ live, until }: { live: boolean; until: number }) {
   useEffect(() => {
-    if (!live) return;
     let raf = 0;
-    let odd = false;
-    const loop = () => {
-      odd = !odd;
-      if (odd && !document.hidden) invalidate();
+    let last = 0;
+    const step = live ? 33 : 1_000;
+    const loop = (t: number) => {
+      const now = Date.now();
+      const busy = now < until + 1_000 || (live && now < awakeUntil);
+      if (busy && !document.hidden && t - last >= step) {
+        last = t;
+        invalidate();
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [live]);
+  }, [live, until]);
   return null;
 }
 
@@ -511,25 +626,57 @@ function World({
     const glass = hexSlab(TILE_R - 0.45, SLAB + BASE - 2, 0.7);
     const bed = hexSlab(TILE_R - 0.2, BASE - 1, 0.2);
     bed.translate(0, -SLAB - 1.2, 0);
-    return { top, base, glass, bed };
+    const raised = hexSlab(TILE_R - 0.45, SLAB + RAISE, 0.7);
+    return { top, base, glass, bed, raised };
   }, []);
   // The tiles by kind (kept while the board stays the same), turned as the engine's lattice.
-  const { own, seen, wet, fog, solid } = useMemo(() => {
+  const { own, seen, wet, fog, solid, gold } = useMemo(() => {
+    const place = (tl: { x: number; y: number }) => ({
+      x: tl.x,
+      y: 0,
+      z: tl.y,
+      s: 1,
+      rot: SLOT_TURN,
+    });
     const of = (kind: string) =>
-      sc.tiles
-        .filter((tl) => tl.kind === kind)
-        .map((tl) => ({ x: tl.x, y: 0, z: tl.y, s: 1, rot: SLOT_TURN }));
+      sc.tiles.filter((tl) => tl.kind === kind && tl.theme !== "fondaco").map(place);
     const own = of("own");
     const seen = of("seen");
-    return { own, seen, wet: of("water"), fog: of("fog"), solid: [...own, ...seen] };
+    // The fondaci's tiles: the only ones of gold, raised (decision of the owner, 3 November).
+    const gold = sc.tiles.filter((tl) => tl.theme === "fondaco").map(place);
+    return {
+      own,
+      seen,
+      wet: of("water"),
+      fog: of("fog"),
+      solid: [...own, ...seen, ...gold],
+      gold,
+    };
   }, [sc]);
   // The lagoon: one surface over every small tile of sea, finely cut for its ripples.
   const lagoon = useMemo(() => (wet.length ? lagoonGeometry(wet, TILE_R - 0.2) : null), [wet]);
-  const fogEdges = useMemo(() => {
-    const g = new EdgesGeometry(hexSlab(TILE_R - 0.45, 0.01, 0));
-    g.rotateY(SLOT_TURN);
-    return g;
-  }, []);
+  useEffect(() => () => lagoon?.dispose(), [lagoon]);
+  const edges = useMemo(() => {
+    const fogTiles = sc.tiles.filter((t) => t.kind === "fog");
+    const mist = segmentsGeometry(
+      fogTiles.flatMap((t) => {
+        const c = tileCorners(t.x, t.y, TILE_R - 0.45);
+        return c.map((a, i) => [a, c[(i + 1) % 6] as [number, number]] as [Pt, Pt]);
+      }),
+    );
+    const cells = [...new Set(fogTiles.map((t) => t.cell))].filter((c) => buyable.get(c) === true);
+    const gold = cells.length
+      ? segmentsGeometry(cells.flatMap((c) => outlineOf(fogTiles.filter((t) => t.cell === c))))
+      : null;
+    return { mist, gold };
+  }, [sc, buyable]);
+  useEffect(
+    () => () => {
+      edges.mist.dispose();
+      edges.gold?.dispose();
+    },
+    [edges],
+  );
 
   // The dressing, model by model, in one draw each.
   const decor = useMemo(() => {
@@ -645,27 +792,23 @@ function World({
           bases. */}
       <Instanced geo={slabs.top} items={own} material={claySolid(C.land)} />
       <Instanced geo={slabs.top} items={seen} material={claySolid(C.mist)} />
+      <Instanced geo={slabs.raised} items={gold} material={claySolid(C.roofGold)} />
       <Instanced geo={slabs.base} items={solid} material={claySolid(C.soil)} cast={false} />
       {/* The lagoon: its bed, its translucent water. */}
       <Instanced geo={slabs.bed} items={wet} material={claySolid(C.mistSoil)} cast={false} />
       {lagoon && <mesh geometry={lagoon} material={water} position-y={WATER_Y} receiveShadow />}
       {/* The unknown: thick tiles of glass, empty, their edge drawn faintly. */}
       <Instanced geo={slabs.glass} items={fog} material={glass} cast={false} receive={false} />
-      {/* A sector to buy: its glass tiles edged in gold (bright when the Casa may buy it). */}
-      {sc.tiles
-        .filter((t) => t.kind === "fog")
-        .map((t) => {
-          const b = buyable.get(t.cell);
-          return (
-            <lineSegments key={t.key} geometry={fogEdges} position={[t.x, 0.05, t.y]}>
-              <lineBasicMaterial
-                color={b === undefined ? C.mist : C.gold}
-                transparent
-                opacity={b === undefined ? 0.45 : b ? 0.9 : 0.4}
-              />
-            </lineSegments>
-          );
-        })}
+      {/* The unknown's tiles edged faintly, in one draw; a sector the Casa may buy now, its outline
+          in gold (one gold a sector, never one a tile: the gold says « yours to do »). */}
+      <lineSegments geometry={edges.mist} position-y={0.05}>
+        <lineBasicMaterial color={C.mist} transparent opacity={0.3} />
+      </lineSegments>
+      {edges.gold && (
+        <lineSegments geometry={edges.gold} position-y={0.08}>
+          <lineBasicMaterial color={C.gold} transparent opacity={0.95} />
+        </lineSegments>
+      )}
       {/* The dressing and the towns. */}
       <group ref={small}>
         {decor
@@ -761,63 +904,226 @@ function workshopModel(type: string): { name: KitName; s: number } {
   }
 }
 
-const WS_TILE_R = 4.4;
+/** A town's tile edged (a flat ring of a hexagon, on its top). */
+const edgeGeo = (() => {
+  const outer = tileCorners(0, 0, TILE_R - 0.35);
+  const inner = tileCorners(0, 0, TILE_R - 1.05);
+  const pos: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    const a = outer[i] as [number, number];
+    const b = outer[(i + 1) % 6] as [number, number];
+    const c = inner[(i + 1) % 6] as [number, number];
+    const d = inner[i] as [number, number];
+    // Facing the sky (counter-clockwise seen from above, z south).
+    pos.push(a[0], 0, a[1], c[0], 0, c[1], b[0], 0, b[1]);
+    pos.push(a[0], 0, a[1], d[0], 0, d[1], c[0], 0, c[1]);
+  }
+  const g = new BufferGeometry();
+  g.setAttribute("position", new BufferAttribute(new Float32Array(pos), 3));
+  g.computeVertexNormals();
+  return g;
+})();
+const edgeGold = new MeshBasicMaterial({ color: C.gold, side: DoubleSide });
+const edgeLagoon = new MeshBasicMaterial({ color: "#6EE0B8", side: DoubleSide });
+const beamGeo = new CylinderGeometry(0.9, 1.6, 40, 10, 1, true);
+beamGeo.translate(0, 20, 0);
+const beamMat = new MeshBasicMaterial({
+  color: C.gold,
+  transparent: true,
+  opacity: 0.22,
+  depthWrite: false,
+  side: DoubleSide,
+});
+const crateGeo = new BoxGeometry(2, 1.7, 2);
+crateGeo.translate(0, 0.85, 0);
+const crateLow = new BoxGeometry(2, 0.5, 2);
+crateLow.translate(0, 0.25, 0);
 
 /**
- * The workshops of the fondaco touched, each on its little tile of clay where its star stands in
- * the orbit above (its arc, its name and its buttons stay in HTML): a site shows its crates, the
- * free place its bare tile.
+ * The towns tell their orders by the scenery (decision of the owner, 3 November 2026): a crate an
+ * order on their quay, tinted by its chain, full when the stock covers it, low else; their tile
+ * edged in gold when « Livrer » would go now (and a beam of light seen from afar), in lagoon-green
+ * when they are full.
  */
-function Workshops3D({ spots }: { spots: OrbitSpot[] }) {
-  const kit = useKit();
-  const tile = useMemo(() => {
-    const top = hexSlab(WS_TILE_R, 1.2, 0.4);
-    top.translate(0, 1.2, 0);
-    return top;
-  }, []);
+function Towns3D({ looks }: { looks: CityLook[] }) {
   return (
     <group>
-      {spots.map((o) => {
-        const m = workshopModel(o.type);
-        return (
-          <group key={`${o.x},${o.y}`} position={[o.x, 0, o.y]}>
+      {looks.map((c) => (
+        <group key={c.code} position={[c.x, 0, c.y]}>
+          {c.state !== "open" && (
             <mesh
-              geometry={tile}
-              material={claySolid(o.kind === "free" ? C.mist : C.land)}
-              castShadow
-              receiveShadow
+              geometry={edgeGeo}
+              material={c.state === "deliverable" ? edgeGold : edgeLagoon}
+              position-y={0.07}
             />
-            {o.kind === "workshop" && (
-              <mesh
-                geometry={kit(m.name).geo}
-                material={clayShared}
-                scale={m.s}
-                position-y={1.2}
-                castShadow
-                receiveShadow
-              />
-            )}
-            {o.kind === "site" && (
-              <>
+          )}
+          {c.state === "deliverable" && <mesh geometry={beamGeo} material={beamMat} />}
+          {c.crates.map((k, i) => (
+            <mesh
+              // biome-ignore lint/suspicious/noArrayIndexKey: an order is its place on the quay
+              key={i}
+              geometry={k.covered ? crateGeo : crateLow}
+              material={claySolid(goodsColour(k.good))}
+              // On its quay, east of the town (its name lies under it, to the south).
+              position={[TILE_R * 0.62, 0, (i - (c.crates.length - 1) / 2) * 2.3 - 0.6]}
+              castShadow
+            />
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/** The domain's tiles rise from the board when it opens (seconds). */
+const RISE = 0.45;
+
+/**
+ * A fondaco's domain (decision of the owner, 3 November 2026): the fondaco on the one tile of gold,
+ * raised; its workshops on the tiles around, each telling its state by itself (a ready one ringed
+ * in lagoon-green, its crates out; a running one smoking; a waiting one still); a site its crates;
+ * the place to build bare; the lagoon beyond. The tiles rise one ring after the other.
+ */
+function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
+  const kit = useKit();
+  const water = useWater(live);
+  const group = useRef<Group>(null);
+  const t0 = useRef<number | null>(null);
+  useFrame(({ clock }) => {
+    const g = group.current;
+    if (!g) return;
+    if (t0.current === null) t0.current = clock.elapsedTime;
+    const k = Math.min(1, (clock.elapsedTime - t0.current) / RISE);
+    for (const child of g.children) {
+      const ring = (child.userData.ring as number | undefined) ?? 0;
+      const u = Math.min(1, Math.max(0, k * 1.6 - ring * 0.22));
+      const e = 1 - (1 - u) ** 3;
+      child.scale.setScalar(Math.max(0.001, e));
+    }
+    if (k < 1) invalidate();
+  });
+  const slabs = useMemo(() => {
+    const top = hexSlab(TILE_R - 0.45, SLAB, 0.7);
+    const base = hexSlab(TILE_R - 0.75, BASE, 0.4);
+    base.translate(0, -SLAB + 0.2, 0);
+    const gold = hexSlab(TILE_R - 0.45, SLAB + RAISE, 0.7);
+    return { top, base, gold };
+  }, []);
+  const shore = scene.tiles.filter((t) => t.kind === "shore");
+  const lagoon = useMemo(
+    () =>
+      shore.length
+        ? lagoonGeometry(
+            shore.map((t) => ({ x: t.x, z: t.y })),
+            TILE_R - 0.2,
+          )
+        : null,
+    [shore],
+  );
+  useEffect(() => () => lagoon?.dispose(), [lagoon]);
+  const ring = useMemo(() => {
+    const g = new TorusGeometry(TILE_R - 1.2, 0.28, 6, 36);
+    g.rotateX(Math.PI / 2);
+    return g;
+  }, []);
+  const lagoonGreen = useMemo(
+    () => new MeshBasicMaterial({ color: "#6EE0B8", transparent: true, opacity: 0.9 }),
+    [],
+  );
+  return (
+    <group ref={group}>
+      {lagoon && (
+        <mesh geometry={lagoon} material={water} position-y={WATER_Y} userData={{ ring: 3 }} />
+      )}
+      {scene.tiles
+        .filter((t) => t.kind !== "shore")
+        .map((t) => {
+          const key = `${t.x},${t.y}`;
+          const state = t.kind === "workshop" ? scene.states[t.id] : undefined;
+          const model = t.kind === "workshop" || t.kind === "site" ? workshopModel(t.type) : null;
+          return (
+            <group key={key} position={[t.x, 0, t.y]} userData={{ ring: t.ring }}>
+              {t.kind === "fondaco" ? (
                 <mesh
-                  geometry={kit("crate").geo}
-                  material={clayShared}
-                  scale={1.8}
-                  position={[-1, 1.2, 0]}
+                  geometry={slabs.gold}
+                  material={claySolid(C.roofGold)}
+                  rotation-y={SLOT_TURN}
                   castShadow
+                  receiveShadow
                 />
+              ) : (
                 <mesh
-                  geometry={kit("crateB").geo}
-                  material={clayShared}
-                  scale={1.4}
-                  position={[1.2, 1.2, 0.6]}
-                  castShadow
+                  geometry={slabs.top}
+                  material={claySolid(t.kind === "free" ? C.mist : C.land)}
+                  rotation-y={SLOT_TURN}
+                  receiveShadow
                 />
-              </>
-            )}
-          </group>
-        );
-      })}
+              )}
+              <mesh geometry={slabs.base} material={claySolid(C.soil)} rotation-y={SLOT_TURN} />
+              {t.kind === "fondaco" && (
+                <group position-y={RAISE}>
+                  <FondacoModel live={live} k={0.8} />
+                </group>
+              )}
+              {t.kind === "workshop" && model && (
+                <mesh
+                  geometry={kit(model.name).geo}
+                  material={clayShared}
+                  scale={model.s * 1.5}
+                  castShadow
+                  receiveShadow
+                />
+              )}
+              {state === "ready" && (
+                <>
+                  <mesh geometry={ring} material={lagoonGreen} position-y={0.12} />
+                  <mesh
+                    geometry={kit("crate").geo}
+                    material={clayShared}
+                    scale={1.6}
+                    position={[TILE_R * 0.45, 0, TILE_R * 0.35]}
+                    castShadow
+                  />
+                  <mesh
+                    geometry={kit("crateB").geo}
+                    material={clayShared}
+                    scale={1.3}
+                    position={[TILE_R * 0.62, 0, TILE_R * 0.02]}
+                    castShadow
+                  />
+                </>
+              )}
+              {state === "running" && (
+                <Smoke at={[TILE_R * 0.25, 3.6, -TILE_R * 0.2]} live={live} />
+              )}
+              {t.kind === "site" && (
+                <>
+                  <mesh
+                    geometry={kit("crate").geo}
+                    material={clayShared}
+                    scale={1.8}
+                    position={[-1, 0, 0]}
+                    castShadow
+                  />
+                  <mesh
+                    geometry={kit("crateB").geo}
+                    material={clayShared}
+                    scale={1.4}
+                    position={[1.2, 0, 0.6]}
+                    castShadow
+                  />
+                </>
+              )}
+            </group>
+          );
+        })}
+      {/* The lagoon's bed, under its water. */}
+      <Instanced
+        geo={slabs.base}
+        items={shore.map((t) => ({ x: t.x, y: -SLAB - 1.2, z: t.y, s: 1, rot: SLOT_TURN }))}
+        material={claySolid(C.mistSoil)}
+        cast={false}
+      />
     </group>
   );
 }
@@ -849,23 +1155,34 @@ function Porta({ x, z }: { x: number; z: number }) {
 
 /** The fondaco: the house's hall (KayKit's large house, its roof in gold), a tower, the flag. */
 function Fondaco({ x, z, live, k = 1 }: { x: number; z: number; live: boolean; k?: number }) {
+  return (
+    <group position={[x, RAISE, z]}>
+      <FondacoModel live={live} k={k} />
+    </group>
+  );
+}
+
+function FondacoModel({ live, k = 1 }: { live: boolean; k?: number }) {
   const kit = useKit();
   const hall = kit("homeB", { roof: C.roofGold });
   const tower = kit("tower", { roof: C.roofGold });
-  const s = 7.6;
+  // The scale of the board (decision of the owner, 3 November): a fondaco some twice a house,
+  // known by its tile of gold rather than by its size.
+  const s = 5.8;
+  const ts = 2.6;
   return (
-    <group position={[x, 0, z]} scale={k} name="fondaco">
+    <group scale={k} name="fondaco">
       <mesh geometry={hall.geo} material={clayShared} scale={s} castShadow receiveShadow />
       <mesh
         geometry={tower.geo}
         material={clayShared}
-        scale={3.4}
-        position={[-4.4, 0, -2.4]}
+        scale={ts}
+        position={[-3.4, 0, -1.8]}
         castShadow
         receiveShadow
       />
-      <Flag at={[-4.4, tower.h * 3.4 - 0.3, -2.4]} live={live} s={0.9} />
-      <Smoke at={[2.2, hall.h * s * 0.95, -1.2]} live={live} />
+      <Flag at={[-3.4, tower.h * ts - 0.3, -1.8]} live={live} s={0.75} />
+      <Smoke at={[1.7, hall.h * s * 0.95, -0.9]} live={live} />
     </group>
   );
 }
@@ -885,6 +1202,19 @@ function Dock({ x, z, rot }: { x: number; z: number; rot: number }) {
       ))}
     </group>
   );
+}
+
+type Pt = [number, number];
+
+/** Segments on the ground (chart points), as one geometry of lines. */
+function segmentsGeometry(segs: [Pt, Pt][]): BufferGeometry {
+  const pos = new Float32Array(segs.length * 6);
+  segs.forEach(([a, b], i) => {
+    pos.set([a[0], 0, a[1], b[0], 0, b[1]], i * 6);
+  });
+  const g = new BufferGeometry();
+  g.setAttribute("position", new BufferAttribute(pos, 3));
+  return g;
 }
 
 /** The lagoon's surface: each sea tile cut in small triangles, merged into one geometry. */
@@ -971,6 +1301,7 @@ function Track({ path }: { path: [number, number][] }) {
     g.computeVertexNormals();
     return g;
   }, [path]);
+  useEffect(() => () => geo.dispose(), [geo]);
   return (
     <mesh geometry={geo} receiveShadow renderOrder={1}>
       <meshStandardMaterial

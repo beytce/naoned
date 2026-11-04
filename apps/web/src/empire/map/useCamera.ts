@@ -291,12 +291,24 @@ export function useCamera({
         e.preventDefault();
       }
     };
+    // On a computer (after the map's audit, 3 November 2026): a mouse's wheel zooms; a touchpad's
+    // two fingers pan, and pinch (the browser sends it with Ctrl) zooms.
     const wheel = (e: WheelEvent) => {
       e.preventDefault();
       rect = el.getBoundingClientRect();
       const { min, max } = bounds();
       anim.current = null;
-      set(zoomAt(current(), Math.exp(-e.deltaY * 0.0015), local(e), min, max));
+      const pad =
+        !e.ctrlKey &&
+        e.deltaMode === 0 &&
+        (e.deltaX !== 0 || !Number.isInteger(e.deltaY) || Math.abs(e.deltaY) < 24);
+      if (pad) {
+        const c = current();
+        set({ ...c, tx: c.tx - e.deltaX, ty: c.ty - e.deltaY });
+        return;
+      }
+      const k = e.ctrlKey ? 0.01 : 0.0015;
+      set(zoomAt(current(), Math.exp(-e.deltaY * k), local(e), min, max));
     };
     el.addEventListener("pointerdown", down);
     window.addEventListener("pointermove", move);

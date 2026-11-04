@@ -7,7 +7,14 @@
  * seed by tile: the same board at every call. Chart units (x east, y south); the renderer lays y
  * along its z axis. Pure and deterministic: no three.js here, it is tested as is.
  */
-import { type EmpireSettings, SLOT_STEP, roadBetween, slotAt, slotPoint } from "@comptoirs/engine";
+import {
+  type EmpireSettings,
+  SLOT_STEP,
+  SLOT_TURN,
+  roadBetween,
+  slotAt,
+  slotPoint,
+} from "@comptoirs/engine";
 import { HEX_SIZE, cellCentre, neighbours } from "../../art/hexmap.js";
 import { DRESS } from "../../art/plateau/board.js";
 import { hashOf, rng } from "../../art/plateau/geom.js";
@@ -24,6 +31,8 @@ export interface SceneInput {
   /** The Campo's sector, and the Porta's (docs/plan-porta.md). */
   camp?: string | null;
   porta?: string | null;
+  /** The small tiles of lagoon (`<cell>#<k>`): water among the land. */
+  water?: string[];
 }
 
 /** The scene's input out of the house's view (the 3D board, its touches, the map's marks). */
@@ -39,7 +48,17 @@ export function sceneInputOf(p: EmpirePayload): SceneInput {
     depot: map?.depot ?? null,
     camp: map?.camp ?? null,
     porta: p.view?.porta?.cell ?? null,
+    water: map?.water ?? [],
   };
+}
+
+/**
+ * What the board is built from, as a string: the same for two payloads of the same map (the server
+ * sends a new object at each refresh, every 30 seconds and at each action), so that the scene is
+ * built again only when the map did change.
+ */
+export function sceneKey(p: EmpirePayload): string {
+  return JSON.stringify(sceneInputOf(p));
 }
 
 export type TileKind = "own" | "seen" | "water" | "fog";
@@ -165,12 +184,18 @@ export function scene3d(m: SceneInput): Scene3D {
     held.set(tileKey(t.cell, t.k), "town");
     const size = c.size ?? 1;
     const r = rng(hashOf(c.code));
-    const n = Math.min(5, 1 + size);
+    // Two houses a size (decision of the owner, 3 November: the towns larger, up to ten for
+    // Venice), in two rings round the monument.
+    const n = Math.min(10, 2 * size);
     const s = 0.75 + size * 0.06;
     const houses: Town["houses"] = [];
+    const inner = Math.ceil(n / 2);
     for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + r();
-      const d = 2.4 + r() * (0.4 + size * 0.3);
+      const ring = i < inner ? 0 : 1;
+      const m = ring ? n - inner : inner;
+      const j = ring ? i - inner : i;
+      const a = (j / Math.max(1, m)) * Math.PI * 2 + r() * 0.5 + ring * 0.6;
+      const d = ring ? 3.6 + r() * 0.5 : 2.2 + r() * 0.4;
       houses.push({
         x: c.x + Math.cos(a) * d,
         y: c.y + Math.sin(a) * d * 0.85,
@@ -220,10 +245,13 @@ export function scene3d(m: SceneInput): Scene3D {
   // kind after their region.
   const tiles: Tile[] = [];
   const props: Prop[] = [];
-  const add = (cell: string, kind: TileKind) => {
+  const wet = new Set(m.water ?? []);
+  const add = (cell: string, kindOf: TileKind) => {
     for (let k = 0; k < 7; k++) {
       const [x, y] = middle(cell, k);
       const key = tileKey(cell, k);
+      // A small tile of lagoon among the land (Venice's): water as the sea's.
+      const kind: TileKind = kindOf !== "fog" && wet.has(key) ? "water" : kindOf;
       let theme: Theme =
         kind === "water" ? "water" : kind === "fog" ? "fog" : (held.get(key) ?? "plain");
       if ((kind === "own" || kind === "seen") && !held.has(key))
@@ -448,6 +476,17 @@ export interface Zone {
   x: number;
   y: number;
   r: number;
+  /** How high it stands (chart units): as high as what is drawn there, its roof and its flag. */
+  h: number;
+}
+
+/** How high a place's touch stands: the fondaco to its flag, a town to its monument. */
+function zoneHeight(id: string): number {
+  if (id === "home") return 16;
+  if (id.startsWith("city:")) return 14;
+  if (id === "depot" || id === "camp" || id === "porta" || id === "arsenal") return 9;
+  // A fondaco of another region (drawn smaller).
+  return 11;
 }
 
 /** A place's touch reaches at most this far, at least this far (chart units). */
@@ -467,6 +506,37 @@ export function zones(places: { id: string; x: number; y: number }[]): Zone[] {
     );
     // A hexagon's flat sides lie at r·cos 30° from its middle: half the way, to its corners.
     const r = Math.min(ZONE_MAX, Math.max(ZONE_MIN, nearest / 2));
-    return { id: p.id, x: p.x, y: p.y, r };
+    return { id: p.id, x: p.x, y: p.y, r, h: zoneHeight(p.id) };
   });
+}
+
+/** A small tile's corners (chart units), turned as the engine's lattice (SLOT_TURN). */
+export function tileCorners(x: number, y: number, r = TILE_R): [number, number][] {
+  return Array.from({ length: 6 }, (_, i) => {
+    const a = (-(90 + 60 * i) * Math.PI) / 180 - SLOT_TURN;
+    return [x + r * Math.cos(a), y + r * Math.sin(a)] as [number, number];
+  });
+}
+
+/**
+ * The outline of a group of small tiles (a sector's seven): their sides that no other tile of the
+ * group shares, as segments.
+ */
+export function outlineOf(
+  tiles: { x: number; y: number }[],
+): [[number, number], [number, number]][] {
+  const key = ([x, y]: [number, number]) => `${Math.round(x * 100)},${Math.round(y * 100)}`;
+  const sides = new Map<string, { seg: [[number, number], [number, number]]; n: number }>();
+  for (const t of tiles) {
+    const c = tileCorners(t.x, t.y);
+    for (let i = 0; i < 6; i++) {
+      const a = c[i] as [number, number];
+      const b = c[(i + 1) % 6] as [number, number];
+      const k = [key(a), key(b)].sort().join(" ");
+      const had = sides.get(k);
+      if (had) had.n++;
+      else sides.set(k, { seg: [a, b], n: 1 });
+    }
+  }
+  return [...sides.values()].filter((x) => x.n === 1).map((x) => x.seg);
 }

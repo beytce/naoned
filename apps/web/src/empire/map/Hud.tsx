@@ -4,6 +4,7 @@ import { CartWheel, DucatCoin, FavourCoin, WaxSeal } from "../../art/plateau/coi
 import { d } from "../../game/format.js";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
+import { MAP_3D } from "../map3d/flag.js";
 import type { EmpirePayload } from "../types.js";
 import { fleetOf, hudOf } from "./logic.js";
 
@@ -93,15 +94,18 @@ export function Hud({
           value={`${fleet.free} / ${fleet.total}`}
           sign={<CartWheel />}
         />
-        <button
-          type="button"
-          onClick={onProduction}
-          aria-label={t.scene.production}
-          data-production
-          className="pointer-events-auto mt-1 flex h-11 w-11 items-center justify-center rounded-full bg-lagoon/90 text-night shadow-lg shadow-black/40 active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
-        >
-          {Icon.plus()}
-        </button>
+        {/* On the 3D board, the Production is in the domain (decision of the owner, 3 November). */}
+        {!MAP_3D && (
+          <button
+            type="button"
+            onClick={onProduction}
+            aria-label={t.scene.production}
+            data-production
+            className="pointer-events-auto mt-1 flex h-11 w-11 items-center justify-center rounded-full bg-lagoon/90 text-night shadow-lg shadow-black/40 active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
+          >
+            {Icon.plus()}
+          </button>
+        )}
       </div>
     </>
   );

@@ -64,9 +64,11 @@ import {
 import {
   autoDeliver,
   cancelStop,
+  deliverCity,
   departNow,
   loadOrder,
   moveVehicle,
+  recallVehicle,
   retireCargo,
   retireRounds,
   settleMoves,
@@ -378,6 +380,10 @@ type EmpireCommandOf =
       /** On the map: a city found, of a region where the house has a counter. */
       city?: string;
     }
+  /** « Livrer » from a city: its orders the stock covers (or those asked), on one vehicle. */
+  | { type: "empireDeliverCity"; playerId: PlayerId; city: string; orderIds?: string[] }
+  /** A vehicle called back a few seconds after it left. */
+  | { type: "empireRecall"; playerId: PlayerId; vehicleId: string }
   | { type: "empireClaim"; playerId: PlayerId; index: number }
   | { type: "empirePlaceCounter"; playerId: PlayerId; cell: string; x?: number; y?: number }
   | { type: "empireBuildCamp"; playerId: PlayerId; cell: string }
@@ -760,6 +766,12 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireDeliver":
       deliverOrders(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region, cmd.city);
+      break;
+    case "empireDeliverCity":
+      deliverCity(tx, cmd.playerId, cmd.city, cmd.orderIds);
+      break;
+    case "empireRecall":
+      recallVehicle(tx, cmd.playerId, cmd.vehicleId);
       break;
   }
 }

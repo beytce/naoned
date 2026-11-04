@@ -114,6 +114,16 @@ export const empireSettingsSchema = z.object({
       tierTimes: z.record(z.string(), positive).prefault({}),
       lots: z.record(z.string(), positive).prefault({}),
       premiumBps: bps.prefault(1_500),
+      /**
+       * After the map's audit (decision of the owner, 3 November 2026): each city's first order a
+       * share of its lot (a first delivery in the first session), the goods the house makes now
+       * drawn so many times more often, and a premium a ten units of the road from the nearest
+       * fondaco (CADRAGE-v3 § 3.4), up to its cap.
+       */
+      firstLotBps: bps.prefault(10_000),
+      madeWeight: positive.prefault(1),
+      distanceBps: bps.prefault(0),
+      distanceMaxBps: bps.prefault(0),
     })
     .nullable()
     .prefault(null),
@@ -128,6 +138,13 @@ export const empireSettingsSchema = z.object({
        */
       secondsPerUnit: positive.optional(),
       maxStops: positive.prefault(15),
+      /**
+       * A vehicle comes back alone to its fondaco once at a city (decision of the owner,
+       * 3 November 2026, after the map's audit); off, it stays there.
+       */
+      returnHome: z.boolean().prefault(false),
+      /** How long after it left a vehicle may still be called back, its orders unloaded (s). */
+      recallSeconds: qty.prefault(5),
     })
     .prefault({}),
   vehicleLevels: z
@@ -509,6 +526,8 @@ export const empireSettingsSchema = z.object({
        * middle of a small tile (slots.ts), never next to a town's nor to another fondaco's.
        */
       tiles: z.boolean().prefault(false),
+      /** Small tiles of lagoon (`<cell>#<k>`): water on the board, never a fondaco on them. */
+      water: z.array(z.string()).prefault([]),
       /** A land vehicle between two counters: so many of the chart's units an hour. */
       transferUnitsPerHour: positive.prefault(20),
       revealRadius: positive.prefault(2),

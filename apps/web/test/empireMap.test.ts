@@ -8,6 +8,7 @@ import {
   coverClamp,
   coverScale,
   detailOf,
+  edgeArrow,
   farCamera,
   fleetOf,
   hudOf,
@@ -290,5 +291,20 @@ describe("the counters raised", () => {
       ["p2", 1],
     ]);
     expect(postsRaised(before, now)).toEqual(["home", "p2"]);
+  });
+});
+
+describe("the arrows at the screen's edge", () => {
+  const v = { w: 400, h: 800 };
+  it("says nothing of a place on the screen", () => {
+    expect(edgeArrow([200, 400], v)).toBeNull();
+  });
+  it("stands on the edge toward a place out of sight, pointing at it", () => {
+    const a = edgeArrow([1_000, 391], v);
+    expect(a?.x).toBeCloseTo(370);
+    expect(a?.angle).toBeCloseTo(0, 1);
+    const b = edgeArrow([200, -500], v);
+    expect(b?.y).toBeCloseTo(132);
+    expect(b?.angle).toBeCloseTo(-Math.PI / 2);
   });
 });

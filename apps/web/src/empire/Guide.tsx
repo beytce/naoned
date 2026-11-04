@@ -20,6 +20,17 @@ function wordsOf(p: EmpirePayload, s: NextStep): { what: string; why: string; bu
       return { what: t.collect(s.lots), why: t.collectWhy, button: t.collectAction };
     case "relaunch":
       return { what: t.relaunch, why: t.relaunchWhy, button: t.relaunchAction };
+    case "deliver":
+      return {
+        what: t.deliverCity(
+          fr.empire.cityNames[s.city] ?? s.city,
+          s.qty,
+          goodName(p, s.good),
+          s.have,
+        ),
+        why: t.deliverCityWhy(d(s.pay)),
+        button: t.deliverAction,
+      };
     case "casa":
       return { what: t.casa(s.level), why: t.casaWhy, button: t.casaAction(s.level) };
     case "build":

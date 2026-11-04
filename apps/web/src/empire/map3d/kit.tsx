@@ -5,7 +5,7 @@
  * what KayKit lacks (the fondaco's flag, the docks, the cart) are made here of rounded shapes.
  */
 import { useGLTF } from "@react-three/drei";
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import {
   Box3,
   BufferAttribute,
@@ -75,31 +75,45 @@ function merged(root: Object3D): BufferGeometry {
   return g;
 }
 
+type Kit = (name: KitName, over?: Partial<Record<Role, string>>) => KitModel;
+
+/** The kits made, one for each loaded pack: merged once for every caller, never again. */
+const kits = new WeakMap<Object3D, Kit>();
+
+function kitOf(scene: Object3D): Kit {
+  const made = kits.get(scene);
+  if (made) return made;
+  const base = new Map<KitName, BufferGeometry>();
+  scene.updateMatrixWorld(true);
+  for (const name of Object.keys(FILES) as KitName[]) {
+    const node = scene.getObjectByName(name);
+    if (node) base.set(name, merged(node));
+  }
+  const cache = new Map<string, KitModel>();
+  /** A model in the palette, some of its roles swapped (`over`). */
+  const kit: Kit = (name, over = {}) => {
+    const key = `${name}:${JSON.stringify(over)}`;
+    const hit = cache.get(key);
+    if (hit) return hit;
+    // A model missing from the pack: a crate stands for it (never a crash).
+    const src = base.get(name) ?? base.get("crate") ?? [...base.values()][0];
+    if (!src) throw new Error("3D kit: no model in the pack");
+    const g = src.clone();
+    const uv = g.getAttribute("uv") as BufferAttribute | undefined;
+    if (uv) g.setAttribute("color", new BufferAttribute(recolour(uv.array, over), 3));
+    g.computeBoundingBox();
+    const model = { geo: g, h: g.boundingBox?.max.y ?? 1 };
+    cache.set(key, model);
+    return model;
+  };
+  kits.set(scene, kit);
+  return kit;
+}
+
 /** Every model, loaded once (it suspends until then), and its recoloured variants on demand. */
-export function useKit() {
+export function useKit(): Kit {
   const gltf = useGLTF(PACK, false, false) as unknown as { scene: Object3D };
-  return useMemo(() => {
-    const base = new Map<KitName, BufferGeometry>();
-    gltf.scene.updateMatrixWorld(true);
-    for (const name of Object.keys(FILES) as KitName[]) {
-      const node = gltf.scene.getObjectByName(name);
-      if (node) base.set(name, merged(node));
-    }
-    const cache = new Map<string, KitModel>();
-    /** A model in the palette, some of its roles swapped (`over`). */
-    return (name: KitName, over: Partial<Record<Role, string>> = {}): KitModel => {
-      const key = `${name}:${JSON.stringify(over)}`;
-      const hit = cache.get(key);
-      if (hit) return hit;
-      const g = (base.get(name) as BufferGeometry).clone();
-      const uv = g.getAttribute("uv") as BufferAttribute;
-      g.setAttribute("color", new BufferAttribute(recolour(uv.array, over), 3));
-      g.computeBoundingBox();
-      const model = { geo: g, h: g.boundingBox?.max.y ?? 1 };
-      cache.set(key, model);
-      return model;
-    };
-  }, [gltf]);
+  return kitOf(gltf.scene);
 }
 useGLTF.preload(PACK, false, false);
 

@@ -12,6 +12,7 @@ import {
   cellsWithin,
   citiesCovered,
   citySpot,
+  distanceBonusBps,
   effectOf,
   highRecipeRaw,
   levelCost,
@@ -19,6 +20,7 @@ import {
   lotOf,
   lotYieldBps,
   newsDelayMs,
+  orderLot,
   orderRefOf,
   regionCells,
   regionCities,
@@ -31,6 +33,7 @@ import {
   standingPosts,
   startCells,
   venice1450,
+  weightedGoods,
 } from "@comptoirs/engine";
 import { askAid, joinCompany, supplyAid } from "./company.js";
 import {
@@ -126,6 +129,7 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     youngRawSold: 0n,
     voyagesDone: 0,
     ordersValue: 0n,
+    cityOrders: new Map(),
     voyageMargin: 0n,
     expeditionsWon: 0,
     expeditionsTried: 0,
@@ -297,12 +301,11 @@ function landPlaces(w: World, h: House): number {
 /** The goods' tiers (the theme's): a lot's worth follows its good's. */
 const tierOf = new Map<string, string>(venice1450.resources.map((r) => [r.code, r.tier]));
 
-function ordersSince(w: World, size: number, sinceHours: number): number {
+/** A city's interval and cap, by its size (the engine's). */
+function sizeRule(w: World, size: number): { every: number; cap: number } {
   const o = w.s.orders;
-  if (!o) return 0;
   const k = Math.min(5, Math.max(1, size)) - 1;
-  const every = o.everyMinutes[k] ?? 120;
-  return Math.min(o.cap[k] ?? 0, Math.max(1, Math.floor((sinceHours * 60) / every)));
+  return { every: (o?.everyMinutes[k] ?? 120) / 60, cap: o?.cap[k] ?? 0 };
 }
 
 /** The goods its workshops make, as the orders draw them. */
@@ -310,44 +313,93 @@ function orderGoods(h: House): string[] {
   return [...new Set(h.workshops.map((x) => x.good))].sort();
 }
 
-/** The orders a session finds in the cities its counters serve (two sessions a day). */
+/** A small hash of a string, for the orders' draw (deterministic, as the engine's `draw`). */
+function hashOf(text: string): number {
+  let x = 2_166_136_261;
+  for (let i = 0; i < text.length; i++) x = Math.imul(x ^ text.charCodeAt(i), 16_777_619);
+  return x >>> 0;
+}
+
+/** The road from the house's nearest fondaco to a city (the premium of the long roads). */
+function roadTo(w: World, h: House, c: { x?: number; y?: number; cell: string }): number {
+  const [cx, cy] = citySpot(c as never, w.s);
+  const home = w.s.map.home;
+  const posts = [...(home ? [[home.x, home.y]] : []), ...h.spots.map((p) => [p.x, p.y])];
+  return Math.min(
+    Number.POSITIVE_INFINITY,
+    ...posts.map(([x = 0, y = 0]) => Math.hypot(x - cx, y - cy)),
+  );
+}
+
+/**
+ * The cities' orders as the engine keeps them (`cityOrdersAt`, decision of the owner, 3 November
+ * 2026, after the map's audit: the simulator no longer gives an order a city a session): an order
+ * every interval of its size while fewer than its cap wait, a good its workshops make (those made
+ * now weighted), its lot (the first a share of it), its pay (the premium, and the long road's).
+ */
+function cityOrdersNow(w: World, h: House, c: (typeof w.s.map.cities)[number]) {
+  const o = w.s.orders;
+  const rec = h.cityOrders.get(c.code) ?? { next: w.now, seq: 0, list: [] };
+  h.cityOrders.set(c.code, rec);
+  if (!o) return rec;
+  const { every, cap } = sizeRule(w, c.size);
+  const goods = weightedGoods(
+    orderGoods(h).filter((g) => orderRefOf(w.s, c.region, g) !== null),
+    new Set(orderGoods(h)),
+    o.madeWeight,
+  );
+  const road = roadTo(w, h, c);
+  for (; rec.next <= w.now && rec.list.length < cap; rec.next += every) {
+    if (goods.length === 0) continue;
+    const good = goods[hashOf(`${h.id}|${c.code}|${rec.seq}`) % goods.length] ?? "";
+    const ref = orderRefOf(w.s, c.region, good);
+    if (ref === null) continue;
+    const qty = orderLot(lotOf(w.s, good, ref, tierOf.get(good)), w.s, rec.seq === 0);
+    const premium = o.premiumBps + distanceBonusBps(w.s, road);
+    rec.list.push({ good, qty, pay: applyBpsFloor(ref * BigInt(qty), 10_000 + premium) });
+    rec.seq++;
+  }
+  if (rec.list.length >= cap && rec.next <= w.now) rec.next = w.now + every;
+  return rec;
+}
+
+/** The orders a session finds in the cities its counters serve. */
 function ordersPerSession(w: World, h: House): number {
   if (!w.s.orders) return Number.POSITIVE_INFINITY;
   if (orderGoods(h).length === 0) return 0;
   const covered = citiesCovered(seen(h), w.s);
   return w.s.map.cities
     .filter((c) => covered.has(c.code))
-    .reduce((n, c) => n + ordersSince(w, c.size, 12), 0);
+    .reduce((n, c) => n + cityOrdersNow(w, h, c).list.length, 0);
 }
 
-function deliverOrders(w: World, h: House, sinceHours: number) {
+function deliverOrders(w: World, h: House, _sinceHours: number) {
   const o = w.s.orders;
   if (!o) return;
   let places = landPlaces(w, h) * w.m.roundsPerSession;
   const covered = citiesCovered(seen(h), w.s);
   const convoy = tradeEffect(w, h, "orderBonus") + identityEffect(w, h, "orderBonus");
-  const all = orderGoods(h);
   for (const c of w.s.map.cities) {
     if (places <= 0) return;
     if (!covered.has(c.code)) continue;
-    const goods = all.filter((g) => orderRefOf(w.s, c.region, g) !== null);
-    if (goods.length === 0) continue;
-    const n = ordersSince(w, c.size, sinceHours);
-    // The orders drawn among its goods: so many of each, the rest to the first ones.
-    goods.forEach((good, i) => {
-      const ref = orderRefOf(w.s, c.region, good);
-      if (places <= 0 || ref === null || !homesOf(h, good).has(c.region)) return;
-      const asked = Math.floor(n / goods.length) + (i < n % goods.length ? 1 : 0);
-      const lot = lotOf(w.s, good, ref, tierOf.get(good));
-      const k = Math.min(asked, Math.floor((h.stock.get(good) ?? 0) / lot), places);
-      if (k <= 0) return;
-      takeStock(h, good, k * lot);
-      places -= k;
-      const gross = applyBpsFloor(ref * BigInt(k * lot), 10_000 + o.premiumBps + convoy);
+    const rec = cityOrdersNow(w, h, c);
+    // « Livrer »: the best paid first, those the stock covers; the others wait (and block).
+    const order = [...rec.list].sort((a, b) => (b.pay > a.pay ? 1 : b.pay < a.pay ? -1 : 0));
+    for (const x of order) {
+      if (places <= 0) break;
+      if (!homesOf(h, x.good).has(c.region)) continue;
+      if ((h.stock.get(x.good) ?? 0) < x.qty) continue;
+      takeStock(h, x.good, x.qty);
+      places--;
+      rec.list.splice(rec.list.indexOf(x), 1);
+      // A place freed in a full city: its next order an interval later.
+      const { every, cap } = sizeRule(w, c.size);
+      if (rec.list.length === cap - 1 && rec.next <= w.now) rec.next = w.now + every;
+      const gross = applyBpsFloor(x.pay, 10_000 + convoy);
       receive(w, h, gross, "orders", "orders");
       h.ordersValue += gross;
       h.favour += Number(gross / (100n * DENIERS_PER_DUCAT)) * w.m.favourPer100Ducats;
-    });
+    }
   }
 }
 

@@ -179,3 +179,15 @@ Détail et ordre proposé dans `docs/audit-profondeur-2026-11-01.md` (un planche
 - **La prime de distance** : une commande d'une ville lointaine paierait plus. Écartée par le porteur ; la distance ne coûte aujourd'hui que du temps.
 - **Les modules retirés à repenser** pour des commandes-places : un ramassage en route (le Shipment Computer), la vitesse vers l'arrêt où va la cargaison (le Rush), le départ immédiat.
 - **Le compteur de soute sur le véhicule** (3/8) et **la pastille du comptoir** (le nombre de commandes chargeables avec son stock) : proposés, non retenus pour l'instant.
+
+## L'audit de la carte (3 novembre 2026), hors du chantier
+
+Décisions du porteur après l'audit des quatre experts (`docs/audit-carte-2026-11-03/SYNTHESE.md`) : à faire plus tard.
+- **Sons et vibrations** : une caisse livrée, les ducats, la mule qui part ; coupés par défaut.
+- **D'autres monuments** : Milan, Florence, Vérone, Constantinople, après le campanile de Venise et les coupoles de Padoue.
+- **Le bouton œil** de la couche d'information (aujourd'hui l'appui long, ou Alt sur PC).
+- **« Tout livrer »** : toutes les tournées planifiées d'un coup, à partir d'une Casa donnée.
+- **Les notifications** (une mule rentrée, une ville pleine) et la paie en route dans la bourse.
+- **La tournée à plusieurs villes** d'une même mule (toucher une autre ville pendant le départ).
+- **L'itinéraire libre** : le bouton « Déplacer » de la feuille d'un véhicule reste pour l'instant ; à trancher.
+- **Le refus d'une commande** et le lot à la mesure de l'atelier (le tirage pondéré a été retenu).

@@ -40,7 +40,10 @@ async function startServer() {
       WORLD_KIND: "empire",
       // The long voyages (five minutes and more) quickened for the journey: a second a unit, a
       // hop to Padua in some thirty seconds (development only, refused in production).
-      WORLD_SETTINGS_OVERRIDE: JSON.stringify({ empire: { moves: { secondsPerUnit: 1 } } }),
+      // More ducats at the start: the orders of two towns bought at the market, to deliver them.
+      WORLD_SETTINGS_OVERRIDE: JSON.stringify({
+        empire: { moves: { secondsPerUnit: 1 }, start: { capitalDucats: 5_000 } },
+      }),
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -210,17 +213,17 @@ try {
       .catch(() => {
         faults.push("the city panel closed: the round buttons not back");
       });
-    // 2. The fondaco touched on the board: its workshops deploy around it, up close; touched
-    // again, the Casa's panel.
+    // 2. The fondaco touched on the board: the camera plunges into its domain, its workshops on
+    // the tiles around it; its Casa touched, the Casa's panel.
     await tapOn("[data-home]");
     await page
-      .locator("[data-orbit-open=home] [data-workshop]")
+      .locator("[data-domain-layer] [data-workshop]")
       .first()
       .waitFor({ timeout: 5_000 })
       .catch(() => faults.push("the fondaco touched through the 3D board: no workshops"));
     await page.waitForTimeout(1500);
     await shot("2-fondaco");
-    await tapOn("[data-home]");
+    await page.locator("[data-domain-casa]").click();
     await page
       .locator("[data-bottom-slot='panel:casa']")
       .waitFor({ timeout: 5_000 })
@@ -229,26 +232,55 @@ try {
       });
     await shot("2b-fondaco-touche");
     await page.keyboard.press("Escape");
-    /** A vehicle of the house (its id, or the first) dragged from its medal to a town, sent at once. */
-    const send = async (pg, code, id) => {
-      const medal = pg.locator(id ? `[data-vehicle="${id}"]` : "[data-vehicle]").first();
-      const car = await medal.boundingBox();
+    // Out of the domain (Échap again): the map's marks back.
+    await page.keyboard.press("Escape");
+    await page
+      .locator("[data-map=empire]:not([data-domain])")
+      .waitFor({ timeout: 5_000 })
+      .catch(() => faults.push("Échap does not leave the domain"));
+    /**
+     * « Livrer » from a town (decision of the owner, 3 November): its orders bought at the market,
+     * the town touched, its gold button; the vehicle's token touched, the camera after it. Returns
+     * the vehicle's id.
+     */
+    const send = async (pg, code) => {
+      const wants = await pg.evaluate(async (c) => {
+        const v = await (await fetch("/api/empire", { credentials: "same-origin" })).json();
+        return (v.view?.orders.find((o) => o.city === c)?.orders ?? []).map((o) => ({
+          good: o.good,
+          qty: o.qty,
+        }));
+      }, code);
+      if (wants.length === 0) throw new Error(`no order at ${code}`);
+      for (const w of wants)
+        await pg.evaluate(
+          (a) =>
+            fetch("/api/empire/actions", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ type: "empireBuy", good: a.good, qty: a.qty }),
+            }),
+          w,
+        );
+      // The view brought up to date (the page again, its 3D board in), then the town touched.
+      await pg.reload();
+      await pg.locator("[data-map=empire][data-three]").waitFor({ timeout: 60_000 });
+      await pg.waitForTimeout(1_200);
       const town = await pg.locator(`[data-map=empire] [data-city=${code}]`).first().boundingBox();
-      if (!car || !town) throw new Error("no vehicle or no town to send it to");
-      const [cx, cy] = [car.x + car.width / 2, car.y + car.height / 2];
-      const [tx, ty] = [town.x + town.width / 2, town.y + town.height / 2];
-      await pg.mouse.move(cx, cy);
-      await pg.mouse.down();
-      await pg.mouse.move((cx + tx) / 2, (cy + ty) / 2, { steps: 6 });
-      await pg.mouse.move(tx, ty, { steps: 6 });
-      await pg.mouse.up();
-      await pg.locator("[data-vehicle-panel] [data-hop-action=go]").click();
-      await pg.locator("[data-vehicle][data-moving]").first().waitFor({ timeout: 5_000 });
-      return medal.getAttribute("data-vehicle");
+      if (!town) throw new Error(`no ${code} on the map`);
+      await pg.mouse.click(town.x + town.width / 2, town.y + town.height / 2);
+      const button = pg.locator(`[data-orders-panel=${code}] [data-deliver] button`);
+      await button.waitFor({ timeout: 10_000 });
+      await button.click();
+      const token = pg.locator("[data-trip]").first();
+      await token.waitFor({ timeout: 5_000 });
+      await token.click();
+      return token.getAttribute("data-trip");
     };
-    // 3. A mule sent to Padua: it walks there on the board, its medal above it. The workshops
+    // 3. A mule sent to Padua: it walks there on the board, no medal above it. The workshops
     // folded first (Recentrer), the camera a little nearer.
-    await page.getByRole("button", { name: /recentrer/i }).click();
+    await page.locator("[data-round=recenter]").click();
     await page.waitForTimeout(900);
     await page.waitForTimeout(800);
     await send(page, "padova");
@@ -285,7 +317,7 @@ try {
     await page.waitForTimeout(3000);
     await page.keyboard.press("Escape");
     // Recentrer: the camera leaves the mule it followed, out over the house's sectors.
-    await page.getByRole("button", { name: /recentrer/i }).click();
+    await page.locator("[data-round=recenter]").click();
     await page.waitForTimeout(1800);
     await shot("4b-secteur");
     // Out, as far as the map goes: the whole house's map on the board.
@@ -294,11 +326,13 @@ try {
     await shot("4-dezoom");
 
     // Every vehicle at rest before the video (the mule sent to Padua arrives).
+    if ((await page.locator("[data-vehicle]").count()) > 0)
+      faults.push("a vehicle's medal on the 3D board");
     await page
-      .locator("[data-vehicle][data-moving]")
+      .locator("[data-trip]")
       .first()
-      .waitFor({ state: "detached", timeout: 90_000 })
-      .catch(() => faults.push("a vehicle still under way after 90 s"));
+      .waitFor({ state: "detached", timeout: 150_000 })
+      .catch(() => faults.push("a vehicle still under way (there and back) after 150 s"));
     // The video: a mule sent to Venice, 13 s from its leaving (the recording cut by ffmpeg).
     const rec = await browser.newContext({
       viewport: { width: W, height: H },
@@ -313,15 +347,11 @@ try {
 
     // A hop of some thirty seconds (a second a unit in the journey): the mule walks all along,
     // the film from its leaving (the wait before it, if any, cut).
-    const id = await send(vp, "venezia");
+    await send(vp, "venezia");
     for (let i = 0; i < 4; i++) {
       await vp.keyboard.press("+");
       await vp.waitForTimeout(400);
     }
-    await vp
-      .locator(`[data-vehicle="${id}"][data-moving]`)
-      .waitFor({ timeout: 15_000 })
-      .catch(() => {});
     const tGo = Date.now();
     await vp.waitForTimeout(13_000);
     const video = vp.video();

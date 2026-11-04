@@ -2439,3 +2439,53 @@ Le porteur a validé la proposition C et ses conséquences (points 1 à 5 ci-des
    - les règles stables : au commerce, un changement s'annonce dans les notes du chapitre avant de s'appliquer.
 
 Reproduire : `cd apps/simulator && npx tsx src/scenario-voyages.ts && npx tsx src/empire-cli.ts --scenario scenarios/voyages-longs-commandes.json` (environ 30 minutes par graine).
+
+## L'audit de la carte : le simulateur sur la logique des commandes, et trois réglages (4 novembre 2026)
+
+Décisions du porteur après l'audit de la carte (`docs/audit-carte-2026-11-03/SYNTHESE.md`, § 5) : corriger d'abord le modèle des commandes du simulateur, quitte à voir le calibrage reculer ; puis une première commande réduite, un tirage pondéré vers ce que la Maison produit, et la prime de distance du cadrage (§ 3.4) rétablie.
+
+### Le modèle du simulateur, corrigé
+
+L'expert game design a relevé que le simulateur comptait **au moins une commande par ville et par session** (`max(1, …)` dans `ordersSince`), même quand l'intervalle n'était pas écoulé : environ trois fois trop pour une petite ville. Le simulateur tient désormais, comme le moteur (`cityOrdersAt`), une file par ville et par Maison : une commande à chaque intervalle tant que le plafond n'est pas atteint, la ville pleine ne demandant plus rien ; une commande que le stock ne couvre pas reste et **bloque sa place** ; « Livrer » prend les mieux payées d'abord (`apps/simulator/src/empire/bots.ts`, `cityOrdersNow`, `deliverOrders`). Le retour automatique des mules (`moves.returnHome`) ne change rien au modèle : il supposait déjà les véhicules rentrés à chaque session.
+
+### Les réglages (moteur, `packages/engine/src/empire/orders.ts`, testés ; éteints par défaut)
+
+- `orders.firstLotBps` : la première commande de chaque ville est une part de son lot (payée d'autant moins) ;
+- `orders.madeWeight` : les marchandises des recettes en marche sont tirées autant de fois plus souvent que les autres marchandises des bâtiments de la Maison ;
+- `orders.distanceBps` et `orders.distanceMaxBps` : une prime par dizaine d'unités de route depuis le fondaco le plus proche, plafonnée.
+
+Le simulateur ne distingue pas les recettes en marche des autres (chaque atelier y a sa marchandise) : `madeWeight` n'y change rien, son effet est au jeu.
+
+### Les essais (24 mois, cohortes de 200, graines 1, 2 et 3)
+
+| Essai | Réglage | Cibles sur 9 |
+| --- | --- | --- |
+| C (référence du 3 novembre) | ancien modèle des commandes | 4, 4 et 4 |
+| A | modèle corrigé, rien d'autre | **5, 5 et 5** |
+| D (graine 1) | A, et `firstLotBps` = 2 500 | 5 |
+| E | A, `firstLotBps` = 2 500, `distanceBps` = 100, `distanceMaxBps` = 1 500 | **5, 5 et 5** |
+
+Cible par cible (graine 1) :
+
+| Cible | C | A | E |
+| --- | --- | --- | --- |
+| Calendrier de la Casa (cohorte 0) | ✗ paliers 18 et 19 | ✓ | ✓ |
+| Tournées avec un objectif à moins de 24 h | ✓ 94,9 % | ✓ 98,6 % | ✓ 99,0 % |
+| Prochain palier en jours de revenu (2 à 7) | ✗ 3,9 à 12,1 | ✗ 4,9 à 26,5 | ✗ 4,9 à 25,3 |
+| Cohorte du mois 12 hors de la 1re bande (4 à 6 mois) | ✗ 2,8 | ✗ 2,9 | ✗ 2,5 |
+| Indice des prix | ✓ | ✓ 95 à 103 | ✓ 95 à 103 |
+| Puits ÷ sources des jeunes Maisons (0,6–0,8) | ✗ 0,96 | ✗ 0,89 | ✗ 0,89 |
+| Part de la Terraferme | ✓ | ✓ | ✓ |
+| Bruts des jeunes Maisons à Venise (≥ 10 %) | ✗ 6,3 % | ✗ 6,8 % | ✗ 6,8 % |
+| Part des commandes (60 à 85 %) | ✓ 67,7 % | ✓ 64,1 % | ✓ 64,1 % |
+
+**Lecture.**
+- Le modèle corrigé **gagne le calendrier de la Casa** sur les trois graines (les commandes plus rares ralentissent les premiers paliers, qui tombent dans leurs bornes) et rapproche l'épargne des jeunes Maisons de sa cible (0,89 contre 0,96).
+- Il **ralentit la fin de partie** : un palier coûte jusqu'à 26 à 28 jours de revenu (12 avec l'ancien modèle). C'est la prochaine passe d'équilibrage à faire (les plafonds des grandes villes, ou la paie des lots de produits finis).
+- La première commande réduite et la prime de distance ne changent rien de mesurable au calibrage (une petite commande de plus par ville, quelques pour cent sur les routes longues) : elles servent la prise en main et le choix des routes, sans déplacer l'économie.
+
+### Appliqué (décisions du porteur du 3 novembre)
+
+`venice1450.empire.ts` : `orders.firstLotBps` = 2 500, `madeWeight` = 3, `distanceBps` = 100, `distanceMaxBps` = 1 500 ; `moves.returnHome` et `recallSeconds` = 5 ; `map.water` (la tuile de lagune de Venise). **À annoncer** dans les notes du chapitre avant de s'appliquer : brouillon dans `docs/notes-chapitre-2026-11-carte.md`.
+
+Reproduire : `cd apps/simulator && npx tsx src/empire-cli.ts` donne E (le jeu tel qu'appliqué) ; environ 50 minutes par graine.

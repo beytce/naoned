@@ -3,7 +3,16 @@ import { describe, expect, it } from "vitest";
 import { HEX_SIZE } from "../src/art/hexmap.js";
 import { C } from "../src/art/plateau/props.js";
 import { PALETTE, linear, recolour, swatchOf } from "../src/empire/map3d/recolor.js";
-import { type SceneInput, TILE_R, road, scene3d, zones } from "../src/empire/map3d/scene.js";
+import {
+  type SceneInput,
+  TILE_R,
+  outlineOf,
+  road,
+  scene3d,
+  sceneKey,
+  zones,
+} from "../src/empire/map3d/scene.js";
+import type { EmpirePayload } from "../src/empire/types.js";
 
 /** The house's map at its start, as the server sends it (the towns and the fondaco on tiles). */
 const start: SceneInput = {
@@ -115,6 +124,31 @@ describe("the 3D map's scene, on the small tiles", () => {
     // Venice and Padua, 10 apart: 5 each; the Remise alone: as large as a touch goes.
     expect(z.find((x) => x.id === "city:padova")?.r).toBeCloseTo(5.0249, 3);
     expect(z.find((x) => x.id === "depot")?.r).toBe(7);
+    // As high as what stands there: the fondaco to its flag, a town to its monument.
+    expect(z.find((x) => x.id === "home")?.h).toBeGreaterThan(14);
+    expect(z.find((x) => x.id === "city:venezia")?.h).toBeGreaterThan(12);
+  });
+
+  it("keeps one key for two refreshes of the same map, another once it changes", () => {
+    const pay = (home: { x: number; y: number }) =>
+      ({
+        view: { map: structuredClone({ ...start, home }), porta: null },
+      }) as unknown as EmpirePayload;
+    expect(sceneKey(pay({ x: 178, y: 154 }))).toBe(sceneKey(pay({ x: 178, y: 154 })));
+    expect(sceneKey(pay({ x: 178, y: 154 }))).not.toBe(sceneKey(pay({ x: 160, y: 154 })));
+  });
+
+  it("draws a sector's outline round its seven small tiles, never between them", () => {
+    const seven = [0, 1, 2, 3, 4, 5, 6].map((k) => {
+      const [x, y] = slotPoint("2,4", k, S);
+      return { x, y };
+    });
+    const sides = outlineOf(seven);
+    expect(sides).toHaveLength(18);
+    const [cx, cy] = slotPoint("2,4", 0, S);
+    // Every side away from the middle tile (none of its six is left).
+    for (const [a, b] of sides)
+      expect(Math.hypot((a[0] + b[0]) / 2 - cx, (a[1] + b[1]) / 2 - cy)).toBeGreaterThan(TILE_R);
   });
 
   it("walks a road from one end to the other, bent to one side", () => {

@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   type EmpireSettingsInput,
   empireHouseAt,
+  empireView,
   hopMs,
   parseEmpireSettings,
+  roadBetween,
+  roadLength,
   slotPoint,
 } from "../../src/index.js";
 import type { EmpireHouse } from "../../src/state.js";
@@ -23,7 +26,10 @@ const [px, py] = tile("0,1", 3);
 const empire: EmpireSettingsInput = {
   ...testEmpire,
   casa: testEmpire.casa.map((c) => ({ ...c, materials: {}, buildMinutes: 0, costDucats: 0 })),
-  start: { capitalDucats: 1_000_000, workshops: [] },
+  start: { capitalDucats: 1_000_000, workshops: [], vehicles: ["cart"] },
+  vehicles: {
+    cart: { casa: 1, capacity: 30, places: 3, costDucats: 100, regions: ["veneto"], speedBps: 0 },
+  },
   counters: { maxLevel: 10, bookStepBps: 0, costTimes: 4 },
   map: {
     ...testEmpire.map,
@@ -79,6 +85,73 @@ describe("a fondaco on the small tiles", () => {
     expect(
       error(w.try({ type: "empirePlaceCounter", playerId: "a", cell: "0,0", x: fx, y: fy })),
     ).toBe("");
+  });
+});
+
+describe("a fondaco of before the small tiles", () => {
+  it("is moved once onto the nearest free tile of its sector, clear of the towns", () => {
+    const w = world();
+    expect(placeHome(w, "0,0", tile("0,0", 5)).ok).toBe(true);
+    // Its point of before: off any tile's middle, next to Venice.
+    const state = structuredClone(w.state);
+    const h = state.empire?.houses.a;
+    if (!h?.home) throw new Error("no home");
+    const [vx0, vy0] = tile("0,0", 1);
+    h.home = { cell: "0,0", x: vx0 + 4, y: vy0 + 3 };
+    w.state = state;
+    w.do({ type: "empireSettle", playerId: "a" });
+    const home = house(w).home;
+    if (!home) throw new Error("no home");
+    const towns = [tile("0,0", 1), tile("0,1", 3)];
+    expect(towns.some(([x, y]) => x === home.x && y === home.y)).toBe(false);
+    expect(
+      [0, 1, 2, 3, 4, 5, 6].some((k) => {
+        const [x, y] = tile("0,0", k);
+        return x === home.x && y === home.y;
+      }),
+    ).toBe(true);
+    expect(home.cell).toBe("0,0");
+  });
+});
+
+describe("a small tile of lagoon", () => {
+  it("takes no fondaco, and the house's view tells it", () => {
+    const wet = { ...empire, map: { ...empire.map, water: ["0,0#5"] } };
+    const w = new World(makeContext({ empire: wet }));
+    w.do({ type: "empireJoin", playerId: "a" });
+    expect(error(placeHome(w, "0,0", tile("0,0", 5)))).toBe("unknown_cell");
+    expect(empireView(w.ctx, w.state, "a", w.now)?.map.water).toEqual(["0,0#5"]);
+  });
+});
+
+describe("the sea along the coasts", () => {
+  it("is seen from the start next to a coast seen, nothing of it to buy", () => {
+    const w = world();
+    const map = empireView(w.ctx, w.state, "a", w.now)?.map;
+    const s = parseEmpireSettings(empire);
+    const sea = (map?.revealed ?? []).filter((k) => !(k in s.map.cells));
+    expect(sea.length).toBeGreaterThan(0);
+    expect(sea.some((k) => (map?.buyable ?? []).some((b) => b.cell === k))).toBe(false);
+  });
+});
+
+describe("a hop's road in the house's view", () => {
+  it("is the very road the engine times, on the whole map (never the part the house sees)", () => {
+    const w = world();
+    expect(placeHome(w, "0,0", tile("0,0", 5)).ok).toBe(true);
+    const v = house(w).vehicles?.[0];
+    expect(
+      error(
+        w.try({ type: "empireMove", playerId: "a", vehicleId: v?.id ?? "", to: "city:venezia" }),
+      ),
+    ).toBe("");
+    const s = parseEmpireSettings(empire);
+    const leg = empireView(w.ctx, w.state, "a", w.now)?.vehicles.mine[0]?.legs[0];
+    const want = roadBetween(tile("0,0", 5), [vx, vy], s);
+    expect(leg?.road?.[0]).toEqual(want[0]);
+    expect(leg?.road?.at(-1)).toEqual(want.at(-1));
+    expect(roadLength(leg?.road ?? [])).toBeCloseTo(roadLength(want), 0);
+    expect(leg && leg.arrivesAt - leg.departAt).toBe(hopMs(s, tile("0,0", 5), [vx, vy]));
   });
 });
 

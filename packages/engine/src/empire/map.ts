@@ -5,7 +5,7 @@ import { levelCost } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { counterCostOf, empireSettings, openSite, ownHouse } from "./house.js";
 import type { EmpireSettings } from "./settings.js";
-import { tileFault } from "./slots.js";
+import { slotPoint, tileFault } from "./slots.js";
 
 /**
  * The map at the centre of the game (step 2): a hex grid over the Mediterranean, in axial cells
@@ -362,6 +362,43 @@ function namePosts(h: EmpireHouse, s: EmpireSettings): void {
  * region where it holds a counter seen around and a counter put there, its Arsenal on Venetia's
  * coast when it has a ship. Never undoes what it already has.
  */
+/**
+ * The fondaci put down before the small tiles (decision of the owner, 3 November 2026, after the
+ * map's audit): each moved onto the nearest tile of its sector clear of the towns and of the house's
+ * other fondaci; one that finds none stays where it was.
+ */
+function alignToTiles(h: EmpireHouse, s: EmpireSettings): void {
+  if (!s.map.tiles) return;
+  const towns = s.map.cities.map((t) => citySpot(t, s));
+  const spots = (): { at: [number, number]; ref: { cell: string; x?: number; y?: number } }[] => [
+    ...(h.home ? [{ at: [h.home.x, h.home.y] as [number, number], ref: h.home }] : []),
+    ...(h.posts ?? [])
+      .filter((p) => p.x !== undefined && p.y !== undefined)
+      .map((p) => ({ at: [p.x as number, p.y as number] as [number, number], ref: p })),
+  ];
+  for (const me of spots()) {
+    const others = spots()
+      .filter((o) => o.ref !== me.ref)
+      .map((o) => o.at);
+    if (!tileFault(s, me.ref.cell, me.at, towns, others)) continue;
+    const free = [0, 1, 2, 3, 4, 5, 6]
+      .map((k) => {
+        const [x, y] = slotPoint(me.ref.cell, k, s);
+        return [Math.round(x), Math.round(y)] as [number, number];
+      })
+      .filter((at) => !tileFault(s, me.ref.cell, at, towns, others))
+      .sort(
+        (a, b) =>
+          Math.hypot(a[0] - me.at[0], a[1] - me.at[1]) -
+          Math.hypot(b[0] - me.at[0], b[1] - me.at[1]),
+      );
+    const to = free[0];
+    if (!to) continue;
+    me.ref.x = to[0];
+    me.ref.y = to[1];
+  }
+}
+
 export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   if (!hasMap(s)) return;
   // The Arsenal gone (1 November): a house that had one has its Remise there.
@@ -381,6 +418,7 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
     if (home && (land > s.start.vehicles.length || h.vehicleLevels)) h.depot = home;
   }
   namePosts(h, s);
+  alignToTiles(h, s);
   // Taken up once per drawing of the map: a house of an older grid has its cells drawn again.
   if (h.revealed && h.mapVersion === s.map.version) return;
   const moved = h.revealed !== undefined;

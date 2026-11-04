@@ -91,8 +91,13 @@ export function Fleet({
   useEffect(() => {
     if (!live) return;
     let f = 0;
-    const step = () => {
-      setFrame(Date.now() + skew.current);
+    // On the 3D board, only the dotted ways follow (the animals walk in the scene): four a second.
+    let last = 0;
+    const step = (t: number) => {
+      if (!MAP_3D || t - last > 250) {
+        last = t;
+        setFrame(Date.now() + skew.current);
+      }
       f = requestAnimationFrame(step);
     };
     f = requestAnimationFrame(step);
@@ -230,7 +235,7 @@ export function Fleet({
               const a = placePoint(p, l.from);
               const b = placePoint(p, l.to);
               if (!a || !b) return [];
-              const road = roadOf(p, a, b);
+              const road = l.road ?? roadOf(p, a, b);
               if (i > 0 || !pose.hop) return [road];
               const k = pose.hop.k;
               const total = road.length > 1 ? road : [a, b];
@@ -281,65 +286,69 @@ export function Fleet({
         </g>
       </svg>
 
-      {/* The seconds left, written in the middle of the way of each vehicle under way. */}
-      {placed.map(({ v, pose, x, y }) => {
-        const leg = pose.hop
-          ? v.legs.find((l) => l.departAt <= clock && l.arrivesAt > clock)
-          : v.legs.find((l) => l.departAt > clock);
-        const b = leg ? placePoint(p, leg.to) : null;
-        if (!leg || !b) return null;
-        const secs = pose.hop
-          ? Math.max(1, Math.ceil((leg.arrivesAt - clock) / 1_000))
-          : Math.round((leg.arrivesAt - leg.departAt) / 1_000);
-        return (
-          <div
-            key={`s${v.id}`}
-            className="map-pin pointer-events-none"
-            style={{ left: ((x + b[0]) / 2) * base, top: ((y + b[1]) / 2) * TILT * base }}
-            data-way-seconds={v.id}
-          >
-            <span className="rounded bg-night/80 px-1 font-display text-[0.625rem] font-bold tabular-nums text-info">
-              {t.seconds(secs)}
-            </span>
-          </div>
-        );
-      })}
-
-      {/* The vehicles themselves, turned to their heading. */}
-      {placed.map(({ v, pose, x, y }) => {
-        const on = v.id === selected;
-        return (
-          <button
-            key={v.id}
-            type="button"
-            data-vehicle={v.id}
-            data-drag-handle
-            data-moving={pose.hop ? "" : undefined}
-            aria-label={fr.empire.vehicleNames[v.type] ?? v.type}
-            aria-pressed={on}
-            onPointerDown={startDrag(v.id)}
-            className="map-place pointer-events-auto touch-none"
-            style={{ left: x * base, top: y * TILT * base }}
-          >
-            {on && (
-              <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[0.6rem] leading-none text-gold">
-                ▼
-              </span>
-            )}
-            <span
-              className={`flex h-8 w-8 items-center justify-center rounded-full bg-night-3/90 shadow-md shadow-black/50 ${on ? "ring-2 ring-gold shadow-[0_0_14px_rgb(var(--gold)/0.7)]" : "ring-1 ring-lagoon/70"}`}
+      {/* The seconds left, written in the middle of the way of each vehicle under way (on the 3D
+          board, its token under the house's name says it, decision of the owner, 3 November). */}
+      {!MAP_3D &&
+        placed.map(({ v, pose, x, y }) => {
+          const leg = pose.hop
+            ? v.legs.find((l) => l.departAt <= clock && l.arrivesAt > clock)
+            : v.legs.find((l) => l.departAt > clock);
+          const b = leg ? placePoint(p, leg.to) : null;
+          if (!leg || !b) return null;
+          const secs = pose.hop
+            ? Math.max(1, Math.ceil((leg.arrivesAt - clock) / 1_000))
+            : Math.round((leg.arrivesAt - leg.departAt) / 1_000);
+          return (
+            <div
+              key={`s${v.id}`}
+              className="map-pin pointer-events-none"
+              style={{ left: ((x + b[0]) / 2) * base, top: ((y + b[1]) / 2) * TILT * base }}
+              data-way-seconds={v.id}
             >
-              <span style={{ transform: `rotate(${pose.angle}rad)` }} className="flex">
-                <Wagon loaded={v.loads.length > 0} />
+              <span className="rounded bg-night/80 px-1 font-display text-xs font-bold tabular-nums text-info">
+                {t.seconds(secs)}
               </span>
-            </span>
-            {/* The information layer: its hold. */}
-            <span className="info-only absolute left-1/2 top-full mt-0.5 -translate-x-1/2 whitespace-nowrap rounded-full bg-night/85 px-1.5 font-display text-[0.625rem] font-bold tabular-nums text-cream ring-1 ring-lagoon/60">
-              {fr.empire.hops.hold(v.loads.length, v.capacity)}
-            </span>
-          </button>
-        );
-      })}
+            </div>
+          );
+        })}
+
+      {/* The vehicles themselves, turned to their heading (on the 3D board, the animals are touched
+          in the scene: no medal over them, decision of the owner, 3 November). */}
+      {!MAP_3D &&
+        placed.map(({ v, pose, x, y }) => {
+          const on = v.id === selected;
+          return (
+            <button
+              key={v.id}
+              type="button"
+              data-vehicle={v.id}
+              data-drag-handle
+              data-moving={pose.hop ? "" : undefined}
+              aria-label={fr.empire.vehicleNames[v.type] ?? v.type}
+              aria-pressed={on}
+              onPointerDown={startDrag(v.id)}
+              className="map-place pointer-events-auto touch-none"
+              style={{ left: x * base, top: y * TILT * base }}
+            >
+              {on && (
+                <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-xs leading-none text-gold">
+                  ▼
+                </span>
+              )}
+              <span
+                className={`flex h-8 w-8 items-center justify-center rounded-full bg-night-3/90 shadow-md shadow-black/50 ${on ? "ring-2 ring-gold shadow-[0_0_14px_rgb(var(--gold)/0.7)]" : "ring-1 ring-lagoon/70"}`}
+              >
+                <span style={{ transform: `rotate(${pose.angle}rad)` }} className="flex">
+                  <Wagon loaded={v.loads.length > 0} />
+                </span>
+              </span>
+              {/* The information layer: its hold. */}
+              <span className="info-only absolute left-1/2 top-full mt-0.5 -translate-x-1/2 whitespace-nowrap rounded-full bg-night/85 px-1.5 font-display text-xs font-bold tabular-nums text-cream ring-1 ring-lagoon/60">
+                {fr.empire.hops.hold(v.loads.length, v.capacity)}
+              </span>
+            </button>
+          );
+        })}
 
       {/* What a vehicle brought, rising from the city it reached. */}
       {arrivals.map((a) => (

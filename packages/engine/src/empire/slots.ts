@@ -198,6 +198,7 @@ export function tileFault(
   const [mx, my] = slotPoint(t.cell, t.k, s);
   if (t.cell !== cell || Math.round(mx) !== at[0] || Math.round(my) !== at[1])
     return "unknown_cell";
+  if ((s.map.water ?? []).includes(`${t.cell}#${t.k}`)) return "unknown_cell";
   if (towns.some((p) => slotsTouch(p, at, s))) return "on_city";
   if (fondaci.some((p) => slotsTouch(p, at, s))) return "post_too_close";
   return null;
@@ -259,7 +260,8 @@ export function roadTiles(
     for (const n of tilesAround(cur.t, s)) {
       const nid = tileId(n);
       if (done.has(nid)) continue;
-      const extra = nid === goal ? 0 : towns.has(nid) ? 3 : s.map.cells[n.cell] ? 0 : 4;
+      const wet = !s.map.cells[n.cell] || (s.map.water ?? []).includes(nid);
+      const extra = nid === goal ? 0 : towns.has(nid) ? 3 : wet ? 4 : 0;
       const g = cur.g + 1 + extra;
       if (g < (cost.get(nid) ?? Number.POSITIVE_INFINITY)) {
         cost.set(nid, g);

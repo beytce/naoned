@@ -14,7 +14,7 @@ import { d } from "../../game/format.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { fr } from "../../i18n.js";
 import { affordable, queueEnd, readyLots } from "../logic.js";
-import type { EmpireAction, EmpirePayload } from "../types.js";
+import type { EmpireAction, EmpireOrderView, EmpirePayload } from "../types.js";
 
 /**
  * The empire's map, pure (the map at the centre of the game, step 1): how the camera covers the
@@ -584,7 +584,7 @@ export function vehiclePose(
       Math.max(0, (t - leg.departAt) / Math.max(1, leg.arrivesAt - leg.departAt)),
     );
     // Along its road (the small tiles), as far as its time says; straight on the old map.
-    const on = alongRoad(roadOf(p, a, b), k);
+    const on = alongRoad(leg.road ?? roadOf(p, a, b), k);
     return {
       x: on.x,
       y: on.y,
@@ -772,7 +772,7 @@ export function snapToTile(
 ): { cell: string; x: number; y: number } {
   const map = p.view?.map;
   if (!map?.tiles) return { cell, x, y };
-  const s = { map: { hexSize: map.hexSize } } as EmpireSettings;
+  const s = { map: { hexSize: map.hexSize, water: map.water ?? [] } } as EmpireSettings;
   const towns = map.cities.map((c): [number, number] => [c.x, c.y]);
   const fondaci: [number, number][] = [
     ...(map.home?.placed === false ? [] : [[map.home.x, map.home.y] as [number, number]]),
@@ -816,4 +816,158 @@ export function roadOf(
   const road = roadBetween(a, b, s);
   known.set(key, road);
   return road;
+}
+
+/** Why « Livrer » cannot go: no stock for any order, every vehicle away, out of reach, none. */
+export type DeliveryBlock = "stock" | "busy" | "reach" | "none";
+
+/**
+ * What a city's « Livrer » would do (decision of the owner, 3 November 2026), as the engine does it
+ * (`empireDeliverCity`): the orders chosen (every one by default) that the stock of a counter serving
+ * the city covers, the best paid first, on the smallest free vehicle docked there that takes them
+ * all (else the one that takes most); or why not, and when the first vehicle comes back.
+ */
+export function deliveryPlan(
+  p: EmpirePayload,
+  city: string,
+  chosen: Set<string> | null = null,
+): {
+  /** Each order, the stock of it at the best counter, and whether that alone covers it. */
+  orders: { o: EmpireOrderView; have: number; covered: boolean }[];
+  picks: string[];
+  vehicle: Mine | null;
+  pay: bigint;
+  reason: DeliveryBlock | null;
+  /** The first vehicle free again (server time), when every one is away. */
+  freeAt: number | null;
+} {
+  const view = p.view;
+  const at = view?.orders.find((x) => x.city === city);
+  const none = { orders: [], picks: [], vehicle: null, pay: 0n, freeAt: null };
+  if (!view || !at) return { ...none, reason: "reach" };
+  const posts = at.posts ?? view.stores.map((s) => s.post);
+  const stockAt = (post: string, good: string) =>
+    view.stores.find((s) => s.post === post)?.goods[good] ?? 0;
+  const asked = [...at.orders]
+    .filter((o) => !chosen || chosen.has(o.id))
+    .sort((a, b) => (BigInt(b.pay) > BigInt(a.pay) ? 1 : BigInt(b.pay) < BigInt(a.pay) ? -1 : 0));
+  const best = (good: string) => Math.max(0, ...posts.map((post) => stockAt(post, good)));
+  const orders = at.orders.map((o) => ({ o, have: best(o.good), covered: best(o.good) >= o.qty }));
+  if (asked.length === 0) return { ...none, orders, reason: "none" };
+  const docked = (v: Mine) =>
+    v.legs.length === 0 &&
+    !(v as { porta?: unknown }).porta &&
+    (v.repairUntil ?? 0) <= p.now &&
+    posts.includes(v.at);
+  let pick: { v: Mine; ids: string[] } | null = null;
+  for (const v of view.vehicles.mine.filter(docked)) {
+    let room = v.capacity - v.loads.length;
+    const left = new Map<string, number>();
+    const ids: string[] = [];
+    for (const o of asked) {
+      if (room <= 0) break;
+      const have = left.get(o.good) ?? stockAt(v.at, o.good);
+      if (have < o.qty) continue;
+      left.set(o.good, have - o.qty);
+      ids.push(o.id);
+      room--;
+    }
+    if (ids.length === 0) continue;
+    if (
+      !pick ||
+      ids.length > pick.ids.length ||
+      (ids.length === pick.ids.length && v.capacity < pick.v.capacity)
+    )
+      pick = { v, ids };
+  }
+  if (pick) {
+    const pay = pick.ids.reduce(
+      (sum, id) => sum + BigInt(at.orders.find((o) => o.id === id)?.pay ?? 0),
+      0n,
+    );
+    return { orders, picks: pick.ids, vehicle: pick.v, pay, reason: null, freeAt: null };
+  }
+  const anyDocked = view.vehicles.mine.some(docked);
+  const away = view.vehicles.mine.filter((v) => v.legs.length > 0);
+  const freeAt = anyDocked
+    ? null
+    : away.length
+      ? Math.min(...away.map((v) => v.legs.at(-1)?.arrivesAt ?? Number.POSITIVE_INFINITY))
+      : null;
+  return {
+    orders,
+    picks: [],
+    vehicle: null,
+    pay: 0n,
+    reason: anyDocked ? "stock" : "busy",
+    freeAt,
+  };
+}
+
+/** What a town shows on the 3D board: a crate an order, and whether it waits for you. */
+export interface CityLook {
+  code: string;
+  x: number;
+  y: number;
+  /** Its orders, each a crate of its good: full when the stock covers it, hollow else. */
+  crates: { good: string; covered: boolean }[];
+  /** « deliverable »: « Livrer » would go now (gold); « full »: no new order (lagoon-green). */
+  state: "deliverable" | "full" | "open";
+}
+
+/**
+ * The towns as the board tells them (decision of the owner, 3 November 2026: the information in
+ * the scenery, no HTML ring): their orders as crates on their quay, their tile edged in gold when
+ * « Livrer » would go now, in lagoon-green when full.
+ */
+export function cityLooks(p: EmpirePayload): CityLook[] {
+  const view = p.view;
+  if (!view) return [];
+  return view.orders.flatMap((o) => {
+    const c = view.map.cities.find((x) => x.code === o.city);
+    if (!c || c.x === undefined || c.y === undefined) return [];
+    const plan = deliveryPlan(p, o.city);
+    const state =
+      plan.vehicle !== null ? "deliverable" : o.orders.length >= o.cap ? "full" : "open";
+    return [
+      {
+        code: o.city,
+        x: c.x,
+        y: c.y,
+        crates: plan.orders.map(({ o: x, covered }) => ({ good: x.good, covered })),
+        state,
+      },
+    ];
+  });
+}
+
+/** The screen's margins an arrow keeps (px): the HUD above, the bar below. */
+export const EDGE = { top: 132, bottom: 150, side: 30 };
+
+/**
+ * An arrow at the screen's edge toward a place out of sight (after the map's audit, 3 November
+ * 2026): where it stands on the edge and where it points (radians, 0 to the east); null when the
+ * place is on the screen.
+ */
+export function edgeArrow(
+  at: [number, number],
+  v: Viewport,
+  inset = EDGE,
+): { x: number; y: number; angle: number } | null {
+  const [x, y] = at;
+  const left = inset.side;
+  const right = v.w - inset.side;
+  const top = inset.top;
+  const bottom = v.h - inset.bottom;
+  if (x >= left && x <= right && y >= top && y <= bottom) return null;
+  // From the middle of the free part of the screen toward the place, cut at its edge.
+  const cx = (left + right) / 2;
+  const cy = (top + bottom) / 2;
+  const dx = x - cx;
+  const dy = y - cy;
+  const k = Math.min(
+    dx === 0 ? Number.POSITIVE_INFINITY : (dx > 0 ? right - cx : left - cx) / dx,
+    dy === 0 ? Number.POSITIVE_INFINITY : (dy > 0 ? bottom - cy : top - cy) / dy,
+  );
+  return { x: cx + dx * k, y: cy + dy * k, angle: Math.atan2(dy, dx) };
 }

@@ -186,28 +186,142 @@ function arrive(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle, leg: Emp
   const here = (v.loads ?? []).filter((o) => o.city === code);
   if (!c || here.length === 0) return;
   const bonus = houseEffect(h, "orderBonus", s, { region: c.region, vehicleId: v.id });
+  let paid = 0n;
   for (const o of here) {
-    receive(tx, playerId, applyBpsFloor(o.pay, 10_000 + bonus), `orders:${code}:${o.good}`);
+    const pay = applyBpsFloor(o.pay, 10_000 + bonus);
+    receive(tx, playerId, pay, `orders:${code}:${o.good}`);
     advanceCarnet(h, "deliver", o.qty);
+    paid += pay;
   }
+  // Kept for the player's return (the board plays them again, decision of the owner, 3 November).
+  h.delivered = [...(h.delivered ?? []), { city: code, pay: paid, at: leg.arrivesAt }].slice(-12);
   const rest = (v.loads ?? []).filter((o) => o.city !== code);
   v.loads = rest.length > 0 ? rest : undefined;
 }
 
+/**
+ * A vehicle standing at a city, its stops all done, sent back to its fondaco (the counter that
+ * serves the city, else the house's first), leaving `at`.
+ */
+function sendBack(h: EmpireHouse, s: EmpireSettings, v: Vehicle, at: number): void {
+  const code = placeCity(v.at ?? "");
+  if (code === null || v.legs?.length || v.porta) return;
+  const posts = standingPosts(h, s);
+  const home = postsServing(h, s, code).find((p) => posts.some((x) => x.id === p)) ?? HOME_POST;
+  const a = placePoint(h, s, v.at ?? "");
+  const b = placePoint(h, s, home);
+  if (!a || !b) {
+    v.at = home;
+    return;
+  }
+  const leg: EmpireLeg = {
+    from: v.at ?? "",
+    to: home,
+    departAt: at,
+    arrivesAt: at + hopMs(s, a, b),
+  };
+  v.legs = [leg];
+  v.busyUntil = leg.arrivesAt;
+}
+
 /** The hops arrived by now, every house's, in the order of their times. */
 export function settleMoves(tx: Tx): void {
+  const s = empireSettings(tx.ctx);
   for (const [id, h] of Object.entries(tx.s.empire?.houses ?? {})) {
-    const due: { v: Vehicle; leg: EmpireLeg }[] = [];
-    for (const v of h.vehicles ?? [])
-      for (const leg of v.legs ?? []) if (leg.arrivesAt <= tx.now) due.push({ v, leg });
-    if (due.length === 0) continue;
-    due.sort((a, b) => a.leg.arrivesAt - b.leg.arrivesAt);
-    for (const { v, leg } of due) {
-      arrive(tx, h, id, v, leg);
-      const legs = (v.legs ?? []).filter((l) => l !== leg);
-      v.legs = legs.length > 0 ? legs : undefined;
+    // Hop after hop until none is due (a way back may be due too, once its vehicle is away long).
+    for (let round = 0; round < 4; round++) {
+      const due: { v: Vehicle; leg: EmpireLeg }[] = [];
+      for (const v of h.vehicles ?? [])
+        for (const leg of v.legs ?? []) if (leg.arrivesAt <= tx.now) due.push({ v, leg });
+      if (due.length === 0) break;
+      due.sort((a, b) => a.leg.arrivesAt - b.leg.arrivesAt);
+      for (const { v, leg } of due) {
+        arrive(tx, h, id, v, leg);
+        const legs = (v.legs ?? []).filter((l) => l !== leg);
+        v.legs = legs.length > 0 ? legs : undefined;
+        if (s.moves.returnHome && !v.legs) sendBack(h, s, v, leg.arrivesAt);
+      }
     }
+    // A vehicle left standing at a city (before the ways back): home it goes, now.
+    if (s.moves.returnHome) for (const v of h.vehicles ?? []) sendBack(h, s, v, tx.now);
   }
+}
+
+/**
+ * « Livrer » from a city (decision of the owner, 3 November 2026): the orders asked (every one, by
+ * default) that the stock covers, the best paid first, loaded on the smallest free vehicle docked at
+ * a counter serving the city that takes them all (else the one that takes the most), which leaves at
+ * once. Returns how many orders went.
+ */
+export function deliverCity(tx: Tx, playerId: PlayerId, city: string, orderIds?: string[]): number {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  if (!s.orders) fail("unknown_target");
+  const asked = cityOrdersAt(tx.ctx, h, playerId, s, city, tx.now)
+    .list.filter((o) => !orderIds || orderIds.includes(o.id))
+    .sort((a, b) => (b.pay > a.pay ? 1 : b.pay < a.pay ? -1 : 0));
+  if (asked.length === 0) fail("not_ordered");
+  const serving = postsServing(h, s, city);
+  let best: { v: Vehicle; picks: string[]; hold: number } | null = null;
+  let anyFree = false;
+  for (const v of h.vehicles ?? []) {
+    if (!s.vehicles[v.type] || v.porta || v.legs?.length || (v.repairUntil ?? 0) > tx.now) continue;
+    const post = v.at ?? HOME_POST;
+    if (placeCity(post) !== null || !standingPosts(h, s).some((p) => p.id === post)) continue;
+    if (!serving.includes(post)) continue;
+    anyFree = true;
+    const hold = holdOf(h, v, s);
+    let room = hold - (v.loads?.length ?? 0);
+    const left = new Map<string, number>();
+    const picks: string[] = [];
+    for (const o of asked) {
+      if (room <= 0) break;
+      const have = left.get(o.good) ?? storeOf(tx, h, playerId, post, o.good);
+      if (have < o.qty) continue;
+      left.set(o.good, have - o.qty);
+      picks.push(o.id);
+      room--;
+    }
+    if (picks.length === 0) continue;
+    if (
+      !best ||
+      picks.length > best.picks.length ||
+      (picks.length === best.picks.length && hold < best.hold)
+    )
+      best = { v, picks, hold };
+  }
+  if (!best) fail(anyFree ? "insufficient_stock" : "vehicle_busy");
+  for (const id of best.picks) loadOrder(tx, playerId, best.v.id, city, id);
+  moveVehicle(tx, playerId, best.v.id, cityPlace(city));
+  departNow(tx, playerId, best.v.id);
+  return best.picks.length;
+}
+
+/**
+ * Called back a few seconds after it left (`recallSeconds`): the vehicle stands again at the
+ * counter it left, its orders unloaded there, back in their cities.
+ */
+export function recallVehicle(tx: Tx, playerId: PlayerId, vehicleId: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const v = vehicleOf(h, s, vehicleId, tx.now);
+  const first = v.legs?.[0];
+  // Only on its way out of a counter, within its few seconds (never on its way back).
+  if (
+    !first ||
+    placeCity(first.from) !== null ||
+    tx.now - first.departAt > s.moves.recallSeconds * 1_000
+  )
+    fail("building_busy");
+  const post = first.from;
+  for (const o of v.loads ?? []) {
+    putAt(tx, h, playerId, o.from, o.good, o.qty, "empire_voyage", v.id);
+    returnOrder(tx.ctx, h, playerId, s, o, tx.now);
+  }
+  v.loads = undefined;
+  v.legs = undefined;
+  v.at = post;
+  v.busyUntil = tx.now;
 }
 
 /**

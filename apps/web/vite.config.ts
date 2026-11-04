@@ -102,16 +102,15 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,webp,woff2}"],
+        // The 3D board (the game's map) with its code and its models: the map opens offline too.
+        globPatterns: ["**/*.{js,css,html,svg,png,webp,woff2,glb}"],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // The large icons are fetched by the system when the app is added: not cached.
         globIgnores: [
           "**/apple-touch-icon-1024.png",
           "**/icons/icon-*.png",
           "**/screenshots/**",
           "**/og.jpg",
-          // The 3D map prototype (?map=3d): its models and its code, fetched only when asked.
-          "**/models/**",
-          "**/assets/Board3D-*.js",
         ],
         // The API is never served from the cache.
         navigateFallbackDenylist: [/^\/api\//],

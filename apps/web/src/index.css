@@ -1178,9 +1178,10 @@ body[data-coach-top] [data-toast] {
   background: rgb(11 22 38 / 0.65);
   color: rgb(var(--cream));
   font-family: Cinzel, serif;
-  font-size: 0.6875rem;
+  /* Never under 12 px (the project's rule, after the map's audit of 3 November 2026). */
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 .mist-drift {
@@ -1538,4 +1539,9 @@ button.map-place {
    and walks above it, seen whole. */
 [data-three] [data-vehicle] {
   transform: translate(-50%, -50%) scale(var(--chartk, 1)) translateY(22px);
+}
+/* A fondaco's domain plunged into (3D, decision of the owner, 3 November 2026): only its labels
+   over its little scene; the map's marks, names and ways put away. */
+[data-domain] .map-layer > :not([data-domain-layer]) {
+  display: none !important;
 }

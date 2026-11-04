@@ -8,8 +8,9 @@ import {
   type PlayerId,
   type WorldContext,
 } from "../state.js";
-import { citiesCovered } from "./map.js";
+import { citiesCovered, citySpot, standingPosts } from "./map.js";
 import type { EmpireSettings } from "./settings.js";
+import { postsServing } from "./stores.js";
 
 /**
  * The cities' orders (decision of the owner, 1 November 2026, after Hades' Star's shipments): each
@@ -31,6 +32,8 @@ export interface CityOrders {
   fillBps: number;
   /** When the next order comes; null while the city is full. */
   nextAt: number | null;
+  /** The house's counters that serve it (a vehicle docked there may bring its orders). */
+  posts: string[];
 }
 
 const sizeOf = (size: number) => Math.min(5, Math.max(1, size));
@@ -76,6 +79,34 @@ export function orderGoodsOf(ctx: WorldContext, h: EmpireHouse): string[] {
   return [...goods].sort();
 }
 
+/** The goods to draw from, those the house makes now repeated `weight` times (each once else). */
+export function weightedGoods(goods: string[], made: Set<string>, weight: number): string[] {
+  return goods.flatMap((g) => Array.from({ length: made.has(g) ? weight : 1 }, () => g));
+}
+
+/** The premium of a long road: `distanceBps` a ten units of it, up to `distanceMaxBps`. */
+export function distanceBonusBps(s: EmpireSettings, distance: number): number {
+  const o = s.orders;
+  if (!o || o.distanceBps <= 0) return 0;
+  return Math.min(o.distanceMaxBps, Math.floor((distance * o.distanceBps) / 10));
+}
+
+/** A city's order's lot: a share of the good's lot for its first (`firstLotBps`), one at least. */
+export function orderLot(lot: number, s: EmpireSettings, first: boolean): number {
+  const share = first ? (s.orders?.firstLotBps ?? 10_000) : 10_000;
+  return share >= 10_000 ? lot : Math.max(1, Math.round((lot * share) / 10_000));
+}
+
+/** The goods the house's workshops make now (their recipes' outputs). */
+export function madeGoodsOf(ctx: WorldContext, h: EmpireHouse): Set<string> {
+  const out = new Set<string>();
+  for (const w of h.workshops) {
+    const r = ctx.theme.recipes.find((x) => x.code === w.recipe);
+    for (const g of Object.keys(r?.outputs ?? {})) out.add(g);
+  }
+  return out;
+}
+
 /** The order number `seq` of a city for a house: its good among those given, lot and pay. */
 function drawOrder(
   ctx: WorldContext,
@@ -85,14 +116,16 @@ function drawOrder(
   region: string,
   seq: number,
   goods: string[],
+  distance: number,
 ): EmpireOrder | null {
   if (goods.length === 0) return null;
   const good = goods[draw(ctx, `order|${playerId}|${code}|${seq}`) % goods.length] ?? "";
   const ref = orderRefOf(s, region, good);
   if (ref === null) return null;
   const tier = ctx.theme.resources.find((r) => r.code === good)?.tier;
-  const qty = lotOf(s, good, ref, tier);
-  const pay = applyBpsFloor(ref * BigInt(qty), 10_000 + (s.orders?.premiumBps ?? 0));
+  const qty = orderLot(lotOf(s, good, ref, tier), s, seq === 0);
+  const premium = (s.orders?.premiumBps ?? 0) + distanceBonusBps(s, distance);
+  const pay = applyBpsFloor(ref * BigInt(qty), 10_000 + premium);
   return { id: `${code}#${seq}`, city: code, good, qty, pay };
 }
 
@@ -115,11 +148,21 @@ export function cityOrdersAt(
   if (!c || !s.orders) return { next: now, seq: kept?.seq ?? 0, list };
   const cap = capOf(s, c.size);
   const every = everyMs(s, c.size);
-  const goods = orderGoodsOf(ctx, h).filter((g) => orderRefOf(s, c.region, g) !== null);
+  const goods = weightedGoods(
+    orderGoodsOf(ctx, h).filter((g) => orderRefOf(s, c.region, g) !== null),
+    madeGoodsOf(ctx, h),
+    s.orders.madeWeight,
+  );
+  // The road from the nearest fondaco (its premium, when set).
+  const [cx, cy] = citySpot(c, s);
+  const distance = Math.min(
+    Number.POSITIVE_INFINITY,
+    ...standingPosts(h, s).map((p) => Math.hypot(p.x - cx, p.y - cy)),
+  );
   let next = kept?.next ?? now;
   let seq = kept?.seq ?? 0;
   for (; next <= now && list.length < cap; next += every) {
-    const o = drawOrder(ctx, s, playerId, code, c.region, seq, goods);
+    const o = drawOrder(ctx, s, playerId, code, c.region, seq, goods, distance);
     if (!o) continue;
     list.push(o);
     seq++;
@@ -154,6 +197,7 @@ export function ordersOf(
         fillBps: Math.min(10_000, Math.floor((rec.list.length * 10_000) / Math.max(1, cap))),
         // Full, the next one waits for a place: it comes an interval after one is freed.
         nextAt: full ? null : rec.next,
+        posts: postsServing(h, s, c.code),
       };
     });
 }
