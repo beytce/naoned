@@ -235,8 +235,21 @@ interface Track {
   to: [number, number];
   t0: number;
   heading: number;
+  /** How long its way to `to` takes: the beat as it comes, a little more. */
+  ms: number;
 }
+/** The server's beat at first (settings' stepMs); then as measured between its snapshots. */
 const BEAT = 250;
+/**
+ * A unit takes a little longer than a beat to reach its new place (audit of 4 November, motion
+ * M8): a snapshot late by some tens of ms no longer stops it dead before the next one.
+ */
+const SLACK = 1.2;
+/** A blow taken shows when its bolt lands (ms after the beat). */
+const HIT_LAG = 300;
+/** A dead man lies this long, then sinks till he is gone (ms). */
+const SINK_AT = 2_200;
+const GONE_AT = 3_000;
 
 const Battle3D = memo(
   forwardRef<
@@ -246,6 +259,8 @@ const Battle3D = memo(
     const camera = useRef<OrthographicCamera | null>(null);
     const last = useRef<{ cam: Camera; v: Viewport } | null>(null);
     const tracks = useRef(new Map<string, Track>());
+    const beat = useRef(BEAT);
+    const seen = useRef({ time: -1, at: 0 });
     const apply = () => {
       const c = camera.current;
       const l = last.current;
@@ -257,17 +272,25 @@ const Battle3D = memo(
       c.updateProjectionMatrix();
       invalidate();
     };
-    // The figurines' new places, from where each stands now (a beat to get there).
+    // The figurines' new places, from where each stands now (a beat to get there), the beat
+    // measured between the snapshots as they come (never a fixed 250 ms).
     const now = performance.now();
+    if (seen.current.time !== battle.timeMs) {
+      const gap = now - seen.current.at;
+      if (seen.current.at > 0 && gap > 80 && gap < 1_500)
+        beat.current = beat.current * 0.7 + gap * 0.3;
+      seen.current = { time: battle.timeMs, at: now };
+    }
+    const ms = beat.current * SLACK;
     for (const u of battle.units) {
       const [X, Z] = toChart(battle, u.x, u.y);
       const t = tracks.current.get(u.id);
       if (!t) {
-        tracks.current.set(u.id, { from: [X, Z], to: [X, Z], t0: now, heading: 0 });
+        tracks.current.set(u.id, { from: [X, Z], to: [X, Z], t0: now, heading: 0, ms });
         continue;
       }
       if (t.to[0] === X && t.to[1] === Z) continue;
-      const k = Math.min(1, (now - t.t0) / BEAT);
+      const k = Math.min(1, (now - t.t0) / t.ms);
       const at: [number, number] = [
         t.from[0] + (t.to[0] - t.from[0]) * k,
         t.from[1] + (t.to[1] - t.from[1]) * k,
@@ -276,6 +299,7 @@ const Battle3D = memo(
       t.from = at;
       t.to = [X, Z];
       t.t0 = now;
+      t.ms = ms;
     }
     // biome-ignore lint/correctness/useExhaustiveDependencies: made once, its methods read refs
     useImperativeHandle(
@@ -539,16 +563,23 @@ function Unit({
     if (!f) return;
     if (dead) f.act("die");
     else if (struck) f.act("strike");
-    else if (hurt) f.act("hit");
+    else if (hurt) {
+      // The blow is felt when it lands, not when it leaves (audit of 4 November, motion M8): the
+      // bolt flies some 300 ms first.
+      const id = window.setTimeout(() => fig.current?.act("hit"), HIT_LAG);
+      return () => window.clearTimeout(id);
+    }
   }, [dead, struck, hurt]);
   useFrame(() => {
     const g = group.current;
     const t = tracks.current.get(u.id);
     if (!g || !t) return;
-    const k = Math.min(1, (performance.now() - t.t0) / BEAT);
+    const k = Math.min(1, (performance.now() - t.t0) / t.ms);
     const x = t.from[0] + (t.to[0] - t.from[0]) * k;
     const z = t.from[1] + (t.to[1] - t.from[1]) * k;
-    g.position.set(x, 0, z);
+    // A dead man lies a while, then sinks into the sand (audit of 4 November, motion M9).
+    const age = deadAt === null ? 0 : performance.now() - deadAt;
+    g.position.set(x, age > SINK_AT ? -((age - SINK_AT) / (GONE_AT - SINK_AT)) * 3 : 0, z);
     // Facing its target while it fights, else its way.
     const target =
       u.side === "rome" ? u.targetId : (u.weapons.find((w) => w.targetId)?.targetId ?? null);
@@ -562,7 +593,7 @@ function Unit({
   });
   // A dead man stays a moment, then fades; one out through the gate is gone.
   if (gone) return null;
-  if (deadAt !== null && performance.now() - deadAt > 3_000) return null;
+  if (deadAt !== null && performance.now() - deadAt > GONE_AT) return null;
   const share = Math.max(0, Math.min(1, u.hp / Math.max(1, u.maxHp)));
   const mine = u.side === "player" && u.mine;
   const big = u.side === "rome" && u.kind === "gonfalonier" ? 1.8 : 1;

@@ -1598,8 +1598,9 @@ button.map-place {
     opacity: 1;
   }
 }
+/* The damage rises when the blow lands, 300 ms after the beat (its bolt's flight). */
 .battle-damage {
-  animation: battle-damage 0.9s ease-out forwards;
+  animation: battle-damage var(--t-moment) var(--ease-out) 300ms both;
 }
 @keyframes battle-damage {
   from {
