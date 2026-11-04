@@ -55,7 +55,7 @@ import type { CityLook } from "../map/logic.js";
 import type { EmpirePayload } from "../types.js";
 import { DISTANCE, orthoFrom } from "./camera.js";
 import type { DomainTile } from "./domain.js";
-import { give3dUp } from "./flag.js";
+import { SOFTWARE_GL, give3dUp } from "./flag.js";
 import { Fleet3D } from "./fleet3d.js";
 import {
   Instanced,
@@ -214,7 +214,8 @@ const Board3D = memo(
     };
     const small = useRef<Group>(null);
     const gl = useRef<import("three").WebGLRenderer | null>(null);
-    const [low, setLow] = useState(false);
+    // The lowest quality from the start on a device that draws in software; else once it is slow.
+    const [low, setLow] = useState(SOFTWARE_GL);
     // The touches of the places (step 2 of § 7): hexagons that never overlap.
     // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its key
     const touch = useMemo(() => zones(placesOf(p)), [key]);
@@ -280,7 +281,7 @@ const Board3D = memo(
         className="!absolute inset-0"
         frameloop={paused ? "never" : "demand"}
         shadows="soft"
-        dpr={[1, 1.5]}
+        dpr={low ? 1 : [1, 1.5]}
         orthographic
         camera={{ near: 1, far: 2000, position: [0, DISTANCE, DISTANCE] }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
@@ -312,7 +313,9 @@ const Board3D = memo(
         </Suspense>
         {/* A device that cannot keep 18 frames a second loses the ambient occlusion for good. */}
         <PerformanceMonitor bounds={() => [18, 26]} flipflops={2} onDecline={() => setLow(true)} />
-        {FX && <Effects near={near} ao={!low} aoRef={ao} />}
+        {/* Slow, no effects at all (the renderer's own ACES keeps the palette): the chain doubles
+            a frame's cost (plateau-reprise § 7). */}
+        {FX && !low && <Effects near={near} ao={!low} aoRef={ao} />}
         {!paused && <Ticker live={live} until={moving} />}
         {PERF && <Probe />}
       </Canvas>
@@ -551,7 +554,8 @@ function Effects({
       ) : (
         <></>
       )}
-      <TiltShift2 blur={near ? 0.12 : 0} taper={0.6} />
+      {/* The tilt-shift only up close, where it blurs: its pass no longer paid far out. */}
+      {near ? <TiltShift2 blur={0.12} taper={0.6} /> : <></>}
       <ToneMapping mode={TONE} />
     </EffectComposer>
   );
