@@ -238,6 +238,17 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in: cubic-bezier(0.55, 0, 0.75, 0.4);
   --spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  /* The rest of the grammar (motion.ts is their source for the scripts and the 3D; a test keeps
+     both the same, audit of 4 November, motion M7). */
+  --t-camera: 450ms;
+  --t-camera-far: 700ms;
+  --t-travel: 680ms;
+  --t-impact: 90ms;
+  --t-moment: 900ms;
+  --t-sequence: 3200ms;
+  --t-fade-reduced: 120ms;
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-travel: cubic-bezier(0.5, 0, 0.2, 1);
   /* The five tabs at the foot of the screen: what sits at the foot of the map stops above them. */
   --tabbar: calc(3.5rem + max(0.25rem, env(safe-area-inset-bottom)));
 }
@@ -1202,10 +1213,6 @@ body[data-coach-top] [data-toast] {
 }
 
 /* The foot of the map (BottomSlot): what comes rises, what leaves sinks and fades. */
-:root {
-  --t-camera: 450ms;
-  --t-moment: 420ms;
-}
 .slot-in {
   animation: slot-in var(--t-base) var(--ease-out) both;
 }

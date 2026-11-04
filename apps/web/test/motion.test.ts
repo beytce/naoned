@@ -48,3 +48,28 @@ describe("the motion (docs/design.md, Mouvement)", () => {
     expect(keys.filter((k) => !CODE.includes(`animate-${k}`))).toEqual([]);
   });
 });
+
+describe("the motion's tokens (audit of 4 November, motion M7)", () => {
+  it("say the same durations and curves in the CSS as in motion.ts", async () => {
+    const { CSS_VARS } = await import("../src/motion.js");
+    const root = [...CSS.matchAll(/:root \{([^}]*)\}/g)].map((m) => m[1]).join("\n");
+    for (const [name, value] of Object.entries(CSS_VARS)) {
+      const m = root.match(new RegExp(`${name}:\\s*([^;]+);`));
+      expect(m?.[1]?.trim(), name).toBe(value);
+    }
+  });
+
+  it("give a moment its time (900 ms, not an entry's)", async () => {
+    const { T } = await import("../src/motion.js");
+    expect(T.moment).toBeGreaterThanOrEqual(900);
+    expect(T.quick).toBeLessThan(T.base);
+  });
+
+  it("bring an angle round the shortest way, whatever the frame rate", async () => {
+    const { dampAngle, damp } = await import("../src/motion.js");
+    const a = dampAngle(3, -3, 12, 1 / 60);
+    expect(a).toBeGreaterThan(3);
+    const twice = damp(damp(0, 1, 8, 1 / 120), 1, 8, 1 / 120);
+    expect(twice).toBeCloseTo(damp(0, 1, 8, 1 / 60), 6);
+  });
+});
