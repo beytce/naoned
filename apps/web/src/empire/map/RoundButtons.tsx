@@ -30,10 +30,11 @@ export function RoundButtons({
   return (
     <nav
       aria-label={t.scene.owner}
-      className="pointer-events-none flex w-full items-end justify-between px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      className="pointer-events-none flex w-full justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       data-round-buttons
     >
-      <div className="flex gap-2.5">
+      {/* One cream tray of round medals at the foot, in the middle (Direction Jour). */}
+      <div className="hud-tray pointer-events-auto flex items-end gap-1 rounded-[1.75rem] px-2 pb-1.5 pt-2 max-[359px]:gap-0">
         {/* On the 3D board, « Maison »: back to the fondaco, its domain at a second touch. */}
         <Round label={MAP_3D ? t.nav.home : t.scene.recenter} onClick={onRecenter} id="recenter">
           {MAP_3D ? Icon.home() : Icon.locate()}
@@ -43,8 +44,6 @@ export function RoundButtons({
             {Icon.help()}
           </Round>
         )}
-      </div>
-      <div className="flex gap-2.5">
         <Round label={t.nav.market} onClick={onMarket} dot={dots.market} id="market" store>
           {Icon.rialto()}
         </Round>
@@ -80,20 +79,18 @@ function Round({
       type="button"
       onClick={onClick}
       data-round={id}
-      className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
+      className="pointer-events-auto flex w-[4.25rem] flex-col items-center gap-0.5 active:scale-95 max-[359px]:w-14"
     >
       <span
         data-goods-to={store ? "store" : undefined}
-        className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#1D304D] text-cream ring-1 ring-[#A9BCD4]/30 shadow-[0_4px_12px_rgb(0_0_0/0.35)] [&_svg]:h-[22px] [&_svg]:w-[22px]"
+        className="hud-medal relative flex h-12 w-12 items-center justify-center rounded-full text-cream [&_svg]:h-[22px] [&_svg]:w-[22px]"
       >
         {children}
         {dot && (
           <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-vermilion ring-2 ring-night" />
         )}
       </span>
-      <span className="text-xs font-semibold text-cream-dim [text-shadow:0_1px_4px_rgb(0_0_0/0.8)]">
-        {label}
-      </span>
+      <span className="max-w-full truncate text-xs font-semibold text-cream-dim">{label}</span>
     </button>
   );
 }
