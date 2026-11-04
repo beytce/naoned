@@ -381,6 +381,8 @@ export const en: Dictionary = {
       renews: (at: string) => `Next order at ${at}`,
       full: "Full: no new order until one is loaded.",
       send: "Send a vehicle there",
+      pill: (n: number, cap: number, ready: boolean) =>
+        `${n} order${n > 1 ? "s" : ""} out of ${cap}${ready ? ", deliverable now" : ""}`,
       deliver: (n: number, pay: string) => `Deliver · ${n} lot${n > 1 ? "s" : ""} · ${pay}`,
       deliverBy: (vehicle: string, time: string) => `${vehicle} · ${time} on the road, back alone`,
       lacking: (n: number) => `${n} short`,
