@@ -371,10 +371,10 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
                       void order({ type: "activate", unitId: sel.id, componentId: a.componentId })
                     }
                     data-battle-active={a.effect}
-                    className={`flex h-12 w-12 flex-col items-center justify-center rounded-full border text-[0.625rem] font-semibold leading-tight disabled:opacity-50 ${active ? "border-lagoon text-lagoon" : "border-info text-info"}`}
+                    className={`flex h-12 w-[4.5rem] flex-col items-center justify-center rounded-2xl border px-1 text-xs font-semibold leading-tight disabled:opacity-50 ${active ? "border-lagoon text-lagoon" : "border-info text-info"}`}
                     aria-label={pt.component[a.effect] ?? a.effect}
                   >
-                    {(pt.component[a.effect] ?? a.effect).slice(0, 6)}
+                    {pt.component[a.effect] ?? a.effect}
                     {wait > 0 && <span className="tabular-nums">{Math.ceil(wait / 1_000)}s</span>}
                   </button>
                 );

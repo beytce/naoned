@@ -416,7 +416,8 @@ function UnitCard({
           className="block h-full rounded-full"
           style={{
             width: `${share * 100}%`,
-            background: share > 0.5 ? "#6EE0B8" : share > 0.25 ? "#F2C24F" : "#E06A4A",
+            // Cream while it holds, cinnabar when it is low: never the gold of « yours to do ».
+            background: share > 0.3 ? "rgb(var(--cream))" : "rgb(var(--vermilion))",
           }}
         />
       </span>
@@ -464,18 +465,19 @@ function ActiveButton({
       onClick={onPress}
       data-battle-active={a.effect}
       aria-label={pt.component[a.effect] ?? a.effect}
-      className={`relative flex h-14 w-14 flex-col items-center justify-center rounded-full text-xs font-semibold leading-tight shadow-lg shadow-black/50 ${on ? "bg-lagoon text-on-lagoon" : "bg-night-3 text-cream ring-1 ring-info/70"}`}
+      className={`relative flex h-14 w-[4.5rem] flex-col items-center justify-center rounded-2xl px-1 text-xs font-semibold leading-tight shadow-lg shadow-black/50 ${on ? "bg-lagoon text-on-lagoon" : "bg-night-3 text-cream ring-1 ring-info/70"}`}
     >
       {cooling && (
         <span
-          className="absolute inset-0 rounded-full"
+          className="absolute inset-0 rounded-2xl"
           style={{
             background: "conic-gradient(rgb(0 0 0 / 0.55) var(--k), transparent 0)",
             ["--k" as string]: `${Math.min(100, (wait / 45_000) * 100)}%`,
           }}
         />
       )}
-      <span className="relative">{(pt.component[a.effect] ?? a.effect).slice(0, 7)}</span>
+      {/* Its whole name, never cut to seven letters (audit of 4 November, UI U-13). */}
+      <span className="relative">{pt.component[a.effect] ?? a.effect}</span>
       {cooling && <span className="relative tabular-nums">{Math.ceil(wait / 1_000)} s</span>}
     </button>
   );

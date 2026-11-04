@@ -172,6 +172,8 @@ halo.rotateX(Math.PI / 2);
  * A glowing material, one for each colour and opacity, made once and kept (audit of 4 November,
  * 3D M1): a material made at each render is never freed by React Three Fiber.
  */
+/** Rome's one red, the interface's cinnabar (audit of 4 November, UI U-13). */
+const ROME = "#FF8070";
 const glows = new Map<string, MeshBasicMaterial>();
 const glow = (hex: string, opacity: number) => {
   const key = `${hex}/${opacity}`;
@@ -191,8 +193,8 @@ const glow = (hex: string, opacity: number) => {
 const M = {
   gold: glow(C.gold, 0.9),
   goldSoft: glow(C.gold, 0.25),
-  vision: glow("#E06A4A", 0.12),
-  reach: glow("#E06A4A", 0.1),
+  vision: glow(ROME, 0.12),
+  reach: glow(ROME, 0.1),
   shield: glow("#9FE7FF", 0.28),
   smoke: glow("#C9D2DE", 0.55),
   heal: glow("#6EE0B8", 0.45),
@@ -202,7 +204,7 @@ const M = {
   chosen: glow("#6EC8F5", 0.95),
   hpMine: glow("#6EE0B8", 0.95),
   hpAlly: glow("#6EC8F5", 0.95),
-  hpRome: glow("#E06A4A", 0.95),
+  hpRome: glow(ROME, 0.95),
   bolt: new MeshBasicMaterial({ color: "#F7EBD0" }),
   iron: new MeshBasicMaterial({ color: "#2A2F36" }),
   spark: glow("#FFD27A", 0.95),
