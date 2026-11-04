@@ -190,8 +190,23 @@ try {
   // The Remise's arms.
   await press(page, "[data-depot-mark]");
   await page.locator("[data-map-action=arms]").click();
-  await page.waitForSelector("[data-arms-models]");
+  // The vehicle in the middle (docs/plan-dock.md), a place touched, then the shop.
+  await page.waitForSelector("[data-arms-dock=vehicle]");
+  await page.waitForTimeout(800);
   await shot("1-armes");
+  // Its places, when it stands at the Remise (here it may already be on its way to the Porta).
+  const socket = page.locator("[data-dock-socket]:not([disabled])").first();
+  if ((await socket.count()) > 0) {
+    await socket.click();
+    await page.waitForSelector("[data-arms-fit]");
+    await page.waitForTimeout(600);
+    await shot("1b-equiper");
+    await page.locator("[data-dock-back]").click();
+  }
+  await page.locator("[data-arms-shop]").click();
+  await page.waitForSelector("[data-arms-models]");
+  await page.waitForTimeout(600);
+  await shot("1c-acheter");
   await page.keyboard.press("Escape");
 
   await page.waitForTimeout(MIN + 2_000);
@@ -203,12 +218,25 @@ try {
   await page.locator("[data-map-action=porta]").click();
   await page.waitForSelector("[data-porta-battle]");
   await shot("4-porta");
+  // The dock in three steps (docs/plan-dock.md): the crew, the tier, how to go.
+  await page.locator("[data-porta-next]").click();
+  await page.waitForSelector("[data-porta-tiers]");
+  await page.waitForTimeout(600);
+  await shot("4b-palier");
+  await page.locator("[data-porta-next]").click();
+  await page.waitForSelector("[data-porta-mode=solo]");
+  await page.waitForTimeout(600);
+  await shot("4c-partir");
+  // The antiquarian, behind its round button, and back.
+  await page.locator("[data-porta-round=stall]").click();
+  await page.waitForSelector("[data-porta-antiquarian]");
+  await page.waitForTimeout(600);
+  await shot("4d-antiquaire");
+  await page.locator("[data-porta-round=stall]").click();
+  await page.waitForSelector("[data-porta-mode=solo]");
 
   // A battle alone, tier 1.
-  await page
-    .getByRole("button", { name: /entrer · palier 1|partir seul/i })
-    .first()
-    .click();
+  await page.locator("[data-porta-go]").click();
   await page.waitForSelector("[data-battle-timer]", { timeout: 15_000 });
   await page.waitForTimeout(1_500);
   await shot("5-bataille");

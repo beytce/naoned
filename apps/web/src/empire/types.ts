@@ -87,7 +87,8 @@ export interface EmpireView {
         opens: string[];
       })
     | null;
-  upgrades: Record<string, EmpireSite | null>;
+  /** A workshop's next level, its lot before and after in basis points of the base lot. */
+  upgrades: Record<string, (EmpireSite & { yieldBps: number; nextYieldBps: number }) | null>;
   newWorkshop: EmpireSite | null;
   workshopSite: EmpireSite;
   buildSlots: number;

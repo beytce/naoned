@@ -6,6 +6,7 @@ import { GoodsMark } from "../art/goods.js";
 import { d, hourOf, minutesLabel } from "../game/format.js";
 import { FxLayer, flyCoins, flyGoods } from "../game/fx.js";
 import { connectLive } from "../game/live.js";
+import { Icon } from "../game/map/icons.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { sound } from "../sound.js";
@@ -13,7 +14,7 @@ import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { suppliable } from "./Company.js";
 import { CompanySheet } from "./CompanyTab.js";
 import { HelpSheet, HouseSheet, Intro, NextStepCard } from "./Guide.js";
-import { ArteSection, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
+import { ArteSection, FamilySheet, Knowledge } from "./Identity.js";
 import { MarketSheet } from "./Market.js";
 import { CasaMoment } from "./Moment.js";
 import { NewWorkshopSheet } from "./NewWorkshop.js";
@@ -41,14 +42,13 @@ import { ProductionSheet } from "./map/Production.js";
 import { RoundButtons } from "./map/RoundButtons.js";
 import { Trips } from "./map/Trips.js";
 import { VehiclePanel } from "./map/VehiclePanel.js";
+import { WorkshopDock } from "./map/WorkshopDock.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
 import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
 import { ArmsScene } from "./porta/ArmsScene.js";
-import { ArmsSheet } from "./porta/ArmsSheet.js";
 import { BattleScreen } from "./porta/Battle.js";
 import { PortaScene } from "./porta/PortaScene.js";
-import { PortaSheet } from "./porta/PortaSheet.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
 type SheetId =
@@ -118,6 +118,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [picked, setPicked] = useState<Picked | null>(null);
   // The vehicle chosen (after Hades' Star), and picking where to send it.
   const [vehicle, setVehicle] = useState<string | null>(null);
+  // The road a delivery would take, drawn on the map while the town's dock is open.
+  const [road, setRoad] = useState<{ from: string; to: string } | null>(null);
+  // A vehicle just sent: a small note to follow it, for a few seconds.
+  const [sent, setSent] = useState<{ id: string; name: string } | null>(null);
+  useEffect(() => {
+    if (!sent) return;
+    const t = setTimeout(() => setSent(null), 8_000);
+    return () => clearTimeout(t);
+  }, [sent]);
   const [aiming, setAiming] = useState(false);
   const map = useRef<EmpireMapHandle>(null);
   useAwayRecap(p);
@@ -271,8 +280,12 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     };
   }, []);
   /** « Livrer » from a city: the orders chosen go; the camera stays on the city. */
-  const deliver = (city: string, orderIds: string[]) => {
-    void act({ type: "empireDeliverCity", city, orderIds }).then(() => setTarget(null));
+  const deliver = (city: string, orderIds: string[], vehicleId: string | null) => {
+    const v = p.view?.vehicles.mine.find((x) => x.id === vehicleId);
+    void act({ type: "empireDeliverCity", city, orderIds }).then(() => {
+      setTarget(null);
+      if (v) setSent({ id: v.id, name: t.vehicleNames[v.type] ?? v.type });
+    });
   };
   const join = async () => {
     setBusy(true);
@@ -292,6 +305,12 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // A panel's action that opens a sheet: the panel gives way to it.
   const open = (id: string) => {
     setTarget(null);
+    // A workshop from the list: its dock on the map (docs/plan-dock.md), not a sheet.
+    if (id.startsWith("workshop:")) {
+      setSheet(null);
+      setTarget({ kind: "workshop", id: id.slice("workshop:".length) });
+      return;
+    }
     if (id.startsWith("place:")) {
       const [, kind = "post", region] = id.split(":");
       setSheet(null);
@@ -379,6 +398,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onCamp={() => setSheet("company:terra")}
         houseName={account.pseudo ?? ""}
         onDomain={setDomain}
+        chosenWorkshop={target?.kind === "workshop" ? target.id : null}
+        road={target?.kind === "city" ? road : null}
       />
 
       <Hud
@@ -398,6 +419,33 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           setTarget({ kind: "vehicle", id });
         }}
       />
+
+      {/* A vehicle just sent from a town: a note to follow it, never a sheet (docs/plan-dock.md). */}
+      {sent && !target && sheet === null && (
+        <output
+          className="dock-in pointer-events-auto absolute inset-x-3 bottom-28 z-30 mx-auto flex min-h-14 max-w-md items-center gap-3 rounded-2xl bg-night-2/95 py-1.5 pl-4 pr-1.5 shadow-xl shadow-black/40"
+          data-sent={sent.id}
+        >
+          <span className="text-gold [&_svg]:h-6 [&_svg]:w-6">{Icon.cart()}</span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm font-semibold">{t.orders.sent(sent.name)}</span>
+            {(p.view?.orders ?? []).some((o) => o.orders.length > 0) && (
+              <span className="truncate text-xs text-cream-dim">{t.orders.sentMore}</span>
+            )}
+          </span>
+          <Slab
+            tone="ghost"
+            size="sm"
+            onClick={() => {
+              setVehicle(sent.id);
+              setTarget({ kind: "vehicle", id: sent.id });
+              setSent(null);
+            }}
+          >
+            {t.orders.follow}
+          </Slab>
+        </output>
+      )}
 
       {/* The foot of the map: the round buttons, a place's panel, or the bar of placing. */}
       <BottomSlot
@@ -443,9 +491,25 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         ) : target?.kind === "city" && p.view?.orders.some((o) => o.city === target.code) ? (
           <OrdersPanel
             p={p}
+            now={now}
             busy={busy}
             city={target.code}
-            onDeliver={(ids) => deliver(target.code, ids)}
+            onDeliver={(ids, vehicleId) => deliver(target.code, ids, vehicleId)}
+            onClose={() => setTarget(null)}
+            onCity={(code) => setTarget({ kind: "city", code })}
+            onWorkshop={(id) => setTarget({ kind: "workshop", id })}
+            onOpen={open}
+            onPlan={setRoad}
+          />
+        ) : target?.kind === "workshop" ? (
+          <WorkshopDock
+            p={p}
+            now={now}
+            busy={busy}
+            act={act}
+            workshopId={target.id}
+            onWorkshop={(id) => setTarget({ kind: "workshop", id })}
+            onOpen={open}
             onClose={() => setTarget(null)}
           />
         ) : target ? (
@@ -603,12 +667,10 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         />
       )}
       <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
-      {MAP_3D ? (
-        <ArmsScene p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
-      ) : (
-        <ArmsSheet p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
-      )}
-      <PortaPlace
+      {/* The Remise's arms and the Porta: their scene and their dock; without WebGL, the same dock
+          over a plain ground (docs/plan-dock.md, lot 6). */}
+      <ArmsScene p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+      <PortaScene
         p={p}
         now={now}
         open={sheet === "porta"}
@@ -756,15 +818,14 @@ function WorkshopsSheet({
 }: SheetProps & { now: number; sheet: SheetId | null; onOpen: (s: SheetId) => void }) {
   const view = p.view;
   if (!view) return null;
-  const focus = sheet?.startsWith("workshop:") ? sheet.slice("workshop:".length) : null;
-  const list = focus ? view.house.workshops.filter((w) => w.id === focus) : view.house.workshops;
-  const one = list[0];
+  // All the workshops; one of them opens its dock on the map (docs/plan-dock.md).
+  const list = view.house.workshops;
   return (
     <Sheet
-      open={sheet === "workshops" || focus !== null}
+      open={sheet === "workshops"}
       onClose={onClose}
       kicker={t.region}
-      title={focus && one ? buildingName(p, one.type) : t.tabs.workshops}
+      title={t.tabs.workshops}
       summary={t.workshop.queueRule}
     >
       <ul className="space-y-3">
@@ -795,15 +856,14 @@ function WorkshopsSheet({
                         : t.workshop.idle}
                   </p>
                 </div>
-                {!focus && (
-                  <button
-                    type="button"
-                    className="text-xs text-gold underline"
-                    onClick={() => onOpen(`workshop:${ws.id}`)}
-                  >
-                    {t.workshop.open}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="min-h-11 px-2 text-xs font-semibold text-info"
+                  onClick={() => onOpen(`workshop:${ws.id}`)}
+                  data-open-workshop={ws.id}
+                >
+                  {t.workshop.open}
+                </button>
               </div>
               {/* The night queue as a ribbon: its share of the 12 hours still to run. */}
               {end && end > now && <Ribbon value={Math.min(1, (end - now) / (12 * 3_600_000))} />}
@@ -846,7 +906,6 @@ function WorkshopsSheet({
                   <Badge>{t.workshop.atCasaShort}</Badge>
                 )}
               </div>
-              {focus && <WorkshopIdentity p={p} ws={ws} busy={busy} act={act} />}
             </li>
           );
         })}
@@ -1015,9 +1074,4 @@ function useAwayRecap(p: EmpirePayload) {
       // Without storage, no recap next time.
     }
   }, [p.now]);
-}
-
-/** The Porta: its scene in 3D (docs/plan-porta-3d.md), its sheet without WebGL. */
-function PortaPlace(props: Parameters<typeof PortaSheet>[0]) {
-  return MAP_3D ? <PortaScene {...props} /> : <PortaSheet {...props} />;
 }

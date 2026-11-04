@@ -125,6 +125,8 @@ export interface DomainScene {
   key: string;
   tiles: DomainTile[];
   states: Record<string, "ready" | "running" | "idle" | "blocked">;
+  /** The workshop whose dock is open (docs/plan-dock.md): ringed in lapis on its tile. */
+  selected?: string | null;
 }
 
 /** Whether the device asks for less motion (read live). */
@@ -993,6 +995,13 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
     () => new MeshBasicMaterial({ color: "#6EE0B8", transparent: true, opacity: 0.9 }),
     [],
   );
+  // The workshop chosen: a lapis ring round its tile, wider than the ready one's.
+  const chosenRing = useMemo(() => {
+    const g = new TorusGeometry(TILE_R - 0.35, 0.34, 6, 42);
+    g.rotateX(Math.PI / 2);
+    return g;
+  }, []);
+  const lapis = useMemo(() => new MeshBasicMaterial({ color: "#6EC8F5" }), []);
   return (
     <group ref={group}>
       {lagoon && (
@@ -1036,6 +1045,9 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
                   castShadow
                   receiveShadow
                 />
+              )}
+              {t.kind === "workshop" && scene.selected === t.id && (
+                <mesh geometry={chosenRing} material={lapis} position-y={0.16} />
               )}
               {state === "ready" && (
                 <>

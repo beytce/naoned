@@ -167,6 +167,10 @@ export const EmpireMap = forwardRef<
     houseName?: string;
     /** A fondaco's domain plunged into (its region), or left (null): on the 3D board. */
     onDomain?: (region: string | null) => void;
+    /** The workshop whose dock is open: ringed on its tile, or its star (docs/plan-dock.md). */
+    chosenWorkshop?: string | null;
+    /** The road a delivery would take, drawn before the vehicle leaves (docs/plan-dock.md). */
+    road?: { from: string; to: string } | null;
   }
 >(function EmpireMap(
   {
@@ -185,6 +189,8 @@ export const EmpireMap = forwardRef<
     onArrive,
     houseName = "",
     onDomain,
+    chosenWorkshop = null,
+    road = null,
   },
   ref,
 ) {
@@ -497,6 +503,7 @@ export const EmpireMap = forwardRef<
         states: Object.fromEntries(
           (view?.house.workshops ?? []).map((w) => [w.id, workshopStatus(p, w, now).state]),
         ),
+        selected: chosenWorkshop ?? null,
       }
     : null;
   // The 3D board in: its camera set from the map's at once (a stable callback: never again at a
@@ -778,6 +785,7 @@ export const EmpireMap = forwardRef<
                     act={act}
                     region={region}
                     bare
+                    selected={chosenWorkshop}
                     onWorkshop={(id) => onTarget({ kind: "workshop", id })}
                     onCasa={() =>
                       onTarget(
@@ -863,6 +871,7 @@ export const EmpireMap = forwardRef<
           onArrive={() => onArrive?.()}
           toChart={toChart}
           unitsPerPx={() => 1 / camera.cam().s}
+          planned={road}
         />
         {map.camp &&
           (() => {

@@ -46,6 +46,7 @@ import {
 } from "../map3d/kit.js";
 import { Smoke, useDonkey, useWater } from "../map3d/life.js";
 import { roleOf } from "../map3d/roster.js";
+import { RARITY_HEX } from "./colours.js";
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
 
 /** Chart units a case of the battle's map (a small tile is about one case across). */
@@ -69,13 +70,6 @@ export const fromChart = (b: { radius: number }, X: number, Y: number): [number,
 export const extentOf = (b: { radius: number }) => {
   const w = (2 * b.radius + 3) * CASE;
   return { w, h: w };
-};
-
-export const RARITY_HEX: Record<Rarity, string> = {
-  common: "#C9B89A",
-  rare: "#6EE0B8",
-  precious: "#6EC8F5",
-  legendary: "#F2C24F",
 };
 
 export interface Battle3DHandle {
