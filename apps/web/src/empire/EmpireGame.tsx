@@ -640,14 +640,13 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         <>
           <Intro p={p} />
           {!online && (
-            <p
+            <output
               className="fixed inset-x-0 top-[max(0.5rem,env(safe-area-inset-top))] z-[65] mx-auto flex w-fit items-center gap-2 rounded-full bg-night-4/95 px-4 py-2 text-sm font-semibold text-cream shadow-lg ring-1 ring-edge"
-              role="status"
               data-offline
             >
               <span className="h-2 w-2 rounded-full bg-vermilion" aria-hidden="true" />
               {fr.errors.offline ?? ""}
-            </p>
+            </output>
           )}
           {toast && (
             <output className="fixed inset-x-4 top-[max(1rem,env(safe-area-inset-top))] z-[70] mx-auto block max-w-sm animate-fade bg-night-4 px-4 py-3 text-center text-sm text-cream shadow-lg slab">
