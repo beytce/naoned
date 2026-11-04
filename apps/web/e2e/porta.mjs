@@ -194,11 +194,15 @@ try {
   await page.waitForSelector("[data-arms-dock=vehicle]");
   await page.waitForTimeout(800);
   await shot("1-armes");
-  await page.locator("[data-dock-socket]").first().click();
-  await page.waitForSelector("[data-arms-fit]");
-  await page.waitForTimeout(600);
-  await shot("1b-equiper");
-  await page.locator("[data-dock-back]").click();
+  // Its places, when it stands at the Remise (here it may already be on its way to the Porta).
+  const socket = page.locator("[data-dock-socket]:not([disabled])").first();
+  if ((await socket.count()) > 0) {
+    await socket.click();
+    await page.waitForSelector("[data-arms-fit]");
+    await page.waitForTimeout(600);
+    await shot("1b-equiper");
+    await page.locator("[data-dock-back]").click();
+  }
   await page.locator("[data-arms-shop]").click();
   await page.waitForSelector("[data-arms-models]");
   await page.waitForTimeout(600);

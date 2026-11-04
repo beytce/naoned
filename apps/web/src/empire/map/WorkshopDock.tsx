@@ -231,7 +231,7 @@ function Front({
           }
           label={site ? t().site : t().upgrade}
           badge={site ? clock(site.endsAt - now) : up ? `→ ${up.level}` : "max"}
-          badgeTone={site ? "gold" : "lagoon"}
+          badgeTone={site ? "gold" : up ? "lagoon" : "ghost"}
           onClick={() => onView("upgrade")}
           attrs={{ "data-map-action": "upgrade" }}
         />

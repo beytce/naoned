@@ -196,20 +196,11 @@ function Vehicle({
       ) : (
         <p className="text-xs text-cream-dim">{pt.equipHint}</p>
       )}
-      <div className="flex gap-2.5">
-        <Slab
-          tone="ghost"
-          size="lg"
-          disabled={busy}
-          onClick={() => onView({ kind: "shop" })}
-          className="shrink-0"
-        >
-          <span data-arms-shop>{pt.shop}</span>
-        </Slab>
+      <div className="flex flex-col items-stretch gap-1">
         {model?.upgradeCost ? (
           <Slab
             size="lg"
-            className="flex-1"
+            className="w-full"
             busy={busy}
             disabled={!affordable(p.cash, model.upgradeCost)}
             onClick={() => void act({ type: "empireUpgradeArm", model: model.code })}
@@ -219,7 +210,7 @@ function Vehicle({
         ) : model ? (
           <Slab
             size="lg"
-            className="flex-1"
+            className="w-full"
             busy={busy}
             disabled={!affordable(p.cash, model.cost)}
             onClick={() => void act({ type: "empireBuyArm", model: model.code })}
@@ -227,6 +218,14 @@ function Vehicle({
             {pt.buyOne(d(model.cost))}
           </Slab>
         ) : null}
+        <Slab
+          tone="text"
+          disabled={busy}
+          onClick={() => onView({ kind: "shop" })}
+          className="self-center"
+        >
+          <span data-arms-shop>{pt.shop}</span>
+        </Slab>
       </div>
     </>
   );
