@@ -301,6 +301,8 @@ const frDict = {
       renews: (at: string) => `Prochaine commande à ${at}`,
       full: "Pleine : plus de nouvelle commande tant qu'aucune n'est chargée.",
       send: "Y envoyer un véhicule",
+      pill: (n: number, cap: number, ready: boolean) =>
+        `${n} commande${n > 1 ? "s" : ""} sur ${cap}${ready ? ", livrable maintenant" : ""}`,
       deliver: (n: number, pay: string) => `Livrer · ${n} lot${n > 1 ? "s" : ""} · ${pay}`,
       deliverBy: (vehicle: string, time: string) => `${vehicle} · ${time} de route, retour seul`,
       lacking: (n: number) => `Il en manque ${n}`,

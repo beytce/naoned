@@ -36,6 +36,7 @@ import { MAP_3D } from "../map3d/flag.js";
 import { sceneInputOf, sitesOf } from "../map3d/scene.js";
 import { pt } from "../porta/texts.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
+import { CityPill } from "./CityPill.js";
 import { DomainLabels } from "./Domain.js";
 import { Fleet } from "./Fleet.js";
 import {
@@ -1388,8 +1389,10 @@ function CityMark({
           </span>
         </span>
         <span className="map-name">{t.cityNames[code] ?? code}</span>
-        {/* The information layer: its orders on its cap, however far. */}
-        {orders && (
+        {/* On the 3D board, its orders in a pill floating over it; on the SVG board, the
+            information layer tells them, however far. */}
+        {orders && MAP_3D && <CityPill p={p} code={code} />}
+        {orders && !MAP_3D && (
           <span className="info-only rounded-full bg-night/85 px-1.5 font-display text-xs font-bold tabular-nums text-gold ring-1 ring-gold/60">
             {t.orders.infoCount(waiting, orders.cap)}
           </span>

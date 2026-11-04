@@ -31,7 +31,6 @@ import {
   useState,
 } from "react";
 import {
-  BoxGeometry,
   BufferAttribute,
   BufferGeometry,
   Cache,
@@ -49,7 +48,6 @@ import {
   Vector2,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { goodsColour } from "../../art/goods.js";
 import { HEX_SIZE, cellCentre } from "../../art/hexmap.js";
 import { C } from "../../art/plateau/props.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
@@ -924,53 +922,18 @@ const edgeGeo = (() => {
   return g;
 })();
 const edgeGold = new MeshBasicMaterial({ color: C.gold, side: DoubleSide });
-const edgeLagoon = new MeshBasicMaterial({ color: "#6EE0B8", side: DoubleSide });
-const beamGeo = new CylinderGeometry(0.9, 1.6, 40, 10, 1, true);
-beamGeo.translate(0, 20, 0);
-const beamMat = new MeshBasicMaterial({
-  color: C.gold,
-  transparent: true,
-  opacity: 0.22,
-  depthWrite: false,
-  side: DoubleSide,
-});
-const crateGeo = new BoxGeometry(2, 1.7, 2);
-crateGeo.translate(0, 0.85, 0);
-const crateLow = new BoxGeometry(2, 0.5, 2);
-crateLow.translate(0, 0.25, 0);
-
 /**
- * The towns tell their orders by the scenery (decision of the owner, 3 November 2026): a crate an
- * order on their quay, tinted by its chain, full when the stock covers it, low else; their tile
- * edged in gold when « Livrer » would go now (and a beam of light seen from afar), in lagoon-green
- * when they are full.
+ * A town where « Livrer » would go now: its tile edged in gold (its orders, how full it is, are
+ * told by its floating pill over it, EmpireMap's `CityMark`; decision of the owner, 4 November).
  */
 function Towns3D({ looks }: { looks: CityLook[] }) {
   return (
     <group>
-      {looks.map((c) => (
-        <group key={c.code} position={[c.x, 0, c.y]}>
-          {c.state !== "open" && (
-            <mesh
-              geometry={edgeGeo}
-              material={c.state === "deliverable" ? edgeGold : edgeLagoon}
-              position-y={0.07}
-            />
-          )}
-          {c.state === "deliverable" && <mesh geometry={beamGeo} material={beamMat} />}
-          {c.crates.map((k, i) => (
-            <mesh
-              // biome-ignore lint/suspicious/noArrayIndexKey: an order is its place on the quay
-              key={i}
-              geometry={k.covered ? crateGeo : crateLow}
-              material={claySolid(goodsColour(k.good))}
-              // On its quay, east of the town (its name lies under it, to the south).
-              position={[TILE_R * 0.62, 0, (i - (c.crates.length - 1) / 2) * 2.3 - 0.6]}
-              castShadow
-            />
-          ))}
-        </group>
-      ))}
+      {looks
+        .filter((c) => c.state === "deliverable")
+        .map((c) => (
+          <mesh key={c.code} geometry={edgeGeo} material={edgeGold} position={[c.x, 0.07, c.y]} />
+        ))}
     </group>
   );
 }

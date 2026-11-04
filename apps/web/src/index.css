@@ -1545,3 +1545,26 @@ button.map-place {
 [data-domain] .map-layer > :not([data-domain-layer]) {
   display: none !important;
 }
+/* A town's pill over it (3D, 4 November 2026): the same size on the screen whatever the zoom (the
+   mark is scaled by the chart, the pill by its inverse), its height over the town with the zoom. */
+.city-pill {
+  transform-origin: 50% 100%;
+  transform: translateX(-50%) translateY(30px) scale(calc(var(--inv, 1) / var(--chartk, 1)));
+}
+.city-pill-ready {
+  animation: city-pill-breathe 2.4s ease-in-out infinite;
+}
+@keyframes city-pill-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--gold) / 0.55), 0 6px 14px rgb(0 0 0 / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgb(var(--gold) / 0), 0 6px 14px rgb(0 0 0 / 0.45);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .city-pill-ready {
+    animation: none;
+  }
+}

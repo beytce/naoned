@@ -195,6 +195,9 @@ try {
     for (const code of ["venezia", "padova"])
       if ((await page.locator(`[data-map=empire] [data-city=${code}]`).count()) !== 1)
         faults.push(`${code} without its mark on the 3D map`);
+    // The towns' orders in a pill over each (4 November): Padua's, never a column of crates.
+    if ((await page.locator("[data-map=empire] [data-city-pill=padova]").count()) !== 1)
+      faults.push("no pill of orders over Padua");
     await shot("1-depart");
     // A town touched on the board (its hexagon, by a ray): its panel at the foot.
     await tapOn("[data-city=padova]");
