@@ -1,13 +1,33 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { P } from "./art/palette.js";
 import { onBack } from "./game/back.js";
 import { pressed } from "./game/fx.js";
+import { GOLD, GoldDepth, useGold } from "./game/gold.js";
 import { store } from "./game/store.js";
 import { haptic } from "./haptics.js";
 import { fr } from "./i18n.js";
 
 type Tone = "gold" | "lagoon" | "vermilion" | "ghost";
+
+/** The gold's depth for what is inside (game/gold.ts): a panel, a guide, a moment, a scene. */
+export function GoldLayer({
+  depth,
+  atLeast = false,
+  children,
+}: {
+  depth: number;
+  /** Never below the layer it sits in (Lorenzo inside a sheet keeps the sheet's depth). */
+  atLeast?: boolean;
+  children: ReactNode;
+}) {
+  const around = useContext(GoldDepth);
+  return (
+    <GoldDepth.Provider value={atLeast ? Math.max(around, depth) : depth}>
+      {children}
+    </GoldDepth.Provider>
+  );
+}
 
 /** Face of each tone; gold is a struck coin (index.css, .gold-face). */
 const TONES: Record<Tone, { face: string }> = {
@@ -43,7 +63,13 @@ export function Slab(props: {
   busy?: boolean;
   /** Something to take (lots ready): a light runs across the gold now and then. */
   shine?: boolean;
+  /** The layer's main action: its gold goes before the layer's other gold slabs. */
+  lead?: boolean;
 }) {
+  // One gold on the screen (game/gold.ts): a gold slab that is not the screen's one, or that
+  // cannot be touched, is drawn as a ghost (never a dull gold that weighs and does nothing).
+  const asked = (props.tone ?? "gold") === "gold";
+  const mine = useGold(asked && !props.disabled, props.lead ? 0.25 : 0);
   const size = {
     // Drawn small, touched at 44 px: the hit area reaches 8 px above and below the pill.
     sm: "min-h-9 px-4 py-1.5 text-[0.8125rem]",
@@ -66,8 +92,8 @@ export function Slab(props: {
         {props.children}
       </button>
     );
-  const tone = TONES[props.tone ?? "gold"];
-  const gold = (props.tone ?? "gold") === "gold";
+  const gold = asked && mine && !props.disabled;
+  const tone = TONES[gold ? "gold" : asked ? "ghost" : (props.tone ?? "gold")];
   return (
     <button
       type={props.type ?? "button"}
@@ -80,7 +106,7 @@ export function Slab(props: {
       disabled={props.disabled}
       aria-busy={props.busy || undefined}
       data-coach={props.coach}
-      data-slab={props.tone ?? "gold"}
+      data-slab={gold ? "gold" : asked ? "ghost" : (props.tone ?? "gold")}
       aria-label={props.label}
       className={`group relative isolate inline-flex font-display font-extrabold disabled:pointer-events-none disabled:opacity-35 ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
     >
@@ -918,7 +944,8 @@ export function Sheet({
             <CloseButton onClick={onClose} className="absolute right-3 top-3 lg:right-4 lg:top-4" />
           )}
         </div>
-        {head.children}
+        {/* A sheet's gold outranks the map's and the panels' (game/gold.ts); one leaving claims none. */}
+        <GoldDepth.Provider value={leaving ? 0 : GOLD.sheet}>{head.children}</GoldDepth.Provider>
         {more && (
           <div
             aria-hidden="true"

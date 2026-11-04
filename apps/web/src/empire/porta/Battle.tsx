@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CloseButton, Slab } from "../../ui.js";
+import { GOLD } from "../../game/gold.js";
+import { CloseButton, GoldLayer, Slab } from "../../ui.js";
 import { MAP_3D } from "../map3d/flag.js";
 import { BattleDiorama } from "./BattleDiorama.js";
 import { portaApi, useBattle } from "./api.js";
@@ -12,10 +13,15 @@ import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./typ
  */
 export function BattleScreen({ onClose }: { onClose: () => void }) {
   const [flat, setFlat] = useState(!MAP_3D);
-  return flat ? (
-    <BattleSvg onClose={onClose} />
-  ) : (
-    <BattleDiorama onClose={onClose} onFail={() => setFlat(true)} />
+  // Over every sheet and panel: the battle's gold is the screen's.
+  return (
+    <GoldLayer depth={GOLD.moment}>
+      {flat ? (
+        <BattleSvg onClose={onClose} />
+      ) : (
+        <BattleDiorama onClose={onClose} onFail={() => setFlat(true)} />
+      )}
+    </GoldLayer>
   );
 }
 
@@ -375,7 +381,7 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
               })}
               {sel && atGate && (
                 <Slab
-                  tone="gold"
+                  tone="ghost"
                   size="sm"
                   onClick={() => void order({ type: "leave", unitId: sel.id })}
                 >

@@ -26,7 +26,11 @@ export function CityPill({ p, code }: { p: EmpirePayload; code: string }) {
   return (
     <span
       className={`city-pill pointer-events-auto absolute bottom-full left-1/2 flex items-center gap-1.5 whitespace-nowrap rounded-full py-1 pl-1 pr-2.5 shadow-lg shadow-black/50 ${
-        ready ? "city-pill-ready bg-gold text-ink" : "bg-night/90 text-cream ring-1 ring-line"
+        // Ready: a gold ring and arc on the night, never a pill filled with gold (one gold on the
+        // screen, audit of 4 November, UI U-1); it breathes only while no sheet is open.
+        ready
+          ? "city-pill-ready bg-night/90 text-cream ring-2 ring-gold"
+          : "bg-night/90 text-cream ring-1 ring-line"
       }`}
       data-city-pill={code}
       data-ready={ready ? "" : undefined}
@@ -34,20 +38,15 @@ export function CityPill({ p, code }: { p: EmpirePayload; code: string }) {
     >
       <span className="relative flex h-7 w-7 items-center justify-center">
         <svg viewBox="0 0 28 28" className="absolute inset-0 -rotate-90" aria-hidden="true">
+          <circle cx="14" cy="14" r={R} fill="none" stroke="rgb(var(--line))" strokeWidth="3" />
           <circle
             cx="14"
             cy="14"
             r={R}
             fill="none"
-            stroke={ready ? "rgb(0 0 0 / 0.18)" : "rgb(var(--line))"}
-            strokeWidth="3"
-          />
-          <circle
-            cx="14"
-            cy="14"
-            r={R}
-            fill="none"
-            stroke={ready ? "#1B2A44" : full ? "rgb(var(--lagoon))" : "rgb(var(--lagoon) / 0.85)"}
+            stroke={
+              ready ? "rgb(var(--gold))" : full ? "rgb(var(--lagoon))" : "rgb(var(--lagoon) / 0.85)"
+            }
             strokeWidth="3"
             strokeLinecap="round"
             strokeDasharray={`${(ROUND * share).toFixed(1)} ${ROUND.toFixed(1)}`}

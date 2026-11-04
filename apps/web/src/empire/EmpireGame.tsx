@@ -5,11 +5,12 @@ import { BuildingArt } from "../art/buildings.js";
 import { GoodsMark } from "../art/goods.js";
 import { d, hourOf, minutesLabel } from "../game/format.js";
 import { FxLayer, flyCoins, flyGoods } from "../game/fx.js";
+import { GOLD } from "../game/gold.js";
 import { connectLive } from "../game/live.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { sound } from "../sound.js";
-import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
+import { Badge, GoldLayer, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { suppliable } from "./Company.js";
 import { CompanySheet } from "./CompanyTab.js";
 import { HelpSheet, HouseSheet, Intro, NextStepCard } from "./Guide.js";
@@ -1038,9 +1039,11 @@ function PortaPlace(props: Parameters<typeof PortaSheet>[0]) {
   const opened = useOnce(props.open);
   if (!MAP_3D) return <PortaSheet {...props} />;
   return opened ? (
-    <Suspense fallback={null}>
-      <PortaScene {...props} />
-    </Suspense>
+    <GoldLayer depth={props.open ? GOLD.scene : 0}>
+      <Suspense fallback={null}>
+        <PortaScene {...props} />
+      </Suspense>
+    </GoldLayer>
   ) : null;
 }
 
@@ -1048,8 +1051,10 @@ function PortaPlace(props: Parameters<typeof PortaSheet>[0]) {
 function LazyArms(props: Parameters<typeof ArmsSheet>[0]) {
   const opened = useOnce(props.open);
   return opened ? (
-    <Suspense fallback={null}>
-      <ArmsScene {...props} />
-    </Suspense>
+    <GoldLayer depth={props.open ? GOLD.scene : 0}>
+      <Suspense fallback={null}>
+        <ArmsScene {...props} />
+      </Suspense>
+    </GoldLayer>
   ) : null;
 }

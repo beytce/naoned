@@ -105,7 +105,7 @@ export function OrdersPanel({
                       type="button"
                       className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${
                         on
-                          ? "border-gold/80 bg-gold/10"
+                          ? "border-info bg-info/10"
                           : covered
                             ? "border-line bg-night"
                             : "border-line/60 bg-night opacity-75"

@@ -135,7 +135,7 @@ export function ArmsScene({
                         disabled={busy || away}
                         onClick={() => setSocket(on ? null : { vehicleId: x.id, slot: k })}
                         data-place-kind={kind ?? undefined}
-                        className={`pointer-events-auto flex min-h-11 min-w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full px-2 text-xs font-bold shadow-lg shadow-black/50 disabled:opacity-50 ${on ? "ring-2 ring-gold" : ""}`}
+                        className={`pointer-events-auto flex min-h-11 min-w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full px-2 text-xs font-bold shadow-lg shadow-black/50 disabled:opacity-50 ${on ? "ring-2 ring-info" : ""}`}
                         style={{
                           background: slot
                             ? kind
@@ -222,7 +222,7 @@ export function ArmsScene({
                         }).then(() => setSocket(null))
                       }
                       data-fit-component={c.id}
-                      className={`min-h-14 rounded-xl border p-2 text-left ${here ? "border-gold bg-gold/10" : "border-line bg-night-2"}`}
+                      className={`min-h-14 rounded-xl border p-2 text-left ${here ? "border-info bg-info/10" : "border-line bg-night-2"}`}
                     >
                       <span className="flex items-center gap-1.5 text-sm font-semibold text-cream">
                         <span
@@ -248,7 +248,7 @@ export function ArmsScene({
                   type="button"
                   aria-pressed={tab === k}
                   onClick={() => setTab(k)}
-                  className={`min-h-11 flex-1 rounded-full text-sm font-semibold ${tab === k ? "bg-night-3 text-cream ring-1 ring-gold/60" : "text-cream-dim"}`}
+                  className={`min-h-11 flex-1 rounded-full text-sm font-semibold ${tab === k ? "bg-night-3 text-cream ring-1 ring-info" : "text-cream-dim"}`}
                 >
                   {k === "models" ? pt.combat : pt.componentsTab}
                 </button>

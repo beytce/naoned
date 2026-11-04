@@ -1634,3 +1634,8 @@ button.map-place {
     animation: none;
   }
 }
+/* A town ready to deliver breathes on the map only while no sheet covers it (audit of
+   4 November, UI U-1: one gold that moves on the screen). */
+body:has(dialog[open]) .city-pill-ready {
+  animation: none;
+}

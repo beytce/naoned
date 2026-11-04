@@ -519,3 +519,24 @@ async function guide(page) {
     return wrong;
   });
 }
+
+/**
+ * One action in gold (Lagune direction, audit of 4 November, UI U-1): at most one gold slab seen
+ * and touchable on the screen (game/gold.ts draws the others as ghosts).
+ */
+export async function assertOneGold(page) {
+  const n = await page.evaluate(
+    () =>
+      [...document.querySelectorAll('button[data-slab="gold"]:not([disabled])')].filter((b) => {
+        const r = b.getBoundingClientRect();
+        const s = getComputedStyle(b);
+        return (
+          r.width > 0 &&
+          r.height > 0 &&
+          s.visibility !== "hidden" &&
+          !b.closest("[aria-hidden=true]")
+        );
+      }).length,
+  );
+  if (n > 1) throw new Error(`${n} gold slabs on the screen, one at most`);
+}

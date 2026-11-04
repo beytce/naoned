@@ -8,7 +8,7 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
-import { assertNoOverflow, assertSheetHead } from "./assert.mjs";
+import { assertNoOverflow, assertOneGold, assertSheetHead } from "./assert.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SHOTS = resolve(process.env.SHOTS ?? join(here, "..", "e2e-shots", "empire"));
@@ -101,6 +101,7 @@ try {
     const shot = async (name) => {
       await page.waitForTimeout(400);
       await assertNoOverflow(page).catch((e) => faults.push(`${label} ${name}: ${e.message}`));
+      await assertOneGold(page).catch((e) => faults.push(`${label} ${name}: ${e.message}`));
       await page.screenshot({ path: join(SHOTS, `${label}-${name}.png`) });
     };
     const email = `empire_${width}@example.org`;

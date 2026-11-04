@@ -38,7 +38,7 @@ const fit = (b: { radius: number; gate: { x: number; y: number } }) => (v: Viewp
  * The battle in the lands of Rome as a diorama (docs/plan-porta-3d.md, step 1): the island and its
  * figurines in 3D under the map's camera (pinched, dragged, back to the whole island), a touch on
  * one of one's vehicles to choose it, a touch on a town or the ground to send it there (its way
- * dotted), a round button for each of its components with its cooldown, the gold « Sortir » at the
+ * dotted), a round button for each of its components with its cooldown, the « Sortir » at the
  * gate; the blows' damage rising over their targets, the towns' relics in pips over them.
  */
 export function BattleDiorama({
@@ -54,7 +54,7 @@ export function BattleDiorama({
   if (!battle)
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-night" data-battle>
-        <span className="h-10 w-10 animate-spin rounded-full border-2 border-gold/30 border-t-gold" />
+        <span className="h-10 w-10 animate-spin rounded-full border-2 border-info/30 border-t-info" />
       </div>
     );
   return <Field battle={battle} onClose={onClose} onFail={onFail} />;
@@ -183,7 +183,7 @@ function Field({
             </Pinned>
           ))}
           <Pinned battle={battle} x={battle.gate.x} y={battle.gate.y} lift={-70}>
-            <span className="rounded-full bg-gold px-2.5 py-0.5 font-place text-xs font-bold uppercase tracking-[0.12em] text-ink shadow-lg">
+            <span className="rounded-full bg-night/85 px-2.5 py-0.5 font-place text-xs font-bold uppercase tracking-[0.12em] text-cream ring-1 ring-edge shadow-lg">
               {pt.gate}
             </span>
           </Pinned>
@@ -247,7 +247,7 @@ function Field({
               <span className="flex-1" />
               {sel && atGate && (
                 <Slab
-                  tone="gold"
+                  tone="ghost"
                   size="md"
                   onClick={() => void order({ type: "leave", unitId: sel.id })}
                 >
@@ -354,7 +354,7 @@ function Damage({ battle }: { battle: BattleSnapshot }) {
       {shown.map((d) => (
         <Pinned key={d.key} battle={battle} x={d.x} y={d.y} lift={-48}>
           <span
-            className={`battle-damage block font-display text-sm font-extrabold tabular-nums [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] ${d.mine ? "text-vermilion" : "text-gold"}`}
+            className={`battle-damage block font-display text-sm font-extrabold tabular-nums [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] ${d.mine ? "text-vermilion" : "text-cream"}`}
           >
             {Math.round(d.n)}
           </span>
@@ -386,7 +386,7 @@ function UnitCard({
       onClick={onChoose}
       disabled={u.outcome !== "in"}
       data-battle-unit={u.id}
-      className={`min-h-[3.25rem] min-w-0 flex-1 rounded-xl border px-2.5 py-1.5 text-left disabled:opacity-40 ${chosen ? "border-gold bg-gold/10" : "border-line bg-night/80"}`}
+      className={`min-h-[3.25rem] min-w-0 flex-1 rounded-xl border px-2.5 py-1.5 text-left disabled:opacity-40 ${chosen ? "border-info bg-info/10" : "border-line bg-night/80"}`}
     >
       <span className="flex items-center justify-between gap-2 text-xs font-semibold text-cream">
         <span>{u.role === "combat" ? pt.combat : pt.transport}</span>

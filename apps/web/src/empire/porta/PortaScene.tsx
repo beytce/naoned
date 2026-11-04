@@ -202,7 +202,7 @@ export function PortaScene({
               type="button"
               disabled={off || !affordable(p.cash, v.upgrade.cost)}
               onClick={() => void act({ type: "empireUpgradePorta" })}
-              className="mt-1 flex min-h-11 items-center gap-1 text-xs font-semibold text-gold disabled:opacity-50"
+              className="mt-1 flex min-h-11 items-center gap-1 text-xs font-semibold text-info disabled:opacity-50"
             >
               {pt.raise} · <Coin size={12} /> {d(v.upgrade.cost)}
             </button>
@@ -284,7 +284,7 @@ export function PortaScene({
               {pt.lobby} · {pt.tier(lobby.tier)} · {pt.lobbyPlayers(lobby.players)}
             </p>
             {lobby.code && (
-              <p className="mt-1 font-display text-lg font-bold tabular-nums tracking-widest text-gold">
+              <p className="mt-1 font-display text-lg font-bold tabular-nums tracking-widest text-cream">
                 {pt.lobbyCode(lobby.code)}
               </p>
             )}
@@ -387,7 +387,7 @@ export function PortaScene({
                 type="button"
                 onClick={() => setPane("stall")}
                 data-porta-stall
-                className="min-h-11 rounded-full border border-gold/60 bg-night/80 px-3 text-xs font-semibold text-gold"
+                className="min-h-11 rounded-full border border-edge bg-night/80 px-3 text-xs font-semibold text-cream"
               >
                 {pt.antiquarian}
               </button>
@@ -441,7 +441,7 @@ function Stall({
             aria-pressed={kind === k}
             onClick={() => onKind(k)}
             data-plan-kind={k}
-            className={`min-h-9 rounded-full border px-2.5 text-xs tabular-nums ${kind === k ? "border-gold text-gold" : "border-line text-cream-dim"}`}
+            className={`min-h-9 rounded-full border px-2.5 text-xs tabular-nums ${kind === k ? "border-info bg-info/10 text-cream" : "border-line text-cream-dim"}`}
           >
             {pt.kind[k]} · {v.plans[k]}
           </button>
@@ -483,7 +483,7 @@ function Stall({
           );
         })}
       </ul>
-      <p className="mt-2 text-xs text-gold">
+      <p className="mt-2 text-xs text-cream-dim">
         {pt.week(v.weekPoints)}
         {ranking?.mine ? ` · ${ranking.mine.rank}ᵉ` : ""}
       </p>
@@ -548,7 +548,7 @@ function SceneView(props: {
               data-porta-tier={t.tier}
               className={`pointer-events-auto -translate-x-1/2 -translate-y-1/2 flex min-h-11 min-w-11 flex-col items-center justify-center rounded-full px-2.5 text-xs font-bold shadow-lg shadow-black/50 ${
                 props.tier === t.tier
-                  ? "bg-gold text-ink"
+                  ? "bg-info text-night"
                   : t.open
                     ? "bg-night/85 text-cream ring-1 ring-line"
                     : "bg-night/60 text-cream-dim"
@@ -591,7 +591,7 @@ function SceneView(props: {
           <button
             type="button"
             onClick={props.onStall}
-            className="pointer-events-auto -translate-x-1/2 translate-y-2 min-h-11 rounded-full bg-night/85 px-3 text-xs font-semibold text-gold ring-1 ring-gold/60 shadow-lg"
+            className="pointer-events-auto -translate-x-1/2 translate-y-2 min-h-11 rounded-full bg-night/85 px-3 text-xs font-semibold text-cream ring-1 ring-edge shadow-lg"
           >
             {pt.antiquarian}
           </button>
@@ -674,12 +674,12 @@ function Scene({
           <planeGeometry args={[8, 8.6]} />
         </mesh>
       </group>
-      {/* The tiers, steps of stone, each higher; the chosen one in gold, the closed ones dim. */}
+      {/* The tiers, steps of stone, each higher; the chosen one in lapis, the closed ones dim. */}
       {v.tiers.map((t, i) => (
         <mesh
           key={t.tier}
           position={stepAt(i, v.tiers.length)}
-          material={claySolid(t.tier === tier ? C.gold : t.open ? C.rock2 : C.mistSoil)}
+          material={claySolid(t.tier === tier ? C.water : t.open ? C.rock2 : C.mistSoil)}
           scale={[1, 0.6 + i * 0.35, 1]}
         >
           <cylinderGeometry args={[2.4, 2.7, 2, 6]} />
