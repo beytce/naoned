@@ -97,6 +97,8 @@ Lot 0, puis lots 1 et 2 ensemble (tous deux sur le HUD et la caméra), puis lot 
 
 ## 4. Décisions du porteur
 
+Le 4 novembre 2026, le porteur a répondu oui aux sept questions et lancé les lots.
+
 1. **Ruban de jalons après la Casa 2** : des jalons qui ouvrent un lieu, sans or, respectent-ils « plus aucun bouton ne joue à la place du joueur » ?
 2. **Notifications** (renvoyées en IDEAS.md le 3 novembre) : les reprendre, en opt-in, limitées à trois sortes ?
 3. **Seuil du retour d'absence** : 12 h aujourd'hui ; 2 ou 3 h, en réglage ?
