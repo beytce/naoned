@@ -486,6 +486,8 @@ const GOLD_RIBBON = 0.75;
 
 /** After the last touch or move of the camera, the board stays alive this long (ms). */
 const AWAKE_MS = 10_000;
+/** Then its life goes on at 12 frames a second this long (ms), and rests. */
+const AMBIENT_MS = 90_000;
 let awakeUntil = 0;
 /** The player did something: the board's life (smoke, water, sails) goes on a while. */
 function wake() {
@@ -502,11 +504,17 @@ function Ticker({ live, until }: { live: boolean; until: number }) {
   useEffect(() => {
     let raf = 0;
     let last = 0;
-    const step = live ? 33 : 1_000;
     const loop = (t: number) => {
       const now = Date.now();
-      const busy = now < until + 1_000 || (live && now < awakeUntil);
-      if (busy && !document.hidden && t - last >= step) {
+      // 30 frames while a vehicle walks or the player touches; then 12 for a minute and a half,
+      // the board's life going on slower (audit of 4 November, motion B2: no world frozen ten
+      // seconds after the last touch); then none. Asking for less motion: one a second, only
+      // while a vehicle walks.
+      const walking = now < until + 1_000;
+      const busy = walking || (live && now < awakeUntil);
+      const ambient = live && now < awakeUntil + AMBIENT_MS;
+      const step = !live ? 1_000 : busy ? 33 : 83;
+      if ((busy || ambient) && !document.hidden && t - last >= step) {
         last = t;
         invalidate();
       }
