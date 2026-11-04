@@ -2,11 +2,13 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Color, type Group, MeshBasicMaterial, Vector3 } from "three";
 import { C } from "../../art/plateau/props.js";
+import { PlainGround } from "../../dock.js";
 import { Icon } from "../../game/map/icons.js";
 import { CloseButton } from "../../ui.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { Figure } from "../map3d/figure.js";
+import { MAP_3D } from "../map3d/flag.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
 import { useDonkey } from "../map3d/life.js";
 import { roleOf } from "../map3d/roster.js";
@@ -363,27 +365,34 @@ function SceneView(props: {
   ];
   return (
     <div className="absolute inset-0">
-      <Guard3D>
-        <Canvas
-          orthographic
-          dpr={[1, 1.5]}
-          camera={{ position: [0, 46, 44], zoom: 1 }}
-          gl={{ antialias: true }}
-          onCreated={({ scene }) => {
-            scene.background = new Color("#16263E");
-          }}
-        >
-          <CameraRig focus={props.focus} dockH={props.dockH} />
-          <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
-          <directionalLight position={[-60, 110, 40]} intensity={2.2} color="#FFF3DD" />
-          <Suspense fallback={null}>
-            <Scene {...props} docked={docked} />
-            <AnchorLayer root={labels} anchors={ANCHOR} />
-          </Suspense>
-        </Canvas>
-      </Guard3D>
+      {MAP_3D ? (
+        <Guard3D>
+          <Canvas
+            orthographic
+            dpr={[1, 1.5]}
+            camera={{ position: [0, 46, 44], zoom: 1 }}
+            gl={{ antialias: true }}
+            onCreated={({ scene }) => {
+              scene.background = new Color("#16263E");
+            }}
+          >
+            <CameraRig focus={props.focus} dockH={props.dockH} />
+            <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
+            <directionalLight position={[-60, 110, 40]} intensity={2.2} color="#FFF3DD" />
+            <Suspense fallback={null}>
+              <Scene {...props} docked={docked} />
+              <AnchorLayer root={labels} anchors={ANCHOR} />
+            </Suspense>
+          </Canvas>
+        </Guard3D>
+      ) : (
+        <PlainGround />
+      )}
       {/* The labels over the scene, each at its anchor (Anchors moves them each frame). */}
-      <div ref={labels} className="pointer-events-none absolute inset-0">
+      <div
+        ref={labels}
+        className={`pointer-events-none absolute inset-0 ${MAP_3D ? "" : "hidden"}`}
+      >
         {v.tiers.map((t, i) => (
           <div key={t.tier} data-anchor={`step:${i}`} className="absolute left-0 top-0">
             <button

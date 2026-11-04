@@ -531,3 +531,17 @@ export function DockDoor({
     </button>
   );
 }
+
+/**
+ * The ground of a place without WebGL (the Porta, the Remise): the night and its two halos, so
+ * that the same dock stands over it as over the 3D scene (docs/plan-dock.md, lot 6).
+ */
+export function PlainGround() {
+  return (
+    <div
+      aria-hidden="true"
+      className="absolute inset-0 bg-night [background-image:radial-gradient(60%_40%_at_50%_30%,rgb(var(--glow-a)/0.25),transparent),radial-gradient(50%_35%_at_70%_10%,rgb(var(--glow-b)/0.18),transparent)]"
+      data-plain-ground
+    />
+  );
+}
