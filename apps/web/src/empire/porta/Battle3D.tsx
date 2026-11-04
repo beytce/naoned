@@ -59,6 +59,11 @@ const NIGHT = "#16263E";
 const SLAB = 2.4;
 /** The figurines are drawn this much larger than on the board: a battle is read from afar. */
 const FIG = 2.2;
+/**
+ * The units drawn this much larger again on the island (audit of 4 November, 3D B2 and UI U-13):
+ * about 28 px high at the battle's first framing on a phone, above the pines.
+ */
+const UNIT = 1.9;
 const TILE_R = CASE / Math.sqrt(3);
 
 export interface Battle3DHandle {
@@ -104,7 +109,9 @@ function dressingOf(b: BattleSnapshot) {
   const r = rng(seedOf(b.id));
   const out: { name: KitName; x: number; z: number; s: number; rot: number }[] = [];
   const clear = [b.gate, ...b.cities];
-  const n = Math.round(b.radius * b.radius * 1.1);
+  // Half as much as before, and lower than the units (audit of 4 November, 3D B2): the island
+  // dressed, never hiding who fights.
+  const n = Math.round(b.radius * b.radius * 0.55);
   for (let i = 0; i < n; i++) {
     const d = Math.sqrt(r()) * (b.radius - 0.2);
     const a = r() * Math.PI * 2;
@@ -125,10 +132,10 @@ function dressingOf(b: BattleSnapshot) {
     const [X, Z] = toChart(b, x, y);
     const s =
       name === "mountainA"
-        ? 9 + r() * 4
+        ? 6 + r() * 2
         : name.startsWith("pine")
-          ? 4.5 + r() * 1.5
-          : 3.5 + r() * 2;
+          ? 2.6 + r() * 0.8
+          : 2 + r() * 1.2;
     out.push({ name, x: X, z: Z, s, rot: r() * Math.PI * 2 });
   }
   return out;
@@ -190,6 +197,9 @@ const M = {
   smoke: glow("#C9D2DE", 0.55),
   heal: glow("#6EE0B8", 0.45),
   hpBack: glow("#0E1A2B", 0.55),
+  blob: glow("#08111F", 0.38),
+  // The vehicle chosen, ringed in lapis (a choice, never gold: UI U-1).
+  chosen: glow("#6EC8F5", 0.95),
   hpMine: glow("#6EE0B8", 0.95),
   hpAlly: glow("#6EC8F5", 0.95),
   hpRome: glow("#E06A4A", 0.95),
@@ -560,27 +570,35 @@ function Unit({
   return (
     <group ref={group}>
       {u.side === "player" && u.role === "transport" ? (
-        <group scale={FIG}>
+        <group scale={FIG * UNIT}>
           <Mule cargo={(u as PlayerUnitView).cargo} live={live} />
         </group>
       ) : (
-        <Figure
-          ref={fig}
-          role={roleOf(
-            u.side === "rome" ? { side: "rome", kind: u.kind } : { side: "player", model: u.model },
-          )}
-          live={live}
-        />
+        <group scale={UNIT}>
+          <Figure
+            ref={fig}
+            role={roleOf(
+              u.side === "rome"
+                ? { side: "rome", kind: u.kind }
+                : { side: "player", model: u.model },
+            )}
+            live={live}
+          />
+        </group>
       )}
+      {/* Its shadow on the sand: it stands on the island, never floats over it. */}
+      <mesh geometry={disc} material={M.blob} scale={0.95 * big * FIG * UNIT} position-y={0.02} />
       {/* Its health, a ring at its feet: green for mine, blue an ally's, red Rome's. */}
-      <group ref={hp} position-y={0.08} scale={1.5 * big * FIG}>
+      <group ref={hp} position-y={0.08} scale={1.5 * big * FIG * UNIT}>
         <mesh geometry={ring} material={M.hpBack} />
         <mesh
           geometry={HP[Math.round(share * 10)] ?? ring}
           material={mine ? M.hpMine : u.side === "player" ? M.hpAlly : M.hpRome}
         />
       </group>
-      {chosen && <mesh geometry={halo} material={M.gold} scale={2.2 * FIG} position-y={0.12} />}
+      {chosen && (
+        <mesh geometry={halo} material={M.chosen} scale={2.2 * FIG * UNIT} position-y={0.12} />
+      )}
       {/* Rome's eyes, when it is roused: its vision, and its reach while it strikes. */}
       {rome && (rome.state === "alert" || rome.state === "attack") && !dead && (
         <mesh

@@ -35,6 +35,23 @@ const fit = (b: { radius: number; gate: { x: number; y: number } }) => (v: Viewp
 };
 
 /**
+ * The battle's first framing (audit of 4 November, 3D B2): twice as near as the whole island,
+ * on one's own vehicles (else the gate), so that they are seen before they are touched; a double
+ * touch goes back to the whole island.
+ */
+const near = (b: BattleSnapshot) => (v: Viewport) => {
+  const whole = fit(b)(v);
+  const s = whole.s * 2;
+  const mine = b.units.filter(isMine);
+  const pts = mine.length ? mine.map((u) => [u.x, u.y] as const) : [[b.gate.x, b.gate.y] as const];
+  const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
+  const cy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+  const [X, Y] = toChart(b, cx, cy);
+  // In the band between the header (about 90 px) and the bar (about 190 px).
+  return { s, tx: v.w / 2 - X * s, ty: 90 + (v.h - 280) / 2 - Y * TILT * s };
+};
+
+/**
  * The battle in the lands of Rome as a diorama (docs/plan-porta-3d.md, step 1): the island and its
  * figurines in 3D under the map's camera (pinched, dragged, back to the whole island), a touch on
  * one of one's vehicles to choose it, a touch on a town or the ground to send it there (its way
@@ -97,7 +114,7 @@ function Field({
   }, []);
   const camera = useCamera({
     root,
-    initial: fit(battle),
+    initial: near(battle),
     onPaint: paint,
     extent: extentOf(battle),
     bounds: (v) => {
