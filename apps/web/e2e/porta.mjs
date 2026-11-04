@@ -205,7 +205,10 @@ try {
   await shot("4-porta");
 
   // A battle alone, tier 1.
-  await page.getByRole("button", { name: /partir seul/i }).click();
+  await page
+    .getByRole("button", { name: /entrer · palier 1|partir seul/i })
+    .first()
+    .click();
   await page.waitForSelector("[data-battle-timer]", { timeout: 15_000 });
   await page.waitForTimeout(1_500);
   await shot("5-bataille");

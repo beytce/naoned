@@ -40,6 +40,21 @@ export const pt = {
         : `${min} à ${max} joueurs`,
   entry: (n: number) => `Entrée : ${n} pains`,
   solo: "Partir seul",
+  enter: (n: number) => `Entrer · palier ${n}`,
+  enterGroup: (n: number) => `File · palier ${n}`,
+  group: "Groupe",
+  notReady: "Choisissez un véhicule de combat et un transport à quai.",
+  hurt: "abîmé",
+  backTitle: "Retour des terres de Rome",
+  backNone: "Aucune relique rapportée.",
+  backCost: (lost: number, hurt: number) =>
+    [
+      lost > 0 ? `${lost} véhicule${lost > 1 ? "s" : ""} perdu${lost > 1 ? "s" : ""}` : "",
+      hurt > 0 ? `${hurt} abîmé${hurt > 1 ? "s" : ""}, en réparation` : "",
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  backOk: "Fermer",
   public: "File publique",
   invite: "Inviter",
   join: "Rejoindre",
