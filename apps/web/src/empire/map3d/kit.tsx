@@ -63,9 +63,15 @@ function merged(root: Object3D): BufferGeometry {
     }
     if (m.geometry.index) g.setIndex(m.geometry.index.clone());
     g.applyMatrix4(m.matrixWorld);
-    parts.push(g.index ? g.toNonIndexed() : g);
+    parts.push(g);
   });
-  const g = mergeGeometries(parts, false) as BufferGeometry;
+  // Indexed when every part is (the pack's welded vertices kept: half the vertices on the GPU,
+  // audit of 4 November, Blender M4); else all flattened, as mergeGeometries asks.
+  const indexed = parts.every((p) => p.index);
+  const g = mergeGeometries(
+    indexed ? parts : parts.map((p) => (p.index ? p.toNonIndexed() : p)),
+    false,
+  ) as BufferGeometry;
   const box = new Box3().setFromBufferAttribute(g.getAttribute("position") as BufferAttribute);
   const size = box.getSize(new Vector3());
   const k = 1 / Math.max(size.x, size.z);
@@ -98,8 +104,13 @@ function kitOf(scene: Object3D): Kit {
     // A model missing from the pack: a crate stands for it (never a crash).
     const src = base.get(name) ?? base.get("crate") ?? [...base.values()][0];
     if (!src) throw new Error("3D kit: no model in the pack");
-    const g = src.clone();
-    const uv = g.getAttribute("uv") as BufferAttribute | undefined;
+    // A variant shares the model's place, normals and triangles; only its colours are its own,
+    // and it keeps no UV (they only serve to paint it).
+    const g = new BufferGeometry();
+    g.setAttribute("position", src.getAttribute("position"));
+    g.setAttribute("normal", src.getAttribute("normal"));
+    if (src.index) g.setIndex(src.index);
+    const uv = src.getAttribute("uv") as BufferAttribute | undefined;
     if (uv) g.setAttribute("color", new BufferAttribute(recolour(uv.array, over), 3));
     g.computeBoundingBox();
     const model = { geo: g, h: g.boundingBox?.max.y ?? 1 };
