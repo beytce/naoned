@@ -120,6 +120,8 @@ export interface EmpireView {
     /** The house's counters that serve it. */
     posts?: string[];
   }[];
+  /** The last deliveries brought (played again on the player's return). */
+  delivered?: { city: string; pay: string; at: number }[];
   /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
   moves: {
     departSeconds: number;

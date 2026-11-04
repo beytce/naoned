@@ -129,6 +129,8 @@ export interface EmpireView {
   stores: { post: string; region: string; goods: Record<string, number> }[];
   /** The orders of the cities its counters serve (after Hades' Star's shipments). */
   orders: CityOrders[];
+  /** The last deliveries brought (the board plays them again on the player's return). */
+  delivered: { city: string; pay: string; at: number }[];
   /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
   moves: {
     departSeconds: number;
@@ -475,6 +477,7 @@ export function empireView(
       : null,
     stores: storesOf(state.inventories[playerId], house, s),
     orders: ordersOf(ctx, house, playerId, s, now),
+    delivered: (house.delivered ?? []).map((d) => ({ ...d, pay: d.pay.toString() })),
     moves: s.moves,
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),

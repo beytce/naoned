@@ -179,3 +179,20 @@ describe("calling back", () => {
     );
   });
 });
+
+describe("the deliveries made while away", () => {
+  it("are kept, the last twelve, for the house's return (city, pay, time)", () => {
+    const w = world();
+    const list = orders(w, "padova");
+    for (const o of list) w.give("a", o.good, o.qty);
+    deliver(w, "padova");
+    const out = vehicle(w, "cart")?.legs?.[0];
+    w.advance((out?.arrivesAt ?? 0) - w.now + 1);
+    settle(w);
+    const done = view(w)?.delivered ?? [];
+    expect(done).toHaveLength(1);
+    expect(done[0]?.city).toBe("padova");
+    expect(done[0]?.at).toBe(out?.arrivesAt);
+    expect(BigInt(done[0]?.pay ?? "0")).toBeGreaterThan(0n);
+  });
+});

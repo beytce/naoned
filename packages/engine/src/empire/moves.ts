@@ -186,10 +186,15 @@ function arrive(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle, leg: Emp
   const here = (v.loads ?? []).filter((o) => o.city === code);
   if (!c || here.length === 0) return;
   const bonus = houseEffect(h, "orderBonus", s, { region: c.region, vehicleId: v.id });
+  let paid = 0n;
   for (const o of here) {
-    receive(tx, playerId, applyBpsFloor(o.pay, 10_000 + bonus), `orders:${code}:${o.good}`);
+    const pay = applyBpsFloor(o.pay, 10_000 + bonus);
+    receive(tx, playerId, pay, `orders:${code}:${o.good}`);
     advanceCarnet(h, "deliver", o.qty);
+    paid += pay;
   }
+  // Kept for the player's return (the board plays them again, decision of the owner, 3 November).
+  h.delivered = [...(h.delivered ?? []), { city: code, pay: paid, at: leg.arrivesAt }].slice(-12);
   const rest = (v.loads ?? []).filter((o) => o.city !== code);
   v.loads = rest.length > 0 ? rest : undefined;
 }

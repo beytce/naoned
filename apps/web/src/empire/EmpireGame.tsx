@@ -115,6 +115,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [vehicle, setVehicle] = useState<string | null>(null);
   const [aiming, setAiming] = useState(false);
   const map = useRef<EmpireMapHandle>(null);
+  useAwayRecap(p);
   // A fondaco's domain plunged into (3D): its bar at the foot instead of the round buttons.
   const [domain, setDomain] = useState<string | null>(null);
   const domainNow = useRef(domain);
@@ -963,4 +964,45 @@ function AwaySheet({ p, open, busy, onClose, act }: SheetProps & { open: boolean
       </Slab>
     </Sheet>
   );
+}
+
+/** When the player last saw the house (server time), for the deliveries made while away. */
+const SEEN = "fondaco:seen";
+
+/**
+ * Back from away (decision of the owner, 3 November 2026): the deliveries brought meanwhile played
+ * again in three seconds, their ducats flying from each town to the purse.
+ */
+function useAwayRecap(p: EmpirePayload) {
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current || !p.view) return;
+    done.current = true;
+    let last = 0;
+    try {
+      last = Number(window.localStorage.getItem(SEEN) ?? 0);
+    } catch {
+      return;
+    }
+    const missed = (p.view.delivered ?? []).filter((x) => x.at > last && x.at <= p.now).slice(-6);
+    // Played once (never cut by the next refresh of the house).
+    missed.forEach((x, i) =>
+      window.setTimeout(
+        () =>
+          flyCoins(BigInt(x.pay), {
+            note: fr.empire.cityNames[x.city] ?? x.city,
+            from: `[data-city=${x.city}]`,
+          }),
+        900 + (i * 2_400) / Math.max(1, missed.length),
+      ),
+    );
+  }, [p]);
+  useEffect(() => {
+    if (!done.current) return;
+    try {
+      window.localStorage.setItem(SEEN, String(p.now));
+    } catch {
+      // Without storage, no recap next time.
+    }
+  }, [p.now]);
 }
