@@ -291,6 +291,13 @@ export const venice1450Empire: EmpireSettingsInput = {
     tierTimes: { raw: 1, intermediate: 2, finished: 3, luxury: 5 },
     lots: {},
     premiumBps: 1_500,
+    // After the map's audit (calibration.md, 4 November 2026): each city's first order a quarter of
+    // its lot (a first delivery in the first session), the goods made now drawn three times more
+    // often, +1 % a ten units of the road from the nearest fondaco, up to +15 %.
+    firstLotBps: 2_500,
+    madeWeight: 3,
+    distanceBps: 100,
+    distanceMaxBps: 1_500,
   },
   // A hop: ten seconds to leave (left at once, or taken back), then eleven seconds a unit of the
   // chart (3 November, the long voyages): five minutes from the first fondaco to Venice, seven to
