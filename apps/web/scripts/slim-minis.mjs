@@ -69,7 +69,13 @@ export async function slimMinis(doc) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const file = join(dirname(fileURLToPath(import.meta.url)), "..", "public", "models", "minis.glb");
-  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
+  // The file served is meshopt-compressed (compress-models.mjs): read and written so.
+  const { MeshoptDecoder, MeshoptEncoder } = await import("meshoptimizer");
+  await MeshoptDecoder.ready;
+  await MeshoptEncoder.ready;
+  const io = new NodeIO()
+    .registerExtensions(ALL_EXTENSIONS)
+    .registerDependencies({ "meshopt.decoder": MeshoptDecoder, "meshopt.encoder": MeshoptEncoder });
   const before = statSync(file).size;
   const doc = await io.read(file);
   const dropped = await slimMinis(doc);

@@ -66,7 +66,9 @@ function securityHeaders(appUrl: string, production: boolean): Record<string, st
   const headers: Record<string, string> = {
     "content-security-policy": [
       "default-src 'self'",
-      "script-src 'self'",
+      // The models' meshopt decoder is a WebAssembly module (audit of 4 November 2026, 3D M5, the
+      // owner's decision): compiling it needs this, and lets no script be evaluated.
+      "script-src 'self' 'wasm-unsafe-eval'",
       // React sets styles on elements (the map's markers, the panels).
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",

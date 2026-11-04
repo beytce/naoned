@@ -123,10 +123,10 @@ function kitOf(scene: Object3D): Kit {
 
 /** Every model, loaded once (it suspends until then), and its recoloured variants on demand. */
 export function useKit(): Kit {
-  const gltf = useGLTF(PACK, false, false) as unknown as { scene: Object3D };
+  const gltf = useGLTF(PACK, false, true) as unknown as { scene: Object3D };
   return kitOf(gltf.scene);
 }
-useGLTF.preload(PACK, false, false);
+useGLTF.preload(PACK, false, true);
 
 export interface Placed {
   x: number;

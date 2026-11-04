@@ -25,7 +25,7 @@ import { C } from "../../art/plateau/props.js";
 import { claySolid } from "./kit.js";
 
 const DONKEY = "/models/quaternius/donkey.glb";
-useGLTF.preload(DONKEY, false, false);
+useGLTF.preload(DONKEY, false, true);
 
 /** The donkey's own colours, swapped for the board's (by its materials' names). */
 const DONKEY_COLOURS: Record<string, string> = {
@@ -41,7 +41,7 @@ const DONKEY_COLOURS: Record<string, string> = {
 
 /** A donkey of its own (its skeleton cloned), `length` chart units long, and its mixer. */
 export function useDonkey(length: number) {
-  const gltf = useGLTF(DONKEY, false, false) as unknown as {
+  const gltf = useGLTF(DONKEY, false, true) as unknown as {
     scene: Object3D;
     animations: import("three").AnimationClip[];
   };
