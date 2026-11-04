@@ -4375,6 +4375,7 @@ export const en: Dictionary = {
   },
 
   errors: {
+    offline: "Offline: nothing is lost, the game goes on once the network is back.",
     invalid_input: "Check what you typed.",
     pseudo_taken: "This name is already taken.",
     too_many_requests: "Too many requests. Try again in a few minutes.",

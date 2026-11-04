@@ -327,6 +327,17 @@ try {
     await page.locator("[data-hud=ducats] [role=note]").waitFor();
     if ((await page.locator("[data-hud=favour], [data-hud=seals]").count()) > 0)
       faults.push(`${label}: a Favour or Seals count at zero in the corner`);
+    // Off the network, it is said; back on it, the word goes (audit of 4 November, UX M10).
+    await page.context().setOffline(true);
+    await page
+      .locator("[data-offline]")
+      .waitFor({ timeout: 3_000 })
+      .catch(() => faults.push(`${label}: nothing said off the network`));
+    await page.context().setOffline(false);
+    await page
+      .locator("[data-offline]")
+      .waitFor({ state: "detached", timeout: 5_000 })
+      .catch(() => faults.push(`${label}: still « offline » once back on the network`));
 
     // The Market: a good touched opens its sheet, to sell or deliver.
     await page.locator("[data-round=market]").click();

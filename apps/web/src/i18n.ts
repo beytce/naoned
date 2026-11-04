@@ -4512,6 +4512,7 @@ const frDict = {
   },
 
   errors: {
+    offline: "Hors ligne : rien n'est perdu, le jeu reprend au retour du réseau.",
     invalid_input: "Vérifiez votre saisie.",
     pseudo_taken: "Ce nom est déjà pris.",
     too_many_requests: "Trop de demandes. Réessayez dans quelques minutes.",

@@ -7,6 +7,7 @@ import { d, hourOf, minutesLabel } from "../game/format.js";
 import { FxLayer, flyCoins, flyGoods } from "../game/fx.js";
 import { GOLD } from "../game/gold.js";
 import { connectLive } from "../game/live.js";
+import { useOnline } from "../game/online.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { sound } from "../sound.js";
@@ -200,6 +201,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     return () => clearTimeout(id);
   }, [toast]);
 
+  // Off the network: said once at the top, and the house read again as soon as it is back.
+  const online = useOnline(refresh);
   const act = async (a: EmpireAction) => {
     setBusy(true);
     try {
@@ -207,7 +210,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       if (!answer.error) feel(p, answer);
       take(answer);
     } catch (err) {
-      setToast(err instanceof ApiError ? (t.errors[err.code] ?? unknownError) : unknownError);
+      setToast(
+        err instanceof ApiError
+          ? (t.errors[err.code] ?? unknownError)
+          : ((!navigator.onLine ? fr.errors.offline : fr.errors.network) ?? unknownError),
+      );
     } finally {
       setBusy(false);
     }
@@ -603,6 +610,16 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       {createPortal(
         <>
           <Intro p={p} />
+          {!online && (
+            <p
+              className="fixed inset-x-0 top-[max(0.5rem,env(safe-area-inset-top))] z-[65] mx-auto flex w-fit items-center gap-2 rounded-full bg-night-4/95 px-4 py-2 text-sm font-semibold text-cream shadow-lg ring-1 ring-edge"
+              role="status"
+              data-offline
+            >
+              <span className="h-2 w-2 rounded-full bg-vermilion" aria-hidden="true" />
+              {fr.errors.offline ?? ""}
+            </p>
+          )}
           {toast && (
             <output className="fixed inset-x-4 top-[max(1rem,env(safe-area-inset-top))] z-[70] mx-auto block max-w-sm animate-fade bg-night-4 px-4 py-3 text-center text-sm text-cream shadow-lg slab">
               {toast}
