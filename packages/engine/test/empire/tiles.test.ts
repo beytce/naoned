@@ -88,6 +88,32 @@ describe("a fondaco on the small tiles", () => {
   });
 });
 
+describe("a fondaco of before the small tiles", () => {
+  it("is moved once onto the nearest free tile of its sector, clear of the towns", () => {
+    const w = world();
+    expect(placeHome(w, "0,0", tile("0,0", 5)).ok).toBe(true);
+    // Its point of before: off any tile's middle, next to Venice.
+    const state = structuredClone(w.state);
+    const h = state.empire?.houses.a;
+    if (!h?.home) throw new Error("no home");
+    const [vx0, vy0] = tile("0,0", 1);
+    h.home = { cell: "0,0", x: vx0 + 4, y: vy0 + 3 };
+    w.state = state;
+    w.do({ type: "empireSettle", playerId: "a" });
+    const home = house(w).home;
+    if (!home) throw new Error("no home");
+    const towns = [tile("0,0", 1), tile("0,1", 3)];
+    expect(towns.some(([x, y]) => x === home.x && y === home.y)).toBe(false);
+    expect(
+      [0, 1, 2, 3, 4, 5, 6].some((k) => {
+        const [x, y] = tile("0,0", k);
+        return x === home.x && y === home.y;
+      }),
+    ).toBe(true);
+    expect(home.cell).toBe("0,0");
+  });
+});
+
 describe("a hop's road in the house's view", () => {
   it("is the very road the engine times, on the whole map (never the part the house sees)", () => {
     const w = world();
