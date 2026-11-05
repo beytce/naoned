@@ -23,6 +23,7 @@ import { TILT } from "../../art/plateau/geom.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
+import { T, reduced } from "../../motion.js";
 import { clock } from "../../ui.js";
 import { EmpireOrbit } from "../Orbit.js";
 import { regionName } from "../World.js";
@@ -204,6 +205,20 @@ export const EmpireMap = forwardRef<
   const touchRef = useRef<((id: string) => void) | null>(null);
   // The counter whose workshops are deployed around it, opened at its touch (never by a zoom).
   const [opened, setOpened] = useState<string | null>(null);
+  // The night drawn over the board for a moment while the map and a domain swap (audit of
+  // 4 November, motion M5): never a scene changed in one frame in the middle of a glide.
+  const [veil, setVeil] = useState(false);
+  const veiled = (swap: () => void) => {
+    if (!MAP_3D || reduced()) {
+      swap();
+      return;
+    }
+    setVeil(true);
+    window.setTimeout(() => {
+      swap();
+      window.setTimeout(() => setVeil(false), 60);
+    }, T.quick);
+  };
   const openedNow = useRef<string | null>(null);
   openedNow.current = opened;
   const openedRegion = useRef("veneto");
@@ -365,10 +380,16 @@ export const EmpireMap = forwardRef<
     );
   /** A counter touched: its workshops deploy around its bubble, the camera zooming around it. */
   const deploy = (region: string, at: [number, number], id = region) => {
-    setOpened(id);
     openedRegion.current = region;
     openedAt.current = at;
-    camera.easeTo(MAP_3D ? domainFrame(at, domainRings(region)) : orbitOn(at, camera.cam()));
+    if (!MAP_3D) {
+      setOpened(id);
+      camera.easeTo(orbitOn(at, camera.cam()));
+      return;
+    }
+    // The camera starts its plunge; the domain comes under the veil.
+    camera.easeTo(domainFrame(at, domainRings(region)));
+    veiled(() => setOpened(id));
   };
   /** « Maison » (3D): back over the first fondaco; already there, its domain. */
   const goHouse = () => {
@@ -406,7 +427,7 @@ export const EmpireMap = forwardRef<
       // Back to the whole sector around (its towns in sight), as the game opens it.
       const at = openedAt.current;
       const home = openedRegion.current === "veneto";
-      setOpened(null);
+      veiled(() => setOpened(null));
       camera.easeTo(home ? sectorOn : (v) => centredOn(at, sectorOn(v).s, v));
     },
     info: showInfo,
@@ -676,6 +697,13 @@ export const EmpireMap = forwardRef<
       )}
 
       {/* Until the 3D board is in: the night and a word, never a bare screen of floating names. */}
+      {MAP_3D && (
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-0 z-[14] bg-[#16263E] transition-opacity duration-[var(--t-quick)] ease-[var(--ease-inout)] ${veil ? "opacity-100" : "opacity-0"}`}
+          data-veil={veil ? "" : undefined}
+        />
+      )}
       {MAP_3D && !threeReady && (
         <div
           className="pointer-events-none absolute inset-0 z-[15] flex flex-col items-center justify-center gap-3 bg-[#16263E]"
