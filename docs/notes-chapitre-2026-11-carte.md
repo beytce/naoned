@@ -26,9 +26,9 @@ Règle du projet : au commerce, un changement s'annonce dans les notes du chapit
 
 Les chiffres ont été vérifiés au simulateur de 24 mois (docs/calibration.md, § « L'audit de la carte »).
 
-## Le chapitre suivant : moins de villes, plus de tournées (brouillon du 5 novembre 2026)
+## Le chapitre suivant : moins de villes, plus de tournées (5 novembre 2026)
 
-À publier dans le jeu avant la mise en ligne (décision du porteur pour la date).
+En vigueur dès sa mise en ligne, sans préavis : décision du porteur du 5 novembre 2026 (« active-le tout de suite »), par exception à la règle de l'annonce préalable. Le texte ci-dessous est à publier dans le jeu en même temps.
 
 **Tracez vos tournées.** Touchez une charrette à quai : les villes qu'elle peut servir s'éclairent. Glissez du doigt vers une ville, puis vers une autre : ses caisses montent à bord. Lâchez dans le vide, elle part ; lâchez sur une ville, la tournée attend votre « Partir ».
 

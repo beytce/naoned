@@ -2524,4 +2524,6 @@ Décisions du porteur après l'audit du gameplay (`docs/audit-gameplay-2026-11-0
 - **La fin de partie ralentit encore** : le palier le plus cher monte à 29 à 46 jours de revenu (27 avant). Avec deux fois moins de villes, les grandes Maisons manquent de commandes. C'était déjà le point faible de la référence ; c'est la prochaine passe : les plafonds des villes de taille 5, ou la paie des lots de produits finis.
 - Les commandes pèsent plus dans les recettes (80 à 82 %, au haut de la fourchette) : la tournée est bien le cœur du jeu, le marché moins.
 
+**Mise en œuvre** : activée tout de suite, sans annonce préalable (décision du porteur du 5 novembre 2026). Avec `WORLD_SETTINGS_FROM_THEME=true` (le défaut), le monde de l'empire reprend ces réglages au premier démarrage du serveur qui les porte ; aucune migration.
+
 Reproduire : `cd apps/simulator && npx tsx src/scenario-trente.ts`, puis `npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/trente-villes.json` (environ 35 minutes par graine) ; depuis l'application des réglages, `npx tsx src/empire-cli.ts` donne F directement.
