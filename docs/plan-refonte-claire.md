@@ -25,7 +25,7 @@
 | --- | --- | --- |
 | 0 | Le moteur : les commandes jamais au-delà du plafond | fait |
 | 1 | La barre des quatre lieux, le HUD réduit, la carte « le mieux maintenant », les pastilles en caisses, le profil derrière le médaillon (Famille, Dogana, Conseil) | fait ; la barre reste à poser sur la Porta et la Compagnie (lots 4 et 5) |
-| 2 | La Carte : repères de ville lisibles, sans chevauchement ; la Dogana dans le dock de Venise | |
+| 2 | La Carte : repères de ville lisibles, sans chevauchement (`map/declutter.ts`, les noms de région à l'encre du jour) ; la Dogana dans le dock de Venise (et derrière le médaillon) | fait |
 | 3 | Le Fondaco : le domaine, le quai (Remise et Armes), la progression de la Casa | |
 | 4 | La Porta : son décor, les paliers, l'affichage du combat | |
 | 5 | La Compagnie (Carnet en médailles) et le profil | |
