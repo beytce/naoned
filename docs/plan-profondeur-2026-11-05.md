@@ -373,3 +373,16 @@ Un plan de domaine, une ligne de tournée ou une tenue de combattant s'exporte e
 4. **La Porta.** La version 2 avait l'aperçu vert, ambre ou rouge. La version 3 le remplace par trois pastilles qui expliquent sans conclure, et limite l'équipage à deux combattants et un transport. D'accord ?
 5. **Les stocks existants.** Les laisser fondre sous le plafond, ou les convertir en ducats sur quatre semaines ?
 6. **Le lot 0** (le défaut des intrants) est un correctif du moteur. Le faire **dès votre go**, en premier, avec son annonce dans les notes du chapitre ?
+
+## 9. Les décisions du porteur sur la version 3 (5 novembre 2026)
+
+« Oui à tout », en attendant la refonte visuelle avant le go.
+
+1. **La caisse et les postes** (§ 2.2) : oui. Le rendement Y(n) cède la place aux bras, et les volumes aux caisses.
+2. **L'absence** ne coûte que par le **plafond** : un magasin ou un camp plein s'arrête, et une commande acceptée en retard paie moins. La table devient **le banquet**, un bonus choisi.
+3. **Le simulateur redevient obligatoire pour les lots qui touchent l'économie** (0, 1, 3, 4, 5), toutes les graines, avec le test « bot glouton contre bot réfléchi ». CLAUDE.md est mis à jour.
+4. **La Porta** : trois pastilles qui expliquent, sans verdict coloré ; deux combattants et un transport au plus.
+5. **Les stocks existants** : convertis en ducats sur quatre semaines, comme le recommande l'économiste, pour que le magasin plafonné ait un effet sur les vétérans. À confirmer au moment du lot 3 : la question proposait deux voies.
+6. **Le lot 0** (les intrants × Y(n)) passe en premier dès le go, avec son annonce dans les notes du chapitre.
+
+**En attente** : le go vient après la refonte visuelle et des interactions menée par une autre session. Au go, on relit l'état du dépôt et on adapte la grammaire visuelle (§ 1) et chaque « Ce qu'on voit » à cette refonte avant de coder.
