@@ -157,6 +157,15 @@ export const pt = {
     rs.length === 0 ? "Ville vide" : `Ville : ${rs.length} relique${rs.length > 1 ? "s" : ""}`,
   selectHint: "Touchez un de vos véhicules, puis l'endroit où il doit aller.",
   moveHint: "Touchez la destination.",
+  /** The relics' next step (goal.tsx, relicStep). */
+  relicStep: {
+    chooseTransport:
+      "Seul le transport charge les coffres : touchez-le, puis une ville aux coffres.",
+    touchTown: "Touchez une ville aux coffres : arrêté dedans, le transport les charge seul.",
+    onTheWay: "En route : une fois dans la ville, il charge un coffre après l'autre.",
+    loading: "Il charge : restez dans la ville jusqu'au bout de l'anneau.",
+    toGate: "Ramenez le transport à la Porte, puis « Sortir » : les reliques sont à vous.",
+  },
   // The battle's goal (the refonte claire, lot 4).
   goal: "Reliques rapportées",
   goalLine: (home: number, aboard: number, left: number) =>

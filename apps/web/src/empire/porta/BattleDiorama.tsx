@@ -12,7 +12,7 @@ import type { Battle3DHandle } from "./Battle3D.js";
 import { portaApi, useBattle } from "./api.js";
 import { CASE, extentOf, fromChart, toChart } from "./chart.js";
 import { RARITY_HEX } from "./colours.js";
-import { BattleGoal } from "./goal.js";
+import { BattleGoal, relicStep } from "./goal.js";
 import { errorText, pt } from "./texts.js";
 import type { BattleOrder, BattleSnapshot, PlayerUnitView, Rarity } from "./types.js";
 
@@ -188,6 +188,7 @@ function Field({
   camRef.current = camera;
 
   const sel = me.find((u) => u.id === selected && u.outcome === "in");
+  const step = relicStep(battle, sel?.id ?? null);
   const atGate = sel
     ? Math.hypot(sel.x - battle.gate.x, sel.y - battle.gate.y) * 100 <= battle.gateRadiusCenti
     : false;
@@ -221,7 +222,11 @@ function Field({
                   e.stopPropagation();
                   moveTo(c.x, c.y);
                 }}
-                className="pointer-events-auto flex min-h-11 min-w-11 items-end justify-center gap-1 rounded-full px-1 pb-1"
+                className={`pointer-events-auto flex min-h-11 min-w-11 items-end justify-center gap-1 rounded-full px-1 pb-1 ${
+                  step === "touchTown" && relicsOf(c).length > 0
+                    ? "animate-pulse ring-2 ring-gold/80"
+                    : ""
+                }`}
                 aria-label={pt.cityRelics(relicsOf(c))}
               >
                 {relicsOf(c).length === 0 ? (
@@ -255,7 +260,12 @@ function Field({
             {pt.tier(battle.tier)}
           </p>
           <BattleGoal battle={battle} />
-          <p className="text-xs text-cream-dim">{sel ? pt.moveHint : pt.selectHint}</p>
+          <p
+            className={`text-xs ${step ? "font-semibold text-gold" : "text-cream-dim"}`}
+            data-relic-step={step ?? undefined}
+          >
+            {step ? pt.relicStep[step] : sel ? pt.moveHint : pt.selectHint}
+          </p>
         </div>
         <div
           className={`rounded-2xl px-3 py-1 text-center shadow-lg shadow-black/40 ${closing ? "bg-vermilion text-cream" : "bg-night/80 text-cream"}`}
@@ -288,6 +298,7 @@ function Field({
                   chosen={u.id === sel?.id}
                   onChoose={() => setSelected(u.id)}
                   t={battle.timeMs}
+                  call={step === "chooseTransport" && u.role === "transport"}
                 />
               ))}
             </div>
@@ -428,11 +439,14 @@ function UnitCard({
   chosen,
   onChoose,
   t,
+  call = false,
 }: {
   u: PlayerUnitView;
   chosen: boolean;
   onChoose: () => void;
   t: number;
+  /** The one to touch now (the transport, for the chests): it pulses in gold. */
+  call?: boolean;
 }) {
   const share = Math.max(0, Math.min(1, u.hp / Math.max(1, u.maxHp)));
   const loading = u.loading
@@ -444,7 +458,7 @@ function UnitCard({
       onClick={onChoose}
       disabled={u.outcome !== "in"}
       data-battle-unit={u.id}
-      className={`min-h-[3.25rem] min-w-0 flex-1 rounded-xl border px-2.5 py-1.5 text-left disabled:opacity-70 ${chosen ? "border-info bg-info/10" : "border-line bg-night/80"}`}
+      className={`min-h-[3.25rem] min-w-0 flex-1 rounded-xl border px-2.5 py-1.5 text-left disabled:opacity-70 ${chosen ? "border-info bg-info/10" : "border-line bg-night/80"} ${call ? "animate-pulse !border-gold ring-2 ring-gold/70" : ""}`}
     >
       <span className="flex items-center justify-between gap-2 text-xs font-semibold text-cream">
         <span>{u.role === "combat" ? pt.combat : pt.transport}</span>

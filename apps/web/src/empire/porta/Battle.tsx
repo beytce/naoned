@@ -4,7 +4,7 @@ import { CloseButton, GoldLayer, Slab } from "../../ui.js";
 import { MAP_3D } from "../map3d/flag.js";
 import { BattleDiorama } from "./BattleDiorama.js";
 import { portaApi, useBattle } from "./api.js";
-import { BattleGoal } from "./goal.js";
+import { BattleGoal, relicStep } from "./goal.js";
 import { errorText, pt } from "./texts.js";
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
 
@@ -129,6 +129,7 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
   const byId = new Map(units.map((u) => [u.id, u]));
   const me = units.filter(isMine);
   const sel = me.find((u) => u.id === selected && u.outcome === "in");
+  const step = relicStep(battle, sel?.id ?? null);
   const atGate = sel ? dist(sel, battle.gate) * 100 <= battle.gateRadiusCenti : false;
   const allOut = me.every((u) => u.outcome !== "in");
 
@@ -159,7 +160,12 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
               {pt.burnt}
             </output>
           ) : (
-            <p className="text-xs text-cream-dim">{sel ? pt.moveHint : pt.selectHint}</p>
+            <p
+              className={`text-xs ${step ? "font-semibold text-gold" : "text-cream-dim"}`}
+              data-relic-step={step ?? undefined}
+            >
+              {step ? pt.relicStep[step] : sel ? pt.moveHint : pt.selectHint}
+            </p>
           )}
         </div>
         <div className="text-right">

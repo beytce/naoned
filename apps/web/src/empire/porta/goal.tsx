@@ -28,6 +28,32 @@ export function battleGoal(battle: BattleSnapshot): {
   return { home: sort(home), aboard: sort(aboard), left: sort(left) };
 }
 
+/** The battle's next step for the relics (pure, tested), said under the goal. */
+export type RelicStep =
+  /** The combat vehicle is chosen: only the transport loads the towns' chests. */
+  | "chooseTransport"
+  /** The transport chosen, idle: a town with chests to touch. */
+  | "touchTown"
+  /** On its way: it loads alone once it stands in the town. */
+  | "onTheWay"
+  /** It loads a chest. */
+  | "loading"
+  /** Its hold full, or no chest left: back to the gate. */
+  | "toGate"
+  | null;
+
+export function relicStep(battle: BattleSnapshot, selected: string | null): RelicStep {
+  const mine = battle.units.filter(isMine).filter((u) => u.outcome === "in");
+  const transport = mine.find((u) => u.role === "transport");
+  if (!transport) return null;
+  const left = battle.cities.some((c) => Object.values(c.relics).some((n) => n > 0));
+  if (transport.loading) return "loading";
+  const full = transport.cargo.length >= transport.capacity;
+  if (full || !left) return transport.cargo.length > 0 ? "toGate" : null;
+  if (selected !== transport.id) return "chooseTransport";
+  return transport.goal ? "onTheWay" : "touchTown";
+}
+
 /**
  * The goal always in sight at the top of the battle: « Rapportez les reliques à la porte », then a
  * gem a relic: full and bright once out, ringed in lapis aboard, hollow still in a town.
