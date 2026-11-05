@@ -133,8 +133,8 @@ L'objectif : 2 à 4 minutes de gestes utiles par session, sans rien perdre quand
 | --- | --- | --- |
 | 1 | Les gestes prévus à l'écran (récolter, livrer, une tournée, une médaille), confirmés par le serveur, remis en place sur un échec ; la barre des lieux sur la Porta et la Compagnie | `empire/foresee.ts`, `EmpireGame.tsx` (`act`), `ui.tsx` (`Sheet docked="places"`), `porta/PortaScene.tsx` |
 | 2 | La tournée tracée du doigt : une poignée sous chaque véhicule à quai, les villes servables en or, la ligne d'or, chaque ville ajoutée au passage ; lâché dans le vide, il part ; lâché sur une ville, la tournée attend dans son dock (« Partir ») et se prolonge par un nouveau glisser ; une seule commande moteur (`empireRound`) ; « Livrer » de la carte « le mieux maintenant » en fantôme, la carte dit le geste | `map/RoundDraw.tsx`, `map/RoundDock.tsx`, `map/round.ts`, `packages/engine/src/empire/moves.ts` (`driveRound`) |
-| 3 | Les villes hors d'atteinte en silhouette | à faire |
-| 4 | Récolter en glissant, Lorenzo qui montre, les chantiers visibles | à faire |
+| 3 | Les villes hors d'atteinte en silhouette (ni nom ni pastille, Alt les dit, hors du désencombrement) ; une ville servie sans commande, sans pastille | `map/EmpireMap.tsx` (`data-silhouette`), `map/CityPill.tsx`, `index.css` |
+| 4 | Récolter en glissant d'un atelier prêt à l'autre ; « Tout récolter » à partir de la Casa 3, sans or (avant : « Touchez les ateliers prêts, ou glissez ») ; la main de Lorenzo pointe l'objet à toucher, son bouton d'or ne fait le geste que la première fois (mémoire sur l'appareil) | `map/Domain.tsx` (`sweep`), `empire/hand.tsx`, `Guide.tsx` ; reste : l'échafaudage 3D des chantiers (aujourd'hui un minuteur et un nom sur la tuile) |
 | 5 | Une trentaine de villes, le nouveau rythme | à faire, au simulateur |
 
 *À vérifier sur un vrai téléphone : le parcours e2e trace la tournée jusqu'à Padoue, mais à ce stade la bourse ne couvre pas la commande, donc la ville ne s'allume pas ; le chemin « ville allumée → dock → Partir » est couvert par les tests unitaires (`test/round.test.tsx`, `packages/engine/test/empire/round.test.ts`), pas encore par un parcours complet.*

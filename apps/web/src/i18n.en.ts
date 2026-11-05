@@ -296,6 +296,7 @@ export const en: Dictionary = {
       quay: "The quay",
       arms: "Arms",
       workshops: "Workshops",
+      sweep: "Touch the ready workshops, or sweep from one to the next.",
     },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {

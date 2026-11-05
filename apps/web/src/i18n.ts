@@ -218,6 +218,7 @@ const frDict = {
       quay: "Le quai",
       arms: "Armes",
       workshops: "Ateliers",
+      sweep: "Touchez les ateliers prêts, ou glissez de l'un à l'autre.",
     },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {

@@ -2,6 +2,7 @@ import { GoodsMark } from "../../art/goods.js";
 import { TILT } from "../../art/plateau/geom.js";
 import { whole } from "../../game/format.js";
 import { Icon } from "../../game/map/icons.js";
+import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { Slab, clock } from "../../ui.js";
 import { regionName } from "../World.js";
@@ -42,6 +43,47 @@ export function DomainLabels({
   const view = p.view;
   if (!view) return null;
   const at = (x: number, y: number) => ({ left: x * base, top: y * TILT * base });
+  // The harvest swept by finger (the gameplay audit, P4): the finger down on a ready workshop and
+  // passed over the others takes each one's lots as it reaches it; a touch alone takes one.
+  const sweep = (first: string) => (e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    const taken = new Set<string>();
+    const x0 = e.clientX;
+    const y0 = e.clientY;
+    let moved = false;
+    const take = (id: string) => {
+      if (taken.has(id)) return;
+      taken.add(id);
+      haptic("tap");
+      void act({ type: "empireRelaunch", workshopId: id });
+    };
+    const move = (ev: PointerEvent) => {
+      if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 10) return;
+      if (!moved) take(first);
+      moved = true;
+      const under = document
+        .elementFromPoint(ev.clientX, ev.clientY)
+        ?.closest<HTMLElement>("[data-workshop][data-ready]");
+      const id = under?.dataset.workshop;
+      if (id) take(id);
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      if (!moved) return;
+      // The click that ends a sweep takes nothing more (the first was taken as the finger left).
+      const swallow = (ev: Event) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+      };
+      window.addEventListener("click", swallow, { capture: true, once: true });
+      window.setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 0);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  };
   return (
     <div data-domain-layer>
       {tiles.map((tile) => {
@@ -81,7 +123,11 @@ export function DomainLabels({
                 type="button"
                 data-workshop={ws.id}
                 data-ready={s.state === "ready" ? "" : undefined}
+                data-idle={s.state === "idle" ? "" : undefined}
                 data-harvest-from={s.state === "ready" ? good : undefined}
+                // A ready one starts a sweep; the camera leaves the finger to it.
+                data-drag-handle={s.state === "ready" ? "" : undefined}
+                onPointerDown={s.state === "ready" ? sweep(ws.id) : undefined}
                 disabled={busy && s.state === "ready"}
                 aria-label={`${buildingName(p, ws.type)} · ${line}`}
                 onClick={() =>
@@ -89,7 +135,7 @@ export function DomainLabels({
                     ? void act({ type: "empireRelaunch", workshopId: ws.id })
                     : onWorkshop(ws.id)
                 }
-                className="pointer-events-auto flex min-h-11 min-w-11 translate-y-10 flex-col items-center justify-end active:scale-95"
+                className="pointer-events-auto flex min-h-11 min-w-11 translate-y-10 touch-none flex-col items-center justify-end active:scale-95"
               >
                 <span
                   className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums shadow-md shadow-black/50 ${
@@ -236,16 +282,24 @@ export function DomainBar({
         >
           {f.buildCasa(road.level)}
         </Slab>
-      ) : ready > 0 ? (
+      ) : ready > 0 && view.house.casa >= 3 ? (
+        // « Tout récolter » from the Casa 3, a convenience without gold (the gameplay audit, P4):
+        // before, the hands learn the workshops.
         <Slab
           size="md"
-          tone="gold"
+          tone="ghost"
           className="w-full"
           busy={busy}
           onClick={() => void act({ type: "empireRelaunchAll" })}
         >
           {t.harvest(ready)}
         </Slab>
+      ) : ready > 0 ? (
+        guided ? null : (
+          <p className="text-center text-sm font-semibold text-lagoon" data-domain-sweep>
+            {f.sweep}
+          </p>
+        )
       ) : guided ? null : (
         <p className="text-center text-sm text-cream-dim" data-domain-next>
           {lefts.length > 0 ? t.next(clock(Math.min(...lefts))) : t.nothing}

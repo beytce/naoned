@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Lorenzo } from "../art/scenes.js";
 import { DockDoor } from "../dock.js";
 import { PalettePicker } from "../game/Profil.js";
@@ -9,6 +9,7 @@ import { Icon } from "../game/map/icons.js";
 import { fr } from "../i18n.js";
 import { GoldLayer, LorenzoCard, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { Term } from "./Term.js";
+import { PointingHand, handTargets, learn, learnt } from "./hand.js";
 import { buildingName, workshopStatus } from "./logic.js";
 import type { NextStep } from "./next.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
@@ -87,6 +88,18 @@ export function NextStepCard({
   compact?: boolean;
 }) {
   const w = wordsOf(p, step);
+  // Lorenzo shows, he does not do (the gameplay audit, P4): his hand points at the object to
+  // touch; his gold button does the gesture only the first time, until the house has made it.
+  const [known, setKnown] = useState(learnt);
+  const was = useRef(step.kind);
+  useEffect(() => {
+    if (was.current !== step.kind && was.current !== "wait") {
+      learn(was.current);
+      setKnown(learnt());
+    }
+    was.current = step.kind;
+  }, [step.kind]);
+  const button = known.has(step.kind) ? undefined : w.button;
   const go = () => {
     if (step.kind === "build") onBuild(step.recipe);
     else if (step.kind !== "wait") void act(step.action);
@@ -103,12 +116,13 @@ export function NextStepCard({
             <p className="line-clamp-2 text-sm font-bold leading-snug text-cream">{w.what}</p>
             {step.kind === "wait" && <WaitArc p={p} now={now} />}
           </div>
-          {w.button && (
+          {button && (
             <Slab tone="gold" size="sm" busy={busy} shine onClick={go}>
-              {w.button}
+              {button}
             </Slab>
           )}
         </div>
+        <PointingHand selectors={handTargets(step)} />
       </GoldLayer>
     );
   return (

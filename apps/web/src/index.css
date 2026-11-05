@@ -1902,3 +1902,24 @@ body:has(dialog[open]) .city-pill-ready {
 [data-info] [data-silhouette] .map-name {
   opacity: 1;
 }
+
+/* Lorenzo's hand (the gameplay audit, P4): its fingertip on the object to touch, bobbing. */
+.pointing-hand {
+  transform: translate(-45%, 4px);
+  animation: pointing-hand 1.1s ease-in-out infinite;
+  filter: drop-shadow(0 4px 6px rgb(40 50 60 / 0.35));
+}
+@keyframes pointing-hand {
+  0%,
+  100% {
+    transform: translate(-45%, 4px);
+  }
+  50% {
+    transform: translate(-45%, 14px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pointing-hand {
+    animation: none;
+  }
+}
