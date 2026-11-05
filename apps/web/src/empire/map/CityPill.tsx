@@ -14,6 +14,8 @@ export function CityPill({ p, code }: { p: EmpirePayload; code: string }) {
   const at = p.view?.orders.find((x) => x.city === code);
   if (!at) return null;
   const n = at.orders.length;
+  // A town served with nothing to ask: no pill (the gameplay audit, P2a).
+  if (n === 0) return null;
   const plan = deliveryPlan(p, code);
   const ready = plan.vehicle !== null && plan.picks.length > 0;
   const covered = new Set(plan.orders.filter((x) => x.covered).map((x) => x.o.id));

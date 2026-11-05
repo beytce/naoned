@@ -1891,3 +1891,14 @@ body:has(dialog[open]) .city-pill-ready {
     animation: none;
   }
 }
+
+/* A town out of reach (the gameplay audit, P2a, 5 November 2026): a silhouette on the board, its
+   name and its pill away, back with the information layer (Alt held) or once a fondaco serves it. */
+[data-silhouette] .map-name,
+[data-silhouette] .city-pill {
+  opacity: 0;
+  pointer-events: none;
+}
+[data-info] [data-silhouette] .map-name {
+  opacity: 1;
+}

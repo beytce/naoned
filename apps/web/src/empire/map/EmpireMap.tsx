@@ -1417,10 +1417,14 @@ function CityMark({
   // larger (the refonte claire, lot 2).
   const ready = orders ? deliveryPlan(p, code).vehicle !== null : false;
   const rank = (ready ? 70 : orders && waiting > 0 ? 60 : 40) + Math.min(5, size);
+  // Out of reach (the gameplay audit, P2a): no fondaco serves it, no vehicle chosen would go there;
+  // a silhouette, its name and its pill away (Alt, the information layer, still says them).
+  const silhouette = !open && !lit && wanted === undefined;
   return (
     <div
       data-at={`${x},${y}`}
-      data-rank={rank}
+      data-rank={silhouette ? undefined : rank}
+      data-silhouette={silhouette ? "" : undefined}
       className={`map-place transition-opacity duration-[var(--t-base)] ${hidden ? "pointer-events-none opacity-0" : dim ? "opacity-50" : ""}`}
       data-wanted={wanted ?? undefined}
     >
