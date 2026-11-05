@@ -1,379 +1,375 @@
-# Plan : un jeu de gestion qui fait réfléchir (5 novembre 2026, version 2)
+# Plan : un jeu de gestion qui fait réfléchir (version 3, après l'équipe d'experts)
 
-*Demande du porteur, après avoir joué : « on produit trop, on a très souvent des stocks surchargés, on peut quasiment faire toutes les commandes en permanence sans aucune difficulté, la production est trop simple. » Il veut que le joueur optimise ses livraisons et ses trajets, que la production offre des optimisations qui ne sont pas évidentes (pas « +x % de cadence »), et que la Porta demande un vrai choix d'équipage et d'équipement selon la carte et les adversaires. Objectif : une communauté de joueurs de gestion qui se posent des questions et se donnent des conseils.*
+*Historique : la version 2, validée par le porteur le 5 novembre au soir, est dans `docs/plan-profondeur-2026-11-05-v2.md`, avec les décisions et les correctifs déjà faits. À la demande du porteur, elle a été passée à une équipe : une documentaliste (25 jeux de gestion étudiés), un game designer senior, un économiste de jeu, un panel de trois joueurs (une min-maxeuse Factorio/Anno, un joueur de Patrician/Offworld, une joueuse mobile Hades' Star/Mini Metro), et un duo tactique et lisibilité. Leurs rapports sont dans `docs/expertise-profondeur-2026-11-05/`. La version 3 en tient compte.*
 
-*« Visuel » veut dire ici : chaque mécanique a une **représentation graphique** (objets, piles, jauges, figurines, flux animés, cartes), pas seulement du texte et des chiffres. Les chiffres accompagnent l'image.*
+*Rien ne se code avant le « go » du porteur. Une autre session refait d'abord les visuels et les interactions : chaque lot s'y adaptera, et ses « Ce qu'on voit » se relisent au moment du go.*
 
-## 0. Les décisions du porteur
+## 0. Ce que l'équipe a changé, en une page
 
-**Première version (5 novembre, au soir) :**
-- le fondaco a une limite de stockage, et le joueur choisit ce qu'il jette pour faire de la place à d'autres matières ;
-- certaines matières s'extraient : il faut envoyer du personnel les chercher ;
-- la production doit être beaucoup plus complexe que la première version de ce plan ;
-- les livraisons (P3 de la version 1) : d'accord, à critiquer et à optimiser ;
-- la Porta : d'accord. Mais **pas de tracé au doigt** : on choisit un véhicule, on touche l'endroit où il va, et on voit pour chaque véhicule où il va arriver, à la manière des Sims ;
-- **le meilleur équipage vient des types d'adversaires**, pas des variantes de la semaine : contre des archers, tel type de combattant ; contre des soldats très protégés, tel autre. Le choix des armes et des accessoires doit être une vraie réflexion.
+1. **La vraie cause de « on produit trop » est arithmétique, et le plan v2 ne la touchait pas.**
+   - **Un défaut du moteur, que j'ai vérifié** : `relaunchWorkshop` prend les intrants **par fournée**, alors que `collectWorkshop` rend les produits **× Y(n)**. Au niveau 10, Y vaut 23,5 : une scierie fait 141 planches avec 10 bois. La transformation crée de la matière, et aucune chaîne ne contraint plus rien. Le simulateur, lui, multiplie les intrants, si bien qu'il **sous-estime** la surproduction.
+   - **Une offre qui grandit au carré** (ateliers × Y(n)) **face à une demande bornée** : 31 villes, un lot de valeur fixe, des villes qui commandent ce que la Maison fait déjà. Le ratio production / commandes vaut ~0,4 à la Casa 1, ~3,5 à la Casa 5, ~9 à la 10 et ~25 à la 20 (`expert-economie.md` § 1).
+   - **Conséquence** : un plafond de magasin, des vivres ou des outils **détruiraient le surplus sans rien faire réfléchir**. Il faut d'abord ramener l'offre et la demande à la même échelle.
+2. **Le plan v2 ajoutait sept contraintes, et presque aucun choix.** Les jeux qui durent (Against the Storm, Anno, Captain of Industry) livrent chaque frein **avec le choix qui le contourne**. La v3 associe à chaque contrainte un levier, et coupe les contraintes sans levier.
+3. **Il y avait des stratégies dominantes**, trouvées en une semaine par un min-maxer :
+   - le luxe léger écrase le lourd (paie par lot, mais encombrement par place) ;
+   - brader l'emporte toujours sur jeter, et acheter local puis brader fait une machine à ducats ;
+   - le camp et la soute servent d'entrepôts gratuits ;
+   - l'extraction se résout en répartissant les ouvriers jusqu'à rendement égal ;
+   - le plan du domaine se copie depuis un wiki ;
+   - à la Porta, la poudre ne perd contre rien, et la couleuvrine (portée 3) abat déjà les arbalétriers immobiles de Rome (portée 2).
+4. **L'absence était punie par cinq canaux à la fois** : magasin plein, périssables, table, vivres, outils. Les cinq experts disent la même chose : pour des sessions de quelques minutes, **l'absence plafonne le gain, elle ne détruit pas l'acquis**. La v3 garde le plafond, et fait du reste un choix (question 2 au porteur).
+5. **Ce qui fait parler une communauté** : du non-évident (le plan l'a), de l'**incertain** (rumeurs, légions tirées), de la **variété** (terroir propre à chaque Maison, plans tirés, goûts qui glissent) et du **partagé** (chantiers communs, plans et tournées partageables). La v3 ajoute les trois derniers.
 
-**Trois règles retirées** (CLAUDE.md, `docs/CADRAGE-v3.md` § 2) :
-- la règle d'or 3 : l'absence peut désormais coûter, et un stock plein peut perdre ;
-- la règle d'or 4 : ce que les perle peuvent acheter n'est plus borné par une règle d'or ;
-- le passage obligé au simulateur de 24 mois : il reste un outil de mesure.
+## 1. La grammaire visuelle : douze signes, partout les mêmes
 
-**Déjà fait :**
+*D'après `expert-porta-visuel.md` § B.3.* « Visuel » ne veut pas dire « beaucoup de dessins ». Cela veut dire **peu de signes, toujours les mêmes, lisibles d'un coup d'œil**, avec les chiffres à un toucher.
 
-| Retour | Correction | Où |
+| # | Signe | Ce qu'il dit, partout |
 | --- | --- | --- |
-| Enlever le bouton de la meilleure commande | Carte « le mieux maintenant » retirée | `map/BestNow.tsx` supprimé |
-| « Aucun véhicule à quai » alors qu'on en a | Les véhicules restaient au quai de la Porta après une bataille. Le dock de la ville dit désormais où ils sont, avec « Rappeler de la Porta » | `map/logic.ts` (`deliveryPlan`), `map/OrdersPanel.tsx` |
-| Impossible de remplir le transport de reliques | Seul le transport charge, et c'est le véhicule de combat qui était choisi. L'étape suivante est dite en or, et la carte du transport et les villes aux coffres battent | `porta/goal.tsx` (`relicStep`) |
-| Déplacement à la manière des Sims | Chaque véhicule montre en permanence son chemin et son point d'arrivée : vif pour le véhicule choisi, pâle pour les autres, en lapis pour le combat, en or pour le transport | `porta/BattleDiorama.tsx`, `porta/Battle.tsx` |
+| 1 | La marque (`GoodsMark`) | Quelle marchandise |
+| 2 | La caisse à taille (demi, 1, 2, 3 hauteurs) | Combien de place elle prend |
+| 3 | Le cerclage (aucun, argent, or, or éclatant) | Le rang : qualité d'une caisse, rareté d'une relique |
+| 4 | L'arc qui se vide | Le temps qui reste avant une perte (échéance, fraîcheur, fermeture) |
+| 5 | L'arc qui se remplit | Le travail en cours (production, chargement, chantier, recharge) |
+| 6 | L'anneau à crans | La place occupée (magasin, soute, camp, charge) |
+| 7 | La silhouette, pleine ou en creux | Des bras (ouvriers, postes, combattants) |
+| 8 | Le creux qui respire | Ce qui manque, sans alarme |
+| 9 | Le débordement (une caisse qui bascule, cinabre) | Bloqué |
+| 10 | Le fil (épaisseur = débit, pointillé = lent) | Un mouvement : flux, route, tournée |
+| 11 | L'épingle | Où un véhicule va arriver, et ce qui l'y attend |
+| 12 | L'écu et la pointe | Le contre : ce qui protège, ce qui frappe |
 
-## 1. Le diagnostic (rappel)
+**Trois principes.**
+- **On montre l'exception, pas l'état.** Un atelier qui tourne ne montre rien ; un atelier bloqué déborde.
+- **Trois distances d'information** : la carte, sans aucun chiffre ; le lieu, avec des signes ; le toucher, avec les chiffres.
+- **Des lentilles exclusives**, une à la fois : flux, place, bras, qualité.
 
-- **La demande suit l'offre** : les villes commandent surtout ce qu'on produit (`orders.madeWeight` = 3).
-- **Les stocks n'ont pas de plafond** : la file de nuit (12 h) remplit le magasin sans limite.
-- **La production n'a qu'un axe** : monter le niveau. Les modules en « + % » et le voisinage vont dans le même sens.
-- **La tournée n'a qu'un critère** : la soute. Le véhicule rentre à vide, et aucune route ne vaut mieux qu'une autre.
-- **La Porta se joue à l'aveugle** : on prend son meilleur véhicule, sans voir contre quoi on part, et sans contre à jouer.
+**Trois conflits de la v2, tranchés.**
+- La qualité se lit au **cerclage**, pas à un écu : l'écu reste à la Porta.
+- Le sablier devient un **arc qui se vide**.
+- La rareté des reliques passe au cerclage, et quitte le vert d'eau et le lapis, qui ont déjà un sens.
 
-## 2. La production, version 2 : une économie à organiser
+## 2. Le socle : remettre l'offre et la demande à la même échelle
 
-Le principe : **chaque marchandise a une histoire**. On l'extrait ou on la récolte quelque part. Il faut des bras et des outils, et elle encombre un magasin plein. Elle se gâte parfois. On la transforme avec d'autres, et elle laisse des restes. Le joueur n'optimise plus un chiffre : il organise un système où **tout se tient**, et où chaque goulot en déplace un autre.
+### 2.1 Corriger les intrants (lot 0, un correctif)
 
-### 2.1 Le magasin du fondaco : la place est la vraie monnaie (décidé)
+- Dans `relaunchWorkshop`, les intrants seront pris × Y(n), comme les produits ; `highRecipeRaw` sera compté en unités.
+- Le simulateur sera aligné sur le moteur.
+- Cela change une règle du commerce : l'annonce se fait dans les notes du chapitre.
+- Ce correctif seul fait déjà remonter la tension : une chaîne redevient un goulot.
 
-**La règle.**
-- Chaque fondaco a une **capacité en places**, qui monte avec son niveau et avec des **entrepôts** bâtis à côté, sur des cases du domaine qu'on ne donne pas alors à un atelier.
-- Chaque marchandise prend une place différente par lot : le marbre et le fer sont **encombrants** (3 places), le bois prend 2 places, la soie, les épices et le verre une demi-place.
-- Plein, le fondaco refuse ce qui arrive. Les ateliers qui y versent **s'arrêtent**, et un camp d'extraction garde son tas sur place.
-- **Jeter** libère de la place tout de suite. On peut aussi **brader** à la Dogana, pour un faible prix mais pas rien, ou **transférer** vers un autre fondaco, ce qui demande un véhicule.
-- **Les denrées périssables** se gâtent avec le temps : poisson, fruits, lait, viande. Elles perdent leur valeur, puis se perdent. La **salaison** (poisson + sel → poisson salé) les garde, mais consomme du sel et une place d'atelier.
+### 2.2 La caisse et les postes (décision à prendre maintenant, code au lot 5)
 
-**Ce qu'on voit.**
-- Sur le plateau, **le quai du fondaco** porte des piles de caisses, une par marchandise, à la couleur de sa marque. Une caisse encombrante est grosse, une caisse fine est petite.
-- **Un arc autour du fondaco** se remplit avec le magasin, et vire au rouge brique quand il est presque plein.
-- Toucher le fondaco ouvre **l'étagère** : les caisses rangées sur des rayonnages.
-  - Celles qu'une commande ouverte réclame sont cerclées d'or.
-  - Une denrée périssable a une **auréole de fraîcheur** qui passe du vert au brun.
-  - Pour jeter, on **glisse une pile vers la lagune** : les caisses tombent à l'eau avec un plouf. Pour brader, on la glisse vers la Dogana.
-- Un atelier arrêté parce que le magasin est plein montre **une caisse qui déborde** sur sa tuile.
+*D'après `expert-economie.md` § 2.0, soutenu par le designer.*
 
-**La question du joueur.** « Je garde le marbre pour la grande commande de Vérone, ou je le jette pour faire de la place au poisson avant qu'il ne pourrisse ? »
+**La caisse** devient l'unité du magasin, de la soute et des commandes : environ 100 ducats pour un brut, 300 pour un fini, 500 pour un luxe. Une commande d'aujourd'hui vaut environ 4 caisses. Les nombres deviennent petits et lisibles : on voit les caisses une à une.
 
-### 2.2 L'extraction : envoyer des équipes aux gisements (décidé dans son principe)
+**Le niveau d'un atelier ouvre des postes**, et ce sont **les bras qui produisent**. Le multiplicateur gratuit Y(n) disparaît.
+- La production croît d'environ ×30 sur la partie, au lieu de ×700.
+- La progression vient de la **valeur par caisse** : produit fini, qualité, contrats.
 
-**La règle.**
-- Les matières premières lourdes ne poussent pas au domaine : marbre, pierre, fer, sel, bois de futaie, sable de verrier. Elles viennent de **gisements** placés sur la carte : carrières du Véronais, mines du Frioul, salines de Chioggia, forêts du Cadore, dunes du Lido.
-- Un gisement a deux traits :
-  - une **richesse** (le filon), qui baisse à mesure qu'on l'exploite et remonte lentement ;
-  - une **qualité** (marbre commun ou marbre blanc), qui passe au produit fini (§ 2.5).
-- Il faut d'abord le **prospecter** : un éclaireur révèle les gisements d'un secteur de la carte.
-- Pour l'exploiter, on **envoie une équipe** :
-  - des **ouvriers**, pris au domaine (§ 2.3) ;
-  - des **outils** (pioches, scies, pelles, fabriqués par la forge, § 2.7), qui s'usent ;
-  - des **vivres** (pain, poisson salé, vin), mangés chaque jour sur place. Faute de vivres, l'équipe ralentit puis rentre.
-- Le rendement dépend du nombre d'ouvriers, avec **des retours décroissants** : dix ouvriers ne font pas deux fois cinq. Il dépend aussi de la qualité des outils et de la richesse du filon.
-- Le produit s'entasse **au camp**. Il faut **aller le chercher en véhicule**, et un tas trop gros arrête le camp. L'extraction se branche donc sur les tournées (§ 3.2).
+Sans cette compression, chaque puits (une place par caisse, une ration par ouvrier) est écrasé par les volumes, et chaque lot serait calibré deux fois.
 
-**Ce qu'on voit.**
-- Les gisements sur la carte 3D : une carrière blanche taillée dans la colline, un puits de mine avec son treuil, des carrés de saline qui brillent.
-- **La richesse se voit dans le décor** : le filon creusé, la colline entamée.
-- **Le camp** : des **figurines d'ouvriers** qui piochent, en nombre réel ; un tas de blocs qui monte ; une cantine dont le **garde-manger se vide** (miches et tonneaux dessinés) ; des outils accrochés, qui ternissent en s'usant.
-- Envoyer une équipe : **on glisse des figurines d'ouvriers** du domaine vers le gisement, et un petit convoi part sur la route.
+### 2.3 La demande à la mesure de la Maison, plus grande que ce qu'on peut servir (lot 1)
 
-**La question du joueur.** « Mes 8 ouvriers, je les mets à la carrière lointaine au filon riche, ou à la proche à moitié épuisée ? Combien de pain je leur laisse ? Et quel véhicule va chercher les blocs, sur quelle tournée ? »
+**Le lot** : la taille d'une commande suit la Casa de la Maison (table `orders.lotByCasa`), comme les cargaisons de Hades' Star qui grossissent avec la planète.
 
-### 2.3 Les bras : ouvriers, artisans, logement et table
+**L'offre** est réglée sur environ **deux fois ce qu'une Maison médiane de son palier peut servir**. Le taux de service visé :
 
-**La règle.**
-- Le domaine a une **population** : des ouvriers, logés dans des **maisons** qui prennent des cases.
-- Chaque atelier a des **postes** :
-  - un atelier sans assez d'ouvriers tourne au ralenti ;
-  - un atelier sans travail libère ses bras ;
-  - les mêmes bras servent aux ateliers **et** aux expéditions (§ 2.2) : c'est l'arbitrage central.
-- **Les artisans** (verriers, tisserands, orfèvres) sont des ouvriers formés : à l'école de leur guilde, avec du temps et des ducats. Les recettes fines (§ 2.4) n'avancent qu'avec eux. Les **maîtres** d'aujourd'hui deviennent les meilleurs de ces artisans : ce système absorbe le personnel actuel.
-- **La table** : la population mange chaque jour. Pain, puis poisson ou viande, puis vin.
-  - Une table pauvre ralentit tout le domaine.
-  - Une table variée accélère, et attire de nouveaux ouvriers jusqu'à la place des maisons.
-  - Nourrir les siens consomme une part de sa production : ce n'est plus tout pour la vente.
-
-**Ce qu'on voit.**
-- De **petits personnages** vont des maisons aux ateliers, le matin.
-- Un atelier montre **ses postes en silhouettes** : pleines s'ils sont occupés, vides sinon.
-- Au-dessus des maisons, **une assiette et une cruche** se vident et se remplissent.
-- Un ouvrier qu'on glisse d'un atelier à l'autre y marche.
-
-**La question du joueur.** « Je forme deux verriers de plus, ou je garde ces bras pour la mine ? Je produis du vin pour mes gens, ou pour Vérone qui le paie bien ? »
-
-### 2.4 Des chaînes longues, avec des restes
-
-**La règle.**
-- Les produits finis demandent **deux à quatre intrants**, et des étapes intermédiaires. Par exemple, le drap :
-  - laine → filage (fil) ;
-  - fil + teinture (guède, alun) → tissage ;
-  - foulage au moulin à eau (§ 2.6) → drap.
-- Beaucoup de recettes laissent **des sous-produits**, qui prennent de la place :
-  - l'abattoir donne la viande, **les peaux** et **le suif** ;
-  - la scierie donne des planches et **de la sciure** ;
-  - le verrier donne du verre et **du calcin**.
-
-  Ces restes se valorisent : peaux → tannerie, suif → chandelier, calcin → refondu, sciure → fours. Sinon, il faut les jeter (§ 2.1).
-- Chaque atelier a **deux ou trois recettes** sur les mêmes intrants : une simple et rapide, une fine qui demande un artisan et paie bien plus.
-
-**Ce qu'on voit.**
-- Sur le domaine, des **charrettes animées** vont d'atelier en atelier. Un trait épais est un flux fort, un trait pointillé un flux faible.
-- Un atelier qui attend un intrant a **une caisse vide qui clignote** à sa porte.
-- Les sous-produits s'entassent **dans la cour** de l'atelier.
-- **La vue des flux** : un toucher sur le médaillon d'une marchandise trace sur le domaine son chemin, de la matière au produit fini, et chaque goulot rougit.
-
-**La question du joueur.** « Ma laine part au drap fin pour Venise, mais la teinture me manque : j'achète l'alun au marché, ou je monte une teinturerie qui me mangera une case de rivière ? »
-
-### 2.5 La qualité qui se propage
-
-**La règle.**
-- La qualité d'un produit fini vient de **ses intrants** (le meilleur filon, le meilleur sable) **et** de qui le fait (un artisan, un maître). Elle a trois niveaux : commun, fin, exquis.
-- Des **intrants de substitution** existent : la soude d'Alexandrie (marché, chère, verre exquis possible) ou les cendres de salicorne locales (gratuites, verre commun au mieux).
-- Certaines commandes **exigent** du fin ou de l'exquis : une caisse cerclée d'or, payée deux à trois fois plus.
-
-**Ce qu'on voit.** La qualité est **une couleur de cerclage sur la caisse** (aucun, argent, or), partout : au magasin, en soute, dans les commandes. Un atelier montre la qualité qu'il sort par un petit écu sur sa porte.
-
-**La question du joueur.** « Ce marbre blanc du filon riche, je le garde pour les statues exquises de Venise, ou je le vends en blocs à Padoue ? »
-
-### 2.6 Le plan du domaine : terroir, voisins, nuisances
-
-**La règle.**
-- **Le terroir** : rivière, forêt, argile, colline, littoral. Un atelier sur son terroir produit mieux. Le moulin à foulon et la scie hydraulique **exigent** la rivière.
-- **Le voisinage**, qui existe déjà, devient spatial : deux ateliers liés côte à côte s'échangent leurs intrants sans charrette, donc plus vite.
-- **Les nuisances** :
-  - une tannerie ou une teinturerie **salit la rivière en aval**, et les moulins et pêcheries en dessous en souffrent ;
-  - la fumée des fours gêne les maisons voisines, dont la table compte moins.
-
-  La rivière a un sens : **l'ordre des ateliers le long de l'eau** est une énigme à lui seul.
-- Les bonnes cases sont rares. Déplacer un atelier coûte un chantier.
-
-**Ce qu'on voit.**
-- Le terroir dessiné sur les tuiles : l'eau qui coule et son sens, les arbres, la terre rouge.
-- La rivière qui **se teinte** en aval d'une tannerie.
-- Les panaches de fumée qui dérivent sur les maisons.
-- En plaçant un atelier, **un aperçu sur les cases** : vert là où il gagne, rouge là où il nuit à un voisin.
-
-**La question du joueur.** « Ma teinturerie va en amont, près de la laine, ou en aval, pour ne pas gâter le moulin ? »
-
-### 2.7 L'usure : les outils et la forge
-
-**La règle.**
-- Les ateliers et les équipes **usent des outils**, fabriqués à la forge à partir du fer et du charbon.
-- Un atelier sans outils ralentit.
-- De meilleurs outils (acier, artisan forgeron) durent plus longtemps et vont plus vite.
-
-C'est une boucle interne : la mine nourrit la forge, qui nourrit la mine. Les **modules** d'atelier d'aujourd'hui deviennent ces outils et équipements, qu'on fabrique au lieu de les rechercher.
-
-**Ce qu'on voit.** Un **râtelier** sur chaque atelier, avec ses outils dessinés, qui ternissent puis se brisent.
-
-### 2.8 La critique : est-ce trop ?
-
-- **Le risque** : une liste de sept mécaniques peut tourner au tableur, et contredit « une douzaine de systèmes visibles ».
-- **La parade** : elles en **absorbent** d'autres, au lieu de s'y ajouter.
-
-  | Ce qui arrive | Ce qu'il absorbe |
-  | --- | --- |
-  | Le magasin | La file de nuit |
-  | Les bras | Le personnel et les maîtres |
-  | Les outils | Les modules d'atelier et leur recherche |
-  | Le plan du domaine | Le voisinage sur l'orbite |
-  | Les goûts des villes (§ 3) | `madeWeight` |
-
-  Le joueur ne voit que **cinq choses** : ses cases, ses gens, ses caisses, ses gisements et ses villes.
-- **L'entrée en douceur** : chaque mécanique s'ouvre par palier de Casa. La Casa 1 n'a qu'argile, briques et un magasin ; l'extraction s'ouvre vers la Casa 3, la table vers la Casa 4, les nuisances et la qualité plus tard. Le joueur apprend une contrainte à la fois.
-
-## 3. Les livraisons, version 2 : critiquées et resserrées
-
-### 3.1 La critique de la version 1
-
-| Idée de la version 1 | Verdict | Pourquoi |
-| --- | --- | --- |
-| Les goûts des villes | **Gardée, renforcée** | C'est elle qui casse « la demande suit l'offre ». |
-| La ville rassasiée (prix qui baisse si on la sert souvent) | **Retirée** | Elle punit sans faire réfléchir : la réponse est toujours « tourner d'une ville à l'autre ». Les échéances et les contrats (§ 3.2) donnent un meilleur rythme. |
-| Le fret de retour | **Gardé, généralisé** | C'est le cœur de l'optimisation. Il devient « la tournée qui charge et décharge ». |
-| Les péages | **Retirés** | C'est un chiffre de plus, pas un choix visible. Le terrain et les véhicules spécialisés font mieux le même travail. |
-| Le terrain des routes | **Gardé** | Il donne un sens au choix du véhicule. |
-
-**Ce qui manquait vraiment** : aujourd'hui, on peut servir **toutes** les commandes. Tant que l'offre dépasse la demande, aucune règle de tournée ne fera réfléchir. Le principe de la version 2 : **il y a toujours plus de commandes que de quoi les servir.** Le joueur choisit lesquelles prendre.
-
-### 3.2 Les règles
-
-1. **Les goûts des villes.**
-   - Chaque ville a deux ou trois marchandises de prédilection, dessinées sur son enseigne. Elle tire ses commandes parmi elles, **qu'on les produise ou non**.
-   - Les grandes villes veulent du fini et du fin, les bourgs du brut.
-   - On choisit **quelles villes servir**, et on bâtit pour elles.
-2. **L'échéance.**
-   - Une commande a un **sablier** sur sa caisse. Livrée à temps, elle paie plein ; en retard, moins. Le sablier vidé, elle part.
-   - Les villes proposent plus de commandes qu'on n'en peut servir, et les meilleures sont souvent les plus pressées.
-3. **Les contrats de ville.**
-   - De temps en temps, une ville ouvre un **grand chantier** : l'Arena de Vérone veut 40 marbre, 20 bois et 10 fer en trois jours.
-   - On le livre en plusieurs tournées, par plusieurs véhicules.
-   - La récompense dépasse celle des commandes : un gros paiement, un titre, un plan.
-4. **La tournée qui charge et décharge.**
-   - Une tournée est une suite d'arrêts, et chaque arrêt **décharge** ou **charge** :
-     - une ville : on livre ses commandes, et on peut acheter sa **matière locale** à bon prix ;
-     - un camp d'extraction (§ 2.2) : on prend le tas ;
-     - un autre fondaco : on transfère.
-   - La soute ne se vide plus en ville pour rentrer à vide : elle se remplit au retour.
-5. **L'encombrement en soute.** Les marchandises prennent leurs places, comme au magasin : un chariot de marbre est vite plein, un chariot de soie presque jamais.
-6. **Les véhicules du terrain.**
-   - Les routes ont leur terrain : la lagune et les fleuves, la plaine, les cols.
-   - Le burchio est rapide sur l'eau, mais n'en sort pas.
-   - La mule passe les cols, mais porte peu.
-   - La charrette est reine en plaine, et lente en montagne.
-
-### 3.3 Ce qu'on voit
-
-- **Les commandes sur la ville** : des caisses sur son quai, avec leur marque, leur cerclage de qualité et leur **sablier**. Le contrat est un **chantier 3D** sur la ville (l'Arena en échafaudages), qui **monte à chaque livraison**.
-- **La tournée** : on choisit le véhicule, puis on touche les arrêts. Sous la carte, une **frise de la tournée** : une case par arrêt, et sous chacune **la soute en grille**, qui se vide et se remplit d'arrêt en arrêt. On voit d'un coup d'œil où la soute est pleine, où elle roule à vide, et le temps de chaque tronçon.
-- **Le terrain** sur les routes : l'eau bleue, les cols en lacets. Un tronçon lent pour le véhicule choisi est dessiné en pointillé.
-- **Le retour chargé** : les caisses montent dans la charrette à l'arrêt, et le véhicule rentre visiblement plein.
-
-### 3.4 La question du joueur
-
-« Mon chariot part livrer le drap fin de Venise, pressé. Je passe par la carrière en revenant ? Il n'aura de place que pour 4 blocs. Ou je l'envoie demain avec la mule par le col, plus lente, mais libre ? »
-
-## 4. La Porta, version 2 : l'équipage contre l'adversaire
-
-### 4.1 Déplacer comme dans les Sims (fait)
-
-- On choisit un véhicule, puis on touche où il va.
-- Chaque véhicule garde son chemin et son **point d'arrivée** en vue, à sa couleur, même quand on en choisit un autre.
-- Pas de tracé au doigt.
-
-### 4.2 La reconnaissance avant d'entrer
-
-- Le dock de la Porta montre la **carte de la bataille avant le départ** : les villes et leurs coffres, chaque garnison **en figurines**, les patrouilles en pointillés, le terrain (§ 4.5).
-- C'est sur cette carte qu'on compose son équipage. Le palier choisi en change la carte.
-
-### 4.3 Les contres : des dégâts et des protections
-
-**La règle.**
-
-Chaque arme a **un type de dégâts** :
-
-| Type | Armes |
+| Paliers | Taux de service visé |
 | --- | --- |
-| Perçant | Arbalètes, arcs |
-| Tranchant | Épées, hallebardes |
-| Choc | Lances de cavalerie, masses |
-| Poudre | Couleuvrine, bombarde |
-| Feu | Feu grégeois |
+| Casa 1 à 3 | 75 à 90 % |
+| Casa 4 à 9 | 50 à 70 % |
+| Casa 10 et plus | 45 à 65 % |
 
-Chaque adversaire porte **une protection** :
+En dessous de 40 %, c'est de la frustration. Au-dessus de 80 % au milieu de partie, la surproduction est revenue.
 
-| Protection | Effet |
+**Les goûts des villes.**
+- Chaque ville a deux ou trois marchandises de prédilection, dessinées sur son enseigne, **qu'on les produise ou non**.
+- Un **filet** de 25 % des commandes vient de ce que la Maison fait déjà (70 % aux Casa 1 et 2).
+- Les goûts **glissent un peu à chaque chapitre** (un goût sur trois change, annoncé à l'avance), sinon la carte se résout en une semaine.
+
+**Les commandes qu'on accepte.**
+- Une commande en attente **ne coûte rien** si on l'ignore : elle part un jour, et c'est tout.
+- On l'**accepte** d'un toucher : elle passe dans un **carnet de places limité** (3 au départ, plus avec la Casa), et c'est alors que son arc se met à tourner.
+- Livrée dans les temps, elle paie plein, avec une **prime de fraîcheur**. En retard, elle paie moins.
+- Seul ce qu'on a choisi craint le retard.
+
+**La paie.**
+- Elle se calcule **par place** et non par lot, pour que le marbre lourd vaille sa place à côté de la soie.
+- Elle tient compte de la **distance** (la prime existe déjà, renforcée) et de la **fraîcheur** (OpenTTD, Railroad Tycoon).
+
+**La mercuriale lente.** Un indice régional quotidien baisse un peu quand tout le serveur livre la même chose (de −20 % à +25 %, la part de chaque Maison plafonnée). C'est l'effet Offworld, sans l'avantage de jouer en continu. Ce que tout le monde fait vaut un peu moins ; une niche vaut un peu plus.
+
+*Ce qu'on voit* :
+- sur la ville, ses caisses de commande (signes 1 à 3) et son enseigne de goûts ;
+- dans le carnet, les commandes acceptées et leur arc qui se vide (signe 4) ;
+- au toucher, une flèche de mercuriale à côté de la marque.
+
+*La question du joueur* : « Quelles 3 commandes je prends parmi les 9 de la région, sachant que mon chariot peut en faire 2 avant ce soir ? »
+
+## 3. Les tournées (lot 2)
+
+### 3.1 La tournée qui charge et décharge (gardée de la v2, verrouillée)
+
+Une tournée est une suite d'arrêts. Chaque arrêt décharge des commandes et peut **charger** :
+- la **matière locale** d'une ville ;
+- le **tas d'un camp** (§ 4.4) ;
+- un **transfert** vers un autre fondaco.
+
+**Les fuites fermées.**
+- **Le prix de brade** est toujours inférieur au prix d'achat local : acheter pour brader ne rapporte rien.
+- **La matière locale** n'est vendue qu'en quantité limitée par jour et par ville.
+- **Une soute à quai** compte dans la place du fondaco : ce n'est pas un entrepôt gratuit.
+
+**L'encombrement en trois classes** (demi, 1, 3 places) vaut dans la soute comme au magasin. La mule peut porter au moins une commande de chaque classe, et une commande lourde se livre en plusieurs fois.
+
+### 3.2 Les lignes enregistrées (nouveau : le panel, Mini Metro, Patrician)
+
+Une tournée qui marche s'**enregistre** comme une **ligne** : un fil de couleur sur la carte, et un véhicule qui la parcourt seul.
+- Elle ne prend que les commandes déjà acceptées et le fret prévu.
+- Elle **prélève une part** de la paie, le salaire du capitaine (environ 15 %).
+- On peut la partager en code court : « ma ligne Venise–Padoue–Trévise ».
+
+Pour le joueur mobile, c'est l'automatisation qui montre son résultat. Pour la min-maxeuse, la tournée à la main paie mieux.
+
+### 3.3 Le terrain et les véhicules (gardés de la v2)
+
+Eau, plaine et cols ; burchio, charrette et mule. Les péages restent retirés.
+
+### 3.4 Ce qu'on voit
+
+- **La frise de la tournée** : une case par arrêt, et sous chacune la **soute en grille** (signes 2 et 6). Elle se vide et se remplit d'arrêt en arrêt ; un trou dit qu'on roule à vide.
+- **Le fil** de la tournée sur la carte, plein ou pointillé selon le terrain.
+- **L'épingle** d'arrivée de chaque véhicule.
+
+*La question du joueur* : « Je fais le détour par la carrière ? Il ne me reste que 2 places au retour, et le marbre en prend 3. »
+
+## 4. La production : des choix, pas des freins
+
+### 4.1 Le magasin et le quai de l'atelier (lot 3)
+
+**La vraie absorption, demandée par le designer.** La **file de nuit disparaît** : un atelier verse sur **son quai** jusqu'à son plafond, puis s'arrête. Le fondaco a un magasin plafonné, en places, comme dans la v2.
+
+**Jeter, brader, transférer.**
+- On jette en glissant une pile vers la lagune.
+- On brade à un prix toujours sous la valeur des intrants, et hors du marché partagé.
+- On transfère avec la tournée (§ 3.1).
+
+**Les stocks d'aujourd'hui, au-delà du futur plafond**, fondent sans que rien n'y entre. L'économiste propose aussi de les convertir en ducats sur quatre semaines (question 5 au porteur).
+
+*Ce qu'on voit* :
+- l'anneau à crans autour du fondaco (signe 6) ;
+- les piles de caisses à taille sur le quai (signe 2) ;
+- l'atelier plein qui déborde (signe 9).
+
+### 4.2 Les recettes à intrants au choix, notées en étoiles (lot 4 ; Against the Storm)
+
+*C'est la meilleure réponse à « la production est trop simple », selon la documentaliste et le panel.*
+
+Une recette accepte des **intrants au choix**. Par exemple, du verre avec du sable et de la soude d'Alexandrie, **ou** du sable et des cendres de salicorne.
+
+Chaque atelier fait une recette avec **1, 2 ou 3 étoiles** :
+- l'étoile dit son efficacité : intrants par caisse et vitesse ;
+- deux ateliers peuvent faire la même chose, l'un bien, l'autre mal.
+
+On ne cherche plus « +x % ». On cherche **quel atelier fait quoi, avec quoi** :
+- le four à 3 étoiles pour le verre fin mange la soude, rare ;
+- le four à 1 étoile fait du verre commun avec les cendres de la lagune.
+
+*Ce qu'on voit* :
+- les étoiles sur la porte de l'atelier ;
+- au toucher d'une recette, ses intrants possibles en marques, l'actuel en plein et les autres en creux (signe 8) ;
+- la lentille des flux, avec les fils (signe 10) et le goulot qui rougit.
+
+### 4.3 Des chaînes courtes, un reste par chaîne, et la qualité (lot 4)
+
+**Des chaînes de deux ou trois étages**, aux ratios simples en entiers (1 → 2, 2 + 1 → 1), pour que les guides restent lisibles.
+
+**Un sous-produit par chaîne**, qui doit aller quelque part : l'abattoir donne des peaux, la scierie de la sciure, le verrier du calcin. Pour qu'aucune boucle ne soit gratuite, le **calcin refondu rend moins** qu'il n'a coûté.
+
+**La qualité vient des intrants, des étoiles et des maîtres**, et se voit au cerclage. Les commandes exquises sont **rares et incertaines** (une ou deux par jour dans la région, annoncées par la rumeur, § 6.2) : c'est un pari, pas un seuil de rentabilité.
+
+### 4.4 L'extraction, simplifiée (lot 5)
+
+**Les gisements sont tirés pour chaque Maison** : deux Maisons n'ont pas la même carte de filons. Ils se révèlent par la prospection, et le **carottage** se paie pour connaître la richesse avant de s'engager (la valeur de l'information).
+
+**Un camp a trois tailles** (petit, moyen, grand), et non un nombre libre d'ouvriers. Le choix porte sur le **lieu** et la **taille**, pas sur une répartition jusqu'au rendement égal.
+- Le petit camp coûte peu de bras et rend peu.
+- Le grand demande un fondaco proche, ou des tournées fréquentes.
+
+**Le tas** s'accumule jusqu'au plafond du camp, petit (ce n'est pas un entrepôt), puis le camp s'arrête : **rien ne se perd**. Il faut aller le chercher en tournée (§ 3.1).
+
+**Les vivres**, si le porteur maintient la table (question 2), ne se mangent **que pendant le travail**. Faute de vivres, le camp s'arrête ; il ne rentre pas, et ne perd rien.
+
+*Ce qu'on voit* :
+- le gisement entamé dans le décor ;
+- les silhouettes d'ouvriers au travail (signe 7) ;
+- le tas en caisses à taille (signe 2) ;
+- l'anneau du camp (signe 6), qui déborde quand il est plein (signe 9).
+
+### 4.5 Les bras (lot 5)
+
+**Le niveau ouvre des postes** (§ 2.2). Les **mêmes bras** servent aux ateliers et aux camps : c'est la rareté à double usage, celle d'Anno, de Banished et de FTL.
+
+**Les artisans** sont des ouvriers formés ; les maîtres d'aujourd'hui en deviennent les meilleurs. **Monter un atelier sans ses artisans le laisse à vide**, comme dans Anno : on ne monte pas tout à la fois.
+
+**La table**, selon ce que choisira le porteur (question 2) :
+- **le banquet** (ce que recommandent le designer et le panel) : on organise un banquet en donnant du vin et du poisson, et le domaine produit mieux pendant quelques heures. C'est un bonus qu'on choisit, pas un malus qu'on subit ;
+- **ou la table de la v2**, avec deux planchers : elle ne se mange que pendant la production, et la faim ralentit sans rien détruire.
+
+### 4.6 Le domaine : un terroir propre à chaque Maison (lot 6)
+
+**Le terroir est tiré pour chaque Maison** : rivière, forêt, argile, colline. Deux domaines ne se ressemblent pas, et un plan du wiki ne se copie plus tel quel.
+
+**Le voisinage devient spatial.** En plaçant un atelier, un **aperçu en cercles** (Islanders) montre où il gagne, en vert, et où il nuit, en rouge.
+
+**Les nuisances** (la rivière salie en aval) viennent en deuxième temps, avec l'aperçu, et seulement si le lot 6 manque de tension.
+
+**Les plans tirés parmi trois** (Against the Storm) : à chaque palier, on choisit un nouvel atelier ou une recette **parmi trois tirés**, au lieu d'un catalogue. Deux joueurs n'ont pas la même Maison, et ils se **conseillent** au lieu de copier.
+
+**Les pierres angulaires de la Maison**, choisies vers la Casa 7 parmi trois :
+- « Les verriers de Murano » : verre +1 étoile, sable ×2 ;
+- « Le Fondaco des Allemands » : fer et laine moins chers, drap moins payé ;
+- etc.
+
+C'est la vocation de la Maison, qui ferme des portes.
+
+### 4.7 Coupé ou reporté (`IDEAS.md`)
+
+| Mécanique | Pourquoi elle sort |
 | --- | --- |
-| Aucune | — |
-| Maille | Résiste au tranchant |
-| Plates | Résistent au perçant et au tranchant ; faibles à la poudre et au choc |
-| Grand pavois | Bloque le perçant **de face** ; se contourne par le flanc |
-| Cheval | Rapide ; faible au perçant et aux piques |
+| Les outils qui s'usent et la forge d'entretien | « +x % » et entretien. Remplacés par les étoiles (§ 4.2) |
+| Les périssables pendant l'absence | Gardés seulement en soute : la fraîcheur paie à la livraison (§ 2.3) |
+| La population qui grandit avec la table | Les postes suffisent |
+| Les nuisances | Reportées en deuxième temps du lot 6 (§ 4.6) |
 
-La table est fixe, simple, et toujours visible en icônes. Les unités de Rome deviennent des **rôles lisibles** :
+## 5. La Porta : des contres sans build dominant (lots 7 et 8)
 
-| Unité de Rome | Ce qu'elle fait | Ce qui la bat |
+### 5.1 La table des contres, refaite en cycle (lot 7)
+
+*D'après `expert-design.md` § 5.2 et `expert-porta-visuel.md` P1.*
+
+**Quatre dégâts** : perçant, taille, choc, poudre. **Quatre protections** : aucune, maille, plates, pavois. Chaque dégât a **une protection où il excelle, et une qui le contre**.
+
+| Dégâts → / Protection ↓ | Perçant | Taille | Choc | Poudre |
+| --- | --- | --- | --- | --- |
+| Aucune (troupe légère) | **+50 %** | = | = | −25 % |
+| Maille | = | **−50 %** | **+50 %** | = |
+| Plates | **−50 %** | **+50 %** | = | = |
+| Pavois | **−75 % de face** | = | = | **+50 %** |
+| *Cheval (un trait)* | +25 % | = | −25 % | = |
+
+**Le feu** devient un effet (brûler une ville, une zone), pas un cinquième type de dégâts.
+
+**La poudre** a ses limites :
+- une **portée minimale** ;
+- une **mise en batterie** de quelques secondes avant de tirer ;
+- un boulet qui met du temps à arriver.
+
+La couleuvrine ne bat donc plus les arbalétriers gratuitement : il faut la protéger pendant qu'elle s'installe.
+
+**Les unités de Rome portent chacune une protection** : les arbalétriers rien, les pavesiers le pavois, les chevau-légers la maille et le cheval, les hommes d'armes les plates, les bombardes rien.
+
+**Le Gonfalonier change de protection en cours de combat** : plates, puis maille à mi-vie. Contre lui, il faut deux types de dégâts : c'est **la** pièce qui oblige à un équipage mixte.
+
+**Le pavois a une orientation** : un **cône dessiné au sol**. De flanc, il ne protège pas.
+
+**Le protecteur existe enfin.** Le piquier a une **zone de contrôle** (le hérisson) : Rome qui y entre le vise d'abord. Le **réexamen** de Rome se voit, comme dans Into the Breach : une petite horloge sur l'unité dit quand elle peut changer de cible.
+
+### 5.2 Rome annonce ce qu'elle va faire (lot 7 ; Slay the Spire, Into the Breach)
+
+Au-dessus de chaque unité de Rome, une **intention** : la cible visée (un fil vers elle), une salve qui charge, une bombarde qui pointe une zone dessinée au sol.
+
+Le temps réel prend alors son sens : on déplace le transport **hors du cercle annoncé**, on lève le pavois **avant** la salve.
+
+### 5.3 La reconnaissance qui explique sans conclure (lot 7)
+
+**Trois portes au choix par jour**, chacune avec sa carte : garnisons en figurines avec leur écu (signe 12), coffres cerclés (signe 3), patrouilles en fil (signe 10).
+
+**Pas de verdict vert, ambre ou rouge**, qui ferait le choix à la place du joueur (le designer et le duo tactique sont d'accord). À la place, **trois pastilles qui expliquent** : par exemple « 2 pavesiers : votre perçant rebondit de face », avec une coche, un trait ou une croix en forme, jamais par la couleur seule.
+
+**Rééquiper au quai de la Porta** : aujourd'hui, il faut retourner à la Remise, ce qui rend la reconnaissance inutile. Le build se verrouille ensuite à l'entrée dans la file.
+
+### 5.4 L'équipage : deux combattants, un transport, une seule contrainte (lot 8)
+
+**Les combattants** : cavaliers, piquiers, artilleurs, arbalétriers, chacun avec un **profil net**. Les trois véhicules de combat d'aujourd'hui sont convertis.
+
+**Deux combattants et un transport au plus par joueur** : au-delà, le micro sur téléphone devient illisible. Le second peut **escorter** d'un toucher. On ne pilote vraiment qu'une figurine à la fois, comme dans Hades' Star.
+
+**Une seule contrainte d'équipement** : des places typées (arme, défense, accessoire), et une **charge en trois crans** (léger, moyen, lourd), qui donne trois classes de vitesse. Pas de jauge fine en plus des places : c'était deux contraintes sur la même chose.
+
+**Les tenues enregistrées** : on enregistre deux ou trois builds par combattant, et on change en un toucher au quai. Sans cela, le joueur mobile ne change jamais de build.
+
+**Des copies de composants bon marché** : on peut essayer un build sans le payer au prix fort.
+
+**Les synergies se voient au sol** :
+- l'étendard dessine un cercle ;
+- le piquier, son hérisson ;
+- l'artilleur, son cône de tir.
+
+On les découvre en regardant, pas en lisant.
+
+**Les munitions fabriquées au fondaco** (poudre, carreaux) relient la production à la Porta : une Maison qui ne fait pas de salpêtre achète sa poudre, ou change de build.
+
+### 5.5 La rejouabilité et le téléphone (lot 8)
+
+**Des compositions de Rome tirées à chaque bataille**, par archétype : la garnison d'arbalétriers, le mur de pavois, la chasse des chevau-légers. La table, elle, reste fixe : on apprend une fois, et chaque carte est différente.
+
+**Moins de villes que de quoi les prendre** : on choisit sa route parmi les coffres.
+
+**Le terrain** : la colline d'abord, seule (une case de portée en plus). Forêts et gués viendront ensuite.
+
+**Une Porta courte** pour le métro : un palier de 5 minutes. Et un véhicule qui **rentre seul vers la porte** si le joueur se déconnecte (le panel).
+
+**Un tournoi de builds au banc** (`porta-bench`) **avant de coder l'écran**, pour vérifier qu'aucun build ne gagne partout.
+
+## 6. Ce qui fait parler la communauté (nouveau)
+
+### 6.1 Les chantiers communs, par bande de Puissance (lot 9 ; Stardew, Hades' Star)
+
+Une ville ouvre un **grand œuvre** (l'Arena de Vérone) pour toutes les Maisons de la même bande. On livre ensemble ; le chantier 3D monte sur la ville. La récompense va à tous, avec une part pour chacun selon ce qu'il a livré, sans rivalité : rien ne se prend, la règle d'or 1 tient.
+
+C'est le sujet de conversation naturel d'une compagnie.
+
+### 6.2 La rumeur (lot 9 ; CADRAGE § 3 quater)
+
+Chaque matin, la Lettre annonce **ce qui va se passer** : « Venise cherchera du verre exquis jeudi », « les mines du Frioul sont riches ce mois ». L'information se paie ou se gagne (l'espion de la compagnie).
+
+C'est l'**incertain** qui rend un pari intéressant (§ 4.3), et qui fait parler.
+
+### 6.3 Le temps : saisons et commandes à terme (lot 9)
+
+- **Les saisons** : la soie au printemps, les vendanges à l'automne, le sel l'été. Stocker pour plus tard donne au magasin plafonné sa valeur d'arbitrage.
+- **La promessa** : une grosse commande à livrer dans 3 jours, scellée à l'avance, bien payée. On s'y engage, et on doit l'honorer, sinon on paie un dédit.
+
+### 6.4 Les plans partageables
+
+Un plan de domaine, une ligne de tournée ou une tenue de combattant s'exporte en **code court**, et se colle chez soi en fantôme. Ce sont les captures qu'on poste, et donc les conversations.
+
+## 7. L'ordre (v3)
+
+| Lot | Contenu | Pourquoi à cette place |
 | --- | --- | --- |
-| **Arbalétriers** | Portée longue, fragiles, derrière un mur | La cavalerie, qui ferme la distance vite, ou la couleuvrine, qui tire de plus loin qu'eux |
-| **Pavesiers** | Grand pavois, lents | Le perçant de face rebondit : il faut de la poudre ou du choc, ou les prendre de flanc |
-| **Chevau-légers** | Rapides, chassent les transports | Les piques et les arbalètes, qui touchent tout le monde |
-| **Hommes d'armes** | En plates, solides | Le choc et la poudre ; le perçant et le tranchant glissent |
-| **Bombardes** | Dégâts de zone, très lentes | La vitesse, et la dispersion de l'équipage |
-| **Gonfalonier** | Le chef, beaucoup de PV | Les dégâts qui montent sur la même cible (lances), la poudre, et les soins pour durer |
-| **Incendiaire** | Brûle les reliques d'une ville | La vitesse, pour l'intercepter avant |
+| 0 | Corriger les intrants × Y(n) ; aligner le simulateur | C'est un défaut du moteur, et tout le reste en dépend |
+| 1 | La demande à la mesure de la Maison : lot par Casa, offre ×2, goûts qui glissent, carnet de commandes acceptées, paie par place, distance et fraîcheur, mercuriale lente | C'est le seul lot qui attaque la cause ; il rend la tournée intéressante à lui seul |
+| 2 | La tournée qui charge et décharge, la frise, l'encombrement, les lignes enregistrées | Elle existe déjà (`driveRound`), il faut l'étendre |
+| 3 | Le magasin et le quai de l'atelier (la file de nuit absorbée), jeter et brader, la grammaire visuelle de base (signes 1, 2, 6 et 9) | Livré juste après la demande, pour ne pas montrer des ateliers arrêtés sans rien à décider |
+| 4 | Le référentiel : recettes à intrants au choix et étoiles, chaînes courtes, un sous-produit par chaîne, la qualité, la lentille des flux | Il donne à l'extraction ses marchandises (marbre, fer, sel) |
+| 5 | La caisse et les postes (§ 2.2), les bras, l'extraction simplifiée, le banquet ou la table | Il dépend du référentiel |
+| 6 | Le domaine : le terroir propre à chaque Maison, l'aperçu en cercles, les plans parmi trois, les pierres angulaires | Il dépend des bras |
+| 7 | La Porta, les contres : la table en cycle, la poudre bornée, le Gonfalonier, l'orientation, le hérisson, les intentions, la reconnaissance qui explique, le rééquipement au quai, le tournoi au banc | Indépendant : il peut passer avant si la Porta presse |
+| 8 | La Porta, l'équipage : les combattants, deux et un transport, les crans de charge, les tenues, les munitions fabriquées, les archétypes, la colline, la Porta courte | Après le lot 7 |
+| 9 | La communauté : les chantiers communs, la rumeur, les saisons, la promessa, les codes de partage | Une fois que les choix existent, on les partage |
 
-**Ce qu'on voit.**
-- Chaque figurine de Rome porte **son écu de protection** : une petite icône au-dessus d'elle.
-- Chaque arme de l'équipage porte **son icône de dégâts**.
-- Sur la carte de reconnaissance, une fois l'équipage composé, chaque garnison **s'allume** :
-  - en vert si l'équipage la bat ;
-  - en ambre si c'est égal ;
-  - en rouge si elle le domine.
+## 8. Les questions au porteur
 
-  On lit tout de suite les trous de son build.
-
-### 4.4 L'équipage et son équipement : une vraie réflexion
-
-**Les types de combattants.** Ils remplacent les trois modèles d'aujourd'hui, et chacun a son rôle :
-
-| Combattant | Profil | Rôle |
-| --- | --- | --- |
-| **Cavaliers** | Rapides, légers | Contre les arbalétriers et les bombardes ; fragiles |
-| **Piquiers** | Lents, solides | Arrêtent la cavalerie, protègent ce qui est derrière eux |
-| **Artilleurs** | Couleuvrine, poudre, très lents | Contre les pavois et les plates ; sans défense au contact |
-| **Arbalétriers mercenaires** | Perçant à distance | Contre la cavalerie et ce qui n'a pas de plates |
-| **Le transport** | — | Seul à charger les reliques, à protéger |
-
-**Les places d'équipage.** La Porta en ouvre deux, trois puis quatre selon son niveau. Les composer, c'est le premier choix : deux cavaliers et un transport pour une carte d'arbalétriers ; un piquier, un artilleur et un transport pour une carte de pavesiers.
-
-**L'équipement.** Chaque combattant a des **places typées** (arme, défense, accessoire) **et une charge** :
-- **Les armes** choisissent le type de dégâts.
-- **Les défenses** :
-
-  | Défense | Contre quoi | Prix |
-  | --- | --- | --- |
-  | Maille | Le tranchant | Légère |
-  | Plates | Le perçant et le tranchant | Lourdes, elles ralentissent |
-  | Pavois actif | Un bouclier qu'on lève | Avec un temps de recharge |
-- **Les accessoires** :
-  - le cheval de guerre : plus de vitesse, plus de charge ;
-  - l'étendard : les alliés proches frappent plus fort ;
-  - le chirurgien : soins ;
-  - la fumée : se cacher ;
-  - la trompette : de la vitesse aux alliés ;
-  - la poudre en plus : plus de coups pour la couleuvrine ;
-  - les crochets : le transport charge plus vite.
-- **La charge** : chaque pièce pèse. Un combattant trop chargé ralentit, sa jauge de charge se remplit. Des plates sur un cavalier, c'est possible, mais il n'est plus un cavalier.
-- **Les synergies** : un piquier à côté de l'artilleur le couvre ; l'étendard ne sert que si l'équipage reste groupé ; la fumée sert le transport qui passe sous une garnison d'arbalétriers.
-
-**Ce qu'on voit.** À la Remise, **la figurine s'habille** de ce qu'on lui met : le pavois sur le bras, la couleuvrine sur l'affût, les plates qui brillent, le cheval caparaçonné. Sa **jauge de charge** est une selle qui ploie. À côté, l'**aperçu contre la carte du jour** (§ 4.3) se met à jour pièce par pièce.
-
-### 4.5 Le terrain de bataille (gardé)
-
-| Terrain | Effet |
-| --- | --- |
-| Forêts | On y avance moins vite, et Rome n'y voit qu'à une case |
-| Collines | Une case de portée en plus à qui s'y tient |
-| Fleuve | Infranchissable, sauf à ses gués |
-
-Un pavesier ne protège que de face, et la colline permet de le prendre de flanc : **le placement compte**. Le terrain se voit sur le diorama : arbres, reliefs, eau.
-
-### 4.6 Les variantes de la semaine (secondaires)
-
-Elles restent possibles, mais **ne décident pas du build** : c'est l'adversaire qui en décide. Une variante modifie la carte, par exemple le brouillard qui raccourcit la vision de Rome ; elle ne change pas la table des contres.
-
-## 5. L'ordre proposé
-
-| Lot | Contenu | Taille |
-| --- | --- | --- |
-| 1 | **Le magasin** (§ 2.1) : places et encombrement, plafond par fondaco, jeter et brader, l'arc, l'étagère, la caisse qui déborde | moyen |
-| 2 | **Les goûts des villes et les échéances** (§ 3.2, 1 et 2) ; l'offre plus petite que la demande | moyen |
-| 3 | **La tournée qui charge et décharge** (§ 3.2, 4 et 5) : la frise et la soute en grille | gros |
-| 4 | **L'extraction** (§ 2.2) : gisements, prospection, camps, équipes, vivres ; l'enlèvement par la tournée | gros |
-| 5 | **Les bras** (§ 2.3) : la population, les postes, la table, les artisans (le personnel absorbé) | gros |
-| 6 | **Les chaînes longues, les restes et la qualité** (§ 2.4, 2.5) : refonte du référentiel des recettes | gros |
-| 7 | **Le plan du domaine** (§ 2.6) et **les outils** (§ 2.7) : modules et voisinage absorbés | gros |
-| 8 | **La Porta : la reconnaissance et les contres** (§ 4.2, 4.3) : dégâts, protections, Rome réécrite, aperçu vert/ambre/rouge | moyen |
-| 9 | **La Porta : les combattants, les places d'équipage, l'équipement et la charge** (§ 4.4) ; le terrain (§ 4.5) | gros |
-| 10 | Les contrats de ville (§ 3.2, 3), les véhicules du terrain (§ 3.2, 6), les périssables et la salaison (§ 2.1) | moyen |
-
-Les lots 8 et 9 ne dépendent pas des autres, et peuvent passer avant si la Porta presse.
-
-Chaque lot de commerce qui change une règle s'annonce dans les notes du chapitre. C'est une règle de joueurs, pas une règle d'or ; elle reste en place.
-
-## 6. Les questions au porteur
-
-1. **L'ordre** : le magasin d'abord (lot 1), puis les villes et la tournée (lots 2 et 3), puis l'extraction ? Ou l'extraction plus tôt ?
-2. **Les bras (§ 2.3)** : faut-il nourrir sa population ? C'est le lot qui rend la production la plus « Anno ». C'est aussi celui où l'absence coûte le plus, puisque la table se vide.
-3. **La Porta (§ 4.4)** : remplacer les trois modèles de véhicules de combat (cavalier, chariot de guerre, grand chariot) par des types de combattants (cavaliers, piquiers, artilleurs, arbalétriers) ? Les joueurs qui en ont déjà les gardent, convertis.
-4. **Les mondes existants** : les stocks d'aujourd'hui dépassent les futurs plafonds. Faut-il les ramener au plafond au passage, ou les laisser fondre sans rien ajouter au-delà ?
-
-## 7. La validation (5 novembre 2026, au soir)
-
-Le porteur **valide la version 2 dans son ensemble**. Ses quatre questions (§ 6) prennent les choix recommandés : le magasin d'abord, les ouvriers nourris, les combattants à la place des véhicules de combat (ceux qui existent déjà convertis), les stocks en trop laissés se vider sans rien accepter au-delà. Chaque point reste ouvert à ses retours au moment de son lot.
-
-**En attente.** Rien ne se code avant le « go » du porteur. Une autre session refait d'abord les visuels et les interactions. Chaque lot de ce plan **s'adaptera à cette refonte** : ses pièces, sa direction, ses gestes. Au moment du go, on relit l'état du dépôt et on ajuste les « Ce qu'on voit » de chaque lot avant de coder.
+1. **La caisse et les postes (§ 2.2).** C'est le changement le plus profond : il remplace le rendement Y(n) par des bras, et les grands nombres par des caisses qu'on compte. Toute l'équipe le juge nécessaire pour que les stocks, les vivres et les bras pèsent. D'accord ?
+2. **L'absence.** Vous avez retiré la règle d'or 3. Les cinq experts recommandent pourtant de ne la faire coûter que par le **plafond** : un magasin ou un camp plein s'arrête, et une commande acceptée en retard paie moins. Rien de ce qu'on a gagné ne serait détruit pendant qu'on est absent. Pour la table, deux voies :
+   - **le banquet** (recommandé) : un bonus choisi ;
+   - **la table qui se vide** : un malus subi, avec ses planchers.
+3. **Le simulateur.** Vous l'avez rendu facultatif. L'économiste et le designer conseillent de le rendre obligatoire **pour les lots qui touchent l'économie** (0, 1, 3, 4, 5). C'est un monde persistant, sans remise à zéro, et la fin de partie est déjà hors cible. Leur test : si un bot glouton joue aussi bien qu'un bot réfléchi, la mécanique ne crée pas de décision. Le remettre pour ces lots ?
+4. **La Porta.** La version 2 avait l'aperçu vert, ambre ou rouge. La version 3 le remplace par trois pastilles qui expliquent sans conclure, et limite l'équipage à deux combattants et un transport. D'accord ?
+5. **Les stocks existants.** Les laisser fondre sous le plafond, ou les convertir en ducats sur quatre semaines ?
+6. **Le lot 0** (le défaut des intrants) est un correctif du moteur. Le faire **dès votre go**, en premier, avec son annonce dans les notes du chapitre ?
