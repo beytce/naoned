@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { P } from "../../art/palette.js";
 import { CartWheel, DucatCoin, FavourCoin, WaxSeal } from "../../art/plateau/coins.js";
-import { d } from "../../game/format.js";
+import { d, whole } from "../../game/format.js";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
 import { MAP_3D } from "../map3d/flag.js";
@@ -71,7 +71,9 @@ export function Hud({
           <span className="block max-w-[9rem] truncate font-display text-base font-extrabold leading-tight text-cream">
             {name}
           </span>
-          <span className="block text-xs text-cream-dim">{t.hud.income(d(view.incomePerDay))}</span>
+          <span className="block text-xs text-cream-dim">
+            {t.hud.income(whole(view.incomePerDay))}
+          </span>
         </span>
       </button>
 
@@ -138,9 +140,16 @@ function Count({
       type="button"
       className="pointer-events-auto relative flex min-h-11 items-center gap-1 px-2 [&:not(:first-child)]:border-l [&:not(:first-child)]:border-line max-[359px]:px-1"
       data-hud={id}
-      aria-label={label}
+      // Its name and its value both read (audit of 4 November, UX M8: the label alone hid the sum).
+      aria-label={`${label} : ${value}`}
       onClick={() => setSaid(!said)}
     >
+      {/* A change of the purse told to a screen reader, as the coins fly to it on the screen. */}
+      {gold && (
+        <span className="sr-only" aria-live="polite">
+          {`${label} : ${value}`}
+        </span>
+      )}
       {said && (
         <span
           role="note"
@@ -154,7 +163,6 @@ function Count({
         className={`whitespace-nowrap font-display text-sm font-extrabold tabular-nums ${gold ? "text-gold" : "text-cream"}`}
         data-fx={gold ? "purse" : undefined}
       >
-        <span className="sr-only">{label} : </span>
         {value}
       </span>
       <span className="flex h-7 w-7 items-center justify-center [&>svg]:h-7 [&>svg]:w-7">

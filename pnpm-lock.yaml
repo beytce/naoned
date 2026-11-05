@@ -146,6 +146,9 @@ importers:
       autoprefixer:
         specifier: 10.4.20
         version: 10.4.20(postcss@8.4.49)
+      meshoptimizer:
+        specifier: 0.18.1
+        version: 0.18.1
       playwright-core:
         specifier: 1.48.2
         version: 1.48.2

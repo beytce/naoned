@@ -934,7 +934,10 @@ export type NotificationKind =
   | "letter"
   | "doge"
   | "broglio"
-  | "shares";
+  | "shares"
+  | "empire_full"
+  | "empire_site"
+  | "empire_orders";
 
 export interface Notice {
   id: number;

@@ -71,7 +71,7 @@ export function Trips({
                 type="button"
                 disabled={busy}
                 onClick={() => void act({ type: "empireRecall", vehicleId: v.id })}
-                className="min-h-11 rounded-full border border-gold/70 bg-night/85 px-3 text-xs font-semibold text-gold shadow-lg shadow-black/40 active:scale-95"
+                className="min-h-11 rounded-full border border-edge bg-night/85 px-3 text-xs font-semibold text-cream shadow-lg shadow-black/40 active:scale-95"
                 data-recall={v.id}
               >
                 {t.orders.recall}

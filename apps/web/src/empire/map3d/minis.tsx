@@ -28,7 +28,11 @@ import { C } from "../../art/plateau/props.js";
 import { claySolid } from "./kit.js";
 
 const MINIS = "/models/minis.glb";
-useGLTF.preload(MINIS, false, false);
+/**
+ * The figurines' file (2 MB), fetched by the Porta's scenes when their module loads, not by the
+ * map's (audit of 4 November, 3D B1): the modules sharing one chunk, a preload here would go with it.
+ */
+export const preloadMinis = () => useGLTF.preload(MINIS, false, true);
 
 export type Character = "Knight" | "Barbarian" | "Mage" | "Rogue" | "Rogue_Hooded";
 export type Side = "house" | "rome";
@@ -130,7 +134,7 @@ interface Pack {
  * 2H_Crossbow », « Round_Shield »…; the others hidden), `height` chart units tall.
  */
 export function useMini(character: Character, side: Side, show: string[], height: number): Mini {
-  const gltf = useGLTF(MINIS, false, false) as unknown as Pack;
+  const gltf = useGLTF(MINIS, false, true) as unknown as Pack;
   const key = show.join(",");
   // biome-ignore lint/correctness/useExhaustiveDependencies: the props by their key
   return useMemo(() => {
@@ -161,7 +165,16 @@ export function useMini(character: Character, side: Side, show: string[], height
       m.castShadow = false;
       m.frustumCulled = false;
     });
-    const box = new Box3().setFromObject(root);
+    // Scaled by its body, never by what it wears on its head nor by a prop hidden (audit of
+    // 4 November, Blender M6: with her hat, the Mage was a fifth smaller than the Rogue).
+    root.updateMatrixWorld(true);
+    const box = new Box3();
+    root.traverse((o) => {
+      const m = o as SkinnedMesh;
+      if (m.isSkinnedMesh && m.visible && !/_(Helmet|Hat)$/.test(m.name.replace(/_\d+$/, "")))
+        box.expandByObject(m);
+    });
+    if (box.isEmpty()) box.setFromObject(root);
     const size = box.getSize(new Vector3());
     const k = height / Math.max(0.001, size.y);
     root.scale.multiplyScalar(k);
@@ -225,7 +238,7 @@ export interface Horse {
 
 /** A horse of its own, `length` chart units long, for a side. */
 export function useHorse(side: Side, length: number): Horse {
-  const gltf = useGLTF(MINIS, false, false) as unknown as Pack;
+  const gltf = useGLTF(MINIS, false, true) as unknown as Pack;
   return useMemo(() => {
     const source = gltf.scene.getObjectByName("Horse");
     if (!source) throw new Error("no horse");

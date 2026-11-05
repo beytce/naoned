@@ -198,6 +198,15 @@ describe("the corners", () => {
     ]);
   });
 
+  it("say the ducats whole, and keep the Favour and the Seals away while they are none", () => {
+    const p = payload({}, "123456");
+    if (p.view) p.view.house = { ...p.view.house, favour: 0, seals: 0 };
+    const [only, ...rest] = hudOf(p);
+    expect(rest).toEqual([]);
+    expect(only?.id).toBe("ducats");
+    expect(only?.value.replace(/\s/gu, "")).toBe("1234");
+  });
+
   it("count the vehicles at home among all, with no cap", () => {
     expect(fleetOf(payload(), HOUR)).toEqual({ free: 1, total: 2 });
     expect(fleetOf(payload(), 6 * HOUR)).toEqual({ free: 2, total: 2 });

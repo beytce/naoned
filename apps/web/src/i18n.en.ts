@@ -245,6 +245,12 @@ export const en: Dictionary = {
       text: "A fondaco near Venice, three workshops and five hundred ducats. Nothing you build will ever be reset.",
       action: "Found the House",
     },
+    milestones: {
+      label: "Your next milestones",
+      casa: (n: number) => `Casa ${n}`,
+      order: (city: string, pay: string) => `${city} · ${pay}`,
+      carnet: (done: number, of: number) => `Ledger ${done}/${of}`,
+    },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
       venezia: "Venice",
@@ -422,6 +428,8 @@ export const en: Dictionary = {
       inStock: (have: number) => `${have} in stock`,
       pick: "Touch an order to take it out or put it back.",
       blockStock: "Nothing in stock for these orders: make them first.",
+      blockShort: (missing: number, good: string, have: number, qty: number) =>
+        `${missing} ${good.toLowerCase()} missing: ${have} in stock of ${qty}.`,
       blockBusy: (at: string) => `All your mules are on the road: the first is back at ${at}.`,
       blockBusyNone: "You have no vehicle docked.",
       blockNone: "Choose at least one order.",
@@ -499,7 +507,8 @@ export const en: Dictionary = {
       to: "For the fondaco",
       venice: "Your fondaco",
       post: (region: string, n: number) => `${region} ${n}`,
-      buy: (n: number, cost: string) => `+${n} · ${cost}`,
+      buy: (n: number) => `Buy ${n}`,
+      confirm: "Confirm",
       heldAt: (n: number) => `${n} at the fondaco`,
       none: "No price has come from Venice yet.",
       trend: { up: "above its rate", down: "below its rate", flat: "at its rate" } as Record<
@@ -730,7 +739,7 @@ export const en: Dictionary = {
       casa: (n: number) => `All is ready for Casa ${n}.`,
       casaWhy: "Each Casa opens workshop places, regions and new trades.",
       casaAction: (n: number) => `Build Casa ${n}`,
-      build: (name: string) => `Build this workshop: ${name}.`,
+      build: (name: string) => `${name}: build this workshop.`,
       buildWhy: (casa: number, good: string) =>
         `Casa ${casa} asks for ${good.toLowerCase()}, and none of your workshops makes it.`,
       buildAction: (name: string) => `Build: ${name}`,
@@ -747,7 +756,7 @@ export const en: Dictionary = {
       sellWhy:
         "You are short of ducats, and this stock serves neither the Casa nor your workshops.",
       sellAction: "Sell",
-      claim: "A Ledger goal (Company tab) is met.",
+      claim: "A Ledger goal is met.",
       claimWhy: "Claim it: it gives Favour.",
       claimAction: "Claim",
       wait: (at: string) => `All is running. Next lot at ${at}.`,
@@ -2905,6 +2914,9 @@ export const en: Dictionary = {
           doge: "Election of the Doge (opening, elected)",
           broglio: "The Rumours (rumour sold, spy, liar unmasked)",
           shares: "Shares (sold, access to the books, dividend, buyback)",
+          empire_full: "A workshop's queue finished: its lots are waiting",
+          empire_site: "A site finished",
+          empire_orders: "A town full of orders to deliver",
         } as Record<string, string>,
       },
     },
@@ -4420,6 +4432,7 @@ export const en: Dictionary = {
   },
 
   errors: {
+    offline: "Offline: nothing is lost, the game goes on once the network is back.",
     invalid_input: "Check what you typed.",
     pseudo_taken: "This name is already taken.",
     too_many_requests: "Too many requests. Try again in a few minutes.",

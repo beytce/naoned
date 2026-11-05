@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Illustration, casaArt } from "../art/Illustration.js";
 import { BuildingArt } from "../art/buildings.js";
+import { GOLD } from "../game/gold.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { sound } from "../sound.js";
-import { Slab } from "../ui.js";
+import { GoldLayer, Slab } from "../ui.js";
 
 /**
  * A Casa reached (lot B of the UX audit): a moment over everything, the palace that grows, what the
@@ -52,9 +53,11 @@ export function CasaMoment({
       ) : (
         <p className="text-sm text-cream-dim">{t.nothing}</p>
       )}
-      <Slab tone="gold" size="lg" className="mt-2 w-full max-w-xs" onClick={onClose}>
-        {t.go}
-      </Slab>
+      <GoldLayer depth={GOLD.moment}>
+        <Slab tone="gold" size="lg" className="mt-2 w-full max-w-xs" onClick={onClose}>
+          {t.go}
+        </Slab>
+      </GoldLayer>
     </section>,
     document.body,
   );

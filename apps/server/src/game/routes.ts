@@ -1293,7 +1293,13 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return {
       publicKey: notifier.publicKey,
       // The Criée and good-deal alerts were the Pass's: no longer sent (live-2), never offered.
-      kinds: NOTIFICATION_KINDS.filter((k) => k !== "criee" && k !== "deal"),
+      // The empire's kinds only in the empire's world.
+      kinds: NOTIFICATION_KINDS.filter(
+        (k) =>
+          k !== "criee" &&
+          k !== "deal" &&
+          (Boolean(world.ctx.settings.empire) || !k.startsWith("empire_")),
+      ),
       off: row?.off ?? [],
       // Kinds off unless asked for: listed in `off`, they are on.
       optIn: [...OPT_IN],

@@ -1,13 +1,16 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { TILT } from "../../art/plateau/geom.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
+import { haptic } from "../../haptics.js";
+import { sound } from "../../sound.js";
 import { CloseButton, Slab } from "../../ui.js";
 import { useCamera } from "../map/useCamera.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { groundAt } from "../map3d/camera.js";
+import { useCoverBoard } from "../map3d/pause.js";
 import type { Battle3DHandle } from "./Battle3D.js";
-import { CASE, extentOf, fromChart, toChart } from "./Battle3D.js";
 import { portaApi, useBattle } from "./api.js";
+import { CASE, extentOf, fromChart, toChart } from "./chart.js";
 import { RARITY_HEX } from "./colours.js";
 import { errorText, pt } from "./texts.js";
 import type { BattleOrder, BattleSnapshot, PlayerUnitView, Rarity } from "./types.js";
@@ -35,24 +38,89 @@ const fit = (b: { radius: number; gate: { x: number; y: number } }) => (v: Viewp
 };
 
 /**
+ * The battle's first framing (audit of 4 November, 3D B2): twice as near as the whole island,
+ * on one's own vehicles (else the gate), so that they are seen before they are touched; a double
+ * touch goes back to the whole island.
+ */
+const near = (b: BattleSnapshot) => (v: Viewport) => {
+  const whole = fit(b)(v);
+  const s = whole.s * 2;
+  const mine = b.units.filter(isMine);
+  const pts = mine.length ? mine.map((u) => [u.x, u.y] as const) : [[b.gate.x, b.gate.y] as const];
+  const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
+  const cy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+  const [X, Y] = toChart(b, cx, cy);
+  // In the band between the header (about 90 px) and the bar (about 190 px).
+  return { s, tx: v.w / 2 - X * s, ty: 90 + (v.h - 280) / 2 - Y * TILT * s };
+};
+
+/**
  * The battle in the lands of Rome as a diorama (docs/plan-porta-3d.md, step 1): the island and its
  * figurines in 3D under the map's camera (pinched, dragged, back to the whole island), a touch on
  * one of one's vehicles to choose it, a touch on a town or the ground to send it there (its way
- * dotted), a round button for each of its components with its cooldown, the gold « Sortir » at the
+ * dotted), a round button for each of its components with its cooldown, the « Sortir » at the
  * gate; the blows' damage rising over their targets, the towns' relics in pips over them.
  */
-export function BattleDiorama({ onClose }: { onClose: () => void }) {
+export function BattleDiorama({
+  onClose,
+  onFail,
+}: {
+  onClose: () => void;
+  /** The 3D failed: the battle goes on in 2D. */
+  onFail: () => void;
+}) {
   const battle = useBattle(true);
+  useCoverBoard(true);
   if (!battle)
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-night" data-battle>
-        <span className="h-10 w-10 animate-spin rounded-full border-2 border-gold/30 border-t-gold" />
+        <span className="h-10 w-10 animate-spin rounded-full border-2 border-info/30 border-t-info" />
       </div>
     );
-  return <Field battle={battle} onClose={onClose} />;
+  return (
+    <>
+      <BattleFeel battle={battle} />
+      <Field battle={battle} onClose={onClose} onFail={onFail} />
+    </>
+  );
 }
 
-function Field({ battle, onClose }: { battle: BattleSnapshot; onClose: () => void }) {
+/**
+ * What the battle sounds and feels like (audit of 4 November, motion M4): a relic taken rings
+ * like a coin, a vehicle of mine lost shakes the phone, one out through the gate rolls its cart,
+ * the battle's end strikes the bell. Each once, at the snapshot that brings it.
+ */
+function BattleFeel({ battle }: { battle: BattleSnapshot }) {
+  const before = useRef<BattleSnapshot | null>(null);
+  useEffect(() => {
+    const was = before.current;
+    before.current = battle;
+    if (!was || was.id !== battle.id) return;
+    const mineNow = battle.units.filter(isMine);
+    const mineWas = new Map(was.units.filter(isMine).map((u) => [u.id, u]));
+    for (const u of mineNow) {
+      const w = mineWas.get(u.id);
+      if (!w) continue;
+      if (u.cargo.length > w.cargo.length) {
+        sound("coin");
+        haptic(u.cargo.at(-1) === "legendary" ? "alarm" : "success");
+      }
+      if (w.outcome === "in" && (u.outcome === "dead" || u.outcome === "lost")) haptic("alarm");
+      if (w.outcome === "in" && u.outcome === "exited") sound("cart");
+    }
+    if (!was.over && battle.over) {
+      sound("bell");
+      haptic("success");
+    }
+  }, [battle]);
+  return null;
+}
+
+function Field({
+  battle,
+  onClose,
+  onFail,
+}: { battle: BattleSnapshot; onClose: () => void; onFail: () => void }) {
   const root = useRef<HTMLDivElement>(null);
   const layer = useRef<HTMLDivElement>(null);
   const board = useRef<Battle3DHandle | null>(null);
@@ -85,7 +153,7 @@ function Field({ battle, onClose }: { battle: BattleSnapshot; onClose: () => voi
   }, []);
   const camera = useCamera({
     root,
-    initial: fit(battle),
+    initial: near(battle),
     onPaint: paint,
     extent: extentOf(battle),
     bounds: (v) => {
@@ -132,7 +200,7 @@ function Field({ battle, onClose }: { battle: BattleSnapshot; onClose: () => voi
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-[#16263E]" data-battle={battle.id}>
       <div ref={root} className="absolute inset-0 touch-none select-none">
-        <Guard3D>
+        <Guard3D onFail={onFail}>
           <Suspense fallback={null}>
             <Battle3D ref={onBoard} battle={battle} selected={sel?.id ?? null} live={live()} />
           </Suspense>
@@ -171,7 +239,7 @@ function Field({ battle, onClose }: { battle: BattleSnapshot; onClose: () => voi
             </Pinned>
           ))}
           <Pinned battle={battle} x={battle.gate.x} y={battle.gate.y} lift={-70}>
-            <span className="rounded-full bg-gold px-2.5 py-0.5 font-place text-xs font-bold uppercase tracking-[0.12em] text-ink shadow-lg">
+            <span className="rounded-full bg-night/85 px-2.5 py-0.5 font-place text-xs font-bold uppercase tracking-[0.12em] text-cream ring-1 ring-edge shadow-lg">
               {pt.gate}
             </span>
           </Pinned>
@@ -180,7 +248,7 @@ function Field({ battle, onClose }: { battle: BattleSnapshot; onClose: () => voi
         </div>
       </div>
 
-      <header className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="pointer-events-auto rounded-2xl bg-night/80 px-3 py-1.5 shadow-lg shadow-black/40">
           <p className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
             {pt.tier(battle.tier)}
@@ -200,7 +268,7 @@ function Field({ battle, onClose }: { battle: BattleSnapshot; onClose: () => voi
         </div>
       </header>
 
-      <footer className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-night via-night/90 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6">
+      <footer className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-night via-night/90 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6">
         {battle.over || allOut ? (
           <div className="flex items-center justify-between gap-3" data-battle-over>
             <p className="text-sm text-cream">{battle.over ? pt.over : pt.out}</p>
@@ -235,7 +303,7 @@ function Field({ battle, onClose }: { battle: BattleSnapshot; onClose: () => voi
               <span className="flex-1" />
               {sel && atGate && (
                 <Slab
-                  tone="gold"
+                  tone="ghost"
                   size="md"
                   onClick={() => void order({ type: "leave", unitId: sel.id })}
                 >
@@ -342,7 +410,7 @@ function Damage({ battle }: { battle: BattleSnapshot }) {
       {shown.map((d) => (
         <Pinned key={d.key} battle={battle} x={d.x} y={d.y} lift={-48}>
           <span
-            className={`battle-damage block font-display text-sm font-extrabold tabular-nums [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] ${d.mine ? "text-vermilion" : "text-gold"}`}
+            className={`battle-damage block font-display text-sm font-extrabold tabular-nums [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] ${d.mine ? "text-vermilion" : "text-cream"}`}
           >
             {Math.round(d.n)}
           </span>
@@ -374,7 +442,7 @@ function UnitCard({
       onClick={onChoose}
       disabled={u.outcome !== "in"}
       data-battle-unit={u.id}
-      className={`min-h-[3.25rem] min-w-0 flex-1 rounded-xl border px-2.5 py-1.5 text-left disabled:opacity-40 ${chosen ? "border-gold bg-gold/10" : "border-line bg-night/80"}`}
+      className={`min-h-[3.25rem] min-w-0 flex-1 rounded-xl border px-2.5 py-1.5 text-left disabled:opacity-70 ${chosen ? "border-info bg-info/10" : "border-line bg-night/80"}`}
     >
       <span className="flex items-center justify-between gap-2 text-xs font-semibold text-cream">
         <span>{u.role === "combat" ? pt.combat : pt.transport}</span>
@@ -387,7 +455,8 @@ function UnitCard({
           className="block h-full rounded-full"
           style={{
             width: `${share * 100}%`,
-            background: share > 0.5 ? "#6EE0B8" : share > 0.25 ? "#F2C24F" : "#E06A4A",
+            // Cream while it holds, cinnabar when it is low: never the gold of « yours to do ».
+            background: share > 0.3 ? "rgb(var(--cream))" : "rgb(var(--vermilion))",
           }}
         />
       </span>
@@ -435,18 +504,19 @@ function ActiveButton({
       onClick={onPress}
       data-battle-active={a.effect}
       aria-label={pt.component[a.effect] ?? a.effect}
-      className={`relative flex h-14 w-14 flex-col items-center justify-center rounded-full text-xs font-semibold leading-tight shadow-lg shadow-black/50 ${on ? "bg-lagoon text-on-lagoon" : "bg-night-3 text-cream ring-1 ring-info/70"}`}
+      className={`relative flex h-14 w-[4.5rem] flex-col items-center justify-center rounded-2xl px-1 text-xs font-semibold leading-tight shadow-lg shadow-black/50 ${on ? "bg-lagoon text-on-lagoon" : "bg-night-3 text-cream ring-1 ring-info/70"}`}
     >
       {cooling && (
         <span
-          className="absolute inset-0 rounded-full"
+          className="absolute inset-0 rounded-2xl"
           style={{
             background: "conic-gradient(rgb(0 0 0 / 0.55) var(--k), transparent 0)",
             ["--k" as string]: `${Math.min(100, (wait / 45_000) * 100)}%`,
           }}
         />
       )}
-      <span className="relative">{(pt.component[a.effect] ?? a.effect).slice(0, 7)}</span>
+      {/* Its whole name, never cut to seven letters (audit of 4 November, UI U-13). */}
+      <span className="relative">{pt.component[a.effect] ?? a.effect}</span>
       {cooling && <span className="relative tabular-nums">{Math.ceil(wait / 1_000)} s</span>}
     </button>
   );

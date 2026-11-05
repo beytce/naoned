@@ -542,6 +542,11 @@ export const empireSettingsSchema = z.object({
     })
     .prefault({}),
   /** The young houses' raw goods sell this much dearer, up to a Casa (CADRAGE-v3 § 6). */
+  /**
+   * The merchant's return told after this long without an action (minutes): half a day by
+   * default; sooner where the world says so (audit of 4 November 2026, UX M1).
+   */
+  away: z.object({ afterMinutes: positive }).prefault({ afterMinutes: 720 }),
   newcomers: z
     .object({ rawBonusBps: bps, untilCasa: qty })
     .prefault({ rawBonusBps: 0, untilCasa: 0 }),

@@ -10,7 +10,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { inflateSync } from "node:zlib";
 import { Document, NodeIO } from "@gltf-transform/core";
+import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import { dedup, mergeDocuments, prune, resample } from "@gltf-transform/functions";
+import { slimMinis } from "./slim-minis.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const web = join(here, "..");
@@ -142,7 +144,7 @@ function drop(a) {
   a.dispose();
 }
 
-const io = new NodeIO();
+const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const out = new Document();
 out.createBuffer();
 const scene = out.createScene("minis");
@@ -190,6 +192,8 @@ for (const acc of out.getRoot().listAccessors()) acc.setBuffer(first);
 for (const b of rest) b.dispose();
 out.getRoot().setDefaultScene(scene);
 await out.transform(resample(), dedup(), prune({ keepAttributes: true }));
+// Lighter, what is seen unchanged (slim-minis.mjs).
+await slimMinis(out);
 await io.write(join(web, "public", "models", "minis.glb"), out);
 const anims = out
   .getRoot()

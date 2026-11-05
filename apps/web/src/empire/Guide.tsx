@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Lorenzo } from "../art/scenes.js";
 import { PalettePicker } from "../game/Profil.js";
+import { PushSettings } from "../game/PushSettings.js";
 import { d, hourOf } from "../game/format.js";
+import { GOLD } from "../game/gold.js";
 import { fr } from "../i18n.js";
-import { LorenzoCard, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
+import { GoldLayer, LorenzoCard, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { Term } from "./Term.js";
 import { buildingName, workshopStatus } from "./logic.js";
 import type { NextStep } from "./next.js";
@@ -89,40 +91,44 @@ export function NextStepCard({
   };
   if (compact)
     return (
-      <div
-        className="glass pointer-events-auto flex w-full max-w-md items-center gap-2.5 rounded-[1.5rem] p-2 pr-2.5"
-        data-next-step={step.kind}
-      >
-        <Lorenzo size={36} />
-        <div className="min-w-0 flex-1">
-          <p className="line-clamp-2 text-sm font-bold leading-snug text-cream">{w.what}</p>
-          {step.kind === "wait" && <WaitArc p={p} now={now} />}
-        </div>
-        {w.button && (
-          <Slab tone="gold" size="sm" busy={busy} shine onClick={go}>
-            {w.button}
-          </Slab>
-        )}
-      </div>
-    );
-  return (
-    <div className="mx-auto mt-3 w-full max-w-md" data-next-step={step.kind}>
-      <LorenzoCard
-        portrait={<Lorenzo size={40} />}
-        name={t.name}
-        foot={
-          w.button ? (
-            <Slab tone="gold" size="lg" className="mt-3 w-full" busy={busy} shine onClick={go}>
+      <GoldLayer depth={GOLD.guide} atLeast>
+        <div
+          className="glass pointer-events-auto flex w-full max-w-md items-center gap-2.5 rounded-[1.5rem] p-2 pr-2.5"
+          data-next-step={step.kind}
+        >
+          <Lorenzo size={36} />
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 text-sm font-bold leading-snug text-cream">{w.what}</p>
+            {step.kind === "wait" && <WaitArc p={p} now={now} />}
+          </div>
+          {w.button && (
+            <Slab tone="gold" size="sm" busy={busy} shine onClick={go}>
               {w.button}
             </Slab>
-          ) : undefined
-        }
-      >
-        <p className="font-display font-bold text-cream">{w.what}</p>
-        <p className="mt-0.5 text-sm text-cream-dim">{w.why}</p>
-        {step.kind === "wait" && <WaitArc p={p} now={now} />}
-      </LorenzoCard>
-    </div>
+          )}
+        </div>
+      </GoldLayer>
+    );
+  return (
+    <GoldLayer depth={GOLD.guide} atLeast>
+      <div className="mx-auto mt-3 w-full max-w-md" data-next-step={step.kind}>
+        <LorenzoCard
+          portrait={<Lorenzo size={40} />}
+          name={t.name}
+          foot={
+            w.button ? (
+              <Slab tone="gold" size="lg" className="mt-3 w-full" busy={busy} shine onClick={go}>
+                {w.button}
+              </Slab>
+            ) : undefined
+          }
+        >
+          <p className="font-display font-bold text-cream">{w.what}</p>
+          <p className="mt-0.5 text-sm text-cream-dim">{w.why}</p>
+          {step.kind === "wait" && <WaitArc p={p} now={now} />}
+        </LorenzoCard>
+      </div>
+    </GoldLayer>
   );
 }
 
@@ -220,6 +226,10 @@ export function HouseSheet({
       <div className="mt-6">
         {/* The palettes of the monthly profile; the Pass's own stays out of the empire. */}
         <PalettePicker pass={false} offered={false} />
+      </div>
+      {/* The empire's notices, asked for, three kinds (decision of the owner, 4 November). */}
+      <div className="mt-6" data-house-push>
+        <PushSettings only={(k) => k.startsWith("empire_")} />
       </div>
     </Sheet>
   );

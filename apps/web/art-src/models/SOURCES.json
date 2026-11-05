@@ -1,0 +1,21 @@
+{
+  "note": "Where each model served in public/models comes from, and the SHA-256 of what is served (audit of 4 November 2026, Blender B1 and B2). The Quaternius files come from a third-party copy on GitHub: their upstream SHA-256 is still to be checked against the official archive (quaternius.com) from a machine that can reach it.",
+  "served": {
+    "public/models/kaykit.glb": {
+      "sha256": "f7d05c82b7697f932bfcd6f274b79e10742f08581beec6507ff6d817bfe14e11",
+      "from": "KayKit Medieval Hexagon Pack (CC0), art-src/models/kaykit, scripts/pack-models.mjs"
+    },
+    "public/models/minis.glb": {
+      "sha256": "9d5042aeb0a4a7003ba3b523e7e4fd8fa49872a722ba8c312fd805dbfc24a5a9",
+      "from": "KayKit Adventurers Character Pack 1.0 (CC0), https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0 at 672074b73ba276876a19e8816ecdc5241817ab47; Quaternius Horse.gltf (CC0) via laoniutoushx/TD-demo-2024-04-03; scripts/pack-minis.mjs then scripts/slim-minis.mjs"
+    },
+    "public/models/quaternius/donkey.glb": {
+      "sha256": "3f44c6db21e4e6129c7055f9fdc8a37f02e052864eb8a012283633cf67f7d6b8",
+      "from": "Quaternius Ultimate Animated Animals, Donkey (CC0) via laoniutoushx/TD-demo-2024-04-03; converted by hand (Walk and Idle kept, resampled): no script yet"
+    }
+  },
+  "upstreamToVerify": [
+    "laoniutoushx/TD-demo-2024-04-03 Asserts/Models/ulitimate animals/glTF/Horse.gltf",
+    "laoniutoushx/TD-demo-2024-04-03 Asserts/Models/ulitimate animals/glTF/Donkey.gltf"
+  ]
+}

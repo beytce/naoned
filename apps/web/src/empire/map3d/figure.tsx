@@ -6,7 +6,7 @@
  */
 import { useFrame } from "@react-three/fiber";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from "react";
-import { CylinderGeometry, type Group, PlaneGeometry } from "three";
+import { AdditiveBlending, CylinderGeometry, type Group, PlaneGeometry } from "three";
 import { C } from "../../art/plateau/props.js";
 import { claySolid } from "./kit.js";
 import { useDonkey } from "./life.js";
@@ -260,7 +260,18 @@ function Torch({ height, live }: { height: number; live: boolean }) {
           <coneGeometry args={[0.18, 0.5, 8]} />
           <meshBasicMaterial color="#FFB347" />
         </mesh>
-        <pointLight color="#FF8A3D" intensity={2} distance={5} />
+        {/* A halo rather than a light (audit of 4 November, 3D M2): a light that comes or goes
+            with a figure made every shader of the scene be compiled again, in mid-battle. */}
+        <mesh scale={0.55}>
+          <sphereGeometry args={[1, 12, 8]} />
+          <meshBasicMaterial
+            color="#FF8A3D"
+            transparent
+            opacity={0.28}
+            depthWrite={false}
+            blending={AdditiveBlending}
+          />
+        </mesh>
       </group>
     </group>
   );

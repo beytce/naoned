@@ -20,7 +20,7 @@ export function Term({ code, children }: { code: string; children?: React.ReactN
           e.stopPropagation();
           setOpen(!open);
         }}
-        className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-night-3 text-[0.625rem] font-bold text-info ring-1 ring-info/50"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-night-3 text-xs font-bold text-info ring-1 ring-info/50"
       >
         ?
       </button>

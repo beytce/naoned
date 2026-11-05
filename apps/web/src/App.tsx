@@ -334,14 +334,14 @@ function CodeForm(props: {
               setError(errorText(err));
             }
           }}
-          className="inline-flex min-h-11 items-center rounded-full px-4 text-sm text-info ring-1 ring-inset ring-line transition active:scale-95 disabled:opacity-40"
+          className="inline-flex min-h-11 items-center rounded-full px-4 text-sm text-info ring-1 ring-inset ring-line transition active:scale-95 disabled:opacity-70"
         >
           {fr.code.resend}
         </button>
         <button
           type="button"
           onClick={props.onReset}
-          className="inline-flex min-h-11 items-center rounded-full px-4 text-sm text-info ring-1 ring-inset ring-line transition active:scale-95 disabled:opacity-40"
+          className="inline-flex min-h-11 items-center rounded-full px-4 text-sm text-info ring-1 ring-inset ring-line transition active:scale-95 disabled:opacity-70"
         >
           {fr.otherAddress}
         </button>

@@ -8,11 +8,18 @@
 const FAILED = "fondaco:map3d-failed";
 const SVG = "fondaco:map-svg";
 
+/** The device draws in software (SwiftShader, llvmpipe…): the board starts at its lowest. */
+export let SOFTWARE_GL = false;
+
 function webgl(): boolean {
   try {
     const c = document.createElement("canvas");
     const gl = c.getContext("webgl2") ?? c.getContext("webgl");
     if (!gl) return false;
+    // Its renderer's name, when told (audit of 4 November, 3D M4).
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    const name = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
+    SOFTWARE_GL = /swiftshader|llvmpipe|software|softpipe|mali-4\d\d/i.test(name);
     // The probe's context given back at once: a phone's browser keeps only a few of them.
     gl.getExtension("WEBGL_lose_context")?.loseContext();
     return true;
@@ -52,6 +59,16 @@ export const MAP_3D =
  * The 3D board failed (its code or its models not fetched, its context refused or lost again and
  * again): the tab goes on with the SVG board, drawn again at once.
  */
+/** The 3D failed: the next start goes to SVG, this tab carries on as it stands. */
+export function mark3dFailed(why: unknown): void {
+  console.warn("3D given up for the next start:", why);
+  try {
+    window.sessionStorage.setItem(FAILED, "1");
+  } catch {
+    // Without storage, the next start tries the 3D again.
+  }
+}
+
 export function give3dUp(why: unknown): void {
   console.warn("3D board given up:", why);
   try {

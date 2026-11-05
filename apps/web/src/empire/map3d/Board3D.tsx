@@ -55,7 +55,7 @@ import type { CityLook } from "../map/logic.js";
 import type { EmpirePayload } from "../types.js";
 import { DISTANCE, orthoFrom } from "./camera.js";
 import type { DomainTile } from "./domain.js";
-import { give3dUp } from "./flag.js";
+import { SOFTWARE_GL, give3dUp } from "./flag.js";
 import { Fleet3D } from "./fleet3d.js";
 import {
   Instanced,
@@ -67,7 +67,8 @@ import {
   useKit,
 } from "./kit.js";
 import { Flag, Smoke, useWater } from "./life.js";
-import { MADE, Mill } from "./props3d.js";
+import { useBoardPaused } from "./pause.js";
+import { FONDACO, Gondola, MADE, Mill } from "./props3d.js";
 import {
   type Scene3D,
   type SceneInput,
@@ -166,6 +167,12 @@ const Board3D = memo(
       [buyKey, casa],
     );
     const live = useLive();
+    // Asleep under a scene in 3D that covers the screen: no frame, until it closes.
+    const paused = useBoardPaused();
+    useEffect(() => {
+      // Awake again: one frame at once, the board as it stands now.
+      if (!paused) invalidate();
+    }, [paused]);
     // Until when a vehicle of the house is on its way (or waiting to leave): frames till then.
     // (on this device's clock).
     const moving =
@@ -209,7 +216,8 @@ const Board3D = memo(
     };
     const small = useRef<Group>(null);
     const gl = useRef<import("three").WebGLRenderer | null>(null);
-    const [low, setLow] = useState(false);
+    // The lowest quality from the start on a device that draws in software; else once it is slow.
+    const [low, setLow] = useState(SOFTWARE_GL);
     // The touches of the places (step 2 of § 7): hexagons that never overlap.
     // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its key
     const touch = useMemo(() => zones(placesOf(p)), [key]);
@@ -273,9 +281,9 @@ const Board3D = memo(
     return (
       <Canvas
         className="!absolute inset-0"
-        frameloop="demand"
+        frameloop={paused ? "never" : "demand"}
         shadows="soft"
-        dpr={[1, 1.5]}
+        dpr={low ? 1 : [1, 1.5]}
         orthographic
         camera={{ near: 1, far: 2000, position: [0, DISTANCE, DISTANCE] }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
@@ -307,8 +315,10 @@ const Board3D = memo(
         </Suspense>
         {/* A device that cannot keep 18 frames a second loses the ambient occlusion for good. */}
         <PerformanceMonitor bounds={() => [18, 26]} flipflops={2} onDecline={() => setLow(true)} />
-        {FX && <Effects near={near} ao={!low} aoRef={ao} />}
-        <Ticker live={live} until={moving} />
+        {/* Slow, no effects at all (the renderer's own ACES keeps the palette): the chain doubles
+            a frame's cost (plateau-reprise § 7). */}
+        {FX && !low && <Effects near={near} ao={!low} aoRef={ao} />}
+        {!paused && <Ticker live={live} until={moving} />}
         {PERF && <Probe />}
       </Canvas>
     );
@@ -479,6 +489,8 @@ function Ready({ onReady }: { onReady: () => void }) {
 
 /** After the last touch or move of the camera, the board stays alive this long (ms). */
 const AWAKE_MS = 10_000;
+/** Then its life goes on at 12 frames a second this long (ms), and rests. */
+const AMBIENT_MS = 90_000;
 let awakeUntil = 0;
 /** The player did something: the board's life (smoke, water, sails) goes on a while. */
 function wake() {
@@ -495,11 +507,17 @@ function Ticker({ live, until }: { live: boolean; until: number }) {
   useEffect(() => {
     let raf = 0;
     let last = 0;
-    const step = live ? 33 : 1_000;
     const loop = (t: number) => {
       const now = Date.now();
-      const busy = now < until + 1_000 || (live && now < awakeUntil);
-      if (busy && !document.hidden && t - last >= step) {
+      // 30 frames while a vehicle walks or the player touches; then 12 for a minute and a half,
+      // the board's life going on slower (audit of 4 November, motion B2: no world frozen ten
+      // seconds after the last touch); then none. Asking for less motion: one a second, only
+      // while a vehicle walks.
+      const walking = now < until + 1_000;
+      const busy = walking || (live && now < awakeUntil);
+      const ambient = live && now < awakeUntil + AMBIENT_MS;
+      const step = !live ? 1_000 : busy ? 33 : 83;
+      if ((busy || ambient) && !document.hidden && t - last >= step) {
         last = t;
         invalidate();
       }
@@ -757,15 +775,12 @@ function World({
     }
     for (const town of sc.towns) {
       const over = town.muted ? muted : {};
-      for (const h of town.houses)
-        add(
-          `town${h.variant}:${town.muted}`,
-          kit(h.variant ? "homeB" : "homeA", over),
-          h.x,
-          h.y,
-          3.4 * h.s,
-          h.rot,
-        );
+      // Its houses, Venetian (props3d.tsx: stucco, a gable of tiles, a funnel chimney).
+      for (const h of town.houses) {
+        const name =
+          `casa${h.variant ? "B" : "A"}${town.muted ? "Muted" : ""}` as keyof typeof MADE;
+        add(`town:${name}`, { geo: MADE[name], h: 1 }, h.x, h.y, 3.4 * h.s, h.rot);
+      }
       // Its monument: Venice's campanile, Padua's domes (made in code), a church else.
       if (town.monument === "church")
         add(
@@ -840,6 +855,17 @@ function World({
       {docks.map((d) => (
         <Dock key={`${d.x},${d.y}`} x={d.x} z={d.y} rot={d.rot} />
       ))}
+      {/* A gondola moored at the end of each landing, out on the lagoon, rocking. */}
+      {docks.map((d) => (
+        <Gondola
+          key={`g${d.x},${d.y}`}
+          x={d.x + Math.cos(d.rot) * 7.5 - Math.sin(d.rot) * 1.8}
+          z={d.y + Math.sin(d.rot) * 7.5 + Math.cos(d.rot) * 1.8}
+          y={WATER_Y + 0.15}
+          rot={d.rot}
+          live={live}
+        />
+      ))}
       {/* The farms' mills, their sails turning; their chimneys' smoke. */}
       {mills.map((m) => (
         <Mill key={`${m.x},${m.y}`} x={m.x} z={m.y} rot={m.rot} s={m.s} live={live} />
@@ -891,12 +917,20 @@ function World({
   );
 }
 
-/** Each workshop's model on its tile (after art/plateau/workshops.ts): a KayKit model, its size. */
-function workshopModel(type: string): { name: KitName; s: number } {
+/**
+ * Each workshop's model on its tile (after art/plateau/workshops.ts), its size: the Venetian
+ * trades made in code (props3d.tsx: the glassworks, the brickworks), the others from KayKit.
+ */
+function workshopModel(type: string): {
+  name: KitName;
+  s: number;
+  made?: "glassworks" | "brickworks";
+} {
   switch (type) {
     case "brickworks":
+      return { name: "forge", s: 6.2, made: "brickworks" };
     case "glassworks":
-      return { name: "forge", s: 6.2 };
+      return { name: "forge", s: 6.2, made: "glassworks" };
     case "clay_pit":
     case "sand_pit":
       return { name: "mine", s: 6.2 };
@@ -969,7 +1003,8 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
     const g = group.current;
     if (!g) return;
     if (t0.current === null) t0.current = clock.elapsedTime;
-    const k = Math.min(1, (clock.elapsedTime - t0.current) / RISE);
+    // Asking for less motion: the tiles are there at once, no rise (audit of 4 November, B3).
+    const k = live ? Math.min(1, (clock.elapsedTime - t0.current) / RISE) : 1;
     for (const child of g.children) {
       const ring = (child.userData.ring as number | undefined) ?? 0;
       const u = Math.min(1, Math.max(0, k * 1.6 - ring * 0.22));
@@ -1050,7 +1085,7 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
               )}
               {t.kind === "workshop" && model && (
                 <mesh
-                  geometry={kit(model.name).geo}
+                  geometry={model.made ? MADE[model.made] : kit(model.name).geo}
                   material={clayShared}
                   scale={model.s * 1.5}
                   castShadow
@@ -1116,18 +1151,13 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
 
 /** The Porta: two stone towers and a glowing arch between them. */
 function Porta({ x, z }: { x: number; z: number }) {
-  const kit = useKit();
-  const stone = kit("tower", { roof: C.rockSeen });
+  // Rome's gate, the game's own model (props3d.tsx, after the Porta Appia), the lands' glow in
+  // its opening.
   return (
     <group position={[x, 0, z]}>
-      <mesh geometry={stone.geo} material={clayShared} scale={3} position={[-3, 0, 0]} castShadow />
-      <mesh geometry={stone.geo} material={clayShared} scale={3} position={[3, 0, 0]} castShadow />
-      <mesh position={[0, 2.2, 0.2]}>
-        <torusGeometry args={[1.9, 0.45, 8, 16, Math.PI]} />
-        <meshStandardMaterial color={C.rockSeen} roughness={0.95} />
-      </mesh>
-      <mesh position={[0, 1.6, 0.1]}>
-        <planeGeometry args={[3, 3.2]} />
+      <mesh geometry={MADE.porta} material={clayShared} scale={0.42} castShadow receiveShadow />
+      <mesh position={[0, 2.35, 0.1]}>
+        <planeGeometry args={[3, 4.6]} />
         <meshStandardMaterial
           color="#E06A4A"
           emissive="#E06A4A"
@@ -1148,27 +1178,18 @@ function Fondaco({ x, z, live, k = 1 }: { x: number; z: number; live: boolean; k
   );
 }
 
+/**
+ * The fondaco: the house's own model (props3d.tsx, `MADE.fondaco`, audit of 4 November: a hall of
+ * Istrian stone on its quay, an arcade on the water, a gold roof and a corner tower, after the
+ * Fondaco dei Tedeschi), its flag on the tower and its chimney's smoke. Some twice a house, known
+ * by its tile of gold (decision of the owner, 3 November).
+ */
 function FondacoModel({ live, k = 1 }: { live: boolean; k?: number }) {
-  const kit = useKit();
-  const hall = kit("homeB", { roof: C.roofGold });
-  const tower = kit("tower", { roof: C.roofGold });
-  // The scale of the board (decision of the owner, 3 November): a fondaco some twice a house,
-  // known by its tile of gold rather than by its size.
-  const s = 5.8;
-  const ts = 2.6;
   return (
     <group scale={k} name="fondaco">
-      <mesh geometry={hall.geo} material={clayShared} scale={s} castShadow receiveShadow />
-      <mesh
-        geometry={tower.geo}
-        material={clayShared}
-        scale={ts}
-        position={[-3.4, 0, -1.8]}
-        castShadow
-        receiveShadow
-      />
-      <Flag at={[-3.4, tower.h * ts - 0.3, -1.8]} live={live} s={0.75} />
-      <Smoke at={[1.7, hall.h * s * 0.95, -0.9]} live={live} />
+      <mesh geometry={MADE.fondaco} material={clayShared} castShadow receiveShadow />
+      <Flag at={[...FONDACO.flag]} live={live} s={0.75} />
+      <Smoke at={[...FONDACO.smoke]} live={live} />
     </group>
   );
 }

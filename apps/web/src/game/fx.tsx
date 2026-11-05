@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { goodsColour } from "../art/goods.js";
 import { Coin } from "../art/icons.js";
+import { EASE, T } from "../motion.js";
 import { chime } from "../sound.js";
 import { amount } from "./format.js";
 
@@ -124,8 +125,10 @@ export function flyGoods(harvested: Record<string, number>, label?: string): voi
   if (typeof window === "undefined" || reduced()) return;
   const layer = document.querySelector<HTMLElement>("[data-fx-layer]");
   if (!layer) return;
-  // No star to leave from: harvested from the map's card, the goods fly to the Ateliers tab.
+  // No star to leave from: from the workshops of the empire's domain to its fondaco, else from
+  // the map's card to the Ateliers tab.
   if (!Object.keys(harvested).some((r) => shown(`[data-goods-from="${r}"]`))) {
+    if (flyHarvest(layer, harvested)) return;
     flyFromPlace(layer, harvested, label);
     return;
   }
@@ -176,6 +179,69 @@ export function flyGoods(harvested: Record<string, number>, label?: string): voi
       flight.oncancel = () => mark.remove();
     }
   }
+}
+
+/**
+ * The empire's harvest (audit of 4 November, motion B1): from each ready workshop on the screen
+ * (`data-harvest-from`, its good), marks of its good leave in a curve for the store (the fondaco,
+ * or the Maison's round: `data-goods-to="store"`), which beats as each lands; « +n » rises over
+ * the workshop. False when there is nothing to fly between.
+ */
+function flyHarvest(layer: HTMLElement, harvested: Record<string, number>): boolean {
+  const target = shown('[data-goods-to="store"]');
+  const sources = [...document.querySelectorAll<HTMLElement>("[data-harvest-from]")].filter(
+    (el) =>
+      el.getBoundingClientRect().width > 0 && (harvested[el.dataset.harvestFrom ?? ""] ?? 0) > 0,
+  );
+  if (!target || sources.length === 0) return false;
+  const to = middle(target);
+  sources.forEach((source, n) => {
+    const good = source.dataset.harvestFrom ?? "";
+    const from = middle(source);
+    // The arc's top, above the straight way: a mark is thrown, not slid.
+    const lift = Math.min(120, Math.hypot(to.x - from.x, to.y - from.y) * 0.35);
+    for (let i = 0; i < 3; i++) {
+      const mark = document.createElement("span");
+      mark.style.cssText = `position:absolute;left:0;top:0;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:${i % 2 ? "50%" : "3px"};background:${goodsColour(good)};box-shadow:0 1px 3px rgb(0 0 0 / 0.5)`;
+      layer.appendChild(mark);
+      const mid = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - lift };
+      const flight = mark.animate(
+        [
+          { transform: `translate(${from.x}px, ${from.y}px) scale(0.6)`, opacity: 0 },
+          {
+            transform: `translate(${from.x}px, ${from.y - 18}px) scale(1.15)`,
+            opacity: 1,
+            offset: 0.15,
+          },
+          { transform: `translate(${mid.x}px, ${mid.y}px) scale(1)`, opacity: 1, offset: 0.55 },
+          { transform: `translate(${to.x}px, ${to.y}px) scale(0.55)`, opacity: 0.3 },
+        ],
+        { duration: T.travel, delay: n * 90 + i * 60, easing: EASE.travel, fill: "both" },
+      );
+      flight.onfinish = () => {
+        mark.remove();
+        beat(target, "tab-bounce");
+      };
+      flight.oncancel = () => mark.remove();
+    }
+    const rise = document.createElement("span");
+    rise.textContent = `+${harvested[good]}`;
+    rise.className =
+      "absolute left-0 top-0 whitespace-nowrap font-display text-base font-extrabold text-lagoon [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]";
+    layer.appendChild(rise);
+    const at = (y: number) => `translate(${from.x}px, ${y}px) translate(-50%, 0)`;
+    const up = rise.animate(
+      [
+        { transform: at(from.y - 20), opacity: 0 },
+        { transform: at(from.y - 28), opacity: 1, offset: 0.2 },
+        { transform: at(from.y - 56), opacity: 0 },
+      ],
+      { duration: T.moment, delay: n * 90, easing: EASE.out, fill: "both" },
+    );
+    up.onfinish = () => rise.remove();
+    up.oncancel = () => rise.remove();
+  });
+  return true;
 }
 
 /**

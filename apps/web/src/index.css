@@ -290,6 +290,17 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in: cubic-bezier(0.55, 0, 0.75, 0.4);
   --spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  /* The rest of the grammar (motion.ts is their source for the scripts and the 3D; a test keeps
+     both the same, audit of 4 November, motion M7). */
+  --t-camera: 450ms;
+  --t-camera-far: 700ms;
+  --t-travel: 680ms;
+  --t-impact: 90ms;
+  --t-moment: 900ms;
+  --t-sequence: 3200ms;
+  --t-fade-reduced: 120ms;
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-travel: cubic-bezier(0.5, 0, 0.2, 1);
   /* The five tabs at the foot of the screen: what sits at the foot of the map stops above them. */
   --tabbar: calc(3.5rem + max(0.25rem, env(safe-area-inset-bottom)));
 }
@@ -1263,10 +1274,6 @@ body[data-coach-top] [data-toast] {
 }
 
 /* The foot of the map (BottomSlot): what comes rises, what leaves sinks and fades. */
-:root {
-  --t-camera: 450ms;
-  --t-moment: 420ms;
-}
 .slot-in {
   animation: slot-in var(--t-base) var(--ease-out) both;
 }
@@ -1324,6 +1331,15 @@ button.map-place::after {
 }
 button.map-place {
   position: absolute;
+}
+/* A place's name keeps its size on the screen whatever the zoom (audit of 4 November, UI U-3):
+   the place grows and shrinks with the chart, its name is scaled back to 12 px, never 4 px far
+   out nor blurred up close. */
+.map-place .map-name {
+  display: inline-block;
+  /* The layer is scaled by k (--inv is 1/k), the place by --chartk: the name, by neither. */
+  transform: scale(calc(var(--inv, 1) / var(--chartk, 1)));
+  transform-origin: top center;
 }
 [data-far] .map-place .map-name {
   opacity: 0;
@@ -1662,8 +1678,9 @@ button.map-place {
     opacity: 1;
   }
 }
+/* The damage rises when the blow lands, 300 ms after the beat (its bolt's flight). */
 .battle-damage {
-  animation: battle-damage 0.9s ease-out forwards;
+  animation: battle-damage var(--t-moment) var(--ease-out) 300ms both;
 }
 @keyframes battle-damage {
   from {
@@ -1713,6 +1730,11 @@ button.map-place {
   .porta-relic {
     animation: none;
   }
+}
+/* A town ready to deliver breathes on the map only while no sheet covers it (audit of
+   4 November, UI U-1: one gold that moves on the screen). */
+body:has(dialog[open]) .city-pill-ready {
+  animation: none;
 }
 
 /* The dock (src/dock.tsx, docs/plan-dock.md): a decision rises from the foot; a new view of the
@@ -1814,6 +1836,7 @@ button.map-place {
     background: rgb(var(--night-2));
   }
 }
+/* biome-ignore lint/correctness/noUnknownMediaFeatureName: a real feature (Media Queries 5), not yet in Biome's list */
 @media (prefers-reduced-transparency: reduce) {
   .glass,
   .glass-thick,

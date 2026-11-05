@@ -7,7 +7,7 @@ import {
   powerOf,
 } from "../../src/index.js";
 import { testEmpire } from "../fixture.js";
-import { DAY, MIN, World, makeContext } from "../helpers.js";
+import { DAY, HOUR, MIN, World, makeContext } from "../helpers.js";
 
 const empire: EmpireSettingsInput = {
   ...testEmpire,
@@ -106,6 +106,20 @@ describe("the merchant's return", () => {
     expect(away?.ready).toEqual({ wheat: 240 });
     expect(away?.sitesDone).toBe(1);
     expect(away?.since).toBe(w.now - 2 * DAY);
+  });
+
+  it("tells it after half a day by default, sooner when the world says so (audit of 4 November)", () => {
+    const w = world();
+    w.do({ type: "empireRelaunchAll", playerId: "a" });
+    w.advance(3 * HOUR);
+    expect(view(w).away).toBeNull();
+    const sooner = new World(makeContext({ empire: { ...empire, away: { afterMinutes: 150 } } }));
+    sooner.do({ type: "empireJoin", playerId: "a" });
+    sooner.do({ type: "empireRelaunchAll", playerId: "a" });
+    sooner.advance(2 * HOUR);
+    expect(view(sooner).away).toBeNull();
+    sooner.advance(HOUR);
+    expect(view(sooner).away?.since).toBe(sooner.now - 3 * HOUR);
   });
 });
 

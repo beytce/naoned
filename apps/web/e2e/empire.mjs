@@ -8,7 +8,7 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
-import { assertNoOverflow, assertSheetHead } from "./assert.mjs";
+import { assertNoOverflow, assertOneGold, assertSheetHead } from "./assert.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SHOTS = resolve(process.env.SHOTS ?? join(here, "..", "e2e-shots", "empire"));
@@ -101,6 +101,7 @@ try {
     const shot = async (name) => {
       await page.waitForTimeout(400);
       await assertNoOverflow(page).catch((e) => faults.push(`${label} ${name}: ${e.message}`));
+      await assertOneGold(page).catch((e) => faults.push(`${label} ${name}: ${e.message}`));
       await page.screenshot({ path: join(SHOTS, `${label}-${name}.png`) });
     };
     const email = `empire_${width}@example.org`;
@@ -330,9 +331,23 @@ try {
     if (under) faults.push(`${label}: a round button still under the open sheet`);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
-    // The corner's counts say what they are when touched.
-    await page.locator("[data-hud=favour]").click();
-    await page.locator("[data-hud=favour] [role=note]").waitFor();
+    // The corner's counts say what they are when touched; the Favour and the Seals are away while
+    // the house has none (audit of 4 November, UX M7).
+    await page.locator("[data-hud=ducats]").click();
+    await page.locator("[data-hud=ducats] [role=note]").waitFor();
+    if ((await page.locator("[data-hud=favour], [data-hud=seals]").count()) > 0)
+      faults.push(`${label}: a Favour or Seals count at zero in the corner`);
+    // Off the network, it is said; back on it, the word goes (audit of 4 November, UX M10).
+    await page.context().setOffline(true);
+    await page
+      .locator("[data-offline]")
+      .waitFor({ timeout: 3_000 })
+      .catch(() => faults.push(`${label}: nothing said off the network`));
+    await page.context().setOffline(false);
+    await page
+      .locator("[data-offline]")
+      .waitFor({ state: "detached", timeout: 5_000 })
+      .catch(() => faults.push(`${label}: still « offline » once back on the network`));
 
     // The Market: a good touched opens its sheet, to sell or deliver.
     await page.locator("[data-round=market]").click();
@@ -451,6 +466,8 @@ try {
         .first();
       const good = await row.getAttribute("data-market-buy");
       await row.locator("button").click();
+      // A weighty purchase asks a second touch (audit of 4 November, UX B1).
+      if ((await row.getAttribute("data-confirm")) !== null) await row.locator("button").click();
       await page
         .locator(`[data-market-good=${good}]`)
         .getByText(/en stock/)

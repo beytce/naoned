@@ -1,16 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { type Account, ApiError } from "../api.js";
 import { BuildingArt } from "../art/buildings.js";
 import { GoodsMark } from "../art/goods.js";
 import { d, hourOf, minutesLabel } from "../game/format.js";
-import { FxLayer, flyCoins, flyGoods } from "../game/fx.js";
+import { FxLayer, flyCoins, flyGoods, pressResult } from "../game/fx.js";
+import { GOLD } from "../game/gold.js";
 import { connectLive } from "../game/live.js";
 import { Icon } from "../game/map/icons.js";
+import { useOnline } from "../game/online.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { sound } from "../sound.js";
-import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
+import { Badge, GoldLayer, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { suppliable } from "./Company.js";
 import { CompanySheet } from "./CompanyTab.js";
 import { HelpSheet, HouseSheet, Intro, NextStepCard } from "./Guide.js";
@@ -36,6 +38,7 @@ import { BottomSlot } from "./map/BottomSlot.js";
 import { DomainBar } from "./map/Domain.js";
 import { EmpireMap, type EmpireMapHandle, type Picked } from "./map/EmpireMap.js";
 import { Hud } from "./map/Hud.js";
+import { Milestones } from "./map/Milestones.js";
 import { OrdersPanel } from "./map/OrdersPanel.js";
 import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
@@ -43,12 +46,11 @@ import { RoundButtons } from "./map/RoundButtons.js";
 import { Trips } from "./map/Trips.js";
 import { VehiclePanel } from "./map/VehiclePanel.js";
 import { WorkshopDock } from "./map/WorkshopDock.js";
+import { measureBand } from "./map/band.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
 import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
-import { ArmsScene } from "./porta/ArmsScene.js";
 import { BattleScreen } from "./porta/Battle.js";
-import { PortaScene } from "./porta/PortaScene.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
 type SheetId =
@@ -70,6 +72,24 @@ type SheetId =
   | `region:${string}`
   | `workshop:${string}`
   | `new:${string}`;
+
+// The Porta's scenes in 3D, loaded only once their place is first opened: three.js and the
+// figurines no longer weigh on the start of the game (audit of 4 November, 3D B1).
+const ArmsScene = lazy(() =>
+  import("./porta/ArmsScene.js").then((m) => ({ default: m.ArmsScene })),
+);
+const PortaScene = lazy(() =>
+  import("./porta/PortaScene.js").then((m) => ({ default: m.PortaScene })),
+);
+
+/** True from the first time `on` is, and then for good (a scene kept mounted once loaded). */
+function useOnce(on: boolean) {
+  const [was, setWas] = useState(on);
+  useEffect(() => {
+    if (on) setWas(true);
+  }, [on]);
+  return was || on;
+}
 
 const t = fr.empire;
 const unknownError = fr.errors.unknown ?? "";
@@ -130,6 +150,16 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [aiming, setAiming] = useState(false);
   const map = useRef<EmpireMapHandle>(null);
   useAwayRecap(p);
+  // The screen's useful band (map/band.ts), measured after each change of what covers it.
+  useEffect(() => {
+    measureBand();
+    const id = window.setTimeout(measureBand, 320);
+    window.addEventListener("resize", measureBand);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("resize", measureBand);
+    };
+  });
   // A fondaco's domain plunged into (3D): its bar at the foot instead of the round buttons.
   const [domain, setDomain] = useState<string | null>(null);
   const domainNow = useRef(domain);
@@ -192,20 +222,32 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     return () => clearTimeout(id);
   }, [toast]);
 
+  // Off the network: said once at the top, and the house read again as soon as it is back.
+  const online = useOnline(refresh);
   const act = async (a: EmpireAction) => {
     setBusy(true);
     try {
       const answer = await empireApi.act(a);
-      if (!answer.error) feel(p, answer);
+      // The gold slab pressed is struck, or shakes (game/fx.tsx), the moment the answer comes.
+      pressResult(!answer.error);
+      if (!answer.error) feel(p, answer, a);
       take(answer);
     } catch (err) {
-      setToast(err instanceof ApiError ? (t.errors[err.code] ?? unknownError) : unknownError);
+      pressResult(false);
+      setToast(
+        err instanceof ApiError
+          ? (t.errors[err.code] ?? unknownError)
+          : ((!navigator.onLine ? fr.errors.offline : fr.errors.network) ?? unknownError),
+      );
     } finally {
       setBusy(false);
     }
   };
-  // A hop arrived by the clock: the house's state settled, quietly (no wait, no error told).
+  // A hop arrived by the clock: the house's state settled, quietly (no wait, no error told);
+  // but a delivery paid is felt: coins to the purse, their sound (audit of 4 November, motion M1).
   const settling = useRef(false);
+  const shown = useRef(p);
+  shown.current = p;
   const settle = useCallback(() => {
     if (settling.current) return;
     settling.current = true;
@@ -213,7 +255,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       empireApi
         .act({ type: "empireSettle" })
         .then((answer) => {
-          if (!answer.error) take(answer);
+          if (answer.error) return;
+          feel(shown.current, answer);
+          take(answer);
         })
         .catch(() => undefined)
         .finally(() => {
@@ -538,8 +582,17 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         ) : (
           <>
             {/* Lorenzo, the tutorial's: until the Casa 2 he says the next gesture, and its gold
-                button does it; then he withdraws behind the « ? », and the player plays. */}
+                button does it; then he withdraws behind the « ? », and the three milestones keep
+                the way in sight (audit of 4 November, UX B2), each opening its place. */}
             {lorenzo}
+            {!tutorial && (
+              <Milestones
+                p={p}
+                onCasa={() => setSheet("casa")}
+                onCity={(code) => setTarget({ kind: "city", code })}
+                onCarnet={() => setSheet("company")}
+              />
+            )}
             <RoundButtons
               onRecenter={() => (MAP_3D ? map.current?.house() : map.current?.toggle())}
               onHelp={tutorial ? undefined : () => setSheet("help")}
@@ -650,6 +703,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       {createPortal(
         <>
           <Intro p={p} />
+          {!online && (
+            <output
+              className="fixed inset-x-0 top-[max(0.5rem,env(safe-area-inset-top))] z-[65] mx-auto flex w-fit items-center gap-2 rounded-full bg-night-4/95 px-4 py-2 text-sm font-semibold text-cream shadow-lg ring-1 ring-edge"
+              data-offline
+            >
+              <span className="h-2 w-2 rounded-full bg-vermilion" aria-hidden="true" />
+              {fr.errors.offline ?? ""}
+            </output>
+          )}
           {toast && (
             <output className="fixed inset-x-4 top-[max(1rem,env(safe-area-inset-top))] z-[70] mx-auto block max-w-sm animate-fade bg-night-4 px-4 py-3 text-center text-sm text-cream shadow-lg slab">
               {toast}
@@ -669,8 +731,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
       {/* The Remise's arms and the Porta: their scene and their dock; without WebGL, the same dock
           over a plain ground (docs/plan-dock.md, lot 6). */}
-      <ArmsScene p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
-      <PortaScene
+      <LazyArms p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+      <PortaPlace
         p={p}
         now={now}
         open={sheet === "porta"}
@@ -707,14 +769,27 @@ const terraCalls = (p: EmpirePayload, now: number) => {
  * The gesture answers (lot A of the UX audit): the goods gained fly to the resource bar, the
  * ducats to the purse, with the sound and the touch of the monthly game.
  */
-function feel(before: EmpirePayload, after: EmpirePayload) {
+/**
+ * What an answer is felt as (audit of 4 November, motion M3): goods gathered fly to the store with
+ * their sound, coins earned to the purse with theirs; a purchase (goods in, ducats out) is a stamp,
+ * not a harvest; a vehicle that leaves, its cart. Each once, at the answer.
+ */
+function feel(before: EmpirePayload, after: EmpirePayload, action?: EmpireAction) {
   const gains: Record<string, number> = {};
   for (const [g, n] of Object.entries(after.stock)) {
     const more = n - (before.stock[g] ?? 0);
     if (more > 0 && !g.includes(":")) gains[g] = more;
   }
   const coins = BigInt(after.cash) - BigInt(before.cash);
-  if (Object.keys(gains).length > 0) {
+  const goods = Object.keys(gains).length > 0;
+  if (action?.type === "empireDeliverCity" || action?.type === "empireMove") {
+    sound("cart");
+    haptic("tap");
+  } else if (goods && coins < 0n) {
+    flyGoods(gains);
+    sound("stamp");
+    haptic("tap");
+  } else if (goods) {
     flyGoods(gains);
     sound("harvest");
   }
@@ -722,7 +797,7 @@ function feel(before: EmpirePayload, after: EmpirePayload) {
     flyCoins(coins);
     sound("coin");
   }
-  if (coins > 0n || Object.keys(gains).length > 0) haptic("success");
+  if (coins > 0n || (goods && coins >= 0n)) haptic("success");
 }
 
 /** A trait to take or a path to choose waits in the family. */
@@ -1074,4 +1149,40 @@ function useAwayRecap(p: EmpirePayload) {
       // Without storage, no recap next time.
     }
   }, [p.now]);
+}
+
+/**
+ * The Porta: its scene and its dock (docs/plan-porta-3d.md, docs/plan-dock.md), loaded at its first
+ * opening (audit of 4 November, 3D B1: three.js never in the start's bundle).
+ */
+type PortaProps = {
+  p: EmpirePayload;
+  now: number;
+  open: boolean;
+  busy: boolean;
+  onClose: () => void;
+  act: (a: EmpireAction) => Promise<void>;
+  onBattle: () => void;
+};
+function PortaPlace(props: PortaProps) {
+  const opened = useOnce(props.open);
+  return opened ? (
+    <GoldLayer depth={props.open ? GOLD.scene : 0}>
+      <Suspense fallback={null}>
+        <PortaScene {...props} />
+      </Suspense>
+    </GoldLayer>
+  ) : null;
+}
+
+/** The Remise's arms (their scene and their dock), loaded at their first opening. */
+function LazyArms(props: Omit<PortaProps, "now" | "onBattle">) {
+  const opened = useOnce(props.open);
+  return opened ? (
+    <GoldLayer depth={props.open ? GOLD.scene : 0}>
+      <Suspense fallback={null}>
+        <ArmsScene {...props} />
+      </Suspense>
+    </GoldLayer>
+  ) : null;
 }

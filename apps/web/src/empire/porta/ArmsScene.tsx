@@ -12,11 +12,16 @@ import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { Figure } from "../map3d/figure.js";
 import { MAP_3D } from "../map3d/flag.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
+import { preloadMinis } from "../map3d/minis.js";
+import { Pace } from "../map3d/pace.js";
+import { useCoverBoard } from "../map3d/pause.js";
 import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { ArmsDock, type ArmsView, KIND_HEX, componentName } from "./ArmsDock.js";
 import { pt } from "./texts.js";
 import type { ComponentKind, PortaView } from "./types.js";
+
+preloadMinis();
 
 const live = () => !(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
 /** A vehicle's pedestal in the workshop, in a row, and its places round it. */
@@ -63,6 +68,8 @@ export function ArmsScene({
   const labels = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   const [dockH, setDockH] = useState(0);
+  // The map asleep under this scene (audit of 4 November, 3D B3).
+  useCoverBoard(open && !!v);
   useEffect(() => {
     const el = dockRef.current;
     if (!open || !el || typeof ResizeObserver === "undefined") return;
@@ -84,6 +91,7 @@ export function ArmsScene({
           <Guard3D>
             <Canvas
               orthographic
+              frameloop="demand"
               dpr={[1, 1.5]}
               camera={{ position: [0, 40, 44], zoom: 1 }}
               gl={{ antialias: true }}
@@ -96,6 +104,7 @@ export function ArmsScene({
                 focus={view.kind === "shop" ? null : at}
                 dockH={dockH}
               />
+              <Pace fps={live() ? 30 : 0} />
               <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
               <directionalLight position={[-50, 100, 40]} intensity={2.2} color="#FFF3DD" />
               <Suspense fallback={null}>
@@ -143,7 +152,7 @@ export function ArmsScene({
                           setView(on ? { kind: "vehicle" } : { kind: "fit", slot: k });
                         }}
                         data-place-kind={kind ?? undefined}
-                        className={`pointer-events-auto flex min-h-11 min-w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full px-2 text-xs font-bold shadow-lg shadow-black/50 disabled:opacity-50 ${on ? "ring-2 ring-gold" : ""}`}
+                        className={`pointer-events-auto flex min-h-11 min-w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full px-2 text-xs font-bold shadow-lg shadow-black/50 disabled:opacity-50 ${on ? "ring-2 ring-info" : ""}`}
                         style={{
                           background: slot
                             ? kind

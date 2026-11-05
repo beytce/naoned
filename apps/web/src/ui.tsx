@@ -1,13 +1,36 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { P } from "./art/palette.js";
 import { onBack } from "./game/back.js";
 import { pressed } from "./game/fx.js";
+import { GOLD, GoldDepth, useGold } from "./game/gold.js";
 import { store } from "./game/store.js";
 import { haptic } from "./haptics.js";
 import { fr } from "./i18n.js";
 
 type Tone = "gold" | "lagoon" | "vermilion" | "ghost";
+
+/** A slab that cannot be touched now: a thin line, its words muted but readable. */
+const OFF = { face: "bg-transparent text-muted ring-1 ring-inset ring-line" };
+
+/** The gold's depth for what is inside (game/gold.ts): a panel, a guide, a moment, a scene. */
+export function GoldLayer({
+  depth,
+  atLeast = false,
+  children,
+}: {
+  depth: number;
+  /** Never below the layer it sits in (Lorenzo inside a sheet keeps the sheet's depth). */
+  atLeast?: boolean;
+  children: ReactNode;
+}) {
+  const around = useContext(GoldDepth);
+  return (
+    <GoldDepth.Provider value={atLeast ? Math.max(around, depth) : depth}>
+      {children}
+    </GoldDepth.Provider>
+  );
+}
 
 /** Face of each tone; gold is a struck coin (index.css, .gold-face). */
 const TONES: Record<Tone, { face: string }> = {
@@ -43,7 +66,13 @@ export function Slab(props: {
   busy?: boolean;
   /** Something to take (lots ready): a light runs across the gold now and then. */
   shine?: boolean;
+  /** The layer's main action: its gold goes before the layer's other gold slabs. */
+  lead?: boolean;
 }) {
+  // One gold on the screen (game/gold.ts): a gold slab that is not the screen's one, or that
+  // cannot be touched, is drawn as a ghost (never a dull gold that weighs and does nothing).
+  const asked = (props.tone ?? "gold") === "gold";
+  const mine = useGold(asked && !props.disabled, props.lead ? 0.25 : 0);
   const size = {
     // Drawn small, touched at 44 px: the hit area reaches 8 px above and below the pill.
     sm: "min-h-9 px-4 py-1.5 text-[0.8125rem]",
@@ -61,13 +90,17 @@ export function Slab(props: {
         disabled={props.disabled}
         data-coach={props.coach}
         aria-label={props.label}
-        className={`inline-flex min-h-11 items-center justify-center px-2 font-display font-bold text-info transition hover:brightness-110 active:opacity-70 disabled:pointer-events-none disabled:opacity-35 ${props.size === "lg" ? "text-base" : "text-sm"} ${props.className ?? ""}`}
+        className={`inline-flex min-h-11 items-center justify-center px-2 font-display font-bold text-info transition hover:brightness-110 active:opacity-70 disabled:pointer-events-none disabled:opacity-70 ${props.size === "lg" ? "text-base" : "text-sm"} ${props.className ?? ""}`}
       >
         {props.children}
       </button>
     );
-  const tone = TONES[props.tone ?? "gold"];
-  const gold = (props.tone ?? "gold") === "gold";
+  const gold = asked && mine && !props.disabled;
+  // Out of reach: its words stay readable (muted, never a faded 35 %), the line thinner
+  // (audit of 4 November, UI U-5).
+  const tone = props.disabled
+    ? OFF
+    : TONES[gold ? "gold" : asked ? "ghost" : (props.tone ?? "gold")];
   return (
     <button
       type={props.type ?? "button"}
@@ -80,9 +113,9 @@ export function Slab(props: {
       disabled={props.disabled}
       aria-busy={props.busy || undefined}
       data-coach={props.coach}
-      data-slab={props.tone ?? "gold"}
+      data-slab={gold ? "gold" : asked ? "ghost" : (props.tone ?? "gold")}
       aria-label={props.label}
-      className={`group relative isolate inline-flex font-display font-extrabold disabled:pointer-events-none disabled:opacity-35 ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
+      className={`group relative isolate inline-flex font-display font-extrabold disabled:pointer-events-none ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
     >
       <span
         className={`slab-face press relative flex w-full items-center justify-center overflow-hidden rounded-full text-center leading-tight group-hover:brightness-105 ${props.busy ? "slab-busy" : gold && props.shine ? "slab-shine" : ""} ${size} ${tone.face}`}
@@ -207,7 +240,7 @@ export function HudChip(props: {
         haptic("tap");
         props.onClick?.();
       }}
-      className={`pointer-events-auto flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full bg-night/85 px-3.5 font-display text-sm font-bold shadow-[0_4px_14px_rgb(0_0_0/0.45)] ring-1 ring-inset backdrop-blur transition active:scale-95 disabled:opacity-35 ${tone}`}
+      className={`pointer-events-auto flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full bg-night/85 px-3.5 font-display text-sm font-bold shadow-[0_4px_14px_rgb(0_0_0/0.45)] ring-1 ring-inset backdrop-blur transition active:scale-95 disabled:opacity-70 ${tone}`}
     >
       <span className="shrink-0">{props.icon}</span>
       <span>{props.children}</span>
@@ -593,7 +626,7 @@ export function Qty(props: {
     props.onChange(Math.max(1, Math.min(Math.max(1, props.max), Math.round(v))));
   // The slab is drawn inside: its slant would cut 3 px off each side of a 44 px button's touch.
   const btn =
-    "group grid h-11 w-11 place-items-center font-display text-lg transition active:scale-95 disabled:opacity-35";
+    "group grid h-11 w-11 place-items-center font-display text-lg transition active:scale-95 disabled:opacity-70";
   const face =
     "slab col-start-1 row-start-1 h-full w-full bg-night-4 ring-1 ring-inset ring-edge group-hover:ring-cream-dim/40";
   return (
@@ -918,7 +951,8 @@ export function Sheet({
             <CloseButton onClick={onClose} className="absolute right-3 top-3 lg:right-4 lg:top-4" />
           )}
         </div>
-        {head.children}
+        {/* A sheet's gold outranks the map's and the panels' (game/gold.ts); one leaving claims none. */}
+        <GoldDepth.Provider value={leaving ? 0 : GOLD.sheet}>{head.children}</GoldDepth.Provider>
         {more && (
           <div
             aria-hidden="true"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GoodsMark } from "../art/goods.js";
 import { d } from "../game/format.js";
 import { fr } from "../i18n.js";
@@ -11,6 +11,9 @@ import type { EmpireAction, EmpirePayload } from "./types.js";
 const t = fr.empire.market;
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
+const CONFIRM_MS = 4000;
+/** A purchase that takes more than a quarter of the purse is confirmed. */
+export const weighty = (cash: string, cost: string) => BigInt(cost) * 4n > BigInt(cash);
 const ARROW = { up: "▲", down: "▼", flat: "=" } as const;
 const TONE = { up: "text-lagoon", down: "text-vermilion", flat: "text-cream-dim" } as const;
 
@@ -37,6 +40,14 @@ export function MarketSheet({
   act: (a: EmpireAction) => Promise<void>;
 }) {
   const [post, setPost] = useState("home");
+  // A purchase of more than a quarter of the purse asks a second touch (audit of 4 November,
+  // UX B1): the first arms it for a few seconds, the second buys.
+  const [armed, setArmed] = useState<string | null>(null);
+  useEffect(() => {
+    if (!armed) return;
+    const id = setTimeout(() => setArmed(null), CONFIRM_MS);
+    return () => clearTimeout(id);
+  }, [armed]);
   if (!p.view) return null;
   const view = p.view;
   // The counter the purchases go to (the map that grows): its region's market, its own stock.
@@ -65,7 +76,7 @@ export function MarketSheet({
                 onClick={() => setPost(x.post)}
                 aria-pressed={x.post === (at?.post ?? "home")}
                 data-market-post={x.post}
-                className={`min-h-9 rounded-full px-3 text-xs font-semibold transition active:scale-95 ${x.post === (at?.post ?? "home") ? "bg-gold/15 text-gold ring-1 ring-gold" : "text-cream-dim ring-1 ring-line"}`}
+                className={`min-h-9 rounded-full px-3 text-xs font-semibold transition active:scale-95 ${x.post === (at?.post ?? "home") ? "bg-info/10 text-cream ring-1 ring-info" : "text-cream-dim ring-1 ring-line"}`}
               >
                 {x.post === "home" ? t.venice : t.post(regionName(x.region), nth(i))}
               </button>
@@ -92,30 +103,47 @@ export function MarketSheet({
                   <GoodsMark code={q.good} size={28} covered={n > 0} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-cream">{goodName(p, q.good)}</span>
-                    <span className="block text-xs text-cream-dim">
-                      {n > 0 ? (post === "home" ? t.held(n) : t.heldAt(n)) : " "}
+                    <span className="block truncate text-xs text-cream-dim">
+                      {n > 0 ? (post === "home" ? t.held(n) : t.heldAt(n)) : t.trend[trend]}
                     </span>
                   </span>
-                  <span className="text-right">
+                  {/* The price and its arrow only: the good's name keeps its room at 320 px. */}
+                  <span className="shrink-0 text-right">
                     <span className="block font-display font-bold tabular-nums text-cream">
                       {d(q.price)}
                     </span>
-                    <span className={`block text-xs ${TONE[trend]}`} data-trend={trend}>
-                      {ARROW[trend]} {t.trend[trend]}
+                    <span
+                      className={`block text-xs ${TONE[trend]}`}
+                      data-trend={trend}
+                      title={t.trend[trend]}
+                    >
+                      {ARROW[trend]}
                     </span>
                   </span>
                 </button>
-                <span data-market-buy={q.good}>
+                <span data-market-buy={q.good} data-confirm={armed === q.good || undefined}>
                   <Slab
                     size="sm"
                     tone="ghost"
                     busy={busy}
                     disabled={!affordable(p.cash, ten)}
-                    onClick={() =>
-                      void act({ type: "empireBuy", good: q.good, qty: 10, post: at?.post })
-                    }
+                    className={armed === q.good ? "rounded-full ring-2 ring-vermilion" : ""}
+                    onClick={() => {
+                      if (armed !== q.good && weighty(p.cash, ten)) {
+                        setArmed(q.good);
+                        return;
+                      }
+                      setArmed(null);
+                      void act({ type: "empireBuy", good: q.good, qty: 10, post: at?.post });
+                    }}
                   >
-                    {t.buy(10, d(ten))}
+                    {/* The verb above, the price below: the good's name keeps its room at 320 px. */}
+                    <span className="flex flex-col items-center leading-tight">
+                      <span>{armed === q.good ? t.confirm : t.buy(10)}</span>
+                      <span className="text-xs font-semibold tabular-nums opacity-80">
+                        {d(ten)}
+                      </span>
+                    </span>
                   </Slab>
                 </span>
               </li>

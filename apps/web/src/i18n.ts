@@ -162,6 +162,12 @@ const frDict = {
       text: "Un fondaco près de Venise, trois ateliers et cinq cents ducats. Rien de ce que vous bâtirez ne sera jamais remis à zéro.",
       action: "Fonder la Maison",
     },
+    milestones: {
+      label: "Vos prochains jalons",
+      casa: (n: number) => `Casa ${n}`,
+      order: (city: string, pay: string) => `${city} · ${pay}`,
+      carnet: (done: number, of: number) => `Carnet ${done}/${of}`,
+    },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
       venezia: "Venise",
@@ -342,6 +348,8 @@ const frDict = {
       inStock: (have: number) => `${have} en stock`,
       pick: "Toucher une commande pour la retirer ou l'ajouter.",
       blockStock: "Rien en stock pour ces commandes : produisez-les d'abord.",
+      blockShort: (missing: number, good: string, have: number, qty: number) =>
+        `Il manque ${missing} ${good.toLowerCase()} : ${have} en stock sur ${qty}.`,
       blockBusy: (at: string) => `Toutes vos mules sont en route : la première rentre à ${at}.`,
       blockBusyNone: "Vous n'avez aucun véhicule à quai.",
       blockNone: "Choisissez au moins une commande.",
@@ -420,7 +428,8 @@ const frDict = {
       to: "Pour le fondaco",
       venice: "Votre fondaco",
       post: (region: string, n: number) => `${region} ${n}`,
-      buy: (n: number, cost: string) => `+${n} · ${cost}`,
+      buy: (n: number) => `Acheter ${n}`,
+      confirm: "Confirmer",
       heldAt: (n: number) => `${n} au fondaco`,
       trend: { up: "au-dessus du cours", down: "sous le cours", flat: "au cours" } as Record<
         string,
@@ -654,7 +663,7 @@ const frDict = {
       casa: (n: number) => `Tout est prêt pour la Casa ${n}.`,
       casaWhy: "Chaque Casa ouvre des places d'ateliers, des régions et de nouveaux métiers.",
       casaAction: (n: number) => `Bâtir la Casa ${n}`,
-      build: (name: string) => `Bâtissez cet atelier : ${name}.`,
+      build: (name: string) => `${name} : bâtissez cet atelier.`,
       buildWhy: (casa: number, good: string) =>
         `La Casa ${casa} demande des ${good.toLowerCase()}, et aucun de vos ateliers n'en fabrique.`,
       buildAction: (name: string) => `Bâtir : ${name}`,
@@ -671,7 +680,7 @@ const frDict = {
       sell: (n: number, good: string) => `Vendez ${n} ${good.toLowerCase()} à la Dogana.`,
       sellWhy: "Il vous manque des ducats, et ce stock ne sert ni à la Casa ni à vos ateliers.",
       sellAction: "Vendre",
-      claim: "Un objectif du Carnet (onglet Compagnie) est rempli.",
+      claim: "Un objectif du Carnet est rempli.",
       claimWhy: "Encaissez-le : il donne de la Faveur.",
       claimAction: "Encaisser",
       wait: (at: string) => `Tout tourne. Prochain lot à ${at}.`,
@@ -2940,6 +2949,9 @@ const frDict = {
           doge: "Élection du Doge (ouverture, élu)",
           broglio: "Les Rumeurs (rumeur vendue, espion, menteur démasqué)",
           shares: "Les actions (vendues, accès aux comptes, dividende, rachat)",
+          empire_full: "Une file d'atelier finie : ses lots vous attendent",
+          empire_site: "Un chantier terminé",
+          empire_orders: "Une ville pleine de commandes à livrer",
         } as Record<string, string>,
       },
     },
@@ -4557,6 +4569,7 @@ const frDict = {
   },
 
   errors: {
+    offline: "Hors ligne : rien n'est perdu, le jeu reprend au retour du réseau.",
     invalid_input: "Vérifiez votre saisie.",
     pseudo_taken: "Ce nom est déjà pris.",
     too_many_requests: "Trop de demandes. Réessayez dans quelques minutes.",

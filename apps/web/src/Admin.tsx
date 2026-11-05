@@ -184,7 +184,7 @@ function SeasonEnd() {
       <button
         type="button"
         disabled={!at}
-        className="mt-3 w-full rounded-xl bg-vermilion px-3 py-2 font-display text-xs font-extrabold uppercase text-cream disabled:opacity-40"
+        className="mt-3 w-full rounded-xl bg-vermilion px-3 py-2 font-display text-xs font-extrabold uppercase text-cream disabled:opacity-70"
         onClick={async () => {
           const r = await fetch("/api/admin/season-end", {
             method: "POST",
@@ -535,7 +535,7 @@ function WorldDesk({ world }: { world: WorldInfo }) {
         <button
           type="button"
           disabled={checking}
-          className="mt-3 w-full rounded-xl bg-info px-3 py-2 font-display text-xs font-extrabold uppercase text-ink disabled:opacity-40"
+          className="mt-3 w-full rounded-xl bg-info px-3 py-2 font-display text-xs font-extrabold uppercase text-ink disabled:opacity-70"
           onClick={async () => {
             setChecking(true);
             const r = await fetch("/api/admin/invariants", {
@@ -584,7 +584,7 @@ function WorldDesk({ world }: { world: WorldInfo }) {
           <button
             type="button"
             disabled={!email.includes("@") || !(Number(days) >= 1)}
-            className="rounded-xl bg-info px-3 py-2 font-display text-xs font-extrabold uppercase text-ink disabled:opacity-40"
+            className="rounded-xl bg-info px-3 py-2 font-display text-xs font-extrabold uppercase text-ink disabled:opacity-70"
             onClick={async () => {
               const r = await fetch("/api/admin/pass", {
                 method: "POST",

@@ -233,7 +233,7 @@ export function ActionButton({
         haptic("tap");
         onClick();
       }}
-      className="group flex w-[72px] shrink-0 flex-col items-center gap-1 disabled:opacity-35"
+      className="group flex w-[72px] shrink-0 flex-col items-center gap-1 disabled:opacity-70"
     >
       <span
         className={`press relative flex h-14 w-14 items-center justify-center rounded-full ${face}`}

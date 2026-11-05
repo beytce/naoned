@@ -14,6 +14,10 @@ Règle du projet : au commerce, un changement s'annonce dans les notes du chapit
 
 **La carte parle.** Les commandes d'une ville se voient en caisses sur son quai ; sa tuile s'éclaire en or quand vous pouvez livrer, en vert d'eau quand elle est pleine. À votre retour, les livraisons faites pendant votre absence défilent quelques secondes.
 
+**Votre retour, plus tôt.** Le récapitulatif de ce que vos ateliers ont fait pendant votre absence s'ouvre dès 2 h 30 sans jouer, et non plus seulement après une demi-journée.
+
+**Un achat qui pèse se confirme.** Au Marché, un achat de plus d'un quart de votre bourse demande un second toucher (« Confirmer »).
+
 ## Ce qui change dans les règles
 
 - **La première commande de chaque ville est plus petite** (un quart d'un lot, payé d'autant moins) : une première livraison est possible dès la première partie.

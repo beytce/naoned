@@ -48,8 +48,9 @@ export function DomainLabels({
               <button
                 type="button"
                 onClick={onCasa}
-                className="pointer-events-auto flex min-h-11 min-w-11 translate-y-9 flex-col items-center justify-center rounded-full bg-night/85 px-3 py-1 text-xs font-bold text-gold shadow-lg shadow-black/50 active:scale-95"
+                className="pointer-events-auto flex min-h-11 min-w-11 translate-y-9 flex-col items-center justify-center rounded-full bg-night/85 px-3 py-1 text-xs font-bold text-cream ring-1 ring-edge shadow-lg shadow-black/50 active:scale-95"
                 data-domain-casa
+                data-goods-to="store"
               >
                 Casa {view.house.casa}
               </button>
@@ -76,6 +77,7 @@ export function DomainLabels({
                 type="button"
                 data-workshop={ws.id}
                 data-ready={s.state === "ready" ? "" : undefined}
+                data-harvest-from={s.state === "ready" ? good : undefined}
                 disabled={busy && s.state === "ready"}
                 aria-label={`${buildingName(p, ws.type)} · ${line}`}
                 onClick={() =>
@@ -105,7 +107,7 @@ export function DomainLabels({
           return (
             <div key={key} className="map-pin" style={at(tile.x, tile.y)}>
               <span className="flex translate-y-4 flex-col items-center gap-0.5">
-                <span className="rounded-full bg-night/85 px-2 py-0.5 text-xs font-bold tabular-nums text-gold shadow-md">
+                <span className="rounded-full bg-night/85 px-2 py-0.5 text-xs font-bold tabular-nums text-info shadow-md">
                   {clock(tile.endsAt - now)}
                 </span>
                 <span className="text-xs font-semibold text-cream [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
@@ -121,7 +123,7 @@ export function DomainLabels({
                 type="button"
                 onClick={onFree}
                 data-domain-free
-                className="pointer-events-auto min-h-11 rounded-full border border-lagoon/80 bg-night/85 px-3 text-xs font-semibold text-lagoon shadow-lg shadow-black/50 active:scale-95"
+                className="pointer-events-auto min-h-11 rounded-full border border-dashed border-cream/60 bg-night/85 px-3 text-xs font-semibold text-cream shadow-lg shadow-black/50 active:scale-95"
               >
                 + {t.buildHere}
               </button>
@@ -183,7 +185,7 @@ export function DomainBar({
         <button
           type="button"
           onClick={onProduction}
-          className="flex h-11 items-center rounded-full px-2 text-sm text-lagoon active:scale-95"
+          className="flex h-11 items-center rounded-full px-2 font-display text-sm font-bold text-info active:scale-95"
           data-production
         >
           {fr.empire.scene.production}

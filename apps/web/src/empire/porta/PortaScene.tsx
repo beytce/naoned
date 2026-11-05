@@ -4,6 +4,8 @@ import { Color, type Group, MeshBasicMaterial, Vector3 } from "three";
 import { C } from "../../art/plateau/props.js";
 import { PlainGround } from "../../dock.js";
 import { Icon } from "../../game/map/icons.js";
+import { haptic } from "../../haptics.js";
+import { sound } from "../../sound.js";
 import { CloseButton } from "../../ui.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
@@ -11,6 +13,10 @@ import { Figure } from "../map3d/figure.js";
 import { MAP_3D } from "../map3d/flag.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
 import { useDonkey } from "../map3d/life.js";
+import { preloadMinis } from "../map3d/minis.js";
+import { Pace } from "../map3d/pace.js";
+import { useCoverBoard } from "../map3d/pause.js";
+import { MADE } from "../map3d/props3d.js";
 import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { PortaDock, type PortaPane } from "./PortaDock.js";
@@ -18,6 +24,8 @@ import { portaApi } from "./api.js";
 import { RARITY_HEX } from "./colours.js";
 import { errorText, pt } from "./texts.js";
 import { type PortaState, type PortaView, RARITIES, type Rarity } from "./types.js";
+
+preloadMinis();
 
 /** The Porta's own small scene (chart units): the gate to the north, the steps, the quay, the stall. */
 const GATE: [number, number, number] = [0, 0, -16];
@@ -70,6 +78,7 @@ export function PortaScene({
   onBattle: () => void;
 }) {
   const v = p.view?.porta;
+  useCoverBoard(open && !!v);
   const [state, setState] = useState<PortaState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tier, setTier] = useState(1);
@@ -139,6 +148,9 @@ export function PortaScene({
         (x) => x.repairUntil !== null && x.repairUntil > now,
       ).length;
       setBack({ gained, lost, hurt });
+      // The return told (audit of 4 November, motion M4): the bell, and the best relic felt.
+      sound(gained.length > 0 ? "bell" : "cart");
+      haptic(gained.includes("legendary") ? "alarm" : gained.length > 0 ? "success" : "tap");
     } catch {
       // Nothing to tell.
     }
@@ -244,13 +256,13 @@ export function PortaScene({
       </header>
       {back && (
         <output
-          className="porta-back absolute inset-x-4 top-24 mx-auto block max-w-sm rounded-2xl bg-night/90 p-3 text-center shadow-xl"
+          className="porta-back orbit-in absolute inset-x-4 top-28 mx-auto block max-w-sm rounded-2xl bg-night/90 p-4 text-center shadow-xl ring-1 ring-edge"
           data-porta-back
         >
           <p className="font-place text-sm font-bold uppercase tracking-[0.12em] text-gold">
             {pt.backTitle}
           </p>
-          <p className="mt-2 flex flex-wrap justify-center gap-1">
+          <p className="mt-3 flex flex-wrap justify-center gap-2">
             {back.gained.length === 0 ? (
               <span className="text-xs text-cream-dim">{pt.backNone}</span>
             ) : (
@@ -258,8 +270,9 @@ export function PortaScene({
                 <span
                   // biome-ignore lint/suspicious/noArrayIndexKey: relics of a rarity are alike
                   key={i}
-                  className="porta-relic h-4 w-4 rounded-sm ring-1 ring-night"
-                  style={{ background: RARITY_HEX[r], animationDelay: `${i * 120}ms` }}
+                  // Each relic laid down in turn, larger the rarer (a legendary one glows).
+                  className={`porta-relic rounded-md ring-1 ring-night ${r === "legendary" ? "h-8 w-8 shadow-[0_0_16px_rgb(242_194_79/0.7)]" : r === "precious" ? "h-7 w-7" : "h-6 w-6"}`}
+                  style={{ background: RARITY_HEX[r], animationDelay: `${300 + i * 220}ms` }}
                 />
               ))
             )}
@@ -369,6 +382,7 @@ function SceneView(props: {
         <Guard3D>
           <Canvas
             orthographic
+            frameloop="demand"
             dpr={[1, 1.5]}
             camera={{ position: [0, 46, 44], zoom: 1 }}
             gl={{ antialias: true }}
@@ -377,6 +391,7 @@ function SceneView(props: {
             }}
           >
             <CameraRig focus={props.focus} dockH={props.dockH} />
+            <Pace fps={live() ? 30 : 0} />
             <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
             <directionalLight position={[-60, 110, 40]} intensity={2.2} color="#FFF3DD" />
             <Suspense fallback={null}>
@@ -403,7 +418,7 @@ function SceneView(props: {
               data-porta-tier={t.tier}
               className={`pointer-events-auto -translate-x-1/2 -translate-y-1/2 flex min-h-11 min-w-11 flex-col items-center justify-center rounded-full px-2.5 text-xs font-bold shadow-lg shadow-black/50 ${
                 props.tier === t.tier
-                  ? "bg-gold text-ink"
+                  ? "bg-info text-night"
                   : t.open
                     ? "bg-night/85 text-cream ring-1 ring-line"
                     : "bg-night/60 text-cream-dim"
@@ -434,7 +449,7 @@ function SceneView(props: {
                 onClick={() => props.onChoose(x.id, x.role)}
                 aria-pressed={chosen}
                 data-porta-vehicle={x.id}
-                className={`pointer-events-auto -translate-x-1/2 translate-y-2 min-h-11 rounded-full px-2.5 text-xs font-semibold shadow-lg ${chosen ? "bg-info text-ink" : "bg-night/85 text-cream ring-1 ring-line"}`}
+                className={`pointer-events-auto -translate-x-1/2 translate-y-2 min-h-11 rounded-full px-2.5 text-xs font-semibold shadow-lg ${chosen ? "bg-night/85 text-cream ring-2 ring-info" : "bg-night/85 text-cream ring-1 ring-line"}`}
               >
                 {x.role === "combat" ? (pt.model[x.model] ?? x.model) : x.model}
                 {x.repairUntil !== null && x.repairUntil > Date.now() ? ` · ${pt.hurt}` : ""}
@@ -446,7 +461,7 @@ function SceneView(props: {
           <button
             type="button"
             onClick={props.onStall}
-            className="pointer-events-auto -translate-x-1/2 translate-y-2 min-h-11 rounded-full bg-night/85 px-3 text-xs font-semibold text-gold ring-1 ring-gold/60 shadow-lg"
+            className="pointer-events-auto -translate-x-1/2 translate-y-2 min-h-11 rounded-full bg-night/85 px-3 text-xs font-semibold text-cream ring-1 ring-edge shadow-lg"
           >
             {pt.antiquarian}
           </button>
@@ -532,7 +547,6 @@ function Scene({
   docked: { id: string; model: string; role: "combat" | "transport" }[];
 }) {
   const kit = useKit();
-  const stone = kit("tower", { roof: C.rockSeen });
   // The ground: a few tiles of sand before the gate, Rome's red lands beyond it.
   const ground = useMemo(() => {
     const out: { x: number; y: number; z: number; s: number; rot: number; rome: boolean }[] = [];
@@ -559,22 +573,17 @@ function Scene({
       <Instanced geo={tile} items={ground.filter((g) => g.rome)} material={claySolid("#B8604A")} />
       {/* The gate: two towers, its arch of stone, the lands' glow through it. */}
       <group position={GATE}>
-        <mesh geometry={stone.geo} material={clayShared} scale={6} position={[-6.5, 0, 0]} />
-        <mesh geometry={stone.geo} material={clayShared} scale={6} position={[6.5, 0, 0]} />
-        <mesh position={[0, 6.4, 0]}>
-          <torusGeometry args={[5, 1, 8, 20, Math.PI]} />
-          <meshStandardMaterial color={C.rockSeen} roughness={0.95} />
-        </mesh>
-        <mesh position={[0, 4.2, 0]} material={dark ? archDark : arch}>
-          <planeGeometry args={[8, 8.6]} />
+        <mesh geometry={MADE.porta} material={clayShared} />
+        <mesh position={[0, 5.6, 0.2]} material={dark ? archDark : arch}>
+          <planeGeometry args={[7, 10.6]} />
         </mesh>
       </group>
-      {/* The tiers, steps of stone, each higher; the chosen one in gold, the closed ones dim. */}
+      {/* The tiers, steps of stone, each higher; the chosen one in lapis, the closed ones dim. */}
       {v.tiers.map((t, i) => (
         <mesh
           key={t.tier}
           position={stepAt(i, v.tiers.length)}
-          material={claySolid(t.tier === tier ? C.gold : t.open ? C.rock2 : C.mistSoil)}
+          material={claySolid(t.tier === tier ? C.water : t.open ? C.rock2 : C.mistSoil)}
           scale={[1, 0.6 + i * 0.35, 1]}
         >
           <cylinderGeometry args={[2.4, 2.7, 2, 6]} />

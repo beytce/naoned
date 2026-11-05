@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
+import { assertOneGold } from "./assert.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(
@@ -155,7 +156,10 @@ try {
     // The models in, the shadows drawn.
     await pg.waitForTimeout(3000);
   };
-  const shot = (name) => page.screenshot({ path: join(OUT, `${name}.png`) });
+  const shot = async (name) => {
+    await assertOneGold(page).catch((e) => faults.push(`${name}: ${e.message}`));
+    await page.screenshot({ path: join(OUT, `${name}.png`) });
+  };
   /** A touch at a mark's middle: on the 3D board, it reaches the place through the scene. */
   const tapOn = async (sel) => {
     const b = await page.locator(`[data-map=empire] ${sel}`).first().boundingBox();

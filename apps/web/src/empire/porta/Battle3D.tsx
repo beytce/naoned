@@ -45,32 +45,27 @@ import {
   useKit,
 } from "../map3d/kit.js";
 import { Smoke, useDonkey, useWater } from "../map3d/life.js";
+import { preloadMinis } from "../map3d/minis.js";
+import { Pace } from "../map3d/pace.js";
 import { roleOf } from "../map3d/roster.js";
+import { CASE, extentOf, fromChart, toChart } from "./chart.js";
 import { RARITY_HEX } from "./colours.js";
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
 
-/** Chart units a case of the battle's map (a small tile is about one case across). */
-export const CASE = 10;
+preloadMinis();
+
+export { CASE, RARITY_HEX, extentOf, fromChart, toChart };
+
 const NIGHT = "#16263E";
 const SLAB = 2.4;
 /** The figurines are drawn this much larger than on the board: a battle is read from afar. */
 const FIG = 2.2;
+/**
+ * The units drawn this much larger again on the island (audit of 4 November, 3D B2 and UI U-13):
+ * about 28 px high at the battle's first framing on a phone, above the pines.
+ */
+const UNIT = 1.9;
 const TILE_R = CASE / Math.sqrt(3);
-
-/** The battle's points (cases, around the disc's middle) on the chart (units, from its corner). */
-export const toChart = (b: { radius: number }, x: number, y: number): [number, number] => [
-  (x + b.radius + 1.5) * CASE,
-  (y + b.radius + 1.5) * CASE,
-];
-export const fromChart = (b: { radius: number }, X: number, Y: number): [number, number] => [
-  X / CASE - b.radius - 1.5,
-  Y / CASE - b.radius - 1.5,
-];
-/** The island's chart, its whole square. */
-export const extentOf = (b: { radius: number }) => {
-  const w = (2 * b.radius + 3) * CASE;
-  return { w, h: w };
-};
 
 export interface Battle3DHandle {
   view(cam: Camera, v: Viewport): void;
@@ -115,7 +110,9 @@ function dressingOf(b: BattleSnapshot) {
   const r = rng(seedOf(b.id));
   const out: { name: KitName; x: number; z: number; s: number; rot: number }[] = [];
   const clear = [b.gate, ...b.cities];
-  const n = Math.round(b.radius * b.radius * 1.1);
+  // Half as much as before, and lower than the units (audit of 4 November, 3D B2): the island
+  // dressed, never hiding who fights.
+  const n = Math.round(b.radius * b.radius * 0.55);
   for (let i = 0; i < n; i++) {
     const d = Math.sqrt(r()) * (b.radius - 0.2);
     const a = r() * Math.PI * 2;
@@ -136,10 +133,10 @@ function dressingOf(b: BattleSnapshot) {
     const [X, Z] = toChart(b, x, y);
     const s =
       name === "mountainA"
-        ? 9 + r() * 4
+        ? 6 + r() * 2
         : name.startsWith("pine")
-          ? 4.5 + r() * 1.5
-          : 3.5 + r() * 2;
+          ? 2.6 + r() * 0.8
+          : 2 + r() * 1.2;
     out.push({ name, x: X, z: Z, s, rot: r() * Math.PI * 2 });
   }
   return out;
@@ -160,27 +157,55 @@ disc.rotateX(-Math.PI / 2);
 const ball = new SphereGeometry(0.35, 10, 8);
 const bubble = new SphereGeometry(1, 20, 14);
 const halo = new TorusGeometry(1, 0.09, 6, 36);
+// The relic's loading, clockwise from the top, by fortieths (made at their first use, then kept).
+const rings = new Map<number, RingGeometry>();
+const loadingRing = (steps: number) => {
+  let g = rings.get(steps);
+  if (!g) {
+    g = new RingGeometry(1.9, 2.3, steps, 1, Math.PI / 2, (-Math.PI * 2 * steps) / 40);
+    g.rotateX(-Math.PI / 2);
+    rings.set(steps, g);
+  }
+  return g;
+};
 halo.rotateX(Math.PI / 2);
-const glow = (hex: string, opacity: number) =>
-  new MeshBasicMaterial({
-    color: hex,
-    transparent: true,
-    opacity,
-    depthWrite: false,
-    side: DoubleSide,
-  });
+/**
+ * A glowing material, one for each colour and opacity, made once and kept (audit of 4 November,
+ * 3D M1): a material made at each render is never freed by React Three Fiber.
+ */
+/** Rome's one red, the interface's cinnabar (audit of 4 November, UI U-13). */
+const ROME = "#FF8070";
+const glows = new Map<string, MeshBasicMaterial>();
+const glow = (hex: string, opacity: number) => {
+  const key = `${hex}/${opacity}`;
+  let m = glows.get(key);
+  if (!m) {
+    m = new MeshBasicMaterial({
+      color: hex,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+      side: DoubleSide,
+    });
+    glows.set(key, m);
+  }
+  return m;
+};
 const M = {
   gold: glow(C.gold, 0.9),
   goldSoft: glow(C.gold, 0.25),
-  vision: glow("#E06A4A", 0.12),
-  reach: glow("#E06A4A", 0.1),
+  vision: glow(ROME, 0.12),
+  reach: glow(ROME, 0.1),
   shield: glow("#9FE7FF", 0.28),
   smoke: glow("#C9D2DE", 0.55),
   heal: glow("#6EE0B8", 0.45),
   hpBack: glow("#0E1A2B", 0.55),
+  blob: glow("#08111F", 0.38),
+  // The vehicle chosen, ringed in lapis (a choice, never gold: UI U-1).
+  chosen: glow("#6EC8F5", 0.95),
   hpMine: glow("#6EE0B8", 0.95),
   hpAlly: glow("#6EC8F5", 0.95),
-  hpRome: glow("#E06A4A", 0.95),
+  hpRome: glow(ROME, 0.95),
   bolt: new MeshBasicMaterial({ color: "#F7EBD0" }),
   iron: new MeshBasicMaterial({ color: "#2A2F36" }),
   spark: glow("#FFD27A", 0.95),
@@ -211,8 +236,21 @@ interface Track {
   to: [number, number];
   t0: number;
   heading: number;
+  /** How long its way to `to` takes: the beat as it comes, a little more. */
+  ms: number;
 }
+/** The server's beat at first (settings' stepMs); then as measured between its snapshots. */
 const BEAT = 250;
+/**
+ * A unit takes a little longer than a beat to reach its new place (audit of 4 November, motion
+ * M8): a snapshot late by some tens of ms no longer stops it dead before the next one.
+ */
+const SLACK = 1.2;
+/** A blow taken shows when its bolt lands (ms after the beat). */
+const HIT_LAG = 300;
+/** A dead man lies this long, then sinks till he is gone (ms). */
+const SINK_AT = 2_200;
+const GONE_AT = 3_000;
 
 const Battle3D = memo(
   forwardRef<
@@ -222,6 +260,8 @@ const Battle3D = memo(
     const camera = useRef<OrthographicCamera | null>(null);
     const last = useRef<{ cam: Camera; v: Viewport } | null>(null);
     const tracks = useRef(new Map<string, Track>());
+    const beat = useRef(BEAT);
+    const seen = useRef({ time: -1, at: 0 });
     const apply = () => {
       const c = camera.current;
       const l = last.current;
@@ -233,17 +273,25 @@ const Battle3D = memo(
       c.updateProjectionMatrix();
       invalidate();
     };
-    // The figurines' new places, from where each stands now (a beat to get there).
+    // The figurines' new places, from where each stands now (a beat to get there), the beat
+    // measured between the snapshots as they come (never a fixed 250 ms).
     const now = performance.now();
+    if (seen.current.time !== battle.timeMs) {
+      const gap = now - seen.current.at;
+      if (seen.current.at > 0 && gap > 80 && gap < 1_500)
+        beat.current = beat.current * 0.7 + gap * 0.3;
+      seen.current = { time: battle.timeMs, at: now };
+    }
+    const ms = beat.current * SLACK;
     for (const u of battle.units) {
       const [X, Z] = toChart(battle, u.x, u.y);
       const t = tracks.current.get(u.id);
       if (!t) {
-        tracks.current.set(u.id, { from: [X, Z], to: [X, Z], t0: now, heading: 0 });
+        tracks.current.set(u.id, { from: [X, Z], to: [X, Z], t0: now, heading: 0, ms });
         continue;
       }
       if (t.to[0] === X && t.to[1] === Z) continue;
-      const k = Math.min(1, (now - t.t0) / BEAT);
+      const k = Math.min(1, (now - t.t0) / t.ms);
       const at: [number, number] = [
         t.from[0] + (t.to[0] - t.from[0]) * k,
         t.from[1] + (t.to[1] - t.from[1]) * k,
@@ -252,6 +300,7 @@ const Battle3D = memo(
       t.from = at;
       t.to = [X, Z];
       t.t0 = now;
+      t.ms = ms;
     }
     // biome-ignore lint/correctness/useExhaustiveDependencies: made once, its methods read refs
     useImperativeHandle(
@@ -284,7 +333,7 @@ const Battle3D = memo(
     return (
       <Canvas
         className="!absolute inset-0"
-        frameloop={live ? "always" : "demand"}
+        frameloop="demand"
         dpr={[1, 1.5]}
         orthographic
         camera={{ near: 1, far: 2000, position: [0, DISTANCE, DISTANCE] }}
@@ -296,6 +345,8 @@ const Battle3D = memo(
         }}
         data-battle3d
       >
+        {/* A battle of ten minutes at 30 frames a second, not 60: the phone keeps cool. */}
+        <Pace fps={live ? 30 : 0} rest={30} />
         <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
         <directionalLight position={[-70, 120, -60]} intensity={2.3} color="#FFF3DD" />
         <Suspense fallback={null}>
@@ -513,16 +564,23 @@ function Unit({
     if (!f) return;
     if (dead) f.act("die");
     else if (struck) f.act("strike");
-    else if (hurt) f.act("hit");
+    else if (hurt) {
+      // The blow is felt when it lands, not when it leaves (audit of 4 November, motion M8): the
+      // bolt flies some 300 ms first.
+      const id = window.setTimeout(() => fig.current?.act("hit"), HIT_LAG);
+      return () => window.clearTimeout(id);
+    }
   }, [dead, struck, hurt]);
   useFrame(() => {
     const g = group.current;
     const t = tracks.current.get(u.id);
     if (!g || !t) return;
-    const k = Math.min(1, (performance.now() - t.t0) / BEAT);
+    const k = Math.min(1, (performance.now() - t.t0) / t.ms);
     const x = t.from[0] + (t.to[0] - t.from[0]) * k;
     const z = t.from[1] + (t.to[1] - t.from[1]) * k;
-    g.position.set(x, 0, z);
+    // A dead man lies a while, then sinks into the sand (audit of 4 November, motion M9).
+    const age = deadAt === null ? 0 : performance.now() - deadAt;
+    g.position.set(x, age > SINK_AT ? -((age - SINK_AT) / (GONE_AT - SINK_AT)) * 3 : 0, z);
     // Facing its target while it fights, else its way.
     const target =
       u.side === "rome" ? u.targetId : (u.weapons.find((w) => w.targetId)?.targetId ?? null);
@@ -536,7 +594,7 @@ function Unit({
   });
   // A dead man stays a moment, then fades; one out through the gate is gone.
   if (gone) return null;
-  if (deadAt !== null && performance.now() - deadAt > 3_000) return null;
+  if (deadAt !== null && performance.now() - deadAt > GONE_AT) return null;
   const share = Math.max(0, Math.min(1, u.hp / Math.max(1, u.maxHp)));
   const mine = u.side === "player" && u.mine;
   const big = u.side === "rome" && u.kind === "gonfalonier" ? 1.8 : 1;
@@ -546,27 +604,35 @@ function Unit({
   return (
     <group ref={group}>
       {u.side === "player" && u.role === "transport" ? (
-        <group scale={FIG}>
+        <group scale={FIG * UNIT}>
           <Mule cargo={(u as PlayerUnitView).cargo} live={live} />
         </group>
       ) : (
-        <Figure
-          ref={fig}
-          role={roleOf(
-            u.side === "rome" ? { side: "rome", kind: u.kind } : { side: "player", model: u.model },
-          )}
-          live={live}
-        />
+        <group scale={UNIT}>
+          <Figure
+            ref={fig}
+            role={roleOf(
+              u.side === "rome"
+                ? { side: "rome", kind: u.kind }
+                : { side: "player", model: u.model },
+            )}
+            live={live}
+          />
+        </group>
       )}
+      {/* Its shadow on the sand: it stands on the island, never floats over it. */}
+      <mesh geometry={disc} material={M.blob} scale={0.95 * big * FIG * UNIT} position-y={0.02} />
       {/* Its health, a ring at its feet: green for mine, blue an ally's, red Rome's. */}
-      <group ref={hp} position-y={0.08} scale={1.5 * big * FIG}>
+      <group ref={hp} position-y={0.08} scale={1.5 * big * FIG * UNIT}>
         <mesh geometry={ring} material={M.hpBack} />
         <mesh
           geometry={HP[Math.round(share * 10)] ?? ring}
           material={mine ? M.hpMine : u.side === "player" ? M.hpAlly : M.hpRome}
         />
       </group>
-      {chosen && <mesh geometry={halo} material={M.gold} scale={2.2 * FIG} position-y={0.12} />}
+      {chosen && (
+        <mesh geometry={halo} material={M.chosen} scale={2.2 * FIG * UNIT} position-y={0.12} />
+      )}
       {/* Rome's eyes, when it is roused: its vision, and its reach while it strikes. */}
       {rome && (rome.state === "alert" || rome.state === "attack") && !dead && (
         <mesh
@@ -688,13 +754,15 @@ function Loading({ rarity, doneAt, t }: { rarity: Rarity; doneAt: number; t: num
   // The loading's time: from its rarity (docs/plan-porta.md § 6.3).
   const total = { common: 10_000, rare: 20_000, precious: 35_000, legendary: 60_000 }[rarity];
   const done = Math.max(0, Math.min(1, 1 - (doneAt - t) / total));
-  const geo = useMemo(() => {
-    const g = new RingGeometry(1.9, 2.3, 40, 1, Math.PI / 2, -Math.PI * 2 * Math.max(0.02, done));
-    g.rotateX(-Math.PI / 2);
-    return g;
-  }, [done]);
-  useEffect(() => () => geo.dispose(), [geo]);
-  return <mesh geometry={geo} material={glow(RARITY_HEX[rarity], 0.95)} position-y={0.14} />;
+  // The ring by steps of a fortieth, each made once and kept: no geometry made again at each beat.
+  const steps = Math.max(1, Math.round(40 * Math.max(0.02, done)));
+  return (
+    <mesh
+      geometry={loadingRing(steps)}
+      material={glow(RARITY_HEX[rarity], 0.95)}
+      position-y={0.14}
+    />
+  );
 }
 
 /**

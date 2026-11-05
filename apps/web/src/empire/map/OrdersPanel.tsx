@@ -98,9 +98,20 @@ export function OrdersPanel({
   const vehicleName = plan.vehicle
     ? (fr.empire.vehicleNames[plan.vehicle.type] ?? plan.vehicle.type)
     : "";
+  // The order nearest to be covered, when some of its good is in: what it still lacks.
+  const short = plan.orders
+    .filter((x) => !x.covered && x.have > 0 && (!chosen || chosen.has(x.o.id)))
+    .sort((a, b) => a.o.qty - a.have - (b.o.qty - b.have))[0];
   const why =
     plan.reason === "stock"
-      ? t().blockStock
+      ? short
+        ? t().blockShort(
+            short.o.qty - short.have,
+            goodName(p, short.o.good),
+            short.have,
+            short.o.qty,
+          )
+        : t().blockStock
       : plan.reason === "busy"
         ? plan.freeAt
           ? t().blockBusy(hourOf(plan.freeAt))

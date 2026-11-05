@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CloseButton, Slab } from "../../ui.js";
+import { GOLD } from "../../game/gold.js";
+import { CloseButton, GoldLayer, Slab } from "../../ui.js";
 import { MAP_3D } from "../map3d/flag.js";
 import { BattleDiorama } from "./BattleDiorama.js";
 import { portaApi, useBattle } from "./api.js";
@@ -11,7 +12,17 @@ import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./typ
  * on a disc of SVG without WebGL.
  */
 export function BattleScreen({ onClose }: { onClose: () => void }) {
-  return MAP_3D ? <BattleDiorama onClose={onClose} /> : <BattleSvg onClose={onClose} />;
+  const [flat, setFlat] = useState(!MAP_3D);
+  // Over every sheet and panel: the battle's gold is the screen's.
+  return (
+    <GoldLayer depth={GOLD.moment}>
+      {flat ? (
+        <BattleSvg onClose={onClose} />
+      ) : (
+        <BattleDiorama onClose={onClose} onFail={() => setFlat(true)} />
+      )}
+    </GoldLayer>
+  );
 }
 
 /**
@@ -150,7 +161,7 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
           )}
         </div>
         <div className="text-right">
-          <p className="text-[0.6875rem] uppercase tracking-wider text-cream-dim">{pt.timer}</p>
+          <p className="text-xs uppercase tracking-wider text-cream-dim">{pt.timer}</p>
           <p
             className={`font-display text-xl font-extrabold tabular-nums ${battle.endsAtMs - battle.timeMs < 60_000 ? "text-vermilion" : "text-cream"}`}
             data-battle-timer
@@ -334,7 +345,7 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
                   onClick={() => setSelected(u.id)}
                   disabled={u.outcome !== "in"}
                   data-battle-unit={u.id}
-                  className={`min-w-[8.5rem] rounded-xl border px-2 py-1.5 text-left text-xs disabled:opacity-40 ${u.id === sel?.id ? "border-info text-cream" : "border-line text-cream-dim"}`}
+                  className={`min-w-[8.5rem] rounded-xl border px-2 py-1.5 text-left text-xs disabled:opacity-70 ${u.id === sel?.id ? "border-info text-cream" : "border-line text-cream-dim"}`}
                 >
                   <span className="block font-semibold">
                     {u.role === "combat" ? pt.combat : pt.transport} · {u.hp}/{u.maxHp}
@@ -360,17 +371,17 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
                       void order({ type: "activate", unitId: sel.id, componentId: a.componentId })
                     }
                     data-battle-active={a.effect}
-                    className={`flex h-12 w-12 flex-col items-center justify-center rounded-full border text-[0.625rem] font-semibold leading-tight disabled:opacity-50 ${active ? "border-lagoon text-lagoon" : "border-info text-info"}`}
+                    className={`flex h-12 w-[4.5rem] flex-col items-center justify-center rounded-2xl border px-1 text-xs font-semibold leading-tight disabled:opacity-50 ${active ? "border-lagoon text-lagoon" : "border-info text-info"}`}
                     aria-label={pt.component[a.effect] ?? a.effect}
                   >
-                    {(pt.component[a.effect] ?? a.effect).slice(0, 6)}
+                    {pt.component[a.effect] ?? a.effect}
                     {wait > 0 && <span className="tabular-nums">{Math.ceil(wait / 1_000)}s</span>}
                   </button>
                 );
               })}
               {sel && atGate && (
                 <Slab
-                  tone="gold"
+                  tone="ghost"
                   size="sm"
                   onClick={() => void order({ type: "leave", unitId: sel.id })}
                 >

@@ -802,7 +802,7 @@ export function Thread({ source = FAMILY_THREAD }: { source?: ThreadSource }) {
           type="submit"
           aria-label={t().thread.send}
           disabled={sending || !text.trim()}
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-info text-ink transition active:scale-95 disabled:opacity-40"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-info text-ink transition active:scale-95 disabled:opacity-70"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
             <path

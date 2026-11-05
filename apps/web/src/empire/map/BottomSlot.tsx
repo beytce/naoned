@@ -1,4 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { GOLD } from "../../game/gold.js";
+import { GoldLayer } from "../../ui.js";
 
 /** As long as `--t-quick` (index.css): what leaves is gone by then. */
 const LEAVE_MS = 160;
@@ -47,11 +49,11 @@ export function BottomSlot({
           className="slot-out absolute inset-x-0 bottom-0"
           aria-hidden="true"
         >
-          {leaving.node}
+          <GoldLayer depth={0}>{leaving.node}</GoldLayer>
         </div>
       )}
-      <div key={id} className="slot-in relative flex flex-col items-center">
-        {children}
+      <div key={id} className="slot-in relative flex flex-col items-center lg:items-end lg:pr-4">
+        <GoldLayer depth={hidden ? 0 : GOLD.panel}>{children}</GoldLayer>
       </div>
     </div>
   );

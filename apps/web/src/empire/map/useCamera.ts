@@ -1,5 +1,6 @@
 import { type RefObject, useCallback, useEffect, useRef } from "react";
 import { type Camera, type Point, type Viewport, zoomAt } from "../../game/map/geometry.js";
+import { T, reduced } from "../../motion.js";
 import { coverClamp, scaleBounds } from "./logic.js";
 
 /** A finger that moved less than this (px) touched; more, it dragged. */
@@ -43,6 +44,7 @@ export function useCamera({
   const cam = useRef<Camera | null>(null);
   const anim = useRef<{ from: Camera; to: Camera; t0: number; ms: number } | null>(null);
   const velocity = useRef<Point | null>(null);
+  const lastStep = useRef(0);
   const frame = useRef(0);
   const live = useRef({ onPaint, onDoubleTap, onTap, onHold, onRest, initial, bounds, extent });
   live.current = { onPaint, onDoubleTap, onTap, onHold, onRest, initial, bounds, extent };
@@ -100,6 +102,7 @@ export function useCamera({
 
   const run = useCallback(() => {
     if (frame.current) return;
+    lastStep.current = 0;
     const step = (t: number) => {
       frame.current = 0;
       const a = anim.current;
@@ -108,26 +111,47 @@ export function useCamera({
         set(glide(a.from, a.to, k, view()));
         if (k >= 1) anim.current = null;
       } else if (velocity.current) {
+        // The momentum after a fling, by the clock (never by the screen's rate: 120 Hz no longer
+        // throws the map twice as far, audit of 4 November, motion m1).
         const v = velocity.current;
+        const dt = Math.min(48, t - (lastStep.current || t - 16));
         const c = current();
-        set({ ...c, tx: c.tx + v.x * 16, ty: c.ty + v.y * 16 });
-        velocity.current = { x: v.x * 0.92, y: v.y * 0.92 };
+        set({ ...c, tx: c.tx + v.x * dt, ty: c.ty + v.y * dt });
+        const keep = 0.92 ** (dt / 16);
+        velocity.current = { x: v.x * keep, y: v.y * keep };
         if (Math.hypot(v.x, v.y) < 0.02) velocity.current = null;
       }
+      lastStep.current = t;
       if (anim.current || velocity.current) frame.current = requestAnimationFrame(step);
     };
     frame.current = requestAnimationFrame(step);
   }, [set, current, view]);
 
-  /** Glides to a camera (or the one a function of the screen gives). */
+  /**
+   * Glides to a camera (or the one a function of the screen gives); a far one (a zoom of three
+   * and more) takes longer. Asking for less motion, it cuts straight there (audit of 4 November,
+   * motion B3: no plunge, no glide).
+   */
   const easeTo = useCallback(
-    (to: Camera | ((v: Viewport) => Camera), ms = 450) => {
+    (to: Camera | ((v: Viewport) => Camera), ms?: number) => {
       const target = typeof to === "function" ? to(view()) : to;
       velocity.current = null;
-      anim.current = { from: current(), to: target, t0: performance.now(), ms };
+      const from = current();
+      if (reduced()) {
+        anim.current = null;
+        set(target);
+        return;
+      }
+      const far = Math.max(target.s / from.s, from.s / target.s) >= 3;
+      anim.current = {
+        from,
+        to: target,
+        t0: performance.now(),
+        ms: ms ?? (far ? T.cameraFar : T.camera),
+      };
       run();
     },
-    [current, run, view],
+    [current, run, view, set],
   );
 
   /** Glides the map by so many pixels of the screen (the keys of a computer). */
@@ -249,7 +273,8 @@ export function useCamera({
       const t = performance.now();
       if (last) {
         const dt = Math.max(1, t - last.t);
-        velocity.current = { x: (p.x - last.p.x) / dt, y: (p.y - last.p.y) / dt };
+        // No momentum when the device asks for less motion.
+        if (!reduced()) velocity.current = { x: (p.x - last.p.x) / dt, y: (p.y - last.p.y) / dt };
       }
       last = { p, t };
     };
