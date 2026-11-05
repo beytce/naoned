@@ -282,6 +282,8 @@ describe("the action panel", () => {
       good: "bread",
       action: { type: "empireDeliver", good: "bread", qty: 12, city: "venezia" },
     });
+    // Then Venice's Dogana, the market (the refonte claire, lot 2).
+    expect(city[1]).toMatchObject({ id: "market", open: "market" });
   });
 });
 

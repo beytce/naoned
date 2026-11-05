@@ -27,6 +27,7 @@ const ICONS: Record<ActionIcon, () => ReactNode> = {
   plus: Icon.plus,
   workshops: Icon.workshops,
   lock: Icon.lock,
+  rialto: Icon.rialto,
   details: Icon.chevronRight,
 };
 

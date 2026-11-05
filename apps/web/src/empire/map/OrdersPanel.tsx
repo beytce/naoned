@@ -153,6 +153,22 @@ export function OrdersPanel({
         </p>
       )}
       <div key={lack ?? "orders"} className="dock-view flex flex-col gap-3">
+        {/* Venice: its Dogana, the market (the refonte claire, lot 2). */}
+        {city === "venezia" && !lacking && (
+          <button
+            type="button"
+            onClick={() => onOpen("market")}
+            className="flex min-h-12 items-center gap-3 rounded-2xl px-3.5 py-1.5 text-left ring-1 ring-inset ring-edge active:scale-[0.98]"
+            data-dogana
+          >
+            <span className="[&_svg]:h-6 [&_svg]:w-6">{Icon.rialto()}</span>
+            <span className="flex flex-1 flex-col">
+              <span className="text-sm font-semibold">{t().dogana}</span>
+              <span className="text-xs text-cream-dim">{t().doganaText}</span>
+            </span>
+            <span className="text-cream-dim [&_svg]:h-4 [&_svg]:w-4">{Icon.chevronRight()}</span>
+          </button>
+        )}
         {lacking ? (
           <Lack
             p={p}

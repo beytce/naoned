@@ -311,6 +311,7 @@ const frDict = {
         vehicles: () => "Véhicules",
         unlock: () => "Acheter la case",
         home: () => "Placer le fondaco",
+        dogana: () => "Dogana",
       } as Record<string, (n: number) => string>,
     },
     /** The five tabs of the empire (lot C of the UX audit): the loop, from the house to the family. */
@@ -391,6 +392,8 @@ const frDict = {
       toWorkshop: (name: string) => `Aller à ${name}`,
       buyAt: "Acheter au marché",
       buyText: "Le Rialto en vend",
+      dogana: "La Dogana",
+      doganaText: "Acheter et vendre à Venise",
       route: (vehicle: string, time: string) => `${vehicle} · ${time} · revient seule`,
       sent: (vehicle: string) => `${vehicle} en route`,
       sentMore: "D'autres villes ont de quoi livrer",

@@ -388,6 +388,7 @@ export const en: Dictionary = {
         vehicles: () => "Vehicles",
         unlock: () => "Buy the sector",
         home: () => "Place the fondaco",
+        dogana: () => "Dogana",
       } as Record<string, (n: number) => string>,
     },
     /** The five tabs of the empire (lot C of the UX audit): the loop, from the house to the family. */
@@ -468,6 +469,8 @@ export const en: Dictionary = {
       toWorkshop: (name: string) => `Go to ${name}`,
       buyAt: "Buy at the market",
       buyText: "The Rialto sells it",
+      dogana: "The Dogana",
+      doganaText: "Buy and sell in Venice",
       route: (vehicle: string, time: string) => `${vehicle} · ${time} · comes back alone`,
       sent: (vehicle: string) => `${vehicle} on its way`,
       sentMore: "Other towns have something to deliver",

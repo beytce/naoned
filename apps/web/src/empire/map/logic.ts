@@ -260,6 +260,7 @@ export type ActionIcon =
   | "plus"
   | "workshops"
   | "lock"
+  | "rialto"
   | "details";
 
 /** One square of the action panel: a command to send, or a sheet to open. */
@@ -375,6 +376,9 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
               action: { type: "empireDeliver", good, qty: held, city: target.code },
             });
         }
+      // After what it delivers, Venice: its Dogana, the market (the refonte claire, lot 2: the Market lives in Venice).
+      if (target.kind === "city" && target.code === "venezia")
+        out.push({ id: "market", icon: "rialto", words: { key: "dogana" }, open: "market" });
       if (r.next && r.buildingUntil === null)
         out.push({
           id: "counter",
