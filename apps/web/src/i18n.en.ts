@@ -480,6 +480,13 @@ export const en: Dictionary = {
         `${missing} ${good.toLowerCase()} missing: ${have} in stock of ${qty}.`,
       blockBusy: (at: string) => `All your mules are on the road: the first is back at ${at}.`,
       blockBusyNone: "You have no vehicle docked.",
+      blockPorta: (n: number) =>
+        n > 1
+          ? `Your ${n} vehicles are at the Porta's quay: call them back to the Remise to deliver.`
+          : "Your vehicle is at the Porta's quay: call it back to the Remise to deliver.",
+      blockRepair: (at: string) => `Your vehicles are under repair at the Remise, until ${at}.`,
+      blockElsewhere: "Your vehicles are docked at another fondaco, too far from this town.",
+      recallPorta: "Call back from the Porta",
       blockNone: "Choose at least one order.",
       gone: (vehicle: string) => `${vehicle} has left.`,
       recall: "Call back",

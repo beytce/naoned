@@ -14,7 +14,14 @@ const order = (id: string, good: string, qty: number, pay: number) => ({
 });
 function payload(
   goods: Record<string, number>,
-  vehicles: { id: string; capacity: number; at?: string; legs?: { arrivesAt: number }[] }[],
+  vehicles: {
+    id: string;
+    capacity: number;
+    at?: string;
+    legs?: { arrivesAt: number }[];
+    porta?: { arrivesAt: number };
+    repairUntil?: number;
+  }[],
 ) {
   return {
     now: 1_000,
@@ -87,6 +94,25 @@ describe("the delivery a city's « Livrer » would make", () => {
     const plan = deliveryPlan(p, "padova");
     expect(plan.reason).toBe("busy");
     expect(plan.freeAt).toBe(50_000);
+  });
+
+  it("says the vehicles are held at the Porta, rather than « none docked »", () => {
+    const p = payload({ wood: 100 }, [{ id: "m", capacity: 3, porta: { arrivesAt: 0 } }]);
+    const plan = deliveryPlan(p, "padova");
+    expect(plan.reason).toBe("porta");
+    expect(plan.porta?.map((v) => v.id)).toEqual(["m"]);
+  });
+
+  it("says a vehicle under repair, and until when", () => {
+    const p = payload({ wood: 100 }, [{ id: "m", capacity: 3, repairUntil: 70_000 }]);
+    const plan = deliveryPlan(p, "padova");
+    expect(plan.reason).toBe("repair");
+    expect(plan.freeAt).toBe(70_000);
+  });
+
+  it("says the vehicles are docked at a fondaco that does not serve the city", () => {
+    const p = payload({ wood: 100 }, [{ id: "m", capacity: 3, at: "p2" }]);
+    expect(deliveryPlan(p, "padova").reason).toBe("elsewhere");
   });
 
   it("says the city is out of every counter's reach", () => {

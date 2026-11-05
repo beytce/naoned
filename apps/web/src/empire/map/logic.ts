@@ -836,7 +836,12 @@ export function roadOf(
 }
 
 /** Why « Livrer » cannot go: no stock for any order, every vehicle away, out of reach, none. */
-export type DeliveryBlock = "stock" | "busy" | "reach" | "none";
+/**
+ * Why « Livrer » cannot go: the stock, every vehicle on the road, out of reach, nothing chosen;
+ * or the vehicles that are not on the road yet not at a counter serving the city: held at the
+ * Porta (to be called back), under repair, or docked at another fondaco.
+ */
+export type DeliveryBlock = "stock" | "busy" | "reach" | "none" | "porta" | "repair" | "elsewhere";
 
 /**
  * What a city's « Livrer » would do (decision of the owner, 3 November 2026), as the engine does it
@@ -855,8 +860,10 @@ export function deliveryPlan(
   vehicle: Mine | null;
   pay: bigint;
   reason: DeliveryBlock | null;
-  /** The first vehicle free again (server time), when every one is away. */
+  /** The first vehicle free again (server time), when every one is away or under repair. */
   freeAt: number | null;
+  /** The vehicles held at the Porta, when they are why nothing can go. */
+  porta?: Mine[];
 } {
   const view = p.view;
   const at = view?.orders.find((x) => x.city === city);
@@ -905,20 +912,27 @@ export function deliveryPlan(
     return { orders, picks: pick.ids, vehicle: pick.v, pay, reason: null, freeAt: null };
   }
   const anyDocked = view.vehicles.mine.some(docked);
+  const blocked = { orders, picks: [], vehicle: null, pay: 0n };
+  if (anyDocked) return { ...blocked, reason: "stock", freeAt: null };
   const away = view.vehicles.mine.filter((v) => v.legs.length > 0);
-  const freeAt = anyDocked
-    ? null
-    : away.length
-      ? Math.min(...away.map((v) => v.legs.at(-1)?.arrivesAt ?? Number.POSITIVE_INFINITY))
-      : null;
-  return {
-    orders,
-    picks: [],
-    vehicle: null,
-    pay: 0n,
-    reason: anyDocked ? "stock" : "busy",
-    freeAt,
-  };
+  if (away.length > 0)
+    return {
+      ...blocked,
+      reason: "busy",
+      freeAt: Math.min(...away.map((v) => v.legs.at(-1)?.arrivesAt ?? Number.POSITIVE_INFINITY)),
+    };
+  // None on the road: say where they are, rather than « none docked ».
+  const atPorta = view.vehicles.mine.filter((v) => (v as { porta?: unknown }).porta);
+  if (atPorta.length > 0) return { ...blocked, reason: "porta", freeAt: null, porta: atPorta };
+  const mending = view.vehicles.mine.filter((v) => (v.repairUntil ?? 0) > p.now);
+  if (mending.length > 0)
+    return {
+      ...blocked,
+      reason: "repair",
+      freeAt: Math.min(...mending.map((v) => v.repairUntil ?? 0)),
+    };
+  if (view.vehicles.mine.length > 0) return { ...blocked, reason: "elsewhere", freeAt: null };
+  return { ...blocked, reason: "busy", freeAt: null };
 }
 
 /** What a town shows on the 3D board: a crate an order, and whether it waits for you. */

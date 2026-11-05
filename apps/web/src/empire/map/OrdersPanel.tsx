@@ -46,6 +46,7 @@ export function OrdersPanel({
   onWorkshop,
   onOpen,
   onPlan,
+  onRecall,
 }: {
   p: EmpirePayload;
   now: number;
@@ -62,6 +63,8 @@ export function OrdersPanel({
   onOpen: (sheet: string) => void;
   /** The road the vehicle would take, for the map to draw (null: none). */
   onPlan: (road: { from: string; to: string } | null) => void;
+  /** Calls the vehicles held at the Porta back to the Remise. */
+  onRecall: (vehicleIds: string[]) => void;
 }) {
   const view = p.view;
   // The orders the player took out (all the others the stock covers go).
@@ -116,9 +119,15 @@ export function OrdersPanel({
         ? plan.freeAt
           ? t().blockBusy(hourOf(plan.freeAt))
           : t().blockBusyNone
-        : plan.reason === "none"
-          ? t().blockNone
-          : null;
+        : plan.reason === "porta"
+          ? t().blockPorta(plan.porta?.length ?? 1)
+          : plan.reason === "repair"
+            ? t().blockRepair(hourOf(plan.freeAt ?? now))
+            : plan.reason === "elsewhere"
+              ? t().blockElsewhere
+              : plan.reason === "none"
+                ? t().blockNone
+                : null;
   const ring = citiesWithOrders(p);
   const lacking = lack ? plan.orders.find((x) => x.o.id === lack) : undefined;
   return (
@@ -235,12 +244,26 @@ export function OrdersPanel({
                 </p>
               </div>
             ) : why ? (
-              <p
-                className="glass-chip rounded-[1.25rem] px-3 py-2.5 text-sm text-cream-dim"
-                data-why
-              >
-                {why}
-              </p>
+              <div className="flex flex-col gap-2">
+                <p
+                  className="glass-chip rounded-[1.25rem] px-3 py-2.5 text-sm text-cream-dim"
+                  data-why={plan.reason ?? undefined}
+                >
+                  {why}
+                </p>
+                {plan.reason === "porta" && plan.porta && (
+                  <Slab
+                    tone="ghost"
+                    size="md"
+                    className="w-full"
+                    busy={busy}
+                    onClick={() => onRecall(plan.porta?.map((v) => v.id) ?? [])}
+                    coach="recall-porta"
+                  >
+                    {t().recallPorta}
+                  </Slab>
+                )}
+              </div>
             ) : null}
           </>
         )}

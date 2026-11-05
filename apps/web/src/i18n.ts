@@ -405,6 +405,13 @@ const frDict = {
         `Il manque ${missing} ${good.toLowerCase()} : ${have} en stock sur ${qty}.`,
       blockBusy: (at: string) => `Toutes vos mules sont en route : la première rentre à ${at}.`,
       blockBusyNone: "Vous n'avez aucun véhicule à quai.",
+      blockPorta: (n: number) =>
+        n > 1
+          ? `Vos ${n} véhicules sont au quai de la Porta : rappelez-les à la Remise pour livrer.`
+          : "Votre véhicule est au quai de la Porta : rappelez-le à la Remise pour livrer.",
+      blockRepair: (at: string) => `Vos véhicules sont en réparation à la Remise, jusqu'à ${at}.`,
+      blockElsewhere: "Vos véhicules sont à quai dans un autre fondaco, trop loin de cette ville.",
+      recallPorta: "Rappeler de la Porta",
       blockNone: "Choisissez au moins une commande.",
       gone: (vehicle: string) => `${vehicle} est partie.`,
       recall: "Rappeler",

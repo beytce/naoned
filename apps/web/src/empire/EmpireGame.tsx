@@ -35,7 +35,6 @@ import {
   sitesByEnd,
 } from "./logic.js";
 import { ActionPanel } from "./map/ActionPanel.js";
-import { BestNowCard } from "./map/BestNow.js";
 import { BottomSlot } from "./map/BottomSlot.js";
 import { DomainBar } from "./map/Domain.js";
 import { EmpireMap, type EmpireMapHandle, type Picked } from "./map/EmpireMap.js";
@@ -640,6 +639,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             onWorkshop={(id) => setTarget({ kind: "workshop", id })}
             onOpen={open}
             onPlan={setRoad}
+            onRecall={(ids) => void act({ type: "empireRecallFromPorta", vehicleIds: ids })}
           />
         ) : target?.kind === "workshop" ? (
           <WorkshopDock
@@ -692,17 +692,6 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
                 button does it; then he withdraws behind the « ? », and the three milestones keep
                 the way in sight (audit of 4 November, UX B2), each opening its place. */}
             {lorenzo}
-            {/* Past the tutorial, the one card « le mieux maintenant » (the refonte claire). */}
-            {!tutorial && (
-              <BestNowCard
-                p={p}
-                busy={busy}
-                onCity={(code) => setTarget({ kind: "city", code })}
-                onCasa={() => setSheet("casa")}
-                onDeliver={deliver}
-                drawn={MAP_3D}
-              />
-            )}
             {placeTabs}
           </>
         )}
