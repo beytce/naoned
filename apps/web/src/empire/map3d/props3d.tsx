@@ -394,7 +394,59 @@ export const MADE = (() => {
   const casaB = casa(OCHRE, C.brick, false);
   const casaAMuted = casa(C.mist, C.roofMuted, true);
   const casaBMuted = casa(C.mistSide, C.roofMuted, false);
+  // The Porta, Rome's gate (audit of 4 November, Blender A6, after the Porta Appia): two drum
+  // towers of brick on a travertine foot, crenellated, an arch of travertine voussoirs between
+  // piers, a curtain of brick above it with its merlons. About 20 units across, the opening
+  // (7 wide, 10.5 high) on x = 0, its face toward +z; the lands' glow is placed behind it.
+  const porta = (() => {
+    const parts: [BufferGeometry, string, number, number, number, number?][] = [
+      [slab(21, 1, 6.5), C.snow, 0, 0, 0],
+    ];
+    for (const side of [-1, 1]) {
+      const x = side * 7;
+      parts.push([new CylinderGeometry(3.1, 3.3, 4.2, 14).translate(0, 2.1, 0), C.snow, x, 1, 0]);
+      parts.push([new CylinderGeometry(2.9, 3.1, 8, 14).translate(0, 4, 0), C.brick, x, 5.2, 0]);
+      parts.push([
+        new CylinderGeometry(3.15, 3.15, 0.4, 14).translate(0, 0.2, 0),
+        C.snow,
+        x,
+        13.2,
+        0,
+      ]);
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2;
+        parts.push([
+          slab(0.8, 0.9, 0.6).rotateY(-a),
+          C.brick,
+          x + Math.cos(a) * 2.8,
+          13.6,
+          Math.sin(a) * 2.8,
+        ]);
+      }
+      // Its arrow slits, facing out.
+      for (const y of [7, 10]) parts.push([slab(0.35, 1.1, 0.1), C.door, x, y, 3.0]);
+      // The pier by the opening.
+      parts.push([slab(1.4, 6.4, 4.2), C.brick, side * 4.3, 1, 0]);
+    }
+    // The arch's voussoirs, of travertine.
+    parts.push([
+      new CylinderGeometry(4.3, 4.3, 1.2, 18, 1, true, -Math.PI / 2, Math.PI)
+        .rotateX(Math.PI / 2)
+        .translate(0, 7.4, 1.5),
+      C.snow,
+      0,
+      0,
+      0,
+    ]);
+    // The curtain of brick above, its cornice and its merlons.
+    parts.push([slab(8.6, 3.2, 4), C.brick, 0, 11.2, 0]);
+    parts.push([slab(9, 0.35, 4.4), C.snow, 0, 14.4, 0]);
+    for (let x = -3.8; x <= 3.9; x += 1.25)
+      parts.push([slab(0.7, 0.9, 0.6), C.brick, x, 14.75, 1.8]);
+    return build(parts);
+  })();
   return {
+    porta,
     casaA,
     casaB,
     casaAMuted,

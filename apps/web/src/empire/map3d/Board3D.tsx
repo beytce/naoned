@@ -1133,18 +1133,13 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
 
 /** The Porta: two stone towers and a glowing arch between them. */
 function Porta({ x, z }: { x: number; z: number }) {
-  const kit = useKit();
-  const stone = kit("tower", { roof: C.rockSeen });
+  // Rome's gate, the game's own model (props3d.tsx, after the Porta Appia), the lands' glow in
+  // its opening.
   return (
     <group position={[x, 0, z]}>
-      <mesh geometry={stone.geo} material={clayShared} scale={3} position={[-3, 0, 0]} castShadow />
-      <mesh geometry={stone.geo} material={clayShared} scale={3} position={[3, 0, 0]} castShadow />
-      <mesh position={[0, 2.2, 0.2]}>
-        <torusGeometry args={[1.9, 0.45, 8, 16, Math.PI]} />
-        <meshStandardMaterial color={C.rockSeen} roughness={0.95} />
-      </mesh>
-      <mesh position={[0, 1.6, 0.1]}>
-        <planeGeometry args={[3, 3.2]} />
+      <mesh geometry={MADE.porta} material={clayShared} scale={0.42} castShadow receiveShadow />
+      <mesh position={[0, 2.35, 0.1]}>
+        <planeGeometry args={[3, 4.6]} />
         <meshStandardMaterial
           color="#E06A4A"
           emissive="#E06A4A"

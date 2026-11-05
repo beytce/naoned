@@ -17,6 +17,7 @@ import { useDonkey } from "../map3d/life.js";
 import { preloadMinis } from "../map3d/minis.js";
 import { Pace } from "../map3d/pace.js";
 import { useCoverBoard } from "../map3d/pause.js";
+import { MADE } from "../map3d/props3d.js";
 import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { portaApi } from "./api.js";
@@ -658,7 +659,6 @@ function Scene({
   docked: { id: string; model: string; role: "combat" | "transport" }[];
 }) {
   const kit = useKit();
-  const stone = kit("tower", { roof: C.rockSeen });
   // The ground: a few tiles of sand before the gate, Rome's red lands beyond it.
   const ground = useMemo(() => {
     const out: { x: number; y: number; z: number; s: number; rot: number; rome: boolean }[] = [];
@@ -685,14 +685,9 @@ function Scene({
       <Instanced geo={tile} items={ground.filter((g) => g.rome)} material={claySolid("#B8604A")} />
       {/* The gate: two towers, its arch of stone, the lands' glow through it. */}
       <group position={GATE}>
-        <mesh geometry={stone.geo} material={clayShared} scale={6} position={[-6.5, 0, 0]} />
-        <mesh geometry={stone.geo} material={clayShared} scale={6} position={[6.5, 0, 0]} />
-        <mesh position={[0, 6.4, 0]}>
-          <torusGeometry args={[5, 1, 8, 20, Math.PI]} />
-          <meshStandardMaterial color={C.rockSeen} roughness={0.95} />
-        </mesh>
-        <mesh position={[0, 4.2, 0]} material={dark ? archDark : arch}>
-          <planeGeometry args={[8, 8.6]} />
+        <mesh geometry={MADE.porta} material={clayShared} />
+        <mesh position={[0, 5.6, 0.2]} material={dark ? archDark : arch}>
+          <planeGeometry args={[7, 10.6]} />
         </mesh>
       </group>
       {/* The tiers, steps of stone, each higher; the chosen one in lapis, the closed ones dim. */}
