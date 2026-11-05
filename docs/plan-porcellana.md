@@ -236,4 +236,5 @@ On compare aussi, à chaque lot, des captures prises au même cadrage que celles
 | 0 | fait : décisions D1 à D8 |
 | M1 | fait : `grid.ts` et ses tests (17), pas encore en service |
 | 1 | fait : le kit (`apps/web/src/porcellana/`, tests `apps/web/test/porcellana.test.ts`), le laboratoire `?lab=porcellana` avec le Fondaco, le Marché (San Marco), les bosquets, la parcelle « + », la route, l'arrivée, la sélection et la fiche ; captures `labo-*.png` |
-| M2 à M4, 2 à 9 | validés, à faire |
+| M2 | fait, à relire par le porteur : `apps/web/scripts/squaremap.ts` écrit `venice1450.squares.ts` (cases de 15 unités, 168 cases de terre, les 31 villes gardées, Venise sur la côte, sa lagune en eau) ; image `carte-carree-controle.png` (cases par région, côtes cerclées de bleu, anciens secteurs en pointillés rouges). La carte en service reste l'hexagonale jusqu'à M3. |
+| M3, M4, 2 à 9 | validés, à faire |
