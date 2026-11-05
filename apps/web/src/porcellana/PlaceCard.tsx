@@ -55,7 +55,7 @@ export const PlaceCard = forwardRef<
       <div>
         <h2>{info.name}</h2>
         <p className="pc-sub">{info.sub}</p>
-        <p className="pc-line">{info.line}</p>
+        {info.line ? <p className="pc-line">{info.line}</p> : null}
       </div>
       <button type="button" className="pc-go" aria-label={info.go} onClick={onGo}>
         <svg

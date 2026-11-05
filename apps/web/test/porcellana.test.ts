@@ -11,10 +11,12 @@ import {
   tileDrop,
 } from "../src/porcellana/arrival.js";
 import { bake } from "../src/porcellana/bake.js";
+import { CATALOGUE } from "../src/porcellana/catalogue.js";
 import { createPalette } from "../src/porcellana/materials.js";
 import { fondaco } from "../src/porcellana/models/fondaco.js";
 import { grove, plot, slab } from "../src/porcellana/models/ground.js";
 import { market } from "../src/porcellana/models/market.js";
+import { mill } from "../src/porcellana/models/workshops.js";
 import { drawnIndices, ribbonGeometry, roundedPath } from "../src/porcellana/ribbon.js";
 import { Blush } from "../src/porcellana/selection.js";
 import {
@@ -201,5 +203,64 @@ describe("the blush", () => {
       if (o instanceof Mesh && o.userData.baseMat) left++;
     });
     expect(left).toBe(0);
+  });
+});
+
+describe("the catalogue (lot 2)", () => {
+  it("names every workshop of the game, the Market among the places", () => {
+    const keys = CATALOGUE.map((e) => e.key);
+    for (const k of [
+      "lumber_camp",
+      "sawmill",
+      "mill",
+      "farm",
+      "glassworks",
+      "clay_pit",
+      "sand_pit",
+      "brickworks",
+      "palazzo",
+      "market",
+      "depot",
+      "porta",
+    ])
+      expect(keys).toContain(k);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  for (const e of CATALOGUE)
+    it(`${e.key}: stands on its tile (a quay reaches into the water), nothing broken`, () => {
+      const P = createPalette();
+      const o = { seed: 3, running: true };
+      const obj = e.make ? e.make(P, o).group : (e.vehicle?.(P, o).group as Group);
+      const box = new Box3().setFromObject(obj, true);
+      expect(box.isEmpty()).toBe(false);
+      if (!e.water) {
+        expect(box.min.y).toBeGreaterThan(-0.05);
+        expect(Math.max(-box.min.x, box.max.x, -box.min.z, box.max.z)).toBeLessThanOrEqual(
+          BOARD.tile / 2,
+        );
+      }
+      obj.traverse((m) => {
+        if (!(m instanceof Mesh)) return;
+        const pos = m.geometry.getAttribute("position");
+        for (let i = 0; i < pos.array.length; i++) expect(Number.isFinite(pos.array[i])).toBe(true);
+      });
+    });
+
+  it("moves only while the game says it works", () => {
+    const P = createPalette();
+    const o = { seed: 1, running: false };
+    const m = mill(P, o);
+    const snap = () => {
+      const out: number[] = [];
+      m.group.traverse((x) => out.push(x.rotation.z));
+      return out.join(",");
+    };
+    const before = snap();
+    m.tick?.(1, 0.5);
+    expect(snap()).toBe(before);
+    o.running = true;
+    m.tick?.(2, 0.5);
+    expect(snap()).not.toBe(before);
   });
 });

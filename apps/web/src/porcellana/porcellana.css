@@ -161,3 +161,70 @@
     transition: none;
   }
 }
+.pc-tools {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  gap: 2px;
+  padding: 5px;
+}
+.pc-tool {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font: 500 12.5px var(--pc-ui);
+  color: var(--pc-ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+.pc-tool[aria-current="true"],
+.pc-tool[aria-pressed="true"] {
+  background: var(--pc-ink);
+  color: var(--pc-paper);
+}
+.pc-strip-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.pc-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  pointer-events: auto;
+  padding: 6px;
+  max-width: 100%;
+}
+.pc-chip {
+  flex: none;
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: 500 12.5px var(--pc-ui);
+  color: var(--pc-ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pc-chip:hover {
+  background: rgba(36, 33, 30, 0.06);
+}
+.pc-chip[aria-pressed="true"] {
+  background: var(--pc-ink);
+  color: var(--pc-paper);
+}
+.pc-tool:focus-visible,
+.pc-chip:focus-visible {
+  outline: 2px solid var(--pc-ink);
+  outline-offset: 2px;
+}
