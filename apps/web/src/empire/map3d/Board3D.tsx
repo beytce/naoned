@@ -917,12 +917,20 @@ function World({
   );
 }
 
-/** Each workshop's model on its tile (after art/plateau/workshops.ts): a KayKit model, its size. */
-function workshopModel(type: string): { name: KitName; s: number } {
+/**
+ * Each workshop's model on its tile (after art/plateau/workshops.ts), its size: the Venetian
+ * trades made in code (props3d.tsx: the glassworks, the brickworks), the others from KayKit.
+ */
+function workshopModel(type: string): {
+  name: KitName;
+  s: number;
+  made?: "glassworks" | "brickworks";
+} {
   switch (type) {
     case "brickworks":
+      return { name: "forge", s: 6.2, made: "brickworks" };
     case "glassworks":
-      return { name: "forge", s: 6.2 };
+      return { name: "forge", s: 6.2, made: "glassworks" };
     case "clay_pit":
     case "sand_pit":
       return { name: "mine", s: 6.2 };
@@ -1070,7 +1078,7 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
               )}
               {t.kind === "workshop" && model && (
                 <mesh
-                  geometry={kit(model.name).geo}
+                  geometry={model.made ? MADE[model.made] : kit(model.name).geo}
                   material={clayShared}
                   scale={model.s * 1.5}
                   castShadow

@@ -445,7 +445,52 @@ export const MADE = (() => {
       parts.push([slab(0.7, 0.9, 0.6), C.brick, x, 14.75, 1.8]);
     return build(parts);
   })();
+  // The Venetian trades (audit of 4 November, Blender A7), one unit across, foot at y = 0.
+  // The glassworks of Murano: a brick hall, its domed furnace, the furnace's mouth aglow, a tall
+  // chimney, glasses of lagoon and lapis on a bench.
+  const glassworks = build([
+    [slab(0.8, 0.36, 0.55), C.brick, -0.05, 0, -0.08],
+    [slab(0.84, 0.04, 0.59), C.snow, -0.05, 0.36, -0.08],
+    [new SphereGeometry(0.24, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), C.brick, 0.18, 0, 0.26],
+    [slab(0.11, 0.09, 0.02), "#FF9A3D", 0.18, 0.02, 0.5],
+    [new CylinderGeometry(0.05, 0.07, 0.75, 8).translate(0, 0.375, 0), C.brick, -0.32, 0.36, -0.22],
+    [new CylinderGeometry(0.1, 0.05, 0.08, 8).translate(0, 0.04, 0), C.brick, -0.32, 1.11, -0.22],
+    [slab(0.36, 0.08, 0.12), C.wood, -0.25, 0, 0.32],
+    [
+      new CylinderGeometry(0.03, 0.04, 0.09, 6).translate(0, 0.045, 0),
+      "#6EC8F5",
+      -0.35,
+      0.08,
+      0.32,
+    ],
+    [new CylinderGeometry(0.04, 0.03, 0.08, 6).translate(0, 0.04, 0), "#6EE0B8", -0.25, 0.08, 0.32],
+    [
+      new CylinderGeometry(0.025, 0.035, 0.1, 6).translate(0, 0.05, 0),
+      "#F2C24F",
+      -0.15,
+      0.08,
+      0.32,
+    ],
+  ]);
+  // The brickworks: a squat round kiln, the bricks in stacks to dry under a roof of planks.
+  const brickworks = build([
+    [new CylinderGeometry(0.22, 0.27, 0.42, 10).translate(0, 0.21, 0), C.brick, -0.18, 0, -0.1],
+    [new CylinderGeometry(0.12, 0.2, 0.12, 10).translate(0, 0.06, 0), C.brick, -0.18, 0.42, -0.1],
+    [slab(0.1, 0.08, 0.02), "#FF9A3D", -0.18, 0.04, 0.17],
+    ...[-0.05, 0.12, 0.29].flatMap((x): [BufferGeometry, string, number, number, number][] => [
+      [slab(0.13, 0.16, 0.13), C.brick, x + 0.05, 0, 0.28],
+      [slab(0.13, 0.12, 0.13), "#D98A5F", x + 0.05, 0.16, 0.28],
+    ]),
+    [slab(0.06, 0.4, 0.06), C.trunk, 0.15, 0, -0.32],
+    [slab(0.06, 0.4, 0.06), C.trunk, 0.4, 0, -0.32],
+    [slab(0.06, 0.4, 0.06), C.trunk, 0.15, 0, 0.0],
+    [slab(0.06, 0.4, 0.06), C.trunk, 0.4, 0, 0.0],
+    [slab(0.38, 0.04, 0.44), C.wood, 0.27, 0.4, -0.16],
+    [slab(0.2, 0.1, 0.24), "#D98A5F", 0.27, 0, -0.16],
+  ]);
   return {
+    glassworks,
+    brickworks,
     porta,
     casaA,
     casaB,
