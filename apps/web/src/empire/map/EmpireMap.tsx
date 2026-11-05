@@ -41,6 +41,7 @@ import { CityPill } from "./CityPill.js";
 import { DomainLabels } from "./Domain.js";
 import { Fleet } from "./Fleet.js";
 import { bandOf } from "./band.js";
+import { declutter } from "./declutter.js";
 import {
   CHART,
   ORBIT_UNITS,
@@ -48,6 +49,7 @@ import {
   type Target,
   centredOn,
   cityLooks,
+  deliveryPlan,
   edgeArrow,
   farCamera,
   fleetSpots,
@@ -206,6 +208,7 @@ export const EmpireMap = forwardRef<
   const mist = useRef<HTMLDivElement>(null);
   const ground = useRef<HTMLDivElement>(null);
   const pins = useRef<HTMLDivElement>(null);
+  const crowdTimer = useRef(0);
   const arrows = useRef<HTMLDivElement>(null);
   // The board in 3D, under the layers: its camera follows the map's at each paint.
   const board3d = useRef<Board3DHandle | null>(null);
@@ -254,6 +257,9 @@ export const EmpireMap = forwardRef<
 
   const paint = useCallback((cam: Camera, v: Viewport) => {
     board3d.current?.view(cam, v);
+    // Once the camera rests, the names that overlap give way (the refonte claire, lot 2).
+    window.clearTimeout(crowdTimer.current);
+    crowdTimer.current = window.setTimeout(() => declutter(pins.current), 160);
     const { s, tx, ty } = cam;
     const k = s / drawn.current;
     // The planes of the depth: the night at a sixth of the move, the mists at half.
@@ -863,7 +869,13 @@ export const EmpireMap = forwardRef<
         {map.posts.map((x) => {
           const [px, py] = [x.x, x.y];
           return (
-            <div key={x.id} data-at={`${px},${py}`} className="map-place" data-post={x.cell}>
+            <div
+              key={x.id}
+              data-at={`${px},${py}`}
+              data-rank={90}
+              className="map-place"
+              data-post={x.cell}
+            >
               {/* A counter touched: its workshops deploy around it; touched again, its panel. */}
               <button
                 type="button"
@@ -937,7 +949,7 @@ export const EmpireMap = forwardRef<
           (() => {
             const [px, py] = cellCentre(map.depot);
             return (
-              <div data-at={siteAt("depot", px - 9, py + 9)} className="map-place">
+              <div data-at={siteAt("depot", px - 9, py + 9)} data-rank={80} className="map-place">
                 <button
                   type="button"
                   onClick={() => touchPlace("depot")}
@@ -957,7 +969,7 @@ export const EmpireMap = forwardRef<
             // The Porta: the gate to the lands of Rome (docs/plan-porta.md § 3).
             const [px, py] = cellCentre(p.view.porta.cell);
             return (
-              <div data-at={siteAt("porta", px + 9, py - 9)} className="map-place">
+              <div data-at={siteAt("porta", px + 9, py - 9)} data-rank={80} className="map-place">
                 <button
                   type="button"
                   onClick={() => touchPlace("porta")}
@@ -976,7 +988,7 @@ export const EmpireMap = forwardRef<
           (() => {
             const [px, py] = cellCentre(map.arsenal);
             return (
-              <div data-at={`${px},${py}`} className="map-pin">
+              <div data-at={`${px},${py}`} data-rank={80} className="map-pin">
                 <button
                   type="button"
                   onClick={() => touchPlace("arsenal")}
@@ -1214,8 +1226,18 @@ function Names({ p }: { p: EmpirePayload }) {
           const x = pts.reduce((n, q) => n + q[0], 0) / pts.length;
           const y = pts.reduce((n, q) => n + q[1], 0) / pts.length - 9;
           return (
-            <div key={region} data-at={`${x},${y}`} className="map-pin" aria-hidden="true">
-              <span className="whitespace-nowrap font-place text-xs font-bold uppercase tracking-[0.2em] text-[#BFE3FF]/50">
+            <div
+              key={region}
+              data-at={`${x},${y}`}
+              data-rank={10}
+              className="map-pin"
+              aria-hidden="true"
+            >
+              {/* In the ink of the day, never a pale blue on the cream board (the refonte claire). */}
+              <span
+                data-region-name
+                className="whitespace-nowrap font-place text-xs font-bold uppercase tracking-[0.2em] text-cream-dim/80"
+              >
                 {regionName(region)}
               </span>
             </div>
@@ -1306,7 +1328,7 @@ function HomeMark({
   const [x, y] = homeAt(p);
   const label = t.world.homeName(name);
   return (
-    <div data-at={`${x},${y}`} data-home className="map-place">
+    <div data-at={`${x},${y}`} data-home data-rank={100} className="map-place">
       <button
         type="button"
         onClick={onClick}
@@ -1369,9 +1391,14 @@ function CityMark({
   const round = 2 * Math.PI * r0;
   const fill = orders ? orders.fillBps / 10_000 : 0;
   const waiting = orders?.orders.length ?? 0;
+  // Its rank when names overlap: a town « Livrer » would serve now, then one with orders, then the
+  // larger (the refonte claire, lot 2).
+  const ready = orders ? deliveryPlan(p, code).vehicle !== null : false;
+  const rank = (ready ? 70 : orders && waiting > 0 ? 60 : 40) + Math.min(5, size);
   return (
     <div
       data-at={`${x},${y}`}
+      data-rank={rank}
       className={`map-place transition-opacity duration-[var(--t-base)] ${hidden ? "pointer-events-none opacity-0" : dim ? "opacity-50" : ""}`}
       data-wanted={wanted ?? undefined}
     >

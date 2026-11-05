@@ -1858,3 +1858,14 @@ body:has(dialog[open]) .city-pill-ready {
     background: rgb(var(--night-2));
   }
 }
+
+/* The refonte claire, lot 2 (5 November 2026): a mark that overlaps a more important one gives
+   way (map/declutter.ts), its name and its pill faded, back once there is room. The information
+   layer (Alt held) still shows every name. */
+[data-crowded] .map-name,
+[data-crowded] .city-pill,
+[data-crowded] [data-region-name] {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-quick, 150ms);
+}
