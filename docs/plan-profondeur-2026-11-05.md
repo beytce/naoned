@@ -371,3 +371,9 @@ Chaque lot de commerce qui change une règle s'annonce dans les notes du chapitr
 2. **Les bras (§ 2.3)** : faut-il nourrir sa population ? C'est le lot qui rend la production la plus « Anno ». C'est aussi celui où l'absence coûte le plus, puisque la table se vide.
 3. **La Porta (§ 4.4)** : remplacer les trois modèles de véhicules de combat (cavalier, chariot de guerre, grand chariot) par des types de combattants (cavaliers, piquiers, artilleurs, arbalétriers) ? Les joueurs qui en ont déjà les gardent, convertis.
 4. **Les mondes existants** : les stocks d'aujourd'hui dépassent les futurs plafonds. Faut-il les ramener au plafond au passage, ou les laisser fondre sans rien ajouter au-delà ?
+
+## 7. La validation (5 novembre 2026, au soir)
+
+Le porteur **valide la version 2 dans son ensemble**. Ses quatre questions (§ 6) prennent les choix recommandés : le magasin d'abord, les ouvriers nourris, les combattants à la place des véhicules de combat (ceux qui existent déjà convertis), les stocks en trop laissés se vider sans rien accepter au-delà. Chaque point reste ouvert à ses retours au moment de son lot.
+
+**En attente.** Rien ne se code avant le « go » du porteur. Une autre session refait d'abord les visuels et les interactions. Chaque lot de ce plan **s'adaptera à cette refonte** : ses pièces, sa direction, ses gestes. Au moment du go, on relit l'état du dépôt et on ajuste les « Ce qu'on voit » de chaque lot avant de coder.
