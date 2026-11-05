@@ -774,15 +774,12 @@ function World({
     }
     for (const town of sc.towns) {
       const over = town.muted ? muted : {};
-      for (const h of town.houses)
-        add(
-          `town${h.variant}:${town.muted}`,
-          kit(h.variant ? "homeB" : "homeA", over),
-          h.x,
-          h.y,
-          3.4 * h.s,
-          h.rot,
-        );
+      // Its houses, Venetian (props3d.tsx: stucco, a gable of tiles, a funnel chimney).
+      for (const h of town.houses) {
+        const name =
+          `casa${h.variant ? "B" : "A"}${town.muted ? "Muted" : ""}` as keyof typeof MADE;
+        add(`town:${name}`, { geo: MADE[name], h: 1 }, h.x, h.y, 3.4 * h.s, h.rot);
+      }
       // Its monument: Venice's campanile, Padua's domes (made in code), a church else.
       if (town.monument === "church")
         add(

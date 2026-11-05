@@ -102,6 +102,9 @@ export function Gondola({
 /** The fondaco's points (its own units): the flag on its tower, the smoke over its chimney. */
 export const FONDACO = { flag: [-2.65, 6.85, -1.55], smoke: [2, 6.4, -0.8] } as const;
 
+/** The verdigris of Venice's copper spires (St Mark's campanile). */
+const VERDIGRIS = "#7FB8A2";
+
 /** The made models, built once. */
 export const MADE = (() => {
   // A field: six slabs of tilled clay on a bed of sand, a fence on two sides.
@@ -175,12 +178,12 @@ export const MADE = (() => {
     [slab(1.2, 0.7, 1.4), C.trunk, 0, 0.25, 3.2],
     [new DodecahedronGeometry(0.45, 0), C.rock, 0, 1.05, 3.2],
   ]);
-  // Venice's campanile: a tall square tower of brick-red, a white belfry, a pointed blue roof.
+  // Venice's campanile: a tall square tower of brick-red, a white belfry, its spire of verdigris.
   const campanile = build([
     [slab(1.9, 9, 1.9), C.brick, 0, 0, 0],
     [slab(2.2, 1.8, 2.2), C.wall, 0, 9, 0],
     [slab(2.3, 0.3, 2.3), C.wall, 0, 10.8, 0],
-    [new ConeGeometry(1.7, 3.2, 4).rotateY(Math.PI / 4).translate(0, 12.7, 0), C.roof, 0, 0, 0],
+    [new ConeGeometry(1.7, 3.2, 4).rotateY(Math.PI / 4).translate(0, 12.7, 0), VERDIGRIS, 0, 0, 0],
   ]);
   // Padua's basilica: a long hall, and its domes on drums.
   const basilica = build([
@@ -342,7 +345,60 @@ export const MADE = (() => {
     ];
     return build(parts);
   })();
+  // Venetian houses (audit of 4 November, Blender A5): tall and narrow, in stucco of rose or
+  // ochre, a gable of tiles, a funnel chimney, dark windows in rows; one unit across, foot at
+  // y = 0, the board scaling them as it did KayKit's. Each also muted, for a town only seen.
+  const casa = (body: string, roof: string, tall: boolean) => {
+    const w = 0.78;
+    const d = 0.62;
+    const h = tall ? 1.15 : 0.85;
+    const parts: [BufferGeometry, string, number, number, number, number?][] = [
+      [slab(w, h, d), body, 0, 0, 0],
+      [slab(w + 0.04, 0.05, d + 0.04), C.snow, 0, h * 0.48, 0],
+      // The gable of tiles, along its width.
+      [
+        new CylinderGeometry(0.36, 0.36, w + 0.1, 3).rotateZ(Math.PI / 2).scale(1, 0.75, d / 0.62),
+        roof,
+        0,
+        h + 0.13,
+        0,
+      ],
+      // The funnel chimney.
+      [
+        new CylinderGeometry(0.035, 0.045, 0.32, 6).translate(0, 0.16, 0),
+        roof,
+        w * 0.3,
+        h + 0.12,
+        -0.12,
+      ],
+      [
+        new CylinderGeometry(0.09, 0.04, 0.12, 6).translate(0, 0.06, 0),
+        roof,
+        w * 0.3,
+        h + 0.44,
+        -0.12,
+      ],
+      // Its door and its windows, front and back.
+      [slab(0.16, 0.3, 0.02), C.door, 0, 0, d / 2 + 0.01],
+    ];
+    for (const y of tall ? [0.45, 0.8] : [0.5])
+      for (const x of [-0.22, 0.22]) {
+        parts.push([slab(0.12, 0.18, 0.02), C.door, x, y, d / 2 + 0.01]);
+        parts.push([slab(0.12, 0.18, 0.02), C.door, x, y, -d / 2 - 0.01]);
+      }
+    return build(parts);
+  };
+  const ROSE = "#E9AE8C";
+  const OCHRE = "#EBCF98";
+  const casaA = casa(ROSE, C.brick, true);
+  const casaB = casa(OCHRE, C.brick, false);
+  const casaAMuted = casa(C.mist, C.roofMuted, true);
+  const casaBMuted = casa(C.mistSide, C.roofMuted, false);
   return {
+    casaA,
+    casaB,
+    casaAMuted,
+    casaBMuted,
     field,
     barrel,
     tuft,
