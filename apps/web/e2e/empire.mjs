@@ -207,9 +207,18 @@ try {
     await page.keyboard.press("-");
     await page.keyboard.press("ArrowLeft");
     await page.waitForTimeout(350);
-    // The fondaco touched: its workshops deploy around it, and its reach shows.
+    // The fondaco touched: its workshops deploy around it, and its reach shows. (The camera may
+    // still glide after the keys: touched again if the first touch fell beside it.)
     await press("[data-region=veneto]");
-    await page.locator(WS).first().waitFor();
+    await page
+      .locator(WS)
+      .first()
+      .waitFor({ timeout: 6_000 })
+      .catch(async () => {
+        await page.waitForTimeout(800);
+        await press("[data-region=veneto]");
+        await page.locator(WS).first().waitFor();
+      });
     if (MAP3D) {
       // The domain: the Casa on the fondaco's tile, the map's marks put away.
       if ((await page.locator("[data-domain-casa]").count()) !== 1)
