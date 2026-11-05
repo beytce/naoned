@@ -310,6 +310,9 @@ export interface EmpireMapView {
   home: { x: number; y: number; level: number; reach: number; cell: string; placed: boolean };
   /** The hexes' size, the reach at each level (none: no reach), the spacing of the counters. */
   hexSize: number;
+  /** The grid (docs/plan-porcellana.md § 2 bis): « hex », or « square » tiles of `tileSize`. */
+  grid: "hex" | "square";
+  tileSize: number;
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
   /** No fondaco closer than this to a town. */
@@ -725,6 +728,8 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
       };
     })(),
     hexSize: s.map.hexSize,
+    grid: s.map.grid,
+    tileSize: s.map.tileSize,
     reach: s.map.reach,
     postSpacing: s.map.postSpacing,
     cityClearance: s.map.cityClearance,

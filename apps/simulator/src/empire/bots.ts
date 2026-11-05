@@ -8,7 +8,9 @@ import {
   casaLevelOf,
   casaRequirementMet,
   catchupCut,
+  cellAtPoint,
   cellCentreOf,
+  cellDistance,
   cellsWithin,
   citiesCovered,
   citySpot,
@@ -30,6 +32,7 @@ import {
   revealedOf,
   routeHours,
   sectorCost,
+  squareGrid,
   standingPosts,
   startCells,
   venice1450,
@@ -95,7 +98,7 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     casaAt: [w.now],
     workshops: w.m.startWorkshops.map((x) => ({ ...x, level: 1 })),
     counters: new Map([["veneto", 1]]),
-    revealed: new Set(startCells(w.s)),
+    revealed: new Set([...startCells(w.s), ...startTiles(w)]),
     posts: 0,
     spots: [],
     homeLevel: 1,
@@ -665,6 +668,14 @@ function tryNewWorkshop(w: World, h: House): boolean {
   if ((short ? h.cash : spendable(w, h)) < cost) return false;
   const pick = bestNewWorkshop(w, h, short);
   if (!pick) return false;
+  // On square tiles, its tile bought first, next to one's own (D7).
+  if (squareGrid(w.s)) {
+    const tile = tileForWorkshop(w, h, pick.region);
+    const land = sectorCost(seen(h), w.s);
+    if (!tile || (short ? h.cash : spendable(w, h)) < cost + land) return false;
+    destroy(w, h, land, "counters");
+    h.revealed.add(tile);
+  }
   destroy(w, h, cost, "workshops");
   startBuild(
     w,
@@ -749,7 +760,7 @@ function postCostOf(w: World, h: House, region: string): Deniers {
 
 /** The cities of a region a counter on `cell` would find, not seen yet. */
 function newCities(w: World, sees: Set<string>, region: string, cell: string): number {
-  const around = cellsWithin(cell, w.s.map.revealRadius);
+  const around = cellsWithin(cell, w.s.map.revealRadius, w.s);
   const hidden = regionCities(w.s, region).filter((c) => !sees.has(c.cell));
   return hidden.filter((c) => around.includes(c.cell)).length;
 }
@@ -798,6 +809,7 @@ const townsIn = (w: World, cell: string) =>
  */
 function tryUnlock(w: World, h: House): boolean {
   if (!w.s.map.unlock) return false;
+  if (squareGrid(w.s)) return tryUnlockTile(w, h);
   const best = buyableOf(seen(h), w.s)
     .filter((c) => {
       const r = w.s.regions.find((x) => x.code === w.s.map.cells[c]?.region);
@@ -812,6 +824,58 @@ function tryUnlock(w: World, h: House): boolean {
   destroy(w, h, cost, "counters");
   h.revealed.add(best.c);
   return true;
+}
+
+/**
+ * On square tiles (docs/plan-porcellana.md M3): a tile bought on the way to the nearest town not
+ * owned yet, of a region its Casa has reached, when it can pay it.
+ */
+function tryUnlockTile(w: World, h: House): boolean {
+  const reached = (cell: string) => {
+    const r = w.s.regions.find((x) => x.code === w.s.map.cells[cell]?.region);
+    return r !== undefined && r.casa <= h.casa;
+  };
+  const towns = w.s.map.cities.map((c) => c.cell).filter((c) => !h.revealed.has(c) && reached(c));
+  if (towns.length === 0) return false;
+  const best = buyableOf(seen(h), w.s)
+    .filter(reached)
+    .map((c) => ({ c, d: Math.min(...towns.map((t) => cellDistance(c, t, w.s))) }))
+    .sort((a, b) => a.d - b.d || a.c.localeCompare(b.c))[0];
+  if (!best) return false;
+  const cost = sectorCost(seen(h), w.s);
+  if (spendable(w, h) < cost) return false;
+  destroy(w, h, cost, "counters");
+  h.revealed.add(best.c);
+  return true;
+}
+
+/** On square tiles, the tile a new workshop of a region is built on: bought next to one's own. */
+function tileForWorkshop(w: World, h: House, region: string): string | null {
+  const home = w.s.map.home;
+  const from = home ? cellAtPoint(home.x, home.y, w.s) : (regionCells(w.s, "veneto")[0] ?? "0,0");
+  return (
+    buyableOf(seen(h), w.s)
+      .filter((c) => w.s.map.cells[c]?.region === region)
+      .sort(
+        (a, b) => cellDistance(from, a, w.s) - cellDistance(from, b, w.s) || a.localeCompare(b),
+      )[0] ?? null
+  );
+}
+
+/**
+ * On square tiles, the tiles the first workshops are seated on, given at the start (engine,
+ * map.ts: seatWorkshops): the free tiles of Venetia nearest the first fondaco.
+ */
+function startTiles(w: World): string[] {
+  if (!squareGrid(w.s)) return [];
+  const home = w.s.map.home;
+  const from = home ? cellAtPoint(home.x, home.y, w.s) : (regionCells(w.s, "veneto")[0] ?? "0,0");
+  const towns = new Set(w.s.map.cities.map((c) => c.cell));
+  return regionCells(w.s, "veneto")
+    .filter((c) => c !== from && !towns.has(c))
+    .sort((a, b) => cellDistance(from, a, w.s) - cellDistance(from, b, w.s) || a.localeCompare(b))
+    .slice(0, w.m.startWorkshops.length)
+    .concat(home ? [from] : []);
 }
 
 function tryCounter(w: World, h: House): boolean {
@@ -1040,7 +1104,8 @@ export function finishBuild(w: World, h: House, b: Build) {
       y: y === "" ? Math.round(cy) : Number(y),
       level: 1,
     });
-    if (!w.s.map.unlock) for (const c of cellsWithin(cell, w.s.map.revealRadius)) h.revealed.add(c);
+    if (!w.s.map.unlock)
+      for (const c of cellsWithin(cell, w.s.map.revealRadius, w.s)) h.revealed.add(c);
     if (!h.counters.has(region)) h.counters.set(region, 1);
   } else if (b.kind === "arsenal") {
     h.arsenal = true;

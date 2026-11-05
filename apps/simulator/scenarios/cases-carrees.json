@@ -1,0 +1,883 @@
+{
+  "settings": {
+    "map": {
+      "cells": {
+        "2,0": {
+          "region": "fiandra",
+          "coast": true
+        },
+        "3,0": {
+          "region": "fiandra"
+        },
+        "1,1": {
+          "region": "fiandra",
+          "coast": true
+        },
+        "2,1": {
+          "region": "fiandra"
+        },
+        "6,1": {
+          "region": "germania"
+        },
+        "7,1": {
+          "region": "germania"
+        },
+        "8,1": {
+          "region": "germania"
+        },
+        "9,1": {
+          "region": "germania"
+        },
+        "10,1": {
+          "region": "germania"
+        },
+        "11,1": {
+          "region": "germania"
+        },
+        "12,1": {
+          "region": "germania"
+        },
+        "13,1": {
+          "region": "germania"
+        },
+        "0,2": {
+          "region": "fiandra",
+          "coast": true
+        },
+        "1,2": {
+          "region": "fiandra"
+        },
+        "2,2": {
+          "region": "fiandra"
+        },
+        "6,2": {
+          "region": "germania"
+        },
+        "7,2": {
+          "region": "germania"
+        },
+        "8,2": {
+          "region": "germania"
+        },
+        "9,2": {
+          "region": "germania"
+        },
+        "10,2": {
+          "region": "germania"
+        },
+        "11,2": {
+          "region": "germania"
+        },
+        "12,2": {
+          "region": "germania"
+        },
+        "13,2": {
+          "region": "germania"
+        },
+        "1,3": {
+          "region": "fiandra"
+        },
+        "6,3": {
+          "region": "germania"
+        },
+        "7,3": {
+          "region": "germania"
+        },
+        "8,3": {
+          "region": "germania"
+        },
+        "9,3": {
+          "region": "germania"
+        },
+        "10,3": {
+          "region": "germania"
+        },
+        "11,3": {
+          "region": "germania"
+        },
+        "12,3": {
+          "region": "germania"
+        },
+        "16,3": {
+          "region": "germania"
+        },
+        "7,4": {
+          "region": "germania"
+        },
+        "8,4": {
+          "region": "germania"
+        },
+        "9,4": {
+          "region": "germania"
+        },
+        "10,4": {
+          "region": "germania"
+        },
+        "11,4": {
+          "region": "germania"
+        },
+        "15,4": {
+          "region": "germania"
+        },
+        "16,4": {
+          "region": "germania"
+        },
+        "17,4": {
+          "region": "germania"
+        },
+        "7,5": {
+          "region": "germania"
+        },
+        "8,5": {
+          "region": "germania"
+        },
+        "9,5": {
+          "region": "germania"
+        },
+        "10,5": {
+          "region": "germania"
+        },
+        "11,5": {
+          "region": "germania"
+        },
+        "15,5": {
+          "region": "germania"
+        },
+        "16,5": {
+          "region": "germania"
+        },
+        "17,5": {
+          "region": "germania"
+        },
+        "3,6": {
+          "region": "lombardia"
+        },
+        "4,6": {
+          "region": "lombardia"
+        },
+        "5,6": {
+          "region": "lombardia"
+        },
+        "6,6": {
+          "region": "lombardia"
+        },
+        "7,6": {
+          "region": "lombardia"
+        },
+        "8,6": {
+          "region": "veneto"
+        },
+        "9,6": {
+          "region": "veneto"
+        },
+        "10,6": {
+          "region": "veneto"
+        },
+        "11,6": {
+          "region": "friuli"
+        },
+        "12,6": {
+          "region": "friuli"
+        },
+        "13,6": {
+          "region": "friuli"
+        },
+        "14,6": {
+          "region": "friuli"
+        },
+        "15,6": {
+          "region": "friuli"
+        },
+        "16,6": {
+          "region": "friuli"
+        },
+        "28,6": {
+          "region": "costantinopoli"
+        },
+        "29,6": {
+          "region": "costantinopoli"
+        },
+        "3,7": {
+          "region": "lombardia"
+        },
+        "4,7": {
+          "region": "lombardia"
+        },
+        "5,7": {
+          "region": "lombardia"
+        },
+        "6,7": {
+          "region": "lombardia"
+        },
+        "7,7": {
+          "region": "lombardia"
+        },
+        "8,7": {
+          "region": "veneto"
+        },
+        "9,7": {
+          "region": "veneto"
+        },
+        "10,7": {
+          "region": "veneto"
+        },
+        "11,7": {
+          "region": "friuli"
+        },
+        "12,7": {
+          "region": "friuli"
+        },
+        "13,7": {
+          "region": "friuli"
+        },
+        "14,7": {
+          "region": "friuli"
+        },
+        "15,7": {
+          "region": "friuli"
+        },
+        "16,7": {
+          "region": "friuli"
+        },
+        "28,7": {
+          "region": "costantinopoli"
+        },
+        "29,7": {
+          "region": "costantinopoli"
+        },
+        "4,8": {
+          "region": "lombardia"
+        },
+        "5,8": {
+          "region": "lombardia"
+        },
+        "6,8": {
+          "region": "lombardia"
+        },
+        "7,8": {
+          "region": "veneto"
+        },
+        "8,8": {
+          "region": "veneto"
+        },
+        "9,8": {
+          "region": "veneto"
+        },
+        "10,8": {
+          "region": "veneto"
+        },
+        "11,8": {
+          "region": "veneto",
+          "coast": true
+        },
+        "12,8": {
+          "region": "friuli",
+          "coast": true
+        },
+        "13,8": {
+          "region": "friuli"
+        },
+        "14,8": {
+          "region": "friuli"
+        },
+        "15,8": {
+          "region": "friuli"
+        },
+        "28,8": {
+          "region": "costantinopoli",
+          "coast": true
+        },
+        "29,8": {
+          "region": "costantinopoli"
+        },
+        "4,9": {
+          "region": "romagna"
+        },
+        "5,9": {
+          "region": "lombardia"
+        },
+        "6,9": {
+          "region": "lombardia"
+        },
+        "7,9": {
+          "region": "veneto"
+        },
+        "8,9": {
+          "region": "veneto"
+        },
+        "9,9": {
+          "region": "veneto"
+        },
+        "10,9": {
+          "region": "veneto",
+          "coast": true
+        },
+        "13,9": {
+          "region": "friuli",
+          "coast": true
+        },
+        "14,9": {
+          "region": "friuli",
+          "coast": true
+        },
+        "28,9": {
+          "region": "costantinopoli",
+          "coast": true
+        },
+        "4,10": {
+          "region": "lombardia"
+        },
+        "5,10": {
+          "region": "lombardia"
+        },
+        "6,10": {
+          "region": "lombardia",
+          "coast": true
+        },
+        "7,10": {
+          "region": "veneto"
+        },
+        "8,10": {
+          "region": "veneto"
+        },
+        "9,10": {
+          "region": "veneto"
+        },
+        "10,10": {
+          "region": "veneto",
+          "coast": true
+        },
+        "3,11": {
+          "region": "romagna"
+        },
+        "4,11": {
+          "region": "romagna"
+        },
+        "5,11": {
+          "region": "lombardia",
+          "coast": true
+        },
+        "7,11": {
+          "region": "lombardia",
+          "coast": true
+        },
+        "8,11": {
+          "region": "veneto"
+        },
+        "9,11": {
+          "region": "veneto"
+        },
+        "10,11": {
+          "region": "veneto",
+          "coast": true
+        },
+        "15,11": {
+          "region": "dalmazia",
+          "coast": true
+        },
+        "16,11": {
+          "region": "dalmazia"
+        },
+        "17,11": {
+          "region": "dalmazia"
+        },
+        "18,11": {
+          "region": "dalmazia"
+        },
+        "3,12": {
+          "region": "romagna",
+          "coast": true
+        },
+        "4,12": {
+          "region": "romagna",
+          "coast": true
+        },
+        "8,12": {
+          "region": "veneto",
+          "coast": true
+        },
+        "9,12": {
+          "region": "veneto"
+        },
+        "10,12": {
+          "region": "veneto"
+        },
+        "11,12": {
+          "region": "romagna",
+          "coast": true
+        },
+        "16,12": {
+          "region": "dalmazia",
+          "coast": true
+        },
+        "17,12": {
+          "region": "dalmazia"
+        },
+        "18,12": {
+          "region": "dalmazia"
+        },
+        "10,13": {
+          "region": "romagna"
+        },
+        "11,13": {
+          "region": "romagna"
+        },
+        "12,13": {
+          "region": "romagna",
+          "coast": true
+        },
+        "17,13": {
+          "region": "dalmazia",
+          "coast": true
+        },
+        "24,13": {
+          "region": "costantinopoli",
+          "coast": true
+        },
+        "10,14": {
+          "region": "romagna"
+        },
+        "11,14": {
+          "region": "romagna"
+        },
+        "24,14": {
+          "region": "costantinopoli",
+          "coast": true
+        },
+        "29,14": {
+          "region": "costantinopoli",
+          "coast": true
+        },
+        "10,15": {
+          "region": "romagna",
+          "coast": true
+        },
+        "11,15": {
+          "region": "romagna",
+          "coast": true
+        },
+        "20,15": {
+          "region": "grecia"
+        },
+        "25,15": {
+          "region": "costantinopoli",
+          "coast": true
+        },
+        "19,16": {
+          "region": "grecia",
+          "coast": true
+        },
+        "20,16": {
+          "region": "grecia",
+          "coast": true
+        },
+        "24,16": {
+          "region": "costantinopoli",
+          "coast": true
+        },
+        "19,17": {
+          "region": "grecia",
+          "coast": true
+        },
+        "20,17": {
+          "region": "grecia",
+          "coast": true
+        },
+        "24,17": {
+          "region": "costantinopoli",
+          "coast": true
+        },
+        "19,18": {
+          "region": "grecia",
+          "coast": true
+        },
+        "20,18": {
+          "region": "grecia"
+        },
+        "21,18": {
+          "region": "grecia",
+          "coast": true
+        },
+        "24,18": {
+          "region": "levante",
+          "coast": true
+        },
+        "25,18": {
+          "region": "levante",
+          "coast": true
+        },
+        "26,18": {
+          "region": "levante",
+          "coast": true
+        },
+        "28,18": {
+          "region": "levante",
+          "coast": true
+        },
+        "20,19": {
+          "region": "grecia",
+          "coast": true
+        },
+        "27,19": {
+          "region": "levante",
+          "coast": true
+        },
+        "28,19": {
+          "region": "levante"
+        },
+        "27,20": {
+          "region": "levante",
+          "coast": true
+        },
+        "28,20": {
+          "region": "levante"
+        },
+        "29,20": {
+          "region": "levante"
+        },
+        "21,21": {
+          "region": "levante",
+          "coast": true
+        },
+        "26,21": {
+          "region": "levante",
+          "coast": true
+        },
+        "27,21": {
+          "region": "levante"
+        },
+        "28,21": {
+          "region": "levante"
+        },
+        "29,21": {
+          "region": "levante"
+        }
+      },
+      "cities": [
+        {
+          "code": "venezia",
+          "cell": "11,8",
+          "region": "veneto",
+          "x": 173,
+          "y": 128,
+          "weight": 20,
+          "size": 5
+        },
+        {
+          "code": "padova",
+          "cell": "10,9",
+          "region": "veneto",
+          "x": 158,
+          "y": 143,
+          "weight": 3,
+          "size": 4
+        },
+        {
+          "code": "treviso",
+          "cell": "10,7",
+          "region": "veneto",
+          "x": 158,
+          "y": 113,
+          "weight": 2,
+          "size": 3
+        },
+        {
+          "code": "milano",
+          "cell": "6,9",
+          "region": "lombardia",
+          "x": 98,
+          "y": 143,
+          "weight": 3,
+          "size": 5
+        },
+        {
+          "code": "udine",
+          "cell": "12,7",
+          "region": "friuli",
+          "x": 188,
+          "y": 113,
+          "weight": 2,
+          "size": 3
+        },
+        {
+          "code": "trieste",
+          "cell": "13,8",
+          "region": "friuli",
+          "x": 203,
+          "y": 128,
+          "weight": 2,
+          "size": 3
+        },
+        {
+          "code": "pola",
+          "cell": "14,9",
+          "region": "friuli",
+          "x": 218,
+          "y": 143,
+          "weight": 1,
+          "size": 1
+        },
+        {
+          "code": "ancona",
+          "cell": "12,13",
+          "region": "romagna",
+          "x": 188,
+          "y": 203,
+          "weight": 2,
+          "size": 3
+        },
+        {
+          "code": "zara",
+          "cell": "15,11",
+          "region": "dalmazia",
+          "x": 233,
+          "y": 173,
+          "weight": 2,
+          "size": 3
+        },
+        {
+          "code": "spalato",
+          "cell": "16,12",
+          "region": "dalmazia",
+          "x": 248,
+          "y": 188,
+          "weight": 1,
+          "size": 2
+        },
+        {
+          "code": "ragusa",
+          "cell": "17,13",
+          "region": "dalmazia",
+          "x": 263,
+          "y": 203,
+          "weight": 2,
+          "size": 4
+        },
+        {
+          "code": "augusta",
+          "cell": "7,5",
+          "region": "germania",
+          "x": 113,
+          "y": 83,
+          "weight": 3,
+          "size": 4
+        },
+        {
+          "code": "candia",
+          "cell": "20,19",
+          "region": "grecia",
+          "x": 308,
+          "y": 293,
+          "weight": 2,
+          "size": 4
+        },
+        {
+          "code": "corfu",
+          "cell": "19,17",
+          "region": "grecia",
+          "x": 293,
+          "y": 263,
+          "weight": 3,
+          "size": 3
+        },
+        {
+          "code": "alessandria",
+          "cell": "21,21",
+          "region": "levante",
+          "x": 323,
+          "y": 323,
+          "weight": 1,
+          "size": 5
+        },
+        {
+          "code": "costantinopoli",
+          "cell": "25,15",
+          "region": "costantinopoli",
+          "x": 383,
+          "y": 233,
+          "weight": 4,
+          "size": 5
+        },
+        {
+          "code": "caffa",
+          "cell": "28,9",
+          "region": "costantinopoli",
+          "x": 428,
+          "y": 143,
+          "weight": 2,
+          "size": 4
+        },
+        {
+          "code": "bruges",
+          "cell": "1,1",
+          "region": "fiandra",
+          "x": 23,
+          "y": 23,
+          "weight": 2,
+          "size": 5
+        },
+        {
+          "code": "anversa",
+          "cell": "3,0",
+          "region": "fiandra",
+          "x": 53,
+          "y": 8,
+          "weight": 2,
+          "size": 4
+        },
+        {
+          "code": "londra",
+          "cell": "0,2",
+          "region": "fiandra",
+          "x": 8,
+          "y": 38,
+          "weight": 1,
+          "size": 4
+        },
+        {
+          "code": "verona",
+          "cell": "8,11",
+          "region": "veneto",
+          "x": 128,
+          "y": 173,
+          "weight": 3,
+          "size": 4
+        },
+        {
+          "code": "bologna",
+          "cell": "10,13",
+          "region": "romagna",
+          "x": 158,
+          "y": 203,
+          "weight": 2,
+          "size": 5
+        },
+        {
+          "code": "firenze",
+          "cell": "4,9",
+          "region": "romagna",
+          "x": 68,
+          "y": 143,
+          "weight": 2,
+          "size": 5
+        },
+        {
+          "code": "genova",
+          "cell": "5,11",
+          "region": "lombardia",
+          "x": 83,
+          "y": 173,
+          "weight": 1,
+          "size": 4
+        },
+        {
+          "code": "cremona",
+          "cell": "5,7",
+          "region": "lombardia",
+          "x": 83,
+          "y": 113,
+          "weight": 2,
+          "size": 3
+        },
+        {
+          "code": "trento",
+          "cell": "9,5",
+          "region": "germania",
+          "x": 143,
+          "y": 83,
+          "weight": 3,
+          "size": 2
+        },
+        {
+          "code": "vienna",
+          "cell": "15,4",
+          "region": "germania",
+          "x": 233,
+          "y": 68,
+          "weight": 2,
+          "size": 5
+        },
+        {
+          "code": "salonicco",
+          "cell": "20,15",
+          "region": "grecia",
+          "x": 308,
+          "y": 233,
+          "weight": 3,
+          "size": 4
+        },
+        {
+          "code": "nicosia",
+          "cell": "25,18",
+          "region": "levante",
+          "x": 383,
+          "y": 278,
+          "weight": 4,
+          "size": 4
+        },
+        {
+          "code": "damasco",
+          "cell": "29,20",
+          "region": "levante",
+          "x": 443,
+          "y": 308,
+          "weight": 4,
+          "size": 5
+        },
+        {
+          "code": "trebisonda",
+          "cell": "29,14",
+          "region": "costantinopoli",
+          "x": 443,
+          "y": 218,
+          "weight": 1,
+          "size": 3
+        }
+      ],
+      "revealRadius": 1,
+      "version": 5,
+      "hexSize": 24,
+      "unlock": {
+        "costDucats": 75,
+        "stepBps": 470,
+        "seaHops": 8
+      },
+      "reach": {
+        "base": 36,
+        "perLevel": 8
+      },
+      "postSpacing": 8,
+      "home": {
+        "x": 158,
+        "y": 173
+      },
+      "cityClearance": 4,
+      "tiles": true,
+      "water": [],
+      "costStepBps": 2500,
+      "camp": {
+        "costDucats": 600,
+        "casa": 4,
+        "minutes": 240
+      },
+      "depot": {
+        "costDucats": 200,
+        "casa": 2,
+        "minutes": 120
+      },
+      "grid": "square",
+      "tileSize": 15
+    },
+    "moves": {
+      "departSeconds": 10,
+      "unitsPerSecond": 8,
+      "secondsPerUnit": 3,
+      "maxStops": 15,
+      "returnHome": true,
+      "recallSeconds": 5
+    }
+  },
+  "model": {
+    "roundsPerSession": 2
+  }
+}
