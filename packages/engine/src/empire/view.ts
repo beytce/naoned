@@ -694,7 +694,7 @@ function seaAlong(seen: Set<string>, s: EmpireSettings): string[] {
   const out: string[] = [];
   for (const k of seen)
     if (s.map.cells[k]?.coast)
-      for (const n of cellsWithin(k, 1)) if (!(n in s.map.cells) && !seen.has(n)) out.push(n);
+      for (const n of cellsWithin(k, 1, s)) if (!(n in s.map.cells) && !seen.has(n)) out.push(n);
   return out;
 }
 

@@ -18,7 +18,7 @@ import { catchupCut } from "./catchup.js";
 import { buildMinutesOf, casaLevelOf, casaRequirementMet, levelCost } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { settleLearning } from "./knowledge.js";
-import { ensureMap, settlePost } from "./map.js";
+import { ensureMap, freeTileFault, settlePost, squareGrid } from "./map.js";
 import { researchCost, researchMinutesOf } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
 import { HOME_POST, putAt, storeOf, takeAt, wherePut } from "./stores.js";
@@ -76,6 +76,7 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
         type: b.workshopType,
         recipe: b.recipe,
         level: 1,
+        ...(b.cell ? { tile: b.cell } : {}),
         job: null,
       });
       advanceCarnet(h, "levels", 1);
@@ -255,10 +256,17 @@ export function startWorkshop(
   type: string,
   recipe: string,
   region = "veneto",
+  tile?: string,
 ): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   checkRecipe(tx, type, recipe);
+  // On square tiles, a workshop stands on a free tile of the house's own, of its region (D7).
+  if (squareGrid(s)) {
+    if (!tile) fail("unknown_cell");
+    const fault = freeTileFault(h, s, tile, region);
+    if (fault) fail(fault);
+  }
   const r = s.regions.find((x) => x.code === region);
   if (!r || (region !== "veneto" && !h.counters?.[region])) fail("unknown_region");
   const def = tx.ctx.theme.recipes.find((x) => x.code === recipe);
@@ -279,6 +287,7 @@ export function startWorkshop(
     workshopType: type,
     recipe,
     ...(region !== "veneto" ? { region } : {}),
+    ...(tile && squareGrid(s) ? { cell: tile } : {}),
     ...site,
   });
 }

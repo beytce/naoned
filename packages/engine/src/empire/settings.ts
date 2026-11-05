@@ -499,6 +499,14 @@ export const empireSettingsSchema = z.object({
       /** The hexes' size across their corners, in the chart's units (pointy-top, axial cells). */
       hexSize: positive.prefault(24),
       /**
+       * The grid (docs/plan-porcellana.md § 2 bis, decision of the owner, 5 November 2026): « hex »,
+       * sectors of seven small tiles, or « square », tiles « i,j » of `tileSize`, the tile the unit
+       * of everything (what is bought, where a place stands, what a road walks through).
+       */
+      grid: z.enum(["hex", "square"]).prefault("hex"),
+      /** A square tile's side, in the chart's units. */
+      tileSize: positive.prefault(15),
+      /**
        * A counter's reach (the map that grows, 31 October 2026): the cities within `base` units,
        * and `perLevel` more a level beyond the first, are served by it. None: every city found is.
        */

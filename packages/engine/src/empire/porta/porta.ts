@@ -5,7 +5,15 @@ import { type Tx, addStock, fail, removeStock } from "../../tx.js";
 import { carnetWeek } from "../carnet.js";
 import { capacityOf } from "../fleet.js";
 import { empireSettings, openSite, ownHouse } from "../house.js";
-import { cellDistance, checkDepot, ensureMap, regionCells, revealedOf } from "../map.js";
+import {
+  cellDistance,
+  checkDepot,
+  ensureMap,
+  freeTileFault,
+  regionCells,
+  revealedOf,
+  squareGrid,
+} from "../map.js";
 import type { EmpireSettings } from "../settings.js";
 import { receive } from "../trade.js";
 import { armStats } from "./arms.js";
@@ -49,6 +57,10 @@ export function buildPorta(tx: Tx, playerId: PlayerId, cell: string): void {
   if (!c) fail("unknown_cell");
   if (!revealedOf(h, s).has(cell)) fail("hidden_cell");
   if (h.porta || h.builds.some((x) => x.kind === "porta")) fail("built");
+  if (squareGrid(s)) {
+    const fault = freeTileFault(h, s, cell);
+    if (fault) fail(fault);
+  }
   if (h.casa < b.casa) fail("requirement_unmet");
   const site = openSite(tx, playerId, h, ducats(b.costDucats), {}, b.minutes, 0);
   h.builds.push({ kind: "porta", level: 1, region: c.region, cell, ...site });
@@ -78,7 +90,10 @@ export function upgradePorta(tx: Tx, playerId: PlayerId): void {
 export function portaTravelMinutes(h: EmpireHouse, s: EmpireSettings): number {
   const b = buildingOf(s);
   const from = h.depot ?? regionCells(s, "veneto")[0];
-  const cells = h.porta && from ? cellDistance(from, h.porta.cell) : 1;
+  let cells = h.porta && from ? cellDistance(from, h.porta.cell, s) : 1;
+  // On square tiles, counted in sectors of before (a sector's step, √3 hexes' sizes), so that the
+  // way lasts as long (docs/plan-porcellana.md § 2 bis).
+  if (squareGrid(s)) cells = Math.ceil((cells * s.map.tileSize) / (Math.sqrt(3) * s.map.hexSize));
   return Math.max(1, cells) * b.travelMinutesPerCell;
 }
 

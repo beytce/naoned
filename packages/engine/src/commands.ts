@@ -337,6 +337,8 @@ type EmpireCommandOf =
       recipe: string;
       /** Venetia when absent. */
       region?: string;
+      /** On square tiles: the house's free tile it stands on. */
+      tile?: string;
     }
   | { type: "empireUpgrade"; playerId: PlayerId; workshopId: string }
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
@@ -608,7 +610,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       startCasa(tx, cmd.playerId);
       break;
     case "empireBuildWorkshop":
-      startWorkshop(tx, cmd.playerId, cmd.workshopType, cmd.recipe, cmd.region);
+      startWorkshop(tx, cmd.playerId, cmd.workshopType, cmd.recipe, cmd.region, cmd.tile);
       break;
     case "empireUpgrade":
       startUpgrade(tx, cmd.playerId, cmd.workshopId);

@@ -5,7 +5,16 @@
  * sector make one board without a gap: small hexagons on their own lattice, `SLOT_STEP` of a
  * sector's size apart, turned by `SLOT_TURN` (seven small hexagons fill one sector).
  */
-import { cellAtPoint, cellCentreOf, cellsWithin } from "./map.js";
+import {
+  gridRoad,
+  gridRoadTiles,
+  placeFault,
+  placeTowns,
+  tileAt,
+  tileCentre,
+  tileDistance,
+} from "./grid.js";
+import { cellAtPoint, cellCentreOf, cellsWithin, squareGrid } from "./map.js";
 import type { EmpireSettings } from "./settings.js";
 
 /** Two small tiles side by side, their middles this many sector sizes apart (√3 / √7). */
@@ -15,6 +24,8 @@ export const SLOT_TURN = Math.atan(Math.sqrt(3) / 5);
 
 /** A small tile's middle: `k` = 0 the sector's middle, 1 to 6 around it. */
 export function slotPoint(cell: string, k: number, s: EmpireSettings): [number, number] {
+  // On square tiles, a cell is its one tile: its middle.
+  if (squareGrid(s)) return tileCentre(cell, s.map.tileSize);
   const [cx, cy] = cellCentreOf(cell, s);
   if (k === 0) return [cx, cy];
   const a = -SLOT_TURN + ((k - 1) * Math.PI) / 3;
@@ -24,11 +35,16 @@ export function slotPoint(cell: string, k: number, s: EmpireSettings): [number, 
 
 /** Two points on small tiles side by side (or on the same tile). */
 export function slotsTouch(a: [number, number], b: [number, number], s: EmpireSettings): boolean {
+  if (squareGrid(s))
+    return (
+      tileDistance(tileAt(a[0], a[1], s.map.tileSize), tileAt(b[0], b[1], s.map.tileSize)) <= 1
+    );
   return Math.hypot(a[0] - b[0], a[1] - b[1]) < 1.5 * SLOT_STEP * s.map.hexSize;
 }
 
 /** The small tile under a point: its sector and its rank there. */
 export function slotAt(x: number, y: number, s: EmpireSettings): { cell: string; k: number } {
+  if (squareGrid(s)) return { cell: tileAt(x, y, s.map.tileSize), k: 0 };
   const home = cellAtPoint(x, y, s);
   let best = { cell: home, k: 0 };
   let bestD = Number.POSITIVE_INFINITY;
@@ -56,6 +72,15 @@ export function slotAt(x: number, y: number, s: EmpireSettings): { cell: string;
 export function placeCities<
   C extends { code: string; cell: string; x?: number; y?: number; size?: number },
 >(cities: C[], s: EmpireSettings, keepFree: string[] = []): (C & { x: number; y: number })[] {
+  // On square tiles: each town on a land tile of its own, none side by side (grid.ts).
+  if (squareGrid(s)) {
+    const at = (c: C): [number, number] =>
+      c.x !== undefined && c.y !== undefined ? [c.x, c.y] : tileCentre(c.cell, s.map.tileSize);
+    return placeTowns(
+      cities.map((c) => ({ ...c, x: at(c)[0], y: at(c)[1] })),
+      { tileSize: s.map.tileSize, tiles: s.map.cells },
+    ).map(({ tile, ...c }) => ({ ...(c as unknown as C), cell: tile, x: c.x, y: c.y }));
+  }
   const keep = new Set(keepFree);
   const byCell = new Map<string, C[]>();
   for (const c of cities) byCell.set(c.cell, [...(byCell.get(c.cell) ?? []), c]);
@@ -194,6 +219,20 @@ export function tileFault(
   towns: [number, number][],
   fondaci: [number, number][],
 ): "unknown_cell" | "on_city" | "post_too_close" | null {
+  if (squareGrid(s)) {
+    const size = s.map.tileSize;
+    const tile = tileAt(at[0], at[1], size);
+    const [mx, my] = tileCentre(tile, size);
+    if (tile !== cell || Math.round(mx) !== at[0] || Math.round(my) !== at[1])
+      return "unknown_cell";
+    const f = placeFault(
+      { tileSize: size, tiles: s.map.cells },
+      tile,
+      towns.map((p) => tileAt(p[0], p[1], size)),
+      fondaci.map((p) => tileAt(p[0], p[1], size)),
+    );
+    return f === "unknown_tile" ? "unknown_cell" : f === "too_close" ? "post_too_close" : f;
+  }
   const t = slotAt(at[0], at[1], s);
   const [mx, my] = slotPoint(t.cell, t.k, s);
   if (t.cell !== cell || Math.round(mx) !== at[0] || Math.round(my) !== at[1])
@@ -227,6 +266,15 @@ export function roadTiles(
   b: [number, number],
   s: EmpireSettings,
 ): { cell: string; k: number }[] {
+  if (squareGrid(s)) {
+    const size = s.map.tileSize;
+    return gridRoadTiles(
+      tileAt(a[0], a[1], size),
+      tileAt(b[0], b[1], size),
+      { tileSize: size, tiles: s.map.cells },
+      townTiles(s),
+    ).map((cell) => ({ cell, k: 0 }));
+  }
   const from = slotAt(a[0], a[1], s);
   const to = slotAt(b[0], b[1], s);
   const goal = tileId(to);
@@ -289,6 +337,8 @@ export function roadBetween(
   b: [number, number],
   s: EmpireSettings,
 ): [number, number][] {
+  if (squareGrid(s))
+    return gridRoad(a, b, { tileSize: s.map.tileSize, tiles: s.map.cells }, townTiles(s));
   const mids = roadTiles(a, b, s)
     .slice(1, -1)
     .map((t) => slotPoint(t.cell, t.k, s));
@@ -305,4 +355,20 @@ export function roadBetween(
     pts = out;
   }
   return pts;
+}
+
+/** The towns' tiles, on square tiles (the roads go round them). */
+const townSets = new WeakMap<EmpireSettings, Set<string>>();
+function townTiles(s: EmpireSettings): Set<string> {
+  let t = townSets.get(s);
+  if (!t) {
+    const size = s.map.tileSize;
+    t = new Set(
+      s.map.cities.map((c) =>
+        c.x !== undefined && c.y !== undefined ? tileAt(c.x, c.y, size) : c.cell,
+      ),
+    );
+    townSets.set(s, t);
+  }
+  return t;
 }

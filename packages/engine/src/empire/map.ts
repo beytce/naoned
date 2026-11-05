@@ -3,6 +3,7 @@ import { type EmpireHouse, type PlayerId, SINK_ACCOUNT, cashAccount } from "../s
 import { type Tx, fail, nextId, transfer } from "../tx.js";
 import { levelCost } from "./curves.js";
 import { houseEffect } from "./effects.js";
+import { tileAt, tileCentre, tileDistance } from "./grid.js";
 import { counterCostOf, empireSettings, openSite, ownHouse } from "./house.js";
 import type { EmpireSettings } from "./settings.js";
 import { slotPoint, tileFault } from "./slots.js";
@@ -23,8 +24,12 @@ export function parseCell(key: string): [number, number] {
   return [q, r];
 }
 
-/** Hex distance between two axial cells. */
-export function cellDistance(a: string, b: string): number {
+/** Whether the world's map is of square tiles (docs/plan-porcellana.md § 2 bis). */
+export const squareGrid = (s?: { map: { grid?: string } }) => s?.map.grid === "square";
+
+/** The distance between two cells: hex steps, or on square tiles, steps by their sides. */
+export function cellDistance(a: string, b: string, s?: EmpireSettings): number {
+  if (squareGrid(s)) return tileDistance(a, b);
   const [aq, ar] = parseCell(a);
   const [bq, br] = parseCell(b);
   const dq = aq - bq;
@@ -32,10 +37,16 @@ export function cellDistance(a: string, b: string): number {
   return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2;
 }
 
-/** Every cell within `radius` of a cell, land or sea, itself first. */
-export function cellsWithin(cell: string, radius: number): string[] {
+/** Every cell within `radius` of a cell, land or sea, itself first (by sides on square tiles). */
+export function cellsWithin(cell: string, radius: number, s?: EmpireSettings): string[] {
   const [q, r] = parseCell(cell);
   const out = [cell];
+  if (squareGrid(s)) {
+    for (let di = -radius; di <= radius; di++)
+      for (let dj = -radius + Math.abs(di); dj <= radius - Math.abs(di); dj++)
+        if (di !== 0 || dj !== 0) out.push(cellKey(q + di, r + dj));
+    return out;
+  }
   for (let dq = -radius; dq <= radius; dq++)
     for (let dr = Math.max(-radius, -dq - radius); dr <= Math.min(radius, -dq + radius); dr++)
       if (dq !== 0 || dr !== 0) out.push(cellKey(q + dq, r + dr));
@@ -44,6 +55,7 @@ export function cellsWithin(cell: string, radius: number): string[] {
 
 /** A cell's centre on the chart (pointy-top hexes of `hexSize`, as the screen draws them). */
 export function cellCentreOf(key: string, s: EmpireSettings): [number, number] {
+  if (squareGrid(s)) return tileCentre(key, s.map.tileSize);
   const [q, r] = parseCell(key);
   const size = s.map.hexSize;
   return [Math.sqrt(3) * size * (q + r / 2), 1.5 * size * r];
@@ -51,6 +63,7 @@ export function cellCentreOf(key: string, s: EmpireSettings): [number, number] {
 
 /** The cell under a point of the chart. */
 export function cellAtPoint(x: number, y: number, s: EmpireSettings): string {
+  if (squareGrid(s)) return tileAt(x, y, s.map.tileSize);
   const size = s.map.hexSize;
   const qf = ((Math.sqrt(3) / 3) * x - y / 3) / size;
   const rf = ((2 / 3) * y) / size;
@@ -131,6 +144,7 @@ export function placeHome(tx: Tx, playerId: PlayerId, cell: string, x: number, y
   )
     fail("post_too_close");
   h.home = { cell, x, y };
+  seatWorkshops(h, s);
 }
 
 /** Every counter that stands, Venice's first, each with its point and its level. */
@@ -225,6 +239,8 @@ function ownedAtStart(h: EmpireHouse, s: EmpireSettings): string[] {
   const built = [
     ...(h.posts ?? []).map((p) => p.cell),
     ...[h.depot, h.camp, h.arsenal].filter((c): c is string => typeof c === "string"),
+    // On square tiles, the workshops' tiles too (D7).
+    ...h.workshops.map((w) => w.tile).filter((t): t is string => typeof t === "string"),
   ];
   return [...new Set([...(home ? [home] : []), ...built])].filter((c) => s.map.cells[c]);
 }
@@ -243,8 +259,8 @@ export function buyableOf(h: EmpireHouse, s: EmpireSettings): string[] {
     .filter((c) => !mine.has(c))
     .filter(
       (c) =>
-        owned.some((o) => cellDistance(o, c) === 1) ||
-        (s.map.cells[c]?.coast === true && coasts.some((o) => cellDistance(o, c) <= u.seaHops)),
+        owned.some((o) => cellDistance(o, c, s) === 1) ||
+        (s.map.cells[c]?.coast === true && coasts.some((o) => cellDistance(o, c, s) <= u.seaHops)),
     )
     .sort();
 }
@@ -298,8 +314,8 @@ export function revealedOf(h: EmpireHouse, s: EmpireSettings): Set<string> {
     const known = [...seen];
     const near = [...cells].sort(
       (a, b) =>
-        Math.min(...known.map((k) => cellDistance(a, k))) -
-          Math.min(...known.map((k) => cellDistance(b, k))) || a.localeCompare(b),
+        Math.min(...known.map((k) => cellDistance(a, k, s))) -
+          Math.min(...known.map((k) => cellDistance(b, k, s))) || a.localeCompare(b),
     )[0];
     if (near) seen.add(near);
   }
@@ -419,6 +435,7 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   }
   namePosts(h, s);
   alignToTiles(h, s);
+  seatWorkshops(h, s);
   // Taken up once per drawing of the map: a house of an older grid has its cells drawn again.
   if (h.revealed && h.mapVersion === s.map.version) return;
   const moved = h.revealed !== undefined;
@@ -427,7 +444,7 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   for (const region of Object.keys(h.counters ?? {})) {
     const seat = regionSeat(s, region);
     if (!seat) continue;
-    for (const c of cellsWithin(seat, s.map.revealRadius)) seen.add(c);
+    for (const c of cellsWithin(seat, s.map.revealRadius, s)) seen.add(c);
     posts.push({ cell: seat, region });
   }
   h.revealed = [...seen].sort();
@@ -443,7 +460,7 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
     for (const b of h.builds)
       if (b.cell && !s.map.cells[b.cell]) {
         b.cell = regionCells(s, b.region ?? HOME)[0] ?? b.cell;
-        b.reveal = b.cell ? cellsWithin(b.cell, s.map.revealRadius) : b.reveal;
+        b.reveal = b.cell ? cellsWithin(b.cell, s.map.revealRadius, s) : b.reveal;
       }
 }
 
@@ -466,7 +483,7 @@ export function postCost(h: EmpireHouse, region: string, s: EmpireSettings): Den
 
 /** The cells a counter on `cell` would reveal: those within the radius. */
 export function revealedBy(cell: string, s: EmpireSettings): string[] {
-  return cellsWithin(cell, s.map.revealRadius);
+  return cellsWithin(cell, s.map.revealRadius, s);
 }
 
 /**
@@ -556,6 +573,10 @@ export function buildCamp(tx: Tx, playerId: PlayerId, cell: string): void {
   if (!c) fail("unknown_cell");
   if (!revealedOf(h, s).has(cell)) fail("hidden_cell");
   if (h.camp || h.builds.some((b) => b.kind === "camp")) fail("built");
+  if (squareGrid(s)) {
+    const fault = freeTileFault(h, s, cell);
+    if (fault) fail(fault);
+  }
   if (h.casa < camp.casa) fail("requirement_unmet");
   const price = BigInt(camp.costDucats) * DENIERS_PER_DUCAT;
   const site = openSite(tx, playerId, h, price, {}, camp.minutes, 0);
@@ -576,10 +597,76 @@ export function buildDepot(tx: Tx, playerId: PlayerId, cell: string): void {
   if (!c) fail("unknown_cell");
   if (!revealedOf(h, s).has(cell)) fail("hidden_cell");
   if (h.depot || h.builds.some((b) => b.kind === "depot")) fail("built");
+  if (squareGrid(s)) {
+    const fault = freeTileFault(h, s, cell);
+    if (fault) fail(fault);
+  }
   if (h.casa < depot.casa) fail("requirement_unmet");
   const price = BigInt(depot.costDucats) * DENIERS_PER_DUCAT;
   const site = openSite(tx, playerId, h, price, {}, depot.minutes, 0);
   h.builds.push({ kind: "depot", level: 1, region: c.region, cell, ...site });
+}
+
+/**
+ * On square tiles, the tiles taken (docs/plan-porcellana.md D7): the towns', the house's places
+ * (its fondaci, its Remise, its Campo, its Arsenal, its Porta), its workshops, its sites under way.
+ */
+export function takenTiles(h: EmpireHouse, s: EmpireSettings): Set<string> {
+  const out = new Set<string>();
+  for (const c of s.map.cities)
+    out.add(c.x !== undefined && c.y !== undefined ? cellAtPoint(c.x, c.y, s) : c.cell);
+  for (const p of standingPosts(h, s)) out.add(cellAtPoint(p.x, p.y, s));
+  for (const c of [h.depot, h.camp, h.arsenal, h.porta?.cell]) if (c) out.add(c);
+  for (const w of h.workshops) if (w.tile) out.add(w.tile);
+  for (const b of h.builds)
+    if (b.cell && b.kind !== "upgrade" && b.kind !== "casa" && b.kind !== "counter")
+      out.add(b.x !== undefined && b.y !== undefined ? cellAtPoint(b.x, b.y, s) : b.cell);
+  return out;
+}
+
+/**
+ * On square tiles, why a building may not stand on a tile: no land, not the house's own, of
+ * another region than asked, or taken. Null when it may.
+ */
+export function freeTileFault(
+  h: EmpireHouse,
+  s: EmpireSettings,
+  tile: string,
+  region?: string,
+): "unknown_cell" | "hidden_cell" | "unknown_region" | "built" | null {
+  const c = s.map.cells[tile];
+  if (!c) return "unknown_cell";
+  if (s.map.unlock ? !unlockedOf(h, s).includes(tile) : !revealedOf(h, s).has(tile))
+    return "hidden_cell";
+  if (region && c.region !== region) return "unknown_region";
+  if (takenTiles(h, s).has(tile)) return "built";
+  return null;
+}
+
+/**
+ * On square tiles, the workshops without a tile seated on the land (D7): each, in its order, on the
+ * free tile of its region nearest its fondaco, that tile given to the house. A house's first
+ * workshops are seated once its first fondaco stands (where the player put it down); an older
+ * house's workshops so too, the first time its world turns to square tiles (M4).
+ */
+function seatWorkshops(h: EmpireHouse, s: EmpireSettings): void {
+  if (!squareGrid(s) || h.workshops.every((w) => w.tile)) return;
+  if (s.map.home && !h.home) return;
+  const posts = standingPosts(h, s);
+  for (const w of h.workshops) {
+    if (w.tile) continue;
+    const region = w.region ?? HOME;
+    const post = posts.find((p) => p.id === w.post) ?? posts.find((p) => p.region === region);
+    if (!post) continue;
+    const from = cellAtPoint(post.x, post.y, s);
+    const taken = takenTiles(h, s);
+    const free = Object.keys(s.map.cells)
+      .filter((t) => s.map.cells[t]?.region === region && !taken.has(t))
+      .sort((a, b) => cellDistance(from, a, s) - cellDistance(from, b, s) || a.localeCompare(b))[0];
+    if (!free) continue;
+    w.tile = free;
+    if (s.map.unlock) h.unlocked = [...new Set([...unlockedOf(h, s), free])];
+  }
 }
 
 /** The Remise asked by the land vehicles, in a world that sets one. */

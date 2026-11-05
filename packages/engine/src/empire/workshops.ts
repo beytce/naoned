@@ -12,6 +12,7 @@ import { type Tx, fail } from "../tx.js";
 const applyBps = (base: number, bps: number) => Math.floor((base * (10_000 + bps)) / 10_000);
 import { lotYieldBps } from "./curves.js";
 import { houseEffect } from "./effects.js";
+import { tilesTouch } from "./grid.js";
 import { empireSettings, ownHouse } from "./house.js";
 import { highRecipeRaw } from "./recipes.js";
 import type { EmpireSettings } from "./settings.js";
@@ -174,11 +175,18 @@ export function neighbourBonus(
   ws: EmpireWorkshop,
   s: EmpireSettings,
 ): number {
-  const ring = h.workshops.filter((w) => (w.region ?? "veneto") === (ws.region ?? "veneto"));
-  const i = ring.findIndex((w) => w.id === ws.id);
-  if (i < 0 || ring.length < 2) return 0;
-  const sides = new Set([ring[(i + 1) % ring.length], ring[(i - 1 + ring.length) % ring.length]]);
-  sides.delete(ws);
+  let sides: Set<EmpireWorkshop | undefined>;
+  if (ws.tile) {
+    // On square tiles (D7): its neighbours are the workshops on the tiles beside it by a side.
+    const at = ws.tile;
+    sides = new Set(h.workshops.filter((w) => w !== ws && w.tile && tilesTouch(w.tile, at)));
+  } else {
+    const ring = h.workshops.filter((w) => (w.region ?? "veneto") === (ws.region ?? "veneto"));
+    const i = ring.findIndex((w) => w.id === ws.id);
+    if (i < 0 || ring.length < 2) return 0;
+    sides = new Set([ring[(i + 1) % ring.length], ring[(i - 1 + ring.length) % ring.length]]);
+    sides.delete(ws);
+  }
   let links = 0;
   for (const n of sides) if (n && (feeds(ctx, n, ws) || feeds(ctx, ws, n))) links++;
   return (
@@ -195,6 +203,13 @@ export function swapWorkshops(tx: Tx, playerId: PlayerId, a: string, b: string):
   const wb = h.workshops[j];
   if (!wa || !wb || i === j) fail("unknown_building");
   if ((wa.region ?? "veneto") !== (wb.region ?? "veneto")) fail("unknown_region");
+  // On square tiles, the two exchange their tiles.
+  if (wa.tile && wb.tile) {
+    const t = wa.tile;
+    wa.tile = wb.tile;
+    wb.tile = t;
+    return;
+  }
   h.workshops[i] = wb;
   h.workshops[j] = wa;
 }

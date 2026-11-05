@@ -312,6 +312,11 @@ export interface EmpireWorkshop {
   type: BuildingType;
   recipe: string;
   level: number;
+  /**
+   * Its tile on a map of square tiles (docs/plan-porcellana.md D7): one of the house's own, its
+   * neighbours by a side its neighbourhood.
+   */
+  tile?: string;
   /** The workshop modules fitted in its places, by place. */
   fitted?: string[];
   /** The night queue: lots queued from `startedAt`, their inputs already taken. */
@@ -331,7 +336,10 @@ export interface EmpireBuild {
     | "camp"
     | "depot"
     | "porta";
-  /** A counter put down on the map, or the Arsenal: its cell (« q,r »). */
+  /**
+   * A counter put down on the map, or the Arsenal: its cell (« q,r »); on square tiles, the tile a
+   * place or a new workshop stands on (« i,j »).
+   */
   cell?: string;
   /** The cells a counter put down reveals when it stands. */
   reveal?: string[];
