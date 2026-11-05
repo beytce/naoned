@@ -6,7 +6,7 @@ Références (elles font foi pour toute question d'aspect) :
 - le prototype : `docs/direction-artistique-2026-11/porcellana/prototype.html` (three.js 0.170, autonome ; en ligne, privé, au compte du porteur : https://claude.ai/artifact/AHMH8g2BCs4rmAKEbSLCBy) ;
 - ses captures : `carte-ensemble.png`, `carte-selection.png`, `carte-telephone.png` dans le même dossier.
 
-Porcellana remplace, pour tout ce qui est en 3D et pour les surfaces de l'interface, le Plateau de nuit, Jour et le verre et la Lagune. Elle garde la refonte claire (les quatre lieux, une décision à la fois) et le dock (le choix se fait dans le dock). Aucune règle de jeu ne change : pas de passage au simulateur.
+Porcellana remplace, pour tout ce qui est en 3D et pour les surfaces de l'interface, le Plateau de nuit, Jour et le verre et la Lagune. Elle garde la refonte claire (les quatre lieux, une décision à la fois) et le dock (le choix se fait dans le dock). Une seule règle change, à la demande du porteur : la carte passe aux cases carrées, achetées une à une (§ 2 bis). Cette partie passe au simulateur ; le reste est visuel.
 
 ## 1. Ce que « exactement » veut dire : la grammaire
 
@@ -83,12 +83,55 @@ On extrait du prototype des valeurs, pas une impression. Chaque élément ci-des
 
 | # | Question | Recommandation |
 | --- | --- | --- |
-| D1 | **Cases carrées (le prototype) ou hexagonales (le treillis du moteur : `hexmap.ts`, `slots.ts`, `roadBetween`, la fleur de 19 du domaine) ?** | Garder l'hexagone, traité en Porcellana : même épaisseur, mêmes arêtes, mêmes joints. Passer au carré changerait le moteur, le serveur et les mondes en cours, et aucune règle ne le demande. **Lot 0** : ajouter au prototype un bouton carré/hexagone, pour que le porteur tranche sur pièce. |
+| D1 | **Cases carrées ou hexagonales ?** | **Tranché par le porteur (5 novembre 2026) : le carré, et l'extension case par case.** Toucher au monde en cours est accepté. Le détail est au § 2 bis. |
+| D7 | **Le domaine sur la carte.** Aujourd'hui, les ateliers d'une région tournent sur l'orbite du Fondaco, et leur bonus de voisinage suit l'ordre de cette orbite (`neighbourBonus`). | Comme dans le prototype : un atelier se bâtit sur une case qu'on possède, et le voisinage devient celui des cases (deux ateliers côte à côte dont l'un nourrit l'autre). La Casa garde le plafond du nombre d'ateliers (`workshopPlaces`) : la règle ne change pas, seul l'endroit devient réel. Le Fondaco n'est plus une scène à part, c'est la Carte vue de près. |
 | D2 | **L'accent et l'or.** Aujourd'hui, l'action est en or, la sélection en lapis et la Porta noire en cinabre. | Une seule couleur, l'accent rouge de Venise, pour l'action, la sélection et les routes. La règle « une seule action en or » devient « une seule action à l'accent ». Les ducats restent des pièces d'or en relief : un objet, pas une couleur d'interface. La Porta noire passe au noir d'encre, ce qui lui va. |
 | D3 | **Le sélecteur d'accent** (rouge, or, vert lagune) du prototype. | Le rouge par défaut. Le choix va derrière le médaillon, dans les réglages : un goût personnel, sans effet de jeu. |
 | D4 | **La typographie.** Le jeu embarque Archivo Expanded, Cinzel et Space Grotesk ; le prototype utilise Cormorant Garamond et Work Sans. | Prendre celles du prototype, embarquées (licence OFL, sans appel à Google), pour tout le jeu. Retirer Cinzel, Archivo et Space Mono, ou ne garder Space Mono que pour la console d'admin. |
 | D5 | **Les terres de Rome** (la Porta, aujourd'hui au crépuscule, `ROME_DUSK`). | La même porcelaine, en « biscuit » : terre cuite pâle non émaillée (sol `#E7DCCD`, murs `#EFE6D9`), et le noir d'encre pour ce qui est à Rome. On sait qu'on a changé de terre sans changer de monde. Maquette au lot 0. |
 | D6 | **Les modèles achetés** (KayKit : sapins, rochers, montagnes, caisses, tour de Rome, figurines ; Quaternius : âne, cheval). | Tout redessiner en code dans le kit Porcellana. Aucun modèle externe ne tient les biseaux, la palette et la finition. |
+
+## 2 bis. La grille carrée et l'extension case par case (le moteur)
+
+**Aujourd'hui.**
+- La carte est une grille d'hexagones (« q,r », 24 unités, `map.ts`), une centaine de secteurs dans `venice1450.map.ts`.
+- Chaque secteur est coupé en 7 petites cases hexagonales tournées de 19° (`slots.ts`).
+- On achète un **secteur** entier (`empireUnlockCell` : 300 ducats, +20 % par secteur possédé, les côtes à 3 sauts par la mer).
+- Les routes vont de petite case en petite case (`roadBetween` : une ville compte 4 pas, la mer 5).
+- La Porta compte en secteurs (`cellDistance`).
+- Les villes gardent leur point sur la carte (x, y).
+
+**Demain.**
+- **Une seule grille, de cases carrées**, clé « i,j », de côté `map.tileSize` dans `worlds.settings`. Environ 15 unités, pour qu'une case vaille une des petites cases d'aujourd'hui et que les distances restent du même ordre.
+- Plus de secteurs ni de petites cases : la case est l'unité de tout.
+- **Chaque case a un terrain** : terre (avec sa région), côte ou eau. Les villes et les lieux gardent leurs coordonnées x, y : une ville occupe la case sous son point, et deux lieux ne partagent ni une case ni un côté (la règle d'aujourd'hui, `tileFault` et `placeCities`, en carré).
+- **On achète case par case.** Une case s'achète si elle touche par un côté une case possédée, ou, depuis une côte possédée, si c'est une côte à `seaHops` cases ou moins. Elle se voit aussitôt, et ses voisines apparaissent en « + ». Le prix monte à chaque case : `costDucats` et `stepBps` sont recalibrés pour qu'acquérir la surface d'un secteur d'aujourd'hui coûte à peu près pareil.
+- **Ce qu'on bâtit occupe des cases à soi** : le Fondaco, ses ateliers (D7), la Remise, le Campo, l'Arsenal, les comptoirs. Bâtir demande une case possédée et libre.
+- **Les routes vont de case en case, par les côtés** (ville 4 pas, mer 5, comme aujourd'hui). Ce sont exactement les rubans à angles arrondis du prototype. La vitesse des trajets est recalibrée pour que leur durée moyenne reste celle d'aujourd'hui.
+- **La Porta** compte la distance en cases.
+
+**Le code.**
+- `packages/engine/src/empire/grid.ts` remplace les fonctions hexagonales de `map.ts` et tout `slots.ts` :
+  - `tileKey`, `tileAt`, `tileCentre`, `neighbours4`, `tileDistance` ;
+  - `buyableOf`, `tileCost`, `unlockTile` ;
+  - `placeFault`, `placeCities` ;
+  - `roadTiles`, `roadBetween`, `roadLength`, `alongRoad`.
+- Les tests s'écrivent avant le code, sur la fixture (`test/fixture.ts`). Les tests de `map`, `slots`, `tiles` et `posts` sont réécrits pour le carré.
+- **La carte de Venise en carrés** (`venice1450.map.ts`) se calcule une fois, par un script qui échantillonne le centre de chaque case dans la carte hexagonale et dans ses eaux. Le résultat est relu par le porteur sur une image avant d'être commité.
+- **Le serveur** : `empireUnlockCell` devient `empireUnlockTile`. Les commandes de construction prennent une case. La base ne change pas (tout est dans le JSON de la maison et du monde).
+- **Le web** : `art/hexmap.ts`, la couche SVG des hexagones et `map3d/domain.ts` (la fleur de 19) disparaissent. Le domaine est la Carte de près.
+- **Le simulateur** : les robots (`bots.ts`, `scenario-voyages.ts`) achètent et bâtissent case par case. Toute la recalibration (prix des cases, vitesse) se valide au simulateur de 24 mois, toutes les graines, et se documente dans `docs/calibration.md`.
+
+**Le monde en cours** (accord du porteur). Une migration au démarrage du serveur :
+- Le monde reçoit la carte carrée.
+- Chaque maison reçoit toutes les cases dont le centre tombe dans un secteur qu'elle possédait : personne ne perd de terre (règle d'or 1).
+- Ses lieux sont posés sur la case libre la plus proche de leur point, et ses ateliers sur des cases libres autour de son Fondaco, dans l'ordre de leur orbite, pour garder leurs voisinages.
+- Les trajets en cours finissent à l'heure prévue.
+- Aucun mouvement d'argent.
+- La règle « au commerce, un changement s'annonce dans les notes du chapitre » est tenue par une note dans `docs/notes-chapitre-*`.
+- Une partie de test rejoue la migration sur une copie du monde, avant la production.
+
+**La Terraferme** (`game/map/TerraLayer.tsx`, `terraShapes.ts`) a ses propres hexagones et ses saisons d'une semaine. Elle passe au carré dans un lot à part (lot 9), avec son changement au lundi suivant (la règle de la Terraferme).
 
 ## 3. L'architecture : un seul kit, partagé par toutes les scènes
 
@@ -132,7 +175,7 @@ Règle : une silhouette qu'on nomme sans légende, et un signe d'état qu'on lit
 | **Les comptoirs** (`posts`) | Une petite maison-magasin à auvent, avec une enseigne d'accent. | — |
 | **Les villes** (une trentaine, par taille) | Hameau : 2 à 3 maisons. Bourg : 5 maisons, un campanile. Cité : un îlot, son monument. Venise : San Marco (campanile et basilique à 5 coupoles), la Salute, les maisons. Le monument d'une ville vient du champ `campanile` de la scène (les coupoles de Padoue, une église ailleurs). | Ses commandes en caisses sur son quai (la règle de la refonte claire). Une ville hors de portée est en silhouette, les ouvertures pleines. |
 | **Le décor** | Arbres ronds, cyprès, sapins ; rochers biseautés ; montagnes en gradins taillés ; champs. La part de chaque espèce vient de la région (`DRESS`). | — |
-| **L'inconnu** | Plaques fines au niveau de l'eau ; secteur achetable : la parcelle « + » ; fermé : la même parcelle, « + » grisé. | — |
+| **L'inconnu et l'achat** | Une case qu'on ne possède pas encore mais qui touche les siennes : la parcelle « + » du prototype, avec son prix en ducats sur sa fiche. Une case qu'on ne peut pas encore acheter (région que la Casa n'atteint pas) : la même, « + » grisé et cadenas. Au-delà, des plaques fines au niveau de l'eau. Une case achetée tombe en place comme à l'arrivée. | — |
 | **Les véhicules** | Mulet bâté de deux caisses ; charrette à deux roues et caisses (prototype) ; cavalier ; navire à voile d'accent (prototype) pour le transport par mer, s'il existe. Tous dessinés en code. | Ils roulent seulement quand leur trajet est en cours (règle de `fleet3d.tsx`). |
 | **Les figurines de la Porta** | Des pions de porcelaine : socle rond biseauté, corps en fuseau, tête ronde, l'arme du rôle en silhouette. La maison en blanc et accent, Rome en biscuit et encre. | Marcher, frapper, tomber : des gestes simples par transformations. Aucun squelette ni mixeur. |
 
@@ -144,15 +187,20 @@ Chaque lot fait l'objet de petits commits, se vérifie (§ 7) et laisse le jeu j
 
 | Lot | Contenu | Validation du porteur |
 | --- | --- | --- |
-| 0 | **Les décisions.** Dans le prototype : bouton carré/hexagone (D1), terres de Rome en biscuit (D5), fiche avec un vrai bouton d'action (D2). Captures dans `docs/direction-artistique-2026-11/porcellana/`. | D1 à D6 tranchées |
+| 0 | **Les décisions.** Dans le prototype : terres de Rome en biscuit (D5), fiche avec un vrai bouton d'action (D2), un atelier posé sur une case achetée à côté d'un autre (D7). Captures dans `docs/direction-artistique-2026-11/porcellana/`. | D2 à D7 tranchées (D1 l'est) |
+| M1 | **La grille carrée, pure** (§ 2 bis) : `grid.ts` et ses tests écrits d'abord (clés, voisins, case sous un point, distance, achat, prix, emplacements, routes). `map.ts` et `slots.ts` passent dessus, et les tests du moteur sont réécrits. | — |
+| M2 | **La carte de Venise en carrés** : le script de conversion, le terrain de chaque case, les villes posées. Une image de contrôle. | L'image de la carte |
+| M3 | **Les règles case par case** : achat par case, bâtir sur une case à soi, le voisinage des ateliers par les côtés (D7), routes et Porta en cases ; le simulateur (robots case par case) ; la recalibration du prix des cases et de la vitesse au simulateur de 24 mois, toutes graines ; `docs/calibration.md`. | Les chiffres du simulateur |
+| M4 | **Le serveur et le monde en cours** : `empireUnlockTile`, les commandes qui prennent une case, la migration (cases, lieux, ateliers) répétée sur une copie du monde, la note du chapitre. | La note du chapitre, avant la mise en production |
 | 1 | **Le kit** (§ 3) : tokens, matériaux, primitives, fusion, `Stage`, arrivée, ruban, sélection, avec leurs tests. Le laboratoire, avec le Fondaco et les arbres. | Le Fondaco et la lumière, au laboratoire, identiques au prototype |
 | 2 | **Le catalogue** (§ 4) : les neuf ateliers, la Remise, le Campo, la Porta, l'Arsenal, les comptoirs, les villes par taille, Venise, le décor, l'inconnu, les véhicules. Tout au laboratoire. | Famille par famille |
-| 3 | **La Carte** : `Board3D` sur le kit. Cases, mer, inconnu, villes, routes en ruban entre les lieux reliés (`roadBetween`), chevrons seulement là où un véhicule roule, véhicules, arrivée à la première ouverture de la session, caméra (§ 1). Le calque SVG et HTML reste calé au pixel (`camera.ts`). Les modèles KayKit quittent la carte. | La Carte, sur ordinateur et sur téléphone |
+| 3 | **La Carte** (après M4) : `Board3D` sur le kit et la grille carrée, sans couche SVG d'hexagones. Cases, mer, parcelles « + » à acheter, villes, routes en ruban entre les lieux reliés (`roadBetween`), chevrons seulement là où un véhicule roule, véhicules, arrivée à la première ouverture de la session, caméra (§ 1). Le calque HTML (repères, fiche) reste calé au pixel (`camera.ts`). Les modèles KayKit quittent la carte. | La Carte, sur ordinateur et sur téléphone |
 | 4 | **La fiche** : toucher un lieu (ville, atelier, Fondaco, Remise, véhicule, parcelle « + ») le sélectionne (levée, anneau, voile) et ouvre sa fiche à côté du repère. La fiche dit qui c'est, ce qu'il fait, son état en une phrase. Son bouton rond ouvre le dock de ce lieu, où se prend la décision. La fiche remplace l'en-tête de lieu en tête du dock ; `CityPill` et les pastilles deviennent des repères (§ 1). | Le parcours toucher → fiche → décision |
-| 5 | **Le Fondaco** (le domaine) : la fleur de 19 cases en Porcellana, l'arrivée des cases quand on y plonge, les ateliers en état, le quai. | Le domaine |
+| 5 | **Le Fondaco** (le domaine) : la Carte vue de près autour du Fondaco (D7), sans scène à part. Toucher l'onglet Fondaco y amène la caméra ; les cases « + » voisines s'achètent, une case libre à soi reçoit un atelier, le quai. `map3d/domain.ts` disparaît. | Le domaine |
 | 6 | **La Porta** : `PortaScene`, `ArmsScene` et `Battle3D` sur le kit, en biscuit ; ruines, tour de Rome et villes à coffres redessinées ; les figurines-pions ; les coups (carreaux, boulets, étincelles) en traits d'accent ou d'encre. L'objectif en haut, en pilule de papier. | La Porta et un combat |
 | 7 | **L'interface** : la palette `porcellana` dans `index.css` (le défaut ; Jour et ses sœurs sont retirées), les surfaces de papier à la place des `.glass*` (mêmes trois épaisseurs, mêmes règles de contraste, `test/theme.test.ts` mis à jour), le HUD, la barre des quatre lieux en pilule de papier, le dock, les feuilles, la Compagnie, le profil, les pièces (`coins.tsx`) et `GoodsMark` en relief de porcelaine, les polices embarquées (D4). | L'ensemble, écran par écran |
 | 8 | **Le ménage** : retrait des modèles KayKit et Quaternius et de `recolor.ts`, du SVG du Plateau (`art/plateau/` sauf ce qui sert au sol sans WebGL, qui passe en Porcellana à plat), des palettes retirées. `docs/design.md` : Porcellana en tête, les directions remplacées marquées comme telles. `CLAUDE.md` : la ligne Porcellana à la place de Jour, du Plateau et de la Lagune. | — |
+| 9 | **La Terraferme** : la même grille carrée et la même direction, changement au lundi suivant. | La Terraferme |
 
 ## 6. Ce qui demande de l'attention
 
@@ -160,7 +208,8 @@ Chaque lot fait l'objet de petits commits, se vérifie (§ 7) et laisse le jeu j
 - **Le monochrome lisible.** Un lieu se reconnaît à sa silhouette, à toutes les tailles de la carte. Le laboratoire montre chaque modèle à 0,8 et à 4 de zoom.
 - **Le contraste.** Le texte reste à 4,5:1 sur papier et sur la scène (test existant). L'accent n'écrit jamais de texte courant.
 - **Règle d'or 8 (tout se voit).** La fiche accompagne l'image, elle ne la remplace pas : une phrase, pas un tableau.
-- **Ce qui ne change pas** : le moteur, le serveur, les règles, les données. Pas de passage au simulateur.
+- **Ce qui change dans les règles** : seulement la carte (§ 2 bis), validée au simulateur. Le reste du moteur, les recettes, le marché, les commandes, la Porta et ses combats ne changent pas.
+- **L'ordre** : le kit et le catalogue (lots 1 et 2) avancent pendant que le moteur passe au carré (M1 à M4) ; la Carte (lot 3) attend les deux.
 
 ## 7. Vérifier (à chaque lot)
 
@@ -179,4 +228,5 @@ On compare aussi, à chaque lot, des captures prises au même cadrage que celles
 
 | Lot | État |
 | --- | --- |
-| 0 à 8 | proposé, en attente de validation |
+| D1 | tranché : le carré, l'extension case par case |
+| 0 à 9, M1 à M4 | proposé, en attente de validation |
