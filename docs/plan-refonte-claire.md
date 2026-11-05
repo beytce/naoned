@@ -29,7 +29,7 @@
 | 3 | Le Fondaco : son pied (`map/Domain.tsx`, `DomainBar`) porte le chemin de la Casa suivante (`map/casaRoad.ts`), les portes Bâtir, Quai (la Remise, ou les véhicules de la Production tant qu'elle n'est pas posée) et Armes (Porta ouverte), une seule action d'or ; les déblocages de la Casa nommés | fait ; la Remise reste un lieu posé sur la carte (la déplacer au quai du domaine 3D : lot 6) |
 | 4 | La Porta : son décor (les terres de Rome au crépuscule, `porta/colours.ts`, `ROME_DUSK`), les paliers en escalier, l'objectif du combat toujours en haut (`porta/goal.tsx`) | fait ; la Porta reste plein écran, sans la barre des lieux (on revient par la croix) |
 | 5 | La Compagnie : le Carnet en médailles, une action d'or pour tout encaisser (`CompanyTab.tsx`) ; le profil derrière le médaillon (lot 1) | fait ; la Compagnie reste une feuille, sans la barre des lieux |
-| 6 | Une seule famille de modèles 3D (les bâtiments vénitiens du jeu), une seule grammaire de caméra | |
+| 6 | Les ateliers dessinés en code dans la main du jeu (`map3d/props3d.tsx` : carrière, sablière, scierie, camp de bûcherons, ferme, moulin de la lagune, palais), les villes de la Porta en maisons du jeu autour d'une église romane | fait ; de KayKit ne restent que les sapins, rochers, montagnes, caisses et la tour de Rome (neutres) ; la grammaire de caméra reste à reprendre |
 
 Aucune règle de jeu ne change hors du lot 0 (une correction) : pas de passage au simulateur.
 
