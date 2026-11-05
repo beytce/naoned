@@ -1,5 +1,7 @@
 import type { EmpireSettingsInput } from "../empire/settings.js";
+import { mergeCities } from "../empire/towns.js";
 import { VENICE_MAP_CELLS, VENICE_MAP_CITIES } from "./venice1450.map.js";
+import { VENICE_TOWNS_MERGED } from "./venice1450.towns.js";
 
 /**
  * The persistent empire of Venice (CADRAGE-v3 § 3, docs/refonte-2026-10-29/profondeur.md): orders
@@ -202,7 +204,12 @@ export const venice1450Empire: EmpireSettingsInput = {
   map: {
     cells: VENICE_MAP_CELLS,
     // Venice, the capital, weighs most in Venetia's book (the map that grows, calibration.md).
-    cities: VENICE_MAP_CITIES.map((c) => (c.code === "venezia" ? { ...c, weight: 20 } : c)),
+    // Some thirty towns (the gameplay audit, 5 November 2026, P2b): 31 kept of 68, each town left
+    // out merged into its kept neighbour (its weight added, the kept town a size larger).
+    cities: mergeCities(
+      VENICE_MAP_CITIES.map((c) => (c.code === "venezia" ? { ...c, weight: 20 } : c)),
+      VENICE_TOWNS_MERGED,
+    ),
     revealRadius: 1,
     // The fifth drawing (1 November): some forty sectors, each with one town or two, bought one
     // next to another; a counter's reach takes in its sector and its neighbours, about two rings
@@ -284,8 +291,10 @@ export const venice1450Empire: EmpireSettingsInput = {
   // workshops make, one place of a hold, paid its reference and 15 %. Five times fewer, larger and
   // slower than before: the same worth an hour, a hold's round a session (calibration.md).
   orders: {
-    cap: [1, 1, 2, 2, 3],
-    everyMinutes: [1_200, 720, 450, 325, 255],
+    // Sessions of a few minutes (the gameplay audit, 5 November 2026, P3): twice as frequent, the
+    // middle towns a place larger, on half as many towns (calibration.md).
+    cap: [1, 2, 2, 3, 4],
+    everyMinutes: [600, 360, 225, 163, 128],
     lotDucats: 400,
     // A lot of a finished good worth three of a raw one (calibration.md, the orders as shipments).
     tierTimes: { raw: 1, intermediate: 2, finished: 3, luxury: 5 },
@@ -307,7 +316,8 @@ export const venice1450Empire: EmpireSettingsInput = {
   moves: {
     departSeconds: 10,
     unitsPerSecond: 8,
-    secondsPerUnit: 11,
+    // The near hops of one to three minutes (the gameplay audit, P3): two rounds a session.
+    secondsPerUnit: 4,
     maxStops: 15,
     returnHome: true,
     recallSeconds: 5,

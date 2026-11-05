@@ -2489,3 +2489,39 @@ Cible par cible (graine 1) :
 `venice1450.empire.ts` : `orders.firstLotBps` = 2 500, `madeWeight` = 3, `distanceBps` = 100, `distanceMaxBps` = 1 500 ; `moves.returnHome` et `recallSeconds` = 5 ; `map.water` (la tuile de lagune de Venise). **À annoncer** dans les notes du chapitre avant de s'appliquer : brouillon dans `docs/notes-chapitre-2026-11-carte.md`.
 
 Reproduire : `cd apps/simulator && npx tsx src/empire-cli.ts` donne E (le jeu tel qu'appliqué) ; environ 50 minutes par graine.
+
+## Une trentaine de villes et des sessions de quelques minutes (5 novembre 2026)
+
+Décisions du porteur après l'audit du gameplay (`docs/audit-gameplay-2026-11-05.md`, P2b et P3) : une trentaine de villes, 3 par région, les autres fusionnées dans leur voisine ; 2 à 4 minutes de gestes par session, avec des trajets proches de 1 à 3 minutes et des commandes plus fréquentes ; valider au simulateur.
+
+### Ce qui change (`venice1450.empire.ts`, `venice1450.towns.ts`)
+
+- **31 villes gardées sur 68** : 4 en Vénétie (Venise, Padoue, Trévise, Vérone), 3 ailleurs. Chaque ville retirée rejoint sa voisine gardée (`mergeCities`, moteur, testée) : son poids dans le livre de la région s'ajoute (la part du revenu d'une région ne change pas), et la ville gardée grandit d'une taille (de deux pour trois villes absorbées ou plus, 5 au plus). Les cases de la carte ne changent pas : secteurs achetés et fondaci restent en place.
+- **Les commandes** : intervalles divisés par deux (`everyMinutes` 600, 360, 225, 163, 128 au lieu de 1 200, 720, 450, 325, 255), plafonds des villes moyennes d'une place de plus (`cap` 1, 2, 2, 3, 4 au lieu de 1, 1, 2, 2, 3).
+- **Les trajets** : `moves.secondsPerUnit` 4 au lieu de 11 (Venise à 2 minutes environ du premier fondaco, les villes lointaines à 7). Au simulateur, qui ne compte pas le temps des trajets : `roundsPerSession` 2 au lieu de 1.
+
+### Les essais (24 mois, cohortes de 200)
+
+| Essai | Graines | Cibles sur 9 |
+| --- | --- | --- |
+| E, la référence (le jeu d'avant) | 1 | 5 |
+| F, `scenarios/trente-villes.json` (`src/scenario-trente.ts`) | 1, 2, 3 | **5, 5 et 6** |
+
+| Cible | E (g. 1) | F (g. 1 / 2 / 3) |
+| --- | --- | --- |
+| Calendrier de la Casa | ✓ | ✓ / ✓ / ✓ |
+| Tournées avec un objectif à moins de 24 h | ✓ 99,3 % | ✓ 100 / 99,6 / 99,8 % |
+| Prochain palier en jours de revenu (2 à 7) | ✗ 4,4 à 26,7 | ✗ 2,9 à 45,7 / 38,5 / 29,4 |
+| Cohorte du mois 12 hors de la 1re bande (4 à 6 mois) | ✗ 2,9 | ✗ 2,5 / 2,5 / 2,5 |
+| Indice des prix | ✓ 95 à 103 | ✓ |
+| Puits ÷ sources, jeunes puis anciennes (0,6–0,8 puis 0,9–1,0) | ✗ 0,89 puis 0,97 | ✗ 0,74 puis 1,03 / ✗ 0,78 puis 1,04 / ✓ 0,75 puis 1,00 |
+| Part de la Terraferme | ✓ | ✓ |
+| Bruts des jeunes Maisons à Venise (≥ 10 %) | ✗ 7,2 % | ✗ 6,2 / 6,7 / 5,8 % |
+| Part des commandes (60 à 85 %) | ✓ 64,0 % | ✓ 80,8 / 80,1 / 82,0 % |
+
+**Lecture.**
+- F tient la référence partout et la dépasse sur une graine. **L'épargne des jeunes Maisons entre dans sa cible** (0,74 à 0,78 contre 0,89) : les commandes plus fréquentes leur donnent plus à dépenser en début de partie. Les premiers paliers de Casa viennent plus vite (2,9 jours de revenu au plus bas, contre 4,4).
+- **La fin de partie ralentit encore** : le palier le plus cher monte à 29 à 46 jours de revenu (27 avant). Avec deux fois moins de villes, les grandes Maisons manquent de commandes. C'était déjà le point faible de la référence ; c'est la prochaine passe : les plafonds des villes de taille 5, ou la paie des lots de produits finis.
+- Les commandes pèsent plus dans les recettes (80 à 82 %, au haut de la fourchette) : la tournée est bien le cœur du jeu, le marché moins.
+
+Reproduire : `cd apps/simulator && npx tsx src/scenario-trente.ts`, puis `npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/trente-villes.json` (environ 35 minutes par graine) ; depuis l'application des réglages, `npx tsx src/empire-cli.ts` donne F directement.

@@ -25,3 +25,17 @@ Règle du projet : au commerce, un changement s'annonce dans les notes du chapit
 - **Les longues routes paient plus** : plus une ville est loin de votre fondaco le plus proche, plus sa commande paie, jusqu'à +15 %.
 
 Les chiffres ont été vérifiés au simulateur de 24 mois (docs/calibration.md, § « L'audit de la carte »).
+
+## Le chapitre suivant : moins de villes, plus de tournées (brouillon du 5 novembre 2026)
+
+À publier dans le jeu avant la mise en ligne (décision du porteur pour la date).
+
+**Tracez vos tournées.** Touchez une charrette à quai : les villes qu'elle peut servir s'éclairent. Glissez du doigt vers une ville, puis vers une autre : ses caisses montent à bord. Lâchez dans le vide, elle part ; lâchez sur une ville, la tournée attend votre « Partir ».
+
+**Une trentaine de villes.** La carte garde les villes qui comptent, trois par région (quatre en Vénétie). Les autres ont rejoint leur voisine, qui grandit d'autant : vos régions vous rapportent autant, sur moins de villes, plus grandes.
+
+**Des routes plus courtes, des commandes plus fréquentes.** Une ville proche est à une à trois minutes de votre fondaco ; les villes commandent deux fois plus souvent, et les villes moyennes gardent une commande de plus en attente. Quelques minutes suffisent pour lancer deux tournées et les voir arriver.
+
+Rien ne se perd : vos secteurs, vos fondaci et vos ateliers restent où ils sont ; les commandes en attente dans une ville qui a rejoint sa voisine ne sont plus servies.
+
+Vérifié au simulateur de 24 mois (docs/calibration.md, § « Une trentaine de villes »).
