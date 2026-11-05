@@ -376,6 +376,7 @@ export type EmpireAction =
   | { type: "empireMove"; vehicleId: string; to: string }
   | { type: "empireDepartNow"; vehicleId: string }
   | { type: "empireDeliverCity"; city: string; orderIds?: string[] }
+  | { type: "empireRound"; vehicleId: string; stops: { city: string; orderIds: string[] }[] }
   | { type: "empireRecall"; vehicleId: string }
   | { type: "empireSettle" }
   | { type: "empireCancelStop"; vehicleId: string }

@@ -298,6 +298,29 @@ export function deliverCity(tx: Tx, playerId: PlayerId, city: string, orderIds?:
 }
 
 /**
+ * A round drawn by finger (the gameplay audit, 5 November 2026, P1): the vehicle chosen, standing
+ * at its fondaco, loads there every order asked of each town (the stock and its hold permitting),
+ * then goes from town to town in the order drawn, leaving at once; it comes back alone once the
+ * last is served. A stop that cannot be refuses the whole round (the command's transaction).
+ */
+export function driveRound(
+  tx: Tx,
+  playerId: PlayerId,
+  vehicleId: string,
+  stops: { city: string; orderIds: string[] }[],
+): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const v = vehicleOf(h, s, vehicleId, tx.now);
+  if (stops.length === 0 || stops.length > s.moves.maxStops) fail("invalid_quantity");
+  if (v.porta || v.legs?.length || (v.repairUntil ?? 0) > tx.now) fail("vehicle_busy");
+  for (const stop of stops)
+    for (const id of stop.orderIds) loadOrder(tx, playerId, vehicleId, stop.city, id);
+  for (const stop of stops) moveVehicle(tx, playerId, vehicleId, cityPlace(stop.city));
+  departNow(tx, playerId, vehicleId);
+}
+
+/**
  * Called back a few seconds after it left (`recallSeconds`): the vehicle stands again at the
  * counter it left, its orders unloaded there, back in their cities.
  */

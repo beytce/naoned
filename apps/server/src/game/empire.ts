@@ -101,6 +101,15 @@ const action = z.discriminatedUnion("type", [
     city: z.string().max(40),
     orderIds: z.array(z.string().max(60)).max(20).optional(),
   }),
+  // A round drawn by finger (the gameplay audit, P1): fifteen stops at most, as the engine.
+  z.object({
+    type: z.literal("empireRound"),
+    vehicleId: z.string().max(40),
+    stops: z
+      .array(z.object({ city: z.string().max(40), orderIds: z.array(z.string().max(60)).max(20) }))
+      .min(1)
+      .max(15),
+  }),
   z.object({ type: z.literal("empireRecall"), vehicleId: z.string().max(40) }),
   z.object({ type: z.literal("empireSettle") }),
   z.object({ type: z.literal("empireCancelStop"), vehicleId: z.string().max(40) }),

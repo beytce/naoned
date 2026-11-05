@@ -66,6 +66,7 @@ import {
   cancelStop,
   deliverCity,
   departNow,
+  driveRound,
   loadOrder,
   moveVehicle,
   recallVehicle,
@@ -382,6 +383,16 @@ type EmpireCommandOf =
     }
   /** « Livrer » from a city: its orders the stock covers (or those asked), on one vehicle. */
   | { type: "empireDeliverCity"; playerId: PlayerId; city: string; orderIds?: string[] }
+  /**
+   * A round drawn by finger (the gameplay audit, 5 November 2026): a vehicle at its fondaco loads
+   * each town's orders asked, goes from town to town in that order, and comes back alone.
+   */
+  | {
+      type: "empireRound";
+      playerId: PlayerId;
+      vehicleId: string;
+      stops: { city: string; orderIds: string[] }[];
+    }
   /** A vehicle called back a few seconds after it left. */
   | { type: "empireRecall"; playerId: PlayerId; vehicleId: string }
   | { type: "empireClaim"; playerId: PlayerId; index: number }
@@ -769,6 +780,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireDeliverCity":
       deliverCity(tx, cmd.playerId, cmd.city, cmd.orderIds);
+      break;
+    case "empireRound":
+      driveRound(tx, cmd.playerId, cmd.vehicleId, cmd.stops);
       break;
     case "empireRecall":
       recallVehicle(tx, cmd.playerId, cmd.vehicleId);
