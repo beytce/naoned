@@ -116,3 +116,13 @@ L'objectif : 2 à 4 minutes de gestes utiles par session, sans rien perdre quand
 2. **Moins de villes (P2b)** : une trentaine (3 par région), ou plus radical (une vingtaine, 2 par région) ? Et les villes retirées : fusionnées dans leurs voisines (leur poids reporté), ou gardées en décor sans commande ?
 3. **Le rythme (P3)** : viser 2 à 4 minutes de gestes par session, avec des trajets proches de 1 à 3 minutes ? Cela change l'équilibre du 3 novembre (« une tournée par session ») : à valider au simulateur.
 4. **« Tout récolter »** : le garder dès le début (en fantôme), ou seulement à partir de la Casa 3 ?
+
+## 6. Les décisions du porteur (5 novembre 2026)
+
+1. **La tournée** : les deux gestes. Si le doigt reste posé, on glisse de ville en ville d'un seul geste ; sinon, un glisser par arrêt, puis « Partir ». « Livrer » reste en secours, sans or.
+2. **Les villes** : une trentaine, 3 par région (une capitale, une ou deux villes moyennes), à valider au simulateur de 24 mois.
+3. **Les villes retirées** : fusionnées dans leur voisine restante, qui reprend leur poids en commandes (le revenu total ne bouge pas).
+4. **Le rythme** : 2 à 4 minutes de gestes par session (des trajets proches de 1 à 3 min, des commandes plus fréquentes), validé au simulateur ; l'absence ne coûte toujours rien.
+5. **« Tout récolter »** : à partir de la Casa 3, sans or ; avant, on touche et on glisse sur les ateliers.
+6. **Lorenzo** montre l'objet à toucher (une main animée) ; son bouton d'or disparaît après la première fois de chaque geste.
+7. **L'ordre** : l'écran d'abord (étapes 1 à 4 : fluidité, tournée au doigt, villes en silhouette, objets d'abord), l'équilibrage ensuite (étape 5 : une trentaine de villes et le nouveau rythme).
