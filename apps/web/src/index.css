@@ -303,6 +303,9 @@
   --ease-travel: cubic-bezier(0.5, 0, 0.2, 1);
   /* The five tabs at the foot of the screen: what sits at the foot of the map stops above them. */
   --tabbar: calc(3.5rem + max(0.25rem, env(safe-area-inset-bottom)));
+  /* The empire's four places at the foot (the refonte claire): a sheet or a place opened over the
+     map stops above them, so that they stay in reach (the gameplay audit, P5). */
+  --places: calc(4.25rem + max(0.75rem, env(safe-area-inset-bottom)));
 }
 
 /* Players who ask for less motion: no floating, pulsing or sliding, only instant changes. */

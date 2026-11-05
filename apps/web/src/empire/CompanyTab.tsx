@@ -47,7 +47,13 @@ export function CompanySheet({
   }, [open]);
   if (!p.view) return null;
   return (
-    <Sheet open={open} onClose={onClose} kicker={t.companyTab.kicker} title={t.nav.company}>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      kicker={t.companyTab.kicker}
+      title={t.nav.company}
+      docked="places"
+    >
       <div className="mb-4 flex gap-2" role="tablist">
         {PANES.map((x) => (
           <button
