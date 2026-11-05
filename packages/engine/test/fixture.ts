@@ -644,3 +644,53 @@ export const testEmpire: EmpireSettingsInput = {
     },
   },
 };
+
+/**
+ * A small square map (docs/plan-porcellana.md § 2 bis), tiles 10 across, « i,j » keys, the sea
+ * where no tile is listed:
+ *
+ *        i=0  1  2  3  4  5  6  7
+ *   j=0   V  V  V  .  ~  ~  L  L
+ *   j=1   V  Vc V  V  ~  ~  Lc L
+ *   j=2   V  V  V  V  V  .  L  L
+ *   j=3   ~  ~  ~  ~  ~  ~  ~  ~
+ *   j=4   ~  ~  Ac A  ~  ~  ~  ~
+ *
+ * V veneto, L lombardia, A levante, c a coast; « . » land of veneto too, « ~ » the sea. Towns:
+ * venezia (15,15, the largest), padova (25,25) and treviso (12,8) crowded in veneto, milano in
+ * lombardia, acri on the far coast.
+ */
+export const testSquareMap = {
+  tileSize: 10,
+  tiles: {
+    "0,0": { region: "veneto" },
+    "1,0": { region: "veneto" },
+    "2,0": { region: "veneto" },
+    "3,0": { region: "veneto" },
+    "0,1": { region: "veneto" },
+    "1,1": { region: "veneto", coast: true },
+    "2,1": { region: "veneto" },
+    "3,1": { region: "veneto", coast: true },
+    "0,2": { region: "veneto", coast: true },
+    "1,2": { region: "veneto", coast: true },
+    "2,2": { region: "veneto", coast: true },
+    "3,2": { region: "veneto", coast: true },
+    "4,2": { region: "veneto", coast: true },
+    "5,2": { region: "veneto" },
+    "6,0": { region: "lombardia" },
+    "7,0": { region: "lombardia" },
+    "6,1": { region: "lombardia", coast: true },
+    "7,1": { region: "lombardia" },
+    "6,2": { region: "lombardia" },
+    "7,2": { region: "lombardia" },
+    "2,4": { region: "levante", coast: true },
+    "3,4": { region: "levante" },
+  } as Record<string, { region: string; coast?: boolean }>,
+  cities: [
+    { code: "venezia", x: 15, y: 15, size: 5 },
+    { code: "padova", x: 25, y: 25 },
+    { code: "treviso", x: 12, y: 8 },
+    { code: "milano", x: 71, y: 12 },
+    { code: "acri", x: 24, y: 44 },
+  ],
+};

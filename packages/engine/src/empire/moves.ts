@@ -4,11 +4,12 @@ import { type Tx, fail } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
 import { houseEffect } from "./effects.js";
 import { holdPlacesOf } from "./fleet.js";
+import { roadLength } from "./grid.js";
 import { empireSettings, ownHouse } from "./house.js";
 import { citiesCovered, citySpot, standingPosts, unlockedOf } from "./map.js";
 import { cityOrdersAt, returnOrder, takeOrder } from "./orders.js";
 import type { EmpireSettings } from "./settings.js";
-import { roadBetween, roadLength } from "./slots.js";
+import { roadBetween } from "./slots.js";
 import { HOME_POST, postsServing, putAt, storeOf, takeAt } from "./stores.js";
 import { receive } from "./trade.js";
 

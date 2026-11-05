@@ -306,35 +306,3 @@ export function roadBetween(
   }
   return pts;
 }
-
-/** A line's length, in the chart's units. */
-export function roadLength(pts: [number, number][]): number {
-  let n = 0;
-  for (let i = 1; i < pts.length; i++) {
-    const [ax, ay] = pts[i - 1] as [number, number];
-    const [bx, by] = pts[i] as [number, number];
-    n += Math.hypot(bx - ax, by - ay);
-  }
-  return n;
-}
-
-/** The point at a share (0 to 1) of a line's length, and its heading there (radians). */
-export function alongRoad(
-  pts: [number, number][],
-  k: number,
-): { x: number; y: number; angle: number } {
-  const total = roadLength(pts);
-  let want = Math.min(1, Math.max(0, k)) * total;
-  for (let i = 1; i < pts.length; i++) {
-    const [ax, ay] = pts[i - 1] as [number, number];
-    const [bx, by] = pts[i] as [number, number];
-    const seg = Math.hypot(bx - ax, by - ay);
-    if (want <= seg || i === pts.length - 1) {
-      const u = seg > 0 ? Math.min(1, want / seg) : 0;
-      return { x: ax + (bx - ax) * u, y: ay + (by - ay) * u, angle: Math.atan2(by - ay, bx - ax) };
-    }
-    want -= seg;
-  }
-  const [x, y] = pts[0] ?? [0, 0];
-  return { x, y, angle: 0 };
-}
