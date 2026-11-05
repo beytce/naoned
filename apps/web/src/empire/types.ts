@@ -367,7 +367,14 @@ export interface EmpirePayload {
 export type EmpireAction =
   | PortaAction
   | { type: "empireBuildCasa" }
-  | { type: "empireBuildWorkshop"; workshopType: string; recipe: string; region?: string }
+  | {
+      type: "empireBuildWorkshop";
+      workshopType: string;
+      recipe: string;
+      region?: string;
+      /** On square tiles, the house's free tile it stands on. */
+      tile?: string;
+    }
   | { type: "empireUpgrade"; workshopId: string }
   | { type: "empireRelaunch"; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll" }

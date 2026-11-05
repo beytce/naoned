@@ -69,6 +69,8 @@ const action = z.discriminatedUnion("type", [
     workshopType: z.string().max(40),
     recipe: z.string().max(40),
     region: z.string().max(40).optional(),
+    /** On square tiles, the house's free tile it stands on (docs/plan-porcellana.md D7). */
+    tile: z.string().max(12).optional(),
   }),
   z.object({ type: z.literal("empireUpgrade"), workshopId: z.string().max(32) }),
   z.object({

@@ -417,6 +417,11 @@ function alignToTiles(h: EmpireHouse, s: EmpireSettings): void {
 
 export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   if (!hasMap(s)) return;
+  // A house of a hexagonal world, its world turned to square tiles (M4): taken up once.
+  if (squareGrid(s) && h.grid !== "square") {
+    if (h.revealed) migrateToSquare(h, s);
+    h.grid = "square";
+  }
   // The Arsenal gone (1 November): a house that had one has its Remise there.
   if (s.map.depot && h.arsenal && !h.depot) h.depot = h.arsenal;
   // The sectors bought one by one: a house of before owns those it has built on.
@@ -667,6 +672,78 @@ function seatWorkshops(h: EmpireHouse, s: EmpireSettings): void {
     w.tile = free;
     if (s.map.unlock) h.unlocked = [...new Set([...unlockedOf(h, s), free])];
   }
+}
+
+/**
+ * A house taken up on square tiles (docs/plan-porcellana.md M4, the owner's leave of 5 November
+ * 2026): nothing it built is lost (the golden rule 1).
+ * - It owns every tile whose middle lay in a sector it owned (or saw, on a map not bought).
+ * - Its fondaci stand on the free tile nearest their point, clear of the towns and of each other;
+ *   its Remise, its Campo, its Arsenal and its Porta on the free tile nearest their sector's middle;
+ *   its sites under way likewise. Each of those tiles is its own.
+ * - Its workshops are then seated round their fondaco, in the order of their orbit (seatWorkshops).
+ * No money moves; the vehicles' hops under way end at their hour.
+ */
+function migrateToSquare(h: EmpireHouse, s: EmpireSettings): void {
+  const hex = { map: { ...s.map, grid: "hex" as const } } as EmpireSettings;
+  const oldCell = (x: number, y: number) => cellAtPoint(x, y, hex);
+  const before = new Set(h.unlocked ?? h.revealed ?? []);
+  const owned = new Set(
+    Object.keys(s.map.cells).filter((t) => {
+      const [x, y] = cellCentreOf(t, s);
+      return before.has(oldCell(x, y));
+    }),
+  );
+  const towns = new Set(
+    s.map.cities.map((c) =>
+      c.x !== undefined && c.y !== undefined ? cellAtPoint(c.x, c.y, s) : c.cell,
+    ),
+  );
+  const taken = new Set<string>(towns);
+  const near = (x: number, y: number, clearOfPlaces: boolean): string | null => {
+    const free = Object.keys(s.map.cells)
+      .filter(
+        (t) =>
+          !taken.has(t) &&
+          ![...towns].some((u) => cellDistance(u, t, s) === 1) &&
+          !(clearOfPlaces && [...taken].some((u) => !towns.has(u) && cellDistance(u, t, s) === 1)),
+      )
+      .map((t) => {
+        const [cx, cy] = cellCentreOf(t, s);
+        return { t, d: Math.hypot(cx - x, cy - y) };
+      })
+      .sort((a, b) => a.d - b.d || a.t.localeCompare(b.t))[0];
+    return free?.t ?? null;
+  };
+  const seat = <T extends { cell: string; x?: number; y?: number }>(p: T, fondaco: boolean): T => {
+    const [ox, oy] =
+      p.x !== undefined && p.y !== undefined ? [p.x, p.y] : cellCentreOf(p.cell, hex);
+    const t = near(ox, oy, fondaco);
+    if (!t) return p;
+    taken.add(t);
+    owned.add(t);
+    const [x, y] = cellCentreOf(t, s);
+    return { ...p, cell: t, x: Math.round(x), y: Math.round(y) };
+  };
+  if (h.home) h.home = seat(h.home, true);
+  if (h.posts) h.posts = h.posts.map((p) => seat(p, true));
+  const place = (cell: string | undefined) => (cell ? seat({ cell }, false).cell : cell);
+  h.depot = place(h.depot);
+  h.camp = place(h.camp);
+  h.arsenal = place(h.arsenal);
+  if (h.porta) h.porta = { ...h.porta, cell: place(h.porta.cell) ?? h.porta.cell };
+  for (const b of h.builds)
+    if (b.cell && b.kind !== "newWorkshop") {
+      const p = seat({ cell: b.cell, x: b.x, y: b.y }, b.kind === "post");
+      b.cell = p.cell;
+      if (b.x !== undefined) b.x = p.x;
+      if (b.y !== undefined) b.y = p.y;
+      b.reveal = [];
+    }
+  for (const w of h.workshops) w.tile = undefined;
+  h.unlocked = [...owned].sort();
+  h.revealed = [...owned].sort();
+  h.mapVersion = s.map.version;
 }
 
 /** The Remise asked by the land vehicles, in a world that sets one. */

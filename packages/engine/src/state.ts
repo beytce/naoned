@@ -440,6 +440,8 @@ export interface EmpireHouse {
   unlocked?: string[];
   /** The drawing of the grid those cells are of. */
   mapVersion?: number;
+  /** « square » once the house was taken up on a map of square tiles (docs/plan-porcellana.md M4). */
+  grid?: "square";
   /**
    * The counters put down on the map, each on its cell, in its region, at its point of the chart
    * (its units) with its level: its reach grows with it (the map that grows, 31 October 2026).
