@@ -183,6 +183,12 @@ export const Icon = {
     </I>
   ),
   /** The map tab: a folded map. */
+  /** The Porta: a gate of two crenellated towers and its arch (the refonte claire's tab). */
+  gate: () => (
+    <I>
+      <path d="M4 20 V8 H7 V5 H9 V8 H15 V5 H17 V8 H20 V20 H14.5 V15 a2.5 2.5 0 0 0 -5 0 V20 Z" />
+    </I>
+  ),
   map: () => (
     <I>
       <path d="M3 6 L9 4 L15 6 L21 4 V18 L15 20 L9 18 L3 20 Z" />

@@ -251,6 +251,28 @@ export const en: Dictionary = {
       order: (city: string, pay: string) => `${city} · ${pay}`,
       carnet: (done: number, of: number) => `Ledger ${done}/${of}`,
     },
+    places: {
+      label: "Places",
+      map: "Map",
+      fondaco: "Fondaco",
+      porta: "Porta",
+      company: "Company",
+      portaLocked: (casa: number) => `The Porta opens at Casa ${casa}.`,
+    },
+    best: {
+      ready: "Best paid right now",
+      waiting: "The best order",
+      casa: "Your next step",
+      crates: (city: string, n: number) => `${city} · ${n} crate${s(n)}`,
+      casaTo: (n: number) => `Towards Casa ${n}`,
+      deliver: "Deliver",
+      see: "See",
+    },
+    profile: {
+      family: "Family",
+      help: "Advice",
+      market: "Dogana",
+    },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
       venezia: "Venice",

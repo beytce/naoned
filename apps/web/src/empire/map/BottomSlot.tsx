@@ -48,6 +48,10 @@ export function BottomSlot({
           key={`out-${leaving.id}`}
           className="slot-out absolute inset-x-0 bottom-0"
           aria-hidden="true"
+          data-slot-out
+          // What leaves can no longer be touched (nor its tabs taken for the place's); React 18
+          // does not know `inert` yet, so it is passed as a plain attribute.
+          {...{ inert: "" }}
         >
           <GoldLayer depth={0}>{leaving.node}</GoldLayer>
         </div>

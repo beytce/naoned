@@ -17,6 +17,19 @@ const SIZES = (process.env.SIZES ?? "390x844,320x568")
   .map((s) => s.split("x").map(Number));
 const log = join(SHOTS, "server.log");
 
+/**
+ * The refonte claire (5 November 2026): the Company is a place at the foot, the Market (the Dogana)
+ * and the Family behind the Casa's medal, the map « Carte » at the foot.
+ */
+async function openRound(page, round) {
+  // The foot in place, never one sliding away (`data-slot-out`).
+  const tab = (id) => page.locator(`[data-bottom-slot] > .slot-in [data-place-tab=${id}]`);
+  if (round === "company") return tab("company").click();
+  if (round === "recenter") return tab("map").click();
+  await page.locator("[data-house-header]").click();
+  await page.locator(`[data-profile-door=${round}]`).click();
+}
+
 async function startServer() {
   const serverDir = join(here, "..", "..", "server");
   const tsx = createRequire(join(serverDir, "package.json")).resolve("tsx/cli");
@@ -217,10 +230,14 @@ try {
       )
         faults.push(`${label}: Venice's bubble replaced when its workshops deploy`);
     }
-    // The corners: the ducats, and the two mules at home among two.
+    // The corners: the ducats alone (the refonte claire: no fleet count), and the four places.
     await page.locator("[data-hud=ducats]").waitFor();
-    if (!/2\s*\/\s*2/.test(await page.locator("[data-hud=fleet]").innerText()))
-      faults.push(`${label}: the fleet not « 2 / 2 » in the corner`);
+    if ((await page.locator("[data-hud=fleet]").count()) > 0)
+      faults.push(`${label}: a fleet count still in the corner`);
+    // (A foot leaving slides away for a moment: its tabs are not counted.)
+    await page.waitForTimeout(400);
+    const tabs = await page.locator("[data-place-tab]").count();
+    if (tabs !== 4) faults.push(`${label}: ${tabs} places at the foot, not four`);
     // The new player's road: the next step says what to do, its gold button does it.
     await page.locator('[data-next-step="relaunch"]').first().waitFor();
     if ((await page.locator("[data-workshop]").count()) !== 3)
@@ -304,14 +321,14 @@ try {
     // The round buttons: the Market, the Company, the Family (on the 3D board, out of the domain).
     if (MAP3D) {
       await page.locator("[data-domain-back]").click();
-      await page.locator("[data-round=market]").waitFor();
+      await page.locator("[data-place-tab=map]").waitFor();
     }
     for (const [round, name, ready] of [
       ["market", "6-marche", "[data-market]"],
       ["company", "7-compagnie", "[data-carnet]"],
       ["family", "8-famille", '[aria-modal="true"]'],
     ]) {
-      await page.locator(`[data-round=${round}]`).click();
+      await openRound(page, round);
       await page.waitForSelector(ready);
       // The sheet still rising: its head checked once it has come to rest.
       await page.waitForTimeout(450);
@@ -320,13 +337,13 @@ try {
       await page.keyboard.press("Escape");
       await page.waitForTimeout(400);
     }
-    // A sheet covers the screen to its foot: no round button left to touch under it.
-    await page.locator("[data-round=market]").click();
+    // A sheet covers the screen to its foot: no place's tab left to touch under it.
+    await openRound(page, "market");
     await page.waitForSelector("[data-market]");
     await page.waitForTimeout(450);
     const under = await page.evaluate(() => {
       const at = document.elementFromPoint(window.innerWidth - 30, window.innerHeight - 20);
-      return at?.closest("[data-round]") ? "round" : "";
+      return at?.closest("[data-place-tab]") ? "round" : "";
     });
     if (under) faults.push(`${label}: a round button still under the open sheet`);
     await page.keyboard.press("Escape");
@@ -350,7 +367,7 @@ try {
       .catch(() => faults.push(`${label}: still « offline » once back on the network`));
 
     // The Market: a good touched opens its sheet, to sell or deliver.
-    await page.locator("[data-round=market]").click();
+    await openRound(page, "market");
     await page.locator("[data-market-good]").first().click();
     await page
       .getByText(/dogana/i)
@@ -362,7 +379,7 @@ try {
     await page.waitForTimeout(400);
     // The Company's panes: the company founded, then the entraide's form (CADRAGE-v3 § 7); the
     // Terraferma's week (CADRAGE-v3 § 8).
-    await page.locator("[data-round=company]").click();
+    await openRound(page, "company");
     await page.locator("[data-pane=company]").click();
     await page.waitForSelector("[data-company] input");
     await page.locator("[data-company] input").fill(`Ca ${width}`);
@@ -375,7 +392,7 @@ try {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
     // The Family: the knowledge and the Scuola wait out of sight until the Casa 3.
-    await page.locator("[data-round=family]").click();
+    await openRound(page, "family");
     await page
       .getByText(/traits de lignée/i)
       .first()
@@ -387,7 +404,7 @@ try {
 
     // Out to the map (step 3): Venice's sector seen, the six around it in silhouette, Lombardy
     // still in the dark. (On the 3D board, out of the domain already: over the fondaco.)
-    if (!MAP3D) await page.locator("[data-round=recenter]").click();
+    if (!MAP3D) await openRound(page, "recenter");
     await page.locator("[data-map=empire]:not([data-orbit])").waitFor();
     await page.waitForTimeout(300);
     if (MAP3D) {
@@ -455,7 +472,7 @@ try {
     await shot("12-attente");
     // Buying at the market goes into a counter's stock: ten units of a good, into Venice's.
     if (MAP3D) await page.locator("[data-domain-back]").click();
-    await page.locator("[data-round=market]").click();
+    await openRound(page, "market");
     await page.waitForSelector("[data-market]");
     if ((await page.locator("[data-market-buy] button:enabled").count()) === 0)
       faults.push(`${label}: nothing to buy at the market`);
@@ -604,7 +621,7 @@ try {
     await page.mouse.wheel(0, -900);
     await page.waitForTimeout(400);
     // A sector next to Venice's to buy (1 November): its edge touched, its panel.
-    await page.locator("[data-round=recenter]").click();
+    await openRound(page, "recenter");
     await page.waitForTimeout(500);
     const sector = page.locator("[data-buyable]").first();
     if ((await page.locator("[data-buyable]").count()) === 0)

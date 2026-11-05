@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Lorenzo } from "../art/scenes.js";
+import { DockDoor } from "../dock.js";
 import { PalettePicker } from "../game/Profil.js";
 import { PushSettings } from "../game/PushSettings.js";
 import { d, hourOf } from "../game/format.js";
 import { GOLD } from "../game/gold.js";
+import { Icon } from "../game/map/icons.js";
 import { fr } from "../i18n.js";
 import { GoldLayer, LorenzoCard, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { Term } from "./Term.js";
@@ -205,16 +207,56 @@ export function HouseSheet({
   p,
   open,
   onClose,
+  onFamily,
+  onHelp,
+  onMarket,
+  familyCalls = false,
 }: {
   p: EmpirePayload;
   open: boolean;
   onClose: () => void;
+  /** The profile's doors (the refonte claire, 5 November 2026): what had a tab of its own. */
+  onFamily?: () => void;
+  onHelp?: () => void;
+  onMarket?: () => void;
+  familyCalls?: boolean;
 }) {
   const view = p.view;
   if (!view) return null;
   const h = fr.empire.house;
+  const doors = fr.empire.profile;
   return (
     <Sheet open={open} onClose={onClose} kicker={h.kicker} title={h.title} summary={h.summary}>
+      {(onFamily || onHelp || onMarket) && (
+        <div className="mb-5 grid grid-cols-3 gap-2" data-profile-doors>
+          {onFamily && (
+            <DockDoor
+              icon={Icon.family()}
+              label={doors.family}
+              badge={familyCalls ? "!" : undefined}
+              badgeTone="gold"
+              onClick={onFamily}
+              attrs={{ "data-profile-door": "family" }}
+            />
+          )}
+          {onMarket && (
+            <DockDoor
+              icon={Icon.rialto()}
+              label={doors.market}
+              onClick={onMarket}
+              attrs={{ "data-profile-door": "market" }}
+            />
+          )}
+          {onHelp && (
+            <DockDoor
+              icon={Icon.help()}
+              label={doors.help}
+              onClick={onHelp}
+              attrs={{ "data-profile-door": "help" }}
+            />
+          )}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-2" data-house-sheet>
         <Stat label={<Term code="casa">{h.casa}</Term>} value={view.house.casa} tone="gold" />
         <Stat label={<Term code="power">{h.power}</Term>} value={view.power} />

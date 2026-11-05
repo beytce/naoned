@@ -20,6 +20,21 @@ const OUT = resolve(
 const [W, H] = (process.env.SIZE ?? "390x844").split("x").map(Number);
 const log = join(tmpdir(), `map3d-server-${process.pid}.log`);
 
+/**
+ * The refonte claire (5 November 2026): the Company is a place at the foot, the Market (the Dogana)
+ * and the Family behind the Casa's medal, the map « Carte » at the foot.
+ */
+async function openRound(page, round) {
+  // A second page may have been opened over it: its animations wait for it to come forward.
+  await page.bringToFront();
+  // The foot in place, never one sliding away (`data-slot-out`).
+  const tab = (id) => page.locator(`[data-bottom-slot] > .slot-in [data-place-tab=${id}]`);
+  if (round === "company") return tab("company").click();
+  if (round === "recenter") return tab("map").click();
+  await page.locator("[data-house-header]").click();
+  await page.locator(`[data-profile-door=${round}]`).click();
+}
+
 async function startServer() {
   const serverDir = join(here, "..", "..", "server");
   const tsx = createRequire(join(serverDir, "package.json")).resolve("tsx/cli");
@@ -287,7 +302,7 @@ try {
     };
     // 3. A mule sent to Padua: it walks there on the board, no medal above it. The workshops
     // folded first (Recentrer), the camera a little nearer.
-    await page.locator("[data-round=recenter]").click();
+    await openRound(page, "recenter");
     await page.waitForTimeout(900);
     await page.waitForTimeout(800);
     await send(page, "padova");
@@ -324,7 +339,7 @@ try {
     await page.waitForTimeout(3000);
     await page.keyboard.press("Escape");
     // Recentrer: the camera leaves the mule it followed, out over the house's sectors.
-    await page.locator("[data-round=recenter]").click();
+    await openRound(page, "recenter");
     await page.waitForTimeout(1800);
     await shot("4b-secteur");
     // Out, as far as the map goes: the whole house's map on the board.

@@ -74,6 +74,8 @@ export interface EmpireMapHandle {
   far(): void;
   /** Out of a fondaco's domain, back to the map around it. */
   leave(): void;
+  /** Back over the house's sector (the « Carte » place touched again): the camera unfollowed. */
+  recenter(): void;
   /**
    * « Maison » (3D): the camera back over the first fondaco; already there, its domain plunged into.
    */
@@ -429,6 +431,11 @@ export const EmpireMap = forwardRef<
       camera.easeTo(farOn);
     },
     house: () => goHouse(),
+    recenter: () => {
+      unfollow.current();
+      if (openedNow.current) setOpened(null);
+      camera.easeTo(sectorOn);
+    },
     leave: () => {
       // Back to the whole sector around (its towns in sight), as the game opens it.
       const at = openedAt.current;

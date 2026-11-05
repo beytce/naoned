@@ -168,6 +168,31 @@ const frDict = {
       order: (city: string, pay: string) => `${city} · ${pay}`,
       carnet: (done: number, of: number) => `Carnet ${done}/${of}`,
     },
+    /** The four places at the foot (docs/plan-refonte-claire.md, 5 November 2026). */
+    places: {
+      label: "Les lieux",
+      map: "Carte",
+      fondaco: "Fondaco",
+      porta: "Porta",
+      company: "Compagnie",
+      portaLocked: (casa: number) => `La Porta s'ouvre à la Casa ${casa}.`,
+    },
+    /** The one card « le mieux maintenant » over the places (5 November 2026). */
+    best: {
+      ready: "Le mieux payé maintenant",
+      waiting: "La meilleure commande",
+      casa: "Votre prochain palier",
+      crates: (city: string, n: number) => `${city} · ${n} caisse${n > 1 ? "s" : ""}`,
+      casaTo: (n: number) => `Vers la Casa ${n}`,
+      deliver: "Livrer",
+      see: "Voir",
+    },
+    /** The profile behind the Casa's medal (5 November 2026). */
+    profile: {
+      family: "Famille",
+      help: "Conseil",
+      market: "Dogana",
+    },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
       venezia: "Venise",

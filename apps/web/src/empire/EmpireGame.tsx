@@ -34,21 +34,20 @@ import {
   sitesByEnd,
 } from "./logic.js";
 import { ActionPanel } from "./map/ActionPanel.js";
+import { BestNowCard } from "./map/BestNow.js";
 import { BottomSlot } from "./map/BottomSlot.js";
 import { DomainBar } from "./map/Domain.js";
 import { EmpireMap, type EmpireMapHandle, type Picked } from "./map/EmpireMap.js";
 import { Hud } from "./map/Hud.js";
-import { Milestones } from "./map/Milestones.js";
 import { OrdersPanel } from "./map/OrdersPanel.js";
+import { type PlaceId, PlaceTabs } from "./map/PlaceTabs.js";
 import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
-import { RoundButtons } from "./map/RoundButtons.js";
 import { Trips } from "./map/Trips.js";
 import { VehiclePanel } from "./map/VehiclePanel.js";
 import { WorkshopDock } from "./map/WorkshopDock.js";
 import { measureBand } from "./map/band.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
-import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
 import { BattleScreen } from "./porta/Battle.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
@@ -391,6 +390,52 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   };
   const step = nextStep(p, now);
   const tutorial = inTutorial(p);
+  // The four places at the foot (docs/plan-refonte-claire.md): where one is, and going there.
+  const porta = view.porta;
+  const portaCasa =
+    porta && !porta.cell && porta.site && view.house.casa < porta.site.casa
+      ? porta.site.casa
+      : null;
+  const here: PlaceId =
+    sheet === "porta" || sheet === "arms"
+      ? "porta"
+      : sheet?.startsWith("company")
+        ? "company"
+        : domain
+          ? "fondaco"
+          : "map";
+  const goPlace = (id: PlaceId) => {
+    setTarget(null);
+    setVehicle(null);
+    setAiming(false);
+    if (id === "map") {
+      setSheet(null);
+      if (domainNow.current) map.current?.leave();
+      else map.current?.recenter();
+    } else if (id === "fondaco") {
+      setSheet(null);
+      if (!domainNow.current) map.current?.home();
+    } else if (id === "porta") {
+      if (!porta) return;
+      if (portaCasa !== null) {
+        setToast(t.places.portaLocked(portaCasa));
+        return;
+      }
+      if (porta.cell) setSheet("porta");
+      else open("place:porta");
+    } else setSheet("company");
+  };
+  const placeTabs = (
+    <PlaceTabs
+      active={here}
+      onPlace={goPlace}
+      portaCasa={portaCasa}
+      dots={{
+        fondaco: view.house.workshops.filter((w) => readyLots(w, now) > 0).length,
+        company: claimable(p) || suppliable(p, account.id) > 0 || terraCalls(p, now),
+      }}
+    />
+  );
   // Lorenzo, the tutorial's card (on the map's foot, and over a domain's bar).
   const lorenzo = tutorial && (
     <div className="w-full px-3 pb-2 lg:max-w-md">
@@ -446,13 +491,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         road={target?.kind === "city" ? road : null}
       />
 
-      <Hud
-        p={p}
-        now={now}
-        name={account.pseudo ?? t.title}
-        onHouse={() => setSheet("house")}
-        onProduction={() => setSheet("production")}
-      />
+      <Hud p={p} name={account.pseudo ?? t.title} onHouse={() => setSheet("house")} />
       <Trips
         p={p}
         now={now}
@@ -578,6 +617,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               onBack={() => map.current?.leave()}
               onProduction={() => setSheet("production")}
             />
+            {placeTabs}
           </div>
         ) : (
           <>
@@ -585,25 +625,17 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
                 button does it; then he withdraws behind the « ? », and the three milestones keep
                 the way in sight (audit of 4 November, UX B2), each opening its place. */}
             {lorenzo}
+            {/* Past the tutorial, the one card « le mieux maintenant » (the refonte claire). */}
             {!tutorial && (
-              <Milestones
+              <BestNowCard
                 p={p}
-                onCasa={() => setSheet("casa")}
+                busy={busy}
                 onCity={(code) => setTarget({ kind: "city", code })}
-                onCarnet={() => setSheet("company")}
+                onCasa={() => setSheet("casa")}
+                onDeliver={deliver}
               />
             )}
-            <RoundButtons
-              onRecenter={() => (MAP_3D ? map.current?.house() : map.current?.toggle())}
-              onHelp={tutorial ? undefined : () => setSheet("help")}
-              onMarket={() => setSheet("market")}
-              onCompany={() => setSheet("company")}
-              onFamily={() => setSheet("family")}
-              dots={{
-                company: claimable(p) || suppliable(p, account.id) > 0 || terraCalls(p, now),
-                family: familyCalls(p),
-              }}
-            />
+            {placeTabs}
           </>
         )}
       </BottomSlot>
@@ -697,7 +729,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         <Knowledge p={p} busy={busy} act={act} />
       </FamilySheet>
       <GoodSheet p={p} good={good} busy={busy} onClose={() => setGood(null)} act={act} />
-      <HouseSheet p={p} open={sheet === "house"} onClose={close} />
+      <HouseSheet
+        p={p}
+        open={sheet === "house"}
+        onClose={close}
+        onFamily={() => setSheet("family")}
+        onMarket={() => setSheet("market")}
+        onHelp={tutorial ? undefined : () => setSheet("help")}
+        familyCalls={familyCalls(p)}
+      />
       {/* Over everything, the sheets included (on the body, as they are): the welcome, the toast,
           the moment of a Casa, the goods and coins in flight. */}
       {createPortal(

@@ -1,12 +1,10 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { P } from "../../art/palette.js";
-import { CartWheel, DucatCoin, FavourCoin, WaxSeal } from "../../art/plateau/coins.js";
+import { DucatCoin, FavourCoin, WaxSeal } from "../../art/plateau/coins.js";
 import { d, whole } from "../../game/format.js";
-import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
-import { MAP_3D } from "../map3d/flag.js";
 import type { EmpirePayload } from "../types.js";
-import { fleetOf, hudOf } from "./logic.js";
+import { hudOf } from "./logic.js";
 
 const t = fr.empire;
 
@@ -14,21 +12,19 @@ const t = fr.empire;
  * The map's head (Direction Jour, 4 November 2026, after the owner's reference). On the left, the
  * house: the medal of its Casa, its ring filling as the ducats near the next one, its name and its
  * income in a cream pill (on a phone, the medal alone). Beside it, one cream bar of counts side by
- * side, each with its sign: the ducats, the Favour, the Seals, the vehicles at home among all (the
- * column of the night board given up by the owner); then the « + » of the Production.
+ * side, each with its sign: the ducats, the Favour, the Seals (the refonte claire, 5 November 2026:
+ * the vehicles' count and the Production's « + » gone; the vehicles are on the map, the Production
+ * in the Fondaco).
  */
 export function Hud({
   p,
-  now,
   name,
   onHouse,
-  onProduction,
 }: {
   p: EmpirePayload;
-  now: number;
   name: string;
+  /** The Casa's medal opens the profile (the family, the Dogana, the advice, the settings). */
   onHouse: () => void;
-  onProduction: () => void;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -36,7 +32,6 @@ export function Hud({
   const share = next
     ? Math.min(1, Number((BigInt(p.cash) * 1000n) / BigInt(next.cost || "1")) / 1000)
     : 1;
-  const fleet = fleetOf(p, now);
   const ring = 2 * Math.PI * 21;
   const signs: Record<string, ReactNode> = {
     ducats: <DucatCoin />,
@@ -91,24 +86,6 @@ export function Hud({
             gold={c.id === "ducats"}
           />
         ))}
-        <Count
-          id="fleet"
-          label={t.scene.fleetShort}
-          value={`${fleet.free} / ${fleet.total}`}
-          sign={<CartWheel />}
-        />
-        {/* On the 3D board, the Production is in the domain (decision of the owner, 3 November). */}
-        {!MAP_3D && (
-          <button
-            type="button"
-            onClick={onProduction}
-            aria-label={t.scene.production}
-            data-production
-            className="pointer-events-auto ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-lagoon text-on-lagoon active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
-          >
-            {Icon.plus()}
-          </button>
-        )}
       </div>
     </>
   );
