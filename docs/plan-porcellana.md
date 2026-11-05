@@ -208,7 +208,7 @@ Chaque lot fait l'objet de petits commits, se vérifie (§ 7) et laisse le jeu j
 
 ## 6. Ce qui demande de l'attention
 
-- **Le téléphone d'abord.** Une case fusionnée = au plus 6 appels de dessin. Carte d'ombre de 2048 sur téléphone, de 4096 sur ordinateur. Occlusion en demi-résolution, coupée quand l'appareil peine. Mesure : `e2e/map-fps.mjs`, avec le seuil d'aujourd'hui comme plancher.
+- **Le téléphone d'abord.** Une case fusionnée = une douzaine d'appels de dessin au plus (un par matériau). Carte d'ombre de 2048 sur téléphone, de 4096 sur ordinateur. Occlusion en demi-résolution, coupée quand l'appareil peine. Mesure : `e2e/map-fps.mjs`, avec le seuil d'aujourd'hui comme plancher.
 - **Le monochrome lisible.** Un lieu se reconnaît à sa silhouette, à toutes les tailles de la carte. Le laboratoire montre chaque modèle à 0,8 et à 4 de zoom.
 - **Le contraste.** Le texte reste à 4,5:1 sur papier et sur la scène (test existant). L'accent n'écrit jamais de texte courant.
 - **Règle d'or 8 (tout se voit).** La fiche accompagne l'image, elle ne la remplace pas : une phrase, pas un tableau.
@@ -234,5 +234,6 @@ On compare aussi, à chaque lot, des captures prises au même cadrage que celles
 | --- | --- |
 | D1 à D8 | tranchés (5 novembre 2026) |
 | 0 | fait : décisions D1 à D8 |
-| M1, 1 | en cours |
+| M1 | fait : `grid.ts` et ses tests (17), pas encore en service |
+| 1 | fait : le kit (`apps/web/src/porcellana/`, tests `apps/web/test/porcellana.test.ts`), le laboratoire `?lab=porcellana` avec le Fondaco, le Marché (San Marco), les bosquets, la parcelle « + », la route, l'arrivée, la sélection et la fiche ; captures `labo-*.png` |
 | M2 à M4, 2 à 9 | validés, à faire |
