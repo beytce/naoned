@@ -34,3 +34,4 @@ export * from "./stores.js";
 export * from "./moves.js";
 export * from "./vehicleModules.js";
 export * from "./orders.js";
+export * from "./towns.js";

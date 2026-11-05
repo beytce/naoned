@@ -116,6 +116,7 @@ export * from "./theme.js";
 export { venice1450 } from "./themes/venice1450.js";
 export { venice1450Settings } from "./themes/venice1450.settings.js";
 export { venice1450Empire } from "./themes/venice1450.empire.js";
+export { VENICE_TOWNS_MERGED } from "./themes/venice1450.towns.js";
 export { EngineError, type EngineErrorCode } from "./tx.js";
 export {
   adoptTurnover,
