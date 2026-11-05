@@ -23,6 +23,7 @@ import { NewWorkshopSheet } from "./NewWorkshop.js";
 import { GoodSheet } from "./Resources.js";
 import { Charroi, RegionPlace, Scuola, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
+import { foresee } from "./foresee.js";
 import {
   affordable,
   buildingName,
@@ -223,24 +224,43 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
 
   // Off the network: said once at the top, and the house read again as soon as it is back.
   const online = useOnline(refresh);
-  const act = async (a: EmpireAction) => {
-    setBusy(true);
-    try {
-      const answer = await empireApi.act(a);
-      // The gold slab pressed is struck, or shakes (game/fx.tsx), the moment the answer comes.
-      pressResult(!answer.error);
-      if (!answer.error) feel(p, answer, a);
-      take(answer);
-    } catch (err) {
-      pressResult(false);
-      setToast(
-        err instanceof ApiError
-          ? (t.errors[err.code] ?? unknownError)
-          : ((!navigator.onLine ? fr.errors.offline : fr.errors.network) ?? unknownError),
-      );
-    } finally {
-      setBusy(false);
-    }
+  // The gestures sent one after the other, in the order touched (a gesture foreseen does not wait
+  // for the one before to be answered to show).
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  const act = (a: EmpireAction): Promise<void> => {
+    // A gesture the screen can foresee shows at once (the gameplay audit, P5): the goods fly, the
+    // lots, the crates or the medal change now, and nothing waits; the server's answer replaces it.
+    const before = shown.current as EmpireAnswer;
+    const guess = foresee(before, a, Date.now() + skew.current);
+    if (guess) {
+      feel(before, guess, a);
+      const next = { ...before, ...guess };
+      // Two touches before the screen is drawn again: the second foresees from the first.
+      shown.current = next;
+      setP(next);
+    } else setBusy(true);
+    const run = async () => {
+      try {
+        const answer = await empireApi.act(a);
+        // The gold slab pressed is struck, or shakes (game/fx.tsx), the moment the answer comes.
+        pressResult(!answer.error);
+        if (!answer.error && !guess) feel(shown.current, answer, a);
+        take(answer);
+      } catch (err) {
+        pressResult(false);
+        // Not done: the screen as the server last told it.
+        if (guess && last.current) setP(last.current);
+        setToast(
+          err instanceof ApiError
+            ? (t.errors[err.code] ?? unknownError)
+            : ((!navigator.onLine ? fr.errors.offline : fr.errors.network) ?? unknownError),
+        );
+      } finally {
+        if (!guess) setBusy(false);
+      }
+    };
+    queue.current = queue.current.then(run, run);
+    return queue.current;
   };
   // A hop arrived by the clock: the house's state settled, quietly (no wait, no error told);
   // but a delivery paid is felt: coins to the purse, their sound (audit of 4 November, motion M1).
@@ -794,6 +814,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           setFighting(true);
         }}
       />
+      {/* The four places stay at the foot over the Porta and the Company (the gameplay audit, P5):
+          those are places, left by the bar, no more by a cross only. */}
+      {(sheet === "porta" || sheet?.startsWith("company") === true) &&
+        createPortal(
+          <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[45]" data-places-over>
+            {placeTabs}
+          </div>,
+          document.body,
+        )}
       {(fighting || (p.view?.porta?.battle && p.view.porta.battle.id !== leftBattle)) && (
         <BattleScreen
           onClose={() => {
