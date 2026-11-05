@@ -488,9 +488,162 @@ export const MADE = (() => {
     [slab(0.38, 0.04, 0.44), C.wood, 0.27, 0.4, -0.16],
     [slab(0.2, 0.1, 0.24), "#D98A5F", 0.27, 0, -0.16],
   ]);
+  // The rest of the trades in the game's own hand (the refonte claire, lot 6, 5 November 2026: no
+  // more KayKit's half-timbered workshops), as the glassworks and the brickworks: one unit across,
+  // foot at y = 0, stucco, terracotta and timber.
+  type Part = [BufferGeometry, string, number, number, number, number?];
+  const gable = (w: number, d: number, colour: string, y: number, x = 0, z = 0): Part => [
+    new CylinderGeometry(d * 0.58, d * 0.58, w + 0.06, 3).rotateZ(Math.PI / 2).scale(1, 0.7, 1),
+    colour,
+    x,
+    y + d * 0.2,
+    z,
+  ];
+  const hut = (w: number, h: number, d: number, body: string, x: number, z: number): Part[] => [
+    [slab(w, h, d), body, x, 0, z],
+    gable(w, d, C.roof, h, x, z),
+    [slab(w * 0.22, h * 0.55, 0.02), C.door, x, 0, z + d / 2 + 0.01],
+  ];
+  const log = (len: number, r: number): BufferGeometry =>
+    new CylinderGeometry(r, r, len, 8).rotateZ(Math.PI / 2).translate(0, r, 0);
+  // A pit (clay or sand): a heap of it, a smaller one, a wooden crane and its bucket, a barrow, the
+  // diggers' shed.
+  const pit = (heap: string) =>
+    build([
+      [new DodecahedronGeometry(0.24, 0).scale(1.4, 0.65, 1.1), heap, 0.12, 0.12, 0.12],
+      [new DodecahedronGeometry(0.14, 0).scale(1.3, 0.6, 1), heap, -0.12, 0.07, 0.3],
+      [slab(0.52, 0.04, 0.4), C.soil, 0.1, 0, 0.15],
+      [slab(0.05, 0.62, 0.05), C.trunk, -0.3, 0, 0.05],
+      [slab(0.42, 0.04, 0.04), C.wood, -0.14, 0.6, 0.05],
+      [slab(0.08, 0.08, 0.08), C.trunk, 0.04, 0.4, 0.05],
+      [slab(0.16, 0.06, 0.1), C.wood, 0.36, 0.06, 0.36],
+      [new CylinderGeometry(0.04, 0.04, 0.02, 8).rotateX(Math.PI / 2), C.trunk, 0.44, 0.04, 0.36],
+      ...hut(0.34, 0.28, 0.28, OCHRE, -0.22, -0.24),
+    ]);
+  const quarry = pit("#C98E6A");
+  const sandpit = pit("#E8D6A0");
+  // The sawmill: an open shed of tiles on posts over its trestle and a log, logs stacked, planks.
+  const sawyard = build([
+    ...[-0.3, 0.3].flatMap((x): Part[] => [
+      [slab(0.05, 0.36, 0.05), C.trunk, x, 0, -0.18],
+      [slab(0.05, 0.36, 0.05), C.trunk, x, 0, 0.14],
+    ]),
+    gable(0.66, 0.42, C.roof, 0.36, 0, -0.02),
+    [slab(0.4, 0.12, 0.08), C.wood, 0, 0, -0.02],
+    [log(0.46, 0.05), C.trunk, 0, 0.12, -0.02],
+    ...[0, 1, 2].map((i): Part => [log(0.5, 0.06), C.trunk, 0.05, i * 0.1, 0.36 - (i % 2) * 0.02]),
+    [log(0.5, 0.06), C.trunk, 0.05, 0, 0.26],
+    ...[0, 1, 2].map((i): Part => [slab(0.34, 0.03, 0.12), C.wood, -0.32, i * 0.035, 0.34]),
+  ]);
+  // The woodcutters' camp: stumps, a pile of logs, their hut, two pines left standing.
+  const woodcamp = build([
+    ...hut(0.32, 0.26, 0.26, C.wood, -0.2, -0.22),
+    ...[0, 1].map((i): Part => [log(0.42, 0.055), C.trunk, 0.18, i * 0.1, 0.1 + i * 0.02]),
+    [log(0.42, 0.055), C.trunk, 0.18, 0, 0.21],
+    ...[
+      [-0.32, 0.3],
+      [0.02, 0.36],
+      [0.38, -0.12],
+    ].map(
+      ([x, z]): Part => [
+        new CylinderGeometry(0.06, 0.07, 0.07, 8).translate(0, 0.035, 0),
+        C.trunk,
+        x as number,
+        0,
+        z as number,
+      ],
+    ),
+    ...[
+      [0.3, -0.34],
+      [0.42, 0.34],
+    ].flatMap(([x, z]): Part[] => [
+      [
+        new CylinderGeometry(0.03, 0.03, 0.12, 6).translate(0, 0.06, 0),
+        C.trunk,
+        x as number,
+        0,
+        z as number,
+      ],
+      [new ConeGeometry(0.15, 0.42, 7).translate(0, 0.33, 0), C.pine, x as number, 0, z as number],
+    ]),
+  ]);
+  // The farm: an ochre farmhouse, rows of wheat ripening, a haystack.
+  const farmstead = build([
+    ...hut(0.36, 0.3, 0.3, OCHRE, -0.22, -0.22),
+    ...[-0.05, 0.08, 0.21, 0.34].map((z): Part => [slab(0.6, 0.07, 0.07), C.plot, 0.12, 0, z]),
+    [slab(0.64, 0.02, 0.48), C.soil, 0.12, 0, 0.15],
+    [
+      new SphereGeometry(0.13, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 1.3, 1),
+      C.plot,
+      0.3,
+      0,
+      -0.26,
+    ],
+  ]);
+  // The mill of the lagoon: a stucco mill house, its wheel turning in a channel of water.
+  const tidemill = build([
+    [slab(0.24, 0.02, 0.8), C.water, 0.3, 0, 0],
+    ...hut(0.44, 0.42, 0.36, ROSE, -0.08, 0),
+    [slab(0.1, 0.12, 0.02), C.door, -0.2, 0.24, 0.19],
+    [slab(0.1, 0.12, 0.02), C.door, 0.04, 0.24, 0.19],
+    [new CylinderGeometry(0.22, 0.22, 0.05, 14).rotateZ(Math.PI / 2), C.trunk, 0.2, 0.2, 0],
+    [new CylinderGeometry(0.17, 0.17, 0.06, 14).rotateZ(Math.PI / 2), C.wood, 0.2, 0.2, 0],
+    ...[0, 1, 2, 3].map(
+      (i): Part => [
+        slab(0.06, 0.44, 0.03)
+          .translate(0, -0.22, 0)
+          .rotateX((i * Math.PI) / 4),
+        C.trunk,
+        0.23,
+        0.2,
+        0,
+      ],
+    ),
+  ]);
+  // A palazzo on the Grand Canal: a block of rose stucco, Istrian string courses, two rows of
+  // pointed windows, a central loggia, white merlons on the cornice.
+  const palazzo = build([
+    [slab(0.82, 0.62, 0.5), ROSE, 0, 0, 0],
+    [slab(0.86, 0.04, 0.54), C.snow, 0, 0.3, 0],
+    [slab(0.86, 0.05, 0.54), C.snow, 0, 0.62, 0],
+    ...[-0.3, -0.15, 0.15, 0.3].flatMap((x): Part[] => [
+      [slab(0.08, 0.14, 0.02), C.door, x, 0.1, 0.26],
+      [slab(0.08, 0.14, 0.02), C.door, x, 0.4, 0.26],
+    ]),
+    [slab(0.2, 0.2, 0.03), C.snow, 0, 0.36, 0.26],
+    [slab(0.14, 0.15, 0.02), C.door, 0, 0.38, 0.28],
+    [slab(0.2, 0.22, 0.02), C.door, 0, 0, 0.26],
+    ...[-0.36, -0.18, 0, 0.18, 0.36].map(
+      (x): Part => [slab(0.08, 0.07, 0.08), C.snow, x, 0.67, 0.22],
+    ),
+    [slab(0.7, 0.05, 0.36), C.roof, 0, 0.67, -0.04],
+  ]);
+  // A Roman country church (the Porta's towns): a travertine nave, its gable of tiles, a bell gable
+  // over the front with its bell, a round window, a door.
+  const chapel = build([
+    [slab(0.5, 0.42, 0.82), C.snow, 0, 0, 0],
+    // The nave's gable, its ridge along the nave (the gable turned a quarter).
+    (() => {
+      const [g, c, x, y, z] = gable(0.82, 0.5, C.roof, 0.42);
+      return [g, c, x, y, z, Math.PI / 2] as Part;
+    })(),
+    [slab(0.34, 0.36, 0.08), C.snow, 0, 0.5, 0.37],
+    [slab(0.1, 0.12, 0.09), C.door, 0, 0.66, 0.37],
+    [new SphereGeometry(0.04, 8, 6), C.gold, 0, 0.7, 0.37],
+    [new CylinderGeometry(0.06, 0.06, 0.02, 12).rotateX(Math.PI / 2), C.door, 0, 0.3, 0.42],
+    [slab(0.14, 0.22, 0.02), C.door, 0, 0, 0.42],
+  ]);
   return {
     glassworks,
     brickworks,
+    quarry,
+    sandpit,
+    sawyard,
+    woodcamp,
+    farmstead,
+    tidemill,
+    palazzo,
+    chapel,
     porta,
     casaA,
     casaB,

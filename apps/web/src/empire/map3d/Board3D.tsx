@@ -918,34 +918,42 @@ function World({
 }
 
 /**
- * Each workshop's model on its tile (after art/plateau/workshops.ts), its size: the Venetian
- * trades made in code (props3d.tsx: the glassworks, the brickworks), the others from KayKit.
+ * Each workshop's model on its tile, its size: every trade made in code in the game's own hand
+ * (props3d.tsx; the refonte claire, lot 6, 5 November 2026: no more KayKit's workshops).
  */
-function workshopModel(type: string): {
-  name: KitName;
-  s: number;
-  made?: "glassworks" | "brickworks";
-} {
+type MadeTrade =
+  | "glassworks"
+  | "brickworks"
+  | "quarry"
+  | "sandpit"
+  | "sawyard"
+  | "woodcamp"
+  | "farmstead"
+  | "tidemill"
+  | "palazzo"
+  | "casaA";
+function workshopModel(type: string): { s: number; made: MadeTrade } {
   switch (type) {
     case "brickworks":
-      return { name: "forge", s: 6.2, made: "brickworks" };
+      return { s: 6.2, made: "brickworks" };
     case "glassworks":
-      return { name: "forge", s: 6.2, made: "glassworks" };
+      return { s: 6.2, made: "glassworks" };
     case "clay_pit":
+      return { s: 6.2, made: "quarry" };
     case "sand_pit":
-      return { name: "mine", s: 6.2 };
+      return { s: 6.2, made: "sandpit" };
     case "lumber_camp":
-      return { name: "woodcut", s: 6.4 };
+      return { s: 6.4, made: "woodcamp" };
     case "sawmill":
-      return { name: "sawmill", s: 6.6 };
+      return { s: 6.4, made: "sawyard" };
     case "farm":
-      return { name: "grain", s: 6.6 };
+      return { s: 6.4, made: "farmstead" };
     case "mill":
-      return { name: "windmill", s: 6 };
+      return { s: 6.2, made: "tidemill" };
     case "palazzo":
-      return { name: "church", s: 6.4 };
+      return { s: 6.4, made: "palazzo" };
     default:
-      return { name: "homeA", s: 5.4 };
+      return { s: 5.4, made: "casaA" };
   }
 }
 
@@ -1085,7 +1093,7 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
               )}
               {t.kind === "workshop" && model && (
                 <mesh
-                  geometry={model.made ? MADE[model.made] : kit(model.name).geo}
+                  geometry={MADE[model.made]}
                   material={clayShared}
                   scale={model.s * 1.5}
                   castShadow

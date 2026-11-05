@@ -47,6 +47,7 @@ import {
 import { Smoke, useDonkey, useWater } from "../map3d/life.js";
 import { preloadMinis } from "../map3d/minis.js";
 import { Pace } from "../map3d/pace.js";
+import { MADE } from "../map3d/props3d.js";
 import { roleOf } from "../map3d/roster.js";
 import { CASE, extentOf, fromChart, toChart } from "./chart.js";
 import { RARITY_HEX, ROME_DUSK } from "./colours.js";
@@ -426,7 +427,6 @@ function Town({
   city: BattleSnapshot["cities"][number];
   live: boolean;
 }) {
-  const kit = useKit();
   const [X, Z] = toChart(battle, city.x, city.y);
   const [burntAt, setBurntAt] = useState<number | null>(null);
   useEffect(() => {
@@ -434,7 +434,6 @@ function Town({
       setBurntAt(battle.timeMs);
   }, [battle, city.id]);
   const burnt = burntAt !== null;
-  const roof = burnt ? "#3A3A3E" : C.brick;
   const houses = useMemo(() => {
     const r = rng(seedOf(city.id));
     return Array.from({ length: 4 }, (_, i) => {
@@ -451,14 +450,17 @@ function Town({
         <mesh
           // biome-ignore lint/suspicious/noArrayIndexKey: a town's houses are its own
           key={i}
-          geometry={kit(h.v ? "homeB" : "homeA", { roof }).geo}
+          // The game's own houses (the refonte claire, lot 6), muted once the town has burnt.
+          geometry={
+            burnt ? (h.v ? MADE.casaBMuted : MADE.casaAMuted) : h.v ? MADE.casaB : MADE.casaA
+          }
           material={clayShared}
           position={[h.x, 0, h.z]}
           rotation-y={h.rot}
-          scale={5.2}
+          scale={4.6}
         />
       ))}
-      <mesh geometry={kit("church", { roof }).geo} material={clayShared} scale={6.4} />
+      <mesh geometry={MADE.chapel} material={clayShared} scale={6.4} />
       {/* Its chests of relics, one for each, in the colour of its rarity. */}
       {chests.map((k, i) => {
         const a = (i / Math.max(1, chests.length)) * Math.PI * 2;
