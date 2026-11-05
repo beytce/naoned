@@ -20,12 +20,12 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage qui fait
 - Paramètres d'équilibrage dans worlds.settings (JSON), jamais en dur.
 - Le commerce est persistant, sans remise à zéro : seule la Terraferme a des saisons courtes, d'une semaine ; `worlds.ends_at` ne borne plus le commerce.
 
-## Règles d'or (CADRAGE-v3 § 2, version Hades' Star du 1er novembre 2026)
+## Règles d'or (CADRAGE-v3 § 2, version Hades' Star du 1er novembre 2026, règles 3 et 4 retirées le 5 novembre)
 Elles font foi pour toute mécanique, toute fonctionnalité et tout mode de jeu ; en cas de conflit, elles priment.
 1. **Ton empire t'appartient.** Personne ne peut piller ni prendre ce que tu as bâti.
 2. **Le risque vient des terres de Rome, jamais d'un autre joueur.** Un véhicule détruit au combat de la Porta rentre abîmé ; un véhicule encore à la Porta à sa fermeture est perdu ; la perte définitive à chaque combat n'existe qu'à la Porta noire, que le joueur choisit.
-3. **L'absence ne coûte rien, mais rien ne s'accumule sans fin.** Stocks, production et commandes ont un plafond : une fois plein, ça s'arrête, sans rien perdre.
-4. **Le temps s'achète, la puissance jamais.** Les perle (monnaie précieuse, achetée ou gagnée en jouant) accélèrent les chantiers et les recherches. On ne vend jamais ni ducats, ni marchandises, ni modules, ni plans, ni reliques, ni Sceaux, ni chantier ou place en plus ; la Terraferme et la Contesa restent à armes égales.
+3. *(Supprimée le 5 novembre 2026, décision du porteur : l'absence peut coûter, un stock plein peut perdre, le joueur jette ce qu'il ne garde pas.)*
+4. *(Supprimée le 5 novembre 2026, décision du porteur : ce que les perle peuvent acheter n'est plus borné par une règle d'or.)*
 5. **Les hauts niveaux se gagnent en jouant.** Au-delà d'un certain niveau, les modules demandent des plans, qui viennent des reliques de la Porta.
 6. **On affronte des joueurs de son niveau.** Combats, classements et appariements se font par bande de Puissance, calculée sur ce qui est bâti, jamais sur la caisse.
 7. **Le jeu se joue en quelques minutes, plusieurs fois par jour, et la compagnie aide sans obliger.** Les modes en direct sont courts (une dizaine de minutes) ; aucun mode n'exige d'être présent pendant des jours.
@@ -35,9 +35,10 @@ Elles font foi pour toute mécanique, toute fonctionnalité et tout mode de jeu 
 - Chaque système absorbe les anciens au lieu de s'y ajouter : une douzaine de systèmes visibles, pas trente.
 - Commencer chaque tâche en mode plan, attendre validation avant de coder.
 - Écrire les tests avant le code pour packages/engine. Les tests du moteur utilisent la fixture figée test/fixture.ts, jamais les paramètres de Venise.
-- Tout changement d'équilibrage se valide au simulateur de 24 mois (toutes les graines) et se documente dans docs/calibration.md.
+- Le simulateur de 24 mois reste un outil pour mesurer l'équilibrage, sans être un passage obligé (décision du porteur du 5 novembre 2026) ; un changement d'équilibrage se documente dans docs/calibration.md.
 - Le socle de l'empire (CADRAGE-v3 § 13, étape 3) vit à côté du monde mensuel : moteur `packages/engine/src/empire/` (commandes `empire*`), routes `/api/empire`, écran `apps/web/src/empire/`. La bascule (`EMPIRE_FROM`) ne s'active en production que sur décision du porteur.
 - La refonte claire (5 novembre 2026, validée par le porteur) : quatre lieux (Carte, Fondaco, Porta, Compagnie) dans une barre d'onglets, le Marché dans Venise, la Remise au quai, le profil derrière le médaillon ; plan, lots et état dans docs/plan-refonte-claire.md. Elle prime sur la Lagune, le Plateau et le dock pour la navigation.
+- La profondeur (5 novembre 2026, retour du porteur) : stocks plafonnés, extraction, livraisons, Porta à contres ; plan et décisions dans docs/plan-profondeur-2026-11-05.md.
 - La Porta (le PvE des terres de Rome, CADRAGE-v3 § 12 quater) : détail dans docs/plan-porta.md ; moteur dans `packages/engine/src/empire/porta/`, serveur `apps/server/src/game/porta.ts`, écran `apps/web/src/empire/porta/`.
 - Direction Jour et le verre (4 novembre 2026, remplace le « Plateau de nuit » pour la carte) : palette Jour par défaut, plateau pastel, cases « + », HUD en barre, surfaces en verre (`.glass*`) ; docs/design.md § Direction Jour et le verre.
 - Le dock (« une scène, un dock, une décision », 4 novembre 2026) : tout menu de choix (ateliers, Porta, livraisons, Remise) en suit les pièces (`apps/web/src/dock.tsx`) ; détail et état dans docs/plan-dock.md.
