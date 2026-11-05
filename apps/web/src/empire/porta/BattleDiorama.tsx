@@ -249,7 +249,22 @@ function Field({
               {pt.gate}
             </span>
           </Pinned>
-          {sel?.goal && <Way battle={battle} from={sel} to={sel.goal} />}
+          {/* Each vehicle's way and where it will land (as the Sims' moves): the chosen one's
+              bright, the others' faint, the landing ringed in its role's colour. */}
+          {me.map(
+            (u) =>
+              u.outcome === "in" &&
+              u.goal && (
+                <Way
+                  key={u.id}
+                  battle={battle}
+                  from={u}
+                  to={u.goal}
+                  chosen={u.id === sel?.id}
+                  role={u.role}
+                />
+              ),
+          )}
           <Damage battle={battle} />
         </div>
       </div>
@@ -373,14 +388,20 @@ function Way({
   battle,
   from,
   to,
+  chosen,
+  role,
 }: {
   battle: BattleSnapshot;
   from: { x: number; y: number };
   to: { x: number; y: number };
+  chosen: boolean;
+  role: "combat" | "transport";
 }) {
   const [x0, y0] = toChart(battle, from.x, from.y);
   const [x1, y1] = toChart(battle, to.x, to.y);
   const n = Math.max(2, Math.round(Math.hypot(x1 - x0, y1 - y0) / (CASE * 0.35)));
+  // The combat vehicle in lapis, the transport in gold (the chests it goes for).
+  const tone = role === "combat" ? "bg-info" : "bg-gold";
   return (
     <>
       {Array.from({ length: n }, (_, i) => {
@@ -390,9 +411,21 @@ function Way({
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: the dots of a way
           <Pinned key={i} battle={battle} x={fx} y={fy}>
-            <span
-              className={`block rounded-full bg-info ${i === n - 1 ? "h-3 w-3 ring-2 ring-night" : "h-1.5 w-1.5 opacity-80"}`}
-            />
+            {i === n - 1 ? (
+              <span
+                className="relative flex h-6 w-6 items-center justify-center"
+                data-battle-landing={role}
+              >
+                <span className={`absolute inset-0 animate-ping rounded-full opacity-60 ${tone}`} />
+                <span
+                  className={`h-4 w-4 rounded-full ring-2 ring-night ${tone} ${chosen ? "" : "opacity-70"}`}
+                />
+              </span>
+            ) : (
+              <span
+                className={`block h-1.5 w-1.5 rounded-full ${tone} ${chosen ? "opacity-80" : "opacity-35"}`}
+              />
+            )}
           </Pinned>
         );
       })}

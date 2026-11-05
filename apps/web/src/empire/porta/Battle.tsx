@@ -322,16 +322,29 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
           ),
         )}
 
-        {sel?.goal && (
-          <line
-            x1={sel.x}
-            y1={sel.y}
-            x2={sel.goal.x}
-            y2={sel.goal.y}
-            stroke="rgb(var(--info))"
-            strokeWidth={0.04}
-            strokeDasharray="0.12 0.1"
-          />
+        {/* Each vehicle's way and its landing (as the Sims' moves), the chosen one's bright. */}
+        {me.map((u) =>
+          u.outcome === "in" && u.goal ? (
+            <g key={u.id} opacity={u.id === sel?.id ? 1 : 0.45} data-battle-landing={u.role}>
+              <line
+                x1={u.x}
+                y1={u.y}
+                x2={u.goal.x}
+                y2={u.goal.y}
+                stroke={u.role === "combat" ? "rgb(var(--info))" : "rgb(var(--gold))"}
+                strokeWidth={0.04}
+                strokeDasharray="0.12 0.1"
+              />
+              <circle
+                cx={u.goal.x}
+                cy={u.goal.y}
+                r={0.14}
+                fill="none"
+                stroke={u.role === "combat" ? "rgb(var(--info))" : "rgb(var(--gold))"}
+                strokeWidth={0.05}
+              />
+            </g>
+          ) : null,
         )}
       </svg>
 
