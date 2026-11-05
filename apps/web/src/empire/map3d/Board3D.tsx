@@ -17,7 +17,7 @@ import {
   useFrame,
   useThree,
 } from "@react-three/fiber";
-import { EffectComposer, N8AO, TiltShift2, ToneMapping } from "@react-three/postprocessing";
+import { EffectComposer, N8AO, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import {
   Suspense,
@@ -31,13 +31,13 @@ import {
   useState,
 } from "react";
 import {
+  BoxGeometry,
   BufferAttribute,
   BufferGeometry,
   Cache,
   Color,
   CylinderGeometry,
   DoubleSide,
-  EdgesGeometry,
   Fog,
   type Group,
   MeshBasicMaterial,
@@ -74,7 +74,6 @@ import {
   type SceneInput,
   TILE_R,
   type Zone,
-  outlineOf,
   scene3d,
   sceneInputOf,
   sceneKey,
@@ -85,7 +84,8 @@ import {
 
 Cache.enabled = true;
 
-const NIGHT = "#16263E";
+/** The day around the board (docs/design.md § Direction Jour): its sky, and the fog into it. */
+const SKY = C.sky;
 /** The tiles: a clay slab on a night-blue base. */
 const SLAB = 3;
 /** A fondaco's tile of gold stands this much above the others. */
@@ -126,6 +126,8 @@ export interface DomainScene {
   key: string;
   tiles: DomainTile[];
   states: Record<string, "ready" | "running" | "idle" | "blocked">;
+  /** The workshop whose dock is open (docs/plan-dock.md): ringed in lapis on its tile. */
+  selected?: string | null;
 }
 
 /** Whether the device asks for less motion (read live). */
@@ -291,8 +293,8 @@ const Board3D = memo(
           wake();
           renderer.shadowMap.autoUpdate = false;
           renderer.shadowMap.needsUpdate = true;
-          scene.background = new Color(NIGHT);
-          scene.fog = new Fog(NIGHT, DISTANCE - 30, DISTANCE + 160);
+          scene.background = new Color(SKY);
+          scene.fog = new Fog(SKY, DISTANCE - 20, DISTANCE + 220);
           camera.current = c as OrthoCam;
           apply();
         }}
@@ -425,12 +427,13 @@ function Lights({ sc }: { sc: Scene3D }) {
   }, [cx, cz]);
   return (
     <>
-      <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
+      {/* A soft day: a white sky, a warm ground, a mild sun (no hard night contrast). */}
+      <hemisphereLight args={["#FFFFFF", "#E2D2AE", 1.55]} />
       <directionalLight
         ref={light}
         position={[cx - 70, 120, cz - 60]}
-        intensity={2.4}
-        color="#FFF3DD"
+        intensity={1.75}
+        color="#FFF6E8"
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0004}
@@ -483,9 +486,6 @@ function Ready({ onReady }: { onReady: () => void }) {
   useEffect(() => onReady(), [onReady]);
   return null;
 }
-
-/** The gold outline of a sector to buy, its width on the ground (chart units). */
-const GOLD_RIBBON = 0.75;
 
 /** After the last touch or move of the camera, the board stays alive this long (ms). */
 const AWAKE_MS = 10_000;
@@ -546,26 +546,25 @@ function Effects({
           ref={aoRef as never}
           halfRes
           quality="performance"
-          aoRadius={5}
+          aoRadius={4}
           distanceFalloff={1.2}
-          intensity={2.6}
-          color={NIGHT}
+          intensity={1.1}
+          color="#7E93A0"
         />
       ) : (
         <></>
       )}
-      {/* The tilt-shift only up close, where it blurs: its pass no longer paid far out. */}
-      {near ? <TiltShift2 blur={0.12} taper={0.6} /> : <></>}
       <ToneMapping mode={TONE} />
     </EffectComposer>
   );
 }
 
-/** The tone mapping: ACES keeps the palette's golds and lapis (AgX greys them), ?tone=agx for it. */
+/** The tone mapping: neutral, the day's pastels as drawn; ?tone=agx for AgX. */
 const TONE =
   new URLSearchParams(window.location.search).get("tone") === "agx"
     ? ToneMappingMode.AGX
-    : ToneMappingMode.ACES_FILMIC;
+    : // The day's pastels kept as they are drawn (ACES darkened and saturated them).
+      ToneMappingMode.NEUTRAL;
 /** The frames measured (?perf=1, for e2e/map3d.mjs): when each began, how long its work took. */
 const PERF = new URLSearchParams(window.location.search).get("perf") === "1";
 function Probe() {
@@ -610,16 +609,6 @@ const MADE_KINDS: Partial<Record<string, keyof typeof MADE>> = {
   cart: "cart",
 };
 
-/** The unknown's glass (decision of the owner, 3 November: transparent, but in relief). */
-const glass = new MeshStandardMaterial({
-  color: C.mist,
-  roughness: 0.85,
-  metalness: 0,
-  transparent: true,
-  opacity: 0.16,
-  depthWrite: false,
-});
-
 /** The board, its dressing, its towns and buildings. Chart units: x east, z south. */
 function World({
   sc,
@@ -643,11 +632,13 @@ function World({
     const top = hexSlab(TILE_R - 0.45, SLAB, 0.7);
     const base = hexSlab(TILE_R - 0.75, BASE, 0.4);
     base.translate(0, -SLAB + 0.2, 0);
-    const glass = hexSlab(TILE_R - 0.45, SLAB + BASE - 2, 0.7);
+    // The unknown: a thin plate at the sea's level, nothing more (image 3 of the owner's).
+    const plate = hexSlab(TILE_R - 0.9, 0.8, 0.35);
+    plate.translate(0, WATER_Y - 0.2, 0);
     const bed = hexSlab(TILE_R - 0.2, BASE - 1, 0.2);
     bed.translate(0, -SLAB - 1.2, 0);
     const raised = hexSlab(TILE_R - 0.45, SLAB + RAISE, 0.7);
-    return { top, base, glass, bed, raised };
+    return { top, base, plate, bed, raised };
   }, []);
   // The tiles by kind (kept while the board stays the same), turned as the engine's lattice.
   const { own, seen, wet, fog, solid, gold } = useMemo(() => {
@@ -676,30 +667,40 @@ function World({
   // The lagoon: one surface over every small tile of sea, finely cut for its ripples.
   const lagoon = useMemo(() => (wet.length ? lagoonGeometry(wet, TILE_R - 0.2) : null), [wet]);
   useEffect(() => () => lagoon?.dispose(), [lagoon]);
-  const edges = useMemo(() => {
+  // The sectors to buy, each a plate of cream with a « + » at its middle: in gold when the Casa
+  // may buy it now, pale else (the owner's « + » on a case, 4 November 2026).
+  const offers = useMemo(() => {
     const fogTiles = sc.tiles.filter((t) => t.kind === "fog");
-    const mist = segmentsGeometry(
-      fogTiles.flatMap((t) => {
-        const c = tileCorners(t.x, t.y, TILE_R - 0.45);
-        return c.map((a, i) => [a, c[(i + 1) % 6] as [number, number]] as [Pt, Pt]);
-      }),
-    );
-    const cells = [...new Set(fogTiles.map((t) => t.cell))].filter((c) => buyable.get(c) === true);
-    const gold = cells.length
-      ? ribbonGeometry(
-          cells.flatMap((c) => outlineOf(fogTiles.filter((t) => t.cell === c))),
-          GOLD_RIBBON,
-        )
-      : null;
-    return { mist, gold };
+    const byCell = new Map<string, typeof fogTiles>();
+    for (const t of fogTiles) {
+      if (!buyable.has(t.cell)) continue;
+      byCell.set(t.cell, [...(byCell.get(t.cell) ?? []), t]);
+    }
+    return [...byCell.entries()].map(([cell, ts]) => ({
+      cell,
+      open: buyable.get(cell) === true,
+      tiles: ts.map((t) => ({ x: t.x, y: 0, z: t.y, s: 1, rot: SLOT_TURN })),
+      x: ts.reduce((a, t) => a + t.x, 0) / ts.length,
+      z: ts.reduce((a, t) => a + t.y, 0) / ts.length,
+    }));
   }, [sc, buyable]);
-  useEffect(
-    () => () => {
-      edges.mist.dispose();
-      edges.gold?.dispose();
-    },
-    [edges],
+  const offered = useMemo(() => new Set(offers.map((o) => o.cell)), [offers]);
+  const plainFog = useMemo(
+    () =>
+      sc.tiles
+        .filter((t) => t.kind === "fog" && !offered.has(t.cell))
+        .map((t) => ({ x: t.x, y: 0, z: t.y, s: 1, rot: SLOT_TURN })),
+    [sc, offered],
   );
+  const plus = useMemo(() => {
+    const a = new BoxGeometry(TILE_R * 0.72, 0.35, TILE_R * 0.17);
+    const b = new BoxGeometry(TILE_R * 0.17, 0.35, TILE_R * 0.72);
+    const g = mergeGeometries([a, b]);
+    a.dispose();
+    b.dispose();
+    return g;
+  }, []);
+  useEffect(() => () => plus?.dispose(), [plus]);
 
   // The dressing, model by model, in one draw each.
   const decor = useMemo(() => {
@@ -811,30 +812,29 @@ function World({
       {/* The small tiles: one's own in sand-gold, the others seen in mist-blue, on night-blue
           bases. */}
       <Instanced geo={slabs.top} items={own} material={claySolid(C.land)} />
-      <Instanced geo={slabs.top} items={seen} material={claySolid(C.mist)} />
+      <Instanced geo={slabs.top} items={seen} material={claySolid(C.seen)} />
       <Instanced geo={slabs.raised} items={gold} material={claySolid(C.roofGold)} />
       <Instanced geo={slabs.base} items={solid} material={claySolid(C.soil)} cast={false} />
       {/* The lagoon: its bed, its translucent water. */}
       <Instanced geo={slabs.bed} items={wet} material={claySolid(C.mistSoil)} cast={false} />
       {lagoon && <mesh geometry={lagoon} material={water} position-y={WATER_Y} receiveShadow />}
-      {/* The unknown: thick tiles of glass, empty, their edge drawn faintly. */}
-      <Instanced geo={slabs.glass} items={fog} material={glass} cast={false} receive={false} />
-      {/* The unknown's tiles edged faintly, in one draw; a sector the Casa may buy now, its outline
-          in gold (one gold a sector, never one a tile: the gold says « yours to do »). */}
-      <lineSegments geometry={edges.mist} position-y={0.05}>
-        <lineBasicMaterial color={C.mist} transparent opacity={0.3} />
-      </lineSegments>
-      {edges.gold && (
-        <mesh geometry={edges.gold} position-y={0.12} renderOrder={2}>
-          <meshBasicMaterial
-            color={C.gold}
-            transparent
-            opacity={0.95}
-            depthWrite={false}
-            side={DoubleSide}
+      {/* The unknown: thin plates at the sea's level, the sectors to buy in cream with a « + ». */}
+      <Instanced geo={slabs.plate} items={plainFog} material={claySolid(C.fog)} cast={false} />
+      {offers.map((o) => (
+        <group key={o.cell}>
+          <Instanced
+            geo={slabs.plate}
+            items={o.tiles}
+            material={claySolid(o.open ? C.plate : C.fog)}
+            cast={false}
           />
-        </mesh>
-      )}
+          <mesh
+            geometry={plus ?? undefined}
+            material={claySolid(o.open ? C.plus : C.plusOff)}
+            position={[o.x, WATER_Y + 0.55, o.z]}
+          />
+        </group>
+      ))}
       {/* The dressing and the towns. */}
       <group ref={small}>
         {decor
@@ -1041,6 +1041,13 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
     () => new MeshBasicMaterial({ color: "#6EE0B8", transparent: true, opacity: 0.9 }),
     [],
   );
+  // The workshop chosen: a lapis ring round its tile, wider than the ready one's.
+  const chosenRing = useMemo(() => {
+    const g = new TorusGeometry(TILE_R - 0.35, 0.34, 6, 42);
+    g.rotateX(Math.PI / 2);
+    return g;
+  }, []);
+  const lapis = useMemo(() => new MeshBasicMaterial({ color: "#6EC8F5" }), []);
   return (
     <group ref={group}>
       {lagoon && (
@@ -1084,6 +1091,9 @@ function Domain3D({ scene, live }: { scene: DomainScene; live: boolean }) {
                   castShadow
                   receiveShadow
                 />
+              )}
+              {t.kind === "workshop" && scene.selected === t.id && (
+                <mesh geometry={chosenRing} material={lapis} position-y={0.16} />
               )}
               {state === "ready" && (
                 <>
@@ -1199,69 +1209,6 @@ function Dock({ x, z, rot }: { x: number; z: number; rot: number }) {
       ))}
     </group>
   );
-}
-
-type Pt = [number, number];
-
-/** Segments on the ground (chart points), as one geometry of lines. */
-function segmentsGeometry(segs: [Pt, Pt][]): BufferGeometry {
-  const pos = new Float32Array(segs.length * 6);
-  segs.forEach(([a, b], i) => {
-    pos.set([a[0], 0, a[1], b[0], 0, b[1]], i * 6);
-  });
-  const g = new BufferGeometry();
-  g.setAttribute("position", new BufferAttribute(pos, 3));
-  return g;
-}
-
-/**
- * Segments as flat ribbons on the ground, `width` across (audit of 4 November, 3D M9): a WebGL
- * line is always one pixel, whatever the zoom, and the gold of a sector to buy was lost in it.
- * Each ribbon runs half its width past its ends, so that the corners close without a gap.
- */
-export function ribbonGeometry(segs: [Pt, Pt][], width: number): BufferGeometry {
-  const pos = new Float32Array(segs.length * 18);
-  const h = width / 2;
-  segs.forEach(([a, b], i) => {
-    const dx = b[0] - a[0];
-    const dz = b[1] - a[1];
-    const len = Math.hypot(dx, dz) || 1;
-    const ux = dx / len;
-    const uz = dz / len;
-    // Along (u) and across (n), the ribbon's four corners.
-    const nx = -uz * h;
-    const nz = ux * h;
-    const ax = a[0] - ux * h;
-    const az = a[1] - uz * h;
-    const bx = b[0] + ux * h;
-    const bz = b[1] + uz * h;
-    pos.set(
-      [
-        ax + nx,
-        0,
-        az + nz,
-        ax - nx,
-        0,
-        az - nz,
-        bx + nx,
-        0,
-        bz + nz,
-        bx + nx,
-        0,
-        bz + nz,
-        ax - nx,
-        0,
-        az - nz,
-        bx - nx,
-        0,
-        bz - nz,
-      ],
-      i * 18,
-    );
-  });
-  const g = new BufferGeometry();
-  g.setAttribute("position", new BufferAttribute(pos, 3));
-  return g;
 }
 
 /** The lagoon's surface: each sea tile cut in small triangles, merged into one geometry. */

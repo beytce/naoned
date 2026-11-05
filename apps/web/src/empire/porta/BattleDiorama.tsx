@@ -10,7 +10,8 @@ import { groundAt } from "../map3d/camera.js";
 import { useCoverBoard } from "../map3d/pause.js";
 import type { Battle3DHandle } from "./Battle3D.js";
 import { portaApi, useBattle } from "./api.js";
-import { CASE, RARITY_HEX, extentOf, fromChart, toChart } from "./chart.js";
+import { CASE, extentOf, fromChart, toChart } from "./chart.js";
+import { RARITY_HEX } from "./colours.js";
 import { errorText, pt } from "./texts.js";
 import type { BattleOrder, BattleSnapshot, PlayerUnitView, Rarity } from "./types.js";
 

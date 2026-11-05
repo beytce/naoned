@@ -21,33 +21,46 @@ import {
 
 /** The board's colours: the palette of the night board, the only ones it uses. */
 export const C = {
-  land: "#E2C27A",
-  landSide: "#C9A55E",
-  landLine: "#C9A55E",
-  soil: "#2E486E",
-  mist: "#9FB3CC",
-  mistSide: "#7F95B3",
-  mistSoil: "#22385A",
-  water: "#6EC8F5",
-  pine: "#3BA58A",
-  pineMuted: "#4F8C7C",
-  trunk: "#8A6A3A",
-  rock: "#A9BBD0",
-  rock2: "#8EA2BA",
-  rockSeen: "#6F84A0",
-  rock2Seen: "#8597B0",
-  snow: "#F4F8FC",
-  snowSeen: "#DDE6F0",
-  wall: "#E9F0F8",
-  roof: "#3F6A9E",
-  roofMuted: "#5A7394",
-  roofGold: "#F2C24F",
-  wood: "#C49A5A",
-  brick: "#C0704A",
-  door: "#22385A",
-  plot: "#D9B866",
-  green: "#6EE0B8",
-  gold: "#F2C24F",
+  // The Jour board (decision of the owner, 4 November 2026, docs/design.md § Direction Jour): a
+  // pastel day — your lands butter-cream, the lands seen pale sage, the sea and the unknown a soft
+  // turquoise, warm earth under the tiles, terracotta roofs.
+  land: "#EEDC98",
+  landSide: "#D2BB78",
+  landLine: "#D2BB78",
+  soil: "#C79A6E",
+  mist: "#DCE9E7",
+  mistSide: "#C3D7D6",
+  mistSoil: "#A9CDD2",
+  water: "#8FD3DF",
+  pine: "#5FAF7E",
+  pineMuted: "#8DB79A",
+  trunk: "#9A7048",
+  rock: "#CBD0D6",
+  rock2: "#B5BDC7",
+  rockSeen: "#C3C9CF",
+  rock2Seen: "#B0B8C1",
+  snow: "#FFFFFF",
+  snowSeen: "#F1F4F5",
+  wall: "#FBF5EA",
+  roof: "#D9714E",
+  roofMuted: "#D2A08A",
+  roofGold: "#F0C452",
+  wood: "#C9A06A",
+  brick: "#D27C57",
+  door: "#5B4A3A",
+  plot: "#E8C86E",
+  green: "#7BD3A8",
+  gold: "#E8B83E",
+  /** The lands seen, not yours: pale sage. */
+  seen: "#DCE3CF",
+  /** The sky round the board, and the fog that melts its far edge into it. */
+  sky: "#CFE4E6",
+  /** The unknown: a plate a shade off the sky. */
+  fog: "#D7EAEA",
+  /** A sector the Casa may buy: its plate, and its « + ». */
+  plate: "#F4EFDF",
+  plus: "#E0A93A",
+  plusOff: "#B9C6C6",
 } as const;
 
 export class Scene {
@@ -107,7 +120,7 @@ export function tile(
     kind === "own"
       ? [C.land, C.landSide, C.soil]
       : kind === "seen"
-        ? [C.mist, C.mistSide, C.mistSoil]
+        ? [C.seen, C.landSide, C.soil]
         : [C.water, C.water, C.soil];
   const t0 = kind === "water" ? -1.6 : 0;
   const ri = r - 0.6;

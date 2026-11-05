@@ -1,7 +1,5 @@
-import type { Rarity } from "./types.js";
-
 /**
- * The battle's chart (its cases on the island's square) and the relics' colours: kept apart from
+ * The battle's chart (its cases on the island's square): kept apart from
  * Battle3D so that the 2D screen and the Porta's place need not load three.js with it (audit of
  * 4 November, 3D B1).
  */
@@ -22,11 +20,4 @@ export const fromChart = (b: { radius: number }, X: number, Y: number): [number,
 export const extentOf = (b: { radius: number }) => {
   const w = (2 * b.radius + 3) * CASE;
   return { w, h: w };
-};
-
-export const RARITY_HEX: Record<Rarity, string> = {
-  common: "#C9B89A",
-  rare: "#6EE0B8",
-  precious: "#6EC8F5",
-  legendary: "#F2C24F",
 };

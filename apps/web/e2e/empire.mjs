@@ -251,22 +251,32 @@ try {
     await page.locator('[data-next-step="build"]').first().waitFor();
     await shot("3-relance");
 
-    // A workshop touched: its panel, then its details (its place on the ring, to move it).
+    // A workshop touched: its dock (docs/plan-dock.md), its doors, then its raise before → after.
     await page.locator("[data-workshop]").first().click();
-    await page.locator("[data-action-panel=workshop]").waitFor();
-    // The panel in the middle of a wide screen (its animation no longer moves it aside).
+    await page.locator("[data-workshop-dock]").waitFor();
+    // The dock in the middle of a wide screen (its animation no longer moves it aside).
     if (width >= 1024) {
-      const box = await page.locator("[data-action-panel]").boundingBox();
+      const box = await page.locator("[data-workshop-dock]").boundingBox();
       if (box && Math.abs(box.x + box.width / 2 - width / 2) > 4)
-        faults.push(`${label}: the panel not centred`);
+        faults.push(`${label}: the dock not centred`);
     }
-    if ((await page.locator("[data-map-action=upgrade]").count()) !== 1)
-      faults.push(`${label}: no level in the workshop's panel`);
-    await shot("4-panneau");
-    await page.locator("[data-map-action=details]").click();
-    await page.waitForSelector('[aria-modal="true"]');
-    if ((await page.getByRole("button", { name: /déplacer/i }).count()) === 0)
+    if ((await page.locator("[data-workshop-dock] [data-map-action=upgrade]").count()) !== 1)
+      faults.push(`${label}: no raise in the workshop's dock`);
+    if (
+      (await page
+        .locator("[data-workshop-dock]")
+        .getByRole("button", { name: /déplacer/i })
+        .count()) === 0
+    )
       faults.push(`${label}: no move on the workshop`);
+    await shot("4-panneau");
+    await page.locator("[data-workshop-dock] [data-map-action=upgrade]").click();
+    await page
+      .locator(
+        "[data-workshop-dock] [data-compare], [data-workshop-dock] [data-dock-maxed], [data-workshop-dock] [data-dock-site]",
+      )
+      .first()
+      .waitFor();
     await shot("4b-atelier");
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);

@@ -38,6 +38,8 @@ Elles font foi pour toute mécanique, toute fonctionnalité et tout mode de jeu 
 - Tout changement d'équilibrage se valide au simulateur de 24 mois (toutes les graines) et se documente dans docs/calibration.md.
 - Le socle de l'empire (CADRAGE-v3 § 13, étape 3) vit à côté du monde mensuel : moteur `packages/engine/src/empire/` (commandes `empire*`), routes `/api/empire`, écran `apps/web/src/empire/`. La bascule (`EMPIRE_FROM`) ne s'active en production que sur décision du porteur.
 - La Porta (le PvE des terres de Rome, CADRAGE-v3 § 12 quater) : détail dans docs/plan-porta.md ; moteur dans `packages/engine/src/empire/porta/`, serveur `apps/server/src/game/porta.ts`, écran `apps/web/src/empire/porta/`.
+- Direction Jour et le verre (4 novembre 2026, remplace le « Plateau de nuit » pour la carte) : palette Jour par défaut, plateau pastel, cases « + », HUD en barre, surfaces en verre (`.glass*`) ; docs/design.md § Direction Jour et le verre.
+- Le dock (« une scène, un dock, une décision », 4 novembre 2026) : tout menu de choix (ateliers, Porta, livraisons, Remise) en suit les pièces (`apps/web/src/dock.tsx`) ; détail et état dans docs/plan-dock.md.
 - Le « Plateau de nuit » (direction de la carte, 2 novembre 2026) : état, architecture et suite dans docs/plateau-reprise.md ; moteur dans `apps/web/src/art/plateau/`, plan docs/plan-plateau.md.
 - Petits commits, un par fonctionnalité.
 - Hors périmètre MVP : noter dans IDEAS.md, ne pas coder.

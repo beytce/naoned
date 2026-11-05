@@ -1,33 +1,29 @@
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Color } from "three";
 import { Coin } from "../../art/icons.js";
 import { C } from "../../art/plateau/props.js";
+import { PlainGround } from "../../dock.js";
 import { d } from "../../game/format.js";
 import { CloseButton, Slab } from "../../ui.js";
 import { affordable } from "../logic.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { Figure } from "../map3d/figure.js";
-import { frameBand, useCovers } from "../map3d/frame.js";
+import { MAP_3D } from "../map3d/flag.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
 import { preloadMinis } from "../map3d/minis.js";
 import { Pace } from "../map3d/pace.js";
 import { useCoverBoard } from "../map3d/pause.js";
 import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
+import { ArmsDock, type ArmsView, KIND_HEX, componentName } from "./ArmsDock.js";
 import { pt } from "./texts.js";
 import type { ComponentKind, PortaView } from "./types.js";
 
 preloadMinis();
 
 const live = () => !(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
-/** Each kind of place by its colour (the sockets round a vehicle). */
-const KIND_HEX: Record<ComponentKind, string> = {
-  weapon: "#E06A4A",
-  defense: "#6EC8F5",
-  support: "#6EE0B8",
-};
 /** A vehicle's pedestal in the workshop, in a row, and its places round it. */
 const PEDESTAL = (i: number, n: number): [number, number, number] => [(i - (n - 1) / 2) * 13, 0, 0];
 const SOCKET = (base: [number, number, number], k: number, n: number): [number, number, number] => {
@@ -67,49 +63,63 @@ export function ArmsScene({
 }) {
   const v = p.view?.porta;
   const casa = p.view?.house.casa ?? 1;
-  const [socket, setSocket] = useState<{ vehicleId: string; slot: number } | null>(null);
-  const [tab, setTab] = useState<"models" | "components">("models");
+  const [focus, setFocus] = useState(0);
+  const [view, setView] = useState<ArmsView>({ kind: "vehicle" });
   const labels = useRef<HTMLDivElement>(null);
-  const head = useRef<HTMLElement>(null);
-  const foot = useRef<HTMLElement>(null);
-  const covers = useCovers(head, foot);
+  const dockRef = useRef<HTMLDivElement>(null);
+  const [dockH, setDockH] = useState(0);
+  // The map asleep under this scene (audit of 4 November, 3D B3).
   useCoverBoard(open && !!v);
+  useEffect(() => {
+    const el = dockRef.current;
+    if (!open || !el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setDockH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [open]);
   if (!open || !v) return null;
-  const nameOf = (id: string | null) => {
-    const c = id ? v.inventory.find((x) => x.id === id) : undefined;
-    return c ? `${pt.component[c.code] ?? c.code} ${c.level}` : null;
-  };
-  const kindOfComponent = (id: string) =>
-    v.components.find((c) => c.code === v.inventory.find((y) => y.id === id)?.code)?.kind;
-  const chosen = socket ? v.vehicles.find((x) => x.id === socket.vehicleId) : undefined;
-  const chosenKind = chosen
-    ? (v.models.find((m) => m.code === chosen.model)?.places?.[socket?.slot ?? 0] ?? null)
-    : null;
+  const at = Math.min(focus, Math.max(0, v.vehicles.length - 1));
+  const socket =
+    view.kind === "fit" && v.vehicles[at]
+      ? { vehicleId: v.vehicles[at].id, slot: view.slot }
+      : null;
+  const nameOf = (id: string | null) => componentName(v, id);
   return (
     <div className="porta-in fixed inset-0 z-40 overflow-hidden bg-[#16263E]" data-arms-scene>
       <div className="absolute inset-0">
-        <Guard3D>
-          <Canvas
-            orthographic
-            frameloop="demand"
-            dpr={[1, 1.5]}
-            camera={{ position: [0, 40, 44], zoom: 1 }}
-            gl={{ antialias: true }}
-            onCreated={({ scene }) => {
-              scene.background = new Color("#16263E");
-            }}
-          >
-            <Fit n={Math.max(1, v.vehicles.length)} covers={covers} />
-            <Pace fps={live() ? 30 : 0} />
-            <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
-            <directionalLight position={[-50, 100, 40]} intensity={2.2} color="#FFF3DD" />
-            <Suspense fallback={null}>
-              <Workshop v={v} socket={socket} />
-              <AnchorLayer root={labels} anchors={ANCHOR} />
-            </Suspense>
-          </Canvas>
-        </Guard3D>
-        <div ref={labels} className="pointer-events-none absolute inset-0">
+        {MAP_3D ? (
+          <Guard3D>
+            <Canvas
+              orthographic
+              frameloop="demand"
+              dpr={[1, 1.5]}
+              camera={{ position: [0, 40, 44], zoom: 1 }}
+              gl={{ antialias: true }}
+              onCreated={({ scene }) => {
+                scene.background = new Color("#16263E");
+              }}
+            >
+              <Fit
+                n={Math.max(1, v.vehicles.length)}
+                focus={view.kind === "shop" ? null : at}
+                dockH={dockH}
+              />
+              <Pace fps={live() ? 30 : 0} />
+              <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
+              <directionalLight position={[-50, 100, 40]} intensity={2.2} color="#FFF3DD" />
+              <Suspense fallback={null}>
+                <Workshop v={v} socket={socket} />
+                <AnchorLayer root={labels} anchors={ANCHOR} />
+              </Suspense>
+            </Canvas>
+          </Guard3D>
+        ) : (
+          <PlainGround />
+        )}
+        <div
+          ref={labels}
+          className={`pointer-events-none absolute inset-0 ${MAP_3D ? "" : "hidden"}`}
+        >
           {v.vehicles.map((x, i) => {
             const away = x.place !== "remise";
             const places = v.models.find((m) => m.code === x.model)?.places ?? [];
@@ -137,7 +147,10 @@ export function ArmsScene({
                       <button
                         type="button"
                         disabled={busy || away}
-                        onClick={() => setSocket(on ? null : { vehicleId: x.id, slot: k })}
+                        onClick={() => {
+                          setFocus(i);
+                          setView(on ? { kind: "vehicle" } : { kind: "fit", slot: k });
+                        }}
                         data-place-kind={kind ?? undefined}
                         className={`pointer-events-auto flex min-h-11 min-w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full px-2 text-xs font-bold shadow-lg shadow-black/50 disabled:opacity-50 ${on ? "ring-2 ring-info" : ""}`}
                         style={{
@@ -162,223 +175,31 @@ export function ArmsScene({
         </div>
       </div>
 
-      <header
-        ref={head}
-        className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]"
-      >
-        <div className="rounded-2xl bg-night/80 px-3 py-1.5 shadow-lg shadow-black/40">
-          <p className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
+      <header className="absolute inset-x-0 top-0 flex items-center gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <div className="glass flex min-h-12 min-w-0 flex-1 flex-col justify-center rounded-full px-4 py-1">
+          <p className="truncate font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
             {pt.arms}
           </p>
-          <p className="text-xs text-cream-dim">{pt.armsSub}</p>
+          <p className="truncate text-xs text-cream-dim">{pt.armsSub}</p>
         </div>
-        <CloseButton onClick={onClose} />
+        <CloseButton onClick={onClose} className="glass shrink-0" />
       </header>
 
-      <footer
-        ref={foot}
-        className="absolute inset-x-0 bottom-0 max-h-[52%] overflow-y-auto bg-gradient-to-t from-night via-night/95 to-night/70 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3"
-      >
-        {socket && chosen ? (
-          <section data-arms-fit>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-cream">
-                {pt.model[chosen.model] ?? chosen.model} ·{" "}
-                {chosenKind ? pt.kind[chosenKind] : pt.fit} {socket.slot + 1}
-              </p>
-              <button
-                type="button"
-                className="min-h-11 px-2 text-xs text-cream-dim"
-                onClick={() => setSocket(null)}
-              >
-                {pt.backOk}
-              </button>
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {chosen.slots[socket.slot] && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() =>
-                    void act({
-                      type: "empireFitArm",
-                      vehicleId: chosen.id,
-                      slot: socket.slot,
-                      componentId: null,
-                    }).then(() => setSocket(null))
-                  }
-                  className="min-h-14 rounded-xl border border-line bg-night-2 p-2 text-left text-xs text-cream-dim"
-                >
-                  {pt.empty}
-                </button>
-              )}
-              {v.inventory
-                .filter((c) => c.on === null || c.on === chosen.id || ownerAtRemise(v, c.on))
-                .filter((c) => chosenKind === null || kindOfComponent(c.id) === chosenKind)
-                .map((c) => {
-                  const def = v.components.find((x) => x.code === c.code);
-                  const here = chosen.slots[socket.slot] === c.id;
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      disabled={busy || here}
-                      onClick={() =>
-                        void act({
-                          type: "empireFitArm",
-                          vehicleId: chosen.id,
-                          slot: socket.slot,
-                          componentId: c.id,
-                        }).then(() => setSocket(null))
-                      }
-                      data-fit-component={c.id}
-                      className={`min-h-14 rounded-xl border p-2 text-left ${here ? "border-info bg-info/10" : "border-line bg-night-2"}`}
-                    >
-                      <span className="flex items-center gap-1.5 text-sm font-semibold text-cream">
-                        <span
-                          className="h-3 w-3 rounded-full"
-                          style={{ background: def ? KIND_HEX[def.kind] : CREAM }}
-                        />
-                        {nameOf(c.id)}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-cream-dim">
-                        {def ? pt.componentText[def.effect] : ""}
-                      </span>
-                    </button>
-                  );
-                })}
-            </div>
-          </section>
-        ) : (
-          <>
-            <div className="mb-2 flex gap-2">
-              {(["models", "components"] as const).map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  aria-pressed={tab === k}
-                  onClick={() => setTab(k)}
-                  className={`min-h-11 flex-1 rounded-full text-sm font-semibold ${tab === k ? "bg-night-3 text-cream ring-1 ring-info" : "text-cream-dim"}`}
-                >
-                  {k === "models" ? pt.combat : pt.componentsTab}
-                </button>
-              ))}
-            </div>
-            {tab === "models" ? (
-              <div className="grid grid-cols-1 gap-2" data-arms-models>
-                {v.models.map((m) => {
-                  const owned = v.vehicles.filter((x) => x.model === m.code).length;
-                  const locked = casa < m.casa;
-                  return (
-                    <div
-                      key={m.code}
-                      className={`rounded-xl border border-line bg-night-2 p-2.5 ${locked ? "opacity-60" : ""}`}
-                      data-arm-model={m.code}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-place text-sm font-bold uppercase tracking-[0.1em] text-cream">
-                          {pt.model[m.code] ?? m.code}
-                        </p>
-                        <span className="text-xs text-cream-dim">
-                          {locked ? pt.opensAt(m.casa) : `${pt.level(m.level)} · ×${owned}`}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-cream-dim">
-                        {pt.hp(m.hp)} ·
-                        {m.places.map((k, i) => (
-                          <span
-                            // biome-ignore lint/suspicious/noArrayIndexKey: a place is its index
-                            key={i}
-                            className="h-2.5 w-2.5 rounded-full"
-                            style={{ background: k ? KIND_HEX[k] : CREAM }}
-                          />
-                        ))}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <Slab
-                          size="sm"
-                          tone="ghost"
-                          disabled={busy || locked || !affordable(p.cash, m.cost)}
-                          onClick={() => void act({ type: "empireBuyArm", model: m.code })}
-                        >
-                          {pt.buy} · <Price cost={m.cost} />
-                        </Slab>
-                        {m.upgradeCost && owned > 0 && (
-                          <Slab
-                            size="sm"
-                            tone="ghost"
-                            disabled={busy || !affordable(p.cash, m.upgradeCost)}
-                            onClick={() => void act({ type: "empireUpgradeArm", model: m.code })}
-                          >
-                            {pt.raiseModel} · <Price cost={m.upgradeCost} />
-                          </Slab>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2" data-arms-components>
-                {v.components.map((c) => {
-                  const locked = casa < c.casa;
-                  const mine = v.inventory.filter((x) => x.code === c.code);
-                  return (
-                    <div
-                      key={c.code}
-                      className={`rounded-xl border border-line bg-night-2 p-2.5 ${locked ? "opacity-60" : ""}`}
-                      data-component={c.code}
-                    >
-                      <p className="flex items-center gap-1.5 text-sm font-semibold text-cream">
-                        <span
-                          className="h-3 w-3 rounded-full"
-                          style={{ background: KIND_HEX[c.kind] }}
-                        />
-                        {pt.component[c.code] ?? c.code}
-                      </p>
-                      <p className="mt-0.5 text-xs text-cream-dim">
-                        {locked ? pt.opensAt(c.casa) : pt.componentText[c.effect]}
-                      </p>
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        <Slab
-                          size="sm"
-                          tone="ghost"
-                          disabled={busy || locked || !affordable(p.cash, c.cost)}
-                          onClick={() => void act({ type: "empireBuyComponent", code: c.code })}
-                        >
-                          <Price cost={c.cost} />
-                        </Slab>
-                        {mine.map((x) => {
-                          const on = x.on ? v.vehicles.find((y) => y.id === x.on) : undefined;
-                          const plans = x.upgradePlans;
-                          return x.upgradeCost ? (
-                            <Slab
-                              key={x.id}
-                              size="sm"
-                              tone="ghost"
-                              disabled={
-                                busy ||
-                                (on && on.place !== "remise") ||
-                                !affordable(p.cash, x.upgradeCost) ||
-                                (plans !== null && v.plans[plans.kind] < plans.n)
-                              }
-                              onClick={() =>
-                                void act({ type: "empireUpgradeComponent", componentId: x.id })
-                              }
-                            >
-                              {pt.raiseComponent} {x.level + 1}
-                            </Slab>
-                          ) : null;
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        )}
-      </footer>
+      <div ref={dockRef} className="pointer-events-none absolute inset-x-0 bottom-0">
+        <ArmsDock
+          p={p}
+          v={v}
+          busy={busy}
+          act={act}
+          focus={at}
+          onFocus={(n) => {
+            setFocus(n);
+            setView({ kind: "vehicle" });
+          }}
+          view={view}
+          onView={setView}
+        />
+      </div>
     </div>
   );
 }
@@ -386,18 +207,41 @@ export function ArmsScene({
 const ownerAtRemise = (v: PortaView, vehicleId: string) =>
   v.vehicles.find((x) => x.id === vehicleId)?.place === "remise";
 
-/** The pedestals framed in the band between the scene's head and its sheet (frame.ts). */
-function Fit({ n, covers }: { n: number; covers: { top: number; bottom: number } }) {
+/**
+ * The camera on the workshop above the dock: all the pedestals, or the one in the middle of the
+ * carousel, closer (docs/plan-dock.md); it glides there, at once for less motion.
+ */
+function Fit({ n, focus, dockH }: { n: number; focus: number | null; dockH: number }) {
   const { camera, size, invalidate } = useThree();
+  const goal = useRef({ x: 0, z: -6, zoom: 2 });
+  const look = useRef({ x: 0, z: -6 });
   useEffect(() => {
-    const across = Math.max(30, n * 13 + 10);
-    const room = Math.max(120, size.height - covers.top - covers.bottom);
-    camera.zoom = Math.max(2, Math.min(size.width / across, (room * 0.9) / 22));
-    camera.position.set(0, 40, 44);
-    camera.lookAt(0, 0, -6);
-    frameBand(camera, size.width, size.height, covers.top, covers.bottom);
+    const room = Math.max(160, size.height - dockH - 64);
+    const across = focus === null ? Math.max(30, n * 13 + 10) : 26;
+    const zoom = Math.max(2, Math.min(size.width / across, room / 22));
+    const x = focus === null ? 0 : PEDESTAL(focus, n)[0];
+    // The pedestal in the middle of the room above the dock.
+    const z = -2 + (dockH - 64) / 2 / zoom / 0.72;
+    goal.current = { x, z, zoom };
+    if (!live()) {
+      look.current = { x, z };
+      camera.zoom = zoom;
+    }
     invalidate();
-  }, [camera, size, n, covers, invalidate]);
+  }, [camera, size, n, focus, dockH, invalidate]);
+  useFrame((_, dt) => {
+    const g = goal.current;
+    const k = live() ? 1 - Math.exp(-dt * 6) : 1;
+    const l = look.current;
+    if (Math.abs(l.x - g.x) + Math.abs(l.z - g.z) + Math.abs(camera.zoom - g.zoom) < 0.001) return;
+    l.x += (g.x - l.x) * k;
+    l.z += (g.z - l.z) * k;
+    camera.zoom += (g.zoom - camera.zoom) * k;
+    camera.position.set(l.x, 40, l.z + 50);
+    camera.lookAt(l.x, 0, l.z);
+    camera.updateProjectionMatrix();
+    invalidate();
+  });
   return null;
 }
 

@@ -93,7 +93,7 @@ export function NextStepCard({
     return (
       <GoldLayer depth={GOLD.guide} atLeast>
         <div
-          className="pointer-events-auto flex w-full max-w-md items-center gap-2.5 rounded-2xl border border-info/40 bg-night-2/90 p-2 pr-2.5 shadow-xl shadow-black/50 backdrop-blur-md"
+          className="glass pointer-events-auto flex w-full max-w-md items-center gap-2.5 rounded-[1.5rem] p-2 pr-2.5"
           data-next-step={step.kind}
         >
           <Lorenzo size={36} />

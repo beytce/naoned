@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   type EmpireSettingsInput,
   empireView,
+  lotYieldBps,
   parseEmpireSettings,
   powerOf,
 } from "../../src/index.js";
@@ -119,5 +120,22 @@ describe("the merchant's return", () => {
     expect(view(sooner).away).toBeNull();
     sooner.advance(HOUR);
     expect(view(sooner).away?.since).toBe(sooner.now - 3 * HOUR);
+  });
+});
+
+describe("a workshop's next level", () => {
+  it("says what its lot becomes, before and after, as the collect counts it", () => {
+    const w = world();
+    // At the Casa 1, a workshop is at its top: the Casa 2 lets it rise.
+    w.do({ type: "empireBuildCasa", playerId: "a" });
+    w.advance(2 * MIN);
+    const v = view(w);
+    const ws = v.house.workshops[0];
+    if (!ws) throw new Error("no workshop");
+    const up = v.upgrades[ws.id];
+    expect(up).not.toBeNull();
+    expect(up?.yieldBps).toBe(lotYieldBps(ws.level, s));
+    expect(up?.nextYieldBps).toBe(lotYieldBps(ws.level + 1, s));
+    expect(up?.nextYieldBps ?? 0).toBeGreaterThan(up?.yieldBps ?? 0);
   });
 });

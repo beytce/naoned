@@ -48,7 +48,8 @@ import { Smoke, useDonkey, useWater } from "../map3d/life.js";
 import { preloadMinis } from "../map3d/minis.js";
 import { Pace } from "../map3d/pace.js";
 import { roleOf } from "../map3d/roster.js";
-import { CASE, RARITY_HEX, extentOf, fromChart, toChart } from "./chart.js";
+import { CASE, extentOf, fromChart, toChart } from "./chart.js";
+import { RARITY_HEX } from "./colours.js";
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
 
 preloadMinis();

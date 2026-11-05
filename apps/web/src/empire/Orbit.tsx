@@ -69,6 +69,7 @@ export function EmpireOrbit({
   region = "veneto",
   bare = false,
   on3d = false,
+  selected = null,
 }: {
   p: EmpirePayload;
   now: number;
@@ -86,6 +87,8 @@ export function EmpireOrbit({
   bare?: boolean;
   /** Over the 3D board: the workshops' tiles and the sun stand in 3D under it (§ 7, step 5). */
   on3d?: boolean;
+  /** The workshop whose dock is open: a lapis ring round its star (docs/plan-dock.md). */
+  selected?: string | null;
 }) {
   const view = p.view;
   const [hop, setHop] = useState(0);
@@ -193,6 +196,7 @@ export function EmpireOrbit({
           hop={hop}
           busy={busy}
           on3d={on3d}
+          chosen={selected === s.ws.id}
           onCollect={() => {
             setHop((n) => n + 1);
             void act({ type: "empireRelaunch", workshopId: s.ws.id });
@@ -254,6 +258,7 @@ function Star({
   onCollect,
   onOpen,
   on3d = false,
+  chosen = false,
 }: {
   p: EmpirePayload;
   ws: EmpireWorkshop;
@@ -266,6 +271,7 @@ function Star({
   onCollect: () => void;
   onOpen: () => void;
   on3d?: boolean;
+  chosen?: boolean;
 }) {
   const s = workshopStatus(p, ws, now);
   const good = Object.keys(recipeOf(p, ws)?.outputs ?? {})[0] ?? "";
@@ -292,6 +298,13 @@ function Star({
       >
         <span className="relative flex h-16 w-16 items-center justify-center">
           {s.state === "ready" && <span className="marker-halo absolute -inset-3 rounded-full" />}
+          {chosen && (
+            <span
+              aria-hidden="true"
+              className="absolute -inset-2 rounded-full ring-[3px] ring-info"
+              data-chosen
+            />
+          )}
           <svg
             viewBox="-34 -34 68 68"
             className="absolute inset-0 -rotate-90"
