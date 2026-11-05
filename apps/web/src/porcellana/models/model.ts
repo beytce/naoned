@@ -6,6 +6,8 @@ export interface ModelOpts {
   seed: number;
   /** It works: its sails turn, its kiln glows, its smoke rises. Read at each frame. */
   running: boolean;
+  /** Where the dressing must not stand (a road through the tile), in the tile's coordinates. */
+  keepOff?: (x: number, z: number) => boolean;
 }
 
 /**

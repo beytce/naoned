@@ -38,9 +38,10 @@ import { fondaco } from "./models/fondaco.js";
 import { grove, plot, slab } from "./models/ground.js";
 import { market } from "./models/market.js";
 import type { Built, ModelOpts } from "./models/model.js";
-import { type Vehicle, cart } from "./models/vehicles.js";
-import { drawChevron, drawnIndices, ribbonGeometry, roundedPath } from "./ribbon.js";
+import { type Vehicle, cart, ship } from "./models/vehicles.js";
+import { drawChevron, drawnIndices, ribbonGeometry, roundedPath, seaDashes } from "./ribbon.js";
 import { Blush } from "./selection.js";
+import { box } from "./shapes.js";
 import { BOARD, CAMERA, RIBBON, SELECT } from "./tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
@@ -69,9 +70,12 @@ interface Cell {
 
 interface Spec {
   rows: string[][];
-  cell(key: string, i: number, j: number): Cell;
-  /** A road in tile coordinates, from where the goods leave to where they go. */
-  route?: [number, number][];
+  /** A cell's content; null where there is no tile (the board has the shape it has). */
+  cell(key: string, i: number, j: number): Cell | null;
+  /** The roads in tile coordinates, each from where the goods leave to where they go. */
+  routes?: [number, number][][];
+  /** The sea roads, dashed, a ship going along each. */
+  sea?: [number, number][][];
   viewH(aspect: number): number;
   families?: boolean;
 }
@@ -116,14 +120,22 @@ function Scene({
     const tiles: Tile[] = [];
     const opts: ModelOpts[] = [];
     const root = new Group();
+    const curves = (spec.routes ?? []).map((r) =>
+      roundedPath(r.map(([i, j]) => new Vector3(wx(i), RIBBON.lift, wz(j)))),
+    );
+    const samples = curves.flatMap((cv) => cv.getSpacedPoints(Math.ceil(cv.getLength() / 0.5)));
     for (let j = 0; j < rows; j++)
       for (let i = 0; i < cols; i++) {
-        const key = spec.rows[j]?.[i] ?? "~";
+        const key = spec.rows[j]?.[i] ?? "";
         const cell = spec.cell(key, i, j);
+        if (!cell) continue;
         const g = new Group();
         g.position.set(wx(i), 0, wz(j));
         g.add(slab(P, !!cell.water));
-        const o: ModelOpts = { seed: i * 31 + j * 17, running: sh.running };
+        // The dressing keeps off the roads that cross the tile.
+        const keepOff = (x: number, z: number) =>
+          samples.some((p) => (p.x - wx(i) - x) ** 2 + (p.z - wz(j) - z) ** 2 < 1.15 * 1.15);
+        const o: ModelOpts = { seed: i * 31 + j * 17, running: sh.running, keepOff };
         opts.push(o);
         const built = cell.make?.(o);
         if (built) g.add(built.group);
@@ -145,14 +157,13 @@ function Scene({
           lift: 0,
         });
       }
-    let road: {
+    const roads: {
       ribbon: Mesh;
-      tex: CanvasTexture;
       route: ReturnType<typeof roundedPath>;
       cart: Vehicle;
-    } | null = null;
-    if (spec.route) {
-      const route = roundedPath(spec.route.map(([i, j]) => new Vector3(wx(i), RIBBON.lift, wz(j))));
+      off: number;
+    }[] = [];
+    const tex = (() => {
       const canvas = document.createElement("canvas");
       canvas.width = 128;
       canvas.height = 64;
@@ -162,22 +173,39 @@ function Scene({
       tex.wrapS = RepeatWrapping;
       tex.colorSpace = SRGBColorSpace;
       tex.anisotropy = 8;
-      const ribbon = new Mesh(
-        ribbonGeometry(route),
-        new MeshStandardMaterial({
-          map: tex,
-          roughness: 0.7,
-          polygonOffset: true,
-          polygonOffsetFactor: -2,
-          polygonOffsetUnits: -2,
-        }),
-      );
+      return tex;
+    })();
+    const ribbonMat = new MeshStandardMaterial({
+      map: tex,
+      roughness: 0.7,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    });
+    curves.forEach((route, k) => {
+      const ribbon = new Mesh(ribbonGeometry(route), ribbonMat);
       ribbon.receiveShadow = true;
       root.add(ribbon);
-      const c = cart(P, { seed: 0, running: true });
+      const c = cart(P, { seed: k, running: true });
       root.add(c.group);
-      road = { ribbon, tex, route, cart: c };
-    }
+      roads.push({ ribbon, route, cart: c, off: k * 0.37 });
+    });
+    // The sea roads: dashes of accent on the water, a ship along each.
+    const seas = (spec.sea ?? []).map((r, k) => {
+      const route = roundedPath(
+        r.map(([i, j]) => new Vector3(wx(i), BOARD.waterY + 0.02, wz(j))),
+        1.4,
+      );
+      for (const d of seaDashes(route)) {
+        const m = box(root, 0.42, 0.03, 0.12, d.p.x, d.p.y - 0.015, d.p.z, P.accent, 0.01);
+        m.rotation.y = d.angle;
+        m.castShadow = false;
+      }
+      const sh2 = ship(P, { seed: k, running: true });
+      sh2.group.scale.setScalar(0.95);
+      root.add(sh2.group);
+      return { route, ship: sh2 };
+    });
     const ring = new Mesh(
       new RingGeometry(SELECT.ring[0], SELECT.ring[1], 72),
       new MeshBasicMaterial({
@@ -190,7 +218,7 @@ function Scene({
     ring.rotation.x = -Math.PI / 2;
     ring.renderOrder = 2;
     root.add(ring);
-    return { root, tiles, opts, road, ring };
+    return { root, tiles, opts, roads, seas, tex, ring };
   }, [P, spec]);
 
   useEffect(() => {
@@ -291,21 +319,39 @@ function Scene({
         t.built.plus.position.y += ((on ? 0.12 : 0) - t.built.plus.position.y) * 0.15;
       }
     }
-    // The road draws itself, then its chevrons run, then the cart goes.
-    const road = board.road;
-    if (road) {
-      const drawn = routesDrawn(c.t);
+    // The roads draw themselves, then their chevrons run, then the carts go.
+    const drawn = routesDrawn(c.t);
+    if (live) board.tex.offset.x -= dt * RIBBON.speed;
+    for (const road of board.roads) {
       const idx = road.ribbon.geometry.index?.count ?? 0;
       road.ribbon.geometry.setDrawRange(0, drawnIndices(idx, drawn));
-      if (live) road.tex.offset.x -= dt * RIBBON.speed;
-      const u = (c.life * (1.3 / road.route.getLength())) % 1;
+      const u = (c.life * (1.3 / road.route.getLength()) + road.off) % 1;
       const p = road.route.getPointAt(u);
       const d = road.route.getTangentAt(u);
       road.cart.group.position.set(p.x, 0.02, p.z);
       road.cart.group.rotation.y = Math.atan2(-d.z, d.x);
       road.cart.tick(c.life);
-      const out = drawn > 0.99 && lifeOut(c.t) ? 1 : 0;
+      const out = drawn > 0.99 && lifeOut(c.t) && sh.running ? 1 : 0;
       road.cart.group.scale.setScalar(Math.max(0.001, Math.min(1, u * 12, (1 - u) * 12) * out));
+    }
+    // The ships go to and fro, waiting at each end.
+    for (const sea of board.seas) {
+      const ph = (c.life % 22) / 22;
+      const there =
+        ph < 0.2
+          ? 0
+          : ph < 0.5
+            ? easeOutCubic((ph - 0.2) / 0.3)
+            : ph < 0.7
+              ? 1
+              : 1 - easeOutCubic((ph - 0.7) / 0.3);
+      const back = ph >= 0.5;
+      const p = sea.route.getPointAt(there);
+      const d = sea.route.getTangentAt(there).multiplyScalar(back ? -1 : 1);
+      sea.ship.group.position.set(p.x, BOARD.waterY - 0.26 + Math.sin(c.life * 1.6) * 0.04, p.z);
+      sea.ship.group.rotation.y = Math.atan2(-d.z, d.x);
+      sea.ship.tick(c.life);
+      sea.ship.group.visible = lifeOut(c.t);
     }
 
     // The ring and the blush.
@@ -373,73 +419,140 @@ function Scene({
   );
 }
 
-/** The small board of the kit (lot 1). */
+/**
+ * The board of the kit: a piece of map as the game will show it (docs/plan-porcellana.md § 1): the
+ * domain in the shape it was bought, tile by tile (no rectangle), its workshops linked to the
+ * Fondaco by roads of accent, the quay and its ship to the Market across the lagoon, the « + »
+ * plots all round where it may grow.
+ */
+const KIT_ROWS = [
+  ["", "plot", "forest", "lumber_camp", "mill", "plot", "", ""],
+  ["plot", "lane", "sawmill", "lane", "lane", "clay_pit", "plot", ""],
+  ["", "lane", "lane", "fondaco", "lane", "farm", "field", "plot"],
+  ["", "plot", "glassworks", "lane", "depot", "lane", "lane", "plot"],
+  ["", "", "~", "~", "~", "~", "plot", ""],
+  ["", "", "~", "market", "venice", "~", "", ""],
+];
 const KIT: Spec = {
-  rows: ["TFzPT", "PzzMz", "~~~~~"].map((r) => [...r]),
-  route: [
-    [1, 0.38],
-    [1, 1],
-    [2.62, 1],
+  rows: KIT_ROWS,
+  routes: [
+    [
+      [3, 0.4],
+      [3, 1.62],
+    ],
+    [
+      [4.07, 0.42],
+      [4.07, 1.08],
+      [3.0, 1.08],
+    ],
+    [
+      [2.2, 1.36],
+      [2.2, 2.0],
+      [2.62, 2.0],
+    ],
+    [
+      [4.66, 1.3],
+      [4.3, 1.3],
+      [4.3, 2.0],
+      [3.38, 2.0],
+    ],
+    [
+      [4.64, 2.0],
+      [3.38, 2.0],
+    ],
+    [
+      [2.4, 3.0],
+      [3.0, 3.0],
+      [3.0, 2.38],
+    ],
+    [
+      [3.3, 2.38],
+      [3.3, 2.62],
+      [3.75, 2.62],
+      [3.75, 2.9],
+    ],
   ],
-  viewH: (a) => (a >= 1 ? Math.max(28, 44 / a) : 30),
+  sea: [
+    [
+      [4.25, 3.85],
+      [4.25, 4.12],
+      [3.2, 4.12],
+      [3.2, 4.5],
+    ],
+  ],
+  viewH: (a) => (a >= 1 ? Math.max(38, 60 / a) : 34),
   cell(key, i, j) {
+    if (key === "") return null;
+    if (key === "~") return { water: true };
     const id = `${key}${i}${j}`;
-    // The dressing keeps off the road (column 1 from the Fondaco down, row 1 to the Market).
-    const offRoad = (x: number, z: number) =>
-      (i === 1 && Math.abs(x) < 1.1) || (j === 1 && i > 0 && i < 3 && Math.abs(z) < 1.1);
-    switch (key) {
-      case "F":
-        return {
-          make: () => fondaco(palette()),
-          place: {
-            id,
-            label: "1",
-            info: {
-              name: "Le Fondaco",
-              sub: "Ton comptoir · Casa 3",
-              line: "Tout converge ici : la route rouge y porte ce que tes ateliers produisent.",
-              go: "Entrer au Fondaco",
-            },
+    if (key === "lane")
+      return { make: (o) => grove(palette(), o.seed + 7, 4, ["round", "cypress"], o.keepOff) };
+    if (key === "plot")
+      return {
+        make: () => plot(palette()),
+        place: {
+          id,
+          label: "+",
+          plus: true,
+          info: {
+            name: "Parcelle libre",
+            sub: "Case à acheter · 40 ducats",
+            line: "Achète-la : le domaine grandit de ce côté, puis bâtis-y un atelier.",
+            go: "Acheter la case",
           },
-        };
-      case "M":
-        return {
-          make: () => market(palette()),
-          place: {
-            id,
-            label: "2",
-            info: {
-              name: "San Marco",
-              sub: "Le Marché · la Dogana",
-              line: "Vendre et acheter au prix de Venise.",
-              go: "Ouvrir la Dogana",
-            },
+        },
+      };
+    if (key === "fondaco")
+      return {
+        make: () => fondaco(palette()),
+        place: {
+          id,
+          label: "1",
+          info: {
+            name: "Le Fondaco",
+            sub: "Ton comptoir · Casa 3",
+            line: "Tout converge ici : les routes rouges y portent ce que tes ateliers produisent.",
+            go: "Entrer au Fondaco",
           },
-        };
-      case "P":
-        return {
-          make: () => plot(palette()),
-          place: {
-            id,
-            label: "+",
-            plus: true,
-            info: {
-              name: "Parcelle libre",
-              sub: "Case à acheter · 40 ducats",
-              line: "Achète-la, puis bâtis-y un atelier.",
-              go: "Acheter la case",
-            },
+        },
+      };
+    if (key === "market")
+      return {
+        make: () => market(palette()),
+        place: {
+          id,
+          label: "2",
+          info: {
+            name: "San Marco",
+            sub: "Le Marché · la Dogana",
+            line: "Le navire du quai y porte ta cargaison ; vendre et acheter au prix de Venise.",
+            go: "Ouvrir la Dogana",
           },
-        };
-      case "T":
-        return { make: (o) => grove(palette(), o.seed, 9, undefined, offRoad) };
-      case "z":
-        return { make: (o) => grove(palette(), o.seed + 7, 4, ["round", "cypress"], offRoad) };
-      default:
-        return { water: true };
-    }
+        },
+      };
+    const e = BY_KEY.get(key)?.e;
+    const make = e?.make;
+    if (!e || !make) return { water: true };
+    const workshop = e.family === "ateliers" && key !== "field";
+    return {
+      make: (o) => make(palette(), o),
+      place:
+        workshop || key === "depot"
+          ? {
+              id,
+              label: String(KIT_LABELS.get(key) ?? ""),
+              info: { name: e.name, sub: e.sub, line: e.sign, go: `Ouvrir : ${e.name}` },
+            }
+          : undefined,
+    };
   },
 };
+const KIT_LABELS = new Map(
+  ["lumber_camp", "mill", "sawmill", "clay_pit", "farm", "glassworks", "depot"].map((k, n) => [
+    k,
+    n + 3,
+  ]),
+);
 
 /** The catalogue (lot 2): every model, family by family. */
 const CATALOGUE_ROWS = [
@@ -506,7 +619,7 @@ export default function PorcellanaLab() {
     const out: Place[] = [];
     spec.rows.forEach((row, j) => {
       row.forEach((key, i) => {
-        const p = spec.cell(key, i, j).place;
+        const p = spec.cell(key, i, j)?.place;
         if (p) out.push(p);
       });
     });

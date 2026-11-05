@@ -375,49 +375,86 @@ export function clayPit(P: Palette, o: ModelOpts): Built {
   };
 }
 
-/** The sand pit: low dunes, cones of sand, a sieve on its legs that shakes, a wheelbarrow, a hut. */
+/**
+ * The sand pit: a pit dug in the sand, framed by planks, its floor lower; three neat cones of sand,
+ * a shovel planted in the largest; a screen leaning on its legs that shakes while the pit works; a
+ * wheelbarrow full; the tool shed.
+ */
 export function sandPit(P: Palette, o: ModelOpts): Built {
   const g = new Group();
   box(g, 5.2, 0.06, 5.2, 0, 0, 0, P.m("crop"), 0.25);
-  for (const [x, z, sx, sz] of [
-    [-1.4, -1.3, 1.6, 1.1],
-    [0.6, -1.9, 1.3, 0.9],
-    [-1.9, 0.9, 1.1, 1.2],
-  ] as const)
-    dome(g, 1, x, 0, z, P.m("crop"), 0.38).scale.set(sx, 0.38, sz);
-  for (const [x, z, s] of [
-    [1.5, 0.9, 0.7],
-    [2.1, -0.2, 0.55],
-    [1.1, 2.0, 0.5],
-  ] as const)
-    cone(g, s, s * 0.9, x, 0.06, z, P.m("soil"), 32);
-  const sieve = dyn(new Group());
-  sieve.position.set(-0.1, 0, 0.6);
-  g.add(sieve);
-  for (const [x, z] of [
-    [-0.55, -0.35],
-    [0.55, -0.35],
-    [-0.55, 0.35],
-    [0.55, 0.35],
-  ] as const)
-    box(g, 0.07, 0.75, 0.07, -0.1 + x, 0.06, 0.6 + z, P.m("wood"), 0.02);
-  box(sieve, 1.3, 0.08, 0.9, 0, 0.82, 0, P.m("wood"), 0.02);
-  box(sieve, 1.16, 0.03, 0.76, 0, 0.86, 0, P.m("open"), 0.01);
-  cone(g, 0.32, 0.28, -0.1, 0.06, 0.6, P.m("soil"), 24);
-  // The wheelbarrow.
-  box(g, 0.7, 0.3, 0.46, 1.2, 0.18, 2.1, P.m("wood"), 0.04);
-  const w = cyl(g, 0.15, 0.15, 0.06, 1.62, 0.06, 2.1, P.ink, 20);
+  // The pit: a rim of sand round a lower floor, its edges held by planks.
+  const px = -1.0;
+  const pz = -0.9;
+  const pw = 2.8;
+  const pd = 2.2;
+  box(g, pw, 0.02, pd, px, 0.06, pz, P.m("soil"), 0.02);
+  for (const s of [-1, 1]) {
+    box(g, pw + 0.5, 0.32, 0.25, px, 0.06, pz + s * (pd / 2 + 0.12), P.m("crop"), 0.08);
+    box(g, 0.25, 0.32, pd, px + s * (pw / 2 + 0.12), 0.06, pz, P.m("crop"), 0.08);
+    box(g, pw + 0.1, 0.12, 0.06, px, 0.12, pz + s * (pd / 2 - 0.02), P.m("wood"), 0.015);
+    box(g, 0.06, 0.12, pd - 0.1, px + s * (pw / 2 - 0.02), 0.12, pz, P.m("wood"), 0.015);
+  }
+  // A ladder down into it.
+  for (const s of [-1, 1])
+    box(
+      g,
+      0.05,
+      0.05,
+      0.7,
+      px + 0.9 + s * 0.16,
+      0.2,
+      pz + pd / 2 - 0.3,
+      P.m("wood"),
+      0.01,
+    ).rotation.x = -0.5;
+  // The cones of sand, smooth, and the shovel.
+  for (const [x, z, r] of [
+    [1.5, -1.3, 0.8],
+    [2.0, 0.2, 0.6],
+    [1.2, 0.9, 0.45],
+  ] as const) {
+    cone(g, r, r * 0.95, x, 0.06, z, P.m("crop"), 48);
+    ball(g, r * 0.12, x, 0.06 + r * 0.86, z, P.m("crop"), 16);
+  }
+  const shovel = new Group();
+  shovel.position.set(1.75, 0.3, -1.15);
+  shovel.rotation.z = -0.35;
+  g.add(shovel);
+  cyl(shovel, 0.02, 0.02, 0.9, 0, 0, 0, P.m("wood"), 8);
+  box(shovel, 0.16, 0.2, 0.03, 0, -0.12, 0, P.ink, 0.01);
+  // The screen, leaning on its legs; the sand it sifts heaped at its foot.
+  const screen = dyn(new Group());
+  screen.position.set(-0.6, 0.06, 1.5);
+  g.add(screen);
+  const frame = new Group();
+  frame.rotation.x = -0.75;
+  screen.add(frame);
+  for (const s of [-1, 1]) box(frame, 0.06, 1.3, 0.06, s * 0.5, 0, 0, P.m("wood"), 0.015);
+  for (const y of [0.02, 1.24]) box(frame, 1.06, 0.06, 0.06, 0, y, 0, P.m("wood"), 0.015);
+  box(frame, 0.94, 1.18, 0.02, 0, 0.06, 0, P.m("open"), 0.005);
+  for (const s of [-1, 1])
+    box(g, 0.05, 0.62, 0.05, -0.6 + s * 0.46, 0.06, 1.95, P.m("wood"), 0.01).rotation.x = 0.5;
+  cone(g, 0.45, 0.32, -0.6, 0.06, 1.1, P.m("crop"), 40);
+  // The wheelbarrow, full.
+  const bx = 0.6;
+  const bz = 2.1;
+  box(g, 0.7, 0.28, 0.46, bx, 0.2, bz, P.m("wood"), 0.04);
+  dome(g, 0.26, bx, 0.48, bz, P.m("crop"), 0.5).scale.set(1.2, 0.5, 0.85);
+  const w = cyl(g, 0.15, 0.15, 0.06, bx + 0.42, 0.06, bz, P.ink, 20);
   w.rotation.x = Math.PI / 2;
   w.position.y = 0.15;
-  for (const s of [-1, 1]) box(g, 0.8, 0.04, 0.04, 0.85, 0.32, 2.1 + s * 0.2, P.m("wood"), 0.01);
-  box(g, 1.5, 1.0, 1.2, 1.6, 0, -1.9, P.m("wall"), 0.04);
-  gable(P, g, 1.5, 1.2, 1.0, 0.55, 1.6, -1.9, Math.PI / 2);
-  box(g, 0.4, 0.7, 0.05, 1.6, 0, -1.28, P.m("open"), 0.01);
+  for (const s of [-1, 1]) box(g, 0.8, 0.04, 0.04, bx - 0.35, 0.3, bz + s * 0.2, P.m("wood"), 0.01);
+  // The tool shed.
+  box(g, 1.3, 0.95, 1.0, -1.9, 0, 1.6, P.m("wall"), 0.04);
+  gable(P, g, 1.3, 1.0, 0.95, 0.5, -1.9, 1.6, 0);
+  box(g, 0.36, 0.65, 0.05, -1.9, 0, 2.11, P.m("open"), 0.01);
   return {
     group: g,
-    pin: [-0.1, 2.4, 0.6],
+    pin: [-1.0, 2.0, -0.9],
     tick: (t) => {
-      sieve.position.x = -0.1 + (o.running ? Math.sin(t * 9) * 0.06 : 0);
+      screen.position.x = -0.6 + (o.running ? Math.sin(t * 11) * 0.03 : 0);
+      screen.position.y = 0.06 + (o.running ? Math.abs(Math.sin(t * 11)) * 0.02 : 0);
     },
   };
 }

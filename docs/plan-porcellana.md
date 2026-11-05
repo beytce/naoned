@@ -33,6 +33,17 @@ On extrait du prototype des valeurs, pas une impression. Chaque élément ci-des
 - L'eau d'un seul tenant, plus basse (‑0,24), sans joints.
 - Une parcelle libre est une plaque de terre avec un « + » en relief et quatre équerres.
 
+**Le plateau a la forme de ce qu'on a bâti** (demande du porteur, 5 novembre 2026 : « que le plateau ne soit pas limité à un carré et que l'on puisse s'étendre comme on le souhaite »).
+- Jamais un rectangle : on voit les cases qu'on possède, dans la forme où on les a achetées, et tout autour, les parcelles « + » qu'on peut acheter, dans toutes les directions.
+- Au-delà, rien : pas de cadre, pas de bord dessiné. Le plateau flotte sur le fond de porcelaine et grandit d'une case à chaque achat (la case tombe en place comme à l'arrivée).
+- Les villes et le Marché, les terres des autres régions apparaissent comme des îlots de cases, reliés au domaine par les routes.
+
+**Les routes font la carte** (demande du porteur : « les routes ont disparu, il n'y a plus d'interconnexions entre les cases, ça ne ressemble plus à une carte mais à un empilement de bâtiments »).
+- Chaque atelier est relié au Fondaco par un ruban d'accent qui passe de case en case, autour des bâtiments, jamais à travers ; le Fondaco est relié au quai, le quai au Marché et aux villes livrées (par la mer en tirets).
+- Le décor (arbres, rochers) s'écarte des routes (`ModelOpts.keepOff`).
+- Le tracé vient du moteur (`gridRoad`), le même pour la durée des trajets et pour le dessin.
+- Les chevrons courent vers où vont les marchandises ; les charrettes et les navires y roulent quand un trajet est en cours.
+
 **La caméra.**
 - Orthographique, azimut 45°, élévation 0,64 rad.
 - Un doigt ou le clic gauche déplace la vue ; deux doigts ou le clic droit tournent de ±0,55 rad au plus ; zoom de 0,8 à 4.
@@ -109,6 +120,7 @@ On extrait du prototype des valeurs, pas une impression. Chaque élément ci-des
 - Plus de secteurs ni de petites cases : la case est l'unité de tout.
 - **Chaque case a un terrain** : terre (avec sa région), côte ou eau. Les villes et les lieux gardent leurs coordonnées x, y : une ville occupe la case sous son point, et deux lieux ne partagent ni une case ni un côté (la règle d'aujourd'hui, `tileFault` et `placeCities`, en carré).
 - **On achète case par case.** Une case s'achète si elle touche par un côté une case possédée, ou, depuis une côte possédée, si c'est une côte à `seaHops` cases ou moins. Elle se voit aussitôt, et ses voisines apparaissent en « + ». Le prix monte à chaque case : `costDucats` et `stepBps` sont recalibrés pour qu'acquérir la surface d'un secteur d'aujourd'hui coûte à peu près pareil.
+- **On s'étend dans la direction qu'on veut.** Aucune limite de forme : toute case de terre qui touche les siennes par un côté s'achète, quelle que soit la forme du domaine. La géographie seule borne le plateau : la mer se franchit d'une côte à une côte (`seaHops`), et une région ne s'ouvre qu'à la Casa qui l'atteint.
 - **Ce qu'on bâtit occupe des cases à soi** : le Fondaco, ses ateliers (D7), la Remise, le Campo, l'Arsenal, les comptoirs. Bâtir demande une case possédée et libre.
 - **Les routes vont de case en case, par les côtés** (ville 4 pas, mer 5, comme aujourd'hui). Ce sont exactement les rubans à angles arrondis du prototype. La vitesse des trajets est recalibrée pour que leur durée moyenne reste celle d'aujourd'hui.
 - **La Porta** compte la distance en cases.
@@ -237,5 +249,5 @@ On compare aussi, à chaque lot, des captures prises au même cadrage que celles
 | M1 | fait : `grid.ts` et ses tests (17), pas encore en service |
 | 1 | fait : le kit (`apps/web/src/porcellana/`, tests `apps/web/test/porcellana.test.ts`), le laboratoire `?lab=porcellana` avec le Fondaco, le Marché (San Marco), les bosquets, la parcelle « + », la route, l'arrivée, la sélection et la fiche ; captures `labo-*.png` |
 | M2 | fait, à relire par le porteur : `apps/web/scripts/squaremap.ts` écrit `venice1450.squares.ts` (cases de 15 unités, 168 cases de terre, les 31 villes gardées, Venise sur la côte, sa lagune en eau) ; image `carte-carree-controle.png` (cases par région, côtes cerclées de bleu, anciens secteurs en pointillés rouges). La carte en service reste l'hexagonale jusqu'à M3. |
-| 2 | fait, à valider famille par famille : le catalogue (`apps/web/src/porcellana/catalogue.ts`, modèles dans `models/`) au laboratoire `?lab=porcellana&vue=catalogue` — les neuf ateliers et le champ, le Fondaco, le Marché, la Remise, le Campo, la Porta, l'Arsenal, le comptoir, les villes de taille 1 à 5, Venise et la Salute, bosquet, forêt, rochers, montagne, parcelles libre et fermée, charrette, mulet, cavalier, navire, gondole ; « En marche / À l'arrêt » montre chaque signe de travail ; captures `catalogue-*.png` |
+| 2 | fait, validé par le porteur (« tout me va ») sauf la sablière et la montagne, refaites le 5 novembre (la fosse cadrée de planches, les cônes, le tamis ; un pic à facettes et sa neige). Le plateau du laboratoire est devenu un morceau de carte : forme libre, routes de chaque atelier au Fondaco, navire du quai au Marché, parcelles « + » tout autour. Détail initial : le catalogue (`apps/web/src/porcellana/catalogue.ts`, modèles dans `models/`) au laboratoire `?lab=porcellana&vue=catalogue` — les neuf ateliers et le champ, le Fondaco, le Marché, la Remise, le Campo, la Porta, l'Arsenal, le comptoir, les villes de taille 1 à 5, Venise et la Salute, bosquet, forêt, rochers, montagne, parcelles libre et fermée, charrette, mulet, cavalier, navire, gondole ; « En marche / À l'arrêt » montre chaque signe de travail ; captures `catalogue-*.png` |
 | M3, M4, 3 à 9 | validés, à faire |

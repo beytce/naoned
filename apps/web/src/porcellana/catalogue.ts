@@ -251,7 +251,7 @@ export const CATALOGUE: Entry[] = [
     name: "Bosquet",
     sub: "Arbres ronds, cyprès, sapins",
     sign: "",
-    make: (P, o) => grove(P, o.seed),
+    make: (P, o) => grove(P, o.seed, 9, undefined, o.keepOff),
   },
   {
     key: "forest",
@@ -259,7 +259,7 @@ export const CATALOGUE: Entry[] = [
     name: "Forêt",
     sub: "Sapins",
     sign: "",
-    make: (P, o) => grove(P, o.seed, 12, ["fir"]),
+    make: (P, o) => grove(P, o.seed, 12, ["fir"], o.keepOff),
   },
   {
     key: "rocks",
