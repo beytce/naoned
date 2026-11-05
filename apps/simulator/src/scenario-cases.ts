@@ -51,7 +51,9 @@ const homeTile = Object.keys(VENICE_SQUARE_TILES)
   .sort((a, b) => {
     const [ax, ay] = tileCentre(a, size);
     const [bx, by] = tileCentre(b, size);
-    return Math.hypot(ax - at.x, ay - at.y) - Math.hypot(bx - at.x, by - at.y) || a.localeCompare(b);
+    return (
+      Math.hypot(ax - at.x, ay - at.y) - Math.hypot(bx - at.x, by - at.y) || a.localeCompare(b)
+    );
   })[0] as string;
 const [hx, hy] = tileCentre(homeTile, size);
 const map = {
