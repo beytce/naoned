@@ -21,7 +21,7 @@ import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { PortaDock, type PortaPane } from "./PortaDock.js";
 import { portaApi } from "./api.js";
-import { RARITY_HEX } from "./colours.js";
+import { RARITY_HEX, ROME_DUSK } from "./colours.js";
 import { errorText, pt } from "./texts.js";
 import { type PortaState, type PortaView, RARITIES, type Rarity } from "./types.js";
 
@@ -184,7 +184,7 @@ export function PortaScene({
         ? "gate"
         : ((["quay", "steps", "gate"] as const)[step] ?? "gate");
   return (
-    <div className="porta-in fixed inset-0 z-40 overflow-hidden bg-[#16263E]" data-porta-scene>
+    <div className="porta-in fixed inset-0 z-40 overflow-hidden bg-[#3B2F52]" data-porta-scene>
       <SceneView
         v={v}
         tier={tier}
@@ -387,13 +387,14 @@ function SceneView(props: {
             camera={{ position: [0, 46, 44], zoom: 1 }}
             gl={{ antialias: true }}
             onCreated={({ scene }) => {
-              scene.background = new Color("#16263E");
+              scene.background = new Color(ROME_DUSK.sky);
             }}
           >
             <CameraRig focus={props.focus} dockH={props.dockH} />
             <Pace fps={live() ? 30 : 0} />
-            <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
-            <directionalLight position={[-60, 110, 40]} intensity={2.2} color="#FFF3DD" />
+            {/* The lands of Rome at dusk (the refonte claire, lot 4). */}
+            <hemisphereLight args={[ROME_DUSK.hemiSky, ROME_DUSK.hemiGround, 1.1]} />
+            <directionalLight position={[-60, 70, 40]} intensity={2.4} color={ROME_DUSK.sun} />
             <Suspense fallback={null}>
               <Scene {...props} docked={docked} />
               <AnchorLayer root={labels} anchors={ANCHOR} />
@@ -569,8 +570,16 @@ function Scene({
   ANCHOR.set("stall", STALL);
   return (
     <group>
-      <Instanced geo={tile} items={ground.filter((g) => !g.rome)} material={claySolid(C.land)} />
-      <Instanced geo={tile} items={ground.filter((g) => g.rome)} material={claySolid("#B8604A")} />
+      <Instanced
+        geo={tile}
+        items={ground.filter((g) => !g.rome)}
+        material={claySolid(ROME_DUSK.earth)}
+      />
+      <Instanced
+        geo={tile}
+        items={ground.filter((g) => g.rome)}
+        material={claySolid(ROME_DUSK.deep)}
+      />
       {/* The gate: two towers, its arch of stone, the lands' glow through it. */}
       <group position={GATE}>
         <mesh geometry={MADE.porta} material={clayShared} />

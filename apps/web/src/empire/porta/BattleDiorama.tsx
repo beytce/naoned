@@ -12,6 +12,7 @@ import type { Battle3DHandle } from "./Battle3D.js";
 import { portaApi, useBattle } from "./api.js";
 import { CASE, extentOf, fromChart, toChart } from "./chart.js";
 import { RARITY_HEX } from "./colours.js";
+import { BattleGoal } from "./goal.js";
 import { errorText, pt } from "./texts.js";
 import type { BattleOrder, BattleSnapshot, PlayerUnitView, Rarity } from "./types.js";
 
@@ -249,10 +250,11 @@ function Field({
       </div>
 
       <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="pointer-events-auto rounded-2xl bg-night/80 px-3 py-1.5 shadow-lg shadow-black/40">
-          <p className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
+        <div className="glass pointer-events-auto flex min-w-0 max-w-[16rem] flex-1 flex-col gap-1 rounded-2xl px-3 py-2">
+          <p className="font-place text-xs font-bold uppercase tracking-[0.12em] text-cream-dim">
             {pt.tier(battle.tier)}
           </p>
+          <BattleGoal battle={battle} />
           <p className="text-xs text-cream-dim">{sel ? pt.moveHint : pt.selectHint}</p>
         </div>
         <div

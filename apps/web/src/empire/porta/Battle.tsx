@@ -4,6 +4,7 @@ import { CloseButton, GoldLayer, Slab } from "../../ui.js";
 import { MAP_3D } from "../map3d/flag.js";
 import { BattleDiorama } from "./BattleDiorama.js";
 import { portaApi, useBattle } from "./api.js";
+import { BattleGoal } from "./goal.js";
 import { errorText, pt } from "./texts.js";
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
 
@@ -152,6 +153,7 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
           <p className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
             {pt.tier(battle.tier)}
           </p>
+          <BattleGoal battle={battle} />
           {Object.values(burnt).some((t) => t + FLAME_MS > battle.timeMs) ? (
             <output className="block text-xs font-semibold text-vermilion" data-burnt-alert>
               {pt.burnt}

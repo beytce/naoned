@@ -294,14 +294,20 @@ function Steps({
         </>
       ) : step === 1 ? (
         <>
-          <ul className="grid grid-cols-3 gap-2" data-porta-tiers>
-            {v.tiers.map((x) => (
-              <li key={x.tier}>
+          {/* The tiers as a stair (the refonte claire, lot 4): each step higher, as the stone
+              steps of the scene above. */}
+          <ul className="flex items-end gap-1.5" data-porta-tiers>
+            {v.tiers.map((x, i) => (
+              <li
+                key={x.tier}
+                className="min-w-0 flex-1"
+                style={{ height: `${4.25 + i * 0.6}rem` }}
+              >
                 <ChoiceCard
                   selected={x.tier === tier}
                   locked={x.open ? undefined : pt.tierLocked(x.tier)}
                   onClick={() => onTier(x.tier)}
-                  className="h-20 w-full flex-col items-center justify-center gap-0.5"
+                  className="h-full w-full flex-col items-center justify-end gap-0.5 pb-2"
                   attrs={{ "data-tier": String(x.tier) }}
                 >
                   <span

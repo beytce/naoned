@@ -49,14 +49,13 @@ import { preloadMinis } from "../map3d/minis.js";
 import { Pace } from "../map3d/pace.js";
 import { roleOf } from "../map3d/roster.js";
 import { CASE, extentOf, fromChart, toChart } from "./chart.js";
-import { RARITY_HEX } from "./colours.js";
+import { RARITY_HEX, ROME_DUSK } from "./colours.js";
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
 
 preloadMinis();
 
 export { CASE, RARITY_HEX, extentOf, fromChart, toChart };
 
-const NIGHT = "#16263E";
 const SLAB = 2.4;
 /** The figurines are drawn this much larger than on the board: a battle is read from afar. */
 const FIG = 2.2;
@@ -339,7 +338,7 @@ const Battle3D = memo(
         camera={{ near: 1, far: 2000, position: [0, DISTANCE, DISTANCE] }}
         gl={{ antialias: true, powerPreference: "high-performance", stencil: false }}
         onCreated={({ scene, camera: c }) => {
-          scene.background = new Color(NIGHT);
+          scene.background = new Color(ROME_DUSK.sky);
           camera.current = c as OrthographicCamera;
           apply();
         }}
@@ -347,8 +346,9 @@ const Battle3D = memo(
       >
         {/* A battle of ten minutes at 30 frames a second, not 60: the phone keeps cool. */}
         <Pace fps={live ? 30 : 0} rest={30} />
-        <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
-        <directionalLight position={[-70, 120, -60]} intensity={2.3} color="#FFF3DD" />
+        {/* The lands of Rome at dusk (the refonte claire, lot 4). */}
+        <hemisphereLight args={[ROME_DUSK.hemiSky, ROME_DUSK.hemiGround, 1.1]} />
+        <directionalLight position={[-70, 80, -60]} intensity={2.4} color={ROME_DUSK.sun} />
         <Suspense fallback={null}>
           <Island battle={battle} live={live} />
           <Units battle={battle} tracks={tracks} selected={selected} live={live} />
@@ -396,12 +396,12 @@ function Island({ battle, live }: { battle: BattleSnapshot; live: boolean }) {
       <Instanced
         geo={tileTop}
         items={land.map((t) => ({ x: t.x, y: 0, z: t.z, s: 1, rot: 0 }))}
-        material={claySolid(C.land)}
+        material={claySolid(ROME_DUSK.earth)}
       />
       <Instanced
         geo={seaBed}
         items={sea.map((t) => ({ x: t.x, y: -3, z: t.z, s: 1, rot: 0 }))}
-        material={claySolid(C.mistSoil)}
+        material={claySolid(ROME_DUSK.deep)}
         cast={false}
       />
       <mesh geometry={lagoon} material={water} position={[cx, -1.6, cz]} />

@@ -157,6 +157,10 @@ export const pt = {
     rs.length === 0 ? "Ville vide" : `Ville : ${rs.length} relique${rs.length > 1 ? "s" : ""}`,
   selectHint: "Touchez un de vos véhicules, puis l'endroit où il doit aller.",
   moveHint: "Touchez la destination.",
+  // The battle's goal (the refonte claire, lot 4).
+  goal: "Reliques rapportées",
+  goalLine: (home: number, aboard: number, left: number) =>
+    `${home} rapportée${home > 1 ? "s" : ""} · ${aboard} à bord · ${left} en ville`,
   loading: (r: Rarity) => `Charge une relique ${pt.rarity[r].toLowerCase()}`,
   cargo: (n: number, max: number) => `${n}/${max} reliques`,
   over: "La bataille est finie.",
