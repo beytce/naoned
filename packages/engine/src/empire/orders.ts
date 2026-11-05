@@ -169,6 +169,18 @@ export function cityOrdersAt(
   }
   // Full: the next comes an interval after a place is freed, none owed for the time passed.
   if (list.length >= cap && next <= now) next = now + every;
+  // Never beyond the cap (5 November 2026: a cap lowered left a town at « 10/3 »; an order given
+  // back to a full town): the best paid stay, in their order; the rest go, at no cost.
+  if (list.length > cap) {
+    const keep = new Set(
+      [...list]
+        .sort((a, b) =>
+          BigInt(b.pay) > BigInt(a.pay) ? 1 : BigInt(b.pay) < BigInt(a.pay) ? -1 : 0,
+        )
+        .slice(0, cap),
+    );
+    return { next, seq, list: list.filter((o) => keep.has(o)) };
+  }
   return { next, seq, list };
 }
 

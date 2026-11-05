@@ -55,6 +55,34 @@ describe("the orders of a city", () => {
     expect(city(w, "padova")?.orders).toHaveLength(2);
   });
 
+  it("never wait beyond the cap, even a cap lowered since: the best paid stay", () => {
+    const w = world();
+    w.advance(48 * HOUR);
+    settle(w);
+    const before = city(w, "venezia")?.orders ?? [];
+    expect(before).toHaveLength(4);
+    // The cap of a town of size 3 lowered from four to two (a calibration, 5 November 2026).
+    const lower = { ...empire, orders: { ...empire.orders, cap: [1, 2, 2, 5, 6] } };
+    const l = new World(makeContext({ empire: lower }));
+    l.state = w.state;
+    l.now = w.now;
+    l.totals = w.totals;
+    const after = city(l, "venezia");
+    expect(after?.cap).toBe(2);
+    expect(after?.orders).toHaveLength(2);
+    expect(after?.fillBps).toBe(10_000);
+    const best = [...before]
+      .sort((a, b) => (BigInt(b.pay) > BigInt(a.pay) ? 1 : BigInt(b.pay) < BigInt(a.pay) ? -1 : 0))
+      .slice(0, 2)
+      .map((o) => o.id)
+      .sort();
+    expect(after?.orders.map((o) => o.id).sort()).toEqual(best);
+    // Kept so once settled, and nothing new while full.
+    settle(l);
+    l.advance(3 * HOUR);
+    expect(city(l, "venezia")?.orders).toHaveLength(2);
+  });
+
   it("stay as they were drawn once kept, whatever the house builds after", () => {
     const w = world();
     w.advance(3 * HOUR);
