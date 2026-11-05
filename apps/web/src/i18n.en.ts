@@ -684,6 +684,7 @@ export const en: Dictionary = {
       wind: (until: string) => `Following wind: Favour doubled until ${until}`,
       claim: "Collect",
       claimed: "Collected",
+      claimAll: (n: number) => `Claim ${n} goal${n === 1 ? "" : "s"}`,
       kinds: {
         relaunch: (n: number) => `Relaunch ${n} times`,
         deliver: (n: number) => `Deliver ${n} units to the cities`,

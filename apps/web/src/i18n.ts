@@ -608,6 +608,7 @@ const frDict = {
       wind: (until: string) => `Vent en poupe : Faveur doublée jusqu'à ${until}`,
       claim: "Encaisser",
       claimed: "Encaissé",
+      claimAll: (n: number) => `Encaisser ${n} objectif${n > 1 ? "s" : ""}`,
       kinds: {
         relaunch: (n: number) => `Relancer ${n} fois`,
         deliver: (n: number) => `Livrer ${n} unités aux villes`,

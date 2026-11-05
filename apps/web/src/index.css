@@ -1869,3 +1869,22 @@ body:has(dialog[open]) .city-pill-ready {
   pointer-events: none;
   transition: opacity var(--t-quick, 150ms);
 }
+
+/* A medal of the Carnet full and not yet taken (the refonte claire, lot 5): it glows slowly. */
+.medal-ready {
+  animation: medal-ready 2.2s ease-in-out infinite;
+}
+@keyframes medal-ready {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--face, var(--gold)) / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgb(var(--face, var(--gold)) / 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .medal-ready {
+    animation: none;
+  }
+}

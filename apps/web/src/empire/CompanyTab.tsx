@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { hourOf } from "../game/format.js";
 import { fr } from "../i18n.js";
-import { Badge, Label, Ribbon, Sheet, Slab, Stat } from "../ui.js";
+import { Badge, Label, Sheet, Slab, Stat } from "../ui.js";
 import { CompanySection } from "./Company.js";
 import { TerraBody } from "./Terra.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
@@ -106,33 +106,55 @@ function CarnetBody({
   if (!view) return null;
   const c = view.carnet;
   const all = [...c.objectives, ...c.carried];
-  const row = (o: (typeof all)[number], i: number) => (
-    <li key={i} className="flex items-center gap-3 border-b border-line/60 py-2">
-      <div className="min-w-0 flex-1">
-        <p className={`text-sm ${o.claimed ? "text-cream-dim line-through" : "text-cream"}`}>
-          {(t.carnet.kinds[o.kind] ?? (() => o.kind))(o.target)}
-        </p>
-        <Ribbon
-          value={o.progress / o.target}
-          tone={o.progress >= o.target ? "lagoon" : "gold"}
-          label={`${o.progress}/${o.target}`}
-        />
-      </div>
-      {o.claimed ? (
-        <Badge>{t.carnet.claimed}</Badge>
-      ) : (
-        <Slab
-          size="sm"
-          tone="ghost"
-          busy={busy}
-          disabled={o.progress < o.target}
+  // The Carnet in medals (the refonte claire, lot 5): each objective a medal that fills; full, it
+  // shines in gold and a touch takes its Favour; taken, it is sealed. One gold action takes them all.
+  const ready = all.flatMap((o, i) => (!o.claimed && o.progress >= o.target ? [i] : []));
+  const medal = (o: (typeof all)[number], i: number) => {
+    const share = Math.min(1, o.progress / Math.max(1, o.target));
+    const full = share >= 1;
+    const label = (t.carnet.kinds[o.kind] ?? (() => o.kind))(o.target);
+    return (
+      <li key={i}>
+        <button
+          type="button"
+          disabled={o.claimed || !full || busy}
           onClick={() => void act({ type: "empireClaim", index: i })}
+          aria-label={`${label} · ${o.progress}/${o.target}${o.claimed ? ` · ${t.carnet.claimed}` : ""}`}
+          className="flex w-full flex-col items-center gap-1.5 text-center active:scale-95 disabled:active:scale-100"
+          data-medal={o.kind}
+          data-medal-state={o.claimed ? "claimed" : full ? "ready" : "running"}
         >
-          {t.carnet.claim}
-        </Slab>
-      )}
-    </li>
-  );
+          <span
+            className={`relative flex h-16 w-16 items-center justify-center rounded-full ${
+              full && !o.claimed ? "medal-ready" : ""
+            }`}
+            style={{
+              background: o.claimed
+                ? "rgb(var(--lagoon))"
+                : `conic-gradient(rgb(var(${full ? "--gold" : "--info"})) 0 ${Math.round(share * 100)}%, rgb(var(--line)) ${Math.round(share * 100)}% 100%)`,
+            }}
+          >
+            <span
+              className={`flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full font-display text-sm font-extrabold tabular-nums ${
+                o.claimed
+                  ? "bg-lagoon text-on-lagoon"
+                  : full
+                    ? "gold-face"
+                    : "bg-night-3 text-cream"
+              }`}
+            >
+              {o.claimed ? "✓" : full ? "+" : `${o.progress}/${o.target}`}
+            </span>
+          </span>
+          <span
+            className={`line-clamp-2 text-xs font-semibold leading-tight ${o.claimed ? "text-cream-dim" : "text-cream"}`}
+          >
+            {label}
+          </span>
+        </button>
+      </li>
+    );
+  };
   return (
     <section data-carnet>
       <p className="font-display text-lg font-extrabold text-cream">{t.carnet.title}</p>
@@ -140,12 +162,29 @@ function CarnetBody({
       {c.windUntil && c.windUntil > now && (
         <Badge tone="lagoon">{t.carnet.wind(hourOf(c.windUntil))}</Badge>
       )}
-      <ul className="mt-2">{c.objectives.map((o, i) => row(o, i))}</ul>
+      <ul className="mt-3 grid grid-cols-3 gap-x-2 gap-y-4" data-medals>
+        {c.objectives.map((o, i) => medal(o, i))}
+      </ul>
       {c.carried.length > 0 && (
         <>
-          <Label className="mt-4">{t.carnet.carried}</Label>
-          <ul>{c.carried.map((o, i) => row(o, c.objectives.length + i))}</ul>
+          <Label className="mt-5">{t.carnet.carried}</Label>
+          <ul className="mt-2 grid grid-cols-3 gap-x-2 gap-y-4">
+            {c.carried.map((o, i) => medal(o, c.objectives.length + i))}
+          </ul>
         </>
+      )}
+      {ready.length > 0 && (
+        <Slab
+          tone="gold"
+          size="lg"
+          className="mt-4 w-full"
+          busy={busy}
+          onClick={async () => {
+            for (const i of ready) await act({ type: "empireClaim", index: i });
+          }}
+        >
+          {t.carnet.claimAll(ready.length)}
+        </Slab>
       )}
       <section className="mt-5">
         <Label>{t.carnet.power}</Label>
