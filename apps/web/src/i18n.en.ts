@@ -273,6 +273,18 @@ export const en: Dictionary = {
       help: "Advice",
       market: "Dogana",
     },
+    round: {
+      handle: (vehicle: string, free: number) =>
+        `${vehicle} · ${free} free place${free === 1 ? "" : "s"}: drag to a town`,
+      title: "The round",
+      stops: (n: number) => `${n} town${n === 1 ? "" : "s"}`,
+      crates: (n: number) => `${n} crate${n === 1 ? "" : "s"}`,
+      go: (pay: string) => `Leave · ${pay}`,
+      more: "Drag again from the cart to add a town.",
+      full: "The hold is full.",
+      cancel: "Cancel",
+      hint: (vehicle: string, city: string) => `Drag the ${vehicle.toLowerCase()} to ${city}`,
+    },
     fondaco: {
       toCasa: (n: number) => `Towards Casa ${n}`,
       building: (n: number) => `Casa ${n} being built`,

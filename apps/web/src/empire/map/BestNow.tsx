@@ -64,9 +64,12 @@ export function BestNowCard({
   onCity,
   onCasa,
   onDeliver,
+  drawn = false,
 }: {
   p: EmpirePayload;
   busy: boolean;
+  /** The round is drawn by finger (the 3D board): the card says the gesture, « Livrer » a ghost. */
+  drawn?: boolean;
   onCity: (city: string) => void;
   onCasa: () => void;
   onDeliver: (city: string, orderIds: string[], vehicleId: string) => void;
@@ -95,6 +98,11 @@ export function BestNowCard({
             <span className="truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-cream-dim">
               {best.kind === "deliver" ? t.ready : best.kind === "order" ? t.waiting : t.casa}
             </span>
+            {best.kind === "deliver" && drawn && (
+              <span className="truncate text-xs font-semibold text-gold" data-best-hint>
+                {fr.empire.round.hint(vehicleName(p, best.vehicle), cityName(best.city))}
+              </span>
+            )}
             <span className="truncate text-[0.9375rem] font-bold leading-tight text-cream">
               {best.kind === "casa"
                 ? t.casaTo(best.level)
@@ -109,7 +117,7 @@ export function BestNowCard({
         </button>
         {best.kind === "deliver" ? (
           <Slab
-            tone="gold"
+            tone={drawn ? "ghost" : "gold"}
             size="md"
             busy={busy}
             lead
@@ -126,6 +134,11 @@ export function BestNowCard({
     </div>
   );
 }
+
+const vehicleName = (p: EmpirePayload, id: string) => {
+  const v = p.view?.vehicles.mine.find((x) => x.id === id);
+  return v ? (fr.empire.vehicleNames[v.type] ?? v.type) : "";
+};
 
 /** A town's orders as crates, two by two (at most six shown). */
 function Crates({ n, gold }: { n: number; gold: boolean }) {

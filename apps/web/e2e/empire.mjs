@@ -572,6 +572,39 @@ try {
       .locator(MAP3D ? "[data-map=empire][data-three]" : "[data-map=empire]")
       .waitFor({ timeout: 60_000 });
     await page.waitForTimeout(1_500);
+    if (MAP3D) {
+      // The round drawn by finger (the gameplay audit, P1): a cart's handle at its fondaco taken,
+      // the towns it may serve light up; dragged to Padua and lifted there, the round waits with
+      // its dock (« Partir »); cancelled here, « Livrer » is tried after.
+      const handle = page.locator("[data-round-handle]").first();
+      const town = page.locator("[data-city=padova]").first();
+      const hb = await handle.boundingBox().catch(() => null);
+      const tb = await town.boundingBox().catch(() => null);
+      if (!hb) faults.push(`${label}: no handle under a vehicle at its fondaco`);
+      else if (tb) {
+        await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(hb.x + hb.width / 2 + 20, hb.y + hb.height / 2 + 10, { steps: 4 });
+        const lit = (await page.locator("[data-round-open=padova]").count()) > 0;
+        await page.mouse.move(tb.x + tb.width / 2, tb.y + tb.height / 2, { steps: 12 });
+        await page.waitForTimeout(150);
+        await shot("15a-trace");
+        await page.mouse.up();
+        if (lit) {
+          await page
+            .locator("[data-round-dock*=padova]")
+            .waitFor({ timeout: 3_000 })
+            .catch(() => faults.push(`${label}: the round to Padua does not wait in its dock`));
+          await shot("15b-tournee");
+          await page
+            .locator("[data-round-dock]")
+            .getByRole("button", { name: /annuler/i })
+            .click();
+          await page.locator("[data-round-dock]").waitFor({ state: "detached" });
+        } else if ((await page.locator("[data-round-dock]").count()) > 0)
+          faults.push(`${label}: a round drawn to a town that was not lit`);
+      }
+    }
     await press("[data-city=padova]");
     await page.locator("[data-orders-panel=padova] [data-order]").first().waitFor();
     // Chosen by its stock (when the purse could buy it: the button shows then).

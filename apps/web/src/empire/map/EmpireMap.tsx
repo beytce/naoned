@@ -40,6 +40,7 @@ import type { EmpireAction, EmpirePayload } from "../types.js";
 import { CityPill } from "./CityPill.js";
 import { DomainLabels } from "./Domain.js";
 import { Fleet } from "./Fleet.js";
+import { type RoundDraft, RoundDraw } from "./RoundDraw.js";
 import { bandOf } from "./band.js";
 import { declutter } from "./declutter.js";
 import {
@@ -170,6 +171,10 @@ export const EmpireMap = forwardRef<
     aiming?: boolean;
     /** A vehicle sent to a place (a drag, a touch while picking, a right click). */
     onMove?: (vehicleId: string, place: string) => void;
+    /** The round being drawn by finger (the gameplay audit, P1), on the 3D board. */
+    round?: RoundDraft | null;
+    onRound?: (r: RoundDraft | null) => void;
+    onRoundGo?: (r: RoundDraft) => void;
     /** A hop arrived by the clock: the house's state to settle. */
     onArrive?: () => void;
     /** The house's name, under its first fondaco. */
@@ -195,6 +200,9 @@ export const EmpireMap = forwardRef<
     selected = null,
     aiming = false,
     onMove,
+    round = null,
+    onRound,
+    onRoundGo,
     onArrive,
     houseName = "",
     onDomain,
@@ -911,6 +919,20 @@ export const EmpireMap = forwardRef<
             </div>
           );
         })}
+        {/* On the 3D board, the round drawn by finger from a vehicle at its fondaco. */}
+        {MAP_3D && onRound && onRoundGo && (
+          <RoundDraw
+            p={p}
+            now={now}
+            base={base}
+            toChart={toChart}
+            unitsPerPx={() => 1 / camera.cam().s}
+            round={round}
+            onRound={onRound}
+            onGo={onRoundGo}
+            onTap={(id) => onTarget({ kind: "vehicle", id })}
+          />
+        )}
         {/* The vehicles, standing in orbit or gliding from place to place (the hops). */}
         <Fleet
           p={p}

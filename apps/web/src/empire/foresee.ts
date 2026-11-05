@@ -60,6 +60,21 @@ export function foresee(p: EmpirePayload, a: EmpireAction, now: number): EmpireP
         },
       };
     }
+    case "empireRound": {
+      // The towns' crates gone aboard (the vehicle's road comes with the answer).
+      const gone = new Set(a.stops.flatMap((s) => s.orderIds));
+      if (gone.size === 0) return null;
+      return {
+        ...p,
+        view: {
+          ...view,
+          orders: view.orders.map((o) => ({
+            ...o,
+            orders: o.orders.filter((x) => !gone.has(x.id)),
+          })),
+        },
+      };
+    }
     case "empireClaim": {
       const n = view.carnet.objectives.length;
       const inMain = a.index < n;

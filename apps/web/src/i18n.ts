@@ -194,6 +194,19 @@ const frDict = {
       market: "Dogana",
     },
     /** The Fondaco's foot (the refonte claire, lot 3). */
+    /** The round drawn by finger (the gameplay audit, P1). */
+    round: {
+      handle: (vehicle: string, free: number) =>
+        `${vehicle} · ${free} place${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""} : glissez vers une ville`,
+      title: "La tournée",
+      stops: (n: number) => `${n} ville${n > 1 ? "s" : ""}`,
+      crates: (n: number) => `${n} caisse${n > 1 ? "s" : ""}`,
+      go: (pay: string) => `Partir · ${pay}`,
+      more: "Glissez encore depuis la charrette pour ajouter une ville.",
+      full: "La soute est pleine.",
+      cancel: "Annuler",
+      hint: (vehicle: string, city: string) => `Glissez la ${vehicle.toLowerCase()} vers ${city}`,
+    },
     fondaco: {
       toCasa: (n: number) => `Vers la Casa ${n}`,
       building: (n: number) => `Casa ${n} en chantier`,

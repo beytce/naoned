@@ -41,7 +41,7 @@ Bilan : **3 à 8 touchers et environ 30 secondes de jeu**, puis plus rien à fai
 
 ### 2.4 Peu de retour, peu de moment (majeur)
 
-- **L'arrivée d'un véhicule en ville** est réglée en silence (`settle` : l'état est rafraîchi, des pièces volent vers la bourse). Rien ne se passe **sur la ville** : pas de caisses déchargées, pas de pièces qui jaillissent de la ville, pas de pastille qui se vide sous les yeux.
+- **L'arrivée d'un véhicule en ville** : *correction du 5 novembre au soir* — elle est déjà animée sur la ville (`Fleet.tsx`, `arrivals` : la marchandise saute du véhicule à la ville, une onde, la paie qui monte), sur les deux plateaux. Ce qui manque, c'est d'y assister : le véhicule part pour 5 à 20 minutes (voir P3).
 - **Le départ** : la note « en route · Suivre » est bien là, mais on ne voit pas les caisses monter dans la charrette.
 - **La récolte** : les marchandises volent vers le magasin (bien), mais depuis un bouton du pied, pas depuis l'atelier.
 
@@ -126,3 +126,15 @@ L'objectif : 2 à 4 minutes de gestes utiles par session, sans rien perdre quand
 5. **« Tout récolter »** : à partir de la Casa 3, sans or ; avant, on touche et on glisse sur les ateliers.
 6. **Lorenzo** montre l'objet à toucher (une main animée) ; son bouton d'or disparaît après la première fois de chaque geste.
 7. **L'ordre** : l'écran d'abord (étapes 1 à 4 : fluidité, tournée au doigt, villes en silhouette, objets d'abord), l'équilibrage ensuite (étape 5 : une trentaine de villes et le nouveau rythme).
+
+## 7. L'état (5 novembre 2026, au soir)
+
+| Étape | Fait | Où |
+| --- | --- | --- |
+| 1 | Les gestes prévus à l'écran (récolter, livrer, une tournée, une médaille), confirmés par le serveur, remis en place sur un échec ; la barre des lieux sur la Porta et la Compagnie | `empire/foresee.ts`, `EmpireGame.tsx` (`act`), `ui.tsx` (`Sheet docked="places"`), `porta/PortaScene.tsx` |
+| 2 | La tournée tracée du doigt : une poignée sous chaque véhicule à quai, les villes servables en or, la ligne d'or, chaque ville ajoutée au passage ; lâché dans le vide, il part ; lâché sur une ville, la tournée attend dans son dock (« Partir ») et se prolonge par un nouveau glisser ; une seule commande moteur (`empireRound`) ; « Livrer » de la carte « le mieux maintenant » en fantôme, la carte dit le geste | `map/RoundDraw.tsx`, `map/RoundDock.tsx`, `map/round.ts`, `packages/engine/src/empire/moves.ts` (`driveRound`) |
+| 3 | Les villes hors d'atteinte en silhouette | à faire |
+| 4 | Récolter en glissant, Lorenzo qui montre, les chantiers visibles | à faire |
+| 5 | Une trentaine de villes, le nouveau rythme | à faire, au simulateur |
+
+*À vérifier sur un vrai téléphone : le parcours e2e trace la tournée jusqu'à Padoue, mais à ce stade la bourse ne couvre pas la commande, donc la ville ne s'allume pas ; le chemin « ville allumée → dock → Partir » est couvert par les tests unitaires (`test/round.test.tsx`, `packages/engine/test/empire/round.test.ts`), pas encore par un parcours complet.*

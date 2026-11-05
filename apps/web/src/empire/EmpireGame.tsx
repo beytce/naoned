@@ -44,11 +44,15 @@ import { OrdersPanel } from "./map/OrdersPanel.js";
 import { type PlaceId, PlaceTabs } from "./map/PlaceTabs.js";
 import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
+import { RoundDock } from "./map/RoundDock.js";
+import type { RoundDraft } from "./map/RoundDraw.js";
 import { Trips } from "./map/Trips.js";
 import { VehiclePanel } from "./map/VehiclePanel.js";
 import { WorkshopDock } from "./map/WorkshopDock.js";
 import { measureBand } from "./map/band.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
+import { planRound } from "./map/round.js";
+import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
 import { BattleScreen } from "./porta/Battle.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
@@ -148,6 +152,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     return () => clearTimeout(t);
   }, [sent]);
   const [aiming, setAiming] = useState(false);
+  // The round drawn by finger (the gameplay audit, P1).
+  const [round, setRound] = useState<RoundDraft | null>(null);
   const map = useRef<EmpireMapHandle>(null);
   useAwayRecap(p);
   // The screen's useful band (map/band.ts), measured after each change of what covers it.
@@ -350,6 +356,18 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       if (v) setSent({ id: v.id, name: t.vehicleNames[v.type] ?? v.type });
     });
   };
+  /** A round drawn by finger, sent: its towns' orders loaded, the vehicle off at once. */
+  const goRound = (r: RoundDraft) => {
+    setRound(null);
+    const plan = planRound(p, r.vehicleId, r.cities);
+    if (plan.stops.length === 0 || !plan.vehicle) return;
+    const v = plan.vehicle;
+    void act({
+      type: "empireRound",
+      vehicleId: r.vehicleId,
+      stops: plan.stops.map(({ city, orderIds }) => ({ city, orderIds })),
+    }).then(() => setSent({ id: v.id, name: t.vehicleNames[v.type] ?? v.type }));
+  };
   const join = async () => {
     setBusy(true);
     try {
@@ -509,6 +527,12 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onDomain={setDomain}
         chosenWorkshop={target?.kind === "workshop" ? target.id : null}
         road={target?.kind === "city" ? road : null}
+        round={round}
+        onRound={(r) => {
+          if (r) setTarget(null);
+          setRound(r);
+        }}
+        onRoundGo={goRound}
       />
 
       <Hud p={p} name={account.pseudo ?? t.title} onHouse={() => setSheet("house")} />
@@ -555,15 +579,28 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         id={
           placing
             ? "placing"
-            : target
-              ? `panel:${target.kind}`
-              : domain
-                ? `domain:${domain}`
-                : "idle"
+            : round && !round.drawing && round.cities.length > 0
+              ? "round"
+              : target
+                ? `panel:${target.kind}`
+                : domain
+                  ? `domain:${domain}`
+                  : "idle"
         }
         hidden={sheet !== null || good !== null}
       >
-        {placing ? (
+        {round && !round.drawing && round.cities.length > 0 && !placing ? (
+          <div className="flex w-full flex-col items-center">
+            <RoundDock
+              p={p}
+              round={round}
+              busy={busy}
+              onGo={() => goRound(round)}
+              onCancel={() => setRound(null)}
+            />
+            {placeTabs}
+          </div>
+        ) : placing ? (
           <PlacingBar
             p={p}
             placing={placing}
@@ -663,6 +700,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
                 onCity={(code) => setTarget({ kind: "city", code })}
                 onCasa={() => setSheet("casa")}
                 onDeliver={deliver}
+                drawn={MAP_3D}
               />
             )}
             {placeTabs}
