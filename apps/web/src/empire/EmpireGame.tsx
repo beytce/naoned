@@ -616,6 +616,16 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               act={act}
               onBack={() => map.current?.leave()}
               onProduction={() => setSheet("production")}
+              onCasa={() => setSheet("casa")}
+              guided={tutorial}
+              // The quay (the refonte claire, lot 3): the Remise once it stands, else the
+              // Production's vehicles, which say where to put it.
+              onQuay={() => setSheet(view.map.depot ? "remise" : "production:vehicles")}
+              onArms={
+                porta && portaCasa === null && (porta.site || porta.cell)
+                  ? () => setSheet("arms")
+                  : undefined
+              }
             />
             {placeTabs}
           </div>

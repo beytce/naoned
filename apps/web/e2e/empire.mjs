@@ -304,7 +304,7 @@ try {
       await page.keyboard.press("Escape");
       await page.waitForTimeout(400);
     }
-    await page.locator("[data-production]").click();
+    await page.locator("[data-fondaco-door=build]").click();
     await page.waitForSelector('[aria-modal="true"]');
     await page.waitForTimeout(450);
     await assertSheetHead(page).catch((e) => faults.push(`${label} 5-production: ${e.message}`));
@@ -418,7 +418,7 @@ try {
     // A counter put down from the Production: the cells light up, one is picked, it is put. On
     // the 3D board, the Production is in the domain.
     if (MAP3D) await press("[data-region=veneto]");
-    await page.locator("[data-production]").click();
+    await page.locator("[data-fondaco-door=build]").click();
     await page.locator("[data-place=post] button").click();
     await page.locator("[data-placing-bar=post]").waitFor();
     await page.waitForTimeout(700);
