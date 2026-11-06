@@ -17,7 +17,11 @@ Proposition visible au laboratoire (`?lab=porcellana&vue=porta`, `&vue=bataille`
 
 Les règles ne bougent pas : le moteur joue la bataille comme aujourd'hui (`packages/engine/src/empire/porta/`), seuls le dessin et la mise en scène changent.
 
-## Lots proposés (après validation)
+## Décision
+
+Validée par le porteur le 6 novembre 2026 (« C'est exactement ce que je souhaite ») : les reliques gardent leurs quatre couleurs (sable, vert, bleu, or ; `RARITY_HEX`), la taille des pions est la bonne.
+
+## Lots
 
 | Lot | Contenu |
 |---|---|
@@ -31,3 +35,13 @@ Les règles ne bougent pas : le moteur joue la bataille comme aujourd'hui (`pack
 
 - **Les gemmes de rareté** gardent quatre couleurs (sable, vert, bleu, or) : ce sont les seules couleurs des terres avec le rouge. On peut aussi les dire par la forme seule (losange, double losange…) et rester monochrome.
 - **La taille des pions** face aux bâtiments : ici à peu près la moitié d'une maison, lisibles en vue d'ensemble.
+
+## État
+
+| Lot | État |
+|---|---|
+| P1 | fait : `roster.ts` réduit au rôle → pièce (`piece`, `mount`, `crew`, `banner`, `torch`) ; `Pawn.tsx` monte la pièce tournée, son chariot et son équipage, sa bannière ou sa torche ; gestes par transformations (balancement en marchant, penché pour frapper, recul, chute, saut de joie) ; `figureOf(role)` pour un plateau |
+| P2 | fait : le plateau du laboratoire devient `porcellana/TileBoard.tsx`, partagé (laboratoire, Porta, armes) ; il sait mettre en avant plusieurs places (`marked`), viser un point (`goTo`, `goZoom`) et laisser la place d'un dock en bas (`inset`) ou à droite (`insetRight`). La place de la Porta (`porta/board.ts`, `portaSpec`) : six paliers toujours visibles (ceux que la Porta n'offre pas encore fermés), la Porta, la Porta noire, l'antiquaire et ses coffres, l'équipage au quai, la route rouge du quai à la porte ; repères de la Carte ; sur ordinateur le dock à droite |
+| P3 | fait : les armes (`armsSpec`) : la Remise au fond, chaque véhicule sur son socle, ses emplacements en disques de la couleur de leur genre et en repères (`extra`) |
+| P4 | fait : l'île de bataille en cases carrées de biscuit (instanciées), bosquets, rochers et pics du kit, villes du catalogue et coffres de reliques, la Porta de la maison ; la carte de bataille tournée d'un huitième de tour (`chart.ts`) pour que la caméra de la carte voie les cases en losange comme la Carte, sans toucher aux calques HTML ni aux gestes ; la lumière, les ombres et l'occlusion de la Carte (`Stage`, à l'échelle de l'île) ; anneaux fins (vie en encre, Rome en rouge) ; interface : carte blanche du palier, fermeture en pastille d'encre, unités en pilules à anneau de vie, composants en touches blanches |
+| P5 | fait : `map3d/kit.tsx`, `life.tsx`, `anchors.tsx` retirés ; e2e `porta.mjs` en 1440×900 (`SIZE`) et 390×844 |

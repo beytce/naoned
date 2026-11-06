@@ -199,7 +199,7 @@ function Field({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-[#16263E]" data-battle={battle.id}>
+    <div className="fixed inset-0 z-50 overflow-hidden bg-[#E3D9CB]" data-battle={battle.id}>
       <div ref={root} className="absolute inset-0 touch-none select-none">
         <Guard3D onFail={onFail}>
           <Suspense fallback={null}>
@@ -221,7 +221,7 @@ function Field({
                   e.stopPropagation();
                   moveTo(c.x, c.y);
                 }}
-                className="pointer-events-auto flex min-h-11 min-w-11 items-end justify-center gap-1 rounded-full px-1 pb-1"
+                className="pointer-events-auto flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-full bg-white px-2.5 shadow-[0_3px_0_rgb(23_21_15/0.18)]"
                 aria-label={pt.cityRelics(relicsOf(c))}
               >
                 {relicsOf(c).length === 0 ? (
@@ -231,7 +231,7 @@ function Field({
                     <span
                       // biome-ignore lint/suspicious/noArrayIndexKey: relics of a rarity are alike
                       key={i}
-                      className="h-3 w-3 rounded-sm shadow-md shadow-black/60 ring-1 ring-night"
+                      className="h-3 w-3 rotate-45 rounded-[2px]"
                       style={{ background: RARITY_HEX[k] }}
                     />
                   ))
@@ -240,7 +240,7 @@ function Field({
             </Pinned>
           ))}
           <Pinned battle={battle} x={battle.gate.x} y={battle.gate.y} lift={-70}>
-            <span className="rounded-full bg-night/85 px-2.5 py-0.5 font-place text-sm font-black leading-tight text-cream ring-1 ring-edge shadow-lg">
+            <span className="rounded-full bg-white px-3 py-1 font-place text-sm font-black leading-tight text-cream shadow-[0_3px_0_rgb(23_21_15/0.18)]">
               {pt.gate}
             </span>
           </Pinned>
@@ -250,7 +250,7 @@ function Field({
       </div>
 
       <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="glass pointer-events-auto flex min-w-0 max-w-[16rem] flex-1 flex-col gap-1 rounded-2xl px-3 py-2">
+        <div className="hud-bar pointer-events-auto flex min-w-0 max-w-[18rem] flex-1 flex-col gap-1 rounded-[1.75rem] px-5 py-4">
           <p className="font-place text-sm font-black leading-tight text-cream-dim">
             {pt.tier(battle.tier)}
           </p>
@@ -258,10 +258,13 @@ function Field({
           <p className="text-xs text-cream-dim">{sel ? pt.moveHint : pt.selectHint}</p>
         </div>
         <div
-          className={`rounded-2xl px-3 py-1 text-center shadow-lg shadow-black/40 ${closing ? "bg-vermilion text-cream" : "bg-night/80 text-cream"}`}
+          className={`rounded-full px-6 py-2 text-center text-white ${closing ? "bg-face shadow-[0_4px_0_rgb(var(--face-deep))]" : "bg-[#17150F] shadow-[0_4px_0_#000]"}`}
         >
-          <p className="text-xs uppercase tracking-wider opacity-80">{pt.timer}</p>
-          <p className="font-display text-2xl font-extrabold tabular-nums" data-battle-timer>
+          <p className="text-[0.6875rem] font-bold opacity-80">{pt.timer}</p>
+          <p
+            className="font-display text-2xl font-black leading-none tabular-nums"
+            data-battle-timer
+          >
             {clock(left)}
           </p>
         </div>
@@ -270,7 +273,7 @@ function Field({
         </div>
       </header>
 
-      <footer className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-night via-night/90 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6">
+      <footer className="absolute inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 mx-auto max-w-3xl rounded-[1.75rem] bg-white p-2.5 shadow-[0_4px_0_rgb(23_21_15/0.07),0_14px_40px_rgb(23_21_15/0.12)]">
         {battle.over || allOut ? (
           <div className="flex items-center justify-between gap-3" data-battle-over>
             <p className="text-sm text-cream">{battle.over ? pt.over : pt.out}</p>
@@ -438,47 +441,68 @@ function UnitCard({
   const loading = u.loading
     ? Math.max(0, Math.min(1, 1 - (u.loading.doneAt - t) / loadMs(u.loading.rarity)))
     : null;
+  const R = 27;
+  const C = 2 * Math.PI * R;
   return (
     <button
       type="button"
       onClick={onChoose}
       disabled={u.outcome !== "in"}
       data-battle-unit={u.id}
-      className={`min-h-[3.25rem] min-w-0 flex-1 rounded-xl border px-2.5 py-1.5 text-left disabled:opacity-70 ${chosen ? "border-info bg-info/10" : "border-line bg-night/80"}`}
+      className={`flex min-h-[3.5rem] min-w-0 flex-1 items-center gap-2.5 rounded-full py-1.5 pl-1.5 pr-4 text-left transition active:translate-y-0.5 disabled:opacity-60 ${chosen ? "ink-pill" : "bg-night-4 text-cream"}`}
     >
-      <span className="flex items-center justify-between gap-2 text-xs font-semibold text-cream">
-        <span>{u.role === "combat" ? pt.combat : pt.transport}</span>
-        <span className="tabular-nums text-cream-dim">
-          {u.hp}/{u.maxHp}
-        </span>
-      </span>
-      <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-night-4">
-        <span
-          className="block h-full rounded-full"
-          style={{
-            width: `${share * 100}%`,
-            // Cream while it holds, cinnabar when it is low: never the gold of « yours to do ».
-            background: share > 0.3 ? "rgb(var(--cream))" : "rgb(var(--vermilion))",
-          }}
+      <svg width="42" height="42" viewBox="0 0 64 64" className="shrink-0" aria-hidden="true">
+        <circle cx="32" cy="32" r={R} fill="#fff" />
+        <circle cx="32" cy="32" r={R} fill="none" stroke="#DDD7CD" strokeWidth="6" />
+        <circle
+          cx="32"
+          cy="32"
+          r={R}
+          fill="none"
+          stroke={share > 0.6 ? "#17150F" : "#C23B2E"}
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={`${(C * share).toFixed(1)} ${C.toFixed(1)}`}
+          transform="rotate(-90 32 32)"
         />
-      </span>
-      {u.role === "transport" && (
-        <span className="mt-1 flex items-center gap-1 text-xs text-cream-dim">
-          {Array.from({ length: u.capacity }, (_, i) => (
-            <span
-              // biome-ignore lint/suspicious/noArrayIndexKey: the places of the hold
-              key={i}
-              className="h-3 w-3 rounded-sm ring-1 ring-line"
-              style={{ background: u.cargo[i] ? RARITY_HEX[u.cargo[i] as Rarity] : "transparent" }}
-            />
-          ))}
-          {loading !== null && u.loading && (
-            <span className="ml-1 tabular-nums" style={{ color: RARITY_HEX[u.loading.rarity] }}>
-              {Math.round(loading * 100)} %
-            </span>
-          )}
+        {loading !== null && u.loading && (
+          <circle
+            cx="32"
+            cy="32"
+            r="14"
+            fill="none"
+            stroke={RARITY_HEX[u.loading.rarity]}
+            strokeWidth="6"
+            strokeDasharray={`${(88 * loading).toFixed(1)} 88`}
+            transform="rotate(-90 32 32)"
+          />
+        )}
+      </svg>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="truncate font-display text-sm font-extrabold">
+            {u.role === "combat" ? pt.combat : pt.transport}
+          </span>
+          <span className={`text-xs tabular-nums ${chosen ? "opacity-80" : "text-cream-dim"}`}>
+            {u.hp}/{u.maxHp}
+          </span>
         </span>
-      )}
+        {u.role === "transport" && (
+          <span className="mt-1 flex items-center gap-1.5">
+            {Array.from({ length: u.capacity }, (_, i) => (
+              <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: the places of the hold
+                key={i}
+                className="h-2.5 w-2.5 rotate-45 rounded-[2px]"
+                style={{
+                  background: u.cargo[i] ? RARITY_HEX[u.cargo[i] as Rarity] : "transparent",
+                  boxShadow: u.cargo[i] ? "none" : "inset 0 0 0 1.5px #DDD7CD",
+                }}
+              />
+            ))}
+          </span>
+        )}
+      </span>
     </button>
   );
 }
@@ -506,13 +530,13 @@ function ActiveButton({
       onClick={onPress}
       data-battle-active={a.effect}
       aria-label={pt.component[a.effect] ?? a.effect}
-      className={`relative flex h-14 w-[4.5rem] flex-col items-center justify-center rounded-2xl px-1 text-xs font-semibold leading-tight shadow-lg shadow-black/50 ${on ? "bg-lagoon text-on-lagoon" : "bg-night-3 text-cream ring-1 ring-info/70"}`}
+      className={`relative flex h-14 w-[4.75rem] flex-col items-center justify-center rounded-[1.25rem] px-1 font-display text-xs font-extrabold leading-tight transition active:translate-y-0.5 ${on ? "bg-face text-white shadow-[0_4px_0_rgb(var(--face-deep))]" : "bg-white text-cream shadow-[inset_0_0_0_1.5px_rgb(var(--line)),0_3px_0_rgb(23_21_15/0.08)]"}`}
     >
       {cooling && (
         <span
           className="absolute inset-0 rounded-2xl"
           style={{
-            background: "conic-gradient(rgb(0 0 0 / 0.55) var(--k), transparent 0)",
+            background: "conic-gradient(rgb(23 21 15 / 0.2) var(--k), transparent 0)",
             ["--k" as string]: `${Math.min(100, (wait / 45_000) * 100)}%`,
           }}
         />

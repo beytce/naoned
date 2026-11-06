@@ -29,9 +29,17 @@ export interface StageProps {
   plain?: boolean;
   /** The background (the lands of Rome take their biscuit). */
   background?: string;
+  /** The world's scale against the kit's (a battle's chart is larger): the shadows reach it all. */
+  scale?: number;
 }
 
-export function Stage({ target, phone = false, plain = false, background = COL.bg }: StageProps) {
+export function Stage({
+  target,
+  phone = false,
+  plain = false,
+  background = COL.bg,
+  scale = 1,
+}: StageProps) {
   const { gl, scene, camera, size } = useThree();
   const sun = useRef<DirectionalLight>(null);
 
@@ -81,7 +89,7 @@ export function Stage({ target, phone = false, plain = false, background = COL.b
     const s = sun.current;
     if (s) {
       const [ox, oy, oz] = LIGHT.sun.offset;
-      s.position.set(target.x + ox, oy, target.z + oz);
+      s.position.set(target.x + ox * scale, oy * scale, target.z + oz * scale);
       s.target.position.copy(target);
       s.target.updateMatrixWorld();
     }
@@ -90,7 +98,7 @@ export function Stage({ target, phone = false, plain = false, background = COL.b
   }, 1);
 
   const map = phone ? LIGHT.shadow.mapPhone : LIGHT.shadow.mapDesk;
-  const e = LIGHT.shadow.extent;
+  const e = LIGHT.shadow.extent * scale;
   return (
     <>
       <hemisphereLight args={[LIGHT.hemi.sky, LIGHT.hemi.ground, LIGHT.hemi.intensity]} />
@@ -105,7 +113,7 @@ export function Stage({ target, phone = false, plain = false, background = COL.b
         shadow-camera-top={e}
         shadow-camera-bottom={-e}
         shadow-camera-near={1}
-        shadow-camera-far={120}
+        shadow-camera-far={120 * scale}
         shadow-bias={LIGHT.shadow.bias}
         shadow-normalBias={LIGHT.shadow.normalBias}
         shadow-radius={LIGHT.shadow.radius}
@@ -115,8 +123,8 @@ export function Stage({ target, phone = false, plain = false, background = COL.b
         intensity={LIGHT.fill.intensity}
         position={LIGHT.fill.position}
       />
-      <mesh rotation-x={-Math.PI / 2} position-y={LIGHT.catcher.y} receiveShadow>
-        <planeGeometry args={[400, 400]} />
+      <mesh rotation-x={-Math.PI / 2} position-y={LIGHT.catcher.y * scale} receiveShadow>
+        <planeGeometry args={[400 * scale, 400 * scale]} />
         <shadowMaterial opacity={LIGHT.catcher.opacity} />
       </mesh>
     </>

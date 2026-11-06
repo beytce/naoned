@@ -22,32 +22,36 @@ import {
 } from "react";
 import {
   CircleGeometry,
-  Color,
   DoubleSide,
   Group,
+  InstancedMesh,
   MeshBasicMaterial,
+  MeshStandardMaterial,
+  Object3D,
   type OrthographicCamera,
   RingGeometry,
   SphereGeometry,
   TorusGeometry,
   Vector3,
 } from "three";
-import { C } from "../../art/plateau/props.js";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { Pawn as Figure } from "../../porcellana/Pawn.js";
 import type { FigureHandle } from "../../porcellana/Pawn.js";
+import { Stage } from "../../porcellana/Stage.js";
+import { bake } from "../../porcellana/bake.js";
 import { createPalette } from "../../porcellana/materials.js";
 import { mountain, rocks } from "../../porcellana/models/decor.js";
+import { grove } from "../../porcellana/models/ground.js";
 import { porta } from "../../porcellana/models/places.js";
+import { chest } from "../../porcellana/models/porta.js";
 import { town } from "../../porcellana/models/towns.js";
 import { mule } from "../../porcellana/models/vehicles.js";
-import { tree } from "../../porcellana/shapes.js";
+import { BOARD } from "../../porcellana/tokens.js";
 import { DISTANCE, orthoFrom } from "../map3d/camera.js";
-import { Instanced, clay as clayShared, claySolid, hexSlab } from "../map3d/kit.js";
-import { Smoke, useWater } from "../map3d/life.js";
 import { Pace } from "../map3d/pace.js";
 import { roleOf } from "../map3d/roster.js";
-import { CASE, extentOf, fromChart, toChart } from "./chart.js";
+import { CASE, TURN, extentOf, fromChart, toChart } from "./chart.js";
 import { RARITY_HEX, ROME_DUSK } from "./colours.js";
 
 /** The transports' mules, in the house's porcelain. */
@@ -55,42 +59,59 @@ const MULE_PALETTE = createPalette();
 /** The lands of Rome in biscuit (D5): their towns, their gate, their dressing. */
 const BISCUIT = createPalette({ biscuit: true });
 const GATE_OF_ROME = (() => {
-  const g = porta(BISCUIT, { seed: 0, running: true }).group;
-  g.scale.setScalar(1.5);
+  const g = porta(MULE_PALETTE, { seed: 0, running: true }).group;
+  g.scale.setScalar(CASE / (BOARD.tile + BOARD.gap));
   g.position.z = 0.6;
   return g;
 })();
-const TEMPLATES = new Map<string, Group>();
-/** A piece of the island's dressing, by the kit's name of before, at its scale. */
-function dressingModel(name: string, s: number): Group {
-  let t = TEMPLATES.get(name);
-  if (!t) {
-    if (name.startsWith("pine")) {
-      t = new Group();
-      tree(BISCUIT, t, 0, 0, 1, name === "pineA" ? "fir" : "cypress");
-    } else if (name.startsWith("mountain"))
-      t = mountain(BISCUIT, { seed: 3, running: false }).group;
-    else t = rocks(BISCUIT, { seed: name.length, running: false }).group;
-    TEMPLATES.set(name, t);
-  }
-  const g = t.clone();
-  // The kit's models were a unit across; Porcellana's a tile (6) for the peaks and rocks.
-  g.scale.setScalar(name.startsWith("pine") ? s / 1.2 : s / 6);
-  return g;
+/** The kit's tile against a case of the battle: the island's pieces are the Carte's, larger. */
+const K = CASE / (BOARD.tile + BOARD.gap);
+/** A tile of the island, rounded like the Carte's, in biscuit. */
+const TILE_GEO = new RoundedBoxGeometry(
+  BOARD.tile * K,
+  BOARD.thick * K,
+  BOARD.tile * K,
+  3,
+  BOARD.radius * K,
+);
+TILE_GEO.translate(0, (-BOARD.thick * K) / 2, 0);
+const GROUND = BISCUIT.m("ground");
+/** A tile's dressing at the Carte's scale: a grove, rocks, a peak, by the battle's draw. */
+function dressingOf(kind: "grove" | "rocks" | "mount" | "few", seed: number): Group {
+  const o = { seed, running: false };
+  const g =
+    kind === "rocks"
+      ? rocks(BISCUIT, o).group
+      : kind === "mount"
+        ? mountain(BISCUIT, o).group
+        : grove(BISCUIT, seed, kind === "few" ? 2 : 5, ["cypress", "round"]).group;
+  const root = new Group();
+  root.add(g);
+  bake(root);
+  root.scale.setScalar(K);
+  return root;
 }
+/** The gems' materials, one per colour. */
+const GEMS = new Map<string, MeshStandardMaterial>();
+const gem = (hex: string) => {
+  let m = GEMS.get(hex);
+  if (!m) {
+    m = new MeshStandardMaterial({ color: hex, roughness: 0.4 });
+    GEMS.set(hex, m);
+  }
+  return m;
+};
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
 
 export { CASE, RARITY_HEX, extentOf, fromChart, toChart };
 
-const SLAB = 2.4;
 /** The figurines are drawn this much larger than on the board: a battle is read from afar. */
 const FIG = 2.2;
 /**
  * The units drawn this much larger again on the island (audit of 4 November, 3D B2 and UI U-13):
  * about 28 px high at the battle's first framing on a phone, above the pines.
  */
-const UNIT = 1.9;
-const TILE_R = CASE / Math.sqrt(3);
+const UNIT = 1.4;
 
 export interface Battle3DHandle {
   view(cam: Camera, v: Viewport): void;
@@ -113,70 +134,40 @@ function rng(seed: number) {
   };
 }
 
-/** The island's tiles: the lattice's points within the disc (land) and a ring beyond (sea). */
+/** The island's tiles: the square lattice's cells within the disc, each with its dressing. */
 function islandOf(b: BattleSnapshot) {
-  const land: { x: number; z: number }[] = [];
-  const sea: { x: number; z: number }[] = [];
-  const n = Math.ceil(b.radius) + 3;
-  for (let r = -n; r <= n; r++)
-    for (let q = -n; q <= n; q++) {
-      const x = q + r / 2;
-      const y = (r * Math.sqrt(3)) / 2;
-      const d = Math.hypot(x, y);
-      const [X, Z] = toChart(b, x, y);
-      if (d <= b.radius + 0.35) land.push({ x: X, z: Z });
-      else if (d <= b.radius + 2.2) sea.push({ x: X, z: Z });
-    }
-  return { land, sea };
-}
-
-/** What dresses the island: pines, olives, rocks, ruins, hills, kept off the towns and the gate. */
-/** The island's dressing, by the names of the kit of before (Porcellana's models now). */
-type DressName = "pineA" | "pineB" | "rockA" | "rockC" | "mountainA";
-
-function dressingOf(b: BattleSnapshot) {
   const r = rng(seedOf(b.id));
-  const out: { name: DressName; x: number; z: number; s: number; rot: number }[] = [];
   const clear = [b.gate, ...b.cities];
-  // Half as much as before, and lower than the units (audit of 4 November, 3D B2): the island
-  // dressed, never hiding who fights.
-  const n = Math.round(b.radius * b.radius * 0.55);
-  for (let i = 0; i < n; i++) {
-    const d = Math.sqrt(r()) * (b.radius - 0.2);
-    const a = r() * Math.PI * 2;
-    const x = d * Math.cos(a);
-    const y = d * Math.sin(a);
-    if (clear.some((c) => Math.hypot(c.x - x, c.y - y) < 1.4)) continue;
-    const k = r();
-    const name: DressName =
-      k < 0.42
-        ? "pineA"
-        : k < 0.62
-          ? "pineB"
-          : k < 0.82
-            ? "rockA"
-            : k < 0.92
-              ? "rockC"
-              : "mountainA";
-    const [X, Z] = toChart(b, x, y);
-    const s =
-      name === "mountainA"
-        ? 6 + r() * 2
-        : name.startsWith("pine")
-          ? 2.6 + r() * 0.8
-          : 2 + r() * 1.2;
-    out.push({ name, x: X, z: Z, s, rot: r() * Math.PI * 2 });
-  }
-  return out;
+  const tiles: { X: number; Z: number; dress: Group | null }[] = [];
+  const n = Math.ceil(b.radius) + 1;
+  for (let y = -n; y <= n; y++)
+    for (let x = -n; x <= n; x++) {
+      if (Math.hypot(x, y) > b.radius + 0.35) continue;
+      const [X, Z] = toChart(b, x, y);
+      const near = clear.some((c) => Math.hypot(c.x - x, c.y - y) < 1.3);
+      const k = r();
+      // Sparse, as on the Carte: most tiles bare, a grove here, rocks there, a peak at the rim.
+      const kind = near
+        ? null
+        : k < 0.16
+          ? "grove"
+          : k < 0.24
+            ? "rocks"
+            : k < 0.28 && Math.hypot(x, y) > b.radius - 1.5
+              ? "mount"
+              : k < 0.46
+                ? "few"
+                : null;
+      tiles.push({ X, Z, dress: kind ? dressingOf(kind, Math.floor(r() * 997)) : null });
+    }
+  return tiles;
 }
 
-const tileTop = hexSlab(TILE_R - 0.35, SLAB, 0.6);
-const seaBed = hexSlab(TILE_R - 0.15, 2, 0.2);
-const ring = new RingGeometry(0.9, 1.15, 40, 1);
+const ring = new RingGeometry(0.94, 1.04, 48, 1);
 ring.rotateX(-Math.PI / 2);
 /** A health ring for each tenth of it, from the top, clockwise. */
 const HP = Array.from({ length: 11 }, (_, i) => {
-  const g = new RingGeometry(0.9, 1.15, 40, 1, Math.PI / 2, -Math.PI * 2 * Math.max(0.001, i / 10));
+  const g = new RingGeometry(0.9, 1.08, 48, 1, Math.PI / 2, -Math.PI * 2 * Math.max(0.001, i / 10));
   g.rotateX(-Math.PI / 2);
   return g;
 });
@@ -184,7 +175,7 @@ const disc = new CircleGeometry(1, 40);
 disc.rotateX(-Math.PI / 2);
 const ball = new SphereGeometry(0.35, 10, 8);
 const bubble = new SphereGeometry(1, 20, 14);
-const halo = new TorusGeometry(1, 0.09, 6, 36);
+const halo = new TorusGeometry(1, 0.05, 6, 48);
 // The relic's loading, clockwise from the top, by fortieths (made at their first use, then kept).
 const rings = new Map<number, RingGeometry>();
 const loadingRing = (steps: number) => {
@@ -202,7 +193,7 @@ halo.rotateX(Math.PI / 2);
  * 3D M1): a material made at each render is never freed by React Three Fiber.
  */
 /** Rome's one red, the interface's cinnabar (audit of 4 November, UI U-13). */
-const ROME = "#FF8070";
+const ROME = "#C23B2E";
 const glows = new Map<string, MeshBasicMaterial>();
 const glow = (hex: string, opacity: number) => {
   const key = `${hex}/${opacity}`;
@@ -220,19 +211,19 @@ const glow = (hex: string, opacity: number) => {
   return m;
 };
 const M = {
-  gold: glow(C.gold, 0.9),
-  goldSoft: glow(C.gold, 0.25),
+  gold: glow("#17150F", 0.35),
+  goldSoft: glow("#17150F", 0.08),
   vision: glow(ROME, 0.12),
   reach: glow(ROME, 0.1),
   shield: glow("#9FE7FF", 0.28),
   smoke: glow("#C9D2DE", 0.55),
   heal: glow("#6EE0B8", 0.45),
-  hpBack: glow("#0E1A2B", 0.55),
-  blob: glow("#08111F", 0.38),
+  hpBack: glow("#FFFFFF", 0.75),
+  blob: glow("#3A2E22", 0.16),
   // The vehicle chosen, ringed in lapis (a choice, never gold: UI U-1).
-  chosen: glow("#6EC8F5", 0.95),
-  hpMine: glow("#6EE0B8", 0.95),
-  hpAlly: glow("#6EC8F5", 0.95),
+  chosen: glow("#C23B2E", 0.95),
+  hpMine: glow("#17150F", 0.95),
+  hpAlly: glow("#3C8FC4", 0.95),
   hpRome: glow(ROME, 0.95),
   bolt: new MeshBasicMaterial({ color: "#F7EBD0" }),
   iron: new MeshBasicMaterial({ color: "#2A2F36" }),
@@ -366,8 +357,7 @@ const Battle3D = memo(
         orthographic
         camera={{ near: 1, far: 2000, position: [0, DISTANCE, DISTANCE] }}
         gl={{ antialias: true, powerPreference: "high-performance", stencil: false }}
-        onCreated={({ scene, camera: c }) => {
-          scene.background = new Color(ROME_DUSK.sky);
+        onCreated={({ camera: c }) => {
           camera.current = c as OrthographicCamera;
           apply();
         }}
@@ -375,9 +365,13 @@ const Battle3D = memo(
       >
         {/* A battle of ten minutes at 30 frames a second, not 60: the phone keeps cool. */}
         <Pace fps={live ? 30 : 0} rest={30} />
-        {/* The lands of Rome at dusk (the refonte claire, lot 4). */}
-        <hemisphereLight args={[ROME_DUSK.hemiSky, ROME_DUSK.hemiGround, 1.1]} />
-        <directionalLight position={[-70, 80, -60]} intensity={2.4} color={ROME_DUSK.sun} />
+        {/* The Carte's light, shadows and occlusion, over the lands of Rome in biscuit. */}
+        <Stage
+          target={centre(battle)}
+          plain={!live}
+          background={ROME_DUSK.sky}
+          scale={((battle.radius + 2) * CASE) / 36}
+        />
         <Suspense fallback={null}>
           <Island battle={battle} live={live} />
           <Units battle={battle} tracks={tracks} selected={selected} live={live} />
@@ -396,54 +390,48 @@ function Ready({ onReady }: { onReady?: () => void }) {
   return null;
 }
 
-/** The island: its tiles, its lagoon, its dressing, its towns, its gate (drawn once a battle). */
+/** The island's middle on the chart: where the sun aims. */
+const centres = new Map<string, Vector3>();
+function centre(b: BattleSnapshot): Vector3 {
+  let v = centres.get(b.id);
+  if (!v) {
+    const [X, Z] = toChart(b, 0, 0);
+    v = new Vector3(X, 0, Z);
+    centres.set(b.id, v);
+  }
+  return v;
+}
+
+/** The island: its square tiles of biscuit, their dressing, its towns, its gate (once a battle). */
 function Island({ battle, live }: { battle: BattleSnapshot; live: boolean }) {
-  const water = useWater(live);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the island is the battle's, by its id
-  const { land, sea, decor } = useMemo(() => {
-    const { land: l, sea: s } = islandOf(battle);
-    return { land: l, sea: s, decor: dressingOf(battle) };
-  }, [battle.id]);
-  const groups = useMemo(() => {
-    const g = new Map<DressName, { x: number; y: number; z: number; s: number; rot: number }[]>();
-    for (const d of decor) {
-      const list = g.get(d.name) ?? [];
-      list.push({ x: d.x, y: 0, z: d.z, s: d.s, rot: d.rot });
-      g.set(d.name, list);
-    }
-    return [...g.entries()];
-  }, [decor]);
-  const [cx, cz] = toChart(battle, 0, 0);
-  const lagoon = useMemo(() => {
-    const g = new CircleGeometry((battle.radius + 2.6) * CASE, 48);
-    g.rotateX(-Math.PI / 2);
-    return g;
-  }, [battle.radius]);
+  const tiles = useMemo(() => islandOf(battle), [battle.id]);
+  const mesh = useMemo(() => {
+    const m = new InstancedMesh(TILE_GEO, GROUND, tiles.length);
+    const o = new Object3D();
+    tiles.forEach((x, i) => {
+      o.position.set(x.X, 0, x.Z);
+      o.rotation.y = TURN;
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+    });
+    m.castShadow = true;
+    m.receiveShadow = true;
+    return m;
+  }, [tiles]);
   return (
     <group>
-      <Instanced
-        geo={tileTop}
-        items={land.map((t) => ({ x: t.x, y: 0, z: t.z, s: 1, rot: 0 }))}
-        material={claySolid(ROME_DUSK.earth)}
-      />
-      <Instanced
-        geo={seaBed}
-        items={sea.map((t) => ({ x: t.x, y: -3, z: t.z, s: 1, rot: 0 }))}
-        material={claySolid(ROME_DUSK.deep)}
-        cast={false}
-      />
-      <mesh geometry={lagoon} material={water} position={[cx, -1.6, cz]} />
-      {/* The dressing in Porcellana (D6): firs, rocks, peaks of the biscuit. */}
-      {groups.flatMap(([name, items]) =>
-        items.map((it, i) => (
+      <primitive object={mesh} />
+      {tiles.map((x, i) =>
+        x.dress ? (
           <primitive
-            // biome-ignore lint/suspicious/noArrayIndexKey: the dressing's items are drawn once
-            key={`${name}${i}`}
-            object={dressingModel(name, it.s)}
-            position={[it.x, 0, it.z]}
-            rotation-y={it.rot}
+            // biome-ignore lint/suspicious/noArrayIndexKey: the island is drawn once
+            key={i}
+            object={x.dress}
+            position={[x.X, 0, x.Z]}
+            rotation-y={TURN}
           />
-        )),
+        ) : null,
       )}
       {battle.cities.map((c) => (
         <Town key={c.id} battle={battle} city={c} live={live} />
@@ -480,22 +468,17 @@ function Town({
   return (
     <group position={[X, 0, Z]}>
       {/* A town of Rome in Porcellana's biscuit (D5, D6), fallen once it has burnt. */}
-      <primitive object={houses} scale={[1.7, burnt ? 0.45 : 1.7, 1.7]} />
+      <primitive object={houses} scale={[K, burnt ? K * 0.3 : K, K]} rotation-y={TURN} />
 
-      {/* Its chests of relics, one for each, in the colour of its rarity. */}
-      {chests.map((k, i) => {
-        const a = (i / Math.max(1, chests.length)) * Math.PI * 2;
-        return (
-          <mesh
-            // biome-ignore lint/suspicious/noArrayIndexKey: chests of a rarity are alike
-            key={i}
-            position={[Math.cos(a) * 2.4, 0.7, Math.sin(a) * 2.4 + 3]}
-            material={claySolid(RARITY_HEX[k])}
-          >
-            <boxGeometry args={[1.5, 1.4, 1.1]} />
-          </mesh>
-        );
-      })}
+      {/* Its chests of relics, one for each, a gem of its rarity's colour on the lid. */}
+      {chests.map((k, i) => (
+        <Chest
+          // biome-ignore lint/suspicious/noArrayIndexKey: chests of a rarity are alike
+          key={i}
+          hex={RARITY_HEX[k]}
+          at={[(i % 4) * 1.6 - 2.4, 0, 5.2 + Math.floor(i / 4) * 1.3]}
+        />
+      ))}
       {/* Its reach for loading: a faint ring on the ground. */}
       <mesh geometry={ring} material={M.goldSoft} scale={CASE} position-y={0.05} />
       {burnt && <Smoke at={[0, 3.5, 0]} live={live} />}
@@ -508,16 +491,13 @@ function Gate({ battle }: { battle: BattleSnapshot }) {
   const [X, Z] = toChart(battle, battle.gate.x, battle.gate.y);
   const r = (battle.gateRadiusCenti / 100) * CASE;
   // Its face toward the island's middle.
-  const face = Math.atan2(-battle.gate.x, -battle.gate.y);
+  const [cx, cz] = toChart(battle, 0, 0);
+  const face = Math.atan2(cx - X, cz - Z);
   return (
     <group position={[X, 0, Z]} rotation-y={face}>
       <mesh geometry={disc} material={M.goldSoft} scale={r} position-y={0.05} />
       <mesh geometry={ring} material={M.gold} scale={r} position-y={0.06} />
       <primitive object={GATE_OF_ROME} />
-      <mesh position={[0, 2.2, 0]}>
-        <planeGeometry args={[3.8, 4.4]} />
-        <meshBasicMaterial color={C.gold} transparent opacity={0.55} side={DoubleSide} />
-      </mesh>
     </group>
   );
 }
@@ -639,7 +619,7 @@ function Unit({
       {/* Its shadow on the sand: it stands on the island, never floats over it. */}
       <mesh geometry={disc} material={M.blob} scale={0.95 * big * FIG * UNIT} position-y={0.02} />
       {/* Its health, a ring at its feet: green for mine, blue an ally's, red Rome's. */}
-      <group ref={hp} position-y={0.08} scale={1.5 * big * FIG * UNIT}>
+      <group ref={hp} position-y={0.08} scale={0.95 * big * FIG * UNIT}>
         <mesh geometry={ring} material={M.hpBack} />
         <mesh
           geometry={HP[Math.round(share * 10)] ?? ring}
@@ -647,7 +627,7 @@ function Unit({
         />
       </group>
       {chosen && (
-        <mesh geometry={halo} material={M.chosen} scale={2.2 * FIG * UNIT} position-y={0.12} />
+        <mesh geometry={halo} material={M.chosen} scale={1.25 * FIG * UNIT} position-y={0.12} />
       )}
       {/* Rome's eyes, when it is roused: its vision, and its reach while it strikes. */}
       {rome && (rome.state === "alert" || rome.state === "attack") && !dead && (
@@ -722,7 +702,7 @@ function Mule({ cargo, live }: { cargo: Rarity[]; live: boolean }) {
           // biome-ignore lint/suspicious/noArrayIndexKey: relics of a rarity are alike
           key={i}
           position={[i % 2 ? 0.45 : -0.45, donkey.height * 0.95, -0.1 - Math.floor(i / 2) * 0.6]}
-          material={claySolid(RARITY_HEX[k])}
+          material={gem(RARITY_HEX[k])}
         >
           <boxGeometry args={[0.55, 0.5, 0.5]} />
         </mesh>
@@ -840,6 +820,60 @@ function Shots({
       {Array.from({ length: 32 }, (_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: a pool of shots
         <mesh key={i} geometry={ball} visible={false} scale={0.6} />
+      ))}
+    </group>
+  );
+}
+
+/** A chest of relics: Porcellana's (models/porta.ts), its gem of the rarity's colour. */
+function Chest({ hex, at }: { hex: string; at: [number, number, number] }) {
+  const g = useMemo(() => chest(BISCUIT, hex, new Group(), 0, 0, K * 1.1), [hex]);
+  return <primitive object={g} position={at} />;
+}
+
+/** A burnt town's smoke: porcelain puffs rising, fading. */
+function Smoke({ at, live }: { at: [number, number, number]; live: boolean }) {
+  const puffs = useRef<Group>(null);
+  const t0 = useRef(0);
+  const mats = useMemo(
+    () =>
+      Array.from(
+        { length: 5 },
+        () =>
+          new MeshStandardMaterial({
+            color: "#F6F4F0",
+            emissive: "#F6F4F0",
+            emissiveIntensity: 0.5,
+            roughness: 1,
+            transparent: true,
+            opacity: 0.6,
+            depthWrite: false,
+          }),
+      ),
+    [],
+  );
+  const set = (t: number) => {
+    const g = puffs.current;
+    if (!g) return;
+    g.children.forEach((c, i) => {
+      const u = (t * 0.22 + i / 5) % 1;
+      c.position.set(Math.sin(u * 5 + i) * 0.5 + u * 1.2, u * 6, Math.cos(u * 4 + i) * 0.3);
+      c.scale.setScalar(0.45 + u * 1.1);
+      (mats[i] as MeshStandardMaterial).opacity = 0.8 * (1 - u) * Math.min(1, u * 6);
+    });
+  };
+  useFrame((_, dt) => {
+    if (!live) return;
+    t0.current += Math.min(dt, 0.1);
+    set(t0.current);
+  });
+  useEffect(() => set(live ? t0.current : 0.4));
+  return (
+    <group ref={puffs} position={at}>
+      {mats.map((m, i) => (
+        <mesh key={String(i)} material={m}>
+          <icosahedronGeometry args={[0.7, 1]} />
+        </mesh>
       ))}
     </group>
   );
