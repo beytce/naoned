@@ -3,6 +3,7 @@ import {
   type EmpireWorkshop,
   type InteriorStation,
   type InteriorView,
+  adviseInterior,
   interiorLayoutProblem,
   interiorThroughput,
 } from "@comptoirs/engine";
@@ -145,37 +146,12 @@ export function placeSpots(
   return out;
 }
 
-export interface Advice {
-  stationId: string;
-  x: number;
-  y: number;
-  rot: InteriorStation["rot"];
-  units: number;
-}
-
-/**
- * Lorenzo's advice: of every station, every flagstone and every turn, the one move that betters
- * the rate most — a good plan, not the best (one move at a time). None when nothing betters it.
- */
+/** Lorenzo's advice: the engine's own (the simulator's careful bots play the same). */
 export function advise(
   ws: EmpireWorkshop,
   s: EmpireSettings,
-  hall: { w: number; h: number },
+  _hall: { w: number; h: number },
   now: number,
-): Advice | null {
-  const base = unitsOf(ws, s, now);
-  let best: Advice | null = null;
-  for (const st of ws.interior?.stations ?? []) {
-    if (st.readyAt !== undefined && st.readyAt > now) continue;
-    for (const rot of [0, 1, 2, 3] as const)
-      for (let y = 0; y < hall.h; y++)
-        for (let x = 0; x < hall.w; x++) {
-          if (x === st.x && y === st.y && rot === st.rot) continue;
-          const next = moved(ws, st.id, x, y, rot);
-          if (interiorLayoutProblem(next, s)) continue;
-          const units = unitsOf(next, s, now);
-          if (units > (best?.units ?? base)) best = { stationId: st.id, x, y, rot, units };
-        }
-  }
-  return best;
+) {
+  return adviseInterior(ws, {}, s, now);
 }

@@ -27,6 +27,7 @@ export * from "./interior/settings.js";
 export * from "./interior/throughput.js";
 export * from "./interior/run.js";
 export * from "./interior/view.js";
+export * from "./interior/advise.js";
 export * from "./interior/commands.js";
 export * from "./porta/settings.js";
 export * from "./porta/arms.js";

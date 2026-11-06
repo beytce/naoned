@@ -1,3 +1,4 @@
+import { type Tending, tendingOf } from "./interior.js";
 import { median } from "./metrics.js";
 import { DAY, MONTH, type Trade } from "./model.js";
 import type { EmpireResult } from "./run.js";
@@ -202,6 +203,48 @@ export function evaluate(r: EmpireResult): Check[] {
     value: pct(ordersBps),
     pass: ordersBps >= 6_000 && ordersBps <= 8_500,
   });
+  // The workshops' insides (docs/plan-ateliers.md § 9), when the world has them.
+  if (w.s.interior) {
+    const pace = (how: Tending) => {
+      const ws = hs.filter((h) => tendingOf(h) === how).flatMap((h) => h.workshops);
+      return ws.length ? ws.reduce((n, x) => n + (x.pace ?? 10_000), 0) / ws.length / 10_000 : 0;
+    };
+    const hasty = pace("hasty");
+    const careful = pace("careful") / (hasty || 1);
+    const average = pace("average") / (hasty || 1);
+    checks.push({
+      code: "interior-careful",
+      label: "Intérieurs : cadence moyenne d'un atelier appliqué / pressé (même niveau)",
+      target: "entre 1,6 et 2,2",
+      value: careful.toFixed(2),
+      pass: careful >= 1.6 && careful <= 2.2,
+    });
+    checks.push({
+      code: "interior-average",
+      label: "Intérieurs : cadence moyenne d'un atelier moyen / pressé",
+      target: "environ 1,3 (1,15 à 1,45)",
+      value: average.toFixed(2),
+      pass: average >= 1.15 && average <= 1.45,
+    });
+    checks.push({
+      code: "interior-hasty",
+      label: "Intérieurs : un atelier pressé ne fait pas moins qu'avant (cadence ≥ 1)",
+      target: "≥ 1,00",
+      value: hasty.toFixed(2),
+      pass: hasty >= 1,
+    });
+    const careHouses = hs.filter((h) => tendingOf(h) === "careful");
+    const sessionsC = careHouses.reduce((n, h) => n + h.sessions, 0);
+    const gestures = careHouses.reduce((n, h) => n + (h.interiorGestures ?? 0), 0);
+    const perSession = sessionsC ? gestures / sessionsC : 0;
+    checks.push({
+      code: "interior-time",
+      label: "Intérieurs : gestes d'un joueur appliqué par séance (règle 7)",
+      target: "≤ 6",
+      value: perSession.toFixed(1),
+      pass: perSession <= 6,
+    });
+  }
   return checks;
 }
 

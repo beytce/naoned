@@ -71,6 +71,8 @@ function shadow(h: House): EmpireHouse {
       recipe: "",
       level: x.level,
       job: null,
+      // With the insides, its inside (the knowledge of the craft no longer gives it a yield).
+      ...(x.inside ? { interior: x.inside } : {}),
     }),
   );
   return id;
@@ -213,7 +215,10 @@ const signature = (id: EmpireHouse) =>
 
 function addMaster(w: World, h: House, rarity: string) {
   const staff = h.ident.staff ?? [];
-  const free = h.workshops.findIndex((_, i) => !staff.some((m) => m.placedAt === String(i)));
+  // With the insides, no master is placed on a workshop (its hands are hired at its door).
+  const free = w.s.interior
+    ? -1
+    : h.workshops.findIndex((_, i) => !staff.some((m) => m.placedAt === String(i)));
   staff.push({
     id: String(staff.length),
     role: "master",

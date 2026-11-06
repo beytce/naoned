@@ -98,6 +98,17 @@ export const interiorSettingsSchema = z
      * opens higher stations instead of a yield): up to `baseLevel`, then each knowledge listed
      * opens up to its level.
      */
+    /**
+     * What a pace of 10 000 is: the default plan « fresh » (new machines, rested hands), or
+     * « worn » (its machines and hands at their floors: what a house that never mends nor rests
+     * them comes to), so that such a house makes no less than before the insides.
+     */
+    reference: z.enum(["fresh", "worn"]).prefault("fresh"),
+    /**
+     * The most a hall gives, in bps of its reference (lot A8): past it, more stations and levels
+     * make it no quicker — « the hall runs full »; its level (its floor) is what grows it then.
+     */
+    maxPaceBps: positive.prefault(1_000_000),
     unlocks: z
       .object({ baseLevel: positive, byKnowledge: z.record(z.string(), positive) })
       .prefault({ baseLevel: 99, byKnowledge: {} }),

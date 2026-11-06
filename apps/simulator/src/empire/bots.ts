@@ -48,6 +48,7 @@ import {
   newIdentity,
   sellToCourt,
 } from "./identity.js";
+import { insidesOn, paceOf, settleInsides, tendInsides } from "./interior.js";
 import {
   type Activity,
   type Bent,
@@ -172,11 +173,16 @@ export function playsNow(w: World, h: House, rng: Rng): boolean {
 
 function rateOf(w: World, h: House, ws: { good: string; level: number }): number {
   const base = w.m.rates[ws.good] ?? (w.m.recipes[ws.good] ? w.m.craftedPerHour : w.m.rawPerHour);
-  const tools = h.modules.tools ? effectOf({ tools: h.modules.tools }, "workshopYield", w.s) : 0;
+  // With the insides, the tools are stations (docs/plan-ateliers.md lot A7): the pace says it.
+  const tools =
+    h.modules.tools && !insidesOn(w)
+      ? effectOf({ tools: h.modules.tools }, "workshopYield", w.s)
+      : 0;
   // Its identity: the Arte's chain, the knowledge, its master, the lineage, its neighbourhood.
   const i = h.workshops.indexOf(ws as Workshop);
   const identity = identityEffect(w, h, "workshopYield", i) + neighbourEffect(w, h, i);
-  return (base * lotYieldBps(ws.level, w.s) * (10_000 + tools + identity)) / 1e8;
+  const pace = insidesOn(w) ? paceOf(ws as Workshop) : 10_000;
+  return (base * lotYieldBps(ws.level, w.s) * (10_000 + tools + identity) * pace) / 1e12;
 }
 
 /** The raw goods of Venetia a workshop's high recipe may eat: the listed ones but its own good. */
@@ -220,6 +226,8 @@ function collect(w: World, h: House) {
       takeRaw(h, raws, highRecipeRaw(ws.level, qty, w.s));
       addStock(h, ws.good, qty - makeFine(w, h, ws.good, qty, i));
     }
+  // The insides: wear and fatigue over the queue that ran, the pace of the next one.
+  settleInsides(w, h);
   h.relaunchedAt = w.now;
   // Inputs for the next queue, bought where the house is; Venetia's raw goods, in Venice.
   const wanted = wantedIn(w, h);
@@ -1136,6 +1144,8 @@ function research(w: World, h: House) {
     const cost = researchCost(level, w.s);
     if (spendable(w, h) < cost) return;
     if (!w.s.modules.some((m) => m.code === code)) continue;
+    // The insides replace the workshop modules (docs/plan-ateliers.md lot A7).
+    if (insidesOn(w) && w.s.modules.find((m) => m.code === code)?.kind === "workshop") continue;
     if (w.s.research.available.length > 0 && !w.s.research.available.includes(code)) continue;
     destroy(w, h, cost, "research");
     h.research.push({ code, level, endsAt: w.now + hoursOf(researchMinutesOf(level, w.s)) });
@@ -1206,6 +1216,7 @@ export function session(w: World, h: House, rng: Rng) {
   sellToCourt(w, h);
   if (h.bent === "armourer") expedition(w, h, rng);
   build(w, h);
+  tendInsides(w, h, () => spendable(w, h));
   research(w, h);
   growIdentity(w, h, () => spendable(w, h));
   if (h.bent === "mixed") expedition(w, h, rng);

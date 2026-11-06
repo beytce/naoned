@@ -206,7 +206,13 @@ function absorbLegacy(h: EmpireHouse, ws: EmpireWorkshop, s: EmpireSettings): vo
 
 /** The rate of the default plan, fresh: what the workshop made before the switch. */
 function referenceUnits(ws: EmpireWorkshop, s: EmpireSettings): number {
-  const ref = { ...ws, interior: presetInterior(ws.type, s, 0) };
+  const preset = presetInterior(ws.type, s, 0);
+  // Worn: its machines and hands at their floors (a house that never mends nor rests them).
+  if (s.interior?.reference === "worn") {
+    for (const st of preset.stations) st.wear = FULL;
+    for (const hand of preset.hands ?? []) hand.fatigue = FULL;
+  }
+  const ref = { ...ws, interior: preset };
   return interiorThroughput(ref, {}, s).unitsMilliPerHour;
 }
 
@@ -224,7 +230,10 @@ export function interiorPaceBps(
   const ref = referenceUnits(ws, s);
   if (ref <= 0) return FULL;
   const now = interiorThroughput(ws, h, s, at).unitsMilliPerHour;
-  return Math.floor((now * (FULL + (ws.interior.legacyBps ?? 0))) / ref);
+  const pace = Math.floor((now * (FULL + (ws.interior.legacyBps ?? 0))) / ref);
+  // A full hall: no quicker, whatever is added (the « acquis » of before passes it, never lost).
+  const cap = (s.interior?.maxPaceBps ?? pace) + (ws.interior.legacyBps ?? 0);
+  return Math.min(pace, cap);
 }
 
 /** The quality the inside adds to its workshop's lots. */

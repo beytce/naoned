@@ -23,6 +23,10 @@ export interface Workshop {
   region: string;
   good: string;
   level: number;
+  /** Its inside (docs/plan-ateliers.md lot A8), when the world has them. */
+  inside?: import("@comptoirs/engine").WorkshopInterior;
+  /** Its pace, in bps of its default plan, frozen at its last relaunch. */
+  pace?: number;
 }
 
 export interface Vehicle {
@@ -112,6 +116,9 @@ export interface House {
   stock: Map<string, number>;
   builds: Build[];
   research: Research[];
+  /** What it spent on its insides, and the gestures it took there (lot A8). */
+  interiorSpent?: Deniers;
+  interiorGestures?: number;
   /** The last time its workshops were relaunched: they work 12 h past it, no more. */
   relaunchedAt: number;
   lastSession: number;
