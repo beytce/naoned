@@ -26,12 +26,10 @@ export type Tone = keyof typeof COL;
 
 /** The lands of Rome (D5): the same porcelain, unglazed — « biscuit ». */
 export const BISCUIT: Partial<Record<Tone, string>> = {
-  ground: "#E7DCCD",
   wall: "#EFE6D9",
   wall2: "#E5D9C8",
   roof: "#D8C8B2",
   leaf: "#EADFCF",
-  bg: "#E3D9CB",
 };
 
 /** The one strong colour (D2, D3): red of Venice by default, the others a matter of taste. */
@@ -62,7 +60,7 @@ export const LIGHT = {
     normalBias: 0.03,
     extent: 36,
     mapDesk: 4096,
-    mapPhone: 2048,
+    mapPhone: 1024,
   },
   catcher: { y: -1.9, opacity: 0.11 },
   ao: { radius: 0.7, distanceExponent: 1.4, thickness: 2, scale: 1.2, blend: 0.85 },
@@ -74,7 +72,7 @@ export const CAMERA = {
   azimuth: Math.PI / 4,
   elevation: 0.64,
   distance: 160,
-  minZoom: 0.8,
+  minZoom: 0.35,
   maxZoom: 4,
   minPolar: 0.62,
   maxPolar: 1.12,

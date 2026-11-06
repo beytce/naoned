@@ -52,7 +52,8 @@ export function Stage({
   }, [gl, scene, background]);
 
   const composer = useMemo(() => {
-    if (plain) return null;
+    // A phone draws without the occlusion: its GPU's memory is short (a page killed is a white screen).
+    if (plain || phone) return null;
     const rt = new WebGLRenderTarget(1, 1, { type: HalfFloatType, samples: 4 });
     const c = new EffectComposer(gl, rt);
     c.addPass(new RenderPass(scene, camera));
@@ -76,7 +77,7 @@ export function Stage({
     c.addPass(ao);
     c.addPass(new OutputPass());
     return c;
-  }, [gl, scene, camera, plain]);
+  }, [gl, scene, camera, plain, phone]);
 
   useEffect(() => {
     if (!composer) return;

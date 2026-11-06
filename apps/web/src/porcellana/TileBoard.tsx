@@ -34,7 +34,7 @@ import { type Vehicle, cart, ship } from "./models/vehicles.js";
 import { drawChevron, drawnIndices, ribbonGeometry, roundedPath, seaDashes } from "./ribbon.js";
 import { Blush } from "./selection.js";
 import { box } from "./shapes.js";
-import { BISCUIT, BOARD, CAMERA, RIBBON, SELECT } from "./tokens.js";
+import { BOARD, CAMERA, RIBBON, SELECT } from "./tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
 
@@ -447,11 +447,7 @@ export function TileBoard({
   };
   return (
     <>
-      <Stage
-        target={sh.target}
-        phone={PHONE()}
-        background={spec.biscuit ? BISCUIT.bg : undefined}
-      />
+      <Stage target={sh.target} phone={PHONE()} background={undefined} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: the keyboard reaches each place by its pin, a button. */}
       <primitive
         object={board.root}

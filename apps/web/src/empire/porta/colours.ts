@@ -16,9 +16,9 @@ export const RARITY_HEX: Record<Rarity, string> = {
  */
 export const ROME_DUSK = {
   /** The sky behind the scene: the biscuit's background. */
-  sky: "#E3D9CB",
+  sky: "#E9E6E0",
   /** The lands' earth, and its deeper tone (the far side of the gate, the sea's bed). */
-  earth: "#E7DCCD",
+  earth: "#EEEBE5",
   deep: "#D8C8B2",
   /** The light: Porcellana's, a white sky over a warm ground, a sun from the front left. */
   hemiSky: "#FFFFFF",

@@ -508,15 +508,7 @@ export function SidePanel({
       className="glass pointer-events-auto fixed bottom-5 left-5 top-28 z-20 hidden w-[24rem] flex-col gap-5 overflow-y-auto overscroll-contain rounded-[2.25rem] p-6 lg:flex"
       data-side-panel
     >
-      {guide ?? (
-        <LorenzoBubble
-          p={p}
-          busy={busy}
-          onCity={(code) => onTarget({ kind: "city", code })}
-          onCasa={onCasa}
-          onDeliver={onDeliver}
-        />
-      )}
+      {guide}
       <section>
         <h2 className="mb-2.5 font-display text-[0.9375rem] font-black">{t.waits}</h2>
         <div className="flex flex-wrap gap-2">

@@ -21,10 +21,11 @@ import { MarketSheet } from "./Market.js";
 import { CasaMoment } from "./Moment.js";
 import { NewWorkshopSheet } from "./NewWorkshop.js";
 import { GoodSheet } from "./Resources.js";
+import { Safe } from "./Safe.js";
 import { Charroi, RegionPlace, Scuola, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import { foresee } from "./foresee.js";
-import { LorenzoBubble, MapControls, RemiseBar, SidePanel, TopBar, useWide } from "./hud/Desk.js";
+import { MapControls, RemiseBar, SidePanel, TopBar, useWide } from "./hud/Desk.js";
 import {
   affordable,
   buildingName,
@@ -516,411 +517,420 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   );
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-night">
-      <Suspense fallback={null}>
-        <PorcellanaMap
-          ref={map}
-          p={p}
-          now={now}
-          target={target}
-          placing={placing}
-          onPick={setPicked}
-          onDomain={setDomain}
-          onTarget={(x) => {
-            if (placing) return;
-            // A free tile of the house's: the workshops one may build there, at once.
-            if (x?.kind === "free" && x.tile) {
-              setBuildTile(x.tile);
-              setSheet("new");
-              return;
-            }
-            if (x?.kind === "vehicle") setVehicle(x.id);
-            if (!x) {
-              setVehicle(null);
-              setAiming(false);
-            }
-            setTarget(x);
-          }}
-        />
-      </Suspense>
-
-      {wide ? (
-        <>
-          <TopBar
-            p={p}
-            now={now}
-            active={here}
-            onPlace={goPlace}
-            dots={placeDots}
-            portaCasa={portaCasa}
-            onHouse={() => setSheet("house")}
-            onFind={(x) => setTarget(x)}
-          />
-          <SidePanel
-            p={p}
-            now={now}
-            busy={busy}
-            guide={guideCard || undefined}
-            onTarget={(x) => setTarget(x)}
-            onPlace={goPlace}
-            portaCasa={portaCasa}
-            onCasa={() => setSheet("casa")}
-            onDeliver={deliver}
-            onAll={() => setSheet("production")}
-          />
-          {!target && !placing && !domain && <RemiseBar p={p} onGood={setGood} />}
-          <MapControls
-            onRecenter={() => map.current?.recenter()}
-            onZoom={(k) => map.current?.zoom(k)}
-          />
-        </>
-      ) : (
-        <>
-          <Hud p={p} name={account.pseudo ?? t.title} onHouse={() => setSheet("house")} />
-          {/* Lorenzo's bubble under the money (the maquette's phone), past the tutorial. */}
-          {!tutorial && !target && !placing && !domain && sheet === null && (
-            <div className="pointer-events-auto absolute inset-x-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+4rem)] z-20 mx-auto max-w-md">
-              <LorenzoBubble
-                p={p}
-                busy={busy}
-                compact
-                onCity={(code) => setTarget({ kind: "city", code })}
-                onCasa={() => setSheet("casa")}
-                onDeliver={deliver}
-              />
-            </div>
-          )}
-        </>
-      )}
-      <Trips
-        p={p}
-        now={now}
-        busy={busy}
-        act={act}
-        onFocus={(id) => {
-          setVehicle(id);
-          setTarget({ kind: "vehicle", id });
-        }}
-      />
-
-      {/* A vehicle just sent from a town: a note to follow it, never a sheet (docs/plan-dock.md). */}
-      {sent && !target && sheet === null && (
-        <output
-          className="dock-in pointer-events-auto absolute inset-x-3 bottom-28 z-30 glass mx-auto flex min-h-14 max-w-md items-center gap-3 rounded-[1.5rem] py-1.5 pl-4 pr-1.5"
-          data-sent={sent.id}
-        >
-          <span className="text-gold [&_svg]:h-6 [&_svg]:w-6">{Icon.cart()}</span>
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-sm font-semibold">{t.orders.sent(sent.name)}</span>
-            {(p.view?.orders ?? []).some((o) => o.orders.length > 0) && (
-              <span className="truncate text-xs text-cream-dim">{t.orders.sentMore}</span>
-            )}
-          </span>
-          <Slab
-            tone="ghost"
-            size="sm"
-            onClick={() => {
-              setVehicle(sent.id);
-              setTarget({ kind: "vehicle", id: sent.id });
-              setSent(null);
-            }}
-          >
-            {t.orders.follow}
-          </Slab>
-        </output>
-      )}
-
-      {/* The foot of the map: the round buttons, a place's panel, or the bar of placing. */}
-      <BottomSlot
-        id={
-          placing
-            ? "placing"
-            : round && !round.drawing && round.cities.length > 0
-              ? "round"
-              : target
-                ? `panel:${target.kind}`
-                : domain
-                  ? `domain:${domain}`
-                  : "idle"
-        }
-        hidden={sheet !== null || good !== null}
-      >
-        {round && !round.drawing && round.cities.length > 0 && !placing ? (
-          <div className="flex w-full flex-col items-center">
-            <RoundDock
+    <Safe
+      onReset={() => {
+        setSheet(null);
+        setTarget(null);
+        setVehicle(null);
+        setGood(null);
+        setFighting(false);
+      }}
+    >
+      <div className="fixed inset-0 overflow-hidden bg-night">
+        {/* On a phone, the map's 3D is let go while a scene of its own covers it (the Porta, the arms,
+          a battle): two WebGL scenes at once exhaust a phone's memory, its page then killed. */}
+        {!(
+          !wide &&
+          (sheet === "porta" || sheet === "arms" || fighting || !!p.view?.porta?.battle)
+        ) && (
+          <Suspense fallback={null}>
+            <PorcellanaMap
+              ref={map}
               p={p}
-              round={round}
-              busy={busy}
-              onGo={() => goRound(round)}
-              onCancel={() => setRound(null)}
+              now={now}
+              target={target}
+              placing={placing}
+              onPick={setPicked}
+              onDomain={setDomain}
+              onTarget={(x) => {
+                if (placing) return;
+                // A free tile of the house's: the workshops one may build there, at once.
+                if (x?.kind === "free" && x.tile) {
+                  setBuildTile(x.tile);
+                  setSheet("new");
+                  return;
+                }
+                if (x?.kind === "vehicle") setVehicle(x.id);
+                if (!x) {
+                  setVehicle(null);
+                  setAiming(false);
+                }
+                setTarget(x);
+              }}
             />
-            {placeTabs}
-          </div>
-        ) : placing ? (
-          <PlacingBar
-            p={p}
-            placing={placing}
-            picked={picked}
-            busy={busy}
-            onPlace={() => void place()}
-            onCancel={() => {
-              setPlacing(null);
-              setPicked(null);
-            }}
-          />
-        ) : target?.kind === "vehicle" ? (
-          <VehiclePanel
-            p={p}
-            now={now}
-            busy={busy}
-            act={act}
-            vehicleId={target.id}
-            aiming={aiming}
-            onAim={setAiming}
-            onCycle={cycle}
-            onClose={() => {
-              setTarget(null);
-              setVehicle(null);
-              setAiming(false);
-            }}
-          />
-        ) : target?.kind === "city" && p.view?.orders.some((o) => o.city === target.code) ? (
-          <OrdersPanel
-            p={p}
-            now={now}
-            busy={busy}
-            city={target.code}
-            onDeliver={(ids, vehicleId) => deliver(target.code, ids, vehicleId)}
-            onClose={() => setTarget(null)}
-            onCity={(code) => setTarget({ kind: "city", code })}
-            onWorkshop={(id) => setTarget({ kind: "workshop", id })}
-            onOpen={open}
-            onPlan={setRoad}
-          />
-        ) : target?.kind === "workshop" ? (
-          <WorkshopDock
-            p={p}
-            now={now}
-            busy={busy}
-            act={act}
-            workshopId={target.id}
-            onWorkshop={(id) => setTarget({ kind: "workshop", id })}
-            onOpen={open}
-            onClose={() => setTarget(null)}
-          />
-        ) : target ? (
-          <ActionPanel
-            p={p}
-            target={target}
-            now={now}
-            busy={busy}
-            act={act}
-            onOpen={open}
-            onClose={() => setTarget(null)}
-          />
-        ) : domain ? (
-          <div className="flex w-full flex-col items-center">
-            {lorenzo}
-            <DomainBar
+          </Suspense>
+        )}
+
+        {wide ? (
+          <>
+            <TopBar
+              p={p}
+              now={now}
+              active={here}
+              onPlace={goPlace}
+              dots={placeDots}
+              portaCasa={portaCasa}
+              onHouse={() => setSheet("house")}
+              onFind={(x) => setTarget(x)}
+            />
+            <SidePanel
               p={p}
               now={now}
               busy={busy}
-              region={domain}
-              act={act}
-              onBack={() => map.current?.leave()}
-              onProduction={() => setSheet("production")}
+              guide={guideCard || undefined}
+              onTarget={(x) => setTarget(x)}
+              onPlace={goPlace}
+              portaCasa={portaCasa}
               onCasa={() => setSheet("casa")}
-              guided={tutorial}
-              // The quay (the refonte claire, lot 3): the Remise once it stands, else the
-              // Production's vehicles, which say where to put it.
-              onQuay={() => setSheet(view.map.depot ? "remise" : "production:vehicles")}
-              onArms={
-                porta && portaCasa === null && (porta.site || porta.cell)
-                  ? () => setSheet("arms")
-                  : undefined
-              }
+              onDeliver={deliver}
+              onAll={() => setSheet("production")}
             />
-            {placeTabs}
-          </div>
+            {!target && !placing && !domain && <RemiseBar p={p} onGood={setGood} />}
+            <MapControls
+              onRecenter={() => map.current?.recenter()}
+              onZoom={(k) => map.current?.zoom(k)}
+            />
+          </>
         ) : (
           <>
-            {/* Lorenzo, the tutorial's: until the Casa 2 he says the next gesture, and its gold
-                button does it; then he withdraws behind the « ? », and the three milestones keep
-                the way in sight (audit of 4 November, UX B2), each opening its place. */}
-            {lorenzo}
-            {placeTabs}
+            <Hud p={p} name={account.pseudo ?? t.title} onHouse={() => setSheet("house")} />
           </>
         )}
-      </BottomSlot>
-
-      <HelpSheet p={p} now={now} step={step} open={sheet === "help"} onClose={close} />
-      <WorkshopsSheet
-        p={p}
-        now={now}
-        sheet={sheet}
-        busy={busy}
-        onClose={close}
-        onOpen={setSheet}
-        act={act}
-      />
-      <NewWorkshopSheet
-        p={p}
-        highlight={highlight}
-        open={sheet === "new" || sheet?.startsWith("new:") === true}
-        region={sheet?.startsWith("new:") ? sheet.slice(4) : "veneto"}
-        busy={busy}
-        onClose={() => {
-          setBuildTile(undefined);
-          close();
-        }}
-        act={act}
-        tile={buildTile}
-      />
-      <ProductionSheet
-        p={p}
-        now={now}
-        open={sheet?.startsWith("production") === true}
-        pane={sheet === "production:vehicles" ? "vehicles" : "buildings"}
-        highlight={highlight}
-        onPlace={(kind) => open(`place:${kind}`)}
-        onRemise={() => setSheet("remise")}
-        busy={busy}
-        onClose={close}
-        act={act}
-      />
-      {sheet?.startsWith("region:") && (
-        <Sheet open onClose={close} kicker={t.world.map} title={regionName(sheet.slice(7))}>
-          <RegionPlace
-            p={p}
-            code={sheet.slice(7)}
-            now={now}
-            busy={busy}
-            act={act}
-            onBuild={() => setSheet(`new:${sheet.slice(7)}`)}
-            onPlace={() => open(`place:post:${sheet.slice(7)}`)}
-          />
-        </Sheet>
-      )}
-      {/* The Remise: the only place where the vehicles are bought, raised and sent (1 November). */}
-      <Sheet open={sheet === "remise"} onClose={close} kicker={t.scene.owner} title={t.scene.depot}>
-        <div data-remise>
-          <Charroi p={p} now={now} busy={busy} act={act} />
-        </div>
-      </Sheet>
-      <CasaSheet
-        p={p}
-        now={now}
-        open={sheet === "casa"}
-        busy={busy}
-        canCasa={canCasa(p)}
-        onClose={close}
-        act={act}
-      />
-      <MarketSheet
-        p={p}
-        now={now}
-        open={sheet === "market"}
-        busy={busy}
-        onClose={close}
-        onGood={setGood}
-        act={act}
-      />
-      <CompanySheet
-        p={p}
-        now={now}
-        open={sheet?.startsWith("company") === true}
-        pane={sheet === "company:terra" ? "terra" : undefined}
-        busy={busy}
-        calls={{
-          carnet: claimable(p),
-          company: suppliable(p, account.id) > 0,
-          terra: terraCalls(p, now),
-        }}
-        onClose={close}
-        act={act}
-        onPlaceCamp={() => open("place:camp")}
-      />
-      <FamilySheet p={p} open={sheet === "family"} busy={busy} onClose={close} act={act}>
-        <ArteSection p={p} busy={busy} act={act} />
-        <Scuola p={p} busy={busy} act={act} />
-        <Knowledge p={p} busy={busy} act={act} />
-      </FamilySheet>
-      <GoodSheet p={p} good={good} busy={busy} onClose={() => setGood(null)} act={act} />
-      <HouseSheet
-        p={p}
-        open={sheet === "house"}
-        onClose={close}
-        onFamily={() => setSheet("family")}
-        onMarket={() => setSheet("market")}
-        onHelp={tutorial ? undefined : () => setSheet("help")}
-        familyCalls={familyCalls(p)}
-      />
-      {/* Over everything, the sheets included (on the body, as they are): the welcome, the toast,
-          the moment of a Casa, the goods and coins in flight. */}
-      {createPortal(
-        <>
-          <Intro p={p} />
-          {!online && (
-            <output
-              className="fixed inset-x-0 top-[max(0.5rem,env(safe-area-inset-top))] z-[65] mx-auto flex w-fit items-center gap-2 rounded-full bg-night-4/95 px-4 py-2 text-sm font-semibold text-cream shadow-lg ring-1 ring-edge"
-              data-offline
-            >
-              <span className="h-2 w-2 rounded-full bg-vermilion" aria-hidden="true" />
-              {fr.errors.offline ?? ""}
-            </output>
-          )}
-          {toast && (
-            <output className="fixed inset-x-4 top-[max(1rem,env(safe-area-inset-top))] z-[70] lg:top-28 mx-auto block max-w-sm animate-fade bg-night-4 px-4 py-3 text-center text-sm text-cream shadow-lg slab">
-              {toast}
-            </output>
-          )}
-          <FxLayer />
-        </>,
-        document.body,
-      )}
-      {moment !== null && (
-        <CasaMoment
-          level={moment}
-          opens={p.casa.find((c) => c.level === moment)?.opens ?? []}
-          onClose={() => setMoment(null)}
-        />
-      )}
-      <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
-      {/* The Remise's arms and the Porta: their scene and their dock; without WebGL, the same dock
-          over a plain ground (docs/plan-dock.md, lot 6). */}
-      <LazyArms p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
-      <PortaPlace
-        p={p}
-        now={now}
-        open={sheet === "porta"}
-        busy={busy}
-        onClose={close}
-        act={act}
-        onBattle={() => {
-          setSheet(null);
-          setFighting(true);
-        }}
-      />
-      {/* The four places stay at the foot over the Porta and the Company (the gameplay audit, P5):
-          those are places, left by the bar, no more by a cross only. */}
-      {!wide &&
-        (sheet === "porta" || sheet?.startsWith("company") === true) &&
-        createPortal(
-          <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[45]" data-places-over>
-            {placeTabs}
-          </div>,
-          document.body,
-        )}
-      {(fighting || (p.view?.porta?.battle && p.view.porta.battle.id !== leftBattle)) && (
-        <BattleScreen
-          onClose={() => {
-            setFighting(false);
-            setLeftBattle(p.view?.porta?.battle?.id ?? null);
-            void refresh();
+        <Trips
+          p={p}
+          now={now}
+          busy={busy}
+          act={act}
+          onFocus={(id) => {
+            setVehicle(id);
+            setTarget({ kind: "vehicle", id });
           }}
         />
-      )}
-    </div>
+
+        {/* A vehicle just sent from a town: a note to follow it, never a sheet (docs/plan-dock.md). */}
+        {sent && !target && sheet === null && (
+          <output
+            className="dock-in pointer-events-auto absolute inset-x-3 bottom-28 z-30 glass mx-auto flex min-h-14 max-w-md items-center gap-3 rounded-[1.5rem] py-1.5 pl-4 pr-1.5"
+            data-sent={sent.id}
+          >
+            <span className="text-gold [&_svg]:h-6 [&_svg]:w-6">{Icon.cart()}</span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-semibold">{t.orders.sent(sent.name)}</span>
+              {(p.view?.orders ?? []).some((o) => o.orders.length > 0) && (
+                <span className="truncate text-xs text-cream-dim">{t.orders.sentMore}</span>
+              )}
+            </span>
+            <Slab
+              tone="ghost"
+              size="sm"
+              onClick={() => {
+                setVehicle(sent.id);
+                setTarget({ kind: "vehicle", id: sent.id });
+                setSent(null);
+              }}
+            >
+              {t.orders.follow}
+            </Slab>
+          </output>
+        )}
+
+        {/* The foot of the map: the round buttons, a place's panel, or the bar of placing. */}
+        <BottomSlot
+          id={
+            placing
+              ? "placing"
+              : round && !round.drawing && round.cities.length > 0
+                ? "round"
+                : target
+                  ? `panel:${target.kind}`
+                  : domain
+                    ? `domain:${domain}`
+                    : "idle"
+          }
+          hidden={sheet !== null || good !== null}
+        >
+          {round && !round.drawing && round.cities.length > 0 && !placing ? (
+            <div className="flex w-full flex-col items-center">
+              <RoundDock
+                p={p}
+                round={round}
+                busy={busy}
+                onGo={() => goRound(round)}
+                onCancel={() => setRound(null)}
+              />
+              {placeTabs}
+            </div>
+          ) : placing ? (
+            <PlacingBar
+              p={p}
+              placing={placing}
+              picked={picked}
+              busy={busy}
+              onPlace={() => void place()}
+              onCancel={() => {
+                setPlacing(null);
+                setPicked(null);
+              }}
+            />
+          ) : target?.kind === "vehicle" ? (
+            <VehiclePanel
+              p={p}
+              now={now}
+              busy={busy}
+              act={act}
+              vehicleId={target.id}
+              aiming={aiming}
+              onAim={setAiming}
+              onCycle={cycle}
+              onClose={() => {
+                setTarget(null);
+                setVehicle(null);
+                setAiming(false);
+              }}
+            />
+          ) : target?.kind === "city" && p.view?.orders.some((o) => o.city === target.code) ? (
+            <OrdersPanel
+              p={p}
+              now={now}
+              busy={busy}
+              city={target.code}
+              onDeliver={(ids, vehicleId) => deliver(target.code, ids, vehicleId)}
+              onClose={() => setTarget(null)}
+              onCity={(code) => setTarget({ kind: "city", code })}
+              onWorkshop={(id) => setTarget({ kind: "workshop", id })}
+              onOpen={open}
+              onPlan={setRoad}
+            />
+          ) : target?.kind === "workshop" ? (
+            <WorkshopDock
+              p={p}
+              now={now}
+              busy={busy}
+              act={act}
+              workshopId={target.id}
+              onWorkshop={(id) => setTarget({ kind: "workshop", id })}
+              onOpen={open}
+              onClose={() => setTarget(null)}
+            />
+          ) : target ? (
+            <ActionPanel
+              p={p}
+              target={target}
+              now={now}
+              busy={busy}
+              act={act}
+              onOpen={open}
+              onClose={() => setTarget(null)}
+            />
+          ) : domain ? (
+            <div className="flex w-full flex-col items-center">
+              {lorenzo}
+              <DomainBar
+                p={p}
+                now={now}
+                busy={busy}
+                region={domain}
+                act={act}
+                onBack={() => map.current?.leave()}
+                onProduction={() => setSheet("production")}
+                onCasa={() => setSheet("casa")}
+                guided={tutorial}
+                // The quay (the refonte claire, lot 3): the Remise once it stands, else the
+                // Production's vehicles, which say where to put it.
+                onQuay={() => setSheet(view.map.depot ? "remise" : "production:vehicles")}
+                onArms={
+                  porta && portaCasa === null && (porta.site || porta.cell)
+                    ? () => setSheet("arms")
+                    : undefined
+                }
+              />
+              {placeTabs}
+            </div>
+          ) : (
+            <>
+              {/* Lorenzo, the tutorial's: until the Casa 2 he says the next gesture, and its gold
+                button does it; then he withdraws behind the « ? », and the three milestones keep
+                the way in sight (audit of 4 November, UX B2), each opening its place. */}
+              {lorenzo}
+              {placeTabs}
+            </>
+          )}
+        </BottomSlot>
+
+        <HelpSheet p={p} now={now} step={step} open={sheet === "help"} onClose={close} />
+        <WorkshopsSheet
+          p={p}
+          now={now}
+          sheet={sheet}
+          busy={busy}
+          onClose={close}
+          onOpen={setSheet}
+          act={act}
+        />
+        <NewWorkshopSheet
+          p={p}
+          highlight={highlight}
+          open={sheet === "new" || sheet?.startsWith("new:") === true}
+          region={sheet?.startsWith("new:") ? sheet.slice(4) : "veneto"}
+          busy={busy}
+          onClose={() => {
+            setBuildTile(undefined);
+            close();
+          }}
+          act={act}
+          tile={buildTile}
+        />
+        <ProductionSheet
+          p={p}
+          now={now}
+          open={sheet?.startsWith("production") === true}
+          pane={sheet === "production:vehicles" ? "vehicles" : "buildings"}
+          highlight={highlight}
+          onPlace={(kind) => open(`place:${kind}`)}
+          onRemise={() => setSheet("remise")}
+          busy={busy}
+          onClose={close}
+          act={act}
+        />
+        {sheet?.startsWith("region:") && (
+          <Sheet open onClose={close} kicker={t.world.map} title={regionName(sheet.slice(7))}>
+            <RegionPlace
+              p={p}
+              code={sheet.slice(7)}
+              now={now}
+              busy={busy}
+              act={act}
+              onBuild={() => setSheet(`new:${sheet.slice(7)}`)}
+              onPlace={() => open(`place:post:${sheet.slice(7)}`)}
+            />
+          </Sheet>
+        )}
+        {/* The Remise: the only place where the vehicles are bought, raised and sent (1 November). */}
+        <Sheet
+          open={sheet === "remise"}
+          onClose={close}
+          kicker={t.scene.owner}
+          title={t.scene.depot}
+        >
+          <div data-remise>
+            <Charroi p={p} now={now} busy={busy} act={act} />
+          </div>
+        </Sheet>
+        <CasaSheet
+          p={p}
+          now={now}
+          open={sheet === "casa"}
+          busy={busy}
+          canCasa={canCasa(p)}
+          onClose={close}
+          act={act}
+        />
+        <MarketSheet
+          p={p}
+          now={now}
+          open={sheet === "market"}
+          busy={busy}
+          onClose={close}
+          onGood={setGood}
+          act={act}
+        />
+        <CompanySheet
+          p={p}
+          now={now}
+          open={sheet?.startsWith("company") === true}
+          pane={sheet === "company:terra" ? "terra" : undefined}
+          busy={busy}
+          calls={{
+            carnet: claimable(p),
+            company: suppliable(p, account.id) > 0,
+            terra: terraCalls(p, now),
+          }}
+          onClose={close}
+          act={act}
+          onPlaceCamp={() => open("place:camp")}
+        />
+        <FamilySheet p={p} open={sheet === "family"} busy={busy} onClose={close} act={act}>
+          <ArteSection p={p} busy={busy} act={act} />
+          <Scuola p={p} busy={busy} act={act} />
+          <Knowledge p={p} busy={busy} act={act} />
+        </FamilySheet>
+        <GoodSheet p={p} good={good} busy={busy} onClose={() => setGood(null)} act={act} />
+        <HouseSheet
+          p={p}
+          open={sheet === "house"}
+          onClose={close}
+          onFamily={() => setSheet("family")}
+          onMarket={() => setSheet("market")}
+          onHelp={tutorial ? undefined : () => setSheet("help")}
+          familyCalls={familyCalls(p)}
+        />
+        {/* Over everything, the sheets included (on the body, as they are): the welcome, the toast,
+          the moment of a Casa, the goods and coins in flight. */}
+        {createPortal(
+          <>
+            <Intro p={p} />
+            {!online && (
+              <output
+                className="fixed inset-x-0 top-[max(0.5rem,env(safe-area-inset-top))] z-[65] mx-auto flex w-fit items-center gap-2 rounded-full bg-night-4/95 px-4 py-2 text-sm font-semibold text-cream shadow-lg ring-1 ring-edge"
+                data-offline
+              >
+                <span className="h-2 w-2 rounded-full bg-vermilion" aria-hidden="true" />
+                {fr.errors.offline ?? ""}
+              </output>
+            )}
+            {toast && (
+              <output className="fixed inset-x-4 top-[max(1rem,env(safe-area-inset-top))] z-[70] lg:top-28 mx-auto block max-w-sm animate-fade bg-night-4 px-4 py-3 text-center text-sm text-cream shadow-lg slab">
+                {toast}
+              </output>
+            )}
+            <FxLayer />
+          </>,
+          document.body,
+        )}
+        {moment !== null && (
+          <CasaMoment
+            level={moment}
+            opens={p.casa.find((c) => c.level === moment)?.opens ?? []}
+            onClose={() => setMoment(null)}
+          />
+        )}
+        <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
+        {/* The Remise's arms and the Porta: their scene and their dock; without WebGL, the same dock
+          over a plain ground (docs/plan-dock.md, lot 6). */}
+        <LazyArms p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+        <PortaPlace
+          p={p}
+          now={now}
+          open={sheet === "porta"}
+          busy={busy}
+          onClose={close}
+          act={act}
+          onBattle={() => {
+            setSheet(null);
+            setFighting(true);
+          }}
+        />
+        {/* The four places stay at the foot over the Porta and the Company (the gameplay audit, P5):
+          those are places, left by the bar, no more by a cross only. */}
+        {!wide &&
+          (sheet === "porta" || sheet?.startsWith("company") === true) &&
+          createPortal(
+            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[45]" data-places-over>
+              {placeTabs}
+            </div>,
+            document.body,
+          )}
+        {(fighting || (p.view?.porta?.battle && p.view.porta.battle.id !== leftBattle)) && (
+          <BattleScreen
+            onClose={() => {
+              setFighting(false);
+              setLeftBattle(p.view?.porta?.battle?.id ?? null);
+              void refresh();
+            }}
+          />
+        )}
+      </div>
+    </Safe>
   );
 }
 

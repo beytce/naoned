@@ -38,7 +38,7 @@ import { type Vehicle, cart, ship } from "./models/vehicles.js";
 import { drawChevron, drawnIndices, ribbonGeometry, roundedPath, seaDashes } from "./ribbon.js";
 import { Blush } from "./selection.js";
 import { box } from "./shapes.js";
-import { BISCUIT, BOARD, CAMERA, RIBBON, SELECT } from "./tokens.js";
+import { BOARD, CAMERA, COL, RIBBON, SELECT } from "./tokens.js";
 
 import { type Cell, type Place, type Shared, type Spec, TileBoard, palette } from "./TileBoard.js";
 
@@ -269,7 +269,7 @@ export default function PorcellanaLab() {
     <div
       className="porcellana fixed inset-0"
       data-porcellana-lab
-      style={spec.biscuit ? { background: BISCUIT.bg } : undefined}
+      style={spec.biscuit ? { background: COL.bg } : undefined}
     >
       <Canvas
         orthographic

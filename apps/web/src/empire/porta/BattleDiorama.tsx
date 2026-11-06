@@ -199,7 +199,7 @@ function Field({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-[#E3D9CB]" data-battle={battle.id}>
+    <div className="fixed inset-0 z-50 overflow-hidden bg-[#E9E6E0]" data-battle={battle.id}>
       <div ref={root} className="absolute inset-0 touch-none select-none">
         <Guard3D onFail={onFail}>
           <Suspense fallback={null}>

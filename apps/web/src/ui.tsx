@@ -932,7 +932,7 @@ export function Sheet({
         {/* Sticky from the dialog's own edge, over its padding (a sticky box stops under it). */}
         <div
           data-sheet-head
-          className={`sticky -top-3 z-10 -mx-5 -mt-3 bg-night-3/95 px-5 pt-3 lg:-top-7 lg:-mx-7 lg:-mt-7 lg:px-7 lg:pt-7 ${head.title ? "mb-4 border-b border-line/60 pb-3" : "mb-4 lg:mb-0"}`}
+          className={`sticky -top-3 z-10 -mx-5 -mt-3 bg-night-3 px-5 pt-3 lg:-top-7 lg:-mx-7 lg:-mt-7 lg:px-7 lg:pt-7 ${head.title ? "mb-4 border-b border-line/60 pb-3" : "mb-4 lg:mb-0"}`}
         >
           <div
             className={`mx-auto h-1.5 w-12 rounded-full bg-line lg:hidden ${head.title ? "mb-3" : ""}`}

@@ -197,7 +197,7 @@ function ArmsBoard({
         <Guard3D>
           <Canvas
             orthographic
-            dpr={[1, 2]}
+            dpr={window.innerWidth < 640 ? [1, 1.5] : [1, 2]}
             gl={{ antialias: true, powerPreference: "high-performance" }}
             onCreated={({ camera }) => {
               (camera as OrthographicCamera & { manual?: boolean }).manual = true;

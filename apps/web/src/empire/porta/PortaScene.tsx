@@ -169,7 +169,7 @@ export function PortaScene({
   return (
     // Above the four places (the gameplay audit, P5): the Porta is a place, left by the bar.
     <div
-      className="porta-in fixed inset-x-0 top-0 bottom-[var(--places)] z-40 lg:top-[var(--topbar,0px)] overflow-hidden bg-[#E3D9CB]"
+      className="porta-in fixed inset-x-0 top-0 bottom-[var(--places)] z-40 lg:top-[var(--topbar,0px)] overflow-hidden bg-[#E9E6E0]"
       data-porta-scene
     >
       <SceneView
@@ -413,7 +413,7 @@ function SceneView(props: {
         <Guard3D>
           <Canvas
             orthographic
-            dpr={[1, 2]}
+            dpr={window.innerWidth < 640 ? [1, 1.5] : [1, 2]}
             gl={{ antialias: true, powerPreference: "high-performance" }}
             onCreated={({ camera }) => {
               (camera as OrthographicCamera & { manual?: boolean }).manual = true;

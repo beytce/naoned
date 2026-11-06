@@ -369,6 +369,7 @@ const Battle3D = memo(
         <Stage
           target={centre(battle)}
           plain={!live}
+          phone={window.innerWidth < 640}
           background={ROME_DUSK.sky}
           scale={((battle.radius + 2) * CASE) / 36}
         />
