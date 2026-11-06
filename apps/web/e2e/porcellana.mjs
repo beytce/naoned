@@ -102,15 +102,33 @@ try {
     await page.locator("[data-place^='fondaco:']").click();
     await page.locator(".pc-card").waitFor();
     await shot("2-fondaco");
-    // A « + » plot: its card, its price; its round button opens the purchase.
-    const plot = page.locator("[data-place^='plot:']").first();
+    // A « + » plot open to buy: its card, its price; its round button opens the purchase, bought.
+    const plot = page.locator("[data-place^='plot:'][aria-label='Parcelle libre']").first();
     if ((await plot.count()) === 0) faults.push(`${label}: no plot to buy round the house`);
     else {
+      const cell = (await plot.getAttribute("data-place"))?.slice(5) ?? "";
       await plot.evaluate((el) => el.click());
       await page.locator(".pc-card").waitFor();
       await shot("3-parcelle");
       await page.locator(".pc-go").click();
+      await page.locator("[data-action-panel=sector]").waitFor();
       await shot("4-achat", 4_000);
+      await page
+        .locator("[data-action-panel=sector]")
+        .getByRole("button", { name: /acheter la case/i })
+        .click();
+      // Bought: the plot is a free tile of the house's; touched, its card offers to build.
+      const free = page.locator(`[data-place='free:${cell}']`);
+      await free.waitFor({ state: "attached", timeout: 15_000 });
+      await shot("4b-achetee", 8_000);
+      await free.evaluate((el) => el.click());
+      await page.locator(".pc-card").waitFor();
+      await page.locator(".pc-go").click();
+      const build = page.getByRole("button", { name: /bâtir ·/i }).first();
+      await build.waitFor();
+      await shot("4c-batir", 2_000);
+      await build.click();
+      await shot("4d-chantier", 10_000);
     }
     // The keys of a computer: the map moves, then zooms.
     await page.keyboard.press("Escape");

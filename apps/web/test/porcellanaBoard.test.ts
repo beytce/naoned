@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { freeTileOf } from "../src/empire/NewWorkshop.js";
 import type { EmpirePayload } from "../src/empire/types.js";
 import { boardOf } from "../src/porcellana/board/scene.js";
 
@@ -129,5 +130,31 @@ describe("the board of the house", () => {
     const mill = b?.tiles.find((x) => x.key === "2,1");
     expect(mill?.running).toBe(false);
     expect(mill?.place?.pin).toBe("3");
+  });
+});
+
+describe("the free tile to build on", () => {
+  it("is the house's own, of the region, free, nearest the fondaco", () => {
+    // 2,1 holds the mill, 3,1 the fondaco: 2,2 is the free one.
+    expect(freeTileOf(payload(), "veneto")).toBe("2,2");
+    expect(freeTileOf(payload({ unlocked: ["2,1", "3,1"] }), "veneto")).toBeNull();
+    expect(freeTileOf(payload({ grid: "hex" }), "veneto")).toBeNull();
+  });
+
+  it("is a quiet place of the board: its card offers to build", () => {
+    const b = boardOf(payload(), NOW);
+    const free = b?.tiles.find((x) => x.key === "2,2")?.place;
+    expect(free?.target).toEqual({ kind: "free", tile: "2,2" });
+    expect(free?.quiet).toBe(true);
+  });
+});
+
+describe("a workshop under way", () => {
+  it("stands as a site on its tile", () => {
+    const p = payload();
+    (p.view as unknown as { house: { builds: unknown[] } }).house.builds = [
+      { kind: "newWorkshop", cell: "2,2", level: 1 },
+    ];
+    expect(boardOf(p, NOW)?.tiles.find((x) => x.key === "2,2")?.model).toBe("site");
   });
 });

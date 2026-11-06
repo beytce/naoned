@@ -435,7 +435,9 @@ function Board({
       const y = (-tmp.y * 0.5 + 0.5) * h;
       el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
       const out =
-        pinOut(c.t, l.from) && !(tile.place.plus && cam.zoom < 1.25 && sh.chosen !== tile.place.id);
+        (!tile.place.quiet || sh.chosen === tile.place.id) &&
+        pinOut(c.t, l.from) &&
+        !(tile.place.plus && cam.zoom < 1.25 && sh.chosen !== tile.place.id);
       el.dataset.out = String(out);
       if (tile.place.id === sh.chosen) sh.card?.place(x, y, w, h);
     }
@@ -524,6 +526,11 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
     }
     sh.current.chosen = chosen;
   }
+  // A plot bought: its purchase panel has nothing left to say, the plot is let go.
+  const bought = target?.kind === "sector" && (p.view?.map?.unlocked ?? []).includes(target.cell);
+  useEffect(() => {
+    if (bought) onTarget(null);
+  }, [bought, onTarget]);
   // The game closed the place's dock: the place is let go.
   const hadTarget = useRef(false);
   useEffect(() => {

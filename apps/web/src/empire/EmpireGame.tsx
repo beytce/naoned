@@ -173,6 +173,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const domainNow = useRef(domain);
   domainNow.current = domain;
   const [busy, setBusy] = useState(false);
+  // On square tiles, the free tile chosen on the map to build a workshop on.
+  const [buildTile, setBuildTile] = useState<string | undefined>(undefined);
   const [toast, setToast] = useState<string | null>(null);
   // The good opened from the resource bar, and the recipe the next step points at.
   const [good, setGood] = useState<string | null>(null);
@@ -505,6 +507,12 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             target={target}
             onTarget={(x) => {
               if (placing) return;
+              // A free tile of the house's: the workshops one may build there, at once.
+              if (x?.kind === "free" && x.tile) {
+                setBuildTile(x.tile);
+                setSheet("new");
+                return;
+              }
               if (x?.kind === "vehicle") setVehicle(x.id);
               if (!x) {
                 setVehicle(null);
@@ -746,8 +754,12 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         open={sheet === "new" || sheet?.startsWith("new:") === true}
         region={sheet?.startsWith("new:") ? sheet.slice(4) : "veneto"}
         busy={busy}
-        onClose={close}
+        onClose={() => {
+          setBuildTile(undefined);
+          close();
+        }}
         act={act}
+        tile={buildTile}
       />
       <ProductionSheet
         p={p}

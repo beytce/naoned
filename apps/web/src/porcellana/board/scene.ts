@@ -64,6 +64,8 @@ export interface BoardPlace {
   /** The pin full: something to do there now. */
   ready: boolean;
   plus?: boolean;
+  /** No pin until chosen (a free tile of the house's: the board stays quiet). */
+  quiet?: boolean;
 }
 
 export interface BoardTile {
@@ -158,8 +160,24 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     });
   }
 
-  // The house's own tiles: plain land, its dressing round the roads.
-  for (const k of owned) put(k, { water: false, model: "lane", running: false, place: null });
+  // The house's own tiles: plain land, its dressing round the roads; free, a workshop may rise there.
+  for (const k of owned)
+    put(k, {
+      water: false,
+      model: "lane",
+      running: false,
+      place: {
+        id: `free:${k}`,
+        target: { kind: "free", tile: k },
+        name: t.porcellana.freeTile,
+        sub: t.porcellana.freeSub,
+        line: t.porcellana.freeLine,
+        go: t.porcellana.build,
+        pin: "",
+        ready: false,
+        quiet: true,
+      },
+    });
 
   // The towns of the regions reached: islands where they are not the house's.
   const orders = new Map(v.orders.map((o) => [o.city, o]));
@@ -216,8 +234,12 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       },
     });
   };
+  // The sites under way: a place being built, a new workshop rising on its tile.
   for (const s of map.sites)
     put(s.cell, { water: false, model: "site", running: true, place: null });
+  for (const b of house.builds ?? [])
+    if (b.kind === "newWorkshop" && b.cell)
+      put(b.cell, { water: false, model: "site", running: true, place: null });
   place(map.depot, "depot", { kind: "depot" }, t.porcellana.depot, t.porcellana.depotSub, "");
   place(
     map.camp,

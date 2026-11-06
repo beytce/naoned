@@ -34,6 +34,8 @@ export interface EmpireWorkshop {
 
 export interface EmpireBuild {
   kind: "casa" | "newWorkshop" | "upgrade" | "counter" | "ship" | "depot";
+  /** On square tiles, the tile a new workshop or a place is built on. */
+  cell?: string;
   vehicleType?: string;
   region?: string;
   level: number;

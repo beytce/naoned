@@ -237,7 +237,8 @@ export function canCasa(p: EmpirePayload): boolean {
 export type Target =
   | { kind: "workshop"; id: string }
   | { kind: "casa" }
-  | { kind: "free" }
+  /** A free place; on square tiles, the house's free tile (« i,j ») to build on. */
+  | { kind: "free"; tile?: string }
   | { kind: "region"; code: string }
   | { kind: "city"; code: string }
   | { kind: "arsenal" }

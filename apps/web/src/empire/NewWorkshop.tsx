@@ -7,6 +7,37 @@ import { affordable } from "./logic.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
 const t = fr.empire;
+
+/**
+ * On square tiles (docs/plan-porcellana.md D7), the house's free tile of a region nearest its
+ * fondaco: owned, no town, no place, no workshop, no site on it. Null when there is none.
+ */
+export function freeTileOf(p: EmpirePayload, region: string): string | null {
+  const map = p.view?.map;
+  const house = p.view?.house;
+  if (!map || !house || map.grid !== "square") return null;
+  const size = map.tileSize ?? 15;
+  const at = (x: number, y: number) => `${Math.floor(x / size)},${Math.floor(y / size)}`;
+  const taken = new Set<string>([
+    ...map.cities.map((c) => at(c.x, c.y)),
+    at(map.home.x, map.home.y),
+    ...map.posts.map((q) => at(q.x, q.y)),
+    ...[map.depot, map.camp, map.arsenal].filter((c): c is string => !!c),
+    ...house.workshops.map((w) => w.tile).filter((c): c is string => !!c),
+    ...map.sites.map((s) => s.cell),
+    ...(house.builds ?? []).map((b) => b.cell).filter((c): c is string => !!c),
+  ]);
+  const [hi = 0, hj = 0] = at(map.home.x, map.home.y).split(",").map(Number);
+  const far = (k: string) => {
+    const [i = 0, j = 0] = k.split(",").map(Number);
+    return Math.abs(i - hi) + Math.abs(j - hj);
+  };
+  return (
+    map.unlocked
+      .filter((k) => map.cells[k]?.region === region && !taken.has(k))
+      .sort((a, b) => far(a) - far(b) || a.localeCompare(b))[0] ?? null
+  );
+}
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
 
@@ -21,6 +52,7 @@ export function NewWorkshopList({
   busy,
   onDone,
   act,
+  tile,
 }: {
   p: EmpirePayload;
   region: string;
@@ -28,8 +60,13 @@ export function NewWorkshopList({
   busy: boolean;
   onDone: () => void;
   act: (a: EmpireAction) => Promise<void>;
+  /** On square tiles, the tile chosen on the map; else the free one nearest the fondaco. */
+  tile?: string;
 }) {
   const view = p.view;
+  const square = view?.map.grid === "square";
+  const at = square ? (tile ?? freeTileOf(p, region)) : undefined;
+  if (square && !at) return <p className="text-sm text-cream-dim">{t.porcellana.noFreeTile}</p>;
   const r = view?.regions.find((x) => x.code === region);
   const here = (view?.house.workshops ?? []).filter(
     (w) => (w.region ?? "veneto") === region,
@@ -89,6 +126,7 @@ export function NewWorkshopList({
                           workshopType: b.type,
                           recipe: r.code,
                           ...(region !== "veneto" ? { region } : {}),
+                          ...(at ? { tile: at } : {}),
                         }).then(onDone);
                       }}
                     >
@@ -112,6 +150,7 @@ export function NewWorkshopSheet({
   busy,
   onClose,
   act,
+  tile,
 }: {
   p: EmpirePayload;
   open: boolean;
@@ -120,6 +159,7 @@ export function NewWorkshopSheet({
   busy: boolean;
   onClose: () => void;
   act: (a: EmpireAction) => Promise<void>;
+  tile?: string;
 }) {
   return (
     <Sheet open={open} onClose={onClose} kicker={t.workshop.newTitle} title={regionName(region)}>
@@ -130,6 +170,7 @@ export function NewWorkshopSheet({
         busy={busy}
         onDone={onClose}
         act={act}
+        tile={tile}
       />
     </Sheet>
   );

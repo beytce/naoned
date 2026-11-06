@@ -192,6 +192,12 @@ const frDict = {
       running: "Il travaille.",
       blocked: (good: string) => `Il attend : ${good}.`,
       idle: "À l'arrêt.",
+      freeTile: "Case libre",
+      freeSub: "À toi · un atelier peut s'y bâtir",
+      freeLine: "Un atelier ici aura pour voisins ceux qui touchent cette case.",
+      build: "Bâtir un atelier",
+      noFreeTile:
+        "Aucune case libre à toi dans cette région : achète une parcelle « + » à côté de ton domaine.",
     },
     region: "Vénétie",
     loading: "On ouvre les livres…",
