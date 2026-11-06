@@ -88,19 +88,7 @@ importers:
       '@comptoirs/engine':
         specifier: workspace:*
         version: link:../../packages/engine
-      '@fontsource-variable/archivo':
-        specifier: 5.2.6
-        version: 5.2.6
-      '@fontsource/cinzel':
-        specifier: 5.2.6
-        version: 5.2.6
       '@fontsource/cormorant-garamond':
-        specifier: 5.3.0
-        version: 5.3.0
-      '@fontsource/space-grotesk':
-        specifier: 5.3.0
-        version: 5.3.0
-      '@fontsource/space-mono':
         specifier: 5.3.0
         version: 5.3.0
       '@fontsource/work-sans':
@@ -1400,20 +1388,8 @@ packages:
   '@fastify/websocket@11.3.4':
     resolution: {integrity: sha512-firnJtEOv6pfdoXIzFDMbd+omgWwFNfLtdM8JejNFr/9lT/9DHkEhjTShuRFeE4phqrevD2B3JRW0v6uyzWhHQ==}
 
-  '@fontsource-variable/archivo@5.2.6':
-    resolution: {integrity: sha512-6l6yqhuNWkAz5anuWBYJ+TONIx7sWBJK5TKmMD0QsE1E8mkHYmzZAHM4K10EKeRVF6efh9n2XHIiSqDIGUmA4g==}
-
-  '@fontsource/cinzel@5.2.6':
-    resolution: {integrity: sha512-ec+bdUJiEugRaDxoXAt7GWb0dYiAW6256a4OsZ8UXgAdsxF798xa9l/B/WrgHTExFhWYWNB0Y9xqcfbqWajTAw==}
-
   '@fontsource/cormorant-garamond@5.3.0':
     resolution: {integrity: sha512-weuGsCirGVWBWqpt6YUp0yLThTe4G8YO45noq8wxeJCRvEpq5lFrxNMFSTxcyOyV5k5otzJ8guDzYegdYlcLMQ==}
-
-  '@fontsource/space-grotesk@5.3.0':
-    resolution: {integrity: sha512-ksnGizDPXIDuvqcTYTSrmZ+evx9sDlS8rp7+42BQ7wU+spt3twEoXfbJz672C+5CLg6VeUQwRy5RXshWb67LcQ==}
-
-  '@fontsource/space-mono@5.3.0':
-    resolution: {integrity: sha512-FrpBMOVWn3PRdRHlrZWC55X3kZG/2BTH7SM5ZyS/bky3iKya2BturI5lk+t0RoDQL2JyHzURsVq/EisCsxpI5A==}
 
   '@fontsource/work-sans@5.3.0':
     resolution: {integrity: sha512-3cKV28+bEiLGdyOl0VgEGCFWE1XdZJu/K+nH4Jt76XC3T//XrRtm2EF7jA61GSMIy8sYp6ZFTE01nD3lLaBV9A==}
@@ -5109,15 +5085,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@fontsource-variable/archivo@5.2.6': {}
-
-  '@fontsource/cinzel@5.2.6': {}
-
   '@fontsource/cormorant-garamond@5.3.0': {}
-
-  '@fontsource/space-grotesk@5.3.0': {}
-
-  '@fontsource/space-mono@5.3.0': {}
 
   '@fontsource/work-sans@5.3.0': {}
 

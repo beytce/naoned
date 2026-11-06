@@ -2,7 +2,22 @@
 
 Le jeu s'appelle **Fondaco**, du nom des entrepôts où les marchands étrangers logeaient et commerçaient à Venise. Ambiance : Venise au Quattrocento, des ducats, la lagune. L'identité suit le guide « Fondaco — identité & palettes ».
 
+## Direction Porcellana (5 novembre 2026) — fait foi
+
+Décision du porteur (« les visuels sont parfaits », « c'est exactement de cette manière que je veux voir apparaître les informations », « même l'animation du début »). Elle remplace, pour tout ce qui est en 3D et pour les surfaces, le Plateau de nuit, Jour et le verre et la Lagune ; ce qui suit garde ses règles là où elles ne parlent ni de couleur ni de matière (le dock, une décision à la fois). Plan, grammaire chiffrée et état : `docs/plan-porcellana.md` ; référence : `docs/direction-artistique-2026-11/porcellana/prototype.html`.
+
+- **Un monde de porcelaine**, presque monochrome : les volumes se lisent par la lumière et la valeur, jamais par la couleur ; chaque volume biseauté.
+- **Un seul accent**, le rouge de Venise, pour ce qui vit ou ce qui est à soi : les routes, les caisses, la voile, le drapeau, le four, la sélection ; et pour l'unique action de l'écran (le bouton d'action, `--face`). L'or reste aux montants. Le noir d'encre en contrepoint rare.
+- **Les bâtiments** simples et explicites : une silhouette qu'on nomme sans légende, un signe de travail qui ne bouge que si le jeu le dit (catalogue : `apps/web/src/porcellana/catalogue.ts`, laboratoire `?lab=porcellana&vue=catalogue`).
+- **La carte en cases carrées**, achetées une à une, de la forme de ce qu'on a bâti ; **les routes font la carte**.
+- **La sélection** : la case se soulève, un anneau d'accent, un voile d'accent de 17 % ; **la fiche** de papier à côté du repère, sa flèche ouvre le dock du lieu.
+- **L'arrivée** : les cases tombent en place le long de la diagonale, puis les routes se dessinent.
+- **Les terres de Rome en biscuit** (porcelaine non émaillée), Rome à l'encre ; les unités en pions de porcelaine.
+- **Les surfaces** de l'interface en papier (la palette `porcellana`, le défaut) ; **la typographie** : Cormorant Garamond pour les titres et les noms, Work Sans pour le reste, aux chiffres alignés.
+
 ## Direction « Plateau de nuit » (2 novembre 2026)
+
+*Remplacée par Porcellana (5 novembre 2026) pour la carte et les surfaces.*
 
 Décision du porteur : la carte de l'empire et ce qui s'y pose suivent le « Plateau de nuit » (toile de design validée, `docs/direction-artistique-2026-11/plateau/`, plan `docs/plan-plateau.md`). Elle remplace la direction Lagune pour la carte ; l'interface autour (feuilles, boutons, une seule action en or, typographie) garde ses règles ci-dessous.
 
@@ -15,6 +30,8 @@ Décision du porteur : la carte de l'empire et ce qui s'y pose suivent le « Pla
 - **Le mouvement** reste lent et rare (vaguelettes, brouillard, fanion), coupé quand l'appareil demande moins d'animations.
 
 ## Direction Jour et le verre (4 novembre 2026)
+
+*Remplacée par Porcellana (5 novembre 2026) pour la carte et les surfaces.*
 
 Décisions du porteur : la carte et toute l'interface passent « de jour » (références : un city-builder aux panneaux crème, une île de cases hexagonales en relief, une île pastel entourée de cases « + »), puis les interfaces et menus « un peu Liquid Glass ». Elles remplacent le « Plateau de nuit » pour la carte ; les règles qui ne parlent pas de couleur restent (une seule action en or, le dock, rien qui lévite). Captures : `docs/direction-artistique-2026-11/jour/`.
 
@@ -35,6 +52,8 @@ Décision du porteur : tout menu qui porte un choix (améliorer, équiper, parti
 - **Une seule action en or**, en bas du dock, qui dit le choix fait (« Poser les Apprentis », « Franchir la Porta », « Livrer 2 · 1 450 d »).
 
 ## Direction Lagune : la règle (25 octobre 2026)
+
+*Remplacée par Porcellana (5 novembre 2026) pour la carte et les surfaces.*
 
 Décision du porteur : **tout ajout suit cette direction**. Les maquettes de chaque page sont sur la planche de design (lien dans `docs/propositions-design-2026-10-25.md`, page « Lagune · toutes les pages », avec le système et la navigation).
 
@@ -100,6 +119,8 @@ Une marchandise se lit pareil partout (carte, Magasin, Rialto, Ateliers) : **la 
 Chaque teinte reste à ΔE ≥ 25 de l'or, du vert d'eau, du cinabre, du lapis et de l'eau des trois palettes, et des autres teintes ; contraste ≥ 3:1 (un graphisme, jamais du texte) sur les nuits sombres (`test/goods.test.ts`). Le blé n'est pas doré : l'or reste l'argent et l'action. La charge d'une charrette prend la teinte de sa chaîne.
 
 ## Typographie (embarquée, sans appel à Google)
+
+*Depuis Porcellana (D4) : Cormorant Garamond remplace Archivo Expanded et Cinzel, Work Sans remplace Space Grotesk et Space Mono ; les règles d'usage ci-dessous restent (les sur-titres en capitales espacées, aucun texte sous 12 px).*
 
 - **Archivo Expanded** (Archivo variable, largeur 125 %) : titres et chiffres.
 - **Cinzel** (capitales romaines, sous-ensemble latin, embarquée) : les noms de lieux des deux cartes et les titres des fenêtres, rien d'autre (décision du porteur du 24 octobre 2026).

@@ -6,11 +6,6 @@
  * target, as the map of before told it). It stands where EmpireMap stood when the world's map is of
  * square tiles.
  */
-import "@fontsource/cormorant-garamond/600.css";
-import "@fontsource/cormorant-garamond/700.css";
-import "@fontsource/work-sans/400.css";
-import "@fontsource/work-sans/500.css";
-import "@fontsource/work-sans/600.css";
 import "../porcellana.css";
 import { Canvas, type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";

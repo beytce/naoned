@@ -46,15 +46,15 @@ export async function chronicleImage(data: Ceremony, pseudo: string): Promise<Bl
   g.stroke();
   g.textAlign = "center";
   g.fillStyle = "#ECF5FF";
-  g.font = "800 112px 'Archivo Variable', Archivo, system-ui, sans-serif";
+  g.font = "800 112px 'Cormorant Garamond', Georgia, serif";
   g.fillText("FONDACO", W / 2, 250);
   g.fillStyle = "#9CB4D2";
-  g.font = "36px 'Space Mono', ui-monospace, monospace";
+  g.font = "36px 'Work Sans', system-ui, sans-serif";
   g.fillText(data.season.toUpperCase(), W / 2, 320);
   g.fillStyle = "#F4C554";
-  g.font = "800 260px 'Archivo Variable', Archivo, system-ui, sans-serif";
+  g.font = "800 260px 'Cormorant Garamond', Georgia, serif";
   g.fillText(`${data.rank}${data.rank === 1 ? "er" : "e"}`, W / 2, 640);
-  g.font = "44px 'Space Grotesk', system-ui, sans-serif";
+  g.font = "44px 'Work Sans', system-ui, sans-serif";
   let y = 760;
   for (const [i, line] of chronicleLines(data, pseudo).entries()) {
     g.fillStyle = i === 0 ? "#ECF5FF" : "#C2D4EA";
@@ -62,7 +62,7 @@ export async function chronicleImage(data: Ceremony, pseudo: string): Promise<Bl
     y += 76;
   }
   g.fillStyle = "#6EC8F5";
-  g.font = "32px 'Space Mono', ui-monospace, monospace";
+  g.font = "32px 'Work Sans', system-ui, sans-serif";
   g.fillText(fr.game.chronicle.footer, W / 2, H - 120);
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
 }

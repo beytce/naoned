@@ -126,7 +126,7 @@ export function SeaChart(props: {
           fill={P.gold}
           fontSize="9"
           fontWeight="800"
-          fontFamily="Archivo Variable, sans-serif"
+          fontFamily="Cormorant Garamond, Georgia, serif"
           style={{ fontStretch: "125%" }}
         >
           VENISE
@@ -148,7 +148,7 @@ export function SeaChart(props: {
               textAnchor={LABEL[p.code]?.[2] ?? "start"}
               fill={P.cream}
               fontSize="8"
-              fontFamily="Space Grotesk, sans-serif"
+              fontFamily="Work Sans, sans-serif"
               fontWeight="600"
             >
               {p.name}

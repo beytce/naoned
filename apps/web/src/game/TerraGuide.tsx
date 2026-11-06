@@ -114,7 +114,7 @@ function Note({
       y={y}
       fontSize="10"
       fill={`rgb(var(--${tone}))`}
-      fontFamily="Space Grotesk, system-ui, sans-serif"
+      fontFamily="Work Sans, system-ui, sans-serif"
     >
       {children}
     </text>

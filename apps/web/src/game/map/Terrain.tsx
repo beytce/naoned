@@ -251,7 +251,7 @@ export const PortolanTerrain = memo(function PortolanTerrain() {
       <g
         fill={INK}
         fillOpacity="0.55"
-        fontFamily="Space Mono, monospace"
+        fontFamily="Work Sans, system-ui, sans-serif"
         fontSize="8"
         letterSpacing="4"
         textAnchor="middle"
@@ -279,7 +279,7 @@ export const PortolanTerrain = memo(function PortolanTerrain() {
           textAnchor="middle"
           fontSize="6.5"
           fill={P.gold}
-          fontFamily="Archivo Variable, sans-serif"
+          fontFamily="Cormorant Garamond, Georgia, serif"
           fontWeight="800"
         >
           N

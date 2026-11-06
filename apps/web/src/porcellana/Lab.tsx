@@ -5,11 +5,6 @@
  * Fondaco, the Market, a road of accent and its cart, the lagoon), and the catalogue (&vue=catalogue:
  * every model of the game, by family, working or idle). Its texts are examples.
  */
-import "@fontsource/cormorant-garamond/600.css";
-import "@fontsource/cormorant-garamond/700.css";
-import "@fontsource/work-sans/400.css";
-import "@fontsource/work-sans/500.css";
-import "@fontsource/work-sans/600.css";
 import "./porcellana.css";
 import { Canvas, type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
