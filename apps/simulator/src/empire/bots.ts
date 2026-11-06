@@ -622,6 +622,10 @@ function spendable(w: World, h: House): Deniers {
 
 /** A good piles up when its stock passes a day of what the house makes of it. */
 function pilesUp(w: World, h: House, good: string): boolean {
+  // Near the Fondaco's cap, it piles up: the house raises no workshop of it (the first steps,
+  // lot 3), as a player would not.
+  const cap = casaLevelOf(h.casa, w.s).storeCap;
+  if (cap !== undefined && (h.stock.get(good) ?? 0) >= Math.floor((cap * 8) / 10)) return true;
   const day = h.workshops
     .filter((x) => x.good === good)
     .reduce((n, x) => n + rateOf(w, h, x) * DAY, 0);
