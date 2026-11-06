@@ -143,7 +143,18 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // A battle closed to look at the map stays closed until the next.
   const [leftBattle, setLeftBattle] = useState<string | null>(null);
   // The place of the map touched, its panel open at the foot of the screen.
-  const [target, setTarget] = useState<Target | null>(null);
+  const [target, setTargetRaw] = useState<Target | null>(null);
+  // A workshop with its inside opens its inside, not a dock (docs/plan-ateliers.md lot A7).
+  const interiorsRef = useRef<Record<string, unknown> | undefined>(undefined);
+  interiorsRef.current = p.view?.interiors;
+  const setTarget = useCallback((x: Target | null) => {
+    if (x?.kind === "workshop" && interiorsRef.current?.[x.id]) {
+      setInside(x.id);
+      setTargetRaw(null);
+      return;
+    }
+    setTargetRaw(x);
+  }, []);
   // Putting a counter or the Arsenal down: the map lights the cells, a touch picks one.
   const [placing, setPlacing] = useState<Placing | null>(null);
   const [picked, setPicked] = useState<Picked | null>(null);
@@ -328,7 +339,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         // A sheet open closes by itself; the domain is left only from the map.
         else if (domainNow.current && !targetNow.current && !sheetNow.current) map.current?.leave();
         else {
-          setTarget(null);
+          setTargetRaw(null);
           setVehicle(null);
         }
       } else if (e.key === ",") keys.current.cycle(-1);
@@ -717,15 +728,6 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               onWorkshop={(id) => setTarget({ kind: "workshop", id })}
               onOpen={open}
               onClose={() => setTarget(null)}
-              onEnter={
-                p.view?.interiors?.[target.id]
-                  ? () => {
-                      // Inside, the dock steps aside; it comes back on leaving.
-                      setInside(target.id);
-                      setTarget(null);
-                    }
-                  : undefined
-              }
             />
           ) : target ? (
             <ActionPanel
@@ -922,10 +924,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
                 now={now}
                 busy={busy}
                 act={act}
-                onClose={() => {
-                  setTarget({ kind: "workshop", id: inside });
-                  setInside(null);
-                }}
+                onClose={() => setInside(null)}
               />
             </Suspense>
           </GoldLayer>

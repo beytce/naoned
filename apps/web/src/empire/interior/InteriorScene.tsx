@@ -17,7 +17,8 @@ import type { Built, ModelOpts } from "../../porcellana/models/model.js";
 import { doorPile, stationModel } from "../../porcellana/models/stations.js";
 import { BOARD } from "../../porcellana/tokens.js";
 import { CloseButton } from "../../ui.js";
-import { buildingName, recipeOf } from "../logic.js";
+import { clock } from "../../ui.js";
+import { buildingName, recipeOf, workshopStatus } from "../logic.js";
 import { perHour } from "../map/WorkshopDock.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { MAP_3D } from "../map3d/flag.js";
@@ -126,6 +127,11 @@ export function InteriorScene({
   const gain = Math.round((pace - 10_000) / 100);
   const quality = Math.min(3, Math.round(inside.rate.qualityBps / 3_334));
   const kinds = [...new Set(inside.kinds.map((k) => k.kind))];
+  const status = workshopStatus(p, ws, now);
+  const up = v.upgrades[ws.id] ?? null;
+  const enlarging = v.house.builds.find((b) => b.workshopId === ws.id && b.kind === "upgrade") as
+    | { endsAt: number }
+    | undefined;
   const pick = async (x: number, y: number) => {
     if (!mode) return;
     const m = mode;
@@ -235,7 +241,31 @@ export function InteriorScene({
           >
             {t().gain(gain)}
           </span>
+          {inside.legacyBps > 0 ? (
+            <span
+              className="rounded-full bg-[#EDE8E0] px-2.5 py-1 text-[0.6875rem] font-bold text-[#625D55]"
+              data-interior-acquis
+            >
+              {t().acquis(Math.round(inside.legacyBps / 100))}
+            </span>
+          ) : null}
         </div>
+        {/* The hall grows with the workshop's level: its site from here. */}
+        {enlarging ? (
+          <p className="mt-2 text-[0.6875rem] font-bold text-[#625D55]" data-interior-enlarging>
+            {t().enlarging(clock(enlarging.endsAt - now))}
+          </p>
+        ) : up ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void act({ type: "empireUpgrade", workshopId })}
+            className="pointer-events-auto mt-2 min-h-11 rounded-full bg-[#EDE8E0] px-4 text-xs font-extrabold text-[#17150F] disabled:opacity-40"
+            data-interior-enlarge
+          >
+            {t().enlarge(up.level, String(Math.round(Number(up.cost) / 100)))}
+          </button>
+        ) : null}
       </div>
       <CloseButton onClick={onClose} className="absolute right-4 top-4 !bg-white !text-[#17150F]" />
       {mode ? (
@@ -321,7 +351,34 @@ export function InteriorScene({
           </ul>
         </div>
       ) : (
-        <div className="absolute inset-x-3 bottom-3 flex justify-center gap-2 lg:inset-x-auto lg:left-1/2 lg:-translate-x-1/2">
+        <div className="absolute inset-x-3 bottom-3 flex flex-wrap justify-center gap-2 lg:inset-x-auto lg:left-1/2 lg:-translate-x-1/2">
+          {status.state === "ready" || status.state === "idle" ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void act({ type: "empireRelaunch", workshopId })}
+              className="min-h-11 w-full rounded-full bg-[#D49A16] px-5 font-display text-sm font-extrabold text-[#17150F] shadow-[0_3px_0_#9a6f0e] disabled:opacity-40 sm:w-auto"
+              data-interior-relaunch={status.state}
+            >
+              {status.state === "ready"
+                ? fr.empire.dock.collect(status.quantity, p.goods[status.good] ?? status.good)
+                : fr.empire.dock.relaunch}
+            </button>
+          ) : status.state === "running" ? (
+            <span
+              className="flex min-h-11 w-full items-center justify-center rounded-full bg-white/80 px-5 text-xs font-bold text-[#625D55] sm:w-auto"
+              data-interior-running
+            >
+              {fr.empire.dock.running(clock(status.left))}
+            </span>
+          ) : (
+            <span
+              className="flex min-h-11 w-full items-center justify-center rounded-full bg-white/80 px-5 text-xs font-bold text-[#625D55] sm:w-auto"
+              data-interior-blocked
+            >
+              {fr.empire.dock.waits(p.goods[status.resource] ?? status.resource)}
+            </span>
+          )}
           <button
             type="button"
             onClick={() => setDrawer(true)}

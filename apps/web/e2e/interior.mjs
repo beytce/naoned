@@ -111,21 +111,21 @@ try {
     await saw.waitFor({ state: "attached", timeout: 30_000 });
     await saw.evaluate((el) => el.click());
     await page.locator(".pc-card").waitFor();
+    await shot("0-fiche", 3_000);
+    // « Entrer »: the inside at once, no dock (docs/plan-ateliers.md lot A7).
     await page.locator(".pc-go").click();
-    await page.locator("[data-enter-interior]").waitFor();
-    await shot("1-dock", 4_000);
     // Inside.
-    await page.locator("[data-enter-interior]").click();
     await page.locator("[data-interior-scene]").waitFor({ timeout: 30_000 });
     await shot("2-interieur", 25_000);
     const neck = page.locator("[data-interior-pin][data-hot=true]");
     if ((await neck.count()) !== 1) faults.push(`${label}: ${await neck.count()} bottlenecks`);
     else {
       await neck.evaluate((el) => el.click());
-      await page.locator(".pc-card").waitFor();
+      await page.locator("[data-station-panel]").waitFor();
       await shot("3-goulot", 6_000);
     }
     // Out again: the map.
+    await page.locator("[data-station-panel] button[aria-label=Fermer]").click();
     await page.locator("[data-interior-scene] > button[aria-label=Fermer]").click();
     await page.locator("[data-interior-scene]").waitFor({ state: "detached" });
     await page.close();

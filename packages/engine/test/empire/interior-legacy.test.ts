@@ -74,7 +74,7 @@ const withInterior: EmpireSettingsInput = { ...base, interior };
 const s = parseEmpireSettings(withInterior);
 
 /** A house of before: tools 2, apprentices 1, master 1 and furnace 1 fitted, a master placed, the craft known. */
-function before() {
+function ofBefore() {
   const w = new World(makeContext({ empire: base }));
   w.do({ type: "empireJoin", playerId: "a" });
   w.state = structuredClone(w.state);
@@ -115,8 +115,8 @@ function twelveHours(w: World): number {
 
 describe("the systems the insides absorb", () => {
   it("no house makes less after the switch: what the modules, the master and the craft gave is in its inside", () => {
-    const old = twelveHours(before());
-    const w = switched(before());
+    const old = twelveHours(ofBefore());
+    const w = switched(ofBefore());
     const now = twelveHours(w);
     expect(now).toBeGreaterThanOrEqual(old);
     // Turned into stations and levels the player sees.
@@ -125,17 +125,17 @@ describe("the systems the insides absorb", () => {
     const levels = inside?.stations.reduce((n, x) => n + x.level, 0) ?? 0;
     expect(levels + (inside?.stations.length ?? 0)).toBeGreaterThan(6);
     // Right after the switch, before any wear: quicker than its default plan.
-    const fresh = switched(before());
+    const fresh = switched(ofBefore());
     relaunch(fresh);
     expect(interiorPaceBps(farm(fresh), house(fresh), s, fresh.now)).toBeGreaterThan(10_000);
   });
 
   it("what the hall cannot hold yet stays as « acquis », never lost", () => {
-    const old0 = before();
+    const old0 = ofBefore();
     const h0 = old0.state.empire?.houses.a as EmpireHouse;
     h0.modules = { ...h0.modules, tools: 30, apprentices: 30 };
     const old = twelveHours(old0);
-    const big = before();
+    const big = ofBefore();
     const h1 = big.state.empire?.houses.a as EmpireHouse;
     h1.modules = { ...h1.modules, tools: 30, apprentices: 30 };
     const w = switched(big);
@@ -144,7 +144,7 @@ describe("the systems the insides absorb", () => {
   });
 
   it("the master becomes a hand of the workshop, at work at a station", () => {
-    const w = switched(before());
+    const w = switched(ofBefore());
     relaunch(w);
     const m = house(w).staff?.[0];
     expect(m?.placedAt).toBeUndefined();
@@ -153,20 +153,20 @@ describe("the systems the insides absorb", () => {
   });
 
   it("the quality of the master and its module is kept as care", () => {
-    const w = switched(before());
+    const w = switched(ofBefore());
     relaunch(w);
     expect(farm(w).interior?.stations.some((x) => x.care > 0)).toBe(true);
   });
 
   it("the furnace still saves inputs; the other workshop modules no longer count", () => {
-    const w = switched(before());
+    const w = switched(ofBefore());
     relaunch(w);
     const fitted = farm(w).fitted ?? [];
     expect(fitted).toEqual(["furnace"]);
   });
 
   it("refuses to research, fit or hire what the insides replaced", () => {
-    const w = switched(before());
+    const w = switched(ofBefore());
     expect(w.try({ type: "empireResearch", playerId: "a", module: "tools" }).ok).toBe(false);
     expect(
       w.try({ type: "empireFit", playerId: "a", workshopId: farm(w).id, slot: 0, module: "tools" })
@@ -176,7 +176,7 @@ describe("the systems the insides absorb", () => {
   });
 
   it("the knowledge of the craft opens the stations' higher levels", () => {
-    const w = switched(before());
+    const w = switched(ofBefore());
     relaunch(w);
     // With the craft known, level 2 (the fixture's last) is open; without it, level 1 only.
     const s1 = farm(w).interior?.stations.find((x) => x.kind === "kiln" && x.level === 1);

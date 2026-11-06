@@ -112,11 +112,10 @@ try {
     await saw.waitFor({ state: "attached", timeout: 30_000 });
     await saw.evaluate((el) => el.click());
     await page.locator(".pc-card").waitFor();
+    await shot("0-fiche", 3_000);
+    // « Entrer »: the inside at once, no dock (docs/plan-ateliers.md lot A7).
     await page.locator(".pc-go").click();
-    await page.locator("[data-enter-interior]").waitFor();
-    await shot("1-dock", 4_000);
     // Inside.
-    await page.locator("[data-enter-interior]").click();
     await page.locator("[data-interior-scene]").waitFor({ timeout: 30_000 });
     await shot("1-interieur", 20_000);
     const rate = async () =>

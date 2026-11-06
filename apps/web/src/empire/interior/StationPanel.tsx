@@ -108,11 +108,15 @@ export function StationPanel({
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Act
           primary
-          disabled={busy || building || !next}
+          disabled={busy || building || !next || st.level >= v.levelOpen}
           onClick={() => go({ type: "empireInteriorUpgrade", workshopId, stationId: st.id })}
           data="upgrade"
         >
-          {next ? t().upgrade(next.costDucats) : t().upgradeMax}
+          {!next
+            ? t().upgradeMax
+            : st.level >= v.levelOpen
+              ? t().locked(st.level + 1)
+              : t().upgrade(next.costDucats)}
         </Act>
         <Act
           disabled={busy || st.wear === 0}
