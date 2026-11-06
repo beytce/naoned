@@ -24,6 +24,7 @@ import {
   upgradeLegacyState,
   venice1450,
   venice1450Empire,
+  venice1450EmpireInterior,
   venice1450EmpireSquare,
   venice1450Settings,
   weekIndex,
@@ -72,6 +73,11 @@ export interface WorldOptions {
   settingsFromTheme?: boolean;
   /** The empire's map: the sectors of now, or the square tiles (docs/plan-porcellana.md M4). */
   empireGrid?: "hex" | "square";
+  /**
+   * The workshops' insides (docs/plan-ateliers.md): off unless set; on square tiles only. Its
+   * switch changes the trade: on in production only on the owner's decision, announced first.
+   */
+  empireInterior?: boolean;
   /** A snapshot of the state at least this often (ms) … */
   snapshotEveryMs?: number;
   /** … or after this many saved versions, whichever comes first. */
@@ -817,8 +823,19 @@ async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: 
   // The empire's own settings: the theme's current ones in beta, else the stored ones completed.
   if (isEmpireRow(world)) {
     const saved = (world.settings as { empire?: unknown }).empire;
-    const theme = options.empireGrid === "square" ? venice1450EmpireSquare : venice1450Empire;
-    const empire = options.settingsFromTheme ? theme : mergeDefaults(theme, saved);
+    const square = options.empireGrid === "square";
+    const theme = !square
+      ? venice1450Empire
+      : options.empireInterior
+        ? venice1450EmpireInterior
+        : venice1450EmpireSquare;
+    const merged = (options.settingsFromTheme ? theme : mergeDefaults(theme, saved)) as Record<
+      string,
+      unknown
+    >;
+    // Switched off, the insides go: the workshops run as before (their insides kept, unread).
+    const { interior, ...without } = merged;
+    const empire = square && options.empireInterior ? { ...without, interior } : without;
     stored = { ...(stored as object), empire };
   }
   if (options.settingsOverride) stored = mergeDefaults(stored, options.settingsOverride);

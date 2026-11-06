@@ -39,6 +39,8 @@ import {
   workshopPlaces,
   workshopTop,
 } from "./house.js";
+import type { InteriorSettings } from "./interior/settings.js";
+import { type InteriorView, interiorRulesOf, interiorsOf } from "./interior/view.js";
 import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import {
   buyableOf,
@@ -191,6 +193,10 @@ export interface EmpireView {
   };
   /** The workshops' places for modules, and their neighbourhood's bonus (bps). */
   workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
+  /** The workshops' insides, by workshop (docs/plan-ateliers.md § 5.6); none without them. */
+  interiors: Record<string, InteriorView>;
+  /** Their rules, for the screen to reckon a rate while a machine is dragged; null without them. */
+  interiorRules: InteriorSettings | null;
   /** What the court of Venice still takes today. */
   courtLeft: number;
   identity: EmpireIdentity;
@@ -498,6 +504,8 @@ export function empireView(
     moves: s.moves,
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
+    interiors: interiorsOf(house, s, now),
+    interiorRules: interiorRulesOf(s),
     workshopPlaces: Object.fromEntries(
       house.workshops.map((w) => [
         w.id,
