@@ -321,6 +321,43 @@ export interface EmpireWorkshop {
   fitted?: string[];
   /** The night queue: lots queued from `startedAt`, their inputs already taken. */
   job: ProductionJob | null;
+  /** Its inside (docs/plan-ateliers.md): its stations, conveyors and buffers. */
+  interior?: WorkshopInterior;
+}
+
+/** A station of a workshop's inside, on its flagstones, turned (`rot`, quarter turns from +x). */
+export interface InteriorStation {
+  id: string;
+  kind: string;
+  x: number;
+  y: number;
+  rot: 0 | 1 | 2 | 3;
+  level: number;
+  /** Wear, 0 to 10 000 bps. */
+  wear: number;
+  /** Care, 0 (quick) to 10 000 (careful). */
+  care: number;
+}
+
+/** A conveyor from a station (or the door « in ») to the next (or the door « out »), by its tiles. */
+export interface InteriorLink {
+  from: string;
+  to: string;
+  via: [number, number][];
+}
+
+/** A workshop's inside (docs/plan-ateliers.md § 5.1). */
+export interface WorkshopInterior {
+  /** Version of its type's catalogue (migration). */
+  v: number;
+  stations: InteriorStation[];
+  links: InteriorLink[];
+  /** Crates waiting between two stages, by « stage>stage ». */
+  buffers: Record<string, number>;
+  /** When its wear and fatigue were last settled. */
+  settledAt: number;
+  /** Seed of its incidents. */
+  seed: number;
 }
 
 /** A building site: it ends at `endsAt`, settled at the next read. */
@@ -567,6 +604,12 @@ export interface EmpireStaff {
   placedSince?: number;
   /** A member of the family, with its name. */
   family?: string;
+  /** A hand of the workshops' insides: its trade (sawyer, carpenter, labourer…). */
+  trade?: string;
+  /** A hand's fatigue, 0 to 10 000 bps. */
+  fatigue?: number;
+  /** The station a hand works at, and its shift. */
+  station?: { workshopId: string; stationId: string; shift: "day" | "night" };
 }
 
 export type CarnetKind = "relaunch" | "deliver" | "sell" | "sites" | "levels" | "casa" | "earn";

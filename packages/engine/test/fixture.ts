@@ -694,3 +694,56 @@ export const testSquareMap = {
     { code: "acri", x: 24, y: 44 },
   ],
 };
+
+/**
+ * The workshops' insides (docs/plan-ateliers.md lot A1), frozen for the tests: a made-up workshop
+ * of three stages (cut → press → bake) on a hall of 4 × 3 flagstones at level 1, 6 × 4 from level 3;
+ * a pillar at (2, 2); the logs come in west of (0, 0), the goods go out east of (3, 2).
+ */
+const lvl = (cycleS: number, capacity: number, seats: number) => ({
+  cycleS,
+  capacity,
+  seats,
+  costDucats: 100,
+  buildMinutes: 5,
+});
+export const testInterior: NonNullable<EmpireSettingsInput["interior"]> = {
+  floorAt: [
+    [1, 4, 3],
+    [3, 6, 4],
+  ],
+  handlingSPerTile: 6,
+  conveyorHandlingS: 1,
+  buffer: { max: 6, lossBps: 1_000, fullAt: 4 },
+  wear: { slowdownBps: 5_000, floorBps: 7_000, careCostDucats: 50 },
+  fatigue: { perHourBps: 500, restPerHourBps: 1_000, floorBps: 6_000 },
+  tradeFit: { same: 10_000, labourer: 7_000, other: 5_000 },
+  skillPerLevelBps: 200,
+  care: { slowdownBps: 5_000, qualityBps: 6_000 },
+  stations: {
+    cutter: { trades: ["sawyer"], wearPerUnitBps: 20, levels: [lvl(60, 1, 1), lvl(45, 1, 2)] },
+    press: { size: [2, 1], trades: ["carpenter"], levels: [lvl(120, 2, 2)] },
+    kiln: { levels: [lvl(90, 1, 0)] },
+    conveyor: { levels: [lvl(1, 1, 0)] },
+    inspector: { trades: ["carpenter"], qualityBps: 1_500, levels: [lvl(1, 1, 1)] },
+  },
+  buildings: {
+    test_works: {
+      doors: { in: [-1, 0], out: [4, 2] },
+      walls: [[2, 2]],
+      stages: [
+        { code: "cut", stations: ["cutter"] },
+        { code: "press", stations: ["press"] },
+        { code: "bake", stations: ["kiln"] },
+      ],
+      common: ["conveyor", "inspector"],
+      unitsPerLot: 2,
+      byproduct: { good: "wood", perUnitBps: 5_000 },
+      preset: [
+        { kind: "cutter", x: 0, y: 0, rot: 0 },
+        { kind: "press", x: 1, y: 1, rot: 0 },
+        { kind: "kiln", x: 3, y: 2, rot: 0 },
+      ],
+    },
+  },
+};

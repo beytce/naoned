@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { interiorSettingsSchema } from "./interior/settings.js";
 import { portaSettingsSchema } from "./porta/settings.js";
 
 /**
@@ -608,6 +609,11 @@ export const empireSettingsSchema = z.object({
   }),
   /** The Porta, the battles in the lands of Rome (docs/plan-porta.md). */
   porta: portaSettingsSchema,
+  /**
+   * The workshops' insides (docs/plan-ateliers.md): their presence is the switch, as `map.grid`
+   * is the square tiles'. Absent: the workshops of before.
+   */
+  interior: interiorSettingsSchema.optional(),
 });
 
 export type EmpireSettingsInput = z.input<typeof empireSettingsSchema>;
