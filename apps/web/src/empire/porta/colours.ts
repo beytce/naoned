@@ -9,18 +9,19 @@ export const RARITY_HEX: Record<Rarity, string> = {
 };
 
 /**
- * The lands of Rome at dusk (the refonte claire, lot 4, 5 November 2026): the Porta and its battles
- * no longer on the cream board of the trade, but on their own ground, terracotta earth under a
- * violet sky, a low amber sun; one look one knows one has left the empire.
+ * The lands of Rome in biscuit (docs/plan-porcellana.md D5, decision of the owner of 5 November
+ * 2026, replacing the dusk of the refonte claire's lot 4): the same porcelain as the trade's world,
+ * unglazed — a warmer, paler earth, Rome's things in ink —, one knows one has changed lands without
+ * changing worlds. The name stays: every scene of the Porta reads it.
  */
 export const ROME_DUSK = {
-  /** The sky behind the scene. */
-  sky: "#3B2F52",
+  /** The sky behind the scene: the biscuit's background. */
+  sky: "#E3D9CB",
   /** The lands' earth, and its deeper tone (the far side of the gate, the sea's bed). */
-  earth: "#B58E72",
-  deep: "#7E4A36",
-  /** The light: an amber sky, a red earth bouncing, a low sun. */
-  hemiSky: "#F6D3B0",
-  hemiGround: "#7C3B28",
-  sun: "#FFDCB4",
+  earth: "#E7DCCD",
+  deep: "#D8C8B2",
+  /** The light: Porcellana's, a white sky over a warm ground, a sun from the front left. */
+  hemiSky: "#FFFFFF",
+  hemiGround: "#D6CDBF",
+  sun: "#FFFAF1",
 } as const;

@@ -5,11 +5,11 @@ import { Coin } from "../../art/icons.js";
 import { C } from "../../art/plateau/props.js";
 import { PlainGround } from "../../dock.js";
 import { d } from "../../game/format.js";
+import { Pawn as Figure } from "../../porcellana/Pawn.js";
 import { CloseButton, Slab } from "../../ui.js";
 import { affordable } from "../logic.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
-import { Figure } from "../map3d/figure.js";
 import { MAP_3D } from "../map3d/flag.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
 import { preloadMinis } from "../map3d/minis.js";
@@ -18,6 +18,7 @@ import { useCoverBoard } from "../map3d/pause.js";
 import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { ArmsDock, type ArmsView, KIND_HEX, componentName } from "./ArmsDock.js";
+import { ROME_DUSK } from "./colours.js";
 import { pt } from "./texts.js";
 import type { ComponentKind, PortaView } from "./types.js";
 
@@ -96,7 +97,7 @@ export function ArmsScene({
               camera={{ position: [0, 40, 44], zoom: 1 }}
               gl={{ antialias: true }}
               onCreated={({ scene }) => {
-                scene.background = new Color("#16263E");
+                scene.background = new Color(ROME_DUSK.sky);
               }}
             >
               <Fit
@@ -105,8 +106,8 @@ export function ArmsScene({
                 dockH={dockH}
               />
               <Pace fps={live() ? 30 : 0} />
-              <hemisphereLight args={["#CFE0F5", "#B89A62", 1.15]} />
-              <directionalLight position={[-50, 100, 40]} intensity={2.2} color="#FFF3DD" />
+              <hemisphereLight args={[ROME_DUSK.hemiSky, ROME_DUSK.hemiGround, 1.25]} />
+              <directionalLight position={[-50, 100, 40]} intensity={2.5} color={ROME_DUSK.sun} />
               <Suspense fallback={null}>
                 <Workshop v={v} socket={socket} />
                 <AnchorLayer root={labels} anchors={ANCHOR} />

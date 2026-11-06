@@ -24,7 +24,7 @@ import {
   CircleGeometry,
   Color,
   DoubleSide,
-  type Group,
+  Group,
   MeshBasicMaterial,
   type OrthographicCamera,
   RingGeometry,
@@ -34,8 +34,15 @@ import {
 } from "three";
 import { C } from "../../art/plateau/props.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
+import { Pawn as Figure } from "../../porcellana/Pawn.js";
+import { createPalette } from "../../porcellana/materials.js";
+import { mountain, rocks } from "../../porcellana/models/decor.js";
+import { porta } from "../../porcellana/models/places.js";
+import { town } from "../../porcellana/models/towns.js";
+import { mule } from "../../porcellana/models/vehicles.js";
+import { tree } from "../../porcellana/shapes.js";
 import { DISTANCE, orthoFrom } from "../map3d/camera.js";
-import { Figure, type FigureHandle } from "../map3d/figure.js";
+import type { FigureHandle } from "../map3d/figure.js";
 import {
   Instanced,
   type KitName,
@@ -44,13 +51,42 @@ import {
   hexSlab,
   useKit,
 } from "../map3d/kit.js";
-import { Smoke, useDonkey, useWater } from "../map3d/life.js";
+import { Smoke, useWater } from "../map3d/life.js";
 import { preloadMinis } from "../map3d/minis.js";
 import { Pace } from "../map3d/pace.js";
 import { MADE } from "../map3d/props3d.js";
 import { roleOf } from "../map3d/roster.js";
 import { CASE, extentOf, fromChart, toChart } from "./chart.js";
 import { RARITY_HEX, ROME_DUSK } from "./colours.js";
+
+/** The transports' mules, in the house's porcelain. */
+const MULE_PALETTE = createPalette();
+/** The lands of Rome in biscuit (D5): their towns, their gate, their dressing. */
+const BISCUIT = createPalette({ biscuit: true });
+const GATE_OF_ROME = (() => {
+  const g = porta(BISCUIT, { seed: 0, running: true }).group;
+  g.scale.setScalar(1.5);
+  g.position.z = 0.6;
+  return g;
+})();
+const TEMPLATES = new Map<string, Group>();
+/** A piece of the island's dressing, by the kit's name of before, at its scale. */
+function dressingModel(name: string, s: number): Group {
+  let t = TEMPLATES.get(name);
+  if (!t) {
+    if (name.startsWith("pine")) {
+      t = new Group();
+      tree(BISCUIT, t, 0, 0, 1, name === "pineA" ? "fir" : "cypress");
+    } else if (name.startsWith("mountain"))
+      t = mountain(BISCUIT, { seed: 3, running: false }).group;
+    else t = rocks(BISCUIT, { seed: name.length, running: false }).group;
+    TEMPLATES.set(name, t);
+  }
+  const g = t.clone();
+  // The kit's models were a unit across; Porcellana's a tile (6) for the peaks and rocks.
+  g.scale.setScalar(name.startsWith("pine") ? s / 1.2 : s / 6);
+  return g;
+}
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
 
 preloadMinis();
@@ -406,9 +442,18 @@ function Island({ battle, live }: { battle: BattleSnapshot; live: boolean }) {
         cast={false}
       />
       <mesh geometry={lagoon} material={water} position={[cx, -1.6, cz]} />
-      {groups.map(([name, items]) => (
-        <Instanced key={name} geo={kit(name).geo} items={items} />
-      ))}
+      {/* The dressing in Porcellana (D6): firs, rocks, peaks of the biscuit. */}
+      {groups.flatMap(([name, items]) =>
+        items.map((it, i) => (
+          <primitive
+            // biome-ignore lint/suspicious/noArrayIndexKey: the dressing's items are drawn once
+            key={`${name}${i}`}
+            object={dressingModel(name, it.s)}
+            position={[it.x, 0, it.z]}
+            rotation-y={it.rot}
+          />
+        )),
+      )}
       {battle.cities.map((c) => (
         <Town key={c.id} battle={battle} city={c} live={live} />
       ))}
@@ -434,33 +479,18 @@ function Town({
       setBurntAt(battle.timeMs);
   }, [battle, city.id]);
   const burnt = burntAt !== null;
-  const houses = useMemo(() => {
-    const r = rng(seedOf(city.id));
-    return Array.from({ length: 4 }, (_, i) => {
-      const a = (i / 4) * Math.PI * 2 + r();
-      return { x: Math.cos(a) * 4.6, z: Math.sin(a) * 4.6, rot: r() * 6, v: r() > 0.5 };
-    });
-  }, [city.id]);
+  const houses = useMemo(
+    () => town(BISCUIT, { seed: seedOf(city.id) % 997, running: false, size: 3 }).group,
+    [city.id],
+  );
   const chests = (Object.entries(city.relics) as [Rarity, number][]).flatMap(([k, n]) =>
     Array.from({ length: n }, () => k),
   );
   return (
     <group position={[X, 0, Z]}>
-      {houses.map((h, i) => (
-        <mesh
-          // biome-ignore lint/suspicious/noArrayIndexKey: a town's houses are its own
-          key={i}
-          // The game's own houses (the refonte claire, lot 6), muted once the town has burnt.
-          geometry={
-            burnt ? (h.v ? MADE.casaBMuted : MADE.casaAMuted) : h.v ? MADE.casaB : MADE.casaA
-          }
-          material={clayShared}
-          position={[h.x, 0, h.z]}
-          rotation-y={h.rot}
-          scale={4.6}
-        />
-      ))}
-      <mesh geometry={MADE.chapel} material={clayShared} scale={6.4} />
+      {/* A town of Rome in Porcellana's biscuit (D5, D6), fallen once it has burnt. */}
+      <primitive object={houses} scale={[1.7, burnt ? 0.45 : 1.7, 1.7]} />
+
       {/* Its chests of relics, one for each, in the colour of its rarity. */}
       {chests.map((k, i) => {
         const a = (i / Math.max(1, chests.length)) * Math.PI * 2;
@@ -484,9 +514,7 @@ function Town({
 
 /** The Porta of the lands: two towers of stone and an arch of gold light, its ring of exit. */
 function Gate({ battle }: { battle: BattleSnapshot }) {
-  const kit = useKit();
   const [X, Z] = toChart(battle, battle.gate.x, battle.gate.y);
-  const stone = kit("tower", { roof: C.rockSeen });
   const r = (battle.gateRadiusCenti / 100) * CASE;
   // Its face toward the island's middle.
   const face = Math.atan2(-battle.gate.x, -battle.gate.y);
@@ -494,12 +522,7 @@ function Gate({ battle }: { battle: BattleSnapshot }) {
     <group position={[X, 0, Z]} rotation-y={face}>
       <mesh geometry={disc} material={M.goldSoft} scale={r} position-y={0.05} />
       <mesh geometry={ring} material={M.gold} scale={r} position-y={0.06} />
-      <mesh geometry={stone.geo} material={clayShared} scale={3.4} position={[-3.2, 0, 0]} />
-      <mesh geometry={stone.geo} material={clayShared} scale={3.4} position={[3.2, 0, 0]} />
-      <mesh position={[0, 3.2, 0]}>
-        <torusGeometry args={[2.4, 0.5, 8, 16, Math.PI]} />
-        <meshStandardMaterial color={C.rockSeen} roughness={0.95} />
-      </mesh>
+      <primitive object={GATE_OF_ROME} />
       <mesh position={[0, 2.2, 0]}>
         <planeGeometry args={[3.8, 4.4]} />
         <meshBasicMaterial color={C.gold} transparent opacity={0.55} side={DoubleSide} />
@@ -689,15 +712,16 @@ function Unit({
 }
 
 /** The transport: the mule and its crates, its relics glowing on its back. */
+/** The transport: Porcellana's mule (D6), its relics in chests on its back. */
 function Mule({ cargo, live }: { cargo: Rarity[]; live: boolean }) {
-  const donkey = useDonkey(2.6);
-  useEffect(() => {
-    donkey.walking?.play();
-    donkey.resting?.play();
-    if (donkey.walking) donkey.walking.weight = 0;
-  }, [donkey]);
-  useFrame((_, dt) => {
-    if (live) donkey.mixer.update(Math.min(dt, 0.1));
+  const donkey = useMemo(() => {
+    const m = mule(MULE_PALETTE, { seed: 0, running: true });
+    m.group.scale.setScalar(3.6);
+    m.group.rotation.y = -Math.PI / 2;
+    return { root: m.group, tick: m.tick, height: 2.6 };
+  }, []);
+  useFrame(({ clock }) => {
+    if (live) donkey.tick(clock.elapsedTime);
   });
   return (
     <group>

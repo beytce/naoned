@@ -5,14 +5,16 @@ import { C } from "../../art/plateau/props.js";
 import { PlainGround } from "../../dock.js";
 import { Icon } from "../../game/map/icons.js";
 import { haptic } from "../../haptics.js";
+import { Pawn as Figure } from "../../porcellana/Pawn.js";
+import { createPalette } from "../../porcellana/materials.js";
+import { porta, post } from "../../porcellana/models/places.js";
+import { mule } from "../../porcellana/models/vehicles.js";
 import { sound } from "../../sound.js";
 import { CloseButton } from "../../ui.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
-import { Figure } from "../map3d/figure.js";
 import { MAP_3D } from "../map3d/flag.js";
 import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
-import { useDonkey } from "../map3d/life.js";
 import { preloadMinis } from "../map3d/minis.js";
 import { Pace } from "../map3d/pace.js";
 import { useCoverBoard } from "../map3d/pause.js";
@@ -586,7 +588,7 @@ function Scene({
       />
       {/* The gate: two towers, its arch of stone, the lands' glow through it. */}
       <group position={GATE}>
-        <mesh geometry={MADE.porta} material={clayShared} />
+        <primitive object={GATE_MODEL} />
         <mesh position={[0, 5.6, 0.2]} material={dark ? archDark : arch}>
           <planeGeometry args={[7, 10.6]} />
         </mesh>
@@ -626,7 +628,7 @@ function Scene({
       ))}
       {/* The antiquarian's stall: a market's roof, its chests by rarity. */}
       <group position={STALL}>
-        <mesh geometry={kit("market").geo} material={clayShared} scale={8} />
+        <primitive object={STALL_MODEL} />
         {RARITIES.map((r, i) =>
           Array.from({ length: Math.min(6, v.relics[r]) }, (_, j) => (
             <mesh
@@ -644,18 +646,26 @@ function Scene({
   );
 }
 
+/** A transport at the quay: Porcellana's mule (D6). */
 function QuayMule() {
-  const donkey = useDonkey(2.6);
-  const g = useRef<Group>(null);
-  useEffect(() => {
-    donkey.resting?.play();
-  }, [donkey]);
-  useFrame((_, dt) => {
-    if (live()) donkey.mixer.update(Math.min(dt, 0.1));
-  });
-  return (
-    <group ref={g}>
-      <primitive object={donkey.root} />
-    </group>
-  );
+  const m = useMemo(() => {
+    const x = mule(HOUSE, { seed: 0, running: false });
+    x.group.scale.setScalar(3.6);
+    x.group.rotation.y = -Math.PI / 2;
+    return x.group;
+  }, []);
+  return <primitive object={m} />;
 }
+
+/** The Porta and the antiquarian's stall in Porcellana (D5, D6): Rome's in biscuit. */
+const HOUSE = createPalette();
+const GATE_MODEL = (() => {
+  const g = porta(createPalette({ biscuit: true }), { seed: 0, running: true }).group;
+  g.scale.setScalar(2.4);
+  return g;
+})();
+const STALL_MODEL = (() => {
+  const g = post(HOUSE).group;
+  g.scale.setScalar(1.7);
+  return g;
+})();
