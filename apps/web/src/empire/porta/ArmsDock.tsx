@@ -11,9 +11,9 @@ import type { ComponentKind, PortaView } from "./types.js";
 
 /** Each kind of place by its colour (the sockets round a vehicle). */
 export const KIND_HEX: Record<ComponentKind, string> = {
-  weapon: "#E06A4A",
-  defense: "#6EC8F5",
-  support: "#6EE0B8",
+  weapon: "#C23B2E",
+  defense: "#3C8FC4",
+  support: "#3FAE8C",
 };
 const CREAM = "#F6E8CC";
 

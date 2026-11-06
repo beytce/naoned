@@ -5,15 +5,16 @@
  * the rocks —, the red road from the quay to the gate. Built from the Porta's view (pure but for
  * the three.js models it makes on demand).
  */
-import { Group } from "three";
+import { Group, MeshStandardMaterial } from "three";
 import { figureOf } from "../../porcellana/Pawn.js";
 import { type Cell, type Spec, palette } from "../../porcellana/TileBoard.js";
 import { mountain, rocks } from "../../porcellana/models/decor.js";
 import { grove } from "../../porcellana/models/ground.js";
 import type { Built, ModelOpts } from "../../porcellana/models/model.js";
-import { porta } from "../../porcellana/models/places.js";
+import { depot, porta } from "../../porcellana/models/places.js";
 import { chest, darkGate, stall, tier } from "../../porcellana/models/porta.js";
 import { mule } from "../../porcellana/models/vehicles.js";
+import { cyl } from "../../porcellana/shapes.js";
 import { roleOf } from "../map3d/roster.js";
 import { RARITY_HEX } from "./colours.js";
 import { type PortaView, RARITIES } from "./types.js";
@@ -182,3 +183,81 @@ export const LOOK: Record<
   gate: { at: [3, 1.5], zoom: 1.0 },
   stall: { at: [5, 3], zoom: 1.35 },
 };
+
+/** The Remise's workshop of arms (P3): its hall behind, each combat vehicle on its tile. */
+export const ARMS_ROW = 1;
+export const armsAt = (k: number): [number, number] => [1 + k, ARMS_ROW];
+
+/** Where a socket stands on its vehicle's tile, in an arc before the piece. */
+export function socketAt(k: number, n: number): [number, number, number] {
+  const a = Math.PI * (0.15 + (0.7 * (k + 0.5)) / Math.max(1, n));
+  return [-Math.cos(a) * 2.2, 0.3, Math.sin(a) * 1.9];
+}
+
+export function armsSpec(
+  v: PortaView,
+  kindHex: Record<string, string>,
+  placesOf: (model: string) => (string | null)[],
+): Spec {
+  const n = Math.max(1, v.vehicles.length);
+  const cols = n + 2;
+  const grid: string[][] = [
+    Array.from({ length: cols }, (_, i) =>
+      i === Math.floor(cols / 2) ? "depot" : i === 0 || i === cols - 1 ? "" : "lane",
+    ),
+    Array.from({ length: cols }, (_, i) => (i === 0 || i === cols - 1 ? "lane" : `arm:${i - 1}`)),
+    Array.from({ length: cols }, (_, i) => (i === 0 || i === cols - 1 ? "" : "lane")),
+  ];
+  return {
+    rows: grid,
+    noCarts: true,
+    viewH: (a) => (a >= 1 ? Math.max(26, (cols * 7) / a) : Math.max(30, cols * 9)),
+    cell(key): Cell | null {
+      if (key === "") return null;
+      if (key === "lane") return { make: lane(false) };
+      if (key === "depot")
+        return {
+          make: (o) => {
+            const b = depot(HOUSE(), o);
+            return b;
+          },
+        };
+      if (key.startsWith("arm:")) {
+        const x = v.vehicles[Number(key.slice(4))];
+        if (!x) return { make: lane(false) };
+        const away = x.place !== "remise";
+        const kinds = placesOf(x.model);
+        return {
+          make: () => {
+            const g = new Group();
+            // The pedestal, a round plinth of porcelain.
+            cyl(g, 1.6, 1.75, 0.3, 0, 0, 0, HOUSE().m(away ? "wall2" : "trim"), 48);
+            if (!away) {
+              const f = figureOf(roleOf({ side: "player", model: x.model }));
+              f.scale.multiplyScalar(1.15);
+              f.position.y = 0.3;
+              f.rotation.y = 0.4;
+              g.add(f);
+            }
+            // Each socket a disc of its kind's colour, full when fitted.
+            x.slots.forEach((slot, k) => {
+              const [sx, , sz] = socketAt(k, x.slots.length);
+              const kind = kinds[k];
+              const hex = kind ? (kindHex[kind] ?? "#C23B2E") : "#C23B2E";
+              const m = new MeshStandardMaterial({
+                color: hex,
+                roughness: 0.6,
+                transparent: !slot,
+                opacity: slot ? 1 : 0.45,
+              });
+              cyl(g, 0.42, 0.42, 0.06, sx, 0.02, sz, m, 28);
+            });
+            return { group: g, pin: [0, 4.0, 0] };
+          },
+          place: { id: `arm:${x.id}`, label: "", info: info(x.id) },
+        };
+      }
+      return null;
+    },
+  };
+}

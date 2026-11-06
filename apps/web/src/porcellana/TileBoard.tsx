@@ -108,6 +108,8 @@ export interface Shared {
   inset?: number;
   /** The room a dock takes on the right (a computer), in pixels: what is aimed at stands left of it. */
   insetRight?: number;
+  /** More pins, each at a point of a place's tile (the sockets round a vehicle), by their key. */
+  extra?: Map<string, { place: string; at: [number, number, number] }>;
 }
 
 const PHONE = () => window.innerWidth < 640;
@@ -420,6 +422,20 @@ export function TileBoard({
       el.dataset.out = String(out);
       if (t.place.id === sh.chosen) sh.card?.place(x, y, w, h);
     }
+    if (sh.extra)
+      for (const [key, e] of sh.extra) {
+        const el = sh.pins.get(key);
+        const tile = board.tiles.find((x) => x.place?.id === e.place);
+        if (!el || !tile) continue;
+        tmp
+          .set(...e.at)
+          .add(tile.group.position)
+          .project(camera);
+        const x = (tmp.x * 0.5 + 0.5) * w;
+        const y = (-tmp.y * 0.5 + 0.5) * h;
+        el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
+        el.dataset.out = String(pinOut(c.t, tile.delay));
+      }
   });
 
   const tileOf = (e: ThreeEvent<PointerEvent | MouseEvent>) => {
