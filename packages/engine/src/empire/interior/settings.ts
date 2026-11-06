@@ -93,6 +93,14 @@ export const interiorSettingsSchema = z
     conveyorCostDucats: money,
     /** What a station taken down (or a conveyor) gives back of what it cost. */
     refundBps: bps,
+    /**
+     * The stations' levels open to a house (decided 6 November 2026: the knowledge of the craft
+     * opens higher stations instead of a yield): up to `baseLevel`, then each knowledge listed
+     * opens up to its level.
+     */
+    unlocks: z
+      .object({ baseLevel: positive, byKnowledge: z.record(z.string(), positive) })
+      .prefault({ baseLevel: 99, byKnowledge: {} }),
     stations: z.record(z.string(), stationKind),
     buildings: z.record(z.string(), building),
   })

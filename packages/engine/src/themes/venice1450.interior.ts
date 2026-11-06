@@ -314,6 +314,9 @@ export const venice1450Interior: Interior = {
   hands: { hireCostDucats: 40, perSeat: 2 },
   conveyorCostDucats: 15,
   refundBps: 5_000,
+  // The knowledge of the craft opens the higher stations (decided 6 November 2026): level 4 with
+  // the mestiere, level 5 with the bottega.
+  unlocks: { baseLevel: 3, byKnowledge: { mestiere: 4, bottega: 5 } },
   stations: STATIONS,
   buildings: BUILDINGS,
 };

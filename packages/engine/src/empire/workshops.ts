@@ -202,6 +202,8 @@ export function fitModule(
   if (!ws) fail("unknown_building");
   const m = s.modules.find((x) => x.code === code);
   if (!m || m.kind !== "workshop" || !(h.modules?.[code] ?? 0)) fail("unknown_building_type");
+  // A workshop with its inside takes stations, not modules (docs/plan-ateliers.md lot A7).
+  if (s.interior?.buildings[ws.type]) fail("locked");
   if (!Number.isInteger(slot) || slot < 0 || slot >= moduleSlotsOf(ws.level, s, h)) fail("no_room");
   const fitted = [...(ws.fitted ?? [])];
   if (fitted.some((x, i) => x === code && i !== slot)) fail("built");

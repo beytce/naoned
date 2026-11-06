@@ -1,9 +1,11 @@
 import type { EmpireHouse, EmpireWorkshop, InteriorHand, WorkshopInterior } from "../../state.js";
+import { houseEffect } from "../effects.js";
 import type { EmpireSettings } from "../settings.js";
 import type { InteriorSettings } from "./settings.js";
 import {
   fatigueResting,
   fatigueWorking,
+  interiorLayoutProblem,
   interiorThroughput,
   wearAfter,
   workersOf,
@@ -62,8 +64,137 @@ export const hasInterior = (ws: EmpireWorkshop, s: EmpireSettings) =>
  */
 export function ensureInterior(h: EmpireHouse, s: EmpireSettings, now: number): void {
   if (!s.interior) return;
-  for (const ws of h.workshops)
-    if (!ws.interior && hasInterior(ws, s)) ws.interior = presetInterior(ws.type, s, now);
+  for (const ws of h.workshops) {
+    if (!hasInterior(ws, s)) continue;
+    if (!ws.interior) ws.interior = presetInterior(ws.type, s, now);
+    if (ws.interior.v < 2) absorbLegacy(h, ws, s);
+  }
+}
+
+/** The stations' levels a house may reach: the base, then what its knowledge opens. */
+export function stationLevelOpen(h: EmpireHouse, s: EmpireSettings): number {
+  const u = s.interior?.unlocks;
+  if (!u) return Number.POSITIVE_INFINITY;
+  let open = u.baseLevel;
+  for (const code of h.knowledge ?? []) open = Math.max(open, u.byKnowledge[code] ?? 0);
+  return open;
+}
+
+/**
+ * The systems the insides absorb (docs/plan-ateliers.md § 5.7 and lot A7), once a workshop: its
+ * workshop modules but the furnace stop counting, its master steps down to work at a station, the
+ * knowledge of the craft stops giving it a yield; what they gave is turned into its inside — care
+ * for their quality, then station levels (and stations of the same kind beside, when a station is
+ * at its last) on the bottleneck until the inside makes at least what the workshop made with them.
+ * The machines and the hands start fresh. Nothing is paid, nothing is lost.
+ */
+function absorbLegacy(h: EmpireHouse, ws: EmpireWorkshop, s: EmpireSettings): void {
+  const inside = ws.interior;
+  const I = s.interior;
+  const b = I?.buildings[ws.type];
+  if (!inside || !I || !b) return;
+  const place = { workshopId: ws.id };
+  const read = () => ({
+    y: houseEffect(h, "workshopYield", s, place),
+    sp: houseEffect(h, "workshopSpeed", s, place),
+    q: houseEffect(h, "quality", s, place),
+  });
+  const was = read();
+  const masters = (h.staff ?? []).filter(
+    (m) => m.placedAt === ws.id && s.staff.roles[m.role]?.place === "workshop",
+  );
+  for (const m of masters) m.placedAt = undefined;
+  ws.fitted = (ws.fitted ?? []).filter(
+    (code) => s.modules.find((m) => m.code === code)?.effect === "inputs",
+  );
+  inside.v = 2;
+  const now = read();
+  for (const st of inside.stations) st.wear = 0;
+  for (const hand of inside.hands ?? []) hand.fatigue = 0;
+  // Their quality, as care at every station.
+  const lostQ = was.q - now.q;
+  if (lostQ > 0 && I.care.qualityBps > 0) {
+    const care = Math.min(FULL, Math.ceil((lostQ * FULL) / I.care.qualityBps));
+    for (const st of inside.stations) st.care = Math.max(st.care, care);
+  }
+  // Their yield and their speed, as the inside's rate against the default plan's.
+  const ref = referenceUnits(ws, s);
+  const target = Math.ceil(
+    (ref * (FULL + was.y) * (FULL + was.sp)) / ((FULL + now.y) * (FULL + now.sp)),
+  );
+  const idOf = (prefix: string, ids: string[]) =>
+    `${prefix}${ids.reduce((n, id) => Math.max(n, Number(id.slice(prefix.length)) || 0), 0) + 1}`;
+  const handFor = (stationId: string, kind: string) => {
+    const hands = inside.hands ?? [];
+    hands.push({
+      id: idOf(
+        "h",
+        hands.map((x) => x.id),
+      ),
+      trade: I.stations[kind]?.trades[0] ?? "labourer",
+      rarity: "common",
+      level: 1,
+      xp: 0,
+      fatigue: 0,
+      stationId,
+      shift: "day",
+    });
+    inside.hands = hands;
+  };
+  const beside = (kind: string, level: number): boolean => {
+    for (let y = 0; y < 16; y++)
+      for (let x = 0; x < 16; x++)
+        for (const rot of [0, 1, 2, 3] as const) {
+          const id = idOf(
+            "s",
+            inside.stations.map((st) => st.id),
+          );
+          const st = { id, kind, x, y, rot, level, wear: 0, care: inside.stations[0]?.care ?? 0 };
+          inside.stations.push(st);
+          if (!interiorLayoutProblem(ws, s)) {
+            if ((I.stations[kind]?.levels[level - 1]?.seats ?? 0) > 0) handFor(id, kind);
+            return true;
+          }
+          inside.stations.pop();
+        }
+    return false;
+  };
+  // The master steps down to work at the bottleneck, on the day if a seat is free, else the night.
+  for (const m of masters) {
+    const r = interiorThroughput(ws, h, s);
+    const st = inside.stations.find((x) => x.id === r.bottleneck.station) ?? inside.stations[0];
+    if (!st) continue;
+    const def = I.stations[st.kind];
+    const seats = def?.levels[st.level - 1]?.seats ?? 0;
+    const day = workersOf(ws, h.staff).filter((x) => x.stationId === st.id && x.shift === "day");
+    m.trade = def?.trades[0] ?? "labourer";
+    m.fatigue = 0;
+    m.station = {
+      workshopId: ws.id,
+      stationId: st.id,
+      shift: day.length < seats ? "day" : "night",
+    };
+  }
+  for (let k = 0; k < 80; k++) {
+    const r = interiorThroughput(ws, h, s);
+    if (r.unitsMilliPerHour >= target) break;
+    const st = inside.stations.find((x) => x.id === r.bottleneck.station);
+    if (!st) {
+      const kind = b.stages.find((x) => x.code === r.bottleneck.stage)?.stations[0];
+      if (!kind || !beside(kind, 1)) break;
+      continue;
+    }
+    const def = I.stations[st.kind];
+    const seats = def?.levels[st.level - 1]?.seats ?? 0;
+    const crew = workersOf(ws, h.staff).filter((x) => x.stationId === st.id).length;
+    if (seats > 0 && crew === 0) handFor(st.id, st.kind);
+    else if (def && st.level < def.levels.length) st.level += 1;
+    else if (!beside(st.kind, st.level)) break;
+  }
+  // What the hall cannot hold yet stays as a share of pace: nothing lost.
+  const reached = interiorThroughput(ws, h, s).unitsMilliPerHour;
+  if (reached > 0 && reached < target)
+    inside.legacyBps = Math.ceil((target * FULL) / reached) - FULL;
 }
 
 /** The rate of the default plan, fresh: what the workshop made before the switch. */
@@ -86,7 +217,7 @@ export function interiorPaceBps(
   const ref = referenceUnits(ws, s);
   if (ref <= 0) return FULL;
   const now = interiorThroughput(ws, h, s, at).unitsMilliPerHour;
-  return Math.floor((now * FULL) / ref);
+  return Math.floor((now * (FULL + (ws.interior.legacyBps ?? 0))) / ref);
 }
 
 /** The quality the inside adds to its workshop's lots. */

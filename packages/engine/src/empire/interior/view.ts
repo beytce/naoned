@@ -1,6 +1,6 @@
 import type { EmpireHouse, InteriorHand, InteriorLink, InteriorStation } from "../../state.js";
 import type { EmpireSettings } from "../settings.js";
-import { ensureInterior, interiorPaceBps, settleInterior } from "./run.js";
+import { ensureInterior, interiorPaceBps, settleInterior, stationLevelOpen } from "./run.js";
 import type { InteriorSettings } from "./settings.js";
 import { type InteriorThroughput, hallAt, interiorThroughput } from "./throughput.js";
 
@@ -24,6 +24,10 @@ export interface InteriorView {
   rate: InteriorThroughput;
   /** The queue's pace against the default plan, fresh (10 000: as before the switch). */
   paceBps: number;
+  /** What the workshop of before kept beyond its hall (« acquis »), in bps of pace. */
+  legacyBps: number;
+  /** The last station level the house may reach (its knowledge opens more). */
+  levelOpen: number;
 }
 
 /** The insides of a house's workshops, by workshop; settled on the copy it is given. */
@@ -51,11 +55,30 @@ export function interiorsOf(
         ...b.common.map((kind) => ({ stage: null, kind })),
       ],
       stations: inside.stations,
-      hands: inside.hands ?? [],
+      // Its own hands, then the members of the staff at work there (the masters of before).
+      hands: [
+        ...(inside.hands ?? []),
+        ...(house.staff ?? [])
+          .filter((m) => m.station?.workshopId === ws.id)
+          .map(
+            (m): InteriorHand => ({
+              id: m.id,
+              trade: m.trade ?? "labourer",
+              rarity: m.rarity,
+              level: m.level,
+              xp: m.xp,
+              fatigue: m.fatigue ?? 0,
+              ...(m.station?.stationId ? { stationId: m.station.stationId } : {}),
+              shift: m.station?.shift ?? "day",
+            }),
+          ),
+      ],
       links: inside.links,
       buffers: inside.buffers,
       rate: interiorThroughput(ws, house, s, now),
       paceBps: interiorPaceBps(ws, house, s, now),
+      legacyBps: inside.legacyBps ?? 0,
+      levelOpen: Math.min(99, stationLevelOpen(house, s)),
     };
   }
   return out;

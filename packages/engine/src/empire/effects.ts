@@ -37,15 +37,21 @@ export function houseEffect(
   for (const [code, level] of Object.entries(h.modules ?? {})) of(code, level, false);
   // The workshop's own modules, at their researched level.
   const ws = place?.workshopId ? h.workshops.find((w) => w.id === place.workshopId) : undefined;
-  for (const code of ws?.fitted ?? [])
-    if (s.modules.find((m) => m.code === code)?.kind === "workshop")
+  // A workshop turned to its inside (docs/plan-ateliers.md lot A7): its modules are stations now,
+  // but the furnace's saving of inputs.
+  const inside = !!s.interior && (ws?.interior?.v ?? 0) >= 2;
+  for (const code of ws?.fitted ?? []) {
+    const m = s.modules.find((x) => x.code === code);
+    if (m?.kind === "workshop" && (!inside || m.effect === "inputs"))
       of(code, h.modules?.[code] ?? 0, true);
+  }
   // The vehicle's own trade modules.
   const v = place?.vehicleId ? h.vehicles?.find((x) => x.id === place.vehicleId) : undefined;
   for (const code of fittedOn(h, v))
     if (s.modules.find((m) => m.code === code)?.kind === "trade")
       of(code, h.modules?.[code] ?? 0, true);
-  total += knowledgeEffect(h, effect, s);
+  // The knowledge of the craft opens stations there instead of a yield.
+  if (!(inside && effect === "workshopYield")) total += knowledgeEffect(h, effect, s);
   total += staffEffect(h, effect, s, place);
   total += lineageEffect(h, effect, s);
   // The Arte: its own effects, and its chain's yield where the workshop is of it.

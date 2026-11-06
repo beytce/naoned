@@ -13,9 +13,9 @@ import { type Tx, fail, transfer } from "../../tx.js";
 import { empireSettings, ownHouse } from "../house.js";
 import type { EmpireSettings } from "../settings.js";
 import { collectWorkshop, repaceWorkshop } from "../workshops.js";
-import { hasInterior } from "./run.js";
+import { hasInterior, stationLevelOpen } from "./run.js";
 import type { InteriorSettings } from "./settings.js";
-import { interiorLayoutProblem, stationPorts, workingLevel } from "./throughput.js";
+import { interiorLayoutProblem, stationPorts, workersOf, workingLevel } from "./throughput.js";
 
 /**
  * The commands of a workshop's inside (docs/plan-ateliers.md § 5.5, lot A2). Each settles the
@@ -182,6 +182,8 @@ export function upgradeStation(
   if (st.readyAt !== undefined && st.readyAt > tx.now) fail("building_busy");
   const lv = x.I.stations[st.kind]?.levels[st.level];
   if (!lv) fail("max_level");
+  // The higher levels open with the knowledge of the craft (docs/plan-ateliers.md lot A7).
+  if (st.level + 1 > stationLevelOpen(ownHouse(tx, playerId), x.s)) fail("locked");
   pay(tx, playerId, ducats(lv.costDucats), `station:${workshopId}:${stationId}:${st.level + 1}`);
   st.level += 1;
   if (lv.buildMinutes > 0) st.readyAt = tx.now + lv.buildMinutes * MINUTE_MS;
@@ -379,19 +381,27 @@ export function assignHand(
   shift: "day" | "night",
 ): void {
   const x = inside(tx, playerId, workshopId);
-  const hand = (x.ws.interior.hands ?? []).find((y) => y.id === handId);
-  if (!hand) fail("unknown_building");
   if (shift !== "day" && shift !== "night") fail("unknown_choice");
-  if (stationId === null) {
-    hand.stationId = undefined;
-  } else {
+  const h = ownHouse(tx, playerId);
+  // A hand of the workshop's, or a member of the staff at work there (a master of before).
+  const hand = (x.ws.interior.hands ?? []).find((y) => y.id === handId);
+  const member = hand
+    ? undefined
+    : h.staff?.find((m) => m.id === handId && m.station?.workshopId === workshopId);
+  if (!hand && !member) fail("unknown_building");
+  if (stationId !== null) {
     const st = stationOf(x, stationId);
-    const there = (x.ws.interior.hands ?? []).filter(
-      (y) => y !== hand && y.stationId === stationId && y.shift === shift,
+    const there = workersOf(x.ws, h.staff).filter(
+      (y) => y.id !== handId && y.stationId === stationId && y.shift === shift,
     ).length;
     if (there >= seatsOf(x, st, tx.now)) fail("no_room");
-    hand.stationId = stationId;
   }
-  hand.shift = shift;
+  if (hand) {
+    hand.stationId = stationId ?? undefined;
+    hand.shift = shift;
+  } else if (member?.station) {
+    // At the door, a member stays the workshop's, waiting: no station, its shift kept.
+    member.station = { workshopId, stationId: stationId ?? "", shift };
+  }
   repaceWorkshop(tx, playerId, x.ws);
 }

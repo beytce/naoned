@@ -51,6 +51,8 @@ export function hireStaff(tx: Tx, playerId: PlayerId, role: string): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   if (!s.staff.roles[role]) fail("unknown_choice");
+  // The insides' hands are hired at the workshop's door: no more master for a workshop.
+  if (s.interior && s.staff.roles[role]?.place === "workshop") fail("locked");
   if ((h.staff ?? []).length >= staffSlots(h, s)) fail("no_room");
   transfer(
     tx,
@@ -71,6 +73,7 @@ export function placeStaff(tx: Tx, playerId: PlayerId, staffId: string, at: stri
   const m = h.staff?.find((x) => x.id === staffId);
   if (!m) fail("unknown_building");
   const place = s.staff.roles[m.role]?.place;
+  if (s.interior && place === "workshop") fail("locked");
   const exists =
     place === "workshop"
       ? h.workshops.some((w) => w.id === at)
