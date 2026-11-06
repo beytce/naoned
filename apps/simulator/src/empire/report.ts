@@ -206,7 +206,10 @@ export function evaluate(r: EmpireResult): Check[] {
   // The workshops' insides (docs/plan-ateliers.md § 9), when the world has them.
   if (w.s.interior) {
     const pace = (how: Tending) => {
-      const ws = hs.filter((h) => tendingOf(h) === how).flatMap((h) => h.workshops);
+      const ws = hs
+        .filter((h) => tendingOf(h) === how)
+        .flatMap((h) => h.workshops)
+        .filter((x) => x.inside);
       return ws.length ? ws.reduce((n, x) => n + (x.pace ?? 10_000), 0) / ws.length / 10_000 : 0;
     };
     const hasty = pace("hasty");

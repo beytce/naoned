@@ -86,11 +86,12 @@ async function sawmill(cookie: string) {
 // The workshops' insides through the server (docs/plan-ateliers.md lot A4): the commands checked
 // by their schema, run by the engine, their money in the ledger; the view carries each inside.
 describe("the workshops' insides", () => {
-  it("shows each workshop's inside, its default plan at the pace of before", async () => {
+  it("shows each workshop's inside, its default plan never slower than before", async () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/empire/join");
     const { inside, body } = await sawmill(cookie);
-    expect(inside.paceBps).toBe(10_000);
+    // Never less than before the insides; new machines and rested hands, more.
+    expect(inside.paceBps).toBeGreaterThanOrEqual(10_000);
     expect(inside.stations.map((s) => s.kind)).toEqual([
       "barking",
       "saw_bench",

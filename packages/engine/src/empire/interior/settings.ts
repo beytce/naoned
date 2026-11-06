@@ -109,6 +109,11 @@ export const interiorSettingsSchema = z
      * make it no quicker — « the hall runs full »; its level (its floor) is what grows it then.
      */
     maxPaceBps: positive.prefault(1_000_000),
+    /**
+     * The pace of the reference itself (lot A8): above 10 000, the default plan worn makes more
+     * than the workshop of before, in place of the workshop modules it no longer researches.
+     */
+    basePaceBps: positive.prefault(10_000),
     unlocks: z
       .object({ baseLevel: positive, byKnowledge: z.record(z.string(), positive) })
       .prefault({ baseLevel: 99, byKnowledge: {} }),

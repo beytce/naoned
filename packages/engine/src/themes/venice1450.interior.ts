@@ -311,8 +311,11 @@ export const venice1450Interior: Interior = {
   // A pace of 10 000 is the default plan worn and tired (lot A8): a house that never mends nor
   // rests its workshops makes no less than before the insides; one that tends them makes more.
   reference: "worn",
-  // A full hall makes twice its default plan worn (lot A8): its level grows it beyond.
-  maxPaceBps: 20_000,
+  // The default plan worn makes a quarter more than the workshop of before: the workshop modules
+  // of the Scuola are gone, their yield is here (lot A8).
+  basePaceBps: 12_500,
+  // A full hall makes twice and a half the workshop of before: its level grows it beyond.
+  maxPaceBps: 25_000,
   tradeFit: { same: 10_000, labourer: 7_000, other: 5_000 },
   skillPerLevelBps: 150,
   care: { slowdownBps: 4_000, qualityBps: 5_000 },

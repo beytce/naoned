@@ -102,7 +102,13 @@ export function tendInsides(w: World, h: House, spendable: () => bigint): void {
   };
   let gestures = 0;
   const open = stationLevelOpen(h.ident, w.s);
-  for (const [i, ws] of h.workshops.entries()) {
+  // A few minutes a session (rule 7): the careful tend three workshops, the average two — the
+  // most worn first.
+  const worn = (ws: Workshop) => (ws.inside?.stations ?? []).reduce((n, x) => n + x.wear, 0);
+  const order = [...h.workshops.entries()]
+    .sort((a, b) => worn(b[1]) - worn(a[1]))
+    .slice(0, how === "careful" ? 3 : 2);
+  for (const [i, ws] of order) {
     const e = engineOf(w, h, ws, i);
     const inside = e?.interior;
     if (!e || !inside) continue;
@@ -119,7 +125,9 @@ export function tendInsides(w: World, h: House, spendable: () => bigint): void {
     }
     if (mended) gestures++;
     // The plan: the careful play the advice until nothing betters it (free, at once).
-    if (how === "careful")
+    // (Reckoned again only when the plan changed: a level, a station, the hall.)
+    const key = `${ws.level}|${inside.stations.map((x) => `${x.kind}${x.x},${x.y},${x.rot},${x.level}`).join(";")}`;
+    if (how === "careful" && ws.advised !== key)
       for (let k = 0; k < 6; k++) {
         const a = adviseInterior(e, NOBODY, w.s, at);
         if (!a) break;
@@ -131,6 +139,8 @@ export function tendInsides(w: World, h: House, spendable: () => bigint): void {
         inside.links = inside.links.filter((l) => l.from !== st.id && l.to !== st.id);
         gestures++;
       }
+    if (how === "careful")
+      ws.advised = `${ws.level}|${inside.stations.map((x) => `${x.kind}${x.x},${x.y},${x.rot},${x.level}`).join(";")}`;
     // The night shift: a hand hired for each staffed station, so that the day's hand rests.
     if (how === "careful")
       for (const st of inside.stations) {
@@ -156,7 +166,7 @@ export function tendInsides(w: World, h: House, spendable: () => bigint): void {
     // The bottleneck: a level (the average now and then, the careful whenever it can), then,
     // at the last level open, a station of the same kind beside it.
     // Nothing more to gain past the hall's ceiling: no money spent there.
-    const full = interiorPaceBps({ ...e, job: null }, NOBODY, w.s, at) >= (I.maxPaceBps ?? 1e9);
+    const full = interiorPaceBps({ ...e, job: null }, NOBODY, w.s, at) >= I.maxPaceBps;
     // The average breaks its main bottleneck once (a level), then leaves the plan be.
     const broken = inside.stations.some((x) => x.level > 1);
     const raise = !full && (how === "careful" || !broken);

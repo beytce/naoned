@@ -2568,3 +2568,32 @@ Décision du porteur du 5 novembre 2026 (docs/plan-porcellana.md, D1 et D7) : la
 **Mise en œuvre** : bascule décidée par le porteur le 6 novembre 2026, en vigueur dès la mise en ligne (`EMPIRE_GRID` vaut `square` par défaut ; les réglages de G sont la variante `venice1450EmpireSquare` du thème). Chaque maison est reprise une fois sur les cases (`migrateToSquare`), sans perte de terre ni mouvement d'argent ; répétition : `npx tsx src/rehearse-square.ts 200` (200 maisons, 346 secteurs devenus 2 601 cases, 730 ateliers posés, aucun défaut) et `node apps/web/e2e/switch.mjs` (une maison fondée sur l'hexagone, retrouvée sur ses cases après redémarrage).
 
 Reproduire : `cd apps/simulator && npx tsx src/scenario-cases.ts`, puis `npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/cases-carrees.json` (environ 95 minutes par graine).
+
+## Les ateliers de l'intérieur (lot A8, 6 novembre 2026) — en cours, non allumé
+
+Plan : docs/plan-ateliers.md § 9. Les intérieurs ne sont **pas** allumés dans les mondes de Venise (`EMPIRE_INTERIOR=off`) ; cette section documente leur équilibrage en cours.
+
+**Le modèle.** Le simulateur de 24 mois porte un intérieur par atelier, joué avec les fonctions du moteur (`apps/simulator/src/empire/interior.ts`) : la cadence figée à chaque relance, l'usure et la fatigue réglées sur les heures où la file a tourné, le conseil de Lorenzo (`adviseInterior`, le même que l'écran). Trois façons de tenir ses ateliers, un tiers des Maisons chacune : **pressé** (plan par défaut, jamais d'entretien), **moyen** (casse une fois le goulot principal, entretient sous 80 %), **appliqué** (joue le conseil, entretient tout, met une équipe de nuit, monte le goulot jusqu'au niveau ouvert puis pose un poste de même sorte à côté). Règle 7 : trois ateliers soignés par séance pour l'appliqué, deux pour le moyen, les plus usés d'abord. Les modules d'atelier, les maîtres sur atelier et le rendement du `mestiere` ne comptent plus (lot A7).
+
+**Les réglages essayés (Venise, `venice1450.interior.ts`).** Référence « usée » (`reference: "worn"` : 10 000 = le plan par défaut au plancher d'usure et de fatigue, ce que devient l'atelier d'un joueur qui ne l'entretient jamais) ; planchers 90 % (usure) et 85 % (fatigue) ; plafond de la halle `maxPaceBps`, cadence de la référence `basePaceBps`.
+
+**Le banc** (`npx tsx src/interior-bench.ts 60` : chaque atelier aux niveaux 1, 5 et 12, 60 jours, argent illimité) : pressé 1,00, moyen **1,25**, appliqué **1,98** (rapports au pressé) ; dépense par atelier 5 300 d (moyen), 8 200 d (appliqué) ; 1 geste par séance. Les cibles du plan (§ 9 : appliqué/pressé 1,6 à 2,2 ; moyen ≈ 1,3) sont tenues au banc.
+
+**Le monde** (graine 1, cohortes de 40, 24 mois ; témoin sans intérieurs : 4 cibles sur 9) :
+
+| Essai | base / plafond | Cibles | Appliqué / pressé | Moyen / pressé | Pressé | Casa 10 (cohorte 0) | Commandes créées |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Témoin (sans intérieurs) | — | 4/9 | — | — | — | 100 j | 725 M d |
+| Passe 1 (entretien après les chantiers) | 10 000 / 20 000 | 5/13 | 1,49 | 1,08 | 1,02 | — (9 paliers hors bornes) | — |
+| Passe 2 | 12 500 / 25 000 | 7/13 | 1,26 | 1,04 | 1,17 | 154 j | 585 M d |
+| Passe 3 | 15 000 / 30 000 | 6/13 | 1,35 | 1,05 | 1,54 | 206 j | — |
+
+**Lecture.**
+- **Au monde, l'écart entre joueurs s'écrase** (appliqué/pressé 1,26 à 1,49 contre 1,98 au banc) : l'argent manque aux jeunes Maisons pour monter leurs postes, et trois ateliers soignés par séance laissent les autres au plan par défaut.
+- **Plus de cadence ne fait pas plus de progression** : de la passe 2 à la passe 3, le pressé passe de 1,17 à 1,54 et la Casa 10 recule de 154 à 206 jours. Dans le modèle, ce sont **les commandes des villes** qui bornent les revenus, pas la production : un atelier plus rapide achète plus d'intrants et vend son surplus au marché, moins cher.
+- **Avec intérieurs, les Maisons progressent moins vite qu'aujourd'hui** (Casa 10 à 154 jours contre 100) alors que l'indice des prix tient (95 à 103) et que le puits des intérieurs reste petit (10 M d). La cause est à chercher dans le modèle d'achat d'intrants du simulateur et dans ce que rendaient les modules et les maîtres, plutôt que dans les intérieurs eux-mêmes : à creuser avant toute bascule.
+- Réglages laissés au thème : ceux de la passe 2 (base 12 500, plafond 25 000).
+
+**Reste à faire** (décision du porteur attendue) : voir docs/plan-ateliers.md, lot A8.
+
+Reproduire : `cd apps/simulator && npx tsx src/interior-bench.ts 60` ; `npx tsx src/empire-cli.ts --seeds 1 --cohort 40 --interior` (environ 5 minutes ; le témoin sans `--interior`).

@@ -27,6 +27,8 @@ export interface Workshop {
   inside?: import("@comptoirs/engine").WorkshopInterior;
   /** Its pace, in bps of its default plan, frozen at its last relaunch. */
   pace?: number;
+  /** The plan Lorenzo last looked at (the simulator asks again only when it changed). */
+  advised?: string;
 }
 
 export interface Vehicle {

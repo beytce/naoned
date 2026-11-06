@@ -230,7 +230,8 @@ export function interiorPaceBps(
   const ref = referenceUnits(ws, s);
   if (ref <= 0) return FULL;
   const now = interiorThroughput(ws, h, s, at).unitsMilliPerHour;
-  const pace = Math.floor((now * (FULL + (ws.interior.legacyBps ?? 0))) / ref);
+  const base = s.interior?.basePaceBps ?? FULL;
+  const pace = Math.floor((now * base * (FULL + (ws.interior.legacyBps ?? 0))) / (ref * FULL));
   // A full hall: no quicker, whatever is added (the « acquis » of before passes it, never lost).
   const cap = (s.interior?.maxPaceBps ?? pace) + (ws.interior.legacyBps ?? 0);
   return Math.min(pace, cap);

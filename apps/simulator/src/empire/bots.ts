@@ -1215,8 +1215,9 @@ export function session(w: World, h: House, rng: Rng) {
   sellSurplus(w, h);
   sellToCourt(w, h);
   if (h.bent === "armourer") expedition(w, h, rng);
-  build(w, h);
+  // The insides first: mending is cheap and pays at once.
   tendInsides(w, h, () => spendable(w, h));
+  build(w, h);
   research(w, h);
   growIdentity(w, h, () => spendable(w, h));
   if (h.bent === "mixed") expedition(w, h, rng);
