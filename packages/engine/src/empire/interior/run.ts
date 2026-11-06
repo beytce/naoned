@@ -159,21 +159,28 @@ function absorbLegacy(h: EmpireHouse, ws: EmpireWorkshop, s: EmpireSettings): vo
         }
     return false;
   };
-  // The master steps down to work at the bottleneck, on the day if a seat is free, else the night.
+  // The master steps down to work: at the bottleneck if a seat is free there (the day, else the
+  // night), else at any station with a free seat, else at the door, waiting for one.
   for (const m of masters) {
     const r = interiorThroughput(ws, h, s);
-    const st = inside.stations.find((x) => x.id === r.bottleneck.station) ?? inside.stations[0];
-    if (!st) continue;
-    const def = I.stations[st.kind];
-    const seats = def?.levels[st.level - 1]?.seats ?? 0;
-    const day = workersOf(ws, h.staff).filter((x) => x.stationId === st.id && x.shift === "day");
-    m.trade = def?.trades[0] ?? "labourer";
+    const order = [
+      ...inside.stations.filter((x) => x.id === r.bottleneck.station),
+      ...inside.stations.filter((x) => x.id !== r.bottleneck.station),
+    ];
     m.fatigue = 0;
-    m.station = {
-      workshopId: ws.id,
-      stationId: st.id,
-      shift: day.length < seats ? "day" : "night",
-    };
+    m.station = { workshopId: ws.id, stationId: "", shift: "day" };
+    m.trade = I.stations[order[0]?.kind ?? ""]?.trades[0] ?? "labourer";
+    for (const st of order) {
+      const def = I.stations[st.kind];
+      const seats = def?.levels[st.level - 1]?.seats ?? 0;
+      const on = (shift: "day" | "night") =>
+        workersOf(ws, h.staff).filter((x) => x.stationId === st.id && x.shift === shift).length;
+      const shift = on("day") < seats ? "day" : on("night") < seats ? "night" : null;
+      if (!shift) continue;
+      m.trade = def?.trades[0] ?? "labourer";
+      m.station = { workshopId: ws.id, stationId: st.id, shift };
+      break;
+    }
   }
   for (let k = 0; k < 80; k++) {
     const r = interiorThroughput(ws, h, s);

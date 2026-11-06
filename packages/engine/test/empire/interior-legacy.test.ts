@@ -152,6 +152,27 @@ describe("the systems the insides absorb", () => {
     expect(m?.trade).toBeDefined();
   });
 
+  it("the master at work is moved like any hand: to the door, and back to its seat", () => {
+    const w = switched(ofBefore());
+    relaunch(w);
+    const m = house(w).staff?.[0];
+    const at = m?.station?.stationId ?? "";
+    const shift = m?.station?.shift ?? "day";
+    const move = (stationId: string | null) =>
+      w.do({
+        type: "empireInteriorAssign",
+        playerId: "a",
+        workshopId: farm(w).id,
+        handId: "m1",
+        stationId,
+        shift,
+      });
+    move(null);
+    expect(house(w).staff?.[0]?.station?.stationId).toBe("");
+    move(at);
+    expect(house(w).staff?.[0]?.station).toEqual({ workshopId: farm(w).id, stationId: at, shift });
+  });
+
   it("the quality of the master and its module is kept as care", () => {
     const w = switched(ofBefore());
     relaunch(w);
