@@ -2565,6 +2565,6 @@ Décision du porteur du 5 novembre 2026 (docs/plan-porcellana.md, D1 et D7) : la
 - Les jeunes Maisons gardent leur épargne dans la cible (0,71 à 0,75) : le prix d'une case ne les freine pas.
 - Restent hors cible comme en F : la sortie de la première bande (trop rapide) et les bruts des jeunes vendus à Venise.
 
-**Mise en œuvre** : pas encore. Les réglages de G s'appliqueront avec la bascule du monde en cases carrées (plan-porcellana, M4 et lot 3), annoncée d'abord dans les notes du chapitre.
+**Mise en œuvre** : bascule décidée par le porteur le 6 novembre 2026, en vigueur dès la mise en ligne (`EMPIRE_GRID` vaut `square` par défaut ; les réglages de G sont la variante `venice1450EmpireSquare` du thème). Chaque maison est reprise une fois sur les cases (`migrateToSquare`), sans perte de terre ni mouvement d'argent ; répétition : `npx tsx src/rehearse-square.ts 200` (200 maisons, 346 secteurs devenus 2 601 cases, 730 ateliers posés, aucun défaut) et `node apps/web/e2e/switch.mjs` (une maison fondée sur l'hexagone, retrouvée sur ses cases après redémarrage).
 
 Reproduire : `cd apps/simulator && npx tsx src/scenario-cases.ts`, puis `npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/cases-carrees.json` (environ 95 minutes par graine).

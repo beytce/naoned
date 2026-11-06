@@ -1,6 +1,6 @@
-# Notes du chapitre : Porcellana, la carte en cases (brouillon, novembre 2026)
+# Notes du chapitre : Porcellana, la carte en cases (novembre 2026)
 
-Règle du projet : au commerce, un changement s'annonce dans les notes du chapitre avant de s'appliquer. Ce texte est à publier dans le jeu **avant** la bascule du monde en cases carrées (plan-porcellana, M4 et lot 3), à une date que le porteur fixe. Les chiffres viennent du simulateur de 24 mois (docs/calibration.md, § « La carte en cases carrées »).
+En vigueur dès sa mise en ligne : décision du porteur du 6 novembre 2026 (« on va lancer la bascule avant toute chose »), par exception à la règle de l'annonce préalable, comme pour le chapitre des trente villes. Le texte ci-dessous est à publier dans le jeu en même temps. Les chiffres viennent du simulateur de 24 mois (docs/calibration.md, § « La carte en cases carrées »).
 
 ## Ce qui change pour vous
 
