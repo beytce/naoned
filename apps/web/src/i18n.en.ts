@@ -237,6 +237,45 @@ export const en: Dictionary = {
 
   empire: {
     title: "Your House",
+    /** Porcellana's board (docs/plan-porcellana.md lot 3): the cards of its places. */
+    porcellana: {
+      plot: "Free plot",
+      plotPrice: (d: number) => `Tile for sale · ${d.toLocaleString("en-GB")} ducats`,
+      plotLine: "Buy it: your domain grows this way, then build a workshop on it.",
+      locked: "Closed plot",
+      lockedCasa: (c: number) => `Open from Casa ${c}`,
+      lockedLine: "Your Casa does not reach this region yet.",
+      buy: "Buy the tile",
+      see: "See the tile",
+      market: "San Marco",
+      marketSub: "The Market · the Dogana",
+      townSize: (n: number) =>
+        ["hamlet", "village", "market town", "city", "capital"][Math.min(4, Math.max(0, n - 1))] ??
+        "town",
+      cityOrders: (n: number) =>
+        n > 1 ? `${n} orders crated on the quay.` : "One order crated on the quay.",
+      cityQuiet: "No order for now.",
+      openMarket: "Open the Dogana",
+      openCity: "See its orders",
+      enter: "Enter",
+      depot: "The Remise",
+      depotSub: "The vehicles' quay",
+      campo: "The Campo",
+      campoSub: "The door to the Terraferma",
+      arsenal: "The Arsenal",
+      arsenalSub: "The ships",
+      porta: "The Porta",
+      portaSub: "To the lands of Rome",
+      post: (region: string) => `Fondaco of ${region}`,
+      level: (n: number) => `Level ${n}`,
+      fondaco: "The Fondaco",
+      casa: (n: number) => `Your counting house · Casa ${n}`,
+      fondacoLine: "The red roads bring it what your workshops make.",
+      ready: (n: number) => (n > 1 ? `${n} lots ready to collect.` : "One lot ready to collect."),
+      running: "It is working.",
+      blocked: (good: string) => `It waits for ${good}.`,
+      idle: "Idle.",
+    },
     region: "Venetia",
     loading: "Opening the books…",
     join: {

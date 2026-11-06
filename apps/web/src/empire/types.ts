@@ -28,6 +28,8 @@ export interface EmpireWorkshop {
   level: number;
   job: EmpireJob | null;
   fitted?: string[];
+  /** On square tiles: its tile (« i,j »), its neighbours by a side its neighbourhood. */
+  tile?: string;
 }
 
 export interface EmpireBuild {
@@ -297,6 +299,11 @@ export interface EmpireMapView {
   /** Venice's own counter, likewise. */
   home: { x: number; y: number; level: number; reach: number; cell?: string; placed?: boolean };
   hexSize: number;
+  /** The grid (docs/plan-porcellana.md § 2 bis): « hex », or « square » tiles of `tileSize`. */
+  grid?: "hex" | "square";
+  tileSize?: number;
+  /** On square tiles: each workshop's road to its fondaco, the Remise's to the first. */
+  roads?: { from: string; to: string; pts: [number, number][] }[];
   /** A counter's reach (the map that grows): none on a map without it. */
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;

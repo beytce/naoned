@@ -154,6 +154,45 @@ const frDict = {
   /** The persistent empire (CADRAGE-v3, the socle): Venetia alone, the Casa and its workshops. */
   empire: {
     title: "Votre Maison",
+    /** Porcellana's board (docs/plan-porcellana.md lot 3): the cards of its places. */
+    porcellana: {
+      plot: "Parcelle libre",
+      plotPrice: (d: number) => `Case à acheter · ${d.toLocaleString("fr-FR")} ducats`,
+      plotLine: "Achète-la : ton domaine grandit de ce côté, puis bâtis-y un atelier.",
+      locked: "Parcelle fermée",
+      lockedCasa: (c: number) => `Ouverte à la Casa ${c}`,
+      lockedLine: "Ta Casa n'atteint pas encore cette région.",
+      buy: "Acheter la case",
+      see: "Voir la case",
+      market: "San Marco",
+      marketSub: "Le Marché · la Dogana",
+      townSize: (n: number) =>
+        ["hameau", "village", "bourg", "cité", "capitale"][Math.min(4, Math.max(0, n - 1))] ??
+        "ville",
+      cityOrders: (n: number) =>
+        n > 1 ? `${n} commandes en caisses au quai.` : "Une commande en caisse au quai.",
+      cityQuiet: "Aucune commande pour l'instant.",
+      openMarket: "Ouvrir la Dogana",
+      openCity: "Voir ses commandes",
+      enter: "Entrer",
+      depot: "La Remise",
+      depotSub: "Le quai des véhicules",
+      campo: "Le Campo",
+      campoSub: "La porte de la Terraferme",
+      arsenal: "L'Arsenal",
+      arsenalSub: "Les navires",
+      porta: "La Porta",
+      portaSub: "Vers les terres de Rome",
+      post: (region: string) => `Fondaco de ${region}`,
+      level: (n: number) => `Niveau ${n}`,
+      fondaco: "Le Fondaco",
+      casa: (n: number) => `Ton comptoir · Casa ${n}`,
+      fondacoLine: "Les routes rouges y portent ce que tes ateliers produisent.",
+      ready: (n: number) => (n > 1 ? `${n} lots prêts à récolter.` : "Un lot prêt à récolter."),
+      running: "Il travaille.",
+      blocked: (good: string) => `Il attend : ${good}.`,
+      idle: "À l'arrêt.",
+    },
     region: "Vénétie",
     loading: "On ouvre les livres…",
     join: {
