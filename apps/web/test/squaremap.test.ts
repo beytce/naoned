@@ -2,8 +2,13 @@ import {
   VENICE_SQUARE_TILES,
   VENICE_SQUARE_TOWNS,
   VENICE_TILE_SIZE,
+  cellAtPoint,
+  parseEmpireSettings,
   tileAt,
+  tileFault,
   tilesTouch,
+  venice1450Empire,
+  venice1450EmpireSquare,
 } from "@comptoirs/engine";
 import { describe, expect, it } from "vitest";
 
@@ -26,5 +31,27 @@ describe("the square map of Venice", () => {
   it("sets Venice on a coast, its lagoon water", () => {
     const v = VENICE_SQUARE_TOWNS.find((t) => t.code === "venezia");
     expect(v && VENICE_SQUARE_TILES[v.tile]?.coast).toBe(true);
+  });
+});
+
+describe("Venice's empire on square tiles (the theme's variant)", () => {
+  const s = parseEmpireSettings(venice1450EmpireSquare);
+
+  it("reads as settings: the square grid, a new drawing, the towns of now", () => {
+    expect(s.map.grid).toBe("square");
+    expect(s.map.cities).toHaveLength(31);
+    const hex = parseEmpireSettings(venice1450Empire);
+    for (const c of hex.map.cities) {
+      const t = s.map.cities.find((x) => x.code === c.code);
+      expect([t?.weight, t?.size]).toEqual([c.weight, c.size]);
+    }
+  });
+
+  it("sets the first fondaco on a free tile of Venetia, clear of the towns", () => {
+    const home = s.map.home as { x: number; y: number };
+    const tile = cellAtPoint(home.x, home.y, s);
+    expect(s.map.cells[tile]?.region).toBe("veneto");
+    const towns = s.map.cities.map((c): [number, number] => [c.x ?? 0, c.y ?? 0]);
+    expect(tileFault(s, tile, [home.x, home.y], towns, [])).toBeNull();
   });
 });

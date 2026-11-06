@@ -24,6 +24,7 @@ import {
   upgradeLegacyState,
   venice1450,
   venice1450Empire,
+  venice1450EmpireSquare,
   venice1450Settings,
   weekIndex,
 } from "@comptoirs/engine";
@@ -69,6 +70,8 @@ export type EffectsListener = (
 
 export interface WorldOptions {
   settingsFromTheme?: boolean;
+  /** The empire's map: the sectors of now, or the square tiles (docs/plan-porcellana.md M4). */
+  empireGrid?: "hex" | "square";
   /** A snapshot of the state at least this often (ms) … */
   snapshotEveryMs?: number;
   /** … or after this many saved versions, whichever comes first. */
@@ -814,9 +817,8 @@ async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: 
   // The empire's own settings: the theme's current ones in beta, else the stored ones completed.
   if (isEmpireRow(world)) {
     const saved = (world.settings as { empire?: unknown }).empire;
-    const empire = options.settingsFromTheme
-      ? venice1450Empire
-      : mergeDefaults(venice1450Empire, saved);
+    const theme = options.empireGrid === "square" ? venice1450EmpireSquare : venice1450Empire;
+    const empire = options.settingsFromTheme ? theme : mergeDefaults(theme, saved);
     stored = { ...(stored as object), empire };
   }
   if (options.settingsOverride) stored = mergeDefaults(stored, options.settingsOverride);

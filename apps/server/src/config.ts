@@ -49,6 +49,12 @@ const schema = z
      */
     WORLD_KIND: z.enum(["season", "empire"]).default("season"),
     /**
+     * The empire's map (docs/plan-porcellana.md M4): « hex », the sectors of now, or « square »,
+     * the tiles bought one at a time (its houses taken up once). The switch is the owner's: in
+     * production only after the chapter's notes (docs/notes-chapitre-2026-12-porcellana.md).
+     */
+    EMPIRE_GRID: z.enum(["hex", "square"]).default("hex"),
+    /**
      * The switch (CADRAGE-v3 § 12), off unless set: from this instant (ISO), the month that ends
      * opens the persistent empire in its place, and a server started after it opens the empire.
      * Set in production only on the decision of the game's owner.
