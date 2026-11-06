@@ -1,133 +1,49 @@
 /**
- * Who plays whom in the lands of Rome (docs/plan-porta-3d.md, decisions of the owner of
- * 4 November 2026): each unit of the battle a figurine (minis.tsx) — its character, its side's
- * colours, the props it carries, its height, the animations of its stand, its walk and its blow,
- * and its mount. The house's combat vehicles carry their crew; Rome's soldiers in papal red and
- * white.
+ * Who plays whom in the lands of Rome (docs/plan-porta-porcellana.md, P1): each unit of the battle
+ * a turned porcelain piece (porcellana/models/pawns.ts) — its piece, its side, its height, its
+ * mount, the crew on its cart. The house's pieces glazed white with the red sash; Rome's biscuit
+ * and ink.
  */
-/** A character, an animation, a side: names kept from the figurines of before (Pawn reads `side`). */
-export type Character = string;
-export type Anim = string;
+import type { PawnKind } from "../../porcellana/models/pawns.js";
+
 export type Side = "house" | "rome";
 
 export interface Role {
-  character: Character;
   side: Side;
-  /** Its props, by their node names in the pack. */
-  show: string[];
-  /** Its height standing, in chart units (a rider's, seated). */
+  /** Its piece (pawns.ts). */
+  piece: PawnKind;
+  /** Its height standing, in chart units. */
   height: number;
-  idle: Anim;
-  move: Anim;
-  attack: Anim;
-  /** On a horse (the cavalier, the light horse), or on a cart pulled by the donkey. */
-  mount?: "horse" | "cart" | "bombard";
+  /** On a cart pulled by a mule, or behind a bombard (the knight is a horse already). */
+  mount?: "cart" | "bombard";
   /** Its crew on the cart, beyond itself. */
-  crew?: { character: Character; show: string[] }[];
-  /** A banner on its back (the Gonfalonier), a torch in its hand (the incendiary). */
+  crew?: PawnKind[];
+  /** A banner held (the Gonfalonier), a torch in hand (the incendiary). */
   banner?: boolean;
   torch?: boolean;
 }
 
-/** The chart's units a figurine stands, its base (a small tile is some 10 across). */
+/** The chart's units a piece stands. */
 const MAN = 2.4;
 
 export const ROLES: Record<string, Role> = {
   // The house's combat vehicles (docs/plan-porta.md § 4).
-  cavaliere: {
-    character: "Knight",
-    side: "house",
-    show: ["1H_Sword", "Badge_Shield", "Knight_Helmet", "Knight_Cape"],
-    height: MAN,
-    idle: "Sit_Chair_Idle",
-    move: "Sit_Chair_Idle",
-    attack: "1H_Melee_Attack_Chop",
-    mount: "horse",
-  },
-  carro: {
-    character: "Knight",
-    side: "house",
-    show: ["1H_Sword", "Round_Shield", "Knight_Helmet"],
-    height: MAN,
-    idle: "Idle",
-    move: "Idle",
-    attack: "1H_Melee_Attack_Chop",
-    mount: "cart",
-    crew: [{ character: "Rogue", show: ["2H_Crossbow", "Rogue_Cape"] }],
-  },
+  cavaliere: { side: "house", piece: "knight", height: MAN },
+  carro: { side: "house", piece: "soldier", height: MAN, mount: "cart", crew: ["crossbow"] },
   carro_grande: {
-    character: "Knight",
     side: "house",
-    show: ["2H_Sword", "Knight_Helmet", "Knight_Cape"],
+    piece: "captain",
     height: MAN,
-    idle: "Idle",
-    move: "Idle",
-    attack: "2H_Melee_Attack_Chop",
     mount: "cart",
-    crew: [
-      { character: "Rogue", show: ["2H_Crossbow", "Rogue_Cape"] },
-      { character: "Barbarian", show: ["Barbarian_Round_Shield", "1H_Axe", "Barbarian_Hat"] },
-    ],
+    crew: ["crossbow", "soldier"],
   },
-  // Rome (docs/plan-porta.md § 6.4), in papal red and white.
-  crossbowman: {
-    character: "Rogue_Hooded",
-    side: "rome",
-    show: ["2H_Crossbow"],
-    height: MAN,
-    idle: "Idle",
-    move: "Walking_A",
-    attack: "2H_Ranged_Shoot",
-  },
-  halberdier: {
-    character: "Barbarian",
-    side: "rome",
-    show: ["2H_Axe", "Barbarian_Hat", "Barbarian_Cape"],
-    height: MAN * 1.05,
-    idle: "Idle",
-    move: "Walking_A",
-    attack: "2H_Melee_Attack_Chop",
-  },
-  light_horse: {
-    character: "Knight",
-    side: "rome",
-    show: ["1H_Sword", "Knight_Helmet", "Knight_Cape"],
-    height: MAN,
-    idle: "Sit_Chair_Idle",
-    move: "Sit_Chair_Idle",
-    attack: "1H_Melee_Attack_Chop",
-    mount: "horse",
-  },
-  bombard: {
-    character: "Barbarian",
-    side: "rome",
-    show: ["Barbarian_Hat"],
-    height: MAN,
-    idle: "Idle",
-    move: "Walking_A",
-    attack: "Block",
-    mount: "bombard",
-  },
-  gonfalonier: {
-    character: "Knight",
-    side: "rome",
-    show: ["2H_Sword", "Knight_Helmet", "Knight_Cape"],
-    height: MAN * 1.8,
-    idle: "Idle",
-    move: "Walking_A",
-    attack: "2H_Melee_Attack_Chop",
-    banner: true,
-  },
-  incendiary: {
-    character: "Mage",
-    side: "rome",
-    show: ["Mage_Hat", "Mage_Cape"],
-    height: MAN,
-    idle: "Idle",
-    move: "Walking_A",
-    attack: "Spellcast_Shoot",
-    torch: true,
-  },
+  // Rome (docs/plan-porta.md § 6.4), in biscuit and ink.
+  crossbowman: { side: "rome", piece: "archer", height: MAN },
+  halberdier: { side: "rome", piece: "legionary", height: MAN * 1.05 },
+  light_horse: { side: "rome", piece: "knight", height: MAN },
+  bombard: { side: "rome", piece: "legionary", height: MAN, mount: "bombard" },
+  gonfalonier: { side: "rome", piece: "centurion", height: MAN * 1.5, banner: true },
+  incendiary: { side: "rome", piece: "archer", height: MAN, torch: true },
 };
 
 /** The role of a unit of the battle: Rome's by its kind, the house's by its vehicle's model. */

@@ -86,8 +86,10 @@ function horseShape(): Shape {
 }
 
 /** A piece: its group and the height of its head (for a pin or a halo over it). */
-export function pawn(P: Palette, kind: PawnKind): Built {
-  const rome = kind === "legionary" || kind === "archer" || kind === "centurion";
+export function pawn(P: Palette, kind: PawnKind, side?: "house" | "rome"): Built {
+  const rome = side
+    ? side === "rome"
+    : kind === "legionary" || kind === "archer" || kind === "centurion";
   const g = new Group();
   const glaze = P.m(rome ? "wall2" : "trim");
   const sign = rome ? P.ink : P.accent;
