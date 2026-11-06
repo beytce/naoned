@@ -260,10 +260,12 @@ try {
   await page.waitForTimeout(1_500);
   await shot("5-bataille");
   // The rider to the nearest city, then the transport.
+  // The town may lie beyond the first framing (it is near one's own vehicles): touched as a finger
+  // would after a drag.
   const city = page.locator("[data-battle-city]").first();
-  await city.click();
+  await city.evaluate((el) => el.click());
   await page.locator("[data-battle-unit]").nth(1).click();
-  await city.click();
+  await city.evaluate((el) => el.click());
   await page.waitForTimeout(8_000);
   await shot("6-bataille-en-route");
   // Up close on the vehicles (a wheel over them): the figurines.
