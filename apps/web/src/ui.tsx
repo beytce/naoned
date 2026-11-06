@@ -308,7 +308,7 @@ export function Tabs<T extends string>(props: {
             type="button"
             data-coach={props.coach ? `${props.coach}-${o.value}` : undefined}
             onClick={() => props.onChange(o.value)}
-            className={`slab min-h-11 flex-1 px-3 py-2.5 font-display text-sm font-bold transition ${on ? "bg-cream text-night" : "bg-night-3 text-cream-dim hover:text-cream"}`}
+            className={`slab min-h-11 flex-1 px-3 py-2.5 font-display text-sm font-bold transition ${on ? "ink-pill" : "bg-night-4 text-cream"}`}
           >
             {o.label}
           </button>
@@ -1039,8 +1039,8 @@ export function Segmented<T extends string>({
           aria-pressed={value === o.value}
           data-coach={coach ? `${coach}-${o.value}` : undefined}
           onClick={() => onChange(o.value)}
-          // Lagune: a pill, the chosen one lit in lapis.
-          className={`min-h-11 rounded-full px-4 py-2.5 font-display text-sm font-semibold transition-colors ${value === o.value ? "bg-info font-bold text-ink" : "text-cream-dim ring-1 ring-inset ring-edge"}`}
+          // The playful Porcellana: a pill, the chosen one in ink on its black foot.
+          className={`min-h-11 rounded-full px-4 py-2.5 font-display text-sm transition active:translate-y-0.5 ${value === o.value ? "ink-pill font-black" : "bg-night-3 font-extrabold text-cream ring-1 ring-inset ring-line"}`}
         >
           {o.label}
         </button>

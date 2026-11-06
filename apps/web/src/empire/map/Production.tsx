@@ -60,7 +60,7 @@ export function ProductionSheet({
             aria-selected={pane === x}
             data-production-pane={x}
             onClick={() => setPane(x)}
-            className={`min-h-10 flex-1 rounded-full px-3 text-sm font-semibold transition active:scale-95 ${pane === x ? "bg-info/15 text-info ring-1 ring-info" : "text-cream-dim ring-1 ring-line"}`}
+            className={`min-h-10 flex-1 rounded-full px-3 font-display text-sm transition active:translate-y-0.5 ${pane === x ? "ink-pill font-black" : "bg-night-4 font-extrabold text-cream"}`}
           >
             {t[x]}
           </button>
@@ -132,8 +132,8 @@ function Buildings({
     price: string | null,
     open: boolean,
   ) => (
-    <li key={kind} className="flex items-center gap-3 border-b border-line/60 pb-3">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-night-3 text-gold ring-1 ring-gold/60 [&_svg]:h-6 [&_svg]:w-6">
+    <li key={kind} className="flex items-center gap-3 rounded-[1.4rem] p-2">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-night-4 text-cream [&_svg]:h-6 [&_svg]:w-6">
         {kind === "post"
           ? Icon.banner()
           : kind === "camp"
@@ -145,7 +145,7 @@ function Buildings({
                 : Icon.anchor()}
       </span>
       <span className="min-w-0 flex-1 text-sm text-cream">
-        {title}
+        <span className="font-display text-base font-extrabold">{title}</span>
         <span className="block text-xs text-cream-dim">{text}</span>
       </span>
       <span data-place={kind}>
@@ -156,7 +156,7 @@ function Buildings({
     </li>
   );
   return (
-    <ul className="mb-4 space-y-3" data-buildings>
+    <ul className="mb-4 space-y-1" data-buildings>
       {cheapest !== null &&
         card("post", pl.postCard, pl.postText, pl.from(d(cheapest.toString())), true)}
       {depot &&

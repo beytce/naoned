@@ -268,5 +268,6 @@ Décision du porteur : la proposition D de la toile « Fondaco — interface mod
 |---|---|---|
 | L1 | Polices, encre plus noire, relief des surfaces et de la touche d'action, monnaies dessinées, barre du haut en pilules, barre des quatre lieux, fiche d'encre avec « Prêt ! », repères | fait |
 | L2 | Feuilles et dock : titres en Nunito sans capitales (sur-titres en clair), croix blanche sur son pied, vignettes rondes, prix avec le ducat dessiné (`Coin` = le ducat de `coins.tsx`, `bare()`), Lorenzo en bulle à côté de son portrait, titres des panneaux et de la Porta en Nunito | fait |
-| L2 bis | Listes d'ateliers aux anneaux de progression et niveaux en points, Remise en jauges rondes | à faire |
+| L2 bis | Filtres et onglets en pastilles d'encre (`Segmented`, `Tabs`, Production, Compagnie), lignes des bâtiments en vignettes rondes ; les ateliers gardent leurs anneaux (`TimeRing`) | fait |
+| L2 ter | La Remise en jauges rondes de la maquette : aucun écran ne montre aujourd'hui tout le stock d'un coup, c'est un écran nouveau (à décider avec le porteur) | en attente |
 | L3 | Porta, Compagnie, profil, Terraferme : mêmes pièces. La sélection reste violette (`--info`) : l'encre noire de la maquette rapproche trop la sélection du vert et du rouge pour un œil daltonien (ΔE 34 et 36 < 40, `test/colourblind.test.ts`) | à faire |

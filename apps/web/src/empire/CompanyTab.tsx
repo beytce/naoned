@@ -63,7 +63,7 @@ export function CompanySheet({
             aria-selected={pane === x}
             data-pane={x}
             onClick={() => setPane(x)}
-            className={`relative min-h-10 flex-1 rounded-full px-3 text-sm font-semibold transition active:scale-95 ${pane === x ? "bg-info/15 text-info ring-1 ring-info" : "text-cream-dim ring-1 ring-line"}`}
+            className={`relative min-h-10 flex-1 rounded-full px-3 font-display text-sm transition active:translate-y-0.5 ${pane === x ? "ink-pill font-black" : "bg-night-4 font-extrabold text-cream"}`}
           >
             {t.companyTab.panes[x]}
             {calls[x] && (
