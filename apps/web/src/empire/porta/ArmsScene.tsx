@@ -184,7 +184,7 @@ export function ArmsScene({
 
       <header className="absolute inset-x-0 top-0 flex items-center gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="glass flex min-h-12 min-w-0 flex-1 flex-col justify-center rounded-full px-4 py-1">
-          <p className="truncate font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
+          <p className="truncate font-place text-lg font-black leading-tight text-cream">
             {pt.arms}
           </p>
           <p className="truncate text-xs text-cream-dim">{pt.armsSub}</p>

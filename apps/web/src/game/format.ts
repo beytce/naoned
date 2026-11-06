@@ -49,6 +49,12 @@ export function amount(deniers: string | bigint | null | undefined): string {
   return grouped(cut(deniers));
 }
 
+/** The exact sum without its unit, for a sum shown next to its drawn ducat: "12,5". */
+export function bare(deniers: string | bigint | null | undefined): string {
+  if (deniers === null || deniers === undefined) return "—";
+  return grouped(deniers);
+}
+
 export function duration(ms: number): string {
   if (ms <= 0) return "0 s";
   const s = Math.ceil(ms / 1000);

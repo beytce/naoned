@@ -1813,3 +1813,10 @@ button.map-place {
   transform: rotate(-4deg);
   box-shadow: 0 3px 0 rgb(var(--face-deep, 128 38 24));
 }
+/* The kickers speak plainly (D): a small bold word, never spaced capitals. */
+[data-palette="porcellana"] .label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+  font-size: 0.8125rem;
+}

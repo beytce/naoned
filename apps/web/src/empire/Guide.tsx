@@ -108,19 +108,26 @@ export function NextStepCard({
     return (
       <GoldLayer depth={GOLD.guide} atLeast>
         <div
-          className="glass pointer-events-auto flex w-full max-w-md items-center gap-2.5 rounded-[1.5rem] p-2 pr-2.5"
+          className="pointer-events-auto flex w-full max-w-md items-end gap-2"
           data-next-step={step.kind}
         >
-          <Lorenzo size={36} />
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm font-bold leading-snug text-cream">{w.what}</p>
-            {step.kind === "wait" && <WaitArc p={p} now={now} />}
+          {/* Lorenzo speaks in a bubble beside his portrait (the playful Porcellana). */}
+          <span className="shrink-0 rounded-full bg-night-3 p-0.5 shadow-[0_3px_0_rgb(23_21_15/0.12)]">
+            <Lorenzo size={40} />
+          </span>
+          <div className="glass flex min-w-0 flex-1 items-center gap-2.5 rounded-[1.5rem] rounded-bl-md py-2 pl-3.5 pr-2">
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 font-display text-[0.9375rem] font-extrabold leading-snug text-cream">
+                {w.what}
+              </p>
+              {step.kind === "wait" && <WaitArc p={p} now={now} />}
+            </div>
+            {button && (
+              <Slab tone="gold" size="sm" busy={busy} shine onClick={go}>
+                {button}
+              </Slab>
+            )}
           </div>
-          {button && (
-            <Slab tone="gold" size="sm" busy={busy} shine onClick={go}>
-              {button}
-            </Slab>
-          )}
         </div>
         <PointingHand selectors={handTargets(step)} />
       </GoldLayer>

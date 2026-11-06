@@ -240,7 +240,7 @@ function Field({
             </Pinned>
           ))}
           <Pinned battle={battle} x={battle.gate.x} y={battle.gate.y} lift={-70}>
-            <span className="rounded-full bg-night/85 px-2.5 py-0.5 font-place text-xs font-bold uppercase tracking-[0.12em] text-cream ring-1 ring-edge shadow-lg">
+            <span className="rounded-full bg-night/85 px-2.5 py-0.5 font-place text-sm font-black leading-tight text-cream ring-1 ring-edge shadow-lg">
               {pt.gate}
             </span>
           </Pinned>
@@ -251,7 +251,7 @@ function Field({
 
       <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="glass pointer-events-auto flex min-w-0 max-w-[16rem] flex-1 flex-col gap-1 rounded-2xl px-3 py-2">
-          <p className="font-place text-xs font-bold uppercase tracking-[0.12em] text-cream-dim">
+          <p className="font-place text-sm font-black leading-tight text-cream-dim">
             {pt.tier(battle.tier)}
           </p>
           <BattleGoal battle={battle} />

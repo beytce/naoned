@@ -74,7 +74,7 @@ export function DomainBar({
         >
           <span aria-hidden="true">‹</span> {t.back}
         </button>
-        <h3 className="min-w-0 flex-1 truncate text-center font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
+        <h3 className="min-w-0 flex-1 truncate text-center font-place text-lg font-black leading-tight text-cream">
           {title}
         </h3>
         <span className="w-16" aria-hidden="true" />
@@ -157,7 +157,7 @@ function Door({
       className="glass-chip flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl text-cream active:scale-[0.97] [@media(max-height:700px)]:min-h-11 [@media(max-height:700px)]:flex-row [@media(max-height:700px)]:gap-1.5 [&_svg]:h-5 [&_svg]:w-5"
     >
       {children}
-      <span className="text-xs font-semibold">{label}</span>
+      <span className="font-display text-xs font-extrabold">{label}</span>
     </button>
   );
 }

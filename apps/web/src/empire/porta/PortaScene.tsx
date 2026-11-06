@@ -219,7 +219,7 @@ export function PortaScene({
           data-porta-level
         >
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
+            <span className="block truncate font-place text-lg font-black leading-tight text-cream">
               {pt.porta}
             </span>
             <span className="block truncate text-xs text-cream-dim">
@@ -261,9 +261,7 @@ export function PortaScene({
           className="porta-back orbit-in absolute inset-x-4 top-28 mx-auto block max-w-sm rounded-2xl bg-night/90 p-4 text-center shadow-xl ring-1 ring-edge"
           data-porta-back
         >
-          <p className="font-place text-sm font-bold uppercase tracking-[0.12em] text-gold">
-            {pt.backTitle}
-          </p>
+          <p className="font-place text-lg font-black leading-tight text-gold">{pt.backTitle}</p>
           <p className="mt-3 flex flex-wrap justify-center gap-2">
             {back.gained.length === 0 ? (
               <span className="text-xs text-cream-dim">{pt.backNone}</span>

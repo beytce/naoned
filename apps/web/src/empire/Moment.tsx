@@ -41,9 +41,7 @@ export function CasaMoment({
         />
       </div>
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-gold">{t.kicker}</p>
-      <h2 className="font-place text-3xl font-bold uppercase tracking-[0.12em] text-cream">
-        {t.title(level)}
-      </h2>
+      <h2 className="font-place text-3xl font-black leading-tight text-cream">{t.title(level)}</h2>
       {opens.length > 0 ? (
         <ul className="space-y-1 text-sm text-cream">
           {opens.map((code) => (

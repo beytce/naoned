@@ -182,10 +182,10 @@ export function LorenzoCard({
 }) {
   return (
     <div
-      className="cut bg-info/60 p-0.5 shadow-xl shadow-black/40"
+      className="rounded-[1.75rem] bg-night-3 shadow-[0_4px_0_rgb(23_21_15/0.07),0_14px_40px_rgb(23_21_15/0.1)]"
       data-coach-bubble={bubble ? "" : undefined}
     >
-      <div className="cut bg-night-2 px-3.5 pb-2.5 pt-3">
+      <div className="px-4 pb-3 pt-3.5">
         <div className="flex gap-3">
           <span className="relative h-fit shrink-0">
             {portrait}
@@ -725,7 +725,7 @@ export function CloseButton({
       type="button"
       aria-label="Fermer"
       onClick={onClick}
-      className={`glass-chip flex h-11 w-11 items-center justify-center rounded-full text-cream-dim transition hover:text-cream active:scale-95 ${className}`}
+      className={`glass-chip flex h-11 w-11 items-center justify-center rounded-full text-cream transition active:translate-y-0.5 ${className}`}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
         <path
@@ -932,7 +932,7 @@ export function Sheet({
         {/* Sticky from the dialog's own edge, over its padding (a sticky box stops under it). */}
         <div
           data-sheet-head
-          className={`sticky -top-3 z-10 -mx-5 -mt-3 bg-night-2/60 px-5 pt-3 backdrop-blur-xl lg:-top-7 lg:-mx-7 lg:-mt-7 lg:px-7 lg:pt-7 ${head.title ? "mb-4 border-b border-line/60 pb-3" : "mb-4 lg:mb-0"}`}
+          className={`sticky -top-3 z-10 -mx-5 -mt-3 bg-night-3/95 px-5 pt-3 lg:-top-7 lg:-mx-7 lg:-mt-7 lg:px-7 lg:pt-7 ${head.title ? "mb-4 border-b border-line/60 pb-3" : "mb-4 lg:mb-0"}`}
         >
           <div
             className={`mx-auto h-1.5 w-12 rounded-full bg-line lg:hidden ${head.title ? "mb-3" : ""}`}
@@ -942,7 +942,7 @@ export function Sheet({
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1 pt-1">
                   {kicker && <p className="label text-cream-dim">{kicker}</p>}
-                  <h3 className="font-place text-xl font-bold uppercase">{head.title}</h3>
+                  <h3 className="font-place text-2xl font-black leading-tight">{head.title}</h3>
                 </div>
                 <CloseButton onClick={onClose} className="-mr-2 shrink-0" />
               </div>

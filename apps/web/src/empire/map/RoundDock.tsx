@@ -34,9 +34,7 @@ export function RoundDock({
       data-round-dock={round.cities.join(",")}
     >
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
-          {t.title}
-        </span>
+        <span className="font-place text-lg font-black leading-tight text-cream">{t.title}</span>
         <span className="text-xs text-cream-dim">
           {vehicle ? (fr.empire.vehicleNames[vehicle.type] ?? vehicle.type) : ""} ·{" "}
           {t.crates(crates)}

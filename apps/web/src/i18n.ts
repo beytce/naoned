@@ -595,6 +595,7 @@ const frDict = {
         "La file couvre 12 heures : relancez avant de dormir, rien ne se perd pendant l'absence.",
       newTitle: "Nouvel atelier",
       newAction: (cost: string) => `Bâtir · ${cost}`,
+      newVerb: "Bâtir",
       noRoom: "Toutes les places sont prises : la Casa en ouvre d'autres.",
     },
     stock: {

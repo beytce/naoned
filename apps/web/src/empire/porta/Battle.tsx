@@ -150,7 +150,7 @@ export function BattleSvg({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex flex-col bg-night" data-battle={battle.id}>
       <header className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
         <div>
-          <p className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
+          <p className="font-place text-lg font-black leading-tight text-cream">
             {pt.tier(battle.tier)}
           </p>
           <BattleGoal battle={battle} />

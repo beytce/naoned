@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useRef } from "react";
 import { GoodsMark } from "./art/goods.js";
 import { Coin } from "./art/icons.js";
 import { onBack } from "./game/back.js";
-import { d } from "./game/format.js";
+import { bare, d } from "./game/format.js";
 import { Icon } from "./game/map/icons.js";
 import { haptic } from "./haptics.js";
 import { CloseButton, useDragToClose } from "./ui.js";
@@ -163,7 +163,7 @@ export function PlaceHeader({
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h3 className="line-clamp-2 font-place text-sm font-bold uppercase leading-tight tracking-[0.12em] text-cream">
+        <h3 className="line-clamp-2 font-place text-lg font-black leading-tight text-cream">
           {title}
         </h3>
         {sub && <p className="truncate text-xs text-cream-dim">{sub}</p>}
@@ -364,8 +364,9 @@ export function CostChips({
           >
             {c.kind === "ducats" ? (
               <>
-                <Coin size={16} />
-                <span className={c.ok ? "text-gold" : ""}>{d(c.need)}</span>
+                <Coin size={22} />
+                <span>{bare(c.need)}</span>
+                <span className="sr-only">ducats</span>
               </>
             ) : c.kind === "good" ? (
               <>
@@ -529,7 +530,7 @@ export function DockDoor({
         </span>
       )}
       <span className="[&_svg]:h-7 [&_svg]:w-7">{icon}</span>
-      <span className="text-sm font-semibold">{label}</span>
+      <span className="font-display text-sm font-extrabold">{label}</span>
     </button>
   );
 }

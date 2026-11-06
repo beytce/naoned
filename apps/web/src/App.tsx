@@ -291,9 +291,7 @@ function CodeForm(props: {
         if (code.length === 6) void send(code);
       }}
     >
-      <h2 className="text-balance font-place text-lg font-bold uppercase tracking-[0.1em]">
-        {fr.checkInbox}
-      </h2>
+      <h2 className="text-balance font-place text-xl font-black leading-tight">{fr.checkInbox}</h2>
       {/* The field first: on a small phone, the keyboard covers what lies below. */}
       <label className="block space-y-2 text-left">
         <Label>{fr.code.label}</Label>
@@ -387,9 +385,7 @@ function PseudoForm({ onDone }: { onDone: (account: Account) => void }) {
 
   return (
     <form onSubmit={submit} className="animate-rise space-y-5">
-      <h2 className="text-center font-place text-lg font-bold uppercase tracking-[0.15em]">
-        {fr.choosePseudo}
-      </h2>
+      <h2 className="text-center font-place text-xl font-black leading-tight">{fr.choosePseudo}</h2>
       <label className="block space-y-2">
         <Label>{fr.pseudoLabel}</Label>
         <input

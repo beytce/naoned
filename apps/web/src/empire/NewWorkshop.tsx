@@ -1,5 +1,6 @@
 import { GoodsMark } from "../art/goods.js";
-import { d } from "../game/format.js";
+import { DucatCoin } from "../art/plateau/coins.js";
+import { amount, d } from "../game/format.js";
 import { fr } from "../i18n.js";
 import { Sheet, Slab } from "../ui.js";
 import { regionName } from "./World.js";
@@ -89,7 +90,7 @@ export function NewWorkshopList({
   return (
     <>
       {
-        <ul className="space-y-2">
+        <ul className="space-y-1">
           {[...p.catalog]
             // The workshop the next step points at comes first, its button in gold.
             .sort(
@@ -101,10 +102,15 @@ export function NewWorkshopList({
               b.recipes
                 .filter((x) => allowed(x.outputs, x.inputs))
                 .map((r) => (
-                  <li key={r.code} className="flex items-center gap-3 border-b border-line/60 pb-2">
-                    <GoodsMark code={Object.keys(r.outputs)[0] ?? ""} size={28} />
+                  <li
+                    key={r.code}
+                    className={`flex items-center gap-3 rounded-[1.4rem] p-2 ${r.code === highlight ? "bg-face/10" : ""}`}
+                  >
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-night-4">
+                      <GoodsMark code={Object.keys(r.outputs)[0] ?? ""} size={28} />
+                    </span>
                     <span className="flex-1 text-sm text-cream">
-                      {b.name}
+                      <span className="font-display text-base font-extrabold">{b.name}</span>
                       <span className="block text-xs text-cream-dim">
                         {Object.entries(r.outputs)
                           .map(([g, n]) => `${n} ${goodName(p, g)}`)
@@ -117,6 +123,7 @@ export function NewWorkshopList({
                     </span>
                     <Slab
                       size="sm"
+                      label={t.workshop.newAction(d(site.cost))}
                       tone={r.code === highlight ? "gold" : "ghost"}
                       busy={busy}
                       disabled={!affordable(p.cash, site.cost)}
@@ -130,7 +137,11 @@ export function NewWorkshopList({
                         }).then(onDone);
                       }}
                     >
-                      {t.workshop.newAction(d(site.cost))}
+                      {t.workshop.newVerb}
+                      <span className="inline-flex items-center gap-1">
+                        <DucatCoin size={20} />
+                        {amount(site.cost)}
+                      </span>
                     </Slab>
                   </li>
                 )),

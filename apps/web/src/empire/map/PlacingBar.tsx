@@ -36,7 +36,7 @@ export function PlacingBar({
       className="pointer-events-auto w-full border-t border-info/40 bg-night-2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-xl shadow-black/50 lg:mb-4 lg:w-[30rem] lg:rounded-2xl lg:border"
       data-placing-bar={placing.kind}
     >
-      <h3 className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
+      <h3 className="font-place text-lg font-black leading-tight text-cream">
         {home
           ? t.home
           : placing.kind === "camp"

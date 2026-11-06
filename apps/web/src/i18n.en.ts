@@ -669,6 +669,7 @@ export const en: Dictionary = {
         "The queue covers 12 hours: relaunch before you sleep, nothing is lost while away.",
       newTitle: "New workshop",
       newAction: (cost: string) => `Build · ${cost}`,
+      newVerb: "Build",
       noRoom: "Every place is taken: the Casa opens more.",
     },
     stock: {

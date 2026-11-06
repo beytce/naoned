@@ -108,7 +108,7 @@ export function ActionPanel({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="truncate font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
+          <h3 className="truncate font-place text-lg font-black leading-tight text-cream">
             {head.title}
           </h3>
           <p className="text-xs text-cream-dim">{head.sub}</p>

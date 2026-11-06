@@ -105,7 +105,7 @@ export function VehiclePanel({
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
+            <h3 className="font-place text-lg font-black leading-tight text-cream">
               {fr.empire.vehicleNames[v.type] ?? v.type}
             </h3>
             <span
