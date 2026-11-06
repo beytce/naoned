@@ -135,14 +135,36 @@ try {
     }
     // The Fondaco's tab: up close on it, its bar at the foot.
     await page.keyboard.press("Escape");
-    await page.locator("[data-bottom-slot] > .slot-in [data-place-tab=fondaco]").click();
+    await page
+      .locator(
+        "[data-top-bar] [data-place-tab=fondaco], [data-bottom-slot] > .slot-in [data-place-tab=fondaco]",
+      )
+      .first()
+      .click();
     await shot("4e-fondaco", 8_000);
-    await page.locator("[data-bottom-slot] > .slot-in [data-place-tab=map]").click();
+    await page
+      .locator(
+        "[data-top-bar] [data-place-tab=map], [data-bottom-slot] > .slot-in [data-place-tab=map]",
+      )
+      .first()
+      .click();
     // The keys of a computer: the map moves, then zooms.
     await page.keyboard.press("Escape");
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("+");
     await shot("5-clavier", 6_000);
+    // The other places under the bar: the Company, then the profile behind the medal.
+    await page
+      .locator(
+        "[data-top-bar] [data-place-tab=company], [data-bottom-slot] > .slot-in [data-place-tab=company]",
+      )
+      .first()
+      .click();
+    await shot("5b-compagnie", 2_000);
+    await page.keyboard.press("Escape");
+    await page.locator("[data-house-header]").first().click();
+    await shot("5c-maison", 1_500);
+    await page.keyboard.press("Escape");
     // Without WebGL: the same board, flat, its pins and its card.
     await page.goto(`${server.url}/?map=svg`);
     await page.waitForSelector("[data-flat-board]", { timeout: 30_000 });

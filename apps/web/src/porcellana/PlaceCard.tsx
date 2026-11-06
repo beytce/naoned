@@ -37,7 +37,7 @@ export const PlaceCard = forwardRef<
       const ch = c.offsetHeight;
       let x = px + 26;
       if (x + cw > w - 16) x = px - cw - 26;
-      const y = Math.max(80, Math.min(h - ch - 90, py - ch / 2));
+      const y = Math.max(120, Math.min(h - ch - 90, py - ch / 2));
       c.style.transform = `translate(${x.toFixed(0)}px,${y.toFixed(0)}px)`;
     },
   }));

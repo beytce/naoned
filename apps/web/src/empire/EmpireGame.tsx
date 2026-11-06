@@ -24,6 +24,7 @@ import { GoodSheet } from "./Resources.js";
 import { Charroi, RegionPlace, Scuola, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import { foresee } from "./foresee.js";
+import { LorenzoBubble, MapControls, RemiseBar, SidePanel, TopBar, useWide } from "./hud/Desk.js";
 import {
   affordable,
   buildingName,
@@ -35,7 +36,6 @@ import {
   sitesByEnd,
 } from "./logic.js";
 import { ActionPanel } from "./map/ActionPanel.js";
-import { BestNowCard } from "./map/BestNow.js";
 import { BottomSlot } from "./map/BottomSlot.js";
 import { DomainBar } from "./map/Domain.js";
 import { Hud } from "./map/Hud.js";
@@ -178,6 +178,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [toast, setToast] = useState<string | null>(null);
   // The good opened from the resource bar, and the recipe the next step points at.
   const [good, setGood] = useState<string | null>(null);
+  const wide = useWide();
   const [highlight, setHighlight] = useState<string | null>(null);
   // The Casa reached since the last view: its moment.
   const [moment, setMoment] = useState<number | null>(null);
@@ -467,7 +468,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       else open("place:porta");
     } else setSheet("company");
   };
-  const placeTabs = (
+  const placeDots = {
+    fondaco: view.house.workshops.filter((w) => readyLots(w, now) > 0).length,
+    company: claimable(p) || suppliable(p, account.id) > 0 || terraCalls(p, now),
+  };
+  const placeTabs = wide ? null : (
     <PlaceTabs
       active={here}
       onPlace={goPlace}
@@ -479,7 +484,21 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     />
   );
   // Lorenzo, the tutorial's card (on the map's foot, and over a domain's bar).
-  const lorenzo = tutorial && (
+  const guideCard = tutorial && (
+    <NextStepCard
+      compact
+      p={p}
+      now={now}
+      step={step}
+      busy={busy}
+      act={act}
+      onBuild={(recipe) => {
+        setHighlight(recipe);
+        setSheet("production");
+      }}
+    />
+  );
+  const lorenzo = tutorial && !wide && (
     <div className="w-full px-3 pb-2 lg:max-w-md">
       <NextStepCard
         compact
@@ -525,7 +544,54 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         />
       </Suspense>
 
-      <Hud p={p} name={account.pseudo ?? t.title} onHouse={() => setSheet("house")} />
+      {wide ? (
+        <>
+          <TopBar
+            p={p}
+            now={now}
+            active={here}
+            onPlace={goPlace}
+            dots={placeDots}
+            portaCasa={portaCasa}
+            onHouse={() => setSheet("house")}
+            onFind={(x) => setTarget(x)}
+          />
+          <SidePanel
+            p={p}
+            now={now}
+            busy={busy}
+            guide={guideCard || undefined}
+            onTarget={(x) => setTarget(x)}
+            onPlace={goPlace}
+            portaCasa={portaCasa}
+            onCasa={() => setSheet("casa")}
+            onDeliver={deliver}
+            onAll={() => setSheet("production")}
+          />
+          {!target && !placing && !domain && <RemiseBar p={p} onGood={setGood} />}
+          <MapControls
+            onRecenter={() => map.current?.recenter()}
+            onZoom={(k) => map.current?.zoom(k)}
+          />
+        </>
+      ) : (
+        <>
+          <Hud p={p} name={account.pseudo ?? t.title} onHouse={() => setSheet("house")} />
+          {/* Lorenzo's bubble under the money (the maquette's phone), past the tutorial. */}
+          {!tutorial && !target && !placing && !domain && sheet === null && (
+            <div className="pointer-events-auto absolute inset-x-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+4rem)] z-20 mx-auto max-w-md">
+              <LorenzoBubble
+                p={p}
+                busy={busy}
+                compact
+                onCity={(code) => setTarget({ kind: "city", code })}
+                onCasa={() => setSheet("casa")}
+                onDeliver={deliver}
+              />
+            </div>
+          )}
+        </>
+      )}
       <Trips
         p={p}
         now={now}
@@ -682,17 +748,6 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
                 button does it; then he withdraws behind the « ? », and the three milestones keep
                 the way in sight (audit of 4 November, UX B2), each opening its place. */}
             {lorenzo}
-            {/* Past the tutorial, the one card « le mieux maintenant » (the refonte claire). */}
-            {!tutorial && (
-              <BestNowCard
-                p={p}
-                busy={busy}
-                onCity={(code) => setTarget({ kind: "city", code })}
-                onCasa={() => setSheet("casa")}
-                onDeliver={deliver}
-                drawn={MAP_3D}
-              />
-            )}
             {placeTabs}
           </>
         )}
@@ -815,7 +870,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             </output>
           )}
           {toast && (
-            <output className="fixed inset-x-4 top-[max(1rem,env(safe-area-inset-top))] z-[70] mx-auto block max-w-sm animate-fade bg-night-4 px-4 py-3 text-center text-sm text-cream shadow-lg slab">
+            <output className="fixed inset-x-4 top-[max(1rem,env(safe-area-inset-top))] z-[70] lg:top-28 mx-auto block max-w-sm animate-fade bg-night-4 px-4 py-3 text-center text-sm text-cream shadow-lg slab">
               {toast}
             </output>
           )}
@@ -848,7 +903,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       />
       {/* The four places stay at the foot over the Porta and the Company (the gameplay audit, P5):
           those are places, left by the bar, no more by a cross only. */}
-      {(sheet === "porta" || sheet?.startsWith("company") === true) &&
+      {!wide &&
+        (sheet === "porta" || sheet?.startsWith("company") === true) &&
         createPortal(
           <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[45]" data-places-over>
             {placeTabs}

@@ -129,7 +129,8 @@ const browser = await chromium.launch({
 });
 const faults = [];
 try {
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, locale: "fr-FR" });
+  const [vw, vh] = (process.env.SIZE ?? "390x844").split("x").map(Number);
+  const page = await browser.newPage({ viewport: { width: vw, height: vh }, locale: "fr-FR" });
   page.on("pageerror", (e) => faults.push(e.message));
   if (process.env.DEBUG) page.on("console", (m) => console.log(`[${m.type()}] ${m.text()}`));
   const shot = async (name) => {
@@ -205,7 +206,7 @@ try {
 
   // The Remise's arms.
   await page.locator("[data-place^='depot:']").evaluate((el) => el.click());
-  await page.locator(".pc-go").click();
+  await page.locator(".pc-go").evaluate((el) => el.click());
   await page.locator("[data-map-action=arms]").click();
   // The vehicle in the middle (docs/plan-dock.md), a place touched, then the shop.
   await page.waitForSelector("[data-arms-dock=vehicle]");
@@ -231,7 +232,7 @@ try {
   await page.waitForSelector("[data-place^='porta:']", { state: "attached" });
   await shot("2-carte");
   await page.locator("[data-place^='porta:']").evaluate((el) => el.click());
-  await page.locator(".pc-go").click();
+  await page.locator(".pc-go").evaluate((el) => el.click());
   await shot("3-panneau");
   await page.locator("[data-map-action=porta]").click();
   await page.waitForSelector("[data-porta-battle]");

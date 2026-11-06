@@ -249,6 +249,23 @@ export const Icon = {
       <path d="M12 5 V19 M5 12 H19" />
     </I>
   ),
+  minus: () => (
+    <I size={22}>
+      <path d="M5 12 H19" />
+    </I>
+  ),
+  search: () => (
+    <I size={20}>
+      <circle cx="11" cy="11" r="6" />
+      <path d="M20 20 L15.5 15.5" />
+    </I>
+  ),
+  compass: () => (
+    <I size={22}>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M15 9 L13 13 L9 15 L11 11 Z" />
+    </I>
+  ),
   chevronLeft: () => (
     <I size={22}>
       <path d="M15 5 L8 12 L15 19" />

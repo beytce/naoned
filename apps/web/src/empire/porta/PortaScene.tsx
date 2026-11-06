@@ -184,7 +184,7 @@ export function PortaScene({
   return (
     // Above the four places (the gameplay audit, P5): the Porta is a place, left by the bar.
     <div
-      className="porta-in fixed inset-x-0 top-0 bottom-[var(--places)] z-40 overflow-hidden bg-[#3B2F52]"
+      className="porta-in fixed inset-x-0 top-0 bottom-[var(--places)] z-40 lg:top-[var(--topbar,0px)] overflow-hidden bg-[#3B2F52]"
       data-porta-scene
     >
       <SceneView

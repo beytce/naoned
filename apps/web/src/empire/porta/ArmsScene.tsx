@@ -92,7 +92,10 @@ export function ArmsScene({
       : null;
   const nameOf = (id: string | null) => componentName(v, id);
   return (
-    <div className="porta-in fixed inset-0 z-40 overflow-hidden bg-[#16263E]" data-arms-scene>
+    <div
+      className="porta-in fixed inset-0 z-40 lg:top-[var(--topbar,0px)] overflow-hidden bg-[#16263E]"
+      data-arms-scene
+    >
       <div className="absolute inset-0">
         {MAP_3D ? (
           <Guard3D>

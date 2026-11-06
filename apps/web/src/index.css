@@ -1820,3 +1820,11 @@ button.map-place {
   font-weight: 700;
   font-size: 0.8125rem;
 }
+/* The desk's top bar (empire/hud/Desk.tsx): on a computer, the sheets and the scenes of the
+   places stand under it, and the places' bar at the foot is gone (it is in the top bar). */
+@media (min-width: 1024px) {
+  :root[data-topbar] {
+    --topbar: 7rem;
+    --places: 0px;
+  }
+}
