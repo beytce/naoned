@@ -117,6 +117,7 @@ export { venice1450 } from "./themes/venice1450.js";
 export { venice1450Settings } from "./themes/venice1450.settings.js";
 export { venice1450Empire } from "./themes/venice1450.empire.js";
 export { venice1450EmpireSquare } from "./themes/venice1450.square.js";
+export { venice1450EmpireInterior, venice1450Interior } from "./themes/venice1450.interior.js";
 export { VENICE_TOWNS_MERGED } from "./themes/venice1450.towns.js";
 export {
   VENICE_SQUARE_TILES,
