@@ -505,6 +505,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             p={p}
             now={now}
             target={target}
+            placing={placing}
+            onPick={setPicked}
+            onDomain={setDomain}
             onTarget={(x) => {
               if (placing) return;
               // A free tile of the house's: the workshops one may build there, at once.

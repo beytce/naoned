@@ -130,6 +130,11 @@ try {
       await build.click();
       await shot("4d-chantier", 10_000);
     }
+    // The Fondaco's tab: up close on it, its bar at the foot.
+    await page.keyboard.press("Escape");
+    await page.locator("[data-bottom-slot] > .slot-in [data-place-tab=fondaco]").click();
+    await shot("4e-fondaco", 8_000);
+    await page.locator("[data-bottom-slot] > .slot-in [data-place-tab=map]").click();
     // The keys of a computer: the map moves, then zooms.
     await page.keyboard.press("Escape");
     await page.keyboard.press("ArrowRight");

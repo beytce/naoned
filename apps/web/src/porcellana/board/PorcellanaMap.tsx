@@ -31,7 +31,8 @@ import {
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { EmpireMapHandle } from "../../empire/map/EmpireMap.js";
-import type { Target } from "../../empire/map/logic.js";
+import type { Picked } from "../../empire/map/EmpireMap.js";
+import type { Placing, Target } from "../../empire/map/logic.js";
 import { vehiclePose } from "../../empire/map/logic.js";
 import { Guard3D } from "../../empire/map3d/Guard.js";
 import { MAP_3D } from "../../empire/map3d/flag.js";
@@ -73,6 +74,10 @@ interface Shared {
   card: PlaceCardHandle | null;
   target: Vector3;
   goHome: number;
+  /** How close the camera comes home: 1, the board; nearer, the Fondaco and its workshops. */
+  homeZoom: number;
+  /** A place being put down: the free tiles of the house's show, to pick. */
+  placing: boolean;
   /** The house's payload and the server's time at the last render, for the vehicles' poses. */
   p: EmpirePayload;
   now: number;
@@ -307,7 +312,7 @@ function Board({
         f.to.copy(chosen ? chosen.group.position : homeAt());
         f.to.y = 0;
         f.z0 = cam.zoom;
-        f.z1 = chosen ? (PHONE() ? SELECT.zoomPhone : SELECT.zoomDesk) : 1;
+        f.z1 = chosen ? (PHONE() ? SELECT.zoomPhone : SELECT.zoomDesk) : sh.homeZoom;
         f.t = live ? 0 : 1;
         if (!live) {
           camera.position.add(f.to.clone().sub(controls.target));
@@ -435,7 +440,7 @@ function Board({
       const y = (-tmp.y * 0.5 + 0.5) * h;
       el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
       const out =
-        (!tile.place.quiet || sh.chosen === tile.place.id) &&
+        (!tile.place.quiet || sh.chosen === tile.place.id || sh.placing) &&
         pinOut(c.t, l.from) &&
         !(tile.place.plus && cam.zoom < 1.25 && sh.chosen !== tile.place.id);
       el.dataset.out = String(out);
@@ -489,10 +494,15 @@ export interface PorcellanaMapProps {
   onTarget: (t: Target | null) => void;
   /** The game's target now: when it closes its dock, the place is let go. */
   target: Target | null;
+  /** A place being put down (the Remise, the Campo, the Porta, a fondaco): a free tile picked. */
+  placing?: Placing | null;
+  onPick?: (p: Picked | null) => void;
+  /** The Fondaco's tab: up close on it, its bar at the foot (the region), or back out (null). */
+  onDomain?: (region: string | null) => void;
 }
 
 const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function PorcellanaMap(
-  { p, now, onTarget, target },
+  { p, now, onTarget, target, placing = null, onPick, onDomain },
   ref,
 ) {
   // Read again each second at most: the workshops' states move with the clock.
@@ -511,6 +521,8 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       card: null,
       target: new Vector3(),
       goHome: 0,
+      homeZoom: 1,
+      placing: false,
       p,
       now,
       nowAt: performance.now(),
@@ -519,6 +531,7 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
     };
   if (sh.current && scene) {
     sh.current.scene = scene;
+    sh.current.placing = !!placing;
     sh.current.p = p;
     if (sh.current.now !== now) {
       sh.current.now = now;
@@ -541,18 +554,23 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       setCarded(false);
     }
   }, [target]);
-  const goHome = () => {
-    if (sh.current) sh.current.goHome++;
+  /** Back over the first fondaco: up close (the Fondaco's tab) or the board round it. */
+  const goHome = (close = false) => {
+    if (sh.current) {
+      sh.current.goHome++;
+      sh.current.homeZoom = close ? (PHONE() ? 1.9 : 1.6) : 1;
+    }
     setChosen(null);
     setCarded(false);
+    onDomain?.(close ? "veneto" : null);
   };
   useImperativeHandle(ref, () => ({
-    toggle: goHome,
-    home: goHome,
-    far: goHome,
-    leave: goHome,
-    recenter: goHome,
-    house: goHome,
+    toggle: () => goHome(),
+    home: () => goHome(true),
+    far: () => goHome(),
+    leave: () => goHome(),
+    recenter: () => goHome(),
+    house: () => goHome(true),
     info: () => {},
     pan: (dx, dy) => {
       if (sh.current)
@@ -563,10 +581,31 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
     },
   }));
   const pick = (id: string | null) => {
+    // Putting a place down: only a free tile of the house's is picked, without a card.
+    if (placing) {
+      const k = id?.startsWith("free:") ? id.slice(5) : null;
+      const cells = p.view?.map?.cells ?? {};
+      if (!k || (placing.region && cells[k]?.region !== placing.region)) return;
+      const size = scene?.tileSize ?? 15;
+      const [i = 0, j = 0] = k.split(",").map(Number);
+      setChosen(id);
+      setCarded(false);
+      onPick?.({ cell: k, x: Math.round((i + 0.5) * size), y: Math.round((j + 0.5) * size) });
+      return;
+    }
     setChosen(id);
     setCarded(id !== null);
     if (id === null) onTarget(null);
   };
+  // The placing over (put down or given up): the tile picked let go.
+  const wasPlacing = useRef(false);
+  useEffect(() => {
+    if (placing) wasPlacing.current = true;
+    else if (wasPlacing.current) {
+      wasPlacing.current = false;
+      setChosen(null);
+    }
+  }, [placing]);
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       if (e.key === "Escape") pick(null);
