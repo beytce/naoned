@@ -14,11 +14,9 @@ import { CloseButton } from "../../ui.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { MAP_3D } from "../map3d/flag.js";
-import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
-import { preloadMinis } from "../map3d/minis.js";
+import { Instanced, clay as clayShared, claySolid, hexSlab } from "../map3d/kit.js";
 import { Pace } from "../map3d/pace.js";
 import { useCoverBoard } from "../map3d/pause.js";
-import { MADE } from "../map3d/props3d.js";
 import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { PortaDock, type PortaPane } from "./PortaDock.js";
@@ -26,8 +24,6 @@ import { portaApi } from "./api.js";
 import { RARITY_HEX, ROME_DUSK } from "./colours.js";
 import { errorText, pt } from "./texts.js";
 import { type PortaState, type PortaView, RARITIES, type Rarity } from "./types.js";
-
-preloadMinis();
 
 /** The Porta's own small scene (chart units): the gate to the north, the steps, the quay, the stall. */
 const GATE: [number, number, number] = [0, 0, -16];
@@ -553,7 +549,6 @@ function Scene({
   transportId: string;
   docked: { id: string; model: string; role: "combat" | "transport" }[];
 }) {
-  const kit = useKit();
   // The ground: a few tiles of sand before the gate, Rome's red lands beyond it.
   const ground = useMemo(() => {
     const out: { x: number; y: number; z: number; s: number; rot: number; rome: boolean }[] = [];

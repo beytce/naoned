@@ -164,16 +164,31 @@ try {
       .locator("[data-intro]")
       .getByRole("button", { name: /suivant|commencer/i })
       .click();
-  await page.waitForSelector("[data-map=empire]");
+  await page.waitForSelector("[data-porcellana-map]");
 
-  // The Remise and the Porta on the first cell seen, their sites of a minute each.
+  // The Remise and the Porta on two tiles bought next to the house's (the square tiles: a place a
+  // tile), their sites of a minute each.
   const first = await page.evaluate(async () => (await fetch("/api/empire")).json());
-  const cell = first.view?.house?.revealed?.[0];
-  if (!cell) throw new Error("no cell seen");
-  let r = await act({ type: "empireBuildDepot", cell });
+  const towns = new Set((first.view?.map?.cities ?? []).map((c) => c.cell));
+  const free = (v) =>
+    (v?.map?.buyable ?? []).filter((x) => x.casa <= v.house.casa && !towns.has(x.cell));
+  const a = free(first.view)[0]?.cell;
+  if (!a) throw new Error("no tile to buy");
+  let u = await act({ type: "empireUnlockCell", cell: a });
+  if (!u.ok) faults.push(`tile ${a}: ${u.error}`);
+  // The Porta next to the Remise: its way of a minute.
+  const [ai, aj] = a.split(",").map(Number);
+  const b = free(u.view).find((x) => {
+    const [i, j] = x.cell.split(",").map(Number);
+    return Math.abs(i - ai) + Math.abs(j - aj) === 1;
+  })?.cell;
+  if (!b) throw new Error("no tile next to the Remise's");
+  u = await act({ type: "empireUnlockCell", cell: b });
+  if (!u.ok) faults.push(`tile ${b}: ${u.error}`);
+  let r = await act({ type: "empireBuildDepot", cell: a });
   if (!r.ok) faults.push(`depot: ${r.error}`);
   await page.waitForTimeout(MIN + 2_000);
-  r = await act({ type: "empireBuildPorta", cell });
+  r = await act({ type: "empireBuildPorta", cell: b });
   if (!r.ok) faults.push(`porta: ${r.error}`);
   await page.waitForTimeout(MIN + 2_000);
   await act({ type: "empireBuyArm", model: "cavaliere" });
@@ -186,10 +201,11 @@ try {
   r = await act({ type: "empireSendToPorta", vehicleIds: [rider, mule] });
   if (!r.ok) faults.push(`send: ${r.error}`);
   await page.reload();
-  await page.waitForSelector("[data-map=empire]");
+  await page.waitForSelector("[data-porcellana-map]");
 
   // The Remise's arms.
-  await press(page, "[data-depot-mark]");
+  await page.locator("[data-place^='depot:']").evaluate((el) => el.click());
+  await page.locator(".pc-go").click();
   await page.locator("[data-map-action=arms]").click();
   // The vehicle in the middle (docs/plan-dock.md), a place touched, then the shop.
   await page.waitForSelector("[data-arms-dock=vehicle]");
@@ -212,9 +228,10 @@ try {
 
   await page.waitForTimeout(MIN + 2_000);
   await page.reload();
-  await page.waitForSelector("[data-porta-mark]");
+  await page.waitForSelector("[data-place^='porta:']", { state: "attached" });
   await shot("2-carte");
-  await press(page, "[data-porta-mark]");
+  await page.locator("[data-place^='porta:']").evaluate((el) => el.click());
+  await page.locator(".pc-go").click();
   await shot("3-panneau");
   await page.locator("[data-map-action=porta]").click();
   await page.waitForSelector("[data-porta-battle]");

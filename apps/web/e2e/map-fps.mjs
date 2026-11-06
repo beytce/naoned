@@ -1,4 +1,4 @@
-// The empire map's smoothness (the map at the centre, step 3): a pan and a zoom on a phone, the CPU slowed
+// The Carte's smoothness (Porcellana's board, lot 8; the map at the centre, step 3): a pan and a zoom on a phone, the CPU slowed
 // four times, the frames counted. Prints the share of frames over 32 ms and the 95th percentile.
 //   pnpm --filter @comptoirs/web build && node apps/web/e2e/map-fps.mjs
 // Was: the persistent empire's first session (CADRAGE-v3, the socle), on a phone, against a server on
@@ -89,7 +89,7 @@ try {
       .locator("[data-intro]")
       .getByRole("button", { name: /suivant|commencer/i })
       .click();
-  await page.waitForSelector("[data-map=empire]");
+  await page.waitForSelector("[data-porcellana-map]");
   await page.waitForTimeout(800);
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });

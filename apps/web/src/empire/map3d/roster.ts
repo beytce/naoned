@@ -5,7 +5,10 @@
  * and its mount. The house's combat vehicles carry their crew; Rome's soldiers in papal red and
  * white.
  */
-import type { Anim, Character, Side } from "./minis.js";
+/** A character, an animation, a side: names kept from the figurines of before (Pawn reads `side`). */
+export type Character = string;
+export type Anim = string;
+export type Side = "house" | "rome";
 
 export interface Role {
   character: Character;

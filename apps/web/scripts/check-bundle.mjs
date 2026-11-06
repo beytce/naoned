@@ -1,5 +1,5 @@
 // After `vite build` (audit of 4 November, 3D B1 and M10): the start of the game carries no
-// three.js and no figurine, and no file nears the service worker's precache limit (3 MB), past
+// three.js (the 3D of Porcellana loads apart), and no file nears the service worker's precache limit (3 MB), past
 // which Workbox would leave it out without a word and the game would no longer start offline.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -14,7 +14,6 @@ if (!entry) faults.push("no entry chunk in dist/index.html");
 else {
   const code = readFileSync(join(dist, entry), "utf8");
   if (code.includes("WebGLRenderer")) faults.push(`${entry} carries three.js's renderer`);
-  if (code.includes("minis.glb")) faults.push(`${entry} names the figurines' file`);
 }
 const walk = (dir) =>
   readdirSync(dir).flatMap((f) => {

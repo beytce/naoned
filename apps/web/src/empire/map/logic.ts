@@ -7,7 +7,6 @@ import {
   slotPoint,
   tileFault,
 } from "@comptoirs/engine";
-import { cellCentre } from "../../art/hexmap.js";
 import { WORLD_VIEW, seatOf } from "../../art/mediterranean.js";
 import { TILT } from "../../art/plateau/geom.js";
 import { amount } from "../../game/format.js";
@@ -59,14 +58,6 @@ export function coverClamp(
   };
 }
 
-/** The camera at a scale, centred on a chart point. */
-export function centredOn(at: [number, number], s: number, view: Viewport): Camera {
-  // The board is tilted (docs/plan-plateau.md): a chart point lies at y·TILT on it; centred in
-  // the screen's useful band (between the HUD and the foot's panel, band.ts).
-  const { mid } = bandOf(view);
-  return coverClamp({ s, tx: view.w / 2 - at[0] * s, ty: mid - at[1] * TILT * s }, view);
-}
-
 /** The orbit's width on screen (px) from which Venice's house shows: more on a large screen. */
 export function nearPx(view: Viewport): number {
   return Math.max(NEAR_PX, Math.min(view.w, view.h) * 0.4);
@@ -80,48 +71,6 @@ export function detailOf(s: number, view: Viewport): "far" | "near" {
 /** How much of the orbit shows, from 0 (far) to 1 (near). */
 export function nearness(s: number, view: Viewport): number {
   return Math.min(1, Math.max(0, (ORBIT_UNITS * s - nearPx(view)) / NEAR_RAMP));
-}
-
-/**
- * The camera far out: every land cell the house sees, framed with room around, never smaller
- * than the screen, short of the house up close.
- */
-export function farCamera(p: EmpirePayload, view: Viewport): Camera {
-  const seen = Object.keys(p.view?.map.cells ?? {}).map(cellCentre);
-  if (seen.length === 0) seen.push(seatOf("veneto"));
-  const margin = 40;
-  const x0 = Math.min(...seen.map((s) => s[0])) - margin;
-  const x1 = Math.max(...seen.map((s) => s[0])) + margin;
-  const y0 = Math.min(...seen.map((s) => s[1])) - margin;
-  const y1 = Math.max(...seen.map((s) => s[1])) + margin;
-  const cover = coverScale(view);
-  const fit = Math.min(view.w / (x1 - x0), view.h / ((y1 - y0) * TILT));
-  const far = (nearPx(view) - 30) / ORBIT_UNITS;
-  return centredOn(
-    [(x0 + x1) / 2, (y0 + y1) / 2],
-    Math.max(cover, Math.min(fit, cover * 1.6, far)),
-    view,
-  );
-}
-
-/**
- * The empire map's zoom: never farther than the house's whole map, a little room around
- * (1 November: farther, the whole sea, the places grown to be touched broke the phone's memory).
- */
-export function zoomBounds(p: EmpirePayload, view: Viewport): { min: number; max: number } {
-  const { min, max } = scaleBounds(view);
-  return { min: Math.min(max, Math.max(min, farCamera(p, view).s * 0.9)), max };
-}
-
-/**
- * The zoom's range on the 3D board (3 November, decision of the owner): as the map's, but as near
- * as one small tile across the screen (a mule, its crates, seen up close).
- */
-export function zoomBounds3d(p: EmpirePayload, view: Viewport): { min: number; max: number } {
-  const { min, max } = zoomBounds(p, view);
-  // A small tile across its flat sides: √3 × its size, its size 24 / √7; a margin around it.
-  const across = Math.sqrt(3) * (24 / Math.sqrt(7)) * 1.05;
-  return { min, max: Math.max(max, Math.min(view.w, view.h * 1.2) / across) };
 }
 
 /** The scale at which Venice's orbit shows whole and comfortable on this screen. */
@@ -208,15 +157,6 @@ export function placingCost(p: EmpirePayload, placing: Placing, cell: string): s
   if (placing.kind === "home") return "0";
   const region = view.map.cells[cell]?.region;
   return view.regions.find((r) => r.code === region)?.postCost ?? null;
-}
-
-/** The cities a counter on `cell` would find: those within its radius, not seen yet. */
-export function wouldFind(p: EmpirePayload, cell: string): number {
-  const map = p.view?.map;
-  if (!map) return 0;
-  const seen = new Set(map.revealed);
-  const around = cellsWithin(cell, map.radius).filter((c) => !seen.has(c));
-  return around.length;
 }
 
 /** May the house build its next Casa now: its demands met, its cost and materials at hand. */
@@ -458,12 +398,6 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
   }
 }
 
-/** The Arsenal's place on the chart: its cell's centre, once it stands. */
-export function arsenalAt(p: EmpirePayload): [number, number] | null {
-  const cell = p.view?.map.arsenal;
-  return cell ? cellCentre(cell) : null;
-}
-
 /**
  * A point picked for a counter (the map that grows): too close to another counter, and the
  * cities it would serve that no counter serves yet.
@@ -646,29 +580,6 @@ export function nearestPlace(
   return best;
 }
 
-/** The house's counters and their levels: Venice's (`home`) and each placed one, by id. */
-export function postLevels(p: EmpirePayload): Map<string, number> {
-  const map = p.view?.map;
-  const out = new Map<string, number>();
-  if (!map) return out;
-  // The first fondaco not yet put down counts for none: put down, it bursts as a new one.
-  out.set("home", map.home.placed === false ? 0 : map.home.level);
-  for (const x of map.posts) out.set(x.id, x.level);
-  return out;
-}
-
-/**
- * The counters put down or raised since the levels seen before (their burst of gold, after
- * Hades' Star's upgrades); none at the first sight.
- */
-export function postsRaised(
-  before: Map<string, number> | null,
-  now: Map<string, number>,
-): string[] {
-  if (!before) return [];
-  return [...now].filter(([id, level]) => level > (before.get(id) ?? 0)).map(([id]) => id);
-}
-
 /** What a vehicle would bring to a city: the orders of that city aboard, with their pay. */
 export function bringsTo(
   p: EmpirePayload,
@@ -775,34 +686,6 @@ export function fleetSpots(
     const r = orbitOf(pose.place) * (south && pose.place.startsWith("city:") ? 1.5 : 1);
     return { v, pose, x: pose.x + r * Math.cos(a), y: pose.y + r * Math.sin(a) };
   });
-}
-
-/**
- * A point picked to put a fondaco down, on the small tiles (3 November, the long voyages): the
- * middle of the free tile nearest it in the cell picked (touching no town and no fondaco of the
- * house, as the engine's `tileFault`), else the point as it is (the engine says why not).
- */
-export function snapToTile(
-  p: EmpirePayload,
-  cell: string,
-  x: number,
-  y: number,
-): { cell: string; x: number; y: number } {
-  const map = p.view?.map;
-  if (!map?.tiles) return { cell, x, y };
-  const s = { map: { hexSize: map.hexSize, water: map.water ?? [] } } as EmpireSettings;
-  const towns = map.cities.map((c): [number, number] => [c.x, c.y]);
-  const fondaci: [number, number][] = [
-    ...(map.home?.placed === false ? [] : [[map.home.x, map.home.y] as [number, number]]),
-    ...map.posts.map((q): [number, number] => [q.x, q.y]),
-  ];
-  const free = [0, 1, 2, 3, 4, 5, 6]
-    .map((k) => slotPoint(cell, k, s))
-    .map(([tx, ty]): [number, number] => [Math.round(tx), Math.round(ty)])
-    .filter((at) => tileFault(s, cell, at, towns, fondaci) === null)
-    .sort((a, b) => Math.hypot(a[0] - x, a[1] - y) - Math.hypot(b[0] - x, b[1] - y));
-  const at = free[0];
-  return at ? { cell, x: at[0], y: at[1] } : { cell, x, y };
 }
 
 /** The roads already reckoned, for each map the house has seen (a road is the same every time). */
@@ -957,35 +840,4 @@ export function cityLooks(p: EmpirePayload): CityLook[] {
       },
     ];
   });
-}
-
-/** The screen's margins an arrow keeps (px): the HUD above, the bar below. */
-export const EDGE = { top: 132, bottom: 150, side: 30 };
-
-/**
- * An arrow at the screen's edge toward a place out of sight (after the map's audit, 3 November
- * 2026): where it stands on the edge and where it points (radians, 0 to the east); null when the
- * place is on the screen.
- */
-export function edgeArrow(
-  at: [number, number],
-  v: Viewport,
-  inset = EDGE,
-): { x: number; y: number; angle: number } | null {
-  const [x, y] = at;
-  const left = inset.side;
-  const right = v.w - inset.side;
-  const top = inset.top;
-  const bottom = v.h - inset.bottom;
-  if (x >= left && x <= right && y >= top && y <= bottom) return null;
-  // From the middle of the free part of the screen toward the place, cut at its edge.
-  const cx = (left + right) / 2;
-  const cy = (top + bottom) / 2;
-  const dx = x - cx;
-  const dy = y - cy;
-  const k = Math.min(
-    dx === 0 ? Number.POSITIVE_INFINITY : (dx > 0 ? right - cx : left - cx) / dx,
-    dy === 0 ? Number.POSITIVE_INFINITY : (dy > 0 ? bottom - cy : top - cy) / dy,
-  );
-  return { x: cx + dx * k, y: cy + dy * k, angle: Math.atan2(dy, dx) };
 }

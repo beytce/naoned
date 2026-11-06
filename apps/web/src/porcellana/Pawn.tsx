@@ -9,7 +9,14 @@
 import { useFrame } from "@react-three/fiber";
 import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import { Group, type Material } from "three";
-import type { Act, FigureHandle } from "../empire/map3d/figure.js";
+/** What a unit does: the caller tells it (the battle's snapshots). */
+export type Act = "stand" | "walk" | "strike" | "hit" | "die" | "cheer";
+
+/** A pawn's handle: its group, and what it does now. */
+export interface FigureHandle {
+  group: Group | null;
+  act(a: Act): void;
+}
 import type { Role } from "../empire/map3d/roster.js";
 import { type Palette, createPalette } from "./materials.js";
 import { cart, mule } from "./models/vehicles.js";

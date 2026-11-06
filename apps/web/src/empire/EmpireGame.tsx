@@ -38,7 +38,6 @@ import { ActionPanel } from "./map/ActionPanel.js";
 import { BestNowCard } from "./map/BestNow.js";
 import { BottomSlot } from "./map/BottomSlot.js";
 import { DomainBar } from "./map/Domain.js";
-import { EmpireMap, type EmpireMapHandle, type Picked } from "./map/EmpireMap.js";
 import { Hud } from "./map/Hud.js";
 import { OrdersPanel } from "./map/OrdersPanel.js";
 import { type PlaceId, PlaceTabs } from "./map/PlaceTabs.js";
@@ -81,6 +80,7 @@ type SheetId =
 // figurines no longer weigh on the start of the game (audit of 4 November, 3D B1).
 /** The Carte on square tiles (docs/plan-porcellana.md lot 3): its own chunk, fetched only then. */
 const PorcellanaMap = lazy(() => import("../porcellana/board/PorcellanaMap.js"));
+import type { EmpireMapHandle, Picked } from "../porcellana/board/PorcellanaMap.js";
 const ArmsScene = lazy(() =>
   import("./porta/ArmsScene.js").then((m) => ({ default: m.ArmsScene })),
 );
@@ -498,43 +498,23 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-night">
-      {p.view?.map?.grid === "square" ? (
-        <Suspense fallback={null}>
-          <PorcellanaMap
-            ref={map}
-            p={p}
-            now={now}
-            target={target}
-            placing={placing}
-            onPick={setPicked}
-            onDomain={setDomain}
-            onTarget={(x) => {
-              if (placing) return;
-              // A free tile of the house's: the workshops one may build there, at once.
-              if (x?.kind === "free" && x.tile) {
-                setBuildTile(x.tile);
-                setSheet("new");
-                return;
-              }
-              if (x?.kind === "vehicle") setVehicle(x.id);
-              if (!x) {
-                setVehicle(null);
-                setAiming(false);
-              }
-              setTarget(x);
-            }}
-          />
-        </Suspense>
-      ) : (
-        <EmpireMap
+      <Suspense fallback={null}>
+        <PorcellanaMap
           ref={map}
           p={p}
           now={now}
-          busy={busy}
-          act={act}
+          target={target}
+          placing={placing}
+          onPick={setPicked}
+          onDomain={setDomain}
           onTarget={(x) => {
             if (placing) return;
-            // A vehicle chosen: its panel; anything else: the vehicle stays chosen behind it.
+            // A free tile of the house's: the workshops one may build there, at once.
+            if (x?.kind === "free" && x.tile) {
+              setBuildTile(x.tile);
+              setSheet("new");
+              return;
+            }
             if (x?.kind === "vehicle") setVehicle(x.id);
             if (!x) {
               setVehicle(null);
@@ -542,31 +522,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             }
             setTarget(x);
           }}
-          selected={vehicle}
-          aiming={aiming}
-          onMove={(vehicleId, to) => {
-            setAiming(false);
-            setVehicle(vehicleId);
-            setTarget({ kind: "vehicle", id: vehicleId });
-            void act({ type: "empireMove", vehicleId, to });
-          }}
-          onArrive={settle}
-          placing={placing}
-          picked={picked}
-          onPick={setPicked}
-          onCamp={() => setSheet("company:terra")}
-          houseName={account.pseudo ?? ""}
-          onDomain={setDomain}
-          chosenWorkshop={target?.kind === "workshop" ? target.id : null}
-          road={target?.kind === "city" ? road : null}
-          round={round}
-          onRound={(r) => {
-            if (r) setTarget(null);
-            setRound(r);
-          }}
-          onRoundGo={goRound}
         />
-      )}
+      </Suspense>
 
       <Hud p={p} name={account.pseudo ?? t.title} onHouse={() => setSheet("house")} />
       <Trips

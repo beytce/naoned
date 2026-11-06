@@ -25,8 +25,6 @@ import {
   Vector3,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import type { EmpireMapHandle } from "../../empire/map/EmpireMap.js";
-import type { Picked } from "../../empire/map/EmpireMap.js";
 import type { Placing, Target } from "../../empire/map/logic.js";
 import { vehiclePose } from "../../empire/map/logic.js";
 import { Guard3D } from "../../empire/map3d/Guard.js";
@@ -481,6 +479,32 @@ function Board({
     </>
   );
 }
+
+/** What the game asks of its map (the keys, the places at the foot). */
+export interface EmpireMapHandle {
+  /** Up close on Venice's house, or back out to the map. */
+  toggle(): void;
+  /** Up close on Venice's house. */
+  home(): void;
+  /** Out to the map. */
+  far(): void;
+  /** Out of a fondaco's domain, back to the map around it. */
+  leave(): void;
+  /** Back over the house's sector (the « Carte » place touched again): the camera unfollowed. */
+  recenter(): void;
+  /**
+   * « Maison » (3D): the camera back over the first fondaco; already there, its domain plunged into.
+   */
+  house(): void;
+  /** The information layer shown (Alt held) or not. */
+  info(on: boolean): void;
+  /** The map moved a step (a key: -1, 0 or 1 on each axis), or zoomed by a factor. */
+  pan(dx: number, dy: number): void;
+  zoom(k: number): void;
+}
+
+/** A point picked to put a place down: its tile, its middle on the chart. */
+export type Picked = { cell: string; x: number; y: number };
 
 export interface PorcellanaMapProps {
   p: EmpirePayload;

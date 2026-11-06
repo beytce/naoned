@@ -1302,22 +1302,6 @@ body[data-coach-top] [data-toast] {
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
-.mist-drift {
-  animation: mist-drift 28s ease-in-out infinite alternate;
-}
-@keyframes mist-drift {
-  from {
-    transform: translate3d(-6%, -3%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(6%, 4%, 0) scale(1.15);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .mist-drift {
-    animation: none;
-  }
-}
 
 /* The foot of the map (BottomSlot): what comes rises, what leaves sinks and fades. */
 .slot-in {
@@ -1423,179 +1407,11 @@ button.map-place {
   }
 }
 /* A vehicle reaching a city: a ring spreads, what it brought rises and fades. */
-.hop-ring {
-  animation: hop-ring 900ms var(--ease-out, ease-out) both;
-}
-@keyframes hop-ring {
-  from {
-    transform: translate(-50%, -50%) scale(0.4);
-    opacity: 0.9;
-  }
-  to {
-    transform: translate(-50%, -50%) scale(2.2);
-    opacity: 0;
-  }
-}
-.hop-rise {
-  animation: hop-rise 1600ms var(--ease-out, ease-out) both;
-}
-@keyframes hop-rise {
-  0% {
-    transform: translate3d(0, 0, 0);
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  100% {
-    transform: translate3d(0, -28px, 0);
-    opacity: 0;
-  }
-}
-/* A counter put down or raised: its ring fills (420 ms), then a burst and a gold wave (700 ms). */
-.post-fill circle {
-  animation: post-fill 420ms var(--ease-out, ease-out) both;
-}
-@keyframes post-fill {
-  from {
-    stroke-dashoffset: var(--round);
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-.post-fill {
-  animation: post-fade 900ms linear both;
-}
-@keyframes post-fade {
-  0%,
-  60% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-.post-burst {
-  animation: post-burst 300ms var(--ease-out, ease-out) 380ms both;
-}
-@keyframes post-burst {
-  from {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  40% {
-    opacity: 0.9;
-  }
-  to {
-    transform: scale(1.1);
-    opacity: 0;
-  }
-}
-.post-wave {
-  animation: post-wave 700ms var(--ease-out, ease-out) 400ms both;
-}
-@keyframes post-wave {
-  from {
-    transform: scale(0.8);
-    opacity: 0.9;
-  }
-  to {
-    transform: scale(2.4);
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .post-fill,
-  .post-fill circle,
-  .post-burst,
-  .post-wave {
-    animation: none;
-  }
-  .post-burst,
-  .post-wave {
-    display: none;
-  }
-}
-/* The wave of the lagoon from a city reached (600 ms), and the good that jumps there (500 ms). */
-.hop-wave {
-  animation: hop-wave 600ms var(--ease-out, ease-out) both;
-}
-@keyframes hop-wave {
-  from {
-    transform: translate(-50%, -50%) scale(0.6);
-    opacity: 0.85;
-  }
-  to {
-    transform: translate(-50%, -50%) scale(2.8);
-    opacity: 0;
-  }
-}
-.hop-jump {
-  animation: hop-jump 500ms var(--spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
-}
-@keyframes hop-jump {
-  0% {
-    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) scale(0.7);
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  55% {
-    transform: translate(
-        calc(-50% + var(--dx, 0px) * 0.4),
-        calc(-50% + var(--dy, 0px) * 0.4 - 18px)
-      )
-      scale(1.15);
-  }
-  85% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(0.6);
-    opacity: 0;
-  }
-}
+
 /* The ducats an arrival paid, rising and fading (900 ms). */
-.hop-coin {
-  animation: hop-coin 900ms var(--ease-out, ease-out) 250ms both;
-}
-@keyframes hop-coin {
-  0% {
-    transform: translate3d(-50%, 0, 0);
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    transform: translate3d(-50%, -22px, 0);
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .hop-ring,
-  .hop-rise,
-  .hop-wave,
-  .hop-jump {
-    animation: none;
-  }
-  .hop-wave,
-  .hop-jump {
-    display: none;
-  }
-  .hop-coin {
-    animation: none;
-    transform: translateX(-50%);
-  }
-}
+
 .map-home {
   opacity: var(--home, 1);
-}
-[data-dragging] .mist-drift {
-  animation-play-state: paused;
 }
 
 /* The night board (docs/plan-plateau.md): the few things that move on it, slowly. */
@@ -1693,23 +1509,7 @@ button.map-place {
   transform-origin: 50% 100%;
   transform: translateX(-50%) translateY(30px) scale(calc(var(--inv, 1) / var(--chartk, 1)));
 }
-.city-pill-ready {
-  animation: city-pill-breathe 2.4s ease-in-out infinite;
-}
-@keyframes city-pill-breathe {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgb(var(--gold) / 0.55), 0 6px 14px rgb(0 0 0 / 0.45);
-  }
-  50% {
-    box-shadow: 0 0 0 7px rgb(var(--gold) / 0), 0 6px 14px rgb(0 0 0 / 0.45);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .city-pill-ready {
-    animation: none;
-  }
-}
+
 /* The battle's diorama (docs/plan-porta-3d.md): the night closing in its last minute, the blows'
    damage rising and fading. */
 .battle-closing {
@@ -1779,9 +1579,6 @@ button.map-place {
 }
 /* A town ready to deliver breathes on the map only while no sheet covers it (audit of
    4 November, UI U-1: one gold that moves on the screen). */
-body:has(dialog[open]) .city-pill-ready {
-  animation: none;
-}
 
 /* The dock (src/dock.tsx, docs/plan-dock.md): a decision rises from the foot; a new view of the
    same dock fades in its place. */
@@ -1805,19 +1602,6 @@ body:has(dialog[open]) .city-pill-ready {
 }
 
 /* A delivery's road before it leaves (OrdersPanel): the gold dots run toward the town. */
-.plan-road {
-  animation: plan-road 1.2s linear infinite;
-}
-@keyframes plan-road {
-  to {
-    stroke-dashoffset: -7;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .plan-road {
-    animation: none;
-  }
-}
 
 /* The veil behind a sheet: black on the night palettes, a light brown wash by day. */
 .sheet-veil {

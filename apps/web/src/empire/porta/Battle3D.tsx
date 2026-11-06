@@ -35,6 +35,7 @@ import {
 import { C } from "../../art/plateau/props.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { Pawn as Figure } from "../../porcellana/Pawn.js";
+import type { FigureHandle } from "../../porcellana/Pawn.js";
 import { createPalette } from "../../porcellana/materials.js";
 import { mountain, rocks } from "../../porcellana/models/decor.js";
 import { porta } from "../../porcellana/models/places.js";
@@ -42,19 +43,9 @@ import { town } from "../../porcellana/models/towns.js";
 import { mule } from "../../porcellana/models/vehicles.js";
 import { tree } from "../../porcellana/shapes.js";
 import { DISTANCE, orthoFrom } from "../map3d/camera.js";
-import type { FigureHandle } from "../map3d/figure.js";
-import {
-  Instanced,
-  type KitName,
-  clay as clayShared,
-  claySolid,
-  hexSlab,
-  useKit,
-} from "../map3d/kit.js";
+import { Instanced, clay as clayShared, claySolid, hexSlab } from "../map3d/kit.js";
 import { Smoke, useWater } from "../map3d/life.js";
-import { preloadMinis } from "../map3d/minis.js";
 import { Pace } from "../map3d/pace.js";
-import { MADE } from "../map3d/props3d.js";
 import { roleOf } from "../map3d/roster.js";
 import { CASE, extentOf, fromChart, toChart } from "./chart.js";
 import { RARITY_HEX, ROME_DUSK } from "./colours.js";
@@ -88,8 +79,6 @@ function dressingModel(name: string, s: number): Group {
   return g;
 }
 import type { BattleSnapshot, PlayerUnitView, Rarity, RomeUnitView } from "./types.js";
-
-preloadMinis();
 
 export { CASE, RARITY_HEX, extentOf, fromChart, toChart };
 
@@ -142,9 +131,12 @@ function islandOf(b: BattleSnapshot) {
 }
 
 /** What dresses the island: pines, olives, rocks, ruins, hills, kept off the towns and the gate. */
+/** The island's dressing, by the names of the kit of before (Porcellana's models now). */
+type DressName = "pineA" | "pineB" | "rockA" | "rockC" | "mountainA";
+
 function dressingOf(b: BattleSnapshot) {
   const r = rng(seedOf(b.id));
-  const out: { name: KitName; x: number; z: number; s: number; rot: number }[] = [];
+  const out: { name: DressName; x: number; z: number; s: number; rot: number }[] = [];
   const clear = [b.gate, ...b.cities];
   // Half as much as before, and lower than the units (audit of 4 November, 3D B2): the island
   // dressed, never hiding who fights.
@@ -156,7 +148,7 @@ function dressingOf(b: BattleSnapshot) {
     const y = d * Math.sin(a);
     if (clear.some((c) => Math.hypot(c.x - x, c.y - y) < 1.4)) continue;
     const k = r();
-    const name: KitName =
+    const name: DressName =
       k < 0.42
         ? "pineA"
         : k < 0.62
@@ -406,7 +398,6 @@ function Ready({ onReady }: { onReady?: () => void }) {
 
 /** The island: its tiles, its lagoon, its dressing, its towns, its gate (drawn once a battle). */
 function Island({ battle, live }: { battle: BattleSnapshot; live: boolean }) {
-  const kit = useKit();
   const water = useWater(live);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the island is the battle's, by its id
   const { land, sea, decor } = useMemo(() => {
@@ -414,7 +405,7 @@ function Island({ battle, live }: { battle: BattleSnapshot; live: boolean }) {
     return { land: l, sea: s, decor: dressingOf(battle) };
   }, [battle.id]);
   const groups = useMemo(() => {
-    const g = new Map<KitName, { x: number; y: number; z: number; s: number; rot: number }[]>();
+    const g = new Map<DressName, { x: number; y: number; z: number; s: number; rot: number }[]>();
     for (const d of decor) {
       const list = g.get(d.name) ?? [];
       list.push({ x: d.x, y: 0, z: d.z, s: d.s, rot: d.rot });

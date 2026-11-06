@@ -83,7 +83,7 @@ try {
   await page.goto(server.url);
   await page.fill("input[type=email]", email);
   await page.keyboard.press("Enter");
-  await page.goto(`${server.url}/connexion?token=${await magicLink(email)}&map=svg`);
+  await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);
   await page.waitForSelector("input[autocomplete=nickname]");
   await page.fill("input", "Casa_bascule");
   await page.keyboard.press("Enter");
@@ -94,9 +94,8 @@ try {
       .locator("[data-intro]")
       .getByRole("button", { name: /suivant|commencer/i })
       .click();
-  await page.waitForSelector("[data-map=empire]");
+  // The web draws only the square board since the lot 8: the house is founded, its map not drawn.
   await page.waitForTimeout(3_000);
-  await page.screenshot({ path: join(SHOTS, "1-avant-hex.png") });
   await page.close();
   server.stop();
   await new Promise((r) => setTimeout(r, 2_000));

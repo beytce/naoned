@@ -8,18 +8,13 @@ import {
   coverClamp,
   coverScale,
   detailOf,
-  edgeArrow,
-  farCamera,
   fleetOf,
   hudOf,
   nearScale,
   nearness,
   placeable,
   placingCost,
-  postsRaised,
   scaleBounds,
-  zoomBounds,
-  zoomBounds3d,
 } from "../src/empire/map/logic.js";
 import type { EmpirePayload, EmpireRegion, EmpireWorkshop } from "../src/empire/types.js";
 
@@ -118,16 +113,6 @@ function payload(over: Partial<NonNullable<EmpirePayload["view"]>> = {}, cash = 
 }
 
 describe("the map's camera (the map at the centre, step 1)", () => {
-  it("never goes farther than the house's whole map (1 November: the zoom crashed far out)", () => {
-    for (const view of [PHONE, PC]) {
-      const p = payload();
-      const { min, max } = zoomBounds(p, view);
-      expect(min).toBeGreaterThanOrEqual(scaleBounds(view).min);
-      expect(min).toBeGreaterThanOrEqual(farCamera(p, view).s * 0.9 - 1e-9);
-      expect(max).toBe(scaleBounds(view).max);
-    }
-  });
-
   it("always covers the screen, on a phone as on a computer", () => {
     for (const view of [PHONE, PC]) {
       const s = coverScale(view);
@@ -157,35 +142,6 @@ describe("the map's camera (the map at the centre, step 1)", () => {
       expect(nearness(near, view)).toBe(1);
       expect(nearness(min, view)).toBe(0);
     }
-  });
-});
-
-describe("the camera far out", () => {
-  it("frames every region in sight, never smaller than the screen", () => {
-    for (const view of [PHONE, PC]) {
-      const cam = farCamera(payload(), view);
-      expect(cam.s).toBeGreaterThanOrEqual(coverScale(view) - 1e-9);
-      expect(detailOf(cam.s, view)).toBe("far");
-      for (const code of ["veneto", "lombardia"]) {
-        const [x, y] = seatOf(code);
-        expect(x * cam.s + cam.tx).toBeGreaterThan(20);
-        expect(x * cam.s + cam.tx).toBeLessThan(view.w - 20);
-        // The board is tilted (docs/plan-plateau.md): a point lies at y·TILT on it.
-        expect(y * TILT * cam.s + cam.ty).toBeGreaterThan(20);
-        expect(y * TILT * cam.s + cam.ty).toBeLessThan(view.h - 20);
-      }
-    }
-  });
-});
-
-describe("the camera up close on the 3D board", () => {
-  it("comes as near as one small tile across a phone, never nearer on the map's own bounds", () => {
-    const flat = zoomBounds(payload(), PHONE);
-    const near = zoomBounds3d(payload(), PHONE);
-    expect(near.min).toBe(flat.min);
-    // A small tile, some 16.5 units across with its margin, fills the phone's width.
-    expect(near.max).toBeCloseTo(PHONE.w / ((Math.sqrt(3) * 24 * 1.05) / Math.sqrt(7)), 6);
-    expect(near.max).toBeGreaterThan(flat.max * 1.5);
   });
 });
 
@@ -284,38 +240,5 @@ describe("the action panel", () => {
     });
     // Then Venice's Dogana, the market (the refonte claire, lot 2).
     expect(city[1]).toMatchObject({ id: "market", open: "market" });
-  });
-});
-
-describe("the counters raised", () => {
-  it("are none at the first sight", () => {
-    expect(postsRaised(null, new Map([["home", 1]]))).toEqual([]);
-  });
-  it("are those put down or gone up a level since", () => {
-    const before = new Map([
-      ["home", 1],
-      ["p1", 2],
-    ]);
-    const now = new Map([
-      ["home", 2],
-      ["p1", 2],
-      ["p2", 1],
-    ]);
-    expect(postsRaised(before, now)).toEqual(["home", "p2"]);
-  });
-});
-
-describe("the arrows at the screen's edge", () => {
-  const v = { w: 400, h: 800 };
-  it("says nothing of a place on the screen", () => {
-    expect(edgeArrow([200, 400], v)).toBeNull();
-  });
-  it("stands on the edge toward a place out of sight, pointing at it", () => {
-    const a = edgeArrow([1_000, 391], v);
-    expect(a?.x).toBeCloseTo(370);
-    expect(a?.angle).toBeCloseTo(0, 1);
-    const b = edgeArrow([200, -500], v);
-    expect(b?.y).toBeCloseTo(132);
-    expect(b?.angle).toBeCloseTo(-Math.PI / 2);
   });
 });

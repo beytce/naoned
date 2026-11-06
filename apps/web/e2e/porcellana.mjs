@@ -1,6 +1,7 @@
-// The Carte on square tiles (docs/plan-porcellana.md lot 3): a house founded on a world of square
-// tiles (EMPIRE_GRID=square), its board drawn with the kit; a place touched, its card, its dock.
-//   pnpm --filter @comptoirs/web build && node e2e/porcellana.mjs
+// The empire's journey on the Carte (docs/plan-porcellana.md lots 3 to 8): a house founded on the
+// square tiles, its board drawn with the kit; the Fondaco and a plot touched, their cards; a plot
+// bought and a workshop built on it; the Fondaco's tab; the keys; the board flat without WebGL.
+//   pnpm --filter @comptoirs/web build && pnpm --filter @comptoirs/web e2e:empire
 // Shots in e2e-shots/porcellana by default (SHOTS), sizes 1280x800 and 390x844 (SIZES).
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -8,6 +9,7 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
+import { assertNoOverflow } from "./assert.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SHOTS = resolve(process.env.SHOTS ?? join(here, "..", "e2e-shots", "porcellana"));
@@ -79,6 +81,7 @@ try {
     page.on("pageerror", (e) => faults.push(`${label}: ${e.message}`));
     const shot = async (name, wait = 12_000) => {
       await page.waitForTimeout(wait);
+      await assertNoOverflow(page).catch((e) => faults.push(`${label} ${name}: ${e.message}`));
       await page.screenshot({ path: join(SHOTS, `${label}-${name}.png`), timeout: 120_000 });
     };
     const email = `porcellana_${width}@example.org`;

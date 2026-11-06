@@ -1,10 +1,9 @@
 /**
- * What lives on the 3D map: Quaternius's donkey (its walk and its rest played by an AnimationMixer,
- * for the vehicles, fleet3d.tsx), the smoke of a chimney, the lagoon's ripples, the fondaco's flag.
+ * What lives in the Porta's scenes: the smoke of a burnt town, the lagoon's ripples, a flag (the
+ * bought donkey gone with the map of before, Porcellana lot 8).
  * Each moves only while `live` (the device does not ask for less motion); the map's loop asks for
  * frames meanwhile.
  */
-import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import {
@@ -20,57 +19,8 @@ import {
   type SkinnedMesh,
   Vector3,
 } from "three";
-import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { C } from "../../art/plateau/props.js";
 import { claySolid } from "./kit.js";
-
-const DONKEY = "/models/quaternius/donkey.glb";
-useGLTF.preload(DONKEY, false, true);
-
-/** The donkey's own colours, swapped for the board's (by its materials' names). */
-const DONKEY_COLOURS: Record<string, string> = {
-  Main: C.rock2,
-  Main_Light: C.wall,
-  Main_Dark: C.door,
-  Hair: C.door,
-  Hooves: C.door,
-  Muzzle: C.wall,
-  Eye_Dark: "#0E1A2B",
-  Eye_White: C.wall,
-};
-
-/** A donkey of its own (its skeleton cloned), `length` chart units long, and its mixer. */
-export function useDonkey(length: number) {
-  const gltf = useGLTF(DONKEY, false, true) as unknown as {
-    scene: Object3D;
-    animations: import("three").AnimationClip[];
-  };
-  return useMemo(() => {
-    const root = cloneSkinned(gltf.scene);
-    root.traverse((o) => {
-      const m = o as SkinnedMesh;
-      if (!m.isMesh) return;
-      const swap = (mat: Material) => {
-        const name = mat.name;
-        return claySolid(DONKEY_COLOURS[name] ?? C.rock2);
-      };
-      m.material = Array.isArray(m.material) ? m.material.map(swap) : swap(m.material);
-      m.castShadow = false;
-      m.frustumCulled = false;
-    });
-    const box = new Box3().setFromObject(root);
-    const size = box.getSize(new Vector3());
-    const k = length / Math.max(size.x, size.z);
-    root.scale.multiplyScalar(k);
-    const mixer = new AnimationMixer(root);
-    const walk = gltf.animations.find((a) => a.name === "Walk");
-    const idle = gltf.animations.find((a) => a.name === "Idle");
-    const walking = walk ? mixer.clipAction(walk) : null;
-    const resting = idle ? mixer.clipAction(idle) : null;
-    walking?.play();
-    return { root, mixer, walking, resting, height: size.y * k };
-  }, [gltf, length]);
-}
 
 /** A soft round shadow under what moves (its shadow is not in the board's still shadow map). */
 export function Blob({ r }: { r: number }) {

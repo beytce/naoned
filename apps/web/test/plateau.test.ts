@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { HEX_SIZE, cellCentre } from "../src/art/hexmap.js";
-import { board } from "../src/art/plateau/board.js";
 import { TILT, box, facesEye, hashOf, project, rng, shade } from "../src/art/plateau/geom.js";
 
 describe("the night board's renderer", () => {
@@ -24,30 +23,6 @@ describe("the night board's renderer", () => {
     expect(shade("#808080", 1)).toBe("#808080");
     expect(shade("#808080", 0.5)).toBe("#404040");
     expect(shade("#000000", 2)).toBe("#ffffff");
-  });
-
-  it("draws the same board from the same map, each time", () => {
-    const k = "10,5";
-    const [x, y] = cellCentre(k);
-    const input = {
-      cells: { [k]: { region: "veneto", coast: true } },
-      revealed: [k, "11,5"],
-      unlocked: [k],
-      cities: [{ code: "padova", region: "veneto", x: x - 6, y: y + 4, size: 2 }],
-      home: { x: x + 5, y: y - 3 },
-      posts: [],
-      depot: null,
-      camp: null,
-      porta: null,
-    };
-    const a = board(input);
-    const b = board(input);
-    expect(a).toEqual(b);
-    expect(a.length).toBeGreaterThan(20);
-    // Everything stays within the sector and its neighbours on screen.
-    for (const s of a)
-      for (const m of s.points.matchAll(/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g))
-        expect(Math.abs(Number(m[1]) - x)).toBeLessThan(5 * HEX_SIZE);
   });
 
   it("seeds a sector's dressing by its key", () => {

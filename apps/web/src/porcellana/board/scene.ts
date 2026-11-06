@@ -257,8 +257,8 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     t.porcellana.arsenalSub,
     "",
   );
-  const porta = (house as { porta?: { cell: string } }).porta;
-  place(porta?.cell, "porta", { kind: "porta" }, t.porcellana.porta, t.porcellana.portaSub, "");
+  // The Porta: its tile, once it stands (the Porta's own view).
+  place(v.porta?.cell ?? (house as { porta?: { cell?: string } }).porta?.cell, "porta", { kind: "porta" }, t.porcellana.porta, t.porcellana.portaSub, "");
   for (const post of map.posts)
     place(
       tileAt(post.x, post.y, size),

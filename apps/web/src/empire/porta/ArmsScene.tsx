@@ -6,23 +6,29 @@ import { C } from "../../art/plateau/props.js";
 import { PlainGround } from "../../dock.js";
 import { d } from "../../game/format.js";
 import { Pawn as Figure } from "../../porcellana/Pawn.js";
+import { createPalette } from "../../porcellana/materials.js";
+import { post } from "../../porcellana/models/places.js";
 import { CloseButton, Slab } from "../../ui.js";
 import { affordable } from "../logic.js";
 import { Guard3D } from "../map3d/Guard.js";
 import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { MAP_3D } from "../map3d/flag.js";
-import { Instanced, clay as clayShared, claySolid, hexSlab, useKit } from "../map3d/kit.js";
-import { preloadMinis } from "../map3d/minis.js";
+import { Instanced, clay as clayShared, claySolid, hexSlab } from "../map3d/kit.js";
 import { Pace } from "../map3d/pace.js";
 import { useCoverBoard } from "../map3d/pause.js";
 import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { ArmsDock, type ArmsView, KIND_HEX, componentName } from "./ArmsDock.js";
 import { ROME_DUSK } from "./colours.js";
+
+/** The Remise's stall, behind the arms: Porcellana's shop (D6). */
+const ARMS_STALL = (() => {
+  const g = post(createPalette()).group;
+  g.scale.setScalar(1.7);
+  return g;
+})();
 import { pt } from "./texts.js";
 import type { ComponentKind, PortaView } from "./types.js";
-
-preloadMinis();
 
 const live = () => !(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
 /** A vehicle's pedestal in the workshop, in a row, and its places round it. */
@@ -256,7 +262,6 @@ function Workshop({
   v: PortaView;
   socket: { vehicleId: string; slot: number } | null;
 }) {
-  const kit = useKit();
   const n = v.vehicles.length;
   const tiles = [];
   for (let r = -2; r <= 2; r++)
@@ -267,7 +272,7 @@ function Workshop({
     <group>
       <Instanced geo={floor} items={tiles} material={claySolid(C.land)} />
       {/* The Remise's hall behind, its crates. */}
-      <mesh geometry={kit("market").geo} material={clayShared} scale={8} position={[0, 0, -22]} />
+      <primitive object={ARMS_STALL} position={[0, 0, -22]} />
       {v.vehicles.map((x, i) => {
         const base = PEDESTAL(i, n);
         ANCHOR.set(`name:${i}`, [base[0], 0, base[2] + 3]);

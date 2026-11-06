@@ -53,22 +53,15 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
 
 const root = document.getElementById("root");
 if (!root) throw new Error("#root missing");
-// The figurines' lab (?lab=minis, docs/plan-porta-3d.md): the lands of Rome's figurines in a row.
-const MinisLab = lazy(() => import("./empire/map3d/MinisLab.js"));
 // Porcellana's laboratory (?lab=porcellana, docs/plan-porcellana.md lot 1): the kit on a small board.
 const PorcellanaLab = lazy(() => import("./porcellana/Lab.js"));
 const labName = new URLSearchParams(window.location.search).get("lab");
-const lab = labName === "minis";
 
 createRoot(root).render(
   <StrictMode>
     {labName === "porcellana" ? (
       <Suspense fallback={null}>
         <PorcellanaLab />
-      </Suspense>
-    ) : lab ? (
-      <Suspense fallback={null}>
-        <MinisLab />
       </Suspense>
     ) : (
       <App />
