@@ -311,7 +311,14 @@ Toutes ces commandes : **règlent d'abord** l'atelier (`collectWorkshop` + `sett
 - **Migration** : la bascule ne doit faire perdre ni production, ni ducats, ni recherches ; une répétition sur une copie de la base (comme `apps/simulator/src/rehearse-square.ts` pour les cases carrées) **avant** la mise en ligne.
 - **Règles stables** : ce changement touche le commerce ; il s'annonce dans les notes du chapitre avant de s'appliquer (CLAUDE.md).
 
-## 11. Questions encore ouvertes (à trancher avec le porteur au lot A0)
+## 11. Questions tranchées par le porteur (6 novembre 2026)
+
+1. **Savoirs de la Scuola** touchant l'atelier : **convertis en postes débloqués** (un poste de niveau supérieur, un convoyeur plus rapide) ; rien n'est perdu, jamais de conversion en ducats (règle 4).
+2. **Embauche** : **à la porte de l'atelier**, au pied du poste à pourvoir, le métier proposé ; la Famille ne garde que les membres de la famille, qui arrivent comme ouvriers spéciaux.
+3. **Ateliers voisins d'une même chaîne** : **oui, une porte reliée dans les deux intérieurs, mais après A8** ; d'ici là, le bonus de voisinage actuel reste.
+4. **Palais** : **hors de ce plan**, noté dans IDEAS.md pour un plan à part.
+
+Les questions telles qu'elles étaient posées :
 
 1. Les **savoirs** de la Scuola qui touchaient l'atelier : les convertir en postes débloqués, ou les retirer et rembourser ?
 2. L'**embauche** : seulement à la porte de l'atelier, ou aussi à la Famille ?

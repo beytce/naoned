@@ -197,3 +197,8 @@ Décisions du porteur après l'audit des quatre experts (`docs/audit-carte-2026-
 - **Les sons et les vibrations** de la bataille : les flèches, les coups, une relique chargée, la fermeture.
 - **Des figurines simplifiées de loin** dans les grosses batailles (palier 6), si la mesure sur téléphone le demande.
 - **Un modèle propre de bombarde et de hallebarde** (aujourd'hui une bombarde faite en code et la hache du barbare).
+
+## Les ateliers de l'intérieur (6 novembre 2026), hors du chantier
+
+- **L'intérieur du Palais** : un intérieur de prestige (salons, collections), dans un plan à part, une fois les ateliers finis (décision du porteur, docs/plan-ateliers.md § 11).
+- **La porte reliée entre deux ateliers voisins d'une même chaîne** : décidée, mais après le lot A8 ; les intrants passent d'une halle à l'autre sans le stock.
