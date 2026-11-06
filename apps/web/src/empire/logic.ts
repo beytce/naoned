@@ -39,12 +39,15 @@ export type WorkshopStatus =
   | { state: "ready"; lots: number; quantity: number; good: string }
   | { state: "running"; progress: number; left: number }
   | { state: "idle" }
-  | { state: "blocked"; resource: string };
+  | { state: "blocked"; resource: string }
+  /** Lots ready that the Fondaco's cap keeps waiting (the first steps, lot 3). */
+  | { state: "full"; good: string };
 
 export function workshopStatus(p: EmpirePayload, ws: EmpireWorkshop, now: number): WorkshopStatus {
   const r = recipeOf(p, ws);
   const [good = "", out = 0] = Object.entries(r?.outputs ?? {})[0] ?? [];
   const lots = readyLots(ws, now);
+  if (lots > 0 && p.view?.full?.includes(ws.id)) return { state: "full", good };
   if (lots > 0) return { state: "ready", lots, quantity: lots * out, good };
   const job = ws.job;
   if (job && lots < job.batches) {
@@ -65,6 +68,8 @@ export function casaReached(before: EmpirePayload | null, after: EmpirePayload):
 /** Something to do with the workshops: lots to take, or a queue that would take more. */
 export function wantsRelaunch(p: EmpirePayload, now: number): boolean {
   return (p.view?.house.workshops ?? []).some((ws) => {
+    // Full: nothing to take until there is room (the first steps, lot 3).
+    if (p.view?.full?.includes(ws.id)) return false;
     if (readyLots(ws, now) > 0) return true;
     const end = queueEnd(ws);
     if (end !== null && end - now > 11 * 3_600_000) return false;

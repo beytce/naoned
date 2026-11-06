@@ -35,6 +35,11 @@ const casaLevel = z.object({
    * level asks the rest to follow, as Hades' Star's). None by default.
    */
   requires: z.object({ workshops: qty, level: qty }).prefault({ workshops: 0, level: 0 }),
+  /**
+   * What a fondaco holds of each good at this level (the first steps, lot 3; golden rule 3): once
+   * full, a workshop's lots wait in its queue, nothing lost. None: no cap.
+   */
+  storeCap: positive.optional(),
 });
 
 const region = z.object({
@@ -530,7 +535,14 @@ export const empireSettingsSchema = z.object({
        * A counter's reach (the map that grows, 31 October 2026): the cities within `base` units,
        * and `perLevel` more a level beyond the first, are served by it. None: every city found is.
        */
-      reach: z.object({ base: positive, perLevel: qty }).nullable().prefault(null),
+      /**
+       * A counter's reach: `base`, and `perLevel` a level more. With `byCasa`, the first fondaco's
+       * level is the Casa's (the first steps, lot 3), up to the counters' top level.
+       */
+      reach: z
+        .object({ base: positive, perLevel: qty, byCasa: z.boolean().prefault(false) })
+        .nullable()
+        .prefault(null),
       /**
        * The sectors bought one by one (decision of the owner, 1 November 2026): one next to a
        * sector of one's own, or a coast within `seaHops` of a coast of one's own; its price, dearer

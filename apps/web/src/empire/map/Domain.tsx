@@ -162,6 +162,47 @@ function Door({
   );
 }
 
+const count = (n: number) => new Intl.NumberFormat("fr-FR").format(n);
+
+/**
+ * What the next level brings the Fondaco (the first steps, lot 3): its stock of each good, before
+ * and after, and the towns its zone adds, by name.
+ */
+export function FondacoGains({ p }: { p: EmpirePayload }) {
+  const f = fr.empire.fondaco;
+  const next = p.view?.nextCasa;
+  const now = p.view?.storeCap;
+  if (!next) return null;
+  const towns = next.newCities ?? [];
+  const names = towns
+    .slice(0, 3)
+    .map((c) => fr.empire.cityNames[c] ?? c)
+    .join(", ");
+  const chip =
+    "flex items-center gap-1 rounded-full bg-face/10 px-2 py-0.5 text-xs font-bold text-face tabular-nums";
+  return (
+    <span className="flex flex-wrap gap-1.5" data-fondaco-gains>
+      {now != null && next.storeCap !== undefined && next.storeCap > now && (
+        <span className={chip} data-gain="store">
+          {f.gainStore(count(now), count(next.storeCap))}
+        </span>
+      )}
+      {towns.length > 0 ? (
+        <span className={chip} data-gain="cities">
+          {f.gainCities(towns.length, names)}
+        </span>
+      ) : (
+        next.reach !== undefined &&
+        next.reach > (p.view?.map.home.reach ?? 0) && (
+          <span className={chip} data-gain="zone">
+            {f.gainZone}
+          </span>
+        )
+      )}
+    </span>
+  );
+}
+
 /** The road to the next Casa: its ring, what it opens, each thing it asks as a chip that fills. */
 function CasaRoadCard({
   p,
@@ -220,6 +261,7 @@ function CasaRoadCard({
         </span>
         <span className="text-cream-dim [&_svg]:h-4 [&_svg]:w-4">{Icon.chevronRight()}</span>
       </span>
+      <FondacoGains p={p} />
       {!site && (
         // On a short screen, the chips give way: the ring and the sheet say it (lot 3).
         <span className="flex flex-wrap gap-1.5 [@media(max-height:700px)]:hidden">

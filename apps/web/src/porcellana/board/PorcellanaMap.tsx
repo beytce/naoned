@@ -265,6 +265,7 @@ function Board({
     minI.current = Math.min(...sh.scene.tiles.map((t) => t.i));
     minJ.current = Math.min(...sh.scene.tiles.map((t) => t.j));
     sync(sh.scene);
+    syncZone(sh.scene);
     look(homeAt());
   }, []);
 
@@ -277,6 +278,51 @@ function Board({
     last: "",
     home: 0,
   });
+  // The Fondaco's zone (the first steps, lot 3): a pale ring of accent round it, and the next
+  // level's, fainter, while the Fondaco is chosen.
+  const zone = useRef<{ sig: string; now: Mesh | null; next: Mesh | null }>({
+    sig: "",
+    now: null,
+    next: null,
+  });
+  const zoneRing = (radius: number, opacity: number) => {
+    const m = new Mesh(
+      new RingGeometry(Math.max(0.1, radius - 0.18), radius, 128),
+      new MeshBasicMaterial({
+        color: P.accentColour,
+        transparent: true,
+        opacity,
+        toneMapped: false,
+        depthWrite: false,
+      }),
+    );
+    m.rotation.x = -Math.PI / 2;
+    m.renderOrder = 1;
+    root.add(m);
+    return m;
+  };
+  const syncZone = (scene: BoardScene) => {
+    const z = scene.zone;
+    const sig = z ? `${z.x},${z.y},${z.reach},${z.next ?? ""},${scene.tileSize}` : "";
+    if (sig === zone.current.sig) return;
+    for (const m of [zone.current.now, zone.current.next])
+      if (m) {
+        root.remove(m);
+        m.geometry.dispose();
+        (m.material as MeshBasicMaterial).dispose();
+      }
+    zone.current = { sig, now: null, next: null };
+    if (!z) return;
+    const size = scene.tileSize;
+    const at = (m: Mesh) =>
+      m.position.set((z.x / size - 0.5) * S, RIBBON.lift + 0.02, (z.y / size - 0.5) * S);
+    const now = zoneRing((z.reach / size) * S, 0.42);
+    at(now);
+    const next = z.next ? zoneRing((z.next / size) * S, 0) : null;
+    if (next) at(next);
+    zone.current = { sig, now, next };
+  };
+
   const tmp = useMemo(() => new Vector3(), []);
   const lastScene = useRef(sh.scene);
 
@@ -288,6 +334,15 @@ function Board({
     if (lastScene.current !== sh.scene) {
       lastScene.current = sh.scene;
       sync(sh.scene);
+      syncZone(sh.scene);
+    }
+    // The next level's zone shows while the Fondaco is chosen.
+    const nextZone = zone.current.next;
+    if (nextZone) {
+      const mat = nextZone.material as MeshBasicMaterial;
+      const want = sh.chosen?.startsWith("fondaco:") ? 0.3 : 0;
+      mat.opacity += (want - mat.opacity) * Math.min(1, dt * 6);
+      nextZone.visible = mat.opacity > 0.01;
     }
     const cam = camera as OrthographicCamera;
     const byKey = new Map(sh.scene.tiles.map((t) => [t.key, t]));

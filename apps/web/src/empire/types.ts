@@ -93,8 +93,16 @@ export interface EmpireView {
         requirementMet: boolean;
         requires: { workshops: number; level: number };
         opens: string[];
+        /** What the next level brings the Fondaco (the first steps, lot 3). */
+        storeCap?: number;
+        reach?: number;
+        newCities?: string[];
       })
     | null;
+  /** What a fondaco holds of each good now (null: no cap). */
+  storeCap?: number | null;
+  /** The workshops whose ready lots wait for room under the cap. */
+  full?: string[];
   /** A workshop's next level, its lot before and after in basis points of the base lot. */
   upgrades: Record<string, (EmpireSite & { yieldBps: number; nextYieldBps: number }) | null>;
   newWorkshop: EmpireSite | null;

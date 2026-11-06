@@ -10,7 +10,7 @@ import { type Tx, fail } from "../tx.js";
 
 /** A rate raised by an effect in bps. */
 const applyBps = (base: number, bps: number) => Math.floor((base * (10_000 + bps)) / 10_000);
-import { lotYieldBps } from "./curves.js";
+import { casaLevelOf, lotYieldBps } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { tilesTouch } from "./grid.js";
 import { empireSettings, ownHouse } from "./house.js";
@@ -44,13 +44,20 @@ export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop):
   settleInterior(ws, h, s, tx.now);
   const job = ws.job;
   if (!job) return;
-  const done = Math.min(job.batches, Math.floor((tx.now - job.startedAt) / job.batchMs));
+  let done = Math.min(job.batches, Math.floor((tx.now - job.startedAt) / job.batchMs));
   if (done <= 0) return;
   const recipe = recipeOf(tx, ws);
-  const yieldBps = applyBps(
-    lotYieldBps(ws.level, s),
-    houseEffect(h, "workshopYield", s, { workshopId: ws.id }) + neighbourBonus(tx.ctx, h, ws, s),
+  const yieldBps = workshopYieldBps(tx.ctx, h, ws, s);
+  // The Fondaco's cap (the first steps, lot 3; golden rule 3): only the lots that fit under it
+  // come in; the others wait, ready, in the queue, nothing lost.
+  const post = workshopPost(h, s, ws);
+  done = Math.min(
+    done,
+    lotsThatFit(recipe.outputs, yieldBps, casaLevelOf(h.casa, s).storeCap, (g) =>
+      storeOf(tx, h, playerId, post, g),
+    ),
   );
+  if (done <= 0) return;
   // A share of the lots comes out better (the master), a share of those exquisite.
   const quality = Math.min(
     10_000,
@@ -76,6 +83,41 @@ export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop):
   job.batches -= done;
   job.startedAt += done * job.batchMs;
   if (job.batches === 0) ws.job = null;
+}
+
+/**
+ * How many lots fit under the Fondaco's cap (the first steps, lot 3): for each good a lot makes,
+ * the room left over what its fondaco holds of it (fine and exquisite counted), in whole lots.
+ * Without a cap, as many as there are.
+ */
+export function lotsThatFit(
+  outputs: Partial<Record<string, number>>,
+  yieldBps: number,
+  cap: number | undefined,
+  held: (good: string) => number,
+): number {
+  if (cap === undefined) return Number.POSITIVE_INFINITY;
+  let fit = Number.POSITIVE_INFINITY;
+  for (const [good, qty = 0] of Object.entries(outputs)) {
+    const perLot = Math.ceil((qty * yieldBps) / 10_000);
+    if (perLot <= 0) continue;
+    const have = held(good) + held(`${good}:fine`) + held(`${good}:exquisite`);
+    fit = Math.min(fit, Math.floor(Math.max(0, cap - have) / perLot));
+  }
+  return fit;
+}
+
+/** A workshop's lot now, in bps of its recipe's: its level, its house's effects, its neighbours. */
+export function workshopYieldBps(
+  ctx: WorldContext,
+  h: EmpireHouse,
+  ws: EmpireWorkshop,
+  s: EmpireSettings,
+): number {
+  return applyBps(
+    lotYieldBps(ws.level, s),
+    houseEffect(h, "workshopYield", s, { workshopId: ws.id }) + neighbourBonus(ctx, h, ws, s),
+  );
 }
 
 /**

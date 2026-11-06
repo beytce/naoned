@@ -369,6 +369,14 @@ export const en: Dictionary = {
       arms: "Arms",
       workshops: "Workshops",
       sweep: "Touch the ready workshops, or sweep from one to the next.",
+      // What the next level brings (the first steps, lot 3).
+      gainStore: (a: string, b: string) => `Stock ${a} → ${b}`,
+      gainCities: (n: number, names: string) =>
+        n === 1 ? `+1 town: ${names}` : `+${n} towns: ${names}`,
+      gainZone: "Wider zone",
+      gainsTitle: "Your Fondaco gains",
+      storeLine: (cap: string, towns: number) =>
+        `${cap} of each good · ${towns} ${towns > 1 ? "towns" : "town"} in its zone`,
     },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
@@ -862,6 +870,7 @@ export const en: Dictionary = {
       ready: "Ready · touch",
       idle: "To launch",
       waits: (good: string) => `waits for ${good.toLowerCase()}`,
+      full: (good: string) => `${good}: warehouse full`,
       level: (n: number) => `lvl ${n}`,
     },
     moment: {

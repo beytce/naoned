@@ -100,6 +100,11 @@ export interface BoardScene {
   roads: BoardRoad[];
   /** The first fondaco's tile: where the camera starts. */
   home: string;
+  /**
+   * The first fondaco's zone (the first steps, lot 3): its middle and reach in the chart's units,
+   * and the reach at the next Casa, drawn while the Fondaco is chosen.
+   */
+  zone?: { x: number; y: number; reach: number; next?: number };
 }
 
 const parse = (k: string): [number, number] => {
@@ -285,7 +290,10 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     { kind: "casa" },
     t.porcellana.fondaco,
     t.porcellana.casa(house.casa),
-    t.porcellana.fondacoLine,
+    // Its stock and its zone, what its level gives (the first steps, lot 3).
+    v.storeCap != null
+      ? t.fondaco.storeLine(new Intl.NumberFormat("fr-FR").format(v.storeCap), v.orders.length)
+      : t.porcellana.fondacoLine,
   );
 
   // The workshops on their tiles, working when the game says so.
@@ -310,7 +318,9 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
               ? t.porcellana.running
               : st.state === "blocked"
                 ? t.porcellana.blocked(goodName(p, st.resource))
-                : t.porcellana.idle,
+                : st.state === "full"
+                  ? t.orbit.full(goodName(p, st.good))
+                  : t.porcellana.idle,
         go: t.porcellana.enter,
         pin: lots > 0 ? String(lots) : "",
         ready: lots > 0,
@@ -323,5 +333,17 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     tiles: [...out.values()].sort((a, b) => a.j - b.j || a.i - b.i),
     roads: (map.roads ?? []).map((r) => ({ from: r.from, to: r.to, pts: r.pts })),
     home: homeTile,
+    ...(map.home.reach > 0
+      ? {
+          zone: {
+            x: map.home.x,
+            y: map.home.y,
+            reach: map.home.reach,
+            ...(v.nextCasa?.reach && v.nextCasa.reach > map.home.reach
+              ? { next: v.nextCasa.reach }
+              : {}),
+          },
+        }
+      : {}),
   };
 }

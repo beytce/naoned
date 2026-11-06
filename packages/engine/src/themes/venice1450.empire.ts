@@ -38,6 +38,16 @@ const CASA: [number, Record<string, number>, number, string[]][] = [
 
 const slots = (level: number, at: number[]) => at.filter((l) => level >= l).length;
 
+/**
+ * What a fondaco holds of each good at the Casa 1 to 20 (the first steps, lot 3; golden rule 3):
+ * above half a day of what the house makes at each level, so that an absence loses nothing, far
+ * below the piles the simulator saw from the Casa 8 (hundreds of thousands, then millions).
+ */
+const STORE_CAPS = [
+  300, 500, 800, 1_200, 2_000, 3_000, 5_000, 8_000, 12_000, 20_000, 30_000, 45_000, 65_000, 90_000,
+  130_000, 180_000, 250_000, 350_000, 500_000, 700_000,
+];
+
 /** The ten regions, by their order of opening (CADRAGE-v3 § 3.4). */
 const REGIONS: EmpireSettingsInput["regions"] = [
   {
@@ -179,6 +189,7 @@ export const venice1450Empire: EmpireSettingsInput = {
       buildSlots: 1 + slots(level, [5, 15, 19]),
       researchSlots: slots(level, [4, 12, 18]),
       opens,
+      storeCap: STORE_CAPS[i],
       // From the Casa 9: so many workshops at the level just below (the empire follows).
       requires:
         level >= 9
@@ -217,7 +228,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     version: 5,
     hexSize: 24,
     unlock: { costDucats: 300, stepBps: 2_000, seaHops: 3 },
-    reach: { base: 36, perLevel: 8 },
+    // The first fondaco's zone follows the Casa (the first steps, lot 3), up to the counters' top.
+    reach: { base: 36, perLevel: 8, byCasa: true },
     postSpacing: 8,
     // The first fondaco is no town (1 November 2026): put down by the player in Venice's sector,
     // at this point until then: the small tile kept free there, two tiles from Venice and from

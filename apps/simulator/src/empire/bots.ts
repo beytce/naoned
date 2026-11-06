@@ -218,6 +218,15 @@ function collect(w: World, h: House) {
       const have = stockOf(h, raws);
       while (qty > 0 && highRecipeRaw(ws.level, qty, w.s) > have)
         qty = Math.floor((qty * have) / highRecipeRaw(ws.level, qty, w.s));
+      // The Fondaco's cap (the first steps, lot 3): once full, the workshop stops, nothing lost.
+      const cap = casaLevelOf(h.casa, w.s).storeCap;
+      if (cap !== undefined) {
+        const held =
+          (h.stock.get(ws.good) ?? 0) +
+          (h.fine.get(`${ws.good}:fine`) ?? 0) +
+          (h.fine.get(`${ws.good}:exquisite`) ?? 0);
+        qty = Math.min(qty, Math.max(0, cap - held));
+      }
       if (qty <= 0) continue;
       if (recipe)
         for (const [g, per] of Object.entries(recipe))
@@ -943,6 +952,9 @@ function tryCounter(w: World, h: House): boolean {
   // Else a counter grows (its private book with it), up to level 10.
   for (const [code, level] of h.counters) {
     if (level >= w.s.counters.maxLevel) continue;
+    // Venetia's own fondaco grows with the Casa (the first steps, lot 3): not raised apart, as in
+    // the game.
+    if (code === "veneto" && w.s.map.reach?.byCasa) continue;
     const up = levelCost(level + 1, w.s) * BigInt(w.s.counters.costTimes);
     const quick = counterPaysBack(w, h, code, up);
     if ((quick ? h.cash : spendable(w, h)) < up) continue;

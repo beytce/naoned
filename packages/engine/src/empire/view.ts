@@ -49,6 +49,7 @@ import {
   citySpot,
   ensureMap,
   hasMap,
+  homeLevelOf,
   homePost,
   postCost,
   reachOf,
@@ -67,11 +68,11 @@ import { regionOf } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
 import { roadBetween } from "./slots.js";
 import { staffHireCost, staffSlots } from "./staff.js";
-import { storesOf } from "./stores.js";
+import { storesOf, workshopPost } from "./stores.js";
 import { isContesaWeek, terraWeekStart } from "./terra.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
 import { vehicleSlotsOf } from "./vehicleModules.js";
-import { moduleSlotsOf, neighbourBonus } from "./workshops.js";
+import { lotsThatFit, moduleSlotsOf, neighbourBonus, workshopYieldBps } from "./workshops.js";
 
 export interface EmpireSite {
   level: number;
@@ -107,8 +108,17 @@ export interface EmpireView {
         requirementMet: boolean;
         requires: { workshops: number; level: number };
         opens: string[];
+        /** What a fondaco will hold of each good (the first steps, lot 3). */
+        storeCap?: number;
+        /** The first fondaco's reach then, and the towns it will add. */
+        reach?: number;
+        newCities?: string[];
       })
     | null;
+  /** What a fondaco holds of each good at this Casa; null without a cap. */
+  storeCap: number | null;
+  /** The workshops whose ready lots wait for room under the cap (the first steps, lot 3). */
+  full: string[];
   /**
    * Each workshop's next level: null at the Casa's, or at the top. With its lot before and after,
    * in basis points of the recipe's base lot (lotYieldBps): what the raise brings, shown first.
@@ -451,6 +461,7 @@ export function empireView(
     share((h) => h.workshops.length > 0),
     s,
   );
+  const stores = storesOf(state.inventories[playerId], house, s);
   return {
     house,
     ...(house.welcome && s.welcome ? { welcome: { workshop: s.welcome.workshop } } : {}),
@@ -475,8 +486,20 @@ export function empireView(
           ),
           requires: nextLine.requires,
           opens: nextLine.opens,
+          // What the next level brings to the Fondaco (the first steps, lot 3): its stock, its zone
+          // and the towns it adds.
+          ...(nextLine.storeCap !== undefined ? { storeCap: nextLine.storeCap } : {}),
+          ...(s.map.reach
+            ? {
+                reach: reachOf(homeLevelOf({ ...house, casa: level }, s), s),
+                newCities: [...citiesCovered({ ...house, casa: level }, s)].filter(
+                  (c) => !citiesCovered(house, s).has(c),
+                ),
+              }
+            : {}),
         }
       : null,
+    storeCap: line.storeCap ?? null,
     upgrades,
     newWorkshop: inVenetia + pending < line.workshopSlots ? workshopSite : null,
     workshopSite,
@@ -495,7 +518,8 @@ export function empireView(
           next: nextDepotLevel(house, s),
         }
       : null,
-    stores: storesOf(state.inventories[playerId], house, s),
+    stores,
+    full: fullWorkshops(ctx, house, s, stores, line.storeCap, now),
     orders: ordersOf(ctx, house, playerId, s, now),
     delivered: (house.delivered ?? []).map((d) => ({ ...d, pay: d.pay.toString() })),
     moves: s.moves,
@@ -903,4 +927,33 @@ function researchOf(house: EmpireHouse, s: EmpireSettings): EmpireView["research
       };
     }),
   };
+}
+
+/** The workshops with lots ready that the Fondaco's cap keeps waiting (the first steps, lot 3). */
+function fullWorkshops(
+  ctx: WorldContext,
+  house: EmpireHouse,
+  s: EmpireSettings,
+  stores: { post: string; goods: Record<string, number> }[],
+  cap: number | undefined,
+  now: number,
+): string[] {
+  if (cap === undefined) return [];
+  return house.workshops
+    .filter((ws) => {
+      const job = ws.job;
+      if (!job || Math.floor((now - job.startedAt) / job.batchMs) <= 0) return false;
+      const recipe = ctx.theme.recipes.find((r) => r.code === ws.recipe && r.building === ws.type);
+      if (!recipe) return false;
+      const goods = stores.find((x) => x.post === workshopPost(house, s, ws))?.goods ?? {};
+      return (
+        lotsThatFit(
+          recipe.outputs,
+          workshopYieldBps(ctx, house, ws, s),
+          cap,
+          (g) => goods[g] ?? 0,
+        ) === 0
+      );
+    })
+    .map((ws) => ws.id);
 }

@@ -9,6 +9,7 @@ import { regionName } from "../World.js";
 import { buildingName } from "../logic.js";
 import { pt } from "../porta/texts.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
+import { FondacoGains } from "./Domain.js";
 import { type ActionIcon, type Target, actionsOf } from "./logic.js";
 
 const t = fr.empire;
@@ -115,6 +116,12 @@ export function ActionPanel({
         </div>
         <CloseButton onClick={onClose} className="shrink-0" />
       </div>
+      {/* The Fondaco: what its next level brings, before the gesture (the first steps, lot 3). */}
+      {target.kind === "casa" && (
+        <div className="mt-2">
+          <FondacoGains p={p} />
+        </div>
+      )}
       {/* A new place: its actions fade in, the panel stays. */}
       <div key={JSON.stringify(target)} className="mt-2 flex animate-fade flex-wrap gap-1.5 pb-1">
         {actions.map((a) => (

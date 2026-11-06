@@ -293,6 +293,14 @@ const frDict = {
       arms: "Armes",
       workshops: "Ateliers",
       sweep: "Touchez les ateliers prêts, ou glissez de l'un à l'autre.",
+      // What the next level brings (the first steps, lot 3).
+      gainStore: (a: string, b: string) => `Stock ${a} → ${b}`,
+      gainCities: (n: number, names: string) =>
+        n === 1 ? `+1 ville : ${names}` : `+${n} villes : ${names}`,
+      gainZone: "Zone plus large",
+      gainsTitle: "Ton Fondaco gagne",
+      storeLine: (cap: string, towns: number) =>
+        `${cap} de chaque marchandise · ${towns} ${towns > 1 ? "villes" : "ville"} dans sa zone`,
     },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
@@ -790,6 +798,7 @@ const frDict = {
       ready: "Prêt · touchez",
       idle: "À lancer",
       waits: (good: string) => `attend ${good.toLowerCase()}`,
+      full: (good: string) => `${good} : entrepôt plein`,
       level: (n: number) => `niv. ${n}`,
     },
     moment: {

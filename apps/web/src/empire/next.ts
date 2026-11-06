@@ -139,7 +139,10 @@ export function nextStep(p: EmpirePayload, now: number): NextStep {
   const freeSite = builds.length < view.buildSlots;
 
   // 1. The lots ready.
-  const lots = ws.reduce((n, w) => n + readyLots(w, now), 0);
+  // The full workshops aside: their lots wait for room (the first steps, lot 3).
+  const lots = ws
+    .filter((w) => !view.full?.includes(w.id))
+    .reduce((n, w) => n + readyLots(w, now), 0);
   if (lots > 0) return { kind: "collect", lots, action: { type: "empireRelaunchAll" } };
   // 2. A workshop that could run more.
   if (wantsRelaunch(p, now)) return { kind: "relaunch", action: { type: "empireRelaunchAll" } };

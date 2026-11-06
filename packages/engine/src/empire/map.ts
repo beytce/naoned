@@ -99,11 +99,21 @@ export function reachOf(level: number, s: EmpireSettings): number {
 }
 
 /**
+ * The first fondaco's level: its own, or with `reach.byCasa` the Casa's when higher (the first
+ * steps, lot 3), up to the counters' top level.
+ */
+export function homeLevelOf(h: Pick<EmpireHouse, "homeLevel" | "casa">, s: EmpireSettings): number {
+  const own = h.homeLevel ?? 1;
+  if (!s.map.reach?.byCasa) return own;
+  return Math.max(own, Math.min(s.counters.maxLevel, h.casa ?? 1));
+}
+
+/**
  * The house's first fondaco, with its level: where the player put it down, else at the world's
  * point, else (a world without one) at Venice's place, as before.
  */
 export function homePost(h: EmpireHouse, s: EmpireSettings) {
-  const level = h.homeLevel ?? 1;
+  const level = homeLevelOf(h, s);
   if (h.home) return { id: "home", region: HOME, ...h.home, level };
   const at = s.map.home;
   if (at) return { id: "home", cell: cellAtPoint(at.x, at.y, s), region: HOME, ...at, level };

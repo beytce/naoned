@@ -38,6 +38,7 @@ import {
 } from "./logic.js";
 import { ActionPanel } from "./map/ActionPanel.js";
 import { BottomSlot } from "./map/BottomSlot.js";
+import { FondacoGains } from "./map/Domain.js";
 import { DomainBar } from "./map/Domain.js";
 import { Hud } from "./map/Hud.js";
 import { OrdersPanel } from "./map/OrdersPanel.js";
@@ -1244,6 +1245,13 @@ function CasaSheet({
               <p className="mt-1 text-sm text-cream">{next.opens.map(opensName).join(" · ")}</p>
             </div>
           )}
+          {/* What the level brings the Fondaco: its stock, its zone (the first steps, lot 3). */}
+          <div>
+            <Label>{fr.empire.fondaco.gainsTitle}</Label>
+            <p className="mt-1">
+              <FondacoGains p={p} />
+            </p>
+          </div>
           {view.house.builds.some((b) => b.kind === "casa") ? (
             <p className="text-sm text-cream-dim">{t.casa.busy}</p>
           ) : (

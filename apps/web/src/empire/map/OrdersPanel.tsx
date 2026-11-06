@@ -21,7 +21,7 @@ export function citiesWithOrders(p: EmpirePayload): string[] {
 
 /** The workshops that make a good (its recipe's outputs), the readiest first. */
 export function makersOf(p: EmpirePayload, good: string, now: number) {
-  const rank = { ready: 0, running: 1, idle: 2, blocked: 3 } as const;
+  const rank = { ready: 0, running: 1, idle: 2, blocked: 3, full: 4 } as const;
   return (p.view?.house.workshops ?? [])
     .filter((ws) => (recipeOf(p, ws)?.outputs[good] ?? 0) > 0)
     .map((ws) => ({ ws, s: workshopStatus(p, ws, now) }))
