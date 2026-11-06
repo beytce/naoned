@@ -232,3 +232,121 @@ describe("Lorenzo and the cities' orders (after the map's audit, 3 November 2026
     expect(nextStep(withOrders({ clay: 10 }), NOW).kind).not.toBe("deliver");
   });
 });
+
+// The welcome of a new house (docs/plan-premiers-pas.md lot 2): Lorenzo leads it, a gesture at a
+// time, to its first order, before anything else.
+describe("the welcome's steps", () => {
+  type Welcome = NonNullable<NonNullable<EmpirePayload["view"]>["house"]["welcome"]>;
+  function newHouse(
+    welcome: Welcome,
+    over: Parameters<typeof house>[0] & { orders?: unknown[]; vehicles?: unknown[] } = {},
+  ): EmpirePayload {
+    const p = house({ workshops: [], ...over });
+    const view = p.view as NonNullable<EmpirePayload["view"]>;
+    return {
+      ...p,
+      view: {
+        ...view,
+        house: { ...view.house, welcome },
+        welcome: { workshop: { type: "lumber_camp", recipe: "fell_wood" } },
+        orders: over.orders ?? [],
+        vehicles: { models: [], mine: over.vehicles ?? [] },
+      } as unknown as EmpirePayload["view"],
+    };
+  }
+  const order = { id: "padova#welcome", city: "padova", good: "wood", qty: 11, pay: "10000" };
+  const camp = (job: EmpireWorkshop["job"]): EmpireWorkshop => ({
+    id: "w1",
+    type: "lumber_camp",
+    recipe: "fell_wood",
+    level: 1,
+    job,
+  });
+
+  it("asks the first workshop on a free tile", () => {
+    expect(nextStep(newHouse({}), NOW)).toMatchObject({
+      kind: "welcome",
+      phase: "build",
+      type: "lumber_camp",
+      recipe: "fell_wood",
+      good: "wood",
+    });
+  });
+
+  it("asks to launch it once built", () => {
+    const p = newHouse({ built: true }, { workshops: [camp(null)] });
+    expect(nextStep(p, NOW)).toMatchObject({
+      phase: "launch",
+      action: { type: "empireRelaunch", workshopId: "w1" },
+    });
+  });
+
+  it("shows the lot under way, the order of welcome already there", () => {
+    const job = {
+      recipe: "fell_wood",
+      startedAt: NOW - 10_000,
+      batches: 1,
+      level: 1,
+      batchMs: 30_000,
+    };
+    const p = newHouse(
+      { built: true, batch: true, order: order.id },
+      { workshops: [camp(job)], orders: [{ city: "padova", orders: [order] }] },
+    );
+    expect(nextStep(p, NOW)).toMatchObject({
+      phase: "making",
+      city: "padova",
+      from: NOW - 10_000,
+      at: NOW + 20_000,
+    });
+  });
+
+  it("asks to collect, then to deliver the order of welcome", () => {
+    const done = {
+      recipe: "fell_wood",
+      startedAt: NOW - 40_000,
+      batches: 1,
+      level: 1,
+      batchMs: 30_000,
+    };
+    const ready = newHouse(
+      { built: true, batch: true, order: order.id },
+      { workshops: [camp(done)], orders: [{ city: "padova", orders: [order] }] },
+    );
+    expect(nextStep(ready, NOW)).toMatchObject({ phase: "collect" });
+    const stocked = newHouse(
+      { built: true, batch: true, order: order.id },
+      {
+        workshops: [camp(null)],
+        stock: { wood: 11 },
+        orders: [{ city: "padova", orders: [order] }],
+      },
+    );
+    expect(nextStep(stocked, NOW)).toMatchObject({
+      phase: "deliver",
+      city: "padova",
+      qty: 11,
+      pay: 10_000n,
+      action: { type: "empireDeliverCity", city: "padova", orderIds: [order.id] },
+    });
+  });
+
+  it("follows the vehicle on its way, then gives the game back once paid", () => {
+    const mule = {
+      id: "v1",
+      at: "home",
+      loads: [{ ...order, from: "home" }],
+      legs: [{ from: "home", to: "city:padova", departAt: NOW - 5_000, arrivesAt: NOW + 40_000 }],
+    };
+    const p = newHouse(
+      { built: true, batch: true, order: order.id, trip: true },
+      { workshops: [camp(null)], vehicles: [mule] },
+    );
+    expect(nextStep(p, NOW)).toMatchObject({ phase: "onWay", city: "padova", at: NOW + 40_000 });
+    const paid = newHouse(
+      { built: true, batch: true, order: order.id, trip: true, done: true },
+      { workshops: [camp(null)] },
+    );
+    expect(nextStep(paid, NOW).kind).not.toBe("welcome");
+  });
+});

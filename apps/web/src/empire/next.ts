@@ -25,7 +25,92 @@ export type NextStep =
   | { kind: "upgrade"; workshopId: string; type: string; level: number; action: EmpireAction }
   | { kind: "sell"; good: string; qty: number; deliver: boolean; action: EmpireAction }
   | { kind: "claim"; index: number; action: EmpireAction }
-  | { kind: "wait"; at: number | null };
+  | { kind: "wait"; at: number | null }
+  | WelcomeStep;
+
+/**
+ * The welcome of a new house (the first steps, docs/plan-premiers-pas.md lot 2): Lorenzo leads it
+ * to its first order, a gesture at a time, before anything else.
+ * - build: a free tile touched, the first workshop (the welcome's) built on it, at once;
+ * - launch: its first lot launched, ready in seconds;
+ * - making: the lot under way;
+ * - collect: the lot taken;
+ * - deliver: the order of welcome brought to its town;
+ * - onWay: the vehicle on its way, until it is paid.
+ */
+export type WelcomeStep = {
+  kind: "welcome";
+  phase: "build" | "launch" | "making" | "collect" | "deliver" | "onWay";
+  /** The workshop to build, the good it makes. */
+  type: string;
+  recipe: string;
+  good: string;
+  /** The first workshop's id, once built. */
+  workshopId?: string;
+  /** The town of the order of welcome, its lot and pay, once given. */
+  city?: string;
+  qty?: number;
+  pay?: bigint;
+  /** Since when, and until when, the lot is made or the vehicle walks (its arc). */
+  from?: number;
+  at?: number;
+  action?: EmpireAction;
+};
+
+/** The welcome's step, or null once its order is paid (or for a house of before). */
+export function welcomeStep(p: EmpirePayload, now: number): WelcomeStep | null {
+  const view = p.view;
+  const w = view?.house.welcome;
+  if (!view?.welcome || !w || w.done) return null;
+  const { type, recipe } = view.welcome.workshop;
+  const r = p.catalog.find((b) => b.type === type)?.recipes.find((x) => x.code === recipe);
+  const good = Object.keys(r?.outputs ?? {})[0] ?? "";
+  const base = { kind: "welcome" as const, type, recipe, good };
+  // The welcome's own workshop, whatever was built before it.
+  const first = view.house.workshops.find((x) => x.type === type);
+  if (!first) {
+    // Rising (at once): the next read shows it.
+    if ((view.house.builds ?? []).some((b) => b.kind === "newWorkshop" && b.workshopType === type))
+      return { ...base, phase: "making" };
+    return { ...base, phase: "build" };
+  }
+  const ws = { ...base, workshopId: first.id };
+  if (!w.batch)
+    return {
+      ...ws,
+      phase: "launch",
+      action: { type: "empireRelaunch", workshopId: first.id },
+    };
+  const order = (view.orders ?? []).flatMap((c) => c.orders).find((o) => o.id === w.order);
+  const vehicle = (view.vehicles?.mine ?? []).find((v) => v.loads.some((o) => o.id === w.order));
+  const city = order?.city ?? vehicle?.loads.find((o) => o.id === w.order)?.city;
+  const about = {
+    ...ws,
+    ...(city ? { city } : {}),
+    ...(order ? { qty: order.qty, pay: BigInt(order.pay) } : {}),
+  };
+  if (vehicle) {
+    const leg = vehicle.legs.find((l) => l.to === `city:${city}`);
+    return {
+      ...about,
+      phase: "onWay",
+      ...(leg ? { from: leg.departAt, at: leg.arrivesAt } : {}),
+    };
+  }
+  const lots = readyLots(first, now);
+  if (lots > 0) return { ...about, phase: "collect", action: { type: "empireRelaunchAll" } };
+  const job = first.job;
+  if (job && order && (p.stock[order.good] ?? 0) < order.qty)
+    return { ...about, phase: "making", from: job.startedAt, at: job.startedAt + job.batchMs };
+  if (order && city)
+    return {
+      ...about,
+      phase: "deliver",
+      action: { type: "empireDeliverCity", city, orderIds: [order.id] },
+    };
+  // No town to serve it (a world without one): the game goes on as usual.
+  return null;
+}
 
 /** What the house keeps of a good: the next Casa's materials, two lots of each workshop's inputs. */
 export function keptOf(p: EmpirePayload, good: string): number {
@@ -46,6 +131,9 @@ function makerOf(p: EmpirePayload, good: string) {
 export function nextStep(p: EmpirePayload, now: number): NextStep {
   const view = p.view;
   if (!view) return { kind: "wait", at: null };
+  // 0. The welcome of a new house, before anything else.
+  const welcome = welcomeStep(p, now);
+  if (welcome) return welcome;
   const ws = view.house.workshops;
   const builds = view.house.builds ?? [];
   const freeSite = builds.length < view.buildSlots;

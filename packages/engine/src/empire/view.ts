@@ -84,6 +84,8 @@ export interface EmpireSite {
 
 export interface EmpireView {
   house: EmpireHouse;
+  /** The welcome of a new house (docs/plan-premiers-pas.md lot 2): the workshop to build first. */
+  welcome?: { workshop: { type: string; recipe: string } };
   /** The Porta and its arms (docs/plan-porta.md). */
   porta: PortaView;
   /** The fleet capped by the Remise's level (null without the fleet's levels). */
@@ -451,6 +453,7 @@ export function empireView(
   );
   return {
     house,
+    ...(house.welcome && s.welcome ? { welcome: { workshop: s.welcome.workshop } } : {}),
     power,
     band: bandOf(power, s),
     incomePerDay: incomePerDay(house, now),

@@ -372,6 +372,16 @@ export const en: Dictionary = {
     },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
+      bologna: "Bologna",
+      firenze: "Florence",
+      genova: "Genoa",
+      cremona: "Cremona",
+      trento: "Trent",
+      vienna: "Vienna",
+      salonicco: "Thessalonica",
+      nicosia: "Nicosia",
+      damasco: "Damascus",
+      trebisonda: "Trebizond",
       venezia: "Venice",
       verona: "Verona",
       padova: "Padua",
@@ -923,10 +933,32 @@ export const en: Dictionary = {
       wait: (at: string) => `All is running. Next lot at ${at}.`,
       waitNone: "All is running.",
       waitWhy: "Come back later: nothing is lost while you are away.",
+      welcome: {
+        build: (name: string) => `Touch a free tile and build a ${name.toLowerCase()} there.`,
+        buildWhy: (good: string) =>
+          `Your first workshop: it rises at once and will make ${good.toLowerCase()}.`,
+        buildAction: (_name: string) => "Build",
+        launch: (name: string) => `Your ${name.toLowerCase()} stands: set it to work.`,
+        launchWhy: "The first lot will be ready in a few seconds.",
+        launchAction: "Start production",
+        making: (good: string) => `Your first ${good.toLowerCase()} is being made…`,
+        makingWhy: (city: string) => `${city} has already ordered it: see its crate on the map.`,
+        makingWhyNone: "One moment more.",
+        collect: (good: string) => `Your ${good.toLowerCase()} is ready.`,
+        collectWhy: (city: string) => `Collect it: ${city} is waiting for it.`,
+        collectAction: "Collect",
+        deliver: (city: string, qty: number, good: string) =>
+          `${city} awaits ${qty} ${good.toLowerCase()}: deliver them.`,
+        deliverWhy: (pay: string) => `Your mule leaves at once, and you are paid ${pay}.`,
+        deliverAction: "Deliver",
+        onWay: (city: string) => `Your mule is on its way to ${city}.`,
+        onWayWhy: "You are paid on its arrival, then it comes back alone to the Fondaco.",
+        town: "the town",
+      },
       intro: [
         [
           "Welcome to Venice.",
-          "Your workshops produce, you sell, and with the ducats you build the Casa, which opens the rest of the game.",
+          "You build your workshops, they produce, you deliver the towns, and with the ducats you grow your Fondaco.",
         ],
         [
           "Your purse: {cash}.",

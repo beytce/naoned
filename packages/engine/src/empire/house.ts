@@ -181,6 +181,7 @@ export function empireJoin(tx: Tx, playerId: PlayerId): void {
       job: null,
     })),
     builds: [],
+    ...(s.welcome ? { welcome: {} } : {}),
     favour: 0,
     seals: 0,
     ...(s.start.vehicles.length > 0
@@ -279,7 +280,19 @@ export function startWorkshop(
   ).length;
   if (here + pending >= workshopPlaces(h, region, s)) fail("no_room");
   const share = shareOwningBps(tx, (x) => x.workshops.some((w) => w.level >= 1));
-  const site = openSite(tx, playerId, h, levelCost(1, s), {}, buildMinutesOf(1, s), share);
+  // The welcome: its workshop rises at once, the first of its kind (docs/plan-premiers-pas.md
+  // lot 2).
+  const first = h.welcome && !h.welcome.built && s.welcome?.workshop.type === type;
+  const site = openSite(
+    tx,
+    playerId,
+    h,
+    levelCost(1, s),
+    {},
+    first ? 0 : buildMinutesOf(1, s),
+    share,
+  );
+  if (h.welcome && first) h.welcome.built = true;
   h.builds.push({
     kind: "newWorkshop",
     level: 1,

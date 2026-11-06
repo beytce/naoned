@@ -21,6 +21,7 @@ import {
   interiorXp,
   settleInterior,
 } from "./interior/run.js";
+import { giveWelcomeOrder, welcomeOrderId } from "./orders.js";
 import { highRecipeRaw } from "./recipes.js";
 import type { EmpireSettings } from "./settings.js";
 import { gainXp } from "./staff.js";
@@ -102,8 +103,10 @@ export function relaunchWorkshop(
   const place = { workshopId: ws.id };
   // The apprentices make a lot quicker; a queue under way keeps its pace.
   const fresh = freshBatchMs(tx, h, ws, s);
-  // An inside that cannot work (a station without its hands) queues nothing.
+  // An inside that cannot work (a station without its hands) queues nothing; nor does the
+  // welcome's quick lot until it is done (lot 2).
   if (!ws.job && fresh === null) return;
+  if (ws.job?.once) return;
   const batchMs = ws.job?.batchMs ?? (fresh as number);
   const queueEnd = ws.job ? ws.job.startedAt + ws.job.batches * batchMs : tx.now;
   let add = Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs);
@@ -119,6 +122,33 @@ export function relaunchWorkshop(
   const raws = s.highRecipes.goods.filter((g) => !(g in r.outputs));
   const rawHeld = raws.reduce((n, g) => n + held(g), 0);
   while (add > 0 && highRecipeRaw(ws.level, add, s) > rawHeld) add--;
+  // The welcome (the first steps, lot 2): the first lot of its workshop in seconds, alone in its
+  // queue, and an order of welcome waiting for exactly it in the nearest town.
+  if (
+    !ws.job &&
+    add > 0 &&
+    h.welcome &&
+    !h.welcome.batch &&
+    s.welcome &&
+    ws.type === s.welcome.workshop.type
+  ) {
+    for (const [good, per = 0] of Object.entries(r.inputs))
+      takeAt(tx, h, playerId, post, good, need(per, 1), "production_input", ws.id);
+    ws.job = {
+      recipe: ws.recipe,
+      startedAt: tx.now,
+      batches: 1,
+      level: ws.level,
+      batchMs: s.welcome.batchSeconds * 1_000,
+      once: true,
+    };
+    h.welcome.batch = true;
+    const [good, qty = 0] = Object.entries(r.outputs)[0] ?? [];
+    const made = Math.floor((qty * lotYieldBps(ws.level, s)) / 10_000);
+    const city = good ? giveWelcomeOrder(tx.ctx, h, playerId, s, good, made, tx.now) : null;
+    if (city) h.welcome.order = welcomeOrderId(city);
+    return;
+  }
   if (add <= 0) return;
   for (const [good, per = 0] of Object.entries(r.inputs))
     takeAt(tx, h, playerId, post, good, need(per, add), "production_input", ws.id);

@@ -263,6 +263,16 @@ export const venice1450Empire: EmpireSettingsInput = {
     freeTiles: 3,
     vehicles: ["mule", "mule"],
   },
+  // The welcome (the first steps, lot 2, the owner's choice of 6 November 2026): the lumber camp
+  // first (wood, raw, no input, asked by Venetia's towns), raised at once; its first lot in thirty
+  // seconds, an order of welcome for it in the nearest town, brought in forty-five, paid a hundred
+  // ducats (a lot of wood is worth some thirty: the first delivery is felt). Once a house.
+  welcome: {
+    workshop: { type: "lumber_camp", recipe: "cut_wood" },
+    batchSeconds: 30,
+    tripSeconds: 45,
+    payDucats: 100,
+  },
   // The vehicles of step 4 (CADRAGE-v3 § 3.3), as the 24-month simulator has them; the ships come
   // with the sea.
   vehicles: {

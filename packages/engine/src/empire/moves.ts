@@ -7,7 +7,7 @@ import { holdPlacesOf } from "./fleet.js";
 import { roadLength } from "./grid.js";
 import { empireSettings, ownHouse } from "./house.js";
 import { citiesCovered, citySpot, standingPosts, unlockedOf } from "./map.js";
-import { cityOrdersAt, returnOrder, takeOrder } from "./orders.js";
+import { cityOrdersAt, isWelcomeOrder, returnOrder, takeOrder } from "./orders.js";
 import type { EmpireSettings } from "./settings.js";
 import { roadBetween } from "./slots.js";
 import { HOME_POST, postsServing, putAt, storeOf, takeAt } from "./stores.js";
@@ -104,7 +104,16 @@ export function moveVehicle(tx: Tx, playerId: PlayerId, vehicleId: string, to: s
   if (!a || !b) fail("unknown_target");
   const last = v.legs?.at(-1);
   const departAt = last ? last.arrivesAt : tx.now + s.moves.departSeconds * 1_000;
-  const leg: EmpireLeg = { from, to, departAt, arrivesAt: departAt + hopMs(s, a, b) };
+  // The welcome (the first steps, lot 2): the order of welcome's delivery goes quickly, once.
+  const code = placeCity(to);
+  const welcome =
+    s.welcome &&
+    h.welcome &&
+    !h.welcome.trip &&
+    (v.loads ?? []).some((o) => o.city === code && isWelcomeOrder(o.id));
+  const ms = welcome && s.welcome ? s.welcome.tripSeconds * 1_000 : hopMs(s, a, b);
+  if (welcome && h.welcome) h.welcome.trip = true;
+  const leg: EmpireLeg = { from, to, departAt, arrivesAt: departAt + ms };
   v.legs = [...(v.legs ?? []), leg];
   v.busyUntil = leg.arrivesAt;
 }
@@ -190,6 +199,7 @@ function arrive(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle, leg: Emp
   let paid = 0n;
   for (const o of here) {
     const pay = applyBpsFloor(o.pay, 10_000 + bonus);
+    if (isWelcomeOrder(o.id) && h.welcome) h.welcome.done = true;
     receive(tx, playerId, pay, `orders:${code}:${o.good}`);
     advanceCarnet(h, "deliver", o.qty);
     paid += pay;

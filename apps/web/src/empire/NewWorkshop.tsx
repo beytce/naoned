@@ -65,6 +65,9 @@ export function NewWorkshopList({
   tile?: string;
 }) {
   const view = p.view;
+  // The welcome's first workshop comes first, in gold, wherever the list was opened (lot 2).
+  if (!highlight && view?.welcome && !view.house.welcome?.built)
+    highlight = view.welcome.workshop.recipe;
   const square = view?.map.grid === "square";
   const at = square ? (tile ?? freeTileOf(p, region)) : undefined;
   if (square && !at) return <p className="text-sm text-cream-dim">{t.porcellana.noFreeTile}</p>;

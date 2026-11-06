@@ -296,6 +296,16 @@ const frDict = {
     },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
+      bologna: "Bologne",
+      firenze: "Florence",
+      genova: "Gênes",
+      cremona: "Crémone",
+      trento: "Trente",
+      vienna: "Vienne",
+      salonicco: "Salonique",
+      nicosia: "Nicosie",
+      damasco: "Damas",
+      trebisonda: "Trébizonde",
       venezia: "Venise",
       verona: "Vérone",
       padova: "Padoue",
@@ -854,10 +864,34 @@ const frDict = {
       wait: (at: string) => `Tout tourne. Prochain lot à ${at}.`,
       waitNone: "Tout tourne.",
       waitWhy: "Revenez plus tard : rien ne se perd pendant votre absence.",
+      // The welcome of a new house (docs/plan-premiers-pas.md lot 2), a gesture at a time.
+      welcome: {
+        build: (name: string) => `Touchez une case libre et bâtissez-y un ${name.toLowerCase()}.`,
+        buildWhy: (good: string) =>
+          `Votre premier atelier : il se dresse tout de suite et fera du ${good.toLowerCase()}.`,
+        buildAction: (_name: string) => "Bâtir",
+        launch: (name: string) => `Votre ${name.toLowerCase()} est debout : lancez-le.`,
+        launchWhy: "Le premier lot sera prêt en quelques secondes.",
+        launchAction: "Lancer la production",
+        making: (good: string) => `Votre premier ${good.toLowerCase()} se fait…`,
+        makingWhy: (city: string) =>
+          `${city} vous en a déjà commandé : regardez sa caisse sur la carte.`,
+        makingWhyNone: "Encore un instant.",
+        collect: (good: string) => `Votre ${good.toLowerCase()} est prêt.`,
+        collectWhy: (city: string) => `Ramassez-le : ${city} l'attend.`,
+        collectAction: "Ramasser",
+        deliver: (city: string, qty: number, good: string) =>
+          `${city} attend ${qty} ${good.toLowerCase()} : livrez-les.`,
+        deliverWhy: (pay: string) => `Votre mule part tout de suite, et vous êtes payé ${pay}.`,
+        deliverAction: "Livrer",
+        onWay: (city: string) => `Votre mule est en route pour ${city}.`,
+        onWayWhy: "Vous serez payé à son arrivée, puis elle rentre seule au Fondaco.",
+        town: "la ville",
+      },
       intro: [
         [
           "Bienvenue à Venise.",
-          "Vos ateliers produisent, vous vendez, et avec les ducats vous bâtissez la Casa, qui ouvre la suite du jeu.",
+          "Vous bâtissez vos ateliers, ils produisent, vous livrez les villes, et avec les ducats vous faites grandir votre Fondaco.",
         ],
         [
           "Votre caisse : {cash}.",

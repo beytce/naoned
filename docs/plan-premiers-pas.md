@@ -43,4 +43,5 @@
 | Lot | État |
 | --- | --- |
 | 1 | fait : moteur (`start.freeTiles`, `giveStartTiles`), thème (650 ducats, aucun atelier, trois cases), simulateur (premiers ateliers payés), tests du serveur (`test/empire-start.ts` bâtit les trois premiers ateliers comme le joueur) ; simulateur de 24 mois : voir `docs/calibration.md` (Les premiers pas) |
-| 2 à 6 | à faire, un lot après l'autre |
+| 2 | fait : moteur (`welcome` des réglages et de la maison ; le camp de bûcherons de l'accueil debout tout de suite, son premier lot en 30 s seul dans sa file, `once`, la commande d'accueil `<ville>#welcome` dans la ville de Vénétie la plus proche hors du plafond de la ville, 100 ducats, son trajet en 45 s ; tests `welcome.test.ts`) ; web (l'étape `welcome` de Lorenzo avant toute autre, ses six phases, son bouton toujours là, l'arc du temps, la main sur la case, l'atelier ou la ville ; les cases libres appellent en rouge ; la liste met le camp en tête). Au passage : le règlement d'une arrivée à son heure, débranché depuis le lot 8 de Porcellana (une livraison n'était payée qu'à l'action suivante), rebranché ; dix villes sans nom français. Parcours dans le jeu : de la fondation au paiement en 91 s en suivant les seuls boutons de Lorenzo. Reste pour le lot 4 : la caméra qui suit la mule vers la ville |
+| 3 à 6 | à faire, un lot après l'autre |

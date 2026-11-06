@@ -296,6 +296,19 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         });
     }, 400);
   }, [take]);
+  // The next hop's arrival: settled at its hour, so that a delivery is paid as the vehicle comes
+  // (the welcome's first order among them, docs/plan-premiers-pas.md lot 2).
+  const arrival = (p.view?.vehicles?.mine ?? [])
+    .flatMap((v) => v.legs.map((l) => l.arrivesAt))
+    .filter((t) => t > p.now)
+    .reduce((a, b) => Math.min(a, b), Number.POSITIVE_INFINITY);
+  useEffect(() => {
+    if (!Number.isFinite(arrival)) return;
+    const wait = Math.max(0, arrival - (Date.now() + skew.current)) + 300;
+    if (wait > 2 ** 31 - 1) return;
+    const id = window.setTimeout(settle, wait);
+    return () => window.clearTimeout(id);
+  }, [arrival, settle]);
   /** The vehicle before or after the one chosen. */
   const cycle = (step: 1 | -1) => {
     const mine = p.view?.vehicles.mine ?? [];
@@ -495,7 +508,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       act={act}
       onBuild={(recipe) => {
         setHighlight(recipe);
-        setSheet("production");
+        // The welcome's first workshop: straight to the list of a free tile (lot 2).
+        setSheet(step.kind === "welcome" ? "new" : "production");
       }}
     />
   );
@@ -510,7 +524,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         act={act}
         onBuild={(recipe) => {
           setHighlight(recipe);
-          setSheet("production");
+          setSheet(step.kind === "welcome" ? "new" : "production");
         }}
       />
     </div>

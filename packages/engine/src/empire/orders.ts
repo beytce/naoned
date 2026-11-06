@@ -144,8 +144,10 @@ export function cityOrdersAt(
 ): EmpireCityOrders {
   const c = s.map.cities.find((x) => x.code === code);
   const kept = h.orders?.[code];
-  const list = [...(kept?.list ?? [])];
-  if (!c || !s.orders) return { next: now, seq: kept?.seq ?? 0, list };
+  if (!c || !s.orders) return { next: now, seq: kept?.seq ?? 0, list: [...(kept?.list ?? [])] };
+  // The order of welcome waits apart, out of the city's cap (the first steps, lot 2).
+  const welcome = (kept?.list ?? []).filter((o) => isWelcomeOrder(o.id));
+  const list = (kept?.list ?? []).filter((o) => !isWelcomeOrder(o.id));
   const cap = capOf(s, c.size);
   const every = everyMs(s, c.size);
   const goods = weightedGoods(
@@ -179,9 +181,9 @@ export function cityOrdersAt(
         )
         .slice(0, cap),
     );
-    return { next, seq, list: list.filter((o) => keep.has(o)) };
+    return { next, seq, list: [...welcome, ...list.filter((o) => keep.has(o))] };
   }
-  return { next, seq, list };
+  return { next, seq, list: [...welcome, ...list] };
 }
 
 /** The orders of every city the house's counters serve, at a time. */
@@ -229,7 +231,9 @@ export function takeOrder(
   if (!o) return null;
   const c = s.map.cities.find((x) => x.code === code);
   // Full until now: the next one an interval after this place is freed.
-  const next = c && rec.list.length >= capOf(s, c.size) ? now + everyMs(s, c.size) : rec.next;
+  const held = rec.list.filter((x) => !isWelcomeOrder(x.id)).length;
+  const full = c && !isWelcomeOrder(o.id) && held >= capOf(s, c.size);
+  const next = full && c ? now + everyMs(s, c.size) : rec.next;
   h.orders = {
     ...(h.orders ?? {}),
     [code]: { next, seq: rec.seq, list: rec.list.filter((x) => x !== o) },
@@ -288,4 +292,53 @@ export function settleOrders(
   const next = { ...(h.orders ?? {}) };
   for (const code of citiesCovered(h, s)) next[code] = cityOrdersAt(ctx, h, playerId, s, code, now);
   h.orders = next;
+}
+
+/** The id of the order of welcome in its city (docs/plan-premiers-pas.md lot 2). */
+export const welcomeOrderId = (city: string) => `${city}#welcome`;
+export const isWelcomeOrder = (id: string) => id.endsWith("#welcome");
+
+/**
+ * The order of welcome (the first steps, lot 2): in the town the house serves nearest its first
+ * fondaco that trades the good, of its own region first, exactly the first lot, paid the welcome's sum. It waits there, its
+ * city's cap notwithstanding, until it is brought. Returns its city, or null when no town serves.
+ */
+export function giveWelcomeOrder(
+  ctx: WorldContext,
+  h: EmpireHouse,
+  playerId: PlayerId,
+  s: EmpireSettings,
+  good: string,
+  qty: number,
+  now: number,
+): string | null {
+  if (!s.orders || !s.welcome || qty <= 0) return null;
+  const home = standingPosts(h, s)[0];
+  if (!home) return null;
+  const covered = citiesCovered(h, s);
+  const city = s.map.cities
+    .filter((c) => covered.has(c.code) && orderRefOf(s, c.region, good) !== null)
+    .map((c) => {
+      const [x, y] = citySpot(c, s);
+      return { c, d: Math.hypot(x - home.x, y - home.y) };
+    })
+    // Venetia's towns first (the house's own region), then the nearest.
+    .sort(
+      (a, b) =>
+        Number(a.c.region !== home.region) - Number(b.c.region !== home.region) ||
+        a.d - b.d ||
+        a.c.code.localeCompare(b.c.code),
+    )[0]?.c;
+  if (!city) return null;
+  trackOrders(h, s, now);
+  const rec = cityOrdersAt(ctx, h, playerId, s, city.code, now);
+  const order: EmpireOrder = {
+    id: welcomeOrderId(city.code),
+    city: city.code,
+    good,
+    qty,
+    pay: BigInt(s.welcome.payDucats) * DENIERS_PER_DUCAT,
+  };
+  h.orders = { ...(h.orders ?? {}), [city.code]: { ...rec, list: [order, ...rec.list] } };
+  return city.code;
 }

@@ -71,7 +71,11 @@ export interface EmpireView {
     modules?: Record<string, number>;
     favour: number;
     seals: number;
+    /** The welcome of a new house (docs/plan-premiers-pas.md lot 2), each haste once. */
+    welcome?: { built?: true; batch?: true; order?: string; trip?: true; done?: true };
   };
+  /** The welcome: the workshop to build first (absent for the houses of before). */
+  welcome?: { workshop: { type: string; recipe: string } };
   power: number;
   band: number;
   /** The fleet capped by the Remise's level (null without the fleet's levels). */

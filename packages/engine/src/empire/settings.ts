@@ -133,6 +133,20 @@ export const empireSettingsSchema = z.object({
     })
     .nullable()
     .prefault(null),
+  /**
+   * The welcome of a new house (the first steps, docs/plan-premiers-pas.md lot 2): the workshop
+   * the guide has built first, at once; its first lot in `batchSeconds`; an order of welcome in the
+   * nearest town for exactly that lot, paid `payDucats`; its first delivery in `tripSeconds`. Once,
+   * for the houses founded with it. None: no welcome.
+   */
+  welcome: z
+    .object({
+      workshop: z.object({ type: z.string(), recipe: z.string() }),
+      batchSeconds: positive,
+      tripSeconds: positive,
+      payDucats: positive,
+    })
+    .optional(),
   /** The vehicles' hops (after Hades' Star): seconds before leaving, speed, stops queued at most. */
   moves: z
     .object({

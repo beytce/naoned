@@ -7,6 +7,7 @@
 import { tileAt } from "@comptoirs/engine";
 import { buildingName, workshopStatus } from "../../empire/logic.js";
 import { type Target, deliveryPlan } from "../../empire/map/logic.js";
+import { welcomeStep } from "../../empire/next.js";
 import type { EmpirePayload } from "../../empire/types.js";
 import { fr } from "../../i18n.js";
 
@@ -161,6 +162,9 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
   }
 
   // The house's own tiles: plain land, its dressing round the roads; free, a workshop may rise there.
+  // While the welcome asks the first workshop (the first steps, lot 2), the free tiles call: a « + »
+  // in accent over each, the one to touch.
+  const calling = welcomeStep(p, now)?.phase === "build";
   for (const k of owned)
     put(k, {
       water: false,
@@ -173,9 +177,9 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         sub: t.porcellana.freeSub,
         line: t.porcellana.freeLine,
         go: t.porcellana.build,
-        pin: "",
-        ready: false,
-        quiet: true,
+        pin: calling ? "+" : "",
+        ready: calling,
+        quiet: !calling,
       },
     });
 

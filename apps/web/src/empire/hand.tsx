@@ -27,6 +27,19 @@ export function handTargets(step: NextStep): string[] {
       return ["[data-place-tab=company]"];
     case "wait":
       return [];
+    // The welcome (lot 2): on the map, the object to touch.
+    case "welcome":
+      switch (step.phase) {
+        case "build":
+          return ["[data-place^='free:']", "[data-place-tab=map]"];
+        case "launch":
+        case "collect":
+          return [`[data-place='workshop:${step.workshopId}']`, "[data-place-tab=map]"];
+        case "deliver":
+          return [`[data-place='city:${step.city}']`, "[data-place-tab=map]"];
+        default:
+          return [];
+      }
   }
 }
 
