@@ -920,6 +920,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
                 p={p}
                 workshopId={inside}
                 now={now}
+                busy={busy}
+                act={act}
                 onClose={() => {
                   setTarget({ kind: "workshop", id: inside });
                   setInside(null);

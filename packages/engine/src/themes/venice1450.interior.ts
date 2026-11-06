@@ -77,7 +77,7 @@ const STATIONS = {
   barking: station(["labourer"], 35, 1, 1),
   saw_bench: station(["sawyer"], 110, 2, 1, { size: [2, 1], cost: 90 }),
   drying_shed: station([], 50, 2, 0),
-  planing: station(["carpenter"], 35, 1, 1),
+  planing: station(["carpenter"], 28, 1, 1),
   // The brickworks: to mix, to mould, to dry, to fire.
   clay_mixer: station(["brickmaker"], 30, 1, 1),
   brick_mould: station(["brickmaker"], 40, 1, 1),

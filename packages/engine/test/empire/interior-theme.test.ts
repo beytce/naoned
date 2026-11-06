@@ -61,6 +61,13 @@ describe("Venice's insides", () => {
     }
   });
 
+  it.each(types)("%s: its bottleneck is alone, so that breaking it pays", (t) => {
+    const rates = interiorThroughput(workshop(t, 1), {}, s)
+      .stages.map((x) => x.rateMilli)
+      .sort((a, b) => a - b);
+    expect(rates[0]).toBeLessThan(rates[1] ?? Number.POSITIVE_INFINITY);
+  });
+
   it("every station that takes hands names a trade", () => {
     for (const [code, k] of Object.entries(I.stations))
       if ((k.levels[0]?.seats ?? 0) > 0) expect(k.trades.length, code).toBeGreaterThan(0);

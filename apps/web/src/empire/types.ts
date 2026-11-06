@@ -367,6 +367,8 @@ export interface EmpireRecipe {
 
 /** The rules of the insides as the server sends them (its money as strings). */
 export interface InteriorRules {
+  wear?: { careCostDucats: string };
+  hands?: { hireCostDucats: string; perSeat: number };
   stations: Record<
     string,
     {
@@ -398,6 +400,35 @@ export interface EmpirePayload {
 
 export type EmpireAction =
   | PortaAction
+  // The workshops' insides (docs/plan-ateliers.md § 5.5).
+  | {
+      type: "empireInteriorPlace";
+      workshopId: string;
+      kind: string;
+      x: number;
+      y: number;
+      rot: number;
+    }
+  | {
+      type: "empireInteriorMove";
+      workshopId: string;
+      stationId: string;
+      x: number;
+      y: number;
+      rot: number;
+    }
+  | { type: "empireInteriorRemove"; workshopId: string; stationId: string }
+  | { type: "empireInteriorUpgrade"; workshopId: string; stationId: string }
+  | { type: "empireInteriorCare"; workshopId: string; stationId: string; care: number }
+  | { type: "empireInteriorMaintain"; workshopId: string; stationId?: string }
+  | { type: "empireInteriorHire"; workshopId: string; trade: string }
+  | {
+      type: "empireInteriorAssign";
+      workshopId: string;
+      handId: string;
+      stationId: string | null;
+      shift: "day" | "night";
+    }
   | { type: "empireBuildCasa" }
   | {
       type: "empireBuildWorkshop";

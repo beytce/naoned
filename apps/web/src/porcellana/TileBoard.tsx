@@ -116,6 +116,8 @@ export interface Shared {
   insetRight?: number;
   /** More pins, each at a point of a place's tile (the sockets round a vehicle), by their key. */
   extra?: Map<string, { place: string; at: [number, number, number] }>;
+  /** Pins on any flagstone of the board, by their key: its column, its row (a workshop's inside). */
+  points?: Map<string, [number, number]>;
 }
 
 const PHONE = () => window.innerWidth < 640;
@@ -428,6 +430,16 @@ export function TileBoard({
       el.dataset.out = String(out);
       if (t.place.id === sh.chosen) sh.card?.place(x, y, w, h);
     }
+    if (sh.points)
+      for (const [key, [i, j]] of sh.points) {
+        const el = sh.pins.get(key);
+        if (!el) continue;
+        tmp.set(wx(i), 1.2, wz(j)).project(camera);
+        const x = (tmp.x * 0.5 + 0.5) * w;
+        const y = (-tmp.y * 0.5 + 0.5) * h;
+        el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
+        el.dataset.out = String(lifeOut(c.t));
+      }
     if (sh.extra)
       for (const [key, e] of sh.extra) {
         const el = sh.pins.get(key);
