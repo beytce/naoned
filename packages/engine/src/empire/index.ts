@@ -25,6 +25,7 @@ export * from "./slots.js";
 export * from "./fleet.js";
 export * from "./interior/settings.js";
 export * from "./interior/throughput.js";
+export * from "./interior/run.js";
 export * from "./porta/settings.js";
 export * from "./porta/arms.js";
 export * from "./porta/battle/types.js";

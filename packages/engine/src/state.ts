@@ -337,6 +337,27 @@ export interface InteriorStation {
   wear: number;
   /** Care, 0 (quick) to 10 000 (careful). */
   care: number;
+  /**
+   * Its building site (placed, or raised a level) ends then: until it does, it works at the level
+   * below, and a station just placed does not work.
+   */
+  readyAt?: number;
+}
+
+/** A hand of a workshop, hired at its door (docs/plan-ateliers.md § 3.3, decided 6 November 2026). */
+export interface InteriorHand {
+  id: string;
+  /** Its trade: sawyer, carpenter, labourer… */
+  trade: string;
+  rarity: string;
+  /** Its skill, 1 to the staff's last level, growing with the lots of its workshop. */
+  level: number;
+  xp: number;
+  /** Fatigue, 0 to 10 000 bps. */
+  fatigue: number;
+  /** The station it works at (none: it waits at the door), and its shift. */
+  stationId?: string;
+  shift: "day" | "night";
 }
 
 /** A conveyor from a station (or the door « in ») to the next (or the door « out »), by its tiles. */
@@ -354,6 +375,8 @@ export interface WorkshopInterior {
   links: InteriorLink[];
   /** Crates waiting between two stages, by « stage>stage ». */
   buffers: Record<string, number>;
+  /** Its hands, hired at its door. */
+  hands?: InteriorHand[];
   /** When its wear and fatigue were last settled. */
   settledAt: number;
   /** Seed of its incidents. */

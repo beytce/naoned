@@ -1,4 +1,4 @@
-import type { EmpireStaff, EmpireWorkshop, InteriorStation } from "../../state.js";
+import type { EmpireStaff, EmpireWorkshop, InteriorHand, InteriorStation } from "../../state.js";
 import type { EmpireSettings } from "../settings.js";
 import type { InteriorSettings } from "./settings.js";
 
@@ -113,6 +113,15 @@ export function interiorLayoutProblem(ws: EmpireWorkshop, s: EmpireSettings): La
       taken.add(k);
     }
   }
+  // The conveyors take their flagstones too.
+  for (const l of inside.links)
+    for (const [x, y] of l.via) {
+      if (x < 0 || y < 0 || x >= w || y >= h) return "outside";
+      const k = `${x},${y}`;
+      if (walls.has(k)) return "wall";
+      if (taken.has(k)) return "overlap";
+      taken.add(k);
+    }
   return null;
 }
 
@@ -144,13 +153,44 @@ export function fatigueResting(fatigue: number, ms: number, I: InteriorSettings)
 const byId = <T extends { id: string }>(a: T, b: T) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 const dist = (a: Tile, b: Tile) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 
+/** A hand at work, whether hired at the door or of the family (the staff). */
+interface Worker {
+  id: string;
+  trade?: string;
+  level: number;
+  rarity: string;
+  fatigue?: number;
+  stationId?: string;
+  shift: "day" | "night";
+}
+
+/** The hands working in a workshop: its own, then the staff placed at its stations. */
+export function workersOf(ws: EmpireWorkshop, staff: EmpireStaff[] = []): Worker[] {
+  const own: Worker[] = (ws.interior?.hands ?? []).map((x: InteriorHand) => ({ ...x }));
+  for (const m of staff)
+    if (m.station?.workshopId === ws.id)
+      own.push({
+        id: m.id,
+        ...(m.trade ? { trade: m.trade } : {}),
+        level: m.level,
+        rarity: m.rarity,
+        fatigue: m.fatigue ?? 0,
+        stationId: m.station.stationId,
+        shift: m.station.shift,
+      });
+  return own.sort(byId);
+}
+
+/**
+ * A station's level at work at `at`: the one below while its site runs (0, not yet standing, for
+ * a station just placed). Without `at`, every site has ended.
+ */
+export function workingLevel(st: InteriorStation, at?: number): number {
+  return at !== undefined && st.readyAt !== undefined && st.readyAt > at ? st.level - 1 : st.level;
+}
+
 /** What a hand gives at a station, in bps: its trade's fit, its skill, its rarity, its fatigue. */
-function handBps(
-  hand: EmpireStaff,
-  trades: string[],
-  I: InteriorSettings,
-  s: EmpireSettings,
-): number {
+function handBps(hand: Worker, trades: string[], I: InteriorSettings, s: EmpireSettings): number {
   const fit =
     hand.trade && trades.includes(hand.trade)
       ? I.tradeFit.same
@@ -172,14 +212,14 @@ function handsBps(
   st: InteriorStation,
   seats: number,
   trades: string[],
-  hands: EmpireStaff[],
+  hands: Worker[],
   I: InteriorSettings,
   s: EmpireSettings,
 ): number {
   if (seats === 0) return FULL;
   const shift = (which: "day" | "night") =>
     hands
-      .filter((x) => x.station?.stationId === st.id && x.station.shift === which)
+      .filter((x) => x.stationId === st.id && x.shift === which)
       .map((x) => handBps(x, trades, I, s))
       .sort((a, b) => b - a)
       .slice(0, seats)
@@ -191,18 +231,25 @@ function handsBps(
   return Math.floor((day + night) / 2);
 }
 
-/** The rate of a workshop's inside; zero everywhere for a workshop without one. */
+/**
+ * The rate of a workshop's inside at `at` (its sites ended by then; all of them without `at`).
+ */
 export function interiorThroughput(
   ws: EmpireWorkshop,
   h: { staff?: EmpireStaff[] },
   s: EmpireSettings,
+  at?: number,
 ): InteriorThroughput {
   const I = need(s);
   const b = I.buildings[ws.type];
   const inside = ws.interior;
   if (!b || !inside) throw new Error(`no inside for ${ws.type}`);
-  const hands = (h.staff ?? []).filter((x) => x.station?.workshopId === ws.id).sort(byId);
-  const stations = [...inside.stations].sort(byId);
+  const hands = workersOf(ws, h.staff);
+  // A station works at the level its sites have reached; one just placed is not there yet.
+  const stations = inside.stations
+    .map((st) => ({ ...st, level: workingLevel(st, at) }))
+    .filter((st) => st.level >= 1)
+    .sort(byId);
   const stageOf = new Map<string, number>();
   b.stages.forEach((st, k) => {
     for (const kind of st.stations) stageOf.set(kind, k);

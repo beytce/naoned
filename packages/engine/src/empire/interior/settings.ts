@@ -87,6 +87,12 @@ export const interiorSettingsSchema = z
     skillPerLevelBps: qty,
     /** Care at its full (10 000) lengthens a cycle by `slowdownBps` and gives `qualityBps`. */
     care: z.object({ slowdownBps: bps, qualityBps: bps }),
+    /** A hand hired at a workshop's door; so many hands a seat of its stations, at most. */
+    hands: z.object({ hireCostDucats: money, perSeat: positive }),
+    /** A conveyor's price, a flagstone. */
+    conveyorCostDucats: money,
+    /** What a station taken down (or a conveyor) gives back of what it cost. */
+    refundBps: bps,
     stations: z.record(z.string(), stationKind),
     buildings: z.record(z.string(), building),
   })

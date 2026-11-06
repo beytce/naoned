@@ -52,6 +52,20 @@ import {
   startWorkshop,
   upgradeCounter,
 } from "./empire/house.js";
+import {
+  assignHand,
+  hireHand,
+  linkStations,
+  maintainStations,
+  moveStation,
+  placeStation,
+  removeStation,
+  setBuffer,
+  setCare,
+  unlinkStations,
+  upgradeStation,
+} from "./empire/interior/commands.js";
+import { ensureInterior } from "./empire/interior/run.js";
 import { startLearning } from "./empire/knowledge.js";
 import {
   buildCamp,
@@ -343,6 +357,66 @@ type EmpireCommandOf =
   | { type: "empireUpgrade"; playerId: PlayerId; workshopId: string }
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll"; playerId: PlayerId }
+  // The workshops' insides (docs/plan-ateliers.md § 5.5).
+  | {
+      type: "empireInteriorPlace";
+      playerId: PlayerId;
+      workshopId: string;
+      kind: string;
+      x: number;
+      y: number;
+      rot: number;
+    }
+  | {
+      type: "empireInteriorMove";
+      playerId: PlayerId;
+      workshopId: string;
+      stationId: string;
+      x: number;
+      y: number;
+      rot: number;
+    }
+  | { type: "empireInteriorRemove"; playerId: PlayerId; workshopId: string; stationId: string }
+  | { type: "empireInteriorUpgrade"; playerId: PlayerId; workshopId: string; stationId: string }
+  | {
+      type: "empireInteriorLink";
+      playerId: PlayerId;
+      workshopId: string;
+      from: string;
+      to: string;
+      via: [number, number][];
+    }
+  | {
+      type: "empireInteriorUnlink";
+      playerId: PlayerId;
+      workshopId: string;
+      from: string;
+      to: string;
+    }
+  | {
+      type: "empireInteriorBuffer";
+      playerId: PlayerId;
+      workshopId: string;
+      link: string;
+      size: number;
+    }
+  | {
+      type: "empireInteriorCare";
+      playerId: PlayerId;
+      workshopId: string;
+      stationId: string;
+      care: number;
+    }
+  | { type: "empireInteriorMaintain"; playerId: PlayerId; workshopId: string; stationId?: string }
+  | { type: "empireInteriorHire"; playerId: PlayerId; workshopId: string; trade: string }
+  | {
+      type: "empireInteriorAssign";
+      playerId: PlayerId;
+      workshopId: string;
+      handId: string;
+      stationId: string | null;
+      shift: "day" | "night";
+    }
   | { type: "empireSell"; playerId: PlayerId; good: string; qty: number; region?: string }
   | { type: "empireBuy"; playerId: PlayerId; good: string; qty: number; post?: string }
   | {
@@ -586,6 +660,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     h.favour += Math.max(0, Math.floor(cmd.favour ?? 0));
     ensureCarnet(tx, cmd.playerId, h);
     ensureMap(h, empireSettings(tx.ctx));
+    ensureInterior(h, empireSettings(tx.ctx), tx.now);
     settleOrders(tx.ctx, h, cmd.playerId, empireSettings(tx.ctx), tx.now);
     passGenerations(tx, cmd.playerId);
     return;
@@ -595,6 +670,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   settleBuilds(h, tx.now);
   ensureCarnet(tx, cmd.playerId, h);
   ensureMap(h, empireSettings(tx.ctx));
+  ensureInterior(h, empireSettings(tx.ctx), tx.now);
   settleOrders(tx.ctx, h, cmd.playerId, empireSettings(tx.ctx), tx.now);
   ensureFitted(h, empireSettings(tx.ctx));
   ensureArmPlaces(h, empireSettings(tx.ctx));
@@ -622,6 +698,39 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     case "empireRelaunchAll":
       relaunchAll(tx, cmd.playerId);
       advanceCarnet(h, "relaunch", 1);
+      break;
+    case "empireInteriorPlace":
+      placeStation(tx, cmd.playerId, cmd.workshopId, cmd.kind, cmd.x, cmd.y, cmd.rot);
+      break;
+    case "empireInteriorMove":
+      moveStation(tx, cmd.playerId, cmd.workshopId, cmd.stationId, cmd.x, cmd.y, cmd.rot);
+      break;
+    case "empireInteriorRemove":
+      removeStation(tx, cmd.playerId, cmd.workshopId, cmd.stationId);
+      break;
+    case "empireInteriorUpgrade":
+      upgradeStation(tx, cmd.playerId, cmd.workshopId, cmd.stationId);
+      break;
+    case "empireInteriorLink":
+      linkStations(tx, cmd.playerId, cmd.workshopId, cmd.from, cmd.to, cmd.via);
+      break;
+    case "empireInteriorUnlink":
+      unlinkStations(tx, cmd.playerId, cmd.workshopId, cmd.from, cmd.to);
+      break;
+    case "empireInteriorBuffer":
+      setBuffer(tx, cmd.playerId, cmd.workshopId, cmd.link, cmd.size);
+      break;
+    case "empireInteriorCare":
+      setCare(tx, cmd.playerId, cmd.workshopId, cmd.stationId, cmd.care);
+      break;
+    case "empireInteriorMaintain":
+      maintainStations(tx, cmd.playerId, cmd.workshopId, cmd.stationId);
+      break;
+    case "empireInteriorHire":
+      hireHand(tx, cmd.playerId, cmd.workshopId, cmd.trade);
+      break;
+    case "empireInteriorAssign":
+      assignHand(tx, cmd.playerId, cmd.workshopId, cmd.handId, cmd.stationId, cmd.shift);
       break;
     case "empireClaim":
       claimObjective(tx, cmd.playerId, cmd.index);

@@ -14,6 +14,13 @@ import { lotYieldBps } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { tilesTouch } from "./grid.js";
 import { empireSettings, ownHouse } from "./house.js";
+import {
+  interiorByproduct,
+  interiorPaceBps,
+  interiorQualityBps,
+  interiorXp,
+  settleInterior,
+} from "./interior/run.js";
 import { highRecipeRaw } from "./recipes.js";
 import type { EmpireSettings } from "./settings.js";
 import { gainXp } from "./staff.js";
@@ -30,19 +37,24 @@ function recipeOf(tx: Tx, ws: EmpireWorkshop) {
  * finished counts for every lot not yet taken.
  */
 export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  // Its inside's wear and fatigue first, while the queue still tells when it ran.
+  settleInterior(ws, h, s, tx.now);
   const job = ws.job;
   if (!job) return;
   const done = Math.min(job.batches, Math.floor((tx.now - job.startedAt) / job.batchMs));
   if (done <= 0) return;
-  const s = empireSettings(tx.ctx);
   const recipe = recipeOf(tx, ws);
-  const h = ownHouse(tx, playerId);
   const yieldBps = applyBps(
     lotYieldBps(ws.level, s),
     houseEffect(h, "workshopYield", s, { workshopId: ws.id }) + neighbourBonus(tx.ctx, h, ws, s),
   );
   // A share of the lots comes out better (the master), a share of those exquisite.
-  const quality = Math.min(10_000, houseEffect(h, "quality", s, { workshopId: ws.id }));
+  const quality = Math.min(
+    10_000,
+    houseEffect(h, "quality", s, { workshopId: ws.id }) + interiorQualityBps(ws, h, s, tx.now),
+  );
   for (const [good, qty = 0] of Object.entries(recipe.outputs)) {
     const made = Math.floor((qty * done * yieldBps) / 10_000);
     const better = Math.floor((made * quality) / 10_000);
@@ -53,8 +65,13 @@ export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop):
     putAt(tx, h, playerId, post, `${good}:fine`, better - exquisite, "production_output", ws.id);
     putAt(tx, h, playerId, post, `${good}:exquisite`, exquisite, "production_output", ws.id);
   }
-  // Its master grows with the lots of its workshop.
+  // What falls aside (the sawdust), when the theme knows the good.
+  const by = interiorByproduct(ws, done, s);
+  if (by && tx.ctx.theme.resources.some((r) => r.code === by.good))
+    putAt(tx, h, playerId, workshopPost(h, s, ws), by.good, by.qty, "production_output", ws.id);
+  // Its master grows with the lots of its workshop, and its hands.
   for (const m of h.staff ?? []) if (m.placedAt === ws.id) gainXp(m, done, s);
+  interiorXp(ws, done, s);
   job.batches -= done;
   job.startedAt += done * job.batchMs;
   if (job.batches === 0) ws.job = null;
@@ -84,11 +101,10 @@ export function relaunchWorkshop(
   const r = recipeOf(tx, ws);
   const place = { workshopId: ws.id };
   // The apprentices make a lot quicker; a queue under way keeps its pace.
-  const speed = houseEffect(h, "workshopSpeed", s, place);
-  const fresh = Math.round(
-    (Math.max(1, r.durationMinutes) * MINUTE_MS * 10_000) / (10_000 + speed),
-  );
-  const batchMs = ws.job?.batchMs ?? fresh;
+  const fresh = freshBatchMs(tx, h, ws, s);
+  // An inside that cannot work (a station without its hands) queues nothing.
+  if (!ws.job && fresh === null) return;
+  const batchMs = ws.job?.batchMs ?? (fresh as number);
   const queueEnd = ws.job ? ws.job.startedAt + ws.job.batches * batchMs : tx.now;
   let add = Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs);
   // The furnace saves inputs: a share of a lot's, in whole units over the queue.
@@ -114,6 +130,43 @@ export function relaunchWorkshop(
   }
   if (ws.job) ws.job.batches += add;
   else ws.job = { recipe: ws.recipe, startedAt: tx.now, batches: add, level: ws.level, batchMs };
+}
+
+/**
+ * A lot's length for a queue filled now: the recipe's, quicker with the apprentices, and at its
+ * inside's pace (docs/plan-ateliers.md § 5.1); null while the inside cannot work.
+ */
+function freshBatchMs(
+  tx: Tx,
+  h: EmpireHouse,
+  ws: EmpireWorkshop,
+  s: EmpireSettings,
+): number | null {
+  const r = recipeOf(tx, ws);
+  const speed = houseEffect(h, "workshopSpeed", s, { workshopId: ws.id });
+  const pace = interiorPaceBps(ws, h, s, tx.now);
+  if (pace <= 0) return null;
+  return Math.max(
+    1,
+    Math.round(
+      (Math.max(1, r.durationMinutes) * MINUTE_MS * 10_000 * 10_000) / ((10_000 + speed) * pace),
+    ),
+  );
+}
+
+/**
+ * After a change inside: the lot under way ends when it would have, the lots after it take the new
+ * pace (no going back on what is done, no gain on what is under way). A pace of nothing changes
+ * nothing: the queue keeps the pace it was filled at.
+ */
+export function repaceWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop): void {
+  const job = ws.job;
+  if (!job) return;
+  const fresh = freshBatchMs(tx, ownHouse(tx, playerId), ws, empireSettings(tx.ctx));
+  if (fresh === null || fresh === job.batchMs) return;
+  const firstEnds = job.startedAt + job.batchMs;
+  job.batchMs = fresh;
+  job.startedAt = firstEnds - fresh;
 }
 
 export function relaunchAll(tx: Tx, playerId: PlayerId): void {
