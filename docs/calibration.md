@@ -2568,3 +2568,34 @@ Décision du porteur du 5 novembre 2026 (docs/plan-porcellana.md, D1 et D7) : la
 **Mise en œuvre** : bascule décidée par le porteur le 6 novembre 2026, en vigueur dès la mise en ligne (`EMPIRE_GRID` vaut `square` par défaut ; les réglages de G sont la variante `venice1450EmpireSquare` du thème). Chaque maison est reprise une fois sur les cases (`migrateToSquare`), sans perte de terre ni mouvement d'argent ; répétition : `npx tsx src/rehearse-square.ts 200` (200 maisons, 346 secteurs devenus 2 601 cases, 730 ateliers posés, aucun défaut) et `node apps/web/e2e/switch.mjs` (une maison fondée sur l'hexagone, retrouvée sur ses cases après redémarrage).
 
 Reproduire : `cd apps/simulator && npx tsx src/scenario-cases.ts`, puis `npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/cases-carrees.json` (environ 95 minutes par graine).
+
+## Les premiers pas : le départ sans atelier (6 novembre 2026)
+
+Retours du porteur du 6 novembre 2026 (docs/plan-premiers-pas.md, lot 1) : une maison neuve démarre sans atelier et les bâtit elle-même.
+
+### Ce qui change
+
+- **Le départ** (`venice1450.empire.ts`, `start`) : aucun atelier ; trois cases libres données autour du premier fondaco (`start.freeTiles`, `giveStartTiles` dans `map.ts`) ; le capital passe de 500 à **650 ducats**. Le premier niveau d'un atelier coûte 120 ducats, 48 une fois que la plupart des maisons l'ont (« le savoir circule », 60 % de moins) : 500 + 3 × 48, arrondi. Les maisons déjà fondées gardent leurs ateliers.
+- **Le simulateur** : ses maisons gardent leurs trois premiers ateliers (glaisière, bûcherons, scierie), payés au départ au prix du monde (le rattrapage compté), sur les trois cases données. C'est ce que fait le joueur guidé dans ses premières minutes.
+- **L'accueil** (lot 2) : une seule commande de 100 ducats par maison neuve, la première, hors simulateur (un apport unique, sans effet à l'échelle de 24 mois).
+
+### Les essais (24 mois, cohortes de 200, scénario G `scenarios/cases-carrees.json`)
+
+| Cible | G (g. 1 / 2 / 3) | Premiers pas (g. 1 / 2 / 3) |
+| --- | --- | --- |
+| Cibles tenues sur 9 | 6 / 6 / 6 | **6 / 6 / 6** |
+| Calendrier de la Casa | ✓ / ✓ / ✓ | ✓ / ✓ / ✓ |
+| Tournées avec un objectif à moins de 24 h | ✓ 99,8 / 99,8 / 99,8 % | ✓ 99,7 / 99,8 / 99,9 % |
+| Prochain palier en jours de revenu (2 à 7) | ✗ 2,9 à 22,1 / 2,5 à 19,1 / 2,4 à 21,6 | ✗ 2,4 à 40,6 / 2,7 à 34,2 / 2,4 à 29,8 |
+| Cohorte du mois 12 hors de la 1re bande (4 à 6 mois) | ✗ 2,4 / 2,5 / 2,4 | ✗ 2,6 / 2,5 / 2,4 |
+| Indice des prix | ✓ 95 à 103 | ✓ 95 à 103 / 96 à 103 / 95 à 103 |
+| Puits ÷ sources, jeunes puis anciennes | ✓ 0,75 puis 0,99 / 0,71 puis 1,00 / 0,73 puis 0,99 | ✓ 0,72 puis 1,00 / 0,69 puis 0,99 / 0,68 puis 0,99 |
+| Part de la Terraferme | ✓ | ✓ |
+| Bruts des jeunes Maisons à Venise (≥ 10 %) | ✗ 6,3 / 6,2 / 6,6 % | ✗ 6,3 / 6,3 / 6,1 % |
+| Part des commandes (60 à 85 %) | ✓ 80,8 / 82,0 / 81,3 % | ✓ 81,7 / 82,9 / 81,6 % |
+
+**Lecture.**
+- Les mêmes six cibles tenues sur les trois graines ; le calendrier de la Casa, l'épargne et la part des commandes restent dans leurs bornes.
+- Le haut du « prochain palier en jours de revenu » monte (30 à 41 jours contre 19 à 22). Cette cible était déjà manquée, et sa borne haute est la médiane d'un mois de fin de partie, très sensible à la trajectoire ; les premières maisons du monde, qui paient leurs trois ateliers au prix plein, partent avec 290 ducats au lieu de 500. À suivre à la prochaine passe d'équilibrage de la fin de partie, avec les plafonds des villes de taille 5.
+
+Reproduire : `cd apps/simulator && npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/cases-carrees.json` (une graine par processus en parallèle : `--seeds 1 --out out/g1`, etc. ; environ 95 minutes par graine).
