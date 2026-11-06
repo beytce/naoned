@@ -7,6 +7,7 @@ import { accounts, influenceEntries, ledgerEntries, players, worlds } from "../s
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
+import { joinAtWork } from "./empire-start.js";
 
 let database: Database;
 let dbUrl: string;
@@ -72,22 +73,32 @@ describe("the empire's world", () => {
     expect(w?.endsAt.getUTCFullYear()).toBe(9999);
   });
 
-  it("lets a merchant join at the Casa 1 with its workshops", async () => {
+  it("lets a merchant join at the Casa 1, without a workshop, to build them", async () => {
     const cookie = await login("ada@example.org");
     expect((await get(cookie)).json().joined).toBe(false);
     const res = await post(cookie, "/api/empire/join");
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(body.view.house.casa).toBe(1);
-    expect(body.view.house.workshops).toHaveLength(3);
-    expect(body.cash).toBe("50000");
+    // The first steps (docs/plan-premiers-pas.md, lot 1): the player builds the first workshops.
+    expect(body.view.house.workshops).toHaveLength(0);
+    expect(body.cash).toBe("65000");
     const rows = await database.db.select().from(players);
     expect(rows).toHaveLength(1);
+    // The first at 120 ducats, the next two at 48 once the house has one (« le savoir circule »).
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
+    const after = (await get(cookie)).json();
+    expect(after.view.house.workshops).toHaveLength(3);
+    expect(after.cash).toBe("43400");
   });
 
   it("relaunches, sells, builds, and the site ends while away", async () => {
     const cookie = await login("ada@example.org");
-    await post(cookie, "/api/empire/join");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
     expect((await act(cookie, { type: "empireRelaunchAll" })).statusCode).toBe(200);
     now += 6 * 3_600_000;
     await act(cookie, { type: "empireRelaunchAll" });
@@ -120,7 +131,9 @@ describe("the empire's world", () => {
 
   it("refuses what the engine refuses, with the view", async () => {
     const cookie = await login("ada@example.org");
-    await post(cookie, "/api/empire/join");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
     const res = await act(cookie, { type: "empireUpgrade", workshopId: "nope" });
     expect(res.statusCode).toBe(422);
     expect(res.json().error).toBe("unknown_building");
@@ -129,7 +142,9 @@ describe("the empire's world", () => {
 
   it("stays open past the end of the month, and keeps what is built across a restart", async () => {
     const cookie = await login("ada@example.org");
-    await post(cookie, "/api/empire/join");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
     now = Date.parse("2026-11-03T08:00:00Z");
     await world.execute({ type: "tick" });
     await act(cookie, { type: "empireRelaunchAll" });
@@ -187,7 +202,9 @@ describe("the switch", () => {
 describe("the empire beyond Venetia", () => {
   it("answers the new actions through the route: a vehicle bought, a research refused", async () => {
     const cookie = await login("ada@example.org");
-    await post(cookie, "/api/empire/join");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
     const body = (await get(cookie)).json();
     expect(body.view.vehicles.mine).toHaveLength(2);
     expect(body.view.regions.map((r: { code: string }) => r.code)).toContain("lombardia");
@@ -201,7 +218,9 @@ describe("the empire beyond Venetia", () => {
 describe("the map (the map at the centre, step 2)", () => {
   it("shows Venetia and its cities alone, puts a counter down, refuses the unknown", async () => {
     const cookie = await login("ada@example.org");
-    await post(cookie, "/api/empire/join");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
     const map = (await get(cookie)).json().view.map;
     // The map that grows: Venice's sector alone at first, with Venice and Padua.
     expect(map.cities.map((c: { code: string }) => c.code)).toEqual(["venezia", "padova"]);
@@ -245,7 +264,9 @@ describe("the map (the map at the centre, step 2)", () => {
 describe("a vehicle's hops (after Hades' Star)", () => {
   it("is sent to a city, ten seconds to leave, then taken back before it leaves", async () => {
     const cookie = await login("hop@example.org");
-    await post(cookie, "/api/empire/join");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
     const vehicle = (await get(cookie)).json().view.vehicles.mine[0];
     const sent = await act(cookie, {
       type: "empireMove",
@@ -278,7 +299,9 @@ describe("a vehicle's hops (after Hades' Star)", () => {
 describe("the house's identity", () => {
   it("hires a master, places it, and reads its identity", async () => {
     const cookie = await login("ada@example.org");
-    await post(cookie, "/api/empire/join");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
     const hired = await act(cookie, { type: "empireHire", role: "master" });
     expect(hired.json().error).toBeUndefined();
     const body = hired.json();

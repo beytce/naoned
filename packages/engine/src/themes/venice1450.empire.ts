@@ -252,15 +252,15 @@ export const venice1450Empire: EmpireSettingsInput = {
       { vehicles: 16, casa: 19, costDucats: 36_000, minutes: 10_080 },
     ],
   },
-  // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the
-  // fourth place, a brickworks, the first choice (a farm instead would leave the Casa waiting).
+  // The first steps (decision of the owner, 6 November 2026, docs/plan-premiers-pas.md): no
+  // workshop at the start, the player builds them, the guide's first a lumber camp. The three
+  // workshops given before are paid from the capital, on three free tiles round the fondaco, so
+  // that the economy stays the same: a first level is 120 ducats, 48 once most houses have it
+  // (« le savoir circule », 60 % off), so 500 + 3 × 48, rounded.
   start: {
-    capitalDucats: 500,
-    workshops: [
-      { type: "clay_pit", recipe: "dig_clay" },
-      { type: "lumber_camp", recipe: "cut_wood" },
-      { type: "sawmill", recipe: "saw_planks" },
-    ],
+    capitalDucats: 650,
+    workshops: [],
+    freeTiles: 3,
     vehicles: ["mule", "mule"],
   },
   // The vehicles of step 4 (CADRAGE-v3 § 3.3), as the 24-month simulator has them; the ships come

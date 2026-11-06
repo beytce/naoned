@@ -74,8 +74,13 @@ export const empireSettingsSchema = z.object({
       workshops: z.array(z.object({ type: z.string(), recipe: z.string() })),
       /** Its first vehicles, by type. */
       vehicles: z.array(z.string()).prefault([]),
+      /**
+       * On square tiles, the free tiles given round the first fondaco at the founding (the first
+       * steps, docs/plan-premiers-pas.md lot 1): the house builds its first workshops there.
+       */
+      freeTiles: z.number().int().min(0).prefault(0),
     })
-    .prefault({ capitalDucats: 0, workshops: [], vehicles: [] }),
+    .prefault({ capitalDucats: 0, workshops: [], vehicles: [], freeTiles: 0 }),
   /**
    * The vehicles (CADRAGE-v3 § 3.3): the Casa that opens each, its hold, its price in ducats, the
    * regions it goes between (one only: a land vehicle of the deliveries), its speed in bps.

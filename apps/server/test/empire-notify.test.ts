@@ -8,6 +8,7 @@ import { MemoryMailer } from "../src/mail/mailer.js";
 import { Notifier } from "../src/notify/notifier.js";
 import { MemoryPusher } from "../src/notify/push.js";
 import { testDatabase } from "./db.js";
+import { joinAtWork } from "./empire-start.js";
 
 let database: Database;
 let dbUrl: string;
@@ -66,7 +67,9 @@ const post = (cookie: string, url: string, payload: unknown = {}) =>
 
 async function merchant(email: string, endpoint: string) {
   const cookie = await login(email);
-  await post(cookie, "/api/empire/join");
+  await joinAtWork(post, cookie, (ms) => {
+    now += ms;
+  });
   await post(cookie, "/api/notifications/push/subscribe", {
     endpoint,
     keys: { p256dh: "p", auth: "a" },

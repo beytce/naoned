@@ -148,6 +148,11 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
   joinCompany(w, h);
   w.houses.push(h);
   create(w, h, d(w.m.startCapitalDucats), "start");
+  // The first workshops, built by the player at the guide's hand in the first minutes: paid,
+  // their first level cut as the world has it (« le savoir circule »).
+  const cut = catchupCut(w.workshopShare[0] ?? 0, w.s);
+  for (const _ of h.workshops)
+    destroy(w, h, applyBpsFloor(levelCost(1, w.s), 10_000 - cut.costCutBps), "workshops");
   h.bookLeft.set("veneto", bookOf(w, h, "veneto", 1));
   return h;
 }
@@ -874,7 +879,7 @@ function startTiles(w: World): string[] {
   return regionCells(w.s, "veneto")
     .filter((c) => c !== from && !towns.has(c))
     .sort((a, b) => cellDistance(from, a, w.s) - cellDistance(from, b, w.s) || a.localeCompare(b))
-    .slice(0, w.m.startWorkshops.length)
+    .slice(0, Math.max(w.s.start.freeTiles, w.m.startWorkshops.length))
     .concat(home ? [from] : []);
 }
 
