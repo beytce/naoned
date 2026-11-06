@@ -199,3 +199,31 @@ describe("the workshops on their tiles (D7)", () => {
     expect(wheatIn(w)).toBe(22);
   });
 });
+
+describe("the square map's view", () => {
+  it("shows the towns of the regions reached, and the roads of the workshops to their fondaco", () => {
+    const w = new World(
+      makeContext({
+        empire: {
+          ...empire,
+          start: {
+            capitalDucats: 1_000_000,
+            workshops: [
+              { type: "farm", recipe: "grow_wheat" },
+              { type: "clay_pit", recipe: "dig_clay" },
+            ],
+          },
+        },
+      }),
+    );
+    w.do({ type: "empireJoin", playerId: "a" });
+    const v = map(w);
+    expect(v?.cities.map((c) => c.code)).toEqual(expect.arrayContaining(["venezia", "padova"]));
+    expect(v?.cities.map((c) => c.code)).not.toContain("milano"); // Lombardy asks the Casa 4
+    expect(v?.roads).toHaveLength(2);
+    for (const r of v?.roads ?? []) {
+      expect(r.to).toBe("home");
+      expect(r.pts.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+});

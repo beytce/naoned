@@ -42,6 +42,7 @@ import {
 import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import {
   buyableOf,
+  cellCentreOf,
   cellsWithin,
   citiesCovered,
   citiesFound,
@@ -53,6 +54,7 @@ import {
   reachOf,
   revealedOf,
   sectorCost,
+  squareGrid,
   standingPosts,
   unlockedOf,
 } from "./map.js";
@@ -335,8 +337,13 @@ export interface EmpireMapView {
   arsenal: string | null;
   /** The Campo's cell, the door of the Terraferma. */
   camp: string | null;
-  /** The cities found, on their cell, at their point. */
+  /** The cities found, on their cell, at their point (on square tiles, those of the regions reached). */
   cities: { code: string; cell: string; region: string; x: number; y: number; size: number }[];
+  /**
+   * On square tiles (docs/plan-porcellana.md § 1, « the roads make the map »): the road from each
+   * workshop to its fondaco, and from the Remise to the first fondaco, tile by tile; empty else.
+   */
+  roads: { from: string; to: string; pts: [number, number][] }[];
   /** How far a counter reveals. */
   radius: number;
   /** The Campo to build, likewise. */
@@ -701,6 +708,28 @@ function seaAlong(seen: Set<string>, s: EmpireSettings): string[] {
   return out;
 }
 
+/** On square tiles, the roads of the house: each workshop to its fondaco, the Remise to the first. */
+function roadsOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView["roads"] {
+  const posts = standingPosts(house, s);
+  const round = (pts: [number, number][]) =>
+    pts.map(([x, y]): [number, number] => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
+  const out: EmpireMapView["roads"] = [];
+  for (const w of house.workshops) {
+    if (!w.tile) continue;
+    const region = w.region ?? "veneto";
+    const post = posts.find((p) => p.id === w.post) ?? posts.find((p) => p.region === region);
+    if (!post) continue;
+    const at = cellCentreOf(w.tile, s);
+    out.push({ from: w.id, to: post.id, pts: round(roadBetween(at, [post.x, post.y], s)) });
+  }
+  const home = posts[0];
+  if (house.depot && home) {
+    const at = cellCentreOf(house.depot, s);
+    out.push({ from: "depot", to: home.id, pts: round(roadBetween(at, [home.x, home.y], s)) });
+  }
+  return out;
+}
+
 /** The map as the house sees it: its cells, its counters, its Arsenal, the cities it found. */
 function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
   const seen = revealedOf(house, s);
@@ -762,11 +791,16 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     arsenal: house.arsenal ?? null,
     camp: house.camp ?? null,
     cities: s.map.cities
-      .filter((c) => seen.has(c.cell))
+      .filter(
+        (c) =>
+          seen.has(c.cell) ||
+          (squareGrid(s) && (s.regions.find((r) => r.code === c.region)?.casa ?? 99) <= house.casa),
+      )
       .map((c) => {
         const [x, y] = citySpot(c, s);
         return { code: c.code, cell: c.cell, region: c.region, x, y, size: c.size };
       }),
+    roads: squareGrid(s) ? roadsOf(house, s) : [],
     radius: s.map.revealRadius,
     campSite:
       s.map.camp && !house.camp && !house.builds.some((b) => b.kind === "camp")
