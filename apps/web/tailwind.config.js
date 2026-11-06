@@ -26,11 +26,12 @@ export default {
         rumour: v("rumour"),
       },
       fontFamily: {
-        display: ["Archivo Variable", "Archivo", "system-ui", "sans-serif"],
-        sans: ["Space Grotesk", "system-ui", "sans-serif"],
-        mono: ["Space Mono", "ui-monospace", "monospace"],
-        /** Roman capitals for the places' names and the windows' titles (owner, 24 October 2026). */
-        place: ["Cinzel", "Georgia", "serif"],
+        // Porcellana (docs/plan-porcellana.md D4): a Venetian roman for names and titles, a plain
+        // grotesque for the rest, its capitals spaced for the kickers.
+        display: ["Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", "Georgia", "serif"],
+        sans: ["Work Sans", "Segoe UI", "system-ui", "sans-serif"],
+        mono: ["Work Sans", "Segoe UI", "system-ui", "sans-serif"],
+        place: ["Cormorant Garamond", "Iowan Old Style", "Georgia", "serif"],
       },
       keyframes: {
         floaty: {

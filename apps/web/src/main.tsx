@@ -1,13 +1,14 @@
 import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App.js";
-import "@fontsource-variable/archivo/wdth.css";
-import "@fontsource/space-grotesk/400.css";
-import "@fontsource/space-grotesk/500.css";
-import "@fontsource/space-grotesk/700.css";
-import "@fontsource/space-mono/400.css";
-import "@fontsource/space-mono/700.css";
-import "@fontsource/cinzel/latin-700.css";
+// Porcellana's type (docs/plan-porcellana.md D4), embedded.
+import "@fontsource/cormorant-garamond/500.css";
+import "@fontsource/cormorant-garamond/600.css";
+import "@fontsource/cormorant-garamond/700.css";
+import "@fontsource/work-sans/400.css";
+import "@fontsource/work-sans/500.css";
+import "@fontsource/work-sans/600.css";
+import "@fontsource/work-sans/700.css";
 import "./index.css";
 import { LANG } from "./lang.js";
 import { keepInvite, keepOrigin } from "./origin.js";

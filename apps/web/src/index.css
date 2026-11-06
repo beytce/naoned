@@ -141,6 +141,46 @@
    * cream panels edged in sand, a dark-brown ink, a mustard gold for the one action. The gold that
    * writes amounts is darker than the gold of the button's face (--face*), so that both read.
    */
+  /*
+   * Porcellana (docs/plan-porcellana.md, lot 7; D2, D4): porcelain paper over the porcelain world,
+   * brown ink, the one action in red of Venice (its face), the amounts still in gold.
+   */
+  [data-palette="porcellana"] {
+    color-scheme: light;
+    --night: 233 230 224;
+    --night-2: 251 250 247;
+    --night-3: 255 255 255;
+    --night-4: 236 231 223;
+    --line: 221 215 205;
+    --edge: 118 110 101;
+    --cream: 36 33 30;
+    --cream-dim: 88 82 75;
+    --muted: 98 91 83;
+    --ink: 255 255 255;
+    --on-lagoon: 255 255 255;
+    --gold: 118 84 10;
+    --gold-deep: 88 62 8;
+    --gold-soft: 160 120 36;
+    --face-soft: 214 102 90;
+    --face: 194 59 46;
+    --face-deep: 160 44 34;
+    --face-ink: 255 255 255;
+    --lagoon: 22 112 98;
+    --rumour: 104 64 168;
+    --lagoon-deep: 16 84 74;
+    --lagoon-soft: 150 206 196;
+    --vermilion: 172 54 36;
+    --vermilion-deep: 128 38 24;
+    --info: 60 40 110;
+    --info-deep: 128 34 26;
+    --glow-a: 255 255 255;
+    --glow-b: 236 231 223;
+    --veil: 36 33 30;
+    --veil-a: 0.28;
+    --glass-a: 0.82;
+    --glass-thick-a: 0.9;
+    --glass-shine: 0.3;
+  }
   [data-palette="jour"] {
     color-scheme: light;
     --night: 234 239 236;
@@ -187,9 +227,12 @@
       ), radial-gradient(50rem 30rem at -10% 110%, rgb(var(--glow-b) / 0.1), transparent 60%);
     background-attachment: fixed;
   }
-  /* Archivo, widened: the expanded cut of the identity guide. */
-  .font-display {
-    font-stretch: 125%;
+  /* Porcellana's display (D4): Cormorant Garamond, a Venetian roman, a little heavier. */
+  .font-display,
+  .font-place {
+    font-weight: 700;
+    /* Cormorant's figures are old style: the game's figures stand in line, a 1 never an I. */
+    font-variant-numeric: lining-nums tabular-nums;
   }
   /*
    * Keyboard focus: a lapis ring (the selection's colour; gold is the action's), never on a tap.

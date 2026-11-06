@@ -45,8 +45,15 @@ const contrast = (a: [number, number, number], b: [number, number, number]) => {
 describe("the palettes", () => {
   const all = palettes();
 
-  it("are the pastel Jour, the blue Lagune, the dark Noyer, the light Parchemin and the Pass's gold", () => {
-    expect(Object.keys(all).sort()).toEqual(["jour", "lagune", "noyer", "or", "parchemin"]);
+  it("are Porcellana, the pastel Jour, the blue Lagune, the dark Noyer, the light Parchemin and the Pass's gold", () => {
+    expect(Object.keys(all).sort()).toEqual([
+      "jour",
+      "lagune",
+      "noyer",
+      "or",
+      "parchemin",
+      "porcellana",
+    ]);
   });
 
   // The gold button's face (a palette may light it apart from the gold of the amounts): its

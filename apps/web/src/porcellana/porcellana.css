@@ -103,6 +103,7 @@
 .pc-card h2 {
   margin: 0;
   font: 700 22px / 1.05 var(--pc-display);
+  font-variant-numeric: lining-nums;
   text-wrap: balance;
 }
 .pc-card .pc-sub {
