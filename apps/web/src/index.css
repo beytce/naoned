@@ -153,9 +153,9 @@
     --night-4: 236 231 223;
     --line: 221 215 205;
     --edge: 118 110 101;
-    --cream: 36 33 30;
-    --cream-dim: 88 82 75;
-    --muted: 98 91 83;
+    --cream: 23 21 15;
+    --cream-dim: 63 59 53;
+    --muted: 98 93 85;
     --ink: 255 255 255;
     --on-lagoon: 255 255 255;
     --gold: 118 84 10;
@@ -177,9 +177,12 @@
     --glow-b: 236 231 223;
     --veil: 36 33 30;
     --veil-a: 0.28;
-    --glass-a: 0.82;
-    --glass-thick-a: 0.9;
-    --glass-shine: 0.3;
+    --glass-a: 0.97;
+    --glass-thick-a: 0.98;
+    --glass-shine: 0;
+    /* The playful surfaces (D4 bis): a solid foot under what is touched, a soft shadow round it. */
+    --foot: 0 4px 0 rgb(23 21 15 / 0.07);
+    --lift: 0 14px 40px rgb(23 21 15 / 0.1);
   }
   [data-palette="jour"] {
     color-scheme: light;
@@ -227,11 +230,10 @@
       ), radial-gradient(50rem 30rem at -10% 110%, rgb(var(--glow-b) / 0.1), transparent 60%);
     background-attachment: fixed;
   }
-  /* Porcellana's display (D4): Cormorant Garamond, a Venetian roman, a little heavier. */
+  /* The playful Porcellana (D4 bis): Nunito, round and heavy, its figures in line. */
   .font-display,
   .font-place {
-    font-weight: 700;
-    /* Cormorant's figures are old style: the game's figures stand in line, a 1 never an I. */
+    font-weight: 800;
     font-variant-numeric: lining-nums tabular-nums;
   }
   /*
@@ -254,7 +256,7 @@
 
 @layer components {
   /*
-   * Spaced capitals (Work Sans): fixed kickers of one to three words only (« RÉCOMPENSE »,
+   * Spaced capitals (Manrope): fixed kickers of one to three words only (« RÉCOMPENSE »,
    * « VOTRE SAISON »). Any datum (a price, a time left, a stock, a count) goes in .meta, never
    * here: capitals turn the denier's « d » into « D » and break « 21 H » across two lines.
    * Guarded by apps/web/test/typography.test.ts.
@@ -1295,7 +1297,7 @@ body[data-coach-top] [data-toast] {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), inset 0 0 0 1px rgb(255 255 255 / 0.3), 0 2px
     8px -2px rgb(40 50 60 / 0.25);
   color: rgb(var(--cream));
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: Nunito, system-ui, sans-serif;
   /* Never under 12 px (the project's rule, after the map's audit of 3 November 2026). */
   font-size: 0.75rem;
   font-weight: 700;
@@ -1749,4 +1751,65 @@ button.map-place {
   .pointing-hand {
     animation: none;
   }
+}
+
+/*
+ * The playful Porcellana (proposal D, decision of the owner, 6 November 2026; docs/design.md §
+ * Porcellana ludique): white surfaces standing on a solid foot, the one action in red of Venice
+ * pressed like a key (its darker red under it), the ghost a white pill on its grey foot, the chosen
+ * place in ink. Same palette, same places: only the relief changes.
+ */
+[data-palette="porcellana"] .gold-face,
+[data-palette="porcellana"]
+  body[data-coaching]
+  button[data-slab="ghost"][data-coach-lit]
+  .slab-face {
+  background: rgb(var(--face));
+  color: rgb(var(--face-ink));
+  box-shadow: 0 4px 0 rgb(var(--face-deep)), 0 10px 22px -10px rgb(var(--face) / 0.55);
+}
+[data-palette="porcellana"] button:active > .press.gold-face {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgb(var(--face-deep));
+}
+[data-palette="porcellana"] .glass-chip {
+  background: rgb(255 255 255);
+  box-shadow: inset 0 0 0 1.5px rgb(var(--line)), 0 3px 0 rgb(23 21 15 / 0.08);
+}
+[data-palette="porcellana"] button:active > .press.glass-chip {
+  transform: translateY(2px);
+  box-shadow: inset 0 0 0 1.5px rgb(var(--line)), 0 1px 0 rgb(23 21 15 / 0.08);
+}
+[data-palette="porcellana"] .glass,
+[data-palette="porcellana"] .hud-bar,
+[data-palette="porcellana"] .hud-tray {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: rgb(255 255 255 / 0.97);
+  box-shadow: var(--foot), var(--lift);
+}
+[data-palette="porcellana"] .glass-thick {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: rgb(255 255 255);
+  box-shadow: 0 -12px 44px rgb(23 21 15 / 0.14);
+}
+[data-palette="porcellana"] .hud-medal {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: rgb(var(--face));
+  color: rgb(255 255 255);
+  box-shadow: inset 0 0 0 3px rgb(var(--face)), inset 0 0 0 5px rgb(255 255 255), 0 4px 0
+    rgb(var(--face-deep));
+}
+/* An ink pill: the chosen place, a filter on, a count that waits (on its own black foot). */
+.ink-pill {
+  background: rgb(var(--cream));
+  color: rgb(var(--night-3));
+  box-shadow: 0 3px 0 rgb(0 0 0);
+}
+/* A tag stuck on aslant: « Prêt ! », « ×3 ». */
+.tag-tilt {
+  transform: rotate(-4deg);
+  box-shadow: 0 3px 0 rgb(var(--face-deep, 128 38 24));
 }

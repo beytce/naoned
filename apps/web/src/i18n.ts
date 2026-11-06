@@ -175,6 +175,7 @@ const frDict = {
       openMarket: "Ouvrir la Dogana",
       openCity: "Voir ses commandes",
       enter: "Entrer",
+      readyTag: "Prêt !",
       depot: "La Remise",
       depotSub: "Le quai des véhicules",
       campo: "Le Campo",

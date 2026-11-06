@@ -1,8 +1,8 @@
 /**
  * The place card (docs/plan-porcellana.md § 1, « exactly the way I want to see the information and
- * features appear », the owner): paper beside the place's pin, its name in a Venetian roman, its
- * role, one sentence of its state, a round button of accent to go in (the place's dock), a round
- * cross to close. On a phone, it lies at the foot, above the bar. Its position is written by the
+ * features appear », the owner), in the playful Porcellana (proposal D, 6 November 2026): an ink
+ * card beside the place's pin, its name round and heavy, its role, one sentence of its state, a red
+ * key to go in (the place's dock), a round cross to close, a « Prêt ! » tag when something waits. On a phone, it lies at the foot, above the bar. Its position is written by the
  * scene at each frame (`place`), never through React.
  */
 import { forwardRef, useImperativeHandle, useRef } from "react";
@@ -11,8 +11,12 @@ export interface PlaceCardInfo {
   name: string;
   sub: string;
   line: string;
-  /** What the round button says to a screen reader (« Entrer », « Ouvrir la Dogana »…). */
+  /** What the button says (« Entrer », « Ouvrir la Dogana »…). */
   go: string;
+  /** Something to take there now: a « Prêt ! » tag stuck on aslant. */
+  ready?: boolean;
+  /** The tag's word. */
+  tag?: string;
 }
 
 export interface PlaceCardHandle {
@@ -52,12 +56,14 @@ export const PlaceCard = forwardRef<
           <path d="M1 1l8 8M9 1l-8 8" />
         </svg>
       </button>
+      {info.ready && info.tag ? <span className="pc-tag">{info.tag}</span> : null}
       <div>
         <h2>{info.name}</h2>
         <p className="pc-sub">{info.sub}</p>
         {info.line ? <p className="pc-line">{info.line}</p> : null}
       </div>
-      <button type="button" className="pc-go" aria-label={info.go} onClick={onGo}>
+      <button type="button" className="pc-go" onClick={onGo}>
+        <span>{info.go}</span>
         <svg
           viewBox="0 0 18 18"
           width="18"

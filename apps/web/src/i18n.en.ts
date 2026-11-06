@@ -258,6 +258,7 @@ export const en: Dictionary = {
       openMarket: "Open the Dogana",
       openCity: "See its orders",
       enter: "Enter",
+      readyTag: "Ready!",
       depot: "The Remise",
       depotSub: "The vehicles' quay",
       campo: "The Campo",

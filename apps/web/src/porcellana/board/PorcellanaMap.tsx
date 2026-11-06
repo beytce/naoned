@@ -30,6 +30,7 @@ import { vehiclePose } from "../../empire/map/logic.js";
 import { Guard3D } from "../../empire/map3d/Guard.js";
 import { MAP_3D } from "../../empire/map3d/flag.js";
 import type { EmpirePayload } from "../../empire/types.js";
+import { fr } from "../../i18n.js";
 import { PlaceCard, type PlaceCardHandle } from "../PlaceCard.js";
 import { Stage } from "../Stage.js";
 import { easeOutCubic, pinOut, routesDrawn, tileDelay, tileDrop } from "../arrival.js";
@@ -696,7 +697,14 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
           ref={(h) => {
             shared.card = h;
           }}
-          info={{ name: current.name, sub: current.sub, line: current.line, go: current.go }}
+          info={{
+            name: current.name,
+            sub: current.sub,
+            line: current.line,
+            go: current.go,
+            ready: current.ready,
+            tag: fr.empire.porcellana.readyTag,
+          }}
           onGo={() => {
             setCarded(false);
             onTarget(current.target);

@@ -114,7 +114,7 @@ function Note({
       y={y}
       fontSize="10"
       fill={`rgb(var(--${tone}))`}
-      fontFamily="Work Sans, system-ui, sans-serif"
+      fontFamily="Manrope, system-ui, sans-serif"
     >
       {children}
     </text>

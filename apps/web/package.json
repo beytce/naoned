@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*",
-    "@fontsource/cormorant-garamond": "5.3.0",
-    "@fontsource/work-sans": "5.3.0",
+    "@fontsource/manrope": "5.2.8",
+    "@fontsource/nunito": "5.2.7",
     "@react-three/drei": "9.122.0",
     "@react-three/fiber": "8.18.0",
     "@react-three/postprocessing": "2.19.1",

@@ -22,16 +22,21 @@ export default {
         vermilion: { DEFAULT: v("vermilion"), deep: v("vermilion-deep") },
         /** Selection, the guide, the active tab: never money nor a gain. */
         info: { DEFAULT: v("info"), deep: v("info-deep") },
+        /** The one action's red (Porcellana), and the badges that ask to be touched. */
+        face: {
+          DEFAULT: "rgb(var(--face, var(--vermilion)) / <alpha-value>)",
+          deep: "rgb(var(--face-deep, var(--vermilion-deep)) / <alpha-value>)",
+        },
         /** A rumour or the auctions on the map: their halo and dot (refonte UX). */
         rumour: v("rumour"),
       },
       fontFamily: {
-        // Porcellana (docs/plan-porcellana.md D4): a Venetian roman for names and titles, a plain
-        // grotesque for the rest, its capitals spaced for the kickers.
-        display: ["Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", "Georgia", "serif"],
-        sans: ["Work Sans", "Segoe UI", "system-ui", "sans-serif"],
-        mono: ["Work Sans", "Segoe UI", "system-ui", "sans-serif"],
-        place: ["Cormorant Garamond", "Iowan Old Style", "Georgia", "serif"],
+        // The playful Porcellana (docs/plan-porcellana.md D4 bis, 6 November 2026): a round, heavy
+        // face for names, titles, figures and buttons; a plain modern grotesque for the rest.
+        display: ["Nunito", "Segoe UI", "system-ui", "sans-serif"],
+        sans: ["Manrope", "Segoe UI", "system-ui", "sans-serif"],
+        mono: ["Manrope", "Segoe UI", "system-ui", "sans-serif"],
+        place: ["Nunito", "Segoe UI", "system-ui", "sans-serif"],
       },
       keyframes: {
         floaty: {

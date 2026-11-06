@@ -9,10 +9,10 @@ import { hudOf } from "./logic.js";
 const t = fr.empire;
 
 /**
- * The map's head (Direction Jour, 4 November 2026, after the owner's reference). On the left, the
- * house: the medal of its Casa, its ring filling as the ducats near the next one, its name and its
- * income in a cream pill (on a phone, the medal alone). Beside it, one cream bar of counts side by
- * side, each with its sign: the ducats, the Favour, the Seals (the refonte claire, 5 November 2026:
+ * The map's head (the playful Porcellana, proposal D, 6 November 2026). On the left, the house: the
+ * red medal of its Casa, its white ring filling as the ducats near the next one, its name and its
+ * income in a white pill (on a phone, the medal alone). On the right, a white pill per count, its
+ * money drawn first (a ducat, a pennant, a seal), its figure after: the ducats, the Favour, the Seals (the refonte claire, 5 November 2026:
  * the vehicles' count and the Production's « + » gone; the vehicles are on the map, the Production
  * in the Fondaco).
  */
@@ -48,19 +48,26 @@ export function Hud({
       >
         <span className="hud-medal relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full">
           <svg viewBox="0 0 48 48" className="absolute inset-0 -rotate-90" aria-hidden="true">
-            <circle cx="24" cy="24" r="21" fill="none" stroke="rgb(var(--line))" strokeWidth="2" />
             <circle
               cx="24"
               cy="24"
               r="21"
               fill="none"
-              stroke="rgb(var(--gold))"
-              strokeWidth="2.5"
+              stroke="rgb(255 255 255 / 0.35)"
+              strokeWidth="3"
+            />
+            <circle
+              cx="24"
+              cy="24"
+              r="21"
+              fill="none"
+              stroke="rgb(255 255 255)"
+              strokeWidth="3"
               strokeLinecap="round"
               strokeDasharray={`${ring * share} ${ring}`}
             />
           </svg>
-          <span className="font-display text-lg font-extrabold text-cream">{view.house.casa}</span>
+          <span className="font-display text-lg font-black text-white">{view.house.casa}</span>
         </span>
         <span className="hud-bar min-w-0 rounded-full py-1 pl-3 pr-4 max-[479px]:sr-only">
           <span className="block max-w-[9rem] truncate font-display text-base font-extrabold leading-tight text-cream">
@@ -73,7 +80,7 @@ export function Hud({
       </button>
 
       <div
-        className="hud-bar pointer-events-none absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 flex items-center rounded-full px-1 max-[479px]:left-[4.25rem] max-[479px]:justify-between"
+        className="pointer-events-none absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 flex items-center gap-1.5 max-[479px]:left-[4.25rem] max-[479px]:justify-end"
         data-hud-counts
       >
         {hudOf(p).map((c) => (
@@ -115,7 +122,7 @@ function Count({
   return (
     <button
       type="button"
-      className="pointer-events-auto relative flex min-h-11 items-center gap-1 px-2 [&:not(:first-child)]:border-l [&:not(:first-child)]:border-line max-[359px]:px-1"
+      className="hud-bar pointer-events-auto relative flex min-h-11 items-center gap-1 rounded-full py-1 pl-1 pr-3 active:translate-y-0.5 max-[359px]:pr-2"
       data-hud={id}
       // Its name and its value both read (audit of 4 November, UX M8: the label alone hid the sum).
       aria-label={`${label} : ${value}`}
@@ -136,14 +143,14 @@ function Count({
           {help && <span className="block text-cream-dim">{help}</span>}
         </span>
       )}
+      <span className="flex h-9 w-9 items-center justify-center [&>svg]:h-9 [&>svg]:w-9 max-[359px]:h-7 max-[359px]:w-7 max-[359px]:[&>svg]:h-7 max-[359px]:[&>svg]:w-7">
+        {sign}
+      </span>
       <span
-        className={`whitespace-nowrap font-display text-sm font-extrabold tabular-nums ${gold ? "text-gold" : "text-cream"}`}
+        className="whitespace-nowrap font-display text-base font-black tabular-nums text-cream"
         data-fx={gold ? "purse" : undefined}
       >
         {value}
-      </span>
-      <span className="flex h-7 w-7 items-center justify-center [&>svg]:h-7 [&>svg]:w-7">
-        {sign}
       </span>
     </button>
   );

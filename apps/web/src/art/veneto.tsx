@@ -115,7 +115,7 @@ const regionName = (x: number, y: number, text: string, rotate = 0) => (
     fontWeight="800"
     fill={P.goldSoft}
     opacity="0.13"
-    fontFamily="Cormorant Garamond, Georgia, serif"
+    fontFamily="Nunito, system-ui, sans-serif"
   >
     {text}
   </text>
@@ -262,7 +262,7 @@ export const VenetoTerrain = memo(function VenetoTerrain() {
           textAnchor="middle"
           fontSize="7"
           fill={P.gold}
-          fontFamily="Cormorant Garamond, Georgia, serif"
+          fontFamily="Nunito, system-ui, sans-serif"
           fontWeight="800"
         >
           N
@@ -276,7 +276,7 @@ export const VenetoTerrain = memo(function VenetoTerrain() {
         letterSpacing="3"
         fill={P.lagoon}
         opacity="0.7"
-        fontFamily="Work Sans, system-ui, sans-serif"
+        fontFamily="Manrope, system-ui, sans-serif"
       >
         MARE ADRIATICUM
       </text>

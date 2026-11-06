@@ -132,6 +132,6 @@ export const PAPER = {
 
 /** The type (D4): a Venetian roman for names, a plain grotesque for the rest. */
 export const FONTS = {
-  display: '"Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Georgia, serif',
-  ui: '"Work Sans", "Segoe UI", system-ui, -apple-system, sans-serif',
+  display: 'Nunito, "Segoe UI", system-ui, sans-serif',
+  ui: 'Manrope, "Segoe UI", system-ui, -apple-system, sans-serif',
 } as const;

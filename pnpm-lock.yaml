@@ -88,12 +88,12 @@ importers:
       '@comptoirs/engine':
         specifier: workspace:*
         version: link:../../packages/engine
-      '@fontsource/cormorant-garamond':
-        specifier: 5.3.0
-        version: 5.3.0
-      '@fontsource/work-sans':
-        specifier: 5.3.0
-        version: 5.3.0
+      '@fontsource/manrope':
+        specifier: 5.2.8
+        version: 5.2.8
+      '@fontsource/nunito':
+        specifier: 5.2.7
+        version: 5.2.7
       '@react-three/drei':
         specifier: 9.122.0
         version: 9.122.0(@react-three/fiber@8.18.0(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.170.0))(@types/react@18.3.18)(@types/three@0.170.0)(immer@10.1.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.170.0)(use-sync-external-store@1.7.0(react@18.3.1))
@@ -1388,11 +1388,11 @@ packages:
   '@fastify/websocket@11.3.4':
     resolution: {integrity: sha512-firnJtEOv6pfdoXIzFDMbd+omgWwFNfLtdM8JejNFr/9lT/9DHkEhjTShuRFeE4phqrevD2B3JRW0v6uyzWhHQ==}
 
-  '@fontsource/cormorant-garamond@5.3.0':
-    resolution: {integrity: sha512-weuGsCirGVWBWqpt6YUp0yLThTe4G8YO45noq8wxeJCRvEpq5lFrxNMFSTxcyOyV5k5otzJ8guDzYegdYlcLMQ==}
+  '@fontsource/manrope@5.2.8':
+    resolution: {integrity: sha512-gJHJmcuUk7qWcNCfcAri/DJQtXtBYqi9yKratr4jXhSo0I3xUtNNKI+igQIcw5c+m95g0vounk8ZnX/kb8o0TA==}
 
-  '@fontsource/work-sans@5.3.0':
-    resolution: {integrity: sha512-3cKV28+bEiLGdyOl0VgEGCFWE1XdZJu/K+nH4Jt76XC3T//XrRtm2EF7jA61GSMIy8sYp6ZFTE01nD3lLaBV9A==}
+  '@fontsource/nunito@5.2.7':
+    resolution: {integrity: sha512-pmtBq0H9ex9nk+RtJYEJOD9pag393iHETnl/PVKleF4i06cd0ttngK5ZCTgYb5eOqR3Xdlrjtev8m7bmgYprew==}
 
   '@gltf-transform/core@4.5.1':
     resolution: {integrity: sha512-OWgBYssKHKoXMIrMb2N20jXqWRnMP9HdtcTFQBEAJtz4P+OOxx5fozl5eAeK7nktIs5uDE/lu4NbkE5VCZaR9g==}
@@ -5085,9 +5085,9 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@fontsource/cormorant-garamond@5.3.0': {}
+  '@fontsource/manrope@5.2.8': {}
 
-  '@fontsource/work-sans@5.3.0': {}
+  '@fontsource/nunito@5.2.7': {}
 
   '@gltf-transform/core@4.5.1':
     dependencies:

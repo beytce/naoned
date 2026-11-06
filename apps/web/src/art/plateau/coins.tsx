@@ -1,101 +1,95 @@
 import { useId } from "react";
 
 /**
- * The purse's pieces, struck in relief (the night board, docs/plan-plateau.md): the ducat with
- * its galley, the favour's star, the wax seal with its keys, the cart's wheel. Each has its own
- * gradients (an id per piece on the page).
+ * The house's money, drawn as objects (the playful Porcellana, proposal D, 6 November 2026): the
+ * ducat a gold piece struck with the fondaco, standing on its rim; the Favour a town's red pennant;
+ * the Seal a red wax with its star; the pearl nacre. Each is recognised without reading: the
+ * figure always goes with it, never instead (rule 8).
  */
 export function DucatCoin({ size = 30 }: { size?: number }) {
-  const id = useId();
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
-      <defs>
-        <radialGradient id={`${id}g`} cx="35%" cy="30%" r="75%">
-          <stop offset="0" stopColor="#FFF1B8" />
-          <stop offset=".45" stopColor="#F2C24F" />
-          <stop offset="1" stopColor="#9A6514" />
-        </radialGradient>
-      </defs>
-      <circle cx="20" cy="20" r="18" fill={`url(#${id}g)`} stroke="#6E4510" strokeWidth="1.5" />
+      <circle cx="20" cy="22" r="16" fill="#A8761F" />
+      <circle cx="20" cy="20" r="16" fill="#E2AE45" />
       <circle
         cx="20"
         cy="20"
-        r="17"
+        r="12"
         fill="none"
-        stroke="#FFE7A0"
-        strokeWidth="2.2"
-        strokeDasharray="1 1.6"
-        strokeOpacity=".7"
+        stroke="#B4832A"
+        strokeWidth="1.4"
+        strokeDasharray="1.5 2.2"
       />
-      <circle cx="20" cy="20" r="12.5" fill="none" stroke="#8A5A0E" strokeWidth=".9" />
-      <path d="M20 10 V24" stroke="#6E4510" strokeWidth="1.3" />
-      <path d="M21 11 L27 21 H21 Z" fill="#B07A1C" stroke="#6E4510" strokeWidth=".7" />
-      <path d="M12 24 H28 L25 28 H15 Z" fill="#8A5A0E" />
       <path
-        d="M10 14 A11 11 0 0 1 17 9"
+        d="M14.5 25.5h11M16 25.5v-6.5l4-3.2 4 3.2v6.5"
         fill="none"
-        stroke="#FFFFFF"
-        strokeWidth="2"
+        stroke="#7E571A"
+        strokeWidth="2.2"
         strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <ellipse
+        cx="13.5"
+        cy="11.5"
+        rx="4"
+        ry="1.8"
+        fill="#fff"
+        opacity="0.5"
+        transform="rotate(-35 13.5 11.5)"
         className="coin-glint"
       />
     </svg>
   );
 }
 
+/** The Favour: a town's pennant, hoisted a little higher with each order delivered. */
 export function FavourCoin({ size = 30 }: { size?: number }) {
-  const id = useId();
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
-      <defs>
-        <radialGradient id={`${id}g`} cx="35%" cy="30%" r="75%">
-          <stop offset="0" stopColor="#C9F6E5" />
-          <stop offset=".5" stopColor="#4FB894" />
-          <stop offset="1" stopColor="#1F6B55" />
-        </radialGradient>
-      </defs>
-      <circle cx="20" cy="20" r="18" fill={`url(#${id}g)`} stroke="#164E3E" strokeWidth="1.5" />
-      <circle cx="20" cy="20" r="13.5" fill="none" stroke="#164E3E" strokeWidth=".9" />
+      <rect x="9" y="4" width="3" height="32" rx="1.5" fill="#7A5A3A" />
       <path
-        d="M20 9 L23 16.4 L31 17 L24.9 22 L26.9 30 L20 25.6 L13.1 30 L15.1 22 L9 17 L17 16.4 Z"
-        fill="#ECFBF5"
-        stroke="#164E3E"
-        strokeWidth=".9"
+        d="M12 7h20l-4.5 7 4.5 7H12Z"
+        fill="#C23B2E"
+        stroke="#8F2820"
+        strokeWidth="1.2"
         strokeLinejoin="round"
       />
-      <path
-        d="M10 14 A11 11 0 0 1 17 9"
-        fill="none"
-        stroke="#FFFFFF"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
+      <circle cx="19.5" cy="14" r="3.2" fill="#F6DAD5" />
+      <circle cx="10.5" cy="4.5" r="2.6" fill="#E2AE45" />
     </svg>
   );
 }
 
+const SEAL =
+  "20,3 23.8,5.9 28.5,5.3 30.3,9.7 34.7,11.5 34.1,16.2 37,20 34.1,23.8 34.7,28.5 30.3,30.3 28.5,34.7 23.8,34.1 20,37 16.2,34.1 11.5,34.7 9.7,30.3 5.3,28.5 5.9,23.8 3,20 5.9,16.2 5.3,11.5 9.7,9.7 11.5,5.3 16.2,5.9";
+const STAR =
+  "20,14 21.6,18.2 26.2,18.5 22.7,21.4 23.8,25.8 20,23.3 16.2,25.8 17.3,21.4 13.8,18.5 18.4,18.2";
+
+/** The Seal: red wax with its star, set down like a stamp. */
 export function WaxSeal({ size = 30 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
+      <polygon points={SEAL} fill="#C23B2E" />
+      <circle cx="20" cy="20" r="10.5" fill="none" stroke="#8F2820" strokeWidth="1.5" />
+      <polygon points={STAR} fill="#F6DAD5" />
+    </svg>
+  );
+}
+
+/** The pearl: nacre, precious; it hastens a site or a study, never power (rule 4). */
+export function PearlCoin({ size = 30 }: { size?: number }) {
   const id = useId();
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
       <defs>
-        <radialGradient id={`${id}g`} cx="38%" cy="32%" r="70%">
-          <stop offset="0" stopColor="#F08A70" />
-          <stop offset=".6" stopColor="#B53A24" />
-          <stop offset="1" stopColor="#6E1C10" />
+        <radialGradient id={`${id}p`} cx="0.36" cy="0.3" r="0.75">
+          <stop offset="0" stopColor="#FFFFFF" />
+          <stop offset="0.5" stopColor="#EEE9F1" />
+          <stop offset="1" stopColor="#B7AEC4" />
         </radialGradient>
       </defs>
-      <path
-        d="M20 3 C26 3 28 6 32 8 C36 11 37 15 37 20 C37 26 34 29 31 33 C27 36 24 37 20 37 C14 37 11 35 8 32 C5 28 3 25 3 20 C3 14 6 10 9 7 C12 4 15 3 20 3Z"
-        fill={`url(#${id}g)`}
-        stroke="#5A160C"
-      />
-      <circle cx="20" cy="20" r="10.5" fill="none" stroke="#5A160C" strokeWidth="1.2" />
-      <g stroke="#5A160C" strokeWidth="1.6" strokeLinecap="round" fill="none">
-        <path d="M14 26 L26 14 M26 26 L14 14" />
-        <circle cx="13" cy="27" r="2" />
-        <circle cx="27" cy="27" r="2" />
-      </g>
+      <circle cx="20" cy="21" r="15" fill={`url(#${id}p)`} stroke="#D8D1DE" strokeWidth="0.8" />
+      <ellipse cx="14.5" cy="14" rx="4" ry="2.4" fill="#fff" transform="rotate(-35 14.5 14)" />
     </svg>
   );
 }

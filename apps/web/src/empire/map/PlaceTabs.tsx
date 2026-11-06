@@ -9,7 +9,7 @@ export type PlaceId = "map" | "fondaco" | "porta" | "company";
 /**
  * The four places at the foot (the refonte claire, docs/plan-refonte-claire.md, 5 November 2026):
  * the Map, the Fondaco, the Porta and the Company, nothing else with an entry of its own. The place
- * one is in is marked in lapis; a dot says something waits behind another; the Porta not open yet
+ * one is in is an ink pill on its black foot (the playful Porcellana); a red badge says something waits behind another; the Porta not open yet
  * says at which Casa it opens.
  */
 export function PlaceTabs({
@@ -30,7 +30,7 @@ export function PlaceTabs({
       className="pointer-events-none flex w-full justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       data-place-tabs
     >
-      <div className="hud-tray pointer-events-auto grid w-full max-w-md grid-cols-4 rounded-[1.75rem] px-1.5 py-1.5">
+      <div className="hud-tray pointer-events-auto grid w-full max-w-md grid-cols-4 gap-1 rounded-[1.9rem] p-1.5">
         <Tab id="map" active={active} onPlace={onPlace} label={t.map} dot={dots.map}>
           {Icon.map()}
         </Tab>
@@ -82,26 +82,24 @@ function Tab({
       aria-label={locked ? `${label} · ${locked}` : undefined}
       data-place-tab={id}
       data-locked={locked ? "" : undefined}
-      className={`relative flex min-h-[3.5rem] flex-col items-center justify-center gap-0.5 rounded-[1.25rem] active:scale-95 ${
-        on ? "text-info" : locked ? "text-cream-dim/70" : "text-cream-dim"
+      className={`relative flex min-h-[3.5rem] flex-col items-center justify-center gap-0.5 rounded-[1.4rem] font-display transition-transform active:translate-y-0.5 ${
+        on ? "ink-pill" : locked ? "text-cream-dim/70" : "text-cream"
       }`}
     >
-      <span
-        className={`flex h-8 w-12 items-center justify-center rounded-full [&_svg]:h-[22px] [&_svg]:w-[22px] ${
-          on ? "bg-info/15" : ""
-        }`}
-      >
+      <span className="flex h-7 w-12 items-center justify-center [&_svg]:h-[22px] [&_svg]:w-[22px]">
         {children}
       </span>
-      <span className={`max-w-full truncate text-xs ${on ? "font-bold" : "font-semibold"}`}>
+      <span className={`max-w-full truncate text-xs ${on ? "font-black" : "font-extrabold"}`}>
         {label}
       </span>
       {typeof dot === "number" && dot > 0 ? (
-        <span className="absolute right-[18%] top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-lagoon px-1 text-[0.6875rem] font-bold text-on-lagoon">
+        <span className="absolute right-[16%] top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-face px-1 font-display text-[0.6875rem] font-black text-white ring-2 ring-white">
           {dot}
         </span>
       ) : dot === true ? (
-        <span className="absolute right-[26%] top-1.5 h-2.5 w-2.5 rounded-full bg-vermilion ring-2 ring-night-3" />
+        <span className="absolute right-[18%] top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-face font-display text-[0.6875rem] font-black text-white ring-2 ring-white">
+          !
+        </span>
       ) : null}
     </button>
   );

@@ -13,7 +13,18 @@ Décision du porteur (« les visuels sont parfaits », « c'est exactement de ce
 - **La sélection** : la case se soulève, un anneau d'accent, un voile d'accent de 17 % ; **la fiche** de papier à côté du repère, sa flèche ouvre le dock du lieu.
 - **L'arrivée** : les cases tombent en place le long de la diagonale, puis les routes se dessinent.
 - **Les terres de Rome en biscuit** (porcelaine non émaillée), Rome à l'encre ; les unités en pions de porcelaine.
-- **Les surfaces** de l'interface en papier (la palette `porcellana`, le défaut) ; **la typographie** : Cormorant Garamond pour les titres et les noms, Work Sans pour le reste, aux chiffres alignés.
+- **Les surfaces** de l'interface en papier (la palette `porcellana`, le défaut) ; la typographie et le relief suivent la Porcellana ludique ci-dessous.
+
+### Porcellana ludique (6 novembre 2026) — fait foi pour l'interface
+
+Décision du porteur sur la proposition D (« La D est parfaite, applique-la » ; toile `Fondaco — interface moderne`, rangée D) : les menus, inspirés de tableaux de bord modernes, un peu plus joueurs, sans changer les couleurs.
+
+- **La typographie** (D4 bis) : Nunito, ronde et grasse (800–900), pour les noms, les titres, les chiffres et les boutons ; Manrope pour le reste. Embarquées (`@fontsource`). Cormorant Garamond et Work Sans sont retirées.
+- **Le relief** : chaque surface blanche pose sur un pied plein (`--foot`) et une ombre douce (`--lift`) ; le bouton d'action est une touche rouge sur son rouge foncé, qui s'enfonce quand on la presse ; le bouton fantôme une pilule blanche sur son pied gris ; le lieu choisi et le filtre actif une pilule d'encre sur son pied noir (`.ink-pill`). Plus de verre flouté.
+- **Les monnaies dessinées** (`art/plateau/coins.tsx`) : le ducat, pièce d'or frappée du fondaco (le seul or ajouté) ; la Faveur, fanion rouge d'une ville ; le Sceau, cire rouge à l'étoile ; la perle, nacrée. Chaque compteur est une pilule blanche, la monnaie d'abord, le chiffre après.
+- **La fiche au clic** devient une carte d'encre, son nom en Nunito, une touche rouge « Entrer » écrite, une étiquette « Prêt ! » collée de biais quand quelque chose attend.
+- **Les badges** qui demandent un geste : rouges, cerclés de blanc, en Nunito 900 (« 3 », « ! »).
+- Suite (feuilles, dock, listes à anneaux, Lorenzo en bulle, Remise en jauges rondes) : `docs/plan-porcellana.md` § Porcellana ludique.
 
 ## Direction « Plateau de nuit » (2 novembre 2026)
 
