@@ -381,7 +381,8 @@ function SceneView(props: {
   }).current;
   const look = LOOK[props.focus];
   sh.goTo = look.at;
-  sh.goZoom = look.zoom;
+  // A phone sees the whole place a little farther back (its dock takes the lower half).
+  sh.goZoom = look.zoom * (props.dockW === 0 && window.innerWidth < 640 ? 0.7 : 1);
   sh.inset = props.dockH;
   sh.insetRight = props.dockW;
   sh.marked = new Set([

@@ -483,7 +483,9 @@ function UnitCard({
           <span className="truncate font-display text-sm font-extrabold">
             {u.role === "combat" ? pt.combat : pt.transport}
           </span>
-          <span className={`text-xs tabular-nums ${chosen ? "opacity-80" : "text-cream-dim"}`}>
+          <span
+            className={`text-xs tabular-nums max-[479px]:hidden ${chosen ? "opacity-80" : "text-cream-dim"}`}
+          >
             {u.hp}/{u.maxHp}
           </span>
         </span>

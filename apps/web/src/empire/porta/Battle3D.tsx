@@ -600,7 +600,7 @@ function Unit({
   return (
     <group ref={group}>
       {u.side === "player" && u.role === "transport" ? (
-        <group scale={FIG * UNIT}>
+        <group scale={UNIT * 1.1}>
           <Mule cargo={(u as PlayerUnitView).cargo} live={live} />
         </group>
       ) : (
