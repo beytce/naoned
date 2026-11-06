@@ -31,6 +31,7 @@ export const pt = {
   noTransport: "Aucun transport à quai.",
   battle: "La bataille",
   tier: (n: number) => `Palier ${n}`,
+  tierClosed: "fermé",
   tierLocked: (n: number) => `Gagnez le palier ${n - 1} et montez la Porta.`,
   players: (min: number, max: number) =>
     min === max

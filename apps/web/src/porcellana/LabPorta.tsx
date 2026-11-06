@@ -5,8 +5,7 @@
  * near side, the house's, is glazed porcelain; the lands of Rome are biscuit.
  */
 import { Group } from "three";
-import type { Cell, Place, Spec } from "./Lab.js";
-import { palette } from "./Lab.js";
+import { type Cell, type Place, type Spec, palette } from "./TileBoard.js";
 import { mountain, rocks } from "./models/decor.js";
 import { grove } from "./models/ground.js";
 import type { Built, ModelOpts } from "./models/model.js";

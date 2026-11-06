@@ -1,44 +1,23 @@
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Color, type Group, MeshBasicMaterial, Vector3 } from "three";
-import { C } from "../../art/plateau/props.js";
+import { Canvas } from "@react-three/fiber";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type OrthographicCamera, Vector3 } from "three";
 import { PlainGround } from "../../dock.js";
 import { Icon } from "../../game/map/icons.js";
 import { haptic } from "../../haptics.js";
-import { Pawn as Figure } from "../../porcellana/Pawn.js";
-import { createPalette } from "../../porcellana/materials.js";
-import { porta, post } from "../../porcellana/models/places.js";
-import { mule } from "../../porcellana/models/vehicles.js";
+import "../../porcellana/porcellana.css";
+import { type Shared, TileBoard } from "../../porcellana/TileBoard.js";
 import { sound } from "../../sound.js";
 import { CloseButton } from "../../ui.js";
 import { Guard3D } from "../map3d/Guard.js";
-import { AnchorLayer, type Anchors } from "../map3d/anchors.js";
 import { MAP_3D } from "../map3d/flag.js";
-import { Instanced, clay as clayShared, claySolid, hexSlab } from "../map3d/kit.js";
-import { Pace } from "../map3d/pace.js";
 import { useCoverBoard } from "../map3d/pause.js";
-import { roleOf } from "../map3d/roster.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { PortaDock, type PortaPane } from "./PortaDock.js";
 import { portaApi } from "./api.js";
+import { type Docked, LOOK, portaSpec, sixTiers } from "./board.js";
 import { RARITY_HEX, ROME_DUSK } from "./colours.js";
 import { errorText, pt } from "./texts.js";
 import { type PortaState, type PortaView, RARITIES, type Rarity } from "./types.js";
-
-/** The Porta's own small scene (chart units): the gate to the north, the steps, the quay, the stall. */
-const GATE: [number, number, number] = [0, 0, -16];
-const STEP_Z = -6;
-const stepAt = (i: number, n: number): [number, number, number] => {
-  const a = ((i - (n - 1) / 2) / Math.max(1, n - 1)) * 1.6;
-  return [Math.sin(a) * 15, 0, STEP_Z + (1 - Math.cos(a)) * 6];
-};
-const DARK: [number, number, number] = [11, 0, -11];
-const QUAY = (i: number): [number, number, number] => [
-  -15 + (i % 2) * 6,
-  0,
-  7 + Math.floor(i / 2) * 5,
-];
-const STALL: [number, number, number] = [15, 0, 8];
 
 const live = () => !(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
 const BEFORE = "fondaco:porta-before";
@@ -88,11 +67,17 @@ export function PortaScene({
   const [step, setStep] = useState(0);
   // The dock's height: the camera frames the scene above it.
   const [dockH, setDockH] = useState(0);
+  const [dockW, setDockW] = useState(0);
   const dockRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = dockRef.current;
     if (!open || !el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => setDockH(el.offsetHeight));
+    // On a computer the dock stands on the right; on a phone, at the foot.
+    const ro = new ResizeObserver(() => {
+      const side = window.innerWidth >= 1024;
+      setDockH(side ? 0 : el.offsetHeight);
+      setDockW(side ? el.offsetWidth + 20 : 0);
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, [open]);
@@ -184,7 +169,7 @@ export function PortaScene({
   return (
     // Above the four places (the gameplay audit, P5): the Porta is a place, left by the bar.
     <div
-      className="porta-in fixed inset-x-0 top-0 bottom-[var(--places)] z-40 lg:top-[var(--topbar,0px)] overflow-hidden bg-[#3B2F52]"
+      className="porta-in fixed inset-x-0 top-0 bottom-[var(--places)] z-40 lg:top-[var(--topbar,0px)] overflow-hidden bg-[#E3D9CB]"
       data-porta-scene
     >
       <SceneView
@@ -195,6 +180,7 @@ export function PortaScene({
         transportId={transportId}
         focus={focus}
         dockH={dockH}
+        dockW={dockW}
         onTier={(n) => {
           setTier(n);
           setPane(null);
@@ -215,7 +201,7 @@ export function PortaScene({
       />
       <header className="absolute inset-x-0 top-0 flex items-center gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div
-          className="glass flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-full py-1 pl-4 pr-1"
+          className="glass flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-full py-1 pl-4 pr-1 lg:max-w-md"
           data-porta-level
         >
           <span className="min-w-0 flex-1">
@@ -254,7 +240,7 @@ export function PortaScene({
             {Icon.trophy()}
           </RoundIcon>
         </div>
-        <CloseButton onClick={onClose} className="glass shrink-0" />
+        <CloseButton onClick={onClose} className="glass shrink-0 lg:ml-auto" />
       </header>
       {back && (
         <output
@@ -289,7 +275,10 @@ export function PortaScene({
           </button>
         </output>
       )}
-      <div ref={dockRef} className="pointer-events-none absolute inset-x-0 bottom-0">
+      <div
+        ref={dockRef}
+        className="pointer-events-none absolute inset-x-0 bottom-0 lg:inset-x-auto lg:bottom-5 lg:right-5 lg:w-[28rem]"
+      >
         <PortaDock
           p={p}
           v={v}
@@ -340,7 +329,7 @@ function RoundIcon({
       aria-pressed={on}
       onClick={onClick}
       data-porta-round={attr}
-      className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition active:scale-95 [&_svg]:h-5 [&_svg]:w-5 ${on ? "bg-info text-ink" : "glass-chip text-cream"}`}
+      className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition active:scale-95 [&_svg]:h-5 [&_svg]:w-5 ${on ? "ink-pill" : "glass-chip text-cream"}`}
     >
       {children}
       {badge !== undefined && (
@@ -352,7 +341,7 @@ function RoundIcon({
   );
 }
 
-/** The Porta's diorama under its labels. */
+/** The Porta's board (Porcellana, P2) under its pins. */
 function SceneView(props: {
   v: PortaView;
   tier: number;
@@ -361,112 +350,140 @@ function SceneView(props: {
   transportId: string;
   focus: Focus;
   dockH: number;
+  dockW: number;
   onTier: (n: number) => void;
   onDark: () => void;
   onChoose: (id: string, role: "combat" | "transport") => void;
   onStall: () => void;
 }) {
   const { v } = props;
-  const labels = useRef<HTMLDivElement>(null);
-  const docked = [
+  const docked: Docked[] = [
     ...v.vehicles
       .filter((x) => x.place === "porta")
-      .map((x) => ({ ...x, role: "combat" as const })),
+      .map((x) => ({ id: x.id, model: x.model, role: "combat" as const })),
     ...v.transports
       .filter((x) => x.place === "porta")
-      .map((x) => ({ ...x, role: "transport" as const, model: x.type })),
+      .map((x) => ({ id: x.id, model: x.type, role: "transport" as const })),
   ];
+  // The board is built again only when what stands on it changes.
+  const shape = `${docked.map((x) => x.id).join(",")}|${v.tiers.map((t) => (t.open ? 1 : 0)).join("")}|${RARITIES.map((r) => (v.relics[r] > 0 ? 1 : 0)).join("")}`;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rebuilt by its shape only
+  const spec = useMemo(() => portaSpec(v, docked), [shape]);
+  const sh = useRef<Shared>({
+    chosen: null,
+    hover: null,
+    running: true,
+    goTo: null,
+    pins: new Map(),
+    card: null,
+    target: new Vector3(),
+    marked: new Set(),
+  }).current;
+  const look = LOOK[props.focus];
+  sh.goTo = look.at;
+  sh.goZoom = look.zoom;
+  sh.inset = props.dockH;
+  sh.insetRight = props.dockW;
+  sh.marked = new Set([
+    `tier:${props.tier}`,
+    ...(props.dark ? ["dark"] : []),
+    `veh:${props.combatId}`,
+    `veh:${props.transportId}`,
+  ]);
+  const pin = (id: string) => (el: HTMLButtonElement | null) => {
+    if (el) sh.pins.set(id, el);
+    else sh.pins.delete(id);
+  };
+  const pick = (id: string | null) => {
+    if (!id) return;
+    if (id.startsWith("tier:")) {
+      const n = Number(id.slice(5));
+      if (v.tiers.find((t) => t.tier === n)?.open) props.onTier(n);
+    } else if (id === "dark") props.onDark();
+    else if (id === "stall") props.onStall();
+    else if (id.startsWith("veh:")) {
+      const x = docked.find((d) => `veh:${d.id}` === id);
+      if (x) props.onChoose(x.id, x.role);
+    }
+  };
   return (
-    <div className="absolute inset-0">
+    <div className="porcellana absolute inset-0" style={{ background: ROME_DUSK.sky }}>
       {MAP_3D ? (
         <Guard3D>
           <Canvas
             orthographic
-            frameloop="demand"
-            dpr={[1, 1.5]}
-            camera={{ position: [0, 46, 44], zoom: 1 }}
-            gl={{ antialias: true }}
-            onCreated={({ scene }) => {
-              scene.background = new Color(ROME_DUSK.sky);
+            dpr={[1, 2]}
+            gl={{ antialias: true, powerPreference: "high-performance" }}
+            onCreated={({ camera }) => {
+              (camera as OrthographicCamera & { manual?: boolean }).manual = true;
             }}
           >
-            <CameraRig focus={props.focus} dockH={props.dockH} />
-            <Pace fps={live() ? 30 : 0} />
-            {/* The lands of Rome at dusk (the refonte claire, lot 4). */}
-            <hemisphereLight args={[ROME_DUSK.hemiSky, ROME_DUSK.hemiGround, 1.1]} />
-            <directionalLight position={[-60, 70, 40]} intensity={2.4} color={ROME_DUSK.sun} />
-            <Suspense fallback={null}>
-              <Scene {...props} docked={docked} />
-              <AnchorLayer root={labels} anchors={ANCHOR} />
-            </Suspense>
+            <TileBoard spec={spec} sh={sh} onPick={pick} />
           </Canvas>
         </Guard3D>
       ) : (
         <PlainGround />
       )}
-      {/* The labels over the scene, each at its anchor (Anchors moves them each frame). */}
-      <div
-        ref={labels}
-        className={`pointer-events-none absolute inset-0 ${MAP_3D ? "" : "hidden"}`}
-      >
-        {v.tiers.map((t, i) => (
-          <div key={t.tier} data-anchor={`step:${i}`} className="absolute left-0 top-0">
-            <button
-              type="button"
-              disabled={!t.open}
-              onClick={() => props.onTier(t.tier)}
-              aria-pressed={props.tier === t.tier}
-              data-porta-tier={t.tier}
-              className={`pointer-events-auto -translate-x-1/2 -translate-y-1/2 flex min-h-11 min-w-11 flex-col items-center justify-center rounded-full px-2.5 text-xs font-bold shadow-lg shadow-black/50 ${
-                props.tier === t.tier
-                  ? "bg-info text-night"
-                  : t.open
-                    ? "bg-night/85 text-cream ring-1 ring-line"
-                    : "bg-night/60 text-cream-dim"
-              }`}
-            >
-              {t.open ? t.tier : "🔒"}
-            </button>
-          </div>
-        ))}
-        <div data-anchor="dark" className="absolute left-0 top-0">
+      <div className={`pc-pins ${MAP_3D ? "" : "hidden"}`}>
+        {sixTiers(v).map((t) => (
           <button
+            key={t.tier}
+            ref={pin(`tier:${t.tier}`)}
             type="button"
-            role="switch"
-            aria-checked={props.dark}
-            onClick={props.onDark}
-            data-porta-dark
-            className={`pointer-events-auto -translate-x-1/2 -translate-y-1/2 min-h-11 rounded-full px-3 text-xs font-bold shadow-lg ${props.dark ? "bg-[#2A1630] text-[#E8A0FF] ring-2 ring-[#B060D0]" : "bg-night/80 text-cream-dim ring-1 ring-line"}`}
+            className="pc-pin"
+            data-out="false"
+            data-on={String(props.tier === t.tier)}
+            disabled={!t.open}
+            onClick={() => props.onTier(t.tier)}
+            aria-pressed={props.tier === t.tier}
+            aria-label={`${pt.tier(t.tier)}${t.open ? "" : ` · ${pt.tierClosed}`}`}
+            data-porta-tier={t.tier}
           >
-            {pt.dark}
+            {t.open ? t.tier : "·"}
           </button>
-        </div>
-        {docked.map((x, i) => {
+        ))}
+        <button
+          ref={pin("dark")}
+          type="button"
+          role="switch"
+          aria-checked={props.dark}
+          aria-label={pt.dark}
+          className="pc-pin pc-pin-wide"
+          data-out="false"
+          data-on={String(props.dark)}
+          onClick={props.onDark}
+          data-porta-dark
+        >
+          {pt.dark}
+        </button>
+        {docked.map((x) => {
           const chosen = x.id === props.combatId || x.id === props.transportId;
           return (
-            <div key={x.id} data-anchor={`quay:${i}`} className="absolute left-0 top-0">
-              <button
-                type="button"
-                onClick={() => props.onChoose(x.id, x.role)}
-                aria-pressed={chosen}
-                data-porta-vehicle={x.id}
-                className={`pointer-events-auto -translate-x-1/2 translate-y-2 min-h-11 rounded-full px-2.5 text-xs font-semibold shadow-lg ${chosen ? "bg-night/85 text-cream ring-2 ring-info" : "bg-night/85 text-cream ring-1 ring-line"}`}
-              >
-                {x.role === "combat" ? (pt.model[x.model] ?? x.model) : x.model}
-                {x.repairUntil !== null && x.repairUntil > Date.now() ? ` · ${pt.hurt}` : ""}
-              </button>
-            </div>
+            <button
+              key={x.id}
+              ref={pin(`veh:${x.id}`)}
+              type="button"
+              className="pc-pin pc-pin-wide"
+              data-out="false"
+              data-on={String(chosen)}
+              onClick={() => props.onChoose(x.id, x.role)}
+              aria-pressed={chosen}
+              data-porta-vehicle={x.id}
+            >
+              {x.role === "combat" ? (pt.model[x.model] ?? x.model) : x.model}
+            </button>
           );
         })}
-        <div data-anchor="stall" className="absolute left-0 top-0">
-          <button
-            type="button"
-            onClick={props.onStall}
-            className="pointer-events-auto -translate-x-1/2 translate-y-2 min-h-11 rounded-full bg-night/85 px-3 text-xs font-semibold text-cream ring-1 ring-edge shadow-lg"
-          >
-            {pt.antiquarian}
-          </button>
-        </div>
+        <button
+          ref={pin("stall")}
+          type="button"
+          className="pc-pin pc-pin-wide"
+          data-out="false"
+          data-on="false"
+          onClick={props.onStall}
+        >
+          {pt.antiquarian}
+        </button>
       </div>
     </div>
   );
@@ -474,191 +491,3 @@ function SceneView(props: {
 
 /** What the camera looks at, by the dock's decision (docs/plan-dock.md). */
 export type Focus = "quay" | "steps" | "gate" | "stall";
-const FOCUS: Record<Focus, { at: [number, number]; zoom: number }> = {
-  quay: { at: [-12, 9], zoom: 1.35 },
-  steps: { at: [0, -5], zoom: 1.1 },
-  gate: { at: [0, -10], zoom: 1.05 },
-  stall: { at: [15, 8], zoom: 1.5 },
-};
-/** The camera's slant: a step on the ground toward it is this much on the screen. */
-const SLANT = 0.715;
-const OFFSET = new Vector3(0, 46, 45);
-
-/**
- * The camera framed on the scene above the dock, gliding to what the dock decides (the quay for
- * the crew, the steps for the tier, the gate to go, the stall); at once for less motion.
- */
-function CameraRig({ focus, dockH }: { focus: Focus; dockH: number }) {
-  const { camera, size, invalidate } = useThree();
-  const look = useRef(new Vector3(0, 0, -1));
-  const goal = useRef({ look: new Vector3(0, 0, -1), zoom: 2 });
-  useEffect(() => {
-    const across = 52;
-    const room = Math.max(160, size.height - dockH - 72);
-    const fit = Math.max(2, Math.min(size.width / across, room / (across * 0.75)));
-    const f = FOCUS[focus];
-    const zoom = fit * f.zoom;
-    // The point of focus in the middle of the room above the dock, not of the whole screen.
-    const shift = (dockH - 72) / 2 / zoom / SLANT;
-    goal.current = { look: new Vector3(f.at[0], 0, f.at[1] + shift), zoom };
-    if (!live()) {
-      look.current.copy(goal.current.look);
-      camera.zoom = zoom;
-      camera.position.copy(look.current).add(OFFSET);
-      camera.lookAt(look.current);
-      camera.updateProjectionMatrix();
-    }
-    invalidate();
-  }, [camera, size, focus, dockH, invalidate]);
-  useFrame((_, dt) => {
-    const g = goal.current;
-    const k = live() ? 1 - Math.exp(-dt * 6) : 1;
-    const before = look.current.distanceTo(g.look) + Math.abs(camera.zoom - g.zoom);
-    if (before < 0.001) return;
-    look.current.lerp(g.look, k);
-    camera.zoom += (g.zoom - camera.zoom) * k;
-    camera.position.copy(look.current).add(OFFSET);
-    camera.lookAt(look.current);
-    camera.updateProjectionMatrix();
-    invalidate();
-  });
-  return null;
-}
-
-/** The anchors' points, set by the scene as it lays its parts out. */
-const ANCHOR: Anchors = new Map();
-
-const tile = hexSlab(4.9, 2, 0.5);
-const arch = new MeshBasicMaterial({ color: "#E06A4A", transparent: true, opacity: 0.85 });
-const archDark = new MeshBasicMaterial({ color: "#5B2A7A", transparent: true, opacity: 0.9 });
-
-function Scene({
-  v,
-  tier,
-  dark,
-  combatId,
-  transportId,
-  docked,
-}: {
-  v: PortaView;
-  tier: number;
-  dark: boolean;
-  combatId: string;
-  transportId: string;
-  docked: { id: string; model: string; role: "combat" | "transport" }[];
-}) {
-  // The ground: a few tiles of sand before the gate, Rome's red lands beyond it.
-  const ground = useMemo(() => {
-    const out: { x: number; y: number; z: number; s: number; rot: number; rome: boolean }[] = [];
-    for (let r = -4; r <= 3; r++)
-      for (let q = -5; q <= 5; q++) {
-        const x = (q + r / 2) * 8.5;
-        const z = r * 7.4 + 4;
-        if (Math.hypot(x, z - 2) > 30) continue;
-        out.push({ x, y: 0, z, s: 1, rot: Math.PI / 6, rome: z < GATE[2] + 1 });
-      }
-    return out;
-  }, []);
-  for (let i = 0; i < v.tiers.length; i++)
-    ANCHOR.set(
-      `step:${i}`,
-      stepAt(i, v.tiers.length).map((n, k) => (k === 1 ? 2.6 : n)) as [number, number, number],
-    );
-  ANCHOR.set("dark", [DARK[0], 1.4, DARK[2]]);
-  docked.forEach((_, i) => ANCHOR.set(`quay:${i}`, QUAY(i)));
-  ANCHOR.set("stall", STALL);
-  return (
-    <group>
-      <Instanced
-        geo={tile}
-        items={ground.filter((g) => !g.rome)}
-        material={claySolid(ROME_DUSK.earth)}
-      />
-      <Instanced
-        geo={tile}
-        items={ground.filter((g) => g.rome)}
-        material={claySolid(ROME_DUSK.deep)}
-      />
-      {/* The gate: two towers, its arch of stone, the lands' glow through it. */}
-      <group position={GATE}>
-        <primitive object={GATE_MODEL} />
-        <mesh position={[0, 5.6, 0.2]} material={dark ? archDark : arch}>
-          <planeGeometry args={[7, 10.6]} />
-        </mesh>
-      </group>
-      {/* The tiers, steps of stone, each higher; the chosen one in lapis, the closed ones dim. */}
-      {v.tiers.map((t, i) => (
-        <mesh
-          key={t.tier}
-          position={stepAt(i, v.tiers.length)}
-          material={claySolid(t.tier === tier ? C.water : t.open ? C.rock2 : C.mistSoil)}
-          scale={[1, 0.6 + i * 0.35, 1]}
-        >
-          <cylinderGeometry args={[2.4, 2.7, 2, 6]} />
-        </mesh>
-      ))}
-      {/* The Porta noire: a slab of black stone, lit violet when chosen. */}
-      <mesh position={DARK} material={claySolid(dark ? "#3A1A4A" : "#1C2230")}>
-        <boxGeometry args={[6, 0.6, 3]} />
-      </mesh>
-      {/* The quay: the house's vehicles waiting, as figurines. */}
-      {docked.map((x, i) => (
-        <group key={x.id} position={QUAY(i)} rotation-y={Math.PI * 0.85}>
-          {(x.id === combatId || x.id === transportId) && (
-            <mesh rotation-x={-Math.PI / 2} position-y={0.05}>
-              <ringGeometry args={[2.4, 2.9, 32]} />
-              <meshBasicMaterial color={C.gold} />
-            </mesh>
-          )}
-          <group scale={1.6}>
-            {x.role === "combat" ? (
-              <Figure role={roleOf({ side: "player", model: x.model })} live={live()} />
-            ) : (
-              <QuayMule />
-            )}
-          </group>
-        </group>
-      ))}
-      {/* The antiquarian's stall: a market's roof, its chests by rarity. */}
-      <group position={STALL}>
-        <primitive object={STALL_MODEL} />
-        {RARITIES.map((r, i) =>
-          Array.from({ length: Math.min(6, v.relics[r]) }, (_, j) => (
-            <mesh
-              // biome-ignore lint/suspicious/noArrayIndexKey: a chest a relic, stacked
-              key={`${r}${j}`}
-              position={[-3 + i * 2, 0.6 + j * 1.15, 5]}
-              material={claySolid(RARITY_HEX[r])}
-            >
-              <boxGeometry args={[1.6, 1.1, 1.2]} />
-            </mesh>
-          )),
-        )}
-      </group>
-    </group>
-  );
-}
-
-/** A transport at the quay: Porcellana's mule (D6). */
-function QuayMule() {
-  const m = useMemo(() => {
-    const x = mule(HOUSE, { seed: 0, running: false });
-    x.group.scale.setScalar(3.6);
-    x.group.rotation.y = -Math.PI / 2;
-    return x.group;
-  }, []);
-  return <primitive object={m} />;
-}
-
-/** The Porta and the antiquarian's stall in Porcellana (D5, D6): Rome's in biscuit. */
-const HOUSE = createPalette();
-const GATE_MODEL = (() => {
-  const g = porta(createPalette({ biscuit: true }), { seed: 0, running: true }).group;
-  g.scale.setScalar(2.4);
-  return g;
-})();
-const STALL_MODEL = (() => {
-  const g = post(HOUSE).group;
-  g.scale.setScalar(1.7);
-  return g;
-})();

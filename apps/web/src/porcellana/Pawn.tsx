@@ -68,6 +68,11 @@ function build(role: Role) {
   return { root, man };
 }
 
+/** A unit's piece as a still group (a board's tile): its mount and crew with it. */
+export function figureOf(role: Role): Group {
+  return build(role).root;
+}
+
 export const Pawn = forwardRef<FigureHandle, { role: Role; live: boolean }>(function Pawn(
   { role, live },
   ref,
