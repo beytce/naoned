@@ -23,6 +23,7 @@ import {
   Vector3,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { BATTLE, PAWNS, PORTA, PortaOverlay } from "./LabPorta.js";
 import { PlaceCard, type PlaceCardHandle, type PlaceCardInfo } from "./PlaceCard.js";
 import { Stage } from "./Stage.js";
 import { easeOutCubic, lifeOut, pinOut, routesDrawn, tileDelay, tileDrop } from "./arrival.js";
@@ -37,18 +38,23 @@ import { type Vehicle, cart, ship } from "./models/vehicles.js";
 import { drawChevron, drawnIndices, ribbonGeometry, roundedPath, seaDashes } from "./ribbon.js";
 import { Blush } from "./selection.js";
 import { box } from "./shapes.js";
-import { BOARD, CAMERA, RIBBON, SELECT } from "./tokens.js";
+import { BISCUIT, BOARD, CAMERA, RIBBON, SELECT } from "./tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
 
 // One palette for every model of a laboratory's board (the blush clones it while chosen).
 let labPalette: Palette | null = null;
-function palette(): Palette {
+let labBiscuit: Palette | null = null;
+export function palette(biscuit = false): Palette {
+  if (biscuit) {
+    labBiscuit ??= createPalette({ biscuit: true });
+    return labBiscuit;
+  }
   labPalette ??= createPalette();
   return labPalette;
 }
 
-interface Place {
+export interface Place {
   id: string;
   label: string;
   plus?: boolean;
@@ -56,15 +62,21 @@ interface Place {
 }
 
 /** A cell of a laboratory's board. */
-interface Cell {
+export interface Cell {
   water?: boolean;
+  /** A tile of the lands of Rome, in biscuit (the Porta's proposal). */
+  rome?: boolean;
   make?: (o: ModelOpts) => Built;
   vehicle?: (o: ModelOpts) => Vehicle;
   place?: Place;
 }
 
-interface Spec {
+export interface Spec {
   rows: string[][];
+  /** The lands of Rome: the board in biscuit, the background too. */
+  biscuit?: boolean;
+  /** No cart along the roads (a battle's march). */
+  noCarts?: boolean;
   /** A cell's content; null where there is no tile (the board has the shape it has). */
   cell(key: string, i: number, j: number): Cell | null;
   /** The roads in tile coordinates, each from where the goods leave to where they go. */
@@ -103,7 +115,7 @@ function Scene({
 }: { spec: Spec; sh: Shared; onPick: (id: string | null) => void }) {
   const { camera, gl, size } = useThree();
   const live = useMemo(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, []);
-  const P = palette();
+  const P = palette(spec.biscuit);
   const blush = useMemo(() => new Blush(P), [P]);
   const cols = Math.max(...spec.rows.map((r) => r.length));
   const rows = spec.rows.length;
@@ -126,7 +138,7 @@ function Scene({
         if (!cell) continue;
         const g = new Group();
         g.position.set(wx(i), 0, wz(j));
-        g.add(slab(P, !!cell.water));
+        g.add(slab(cell.rome ? palette(true) : P, !!cell.water));
         // The dressing keeps off the roads that cross the tile.
         const keepOff = (x: number, z: number) =>
           samples.some((p) => (p.x - wx(i) - x) ** 2 + (p.z - wz(j) - z) ** 2 < 1.15 * 1.15);
@@ -182,7 +194,7 @@ function Scene({
       ribbon.receiveShadow = true;
       root.add(ribbon);
       const c = cart(P, { seed: k, running: true });
-      root.add(c.group);
+      if (!spec.noCarts) root.add(c.group);
       roads.push({ ribbon, route, cart: c, off: k * 0.37 });
     });
     // The sea roads: dashes of accent on the water, a ship along each.
@@ -391,7 +403,11 @@ function Scene({
   };
   return (
     <>
-      <Stage target={sh.target} phone={PHONE()} />
+      <Stage
+        target={sh.target}
+        phone={PHONE()}
+        background={spec.biscuit ? BISCUIT.bg : undefined}
+      />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: the keyboard reaches each place by its pin, a button. */}
       <primitive
         object={board.root}
@@ -594,7 +610,16 @@ const CAT: Spec = {
 
 export default function PorcellanaLab() {
   const view = new URLSearchParams(window.location.search).get("vue");
-  const spec = view === "catalogue" ? CAT : KIT;
+  const spec =
+    view === "catalogue"
+      ? CAT
+      : view === "porta"
+        ? PORTA
+        : view === "bataille"
+          ? BATTLE
+          : view === "pions"
+            ? PAWNS
+            : KIT;
   const [chosen, setChosen] = useState<string | null>(null);
   const [running, setRunning] = useState(true);
   const [family, setFamily] = useState<Family | null>(null);
@@ -629,7 +654,11 @@ export default function PorcellanaLab() {
     return () => window.removeEventListener("keydown", k);
   }, []);
   return (
-    <div className="porcellana fixed inset-0" data-porcellana-lab>
+    <div
+      className="porcellana fixed inset-0"
+      data-porcellana-lab
+      style={spec.biscuit ? { background: BISCUIT.bg } : undefined}
+    >
       <Canvas
         orthographic
         dpr={[1, 2]}
@@ -663,7 +692,7 @@ export default function PorcellanaLab() {
         ))}
       </div>
       <nav className="pc-tools pc-pill" aria-label="Laboratoire">
-        <a className="pc-tool" href="?lab=porcellana" aria-current={view !== "catalogue"}>
+        <a className="pc-tool" href="?lab=porcellana" aria-current={!view}>
           Plateau
         </a>
         <a
@@ -673,6 +702,16 @@ export default function PorcellanaLab() {
         >
           Catalogue
         </a>
+        {(["porta", "bataille", "pions"] as const).map((v) => (
+          <a
+            key={v}
+            className="pc-tool"
+            href={`?lab=porcellana&vue=${v}`}
+            aria-current={view === v}
+          >
+            {v === "porta" ? "Porta" : v === "bataille" ? "Bataille" : "Pions"}
+          </a>
+        ))}
         <button
           type="button"
           className="pc-tool"
@@ -702,6 +741,7 @@ export default function PorcellanaLab() {
           </div>
         </div>
       ) : null}
+      {view === "porta" || view === "bataille" ? <PortaOverlay view={view} /> : null}
       {current ? (
         <PlaceCard
           ref={(h) => {
