@@ -55,7 +55,7 @@ function payload(over: Record<string, unknown> = {}): EmpirePayload {
   return {
     catalog: [],
     goods: {},
-    stock: {},
+    stock: { flour: 5 },
     view: {
       house: {
         casa: 1,
@@ -70,7 +70,18 @@ function payload(over: Record<string, unknown> = {}): EmpirePayload {
           },
         ],
       },
-      orders: [{ city: "padova", orders: [{}, {}], cap: 3 }],
+      orders: [
+        {
+          city: "padova",
+          cap: 3,
+          orders: [
+            { id: "o1", good: "flour", qty: 2, pay: "100" },
+            { id: "o2", good: "wheat", qty: 50, pay: "100" },
+          ],
+        },
+      ],
+      vehicles: { mine: [] },
+      stores: [{ post: "home", goods: { flour: 5 } }],
       map,
     },
   } as unknown as EmpirePayload;
@@ -107,6 +118,8 @@ describe("the board of the house", () => {
     expect(place("1,1")?.name).toBe("San Marco");
     expect(place("5,3")?.pin).toBe("2");
     expect(place("5,3")?.ready).toBe(true);
+    // Its crates on the quay: the flour the house has, the wheat it lacks.
+    expect(b?.tiles.find((x) => x.key === "5,3")?.crates).toEqual([true, false]);
     expect(place("4,1")?.target).toEqual({ kind: "sector", cell: "4,1" });
     expect(place("4,1")?.sub).toContain("75");
   });

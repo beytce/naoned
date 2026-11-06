@@ -32,6 +32,9 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { EmpireMapHandle } from "../../empire/map/EmpireMap.js";
 import type { Target } from "../../empire/map/logic.js";
+import { vehiclePose } from "../../empire/map/logic.js";
+import { Guard3D } from "../../empire/map3d/Guard.js";
+import { MAP_3D } from "../../empire/map3d/flag.js";
 import type { EmpirePayload } from "../../empire/types.js";
 import { PlaceCard, type PlaceCardHandle } from "../PlaceCard.js";
 import { Stage } from "../Stage.js";
@@ -40,10 +43,12 @@ import { bake } from "../bake.js";
 import { type Palette, createPalette } from "../materials.js";
 import { slab } from "../models/ground.js";
 import type { Built, ModelOpts } from "../models/model.js";
+import type { Vehicle } from "../models/vehicles.js";
 import { drawChevron, drawnIndices, ribbonGeometry, roundedPath } from "../ribbon.js";
 import { Blush } from "../selection.js";
 import { BOARD, CAMERA, RIBBON, SELECT } from "../tokens.js";
-import { modelOf } from "./models.js";
+import { FlatBoard } from "./FlatBoard.js";
+import { PARK, modelOf, vehicleModel } from "./models.js";
 import { type BoardPlace, type BoardScene, type BoardTile, boardOf } from "./scene.js";
 
 const S = BOARD.tile + BOARD.gap;
@@ -68,6 +73,13 @@ interface Shared {
   card: PlaceCardHandle | null;
   target: Vector3;
   goHome: number;
+  /** The house's payload and the server's time at the last render, for the vehicles' poses. */
+  p: EmpirePayload;
+  now: number;
+  nowAt: number;
+  /** Keys asked of the map: a step to pan (in screens), a factor to zoom. */
+  pan: [number, number];
+  zoom: number;
 }
 
 /** A tile's middle in the scene (x, z), from its tile coordinates. */
@@ -76,9 +88,11 @@ const world = (i: number, j: number): [number, number] => [i * S, j * S];
 function Board({
   sh,
   onPick,
+  onVehicle,
 }: {
   sh: Shared;
   onPick: (id: string | null) => void;
+  onVehicle: (id: string) => void;
 }) {
   const { camera, gl, size } = useThree();
   const live = useMemo(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, []);
@@ -87,6 +101,7 @@ function Board({
   const root = useMemo(() => new Group(), []);
   const tiles = useRef(new Map<string, Live>());
   const clock = useRef({ t: live ? 0 : 10, life: 0 });
+  const vehicles = useRef(new Map<string, Vehicle & { opts: ModelOpts }>());
 
   // The roads: a ribbon each, one texture whose chevrons run.
   const tex = useMemo(() => {
@@ -161,7 +176,7 @@ function Board({
     const seen = new Set<string>();
     for (const tile of scene.tiles) {
       seen.add(tile.key);
-      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}`;
+      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}|${(tile.crates ?? []).map(Number).join("")}`;
       const was = tiles.current.get(tile.key);
       if (was && was.sig === sig) continue;
       if (was) root.remove(was.group);
@@ -311,6 +326,20 @@ function Board({
       cam.zoom = f.z0 + (f.z1 - f.z0) * k;
       cam.updateProjectionMatrix();
     }
+    // The keys of a computer: an arrow moves the map by a share of the screen, « + » and « - » zoom.
+    if (sh.pan[0] !== 0 || sh.pan[1] !== 0 || sh.zoom !== 1) {
+      const az = controls.getAzimuthalAngle();
+      const across = (cam.right - cam.left) / cam.zoom;
+      const step = new Vector3(Math.cos(az), 0, -Math.sin(az))
+        .multiplyScalar(sh.pan[0] * across)
+        .add(new Vector3(-Math.sin(az), 0, -Math.cos(az)).multiplyScalar(-sh.pan[1] * across));
+      camera.position.add(step);
+      controls.target.add(step);
+      cam.zoom = Math.min(CAMERA.maxZoom, Math.max(CAMERA.minZoom, cam.zoom * sh.zoom));
+      cam.updateProjectionMatrix();
+      sh.pan = [0, 0];
+      sh.zoom = 1;
+    }
     controls.update();
     sh.target.copy(controls.target);
 
@@ -333,6 +362,51 @@ function Board({
     for (const m of roads.current.meshes)
       m.geometry.setDrawRange(0, drawnIndices(m.geometry.index?.count ?? 0, drawn));
     if (live) tex.offset.x -= dt * RIBBON.speed;
+
+    // The vehicles: on their road while a hop is under way (the server's time), else parked at
+    // their place, along its tile's south edge.
+    const t = sh.now + (performance.now() - sh.nowAt);
+    const tileSize = sh.scene.tileSize;
+    const mine = sh.p.view?.vehicles.mine ?? [];
+    const parked = new Map<string, number>();
+    const seenV = new Set<string>();
+    for (const v of mine) {
+      seenV.add(v.id);
+      let actor = vehicles.current.get(v.id);
+      if (!actor) {
+        const o: ModelOpts = { seed: 0, running: false };
+        const made = vehicleModel(P, v.type, o);
+        made.group.userData.vehicleId = v.id;
+        made.group.traverse((x) => {
+          x.userData.vehicleId = v.id;
+        });
+        root.add(made.group);
+        actor = { ...made, opts: o };
+        vehicles.current.set(v.id, actor);
+      }
+      const pose = vehiclePose(sh.p, v, t);
+      let x = (pose.x / tileSize - 0.5) * S;
+      let z = (pose.y / tileSize - 0.5) * S;
+      let heading = -pose.angle;
+      if (!pose.hop) {
+        const k = parked.get(pose.place ?? "") ?? 0;
+        parked.set(pose.place ?? "", k + 1);
+        const [ox, oz] = PARK[k % PARK.length] as [number, number];
+        x += ox;
+        z += oz;
+        heading = Math.PI;
+      }
+      actor.opts.running = !!pose.hop && live;
+      actor.group.position.set(x, 0.02, z);
+      actor.group.rotation.y = heading;
+      actor.group.visible = drawn > 0.99;
+      actor.tick(c.life);
+    }
+    for (const [id, a] of vehicles.current)
+      if (!seenV.has(id)) {
+        root.remove(a.group);
+        vehicles.current.delete(id);
+      }
 
     // The ring and the blush.
     const ringMat = ring.material as MeshBasicMaterial;
@@ -367,6 +441,11 @@ function Board({
     }
   });
 
+  const vehicleOf = (e: ThreeEvent<PointerEvent | MouseEvent>): string | null => {
+    for (let o: Object3D | null = e.object; o; o = o.parent)
+      if (o.userData.vehicleId) return o.userData.vehicleId as string;
+    return null;
+  };
   const placeOf = (e: ThreeEvent<PointerEvent | MouseEvent>): BoardPlace | null => {
     for (let o: Object3D | null = e.object; o; o = o.parent) {
       const k = o.userData.tileKey as string | undefined;
@@ -383,7 +462,9 @@ function Board({
         onClick={(e: ThreeEvent<MouseEvent>) => {
           if (e.delta > 6) return;
           e.stopPropagation();
-          onPick(placeOf(e)?.id ?? null);
+          const v = vehicleOf(e);
+          if (v) onVehicle(v);
+          else onPick(placeOf(e)?.id ?? null);
         }}
         onPointerMove={(e: ThreeEvent<PointerEvent>) => {
           const id = placeOf(e)?.id ?? null;
@@ -428,9 +509,19 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       card: null,
       target: new Vector3(),
       goHome: 0,
+      p,
+      now,
+      nowAt: performance.now(),
+      pan: [0, 0],
+      zoom: 1,
     };
   if (sh.current && scene) {
     sh.current.scene = scene;
+    sh.current.p = p;
+    if (sh.current.now !== now) {
+      sh.current.now = now;
+      sh.current.nowAt = performance.now();
+    }
     sh.current.chosen = chosen;
   }
   // The game closed the place's dock: the place is let go.
@@ -456,8 +547,13 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
     recenter: goHome,
     house: goHome,
     info: () => {},
-    pan: () => {},
-    zoom: () => {},
+    pan: (dx, dy) => {
+      if (sh.current)
+        sh.current.pan = [sh.current.pan[0] + dx * 0.12, sh.current.pan[1] + dy * 0.12];
+    },
+    zoom: (k) => {
+      if (sh.current) sh.current.zoom *= k;
+    },
   }));
   const pick = (id: string | null) => {
     setChosen(id);
@@ -477,17 +573,37 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
   const current = places.find((x) => x.id === chosen);
   return (
     <div className="porcellana absolute inset-0" data-porcellana-map>
-      <Canvas
-        orthographic
-        dpr={[1, 2]}
-        gl={{ antialias: true, powerPreference: "high-performance" }}
-        onCreated={({ camera }) => {
-          (camera as OrthographicCamera & { manual?: boolean }).manual = true;
-        }}
-        onPointerMissed={() => pick(null)}
-      >
-        <Board sh={shared} onPick={pick} />
-      </Canvas>
+      {!MAP_3D ? (
+        <FlatBoard
+          scene={scene}
+          chosen={chosen}
+          onPick={pick}
+          card={shared.card}
+          pins={shared.pins}
+        />
+      ) : (
+        <Guard3D>
+          <Canvas
+            orthographic
+            dpr={[1, 2]}
+            gl={{ antialias: true, powerPreference: "high-performance" }}
+            onCreated={({ camera }) => {
+              (camera as OrthographicCamera & { manual?: boolean }).manual = true;
+            }}
+            onPointerMissed={() => pick(null)}
+          >
+            <Board
+              sh={shared}
+              onPick={pick}
+              onVehicle={(id) => {
+                setChosen(null);
+                setCarded(false);
+                onTarget({ kind: "vehicle", id });
+              }}
+            />
+          </Canvas>
+        </Guard3D>
+      )}
       <div className="pc-vignette" />
       <div className="pc-pins">
         {places.map((x) => (

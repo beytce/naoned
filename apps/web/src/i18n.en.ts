@@ -340,6 +340,7 @@ export const en: Dictionary = {
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
       venezia: "Venice",
+      verona: "Verona",
       padova: "Padua",
       treviso: "Treviso",
       vicenza: "Vicenza",

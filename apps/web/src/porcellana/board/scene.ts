@@ -6,7 +6,7 @@
  */
 import { tileAt } from "@comptoirs/engine";
 import { buildingName, workshopStatus } from "../../empire/logic.js";
-import type { Target } from "../../empire/map/logic.js";
+import { type Target, deliveryPlan } from "../../empire/map/logic.js";
 import type { EmpirePayload } from "../../empire/types.js";
 import { fr } from "../../i18n.js";
 
@@ -78,6 +78,8 @@ export interface BoardTile {
   size?: number;
   /** Venice's own houses. */
   venetian?: boolean;
+  /** A town's orders in crates on its quay: each one covered by the house's stock or not. */
+  crates?: boolean[];
   place: BoardPlace | null;
   seed: number;
 }
@@ -166,7 +168,9 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     const o = orders.get(c.code);
     const waiting = o?.orders.length ?? 0;
     const venice = c.code === "venezia";
+    const crates = waiting > 0 ? deliveryPlan(p, c.code).orders.map((x) => x.covered) : [];
     put(k, {
+      crates,
       water: false,
       model: venice ? "market" : "town",
       size: c.size ?? 1,

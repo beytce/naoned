@@ -11,6 +11,7 @@ import { grove, plot } from "../models/ground.js";
 import { market } from "../models/market.js";
 import type { Built, ModelOpts } from "../models/model.js";
 import { town } from "../models/towns.js";
+import { type Vehicle, cart, mule, rider, ship } from "../models/vehicles.js";
 import { box, crate } from "../shapes.js";
 import type { BoardTile, ModelKey } from "./scene.js";
 
@@ -37,6 +38,19 @@ function site(P: Palette): Built {
   return { group: g, pin: [0, 2.4, 0] };
 }
 
+/**
+ * A town's orders as crates on its quay, along the tile's south edge (the side the camera sees):
+ * of accent those the house's stock covers (it may deliver), of wood the others.
+ */
+export function quayCrates(P: Palette, g: Group, covered: boolean[]): void {
+  const n = Math.min(covered.length, 6);
+  for (let k = 0; k < n; k++) {
+    const x = -2.3 + (k % 3) * 0.5;
+    const y = k >= 3 ? 0.42 : 0.08;
+    crate(g, x, y, 2.45, covered[k] ? P.accent : P.m("wood"), 0.42, (k % 2) * 0.15);
+  }
+}
+
 /** The model of a tile, or nothing for the sea. */
 export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null {
   const key: ModelKey | null = tile.model;
@@ -50,10 +64,16 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
       b.pin = [b.pin[0], b.pin[1] * 0.78, b.pin[2]];
       return b;
     }
-    case "market":
-      return market(P);
-    case "town":
-      return town(P, { ...o, size: tile.size ?? 1, venetian: tile.venetian });
+    case "market": {
+      const b = market(P);
+      quayCrates(P, b.group, tile.crates ?? []);
+      return b;
+    }
+    case "town": {
+      const b = town(P, { ...o, size: tile.size ?? 1, venetian: tile.venetian });
+      quayCrates(P, b.group, tile.crates ?? []);
+      return b;
+    }
     case "plot":
       return plot(P);
     case "locked":
@@ -70,3 +90,21 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
     }
   }
 }
+
+/** A vehicle of the house by its type: a mule, a cart, a ship, else a rider (fleet3d's reading). */
+export function vehicleModel(P: Palette, type: string, o: ModelOpts): Vehicle {
+  if (type === "mule") return mule(P, o);
+  if (type.startsWith("carro")) return cart(P, o);
+  if (/nave|galea|cocca|ship/.test(type)) return ship(P, o);
+  return rider(P, o);
+}
+
+/** Where the vehicles standing at a place park, round its tile's south-east corner (world units). */
+export const PARK: [number, number][] = [
+  [1.1, 2.3],
+  [1.9, 2.3],
+  [2.5, 1.7],
+  [2.5, 0.9],
+  [0.3, 2.5],
+  [2.6, 0.1],
+];

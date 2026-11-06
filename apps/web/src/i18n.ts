@@ -262,6 +262,7 @@ const frDict = {
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
       venezia: "Venise",
+      verona: "Vérone",
       padova: "Padoue",
       treviso: "Trévise",
       vicenza: "Vicence",

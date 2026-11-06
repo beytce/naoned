@@ -112,6 +112,17 @@ try {
       await page.locator(".pc-go").click();
       await shot("4-achat", 4_000);
     }
+    // The keys of a computer: the map moves, then zooms.
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("+");
+    await shot("5-clavier", 6_000);
+    // Without WebGL: the same board, flat, its pins and its card.
+    await page.goto(`${server.url}/?map=svg`);
+    await page.waitForSelector("[data-flat-board]", { timeout: 30_000 });
+    await page.locator("[data-place^='fondaco:']").click();
+    await page.locator(".pc-card").waitFor();
+    await shot("6-plat", 2_000);
     await page.close();
   }
 } finally {
