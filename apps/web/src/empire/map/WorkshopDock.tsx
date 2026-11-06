@@ -60,12 +60,15 @@ export function WorkshopDock({
   onWorkshop,
   onOpen,
   onClose,
+  onEnter,
 }: {
   p: EmpirePayload;
   now: number;
   busy: boolean;
   act: (a: EmpireAction) => Promise<void>;
   workshopId: string;
+  /** Steps into the workshop's inside (docs/plan-ateliers.md lot A5), when the world has them. */
+  onEnter?: () => void;
   /** Another workshop chosen (‹ ›): the dock follows it. */
   onWorkshop: (id: string) => void;
   /** A sheet to open (the family, for the master). */
@@ -105,6 +108,11 @@ export function WorkshopDock({
         onClose={onClose}
       />
       <div key={`${ws.id}:${view}`} className="dock-view flex flex-col gap-3">
+        {onEnter && view === "main" ? (
+          <Slab tone="ghost" className="w-full" onClick={onEnter}>
+            <span data-enter-interior>{fr.empire.interior.enter}</span>
+          </Slab>
+        ) : null}
         {view === "main" ? (
           <Front p={p} ws={ws} now={now} busy={busy} act={act} onView={setView} onOpen={onOpen} />
         ) : view === "upgrade" ? (

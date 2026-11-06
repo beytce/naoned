@@ -85,6 +85,10 @@ import type { EmpireMapHandle, Picked } from "../porcellana/board/PorcellanaMap.
 const ArmsScene = lazy(() =>
   import("./porta/ArmsScene.js").then((m) => ({ default: m.ArmsScene })),
 );
+// The workshops' insides (docs/plan-ateliers.md lot A5), loaded at the first entry.
+const InteriorScene = lazy(() =>
+  import("./interior/InteriorScene.js").then((m) => ({ default: m.InteriorScene })),
+);
 const PortaScene = lazy(() =>
   import("./porta/PortaScene.js").then((m) => ({ default: m.PortaScene })),
 );
@@ -171,6 +175,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   });
   // A fondaco's domain plunged into (3D): its bar at the foot instead of the round buttons.
   const [domain, setDomain] = useState<string | null>(null);
+  // The workshop one has stepped into (its inside over the map), if any.
+  const [inside, setInside] = useState<string | null>(null);
   const domainNow = useRef(domain);
   domainNow.current = domain;
   const [busy, setBusy] = useState(false);
@@ -711,6 +717,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               onWorkshop={(id) => setTarget({ kind: "workshop", id })}
               onOpen={open}
               onClose={() => setTarget(null)}
+              onEnter={
+                p.view?.interiors?.[target.id]
+                  ? () => {
+                      // Inside, the dock steps aside; it comes back on leaving.
+                      setInside(target.id);
+                      setTarget(null);
+                    }
+                  : undefined
+              }
             />
           ) : target ? (
             <ActionPanel
@@ -898,6 +913,21 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         {/* The Remise's arms and the Porta: their scene and their dock; without WebGL, the same dock
           over a plain ground (docs/plan-dock.md, lot 6). */}
         <LazyArms p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+        {inside ? (
+          <GoldLayer depth={GOLD.scene}>
+            <Suspense fallback={null}>
+              <InteriorScene
+                p={p}
+                workshopId={inside}
+                now={now}
+                onClose={() => {
+                  setTarget({ kind: "workshop", id: inside });
+                  setInside(null);
+                }}
+              />
+            </Suspense>
+          </GoldLayer>
+        ) : null}
         <PortaPlace
           p={p}
           now={now}

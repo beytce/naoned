@@ -93,8 +93,13 @@ export function hand(P: Palette, g: Group, x: number, z: number, face: number, s
   return p;
 }
 
+/** So many hands side by side at a station's front, the first at (x, z). */
+export function crewAt(P: Palette, g: Group, n: number, x: number, z: number, face: number): void {
+  for (let i = 0; i < n; i++) hand(P, g, x + (i - (n - 1) / 2) * 1.15, z, face);
+}
+
 /** The bottleneck's ring: flat, of accent, breathing on the floor round the station. */
-function neckRing(P: Palette, g: Group): (t: number) => void {
+export function neckRing(P: Palette, g: Group, scale = 1): (t: number) => void {
   const mat = new MeshBasicMaterial({
     color: P.accentColour,
     transparent: true,
@@ -115,7 +120,7 @@ function neckRing(P: Palette, g: Group): (t: number) => void {
   return (t) => {
     const k = 0.5 + 0.5 * Math.sin(t * 3.2);
     mat.opacity = 0.45 + 0.5 * k;
-    ring.scale.setScalar(1 + 0.03 * k);
+    ring.scale.setScalar(scale * (1 + 0.03 * k));
   };
 }
 
@@ -161,7 +166,12 @@ export function planksOut(P: Palette, o: ModelOpts, door: "north" | "west"): Bui
 }
 
 /** To bark: a low trestle, a trunk on it, the drawknife going along, bark in curls below. */
-export function debarker(P: Palette, o: ModelOpts, edge: { north?: boolean } = {}): Built {
+export function debarker(
+  P: Palette,
+  o: ModelOpts,
+  edge: { north?: boolean } = {},
+  crew = 1,
+): Built {
   const { g, m } = station(P, { north: edge.north });
   for (const x of [-1.1, 1.1]) {
     box(m, 0.14, 0.7, 0.9, x, 0, 0, P.m("wood"), 0.03);
@@ -185,7 +195,7 @@ export function debarker(P: Palette, o: ModelOpts, edge: { north?: boolean } = {
     const c = put(m, curl, P.m("wall2"), x, 0.08, z);
     c.rotation.set(Math.PI / 2, 0, r);
   }
-  hand(P, g, 0.1, 1.45, Math.PI);
+  crewAt(P, g, crew, 0.1, 1.45, Math.PI);
   return {
     group: g,
     pin: [0, 3.9, 0],
@@ -199,7 +209,7 @@ export function debarker(P: Palette, o: ModelOpts, edge: { north?: boolean } = {
  * To saw: a long bench, a trunk being fed, the frame saw going up and down; on the canal's side
  * the water wheel that drives it.
  */
-export function sawBench(P: Palette, o: ModelOpts, neck = false): Built {
+export function sawBench(P: Palette, o: ModelOpts, neck = false, crew = 1): Built {
   const { g, m } = station(P, {});
   box(m, 3.8, 0.85, 0.9, -0.3, 0, 0, P.m("wood"), 0.04);
   box(m, 3.9, 0.08, 1.0, -0.3, 0.85, 0, P.m("wall2"), 0.03);
@@ -237,7 +247,7 @@ export function sawBench(P: Palette, o: ModelOpts, neck = false): Built {
     paddle.rotation.z = a;
   }
   cyl(wheel, 0.16, 0.16, 0.6, 0, -0.3, 0, P.accent, 20).rotation.x = Math.PI / 2;
-  hand(P, g, -1.0, 1.25, Math.PI);
+  crewAt(P, g, crew, -1.0, 1.25, Math.PI);
   const pulse = neck ? neckRing(P, g) : null;
   return {
     group: g,
@@ -279,7 +289,7 @@ export function dryer(P: Palette, o: ModelOpts): Built {
 }
 
 /** To plane: a bench, a board, the plane going back and forth, shavings falling. */
-export function planer(P: Palette, o: ModelOpts): Built {
+export function planer(P: Palette, o: ModelOpts, crew = 1): Built {
   const { g, m } = station(P, {});
   box(m, 3.0, 0.9, 1.0, 0, 0, -0.2, P.m("wood"), 0.04);
   box(m, 3.1, 0.08, 1.1, 0, 0.9, -0.2, P.m("wall2"), 0.03);
@@ -299,7 +309,7 @@ export function planer(P: Palette, o: ModelOpts): Built {
     c.rotation.set(Math.PI / 2, 0, r);
   }
   planks(P, g, 0.2, -1.65, 4, 2.4, 0.36);
-  hand(P, g, 0, 1.15, Math.PI);
+  crewAt(P, g, crew, 0, 1.15, Math.PI);
   return {
     group: g,
     pin: [0, 3.8, 0],

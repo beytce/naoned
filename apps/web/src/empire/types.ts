@@ -1,3 +1,4 @@
+import type { InteriorView } from "@comptoirs/engine";
 import type { TerraAction } from "../game/types.js";
 import type { PortaAction, PortaView } from "./porta/types.js";
 
@@ -188,6 +189,10 @@ export interface EmpireView {
     }[];
   };
   workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
+  /** The workshops' insides, by workshop (docs/plan-ateliers.md § 5.6); absent or empty when off. */
+  interiors?: Record<string, InteriorView>;
+  /** Their rules (the stations' footprints and levels), for the screen's own reckoning. */
+  interiorRules?: InteriorRules | null;
   courtLeft: number;
   identity: EmpireIdentity;
   terra: {
@@ -358,6 +363,24 @@ export interface EmpireRecipe {
   inputs: Record<string, number>;
   outputs: Record<string, number>;
   minutes: number;
+}
+
+/** The rules of the insides as the server sends them (its money as strings). */
+export interface InteriorRules {
+  stations: Record<
+    string,
+    {
+      size: [number, number];
+      trades: string[];
+      levels: {
+        cycleS: number;
+        capacity: number;
+        seats: number;
+        costDucats: string;
+        buildMinutes: number;
+      }[];
+    }
+  >;
 }
 
 export interface EmpirePayload {
