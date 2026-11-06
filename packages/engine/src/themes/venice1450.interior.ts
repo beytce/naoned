@@ -306,16 +306,16 @@ export const venice1450Interior: Interior = {
   handlingSPerTile: 4,
   conveyorHandlingS: 1,
   buffer: { max: 8, lossBps: 800, fullAt: 4 },
-  wear: { slowdownBps: 4_000, floorBps: 9_000, careCostDucats: 20 },
-  fatigue: { perHourBps: 400, restPerHourBps: 800, floorBps: 8_500 },
+  wear: { slowdownBps: 4_000, floorBps: 8_000, careCostDucats: 20 },
+  fatigue: { perHourBps: 400, restPerHourBps: 800, floorBps: 7_500 },
   // A pace of 10 000 is the default plan worn and tired (lot A8): a house that never mends nor
   // rests its workshops makes no less than before the insides; one that tends them makes more.
   reference: "worn",
-  // The default plan worn makes a quarter more than the workshop of before: the workshop modules
+  // The default plan worn makes a tenth more than the workshop of before: the workshop modules
   // of the Scuola are gone, their yield is here (lot A8).
-  basePaceBps: 12_500,
-  // A full hall makes twice and a half the workshop of before: its level grows it beyond.
-  maxPaceBps: 25_000,
+  basePaceBps: 11_000,
+  // A full hall makes twice and a fifth the workshop of before: its level grows it beyond.
+  maxPaceBps: 22_000,
   tradeFit: { same: 10_000, labourer: 7_000, other: 5_000 },
   skillPerLevelBps: 150,
   care: { slowdownBps: 4_000, qualityBps: 5_000 },

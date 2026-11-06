@@ -296,6 +296,13 @@ export interface SimModel {
   galleyStrength: number;
   /** A house's raw goods count as young while its Casa is at most this. */
   youngCasa: number;
+  /**
+   * How a house sells what it does not deliver (lot A8 of docs/plan-ateliers.md): it keeps
+   * `orderReserveDays` of its making for the orders to come, sells the rest at no less than
+   * `surplusFloorBps` of the good's reference, and sells anyway past `storeDays` of its making
+   * (its stores full). 0, 0, 0: everything spare sold at once, at any price (before).
+   */
+  surplus: { orderReserveDays: number; surplusFloorBps: number; storeDays: number };
   /** What a plan sells for between houses, in ducats. */
   planPriceDucats: number;
   plansPerRelic: number;

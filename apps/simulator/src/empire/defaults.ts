@@ -86,6 +86,8 @@ export const DEFAULT_MODEL: SimModel = {
   galleyCostDucats: 1_200,
   galleyStrength: 10,
   youngCasa: 8,
+  // The stores full past 3 days of making (rule 3); the spare sold at once, at any price, as before.
+  surplus: { orderReserveDays: 0, surplusFloorBps: 0, storeDays: 3 },
   planPriceDucats: 80,
   // The antiquarian buys the relics (docs/plan-porta.md): none deciphered into plans.
   plansPerRelic: 0,

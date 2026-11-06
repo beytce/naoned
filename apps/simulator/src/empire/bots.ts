@@ -208,6 +208,9 @@ function collect(w: World, h: House) {
   if (hours > 0)
     for (const [i, ws] of h.workshops.entries()) {
       masterWorked(w, h, i, hours);
+      // Rule 3: a workshop whose goods fill the stores stops, its inputs untouched (lot A8: the
+      // model made planks of the wood the orders wanted, without end).
+      if (storesFull(w, h, ws.good)) continue;
       const saved = Math.min(9_000, identityEffect(w, h, "inputs", i));
       let qty = Math.floor(rateOf(w, h, ws) * hours);
       const recipe = w.m.recipes[ws.good];
@@ -520,7 +523,18 @@ function sellSurplus(w: World, h: House) {
         best = region;
       }
     }
-    takeStock(h, good, sellToMarket(w, h, best, good, spare, "market"));
+    // A day's making kept for the orders to come; the rest sold if the price holds, or anyway
+    // once the stores are full (lot A8: a merchant does not sell below its worth).
+    const { orderReserveDays, surplusFloorBps, storeDays } = w.m.surplus;
+    const day = h.workshops
+      .filter((x) => x.good === good)
+      .reduce((n, x) => n + rateOf(w, h, x) * DAY, 0);
+    const sell = Math.floor(qty - Math.max(keep[good] ?? 0, day * orderReserveDays));
+    if (sell <= 0) continue;
+    const full = storeDays > 0 && qty > day * storeDays;
+    const ref = market(w, best, good).ref;
+    if (!full && bestPrice * 10_000n < ref * BigInt(surplusFloorBps)) continue;
+    takeStock(h, good, sellToMarket(w, h, best, good, sell, "market"));
   }
 }
 
@@ -615,6 +629,16 @@ function spendable(w: World, h: House): Deniers {
 }
 
 /** A good piles up when its stock passes a day of what the house makes of it. */
+/** The stores of a good are full: past `storeDays` of what the house makes of it. */
+function storesFull(w: World, h: House, good: string): boolean {
+  const days = w.m.surplus.storeDays;
+  if (days <= 0) return false;
+  const day = h.workshops
+    .filter((x) => x.good === good)
+    .reduce((n, x) => n + rateOf(w, h, x) * DAY, 0);
+  return (h.stock.get(good) ?? 0) > Math.max(day * days, 50);
+}
+
 function pilesUp(w: World, h: House, good: string): boolean {
   const day = h.workshops
     .filter((x) => x.good === good)

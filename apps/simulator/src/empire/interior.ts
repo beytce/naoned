@@ -102,12 +102,12 @@ export function tendInsides(w: World, h: House, spendable: () => bigint): void {
   };
   let gestures = 0;
   const open = stationLevelOpen(h.ident, w.s);
-  // A few minutes a session (rule 7): the careful tend three workshops, the average two — the
+  // A few minutes a session (rule 7): the careful tend six workshops, the average four — the
   // most worn first.
   const worn = (ws: Workshop) => (ws.inside?.stations ?? []).reduce((n, x) => n + x.wear, 0);
   const order = [...h.workshops.entries()]
     .sort((a, b) => worn(b[1]) - worn(a[1]))
-    .slice(0, how === "careful" ? 3 : 2);
+    .slice(0, how === "careful" ? 6 : 4);
   for (const [i, ws] of order) {
     const e = engineOf(w, h, ws, i);
     const inside = e?.interior;
