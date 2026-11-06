@@ -2527,3 +2527,44 @@ Décisions du porteur après l'audit du gameplay (`docs/audit-gameplay-2026-11-0
 **Mise en œuvre** : activée tout de suite, sans annonce préalable (décision du porteur du 5 novembre 2026). Avec `WORLD_SETTINGS_FROM_THEME=true` (le défaut), le monde de l'empire reprend ces réglages au premier démarrage du serveur qui les porte ; aucune migration.
 
 Reproduire : `cd apps/simulator && npx tsx src/scenario-trente.ts`, puis `npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/trente-villes.json` (environ 35 minutes par graine) ; depuis l'application des réglages, `npx tsx src/empire-cli.ts` donne F directement.
+
+## La carte en cases carrées, achetées une à une (6 novembre 2026)
+
+Décision du porteur du 5 novembre 2026 (docs/plan-porcellana.md, D1 et D7) : la carte passe aux cases carrées, achetées une à une, et chaque atelier se bâtit sur une case à soi, son voisinage venant des ateliers collés par un côté. Validé au simulateur avant toute bascule du monde.
+
+### Ce qui change (scénario G, `scenarios/cases-carrees.json`, écrit par `src/scenario-cases.ts`)
+
+- **La carte** : celle de `venice1450.squares.ts`, des cases de 15 unités (168 cases de terre, les 31 villes gardées sur leur case), `map.grid = "square"`. Le premier fondaco sur la case libre la plus proche de son point d'avant.
+- **Le prix d'une case** : 75 ducats, chaque case possédée rendant la suivante 4,7 % plus chère (`unlock.costDucats` 75, `stepBps` 470). Un secteur d'avant valait environ quatre cases : 300 ducats et un cinquième de plus par secteur deviennent, pour quatre cases, à peu près la même somme (racine quatrième de 1,2).
+- **La mer** : franchie d'une côte à une côte à 8 cases au plus (`seaHops` 8, pour 3 secteurs avant).
+- **Les trajets** : les routes en cases sont 20 % plus longues que sur les petites cases hexagonales (5 368 unités contre 4 469 du premier fondaco à chaque ville) ; `moves.secondsPerUnit` passe de 4 à 3 (les réglages veulent un entier ; 3,33 aurait gardé les durées), soit des trajets environ 10 % plus courts.
+- **Les robots** : ils achètent une case sur le chemin de la ville la plus proche qu'ils n'ont pas, et une case pour chaque nouvel atelier (son prix s'ajoute au chantier) ; leurs premiers ateliers sont posés sur les cases les plus proches du fondaco, données au départ.
+
+### Les essais (24 mois, cohortes de 200)
+
+| Essai | Graines | Cibles sur 9 |
+| --- | --- | --- |
+| F, le jeu en service (trente villes) | 1, 2, 3 | 5, 5 et 6 |
+| G, les cases carrées | 1, 2, 3 | **6, 6 et 6** |
+
+| Cible | F (g. 1 / 2 / 3) | G (g. 1 / 2 / 3) |
+| --- | --- | --- |
+| Calendrier de la Casa | ✓ / ✓ / ✓ | ✓ / ✓ / ✓ |
+| Tournées avec un objectif à moins de 24 h | ✓ 100 / 99,6 / 99,8 % | ✓ 99,8 / 99,8 / 99,8 % |
+| Prochain palier en jours de revenu (2 à 7) | ✗ 2,9 à 45,7 / 38,5 / 29,4 | ✗ 2,9 à 22,1 / 2,5 à 19,1 / 2,4 à 21,6 |
+| Cohorte du mois 12 hors de la 1re bande (4 à 6 mois) | ✗ 2,5 / 2,5 / 2,5 | ✗ 2,4 / 2,5 / 2,4 |
+| Indice des prix | ✓ | ✓ 95 à 103 |
+| Puits ÷ sources, jeunes puis anciennes (0,6–0,8 puis 0,9–1,0) | ✗ / ✗ / ✓ | **✓ 0,75 puis 0,99 / ✓ 0,71 puis 1,00 / ✓ 0,73 puis 0,99** |
+| Part de la Terraferme | ✓ | ✓ |
+| Bruts des jeunes Maisons à Venise (≥ 10 %) | ✗ 6,2 / 6,7 / 5,8 % | ✗ 6,3 / 6,2 / 6,6 % |
+| Part des commandes (60 à 85 %) | ✓ 80,8 / 80,1 / 82,0 % | ✓ 80,8 / 82,0 / 81,3 % |
+
+**Lecture.**
+- G tient tout ce que tenait F et gagne une cible sur deux graines : **l'épargne des anciennes Maisons entre dans sa cible** (0,99 à 1,00 contre 1,03 et 1,04). Les cases achetées une à une, et celle de chaque nouvel atelier, sont un puits régulier, à la mesure de la croissance.
+- **La fin de partie respire** : le palier le plus cher tombe à 19 à 22 jours de revenu (29 à 46 en F). Il reste au-dessus de la cible (7), comme avant : c'est toujours la prochaine passe (les plafonds des villes de taille 5, ou la paie des lots de produits finis).
+- Les jeunes Maisons gardent leur épargne dans la cible (0,71 à 0,75) : le prix d'une case ne les freine pas.
+- Restent hors cible comme en F : la sortie de la première bande (trop rapide) et les bruts des jeunes vendus à Venise.
+
+**Mise en œuvre** : pas encore. Les réglages de G s'appliqueront avec la bascule du monde en cases carrées (plan-porcellana, M4 et lot 3), annoncée d'abord dans les notes du chapitre.
+
+Reproduire : `cd apps/simulator && npx tsx src/scenario-cases.ts`, puis `npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/cases-carrees.json` (environ 95 minutes par graine).
