@@ -54,6 +54,10 @@ export interface Place {
   id: string;
   label: string;
   plus?: boolean;
+  /** A pin that reads a figure (a station's rate inside a workshop): a pill, not a disc. */
+  tag?: boolean;
+  /** The pin of what holds the rest back (the bottleneck): in accent. */
+  hot?: boolean;
   info: PlaceCardInfo;
 }
 
@@ -73,6 +77,8 @@ export interface Spec {
   biscuit?: boolean;
   /** No cart along the roads (a battle's march). */
   noCarts?: boolean;
+  /** What goes along the roads instead of a cart (the crates inside a workshop). */
+  mover?: (P: Palette, o: ModelOpts) => Vehicle;
   /** A cell's content; null where there is no tile (the board has the shape it has). */
   cell(key: string, i: number, j: number): Cell | null;
   /** The roads in tile coordinates, each from where the goods leave to where they go. */
@@ -199,7 +205,7 @@ export function TileBoard({
       const ribbon = new Mesh(ribbonGeometry(route), ribbonMat);
       ribbon.receiveShadow = true;
       root.add(ribbon);
-      const c = cart(P, { seed: k, running: true });
+      const c = (spec.mover ?? cart)(P, { seed: k, running: true });
       if (!spec.noCarts) root.add(c.group);
       roads.push({ ribbon, route, cart: c, off: k * 0.37 });
     });

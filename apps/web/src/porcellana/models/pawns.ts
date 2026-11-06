@@ -19,7 +19,8 @@ export type PawnKind =
   | "captain"
   | "legionary"
   | "archer"
-  | "centurion";
+  | "centurion"
+  | "worker";
 
 /** Turned once, shared by every pawn. */
 function lathe(key: string, pts: [number, number][], seg = 48): BufferGeometry {
@@ -141,6 +142,11 @@ export function pawn(P: Palette, kind: PawnKind, side?: "house" | "rome"): Built
     // The kettle hat: a brim and a crown, in metal.
     cyl(g, 0.27, 0.27, 0.025, 0, 1.24, 0, P.m("metal"), 40);
     dome(g, 0.16, 0, 1.25, 0, P.m("metal"));
+  }
+  if (kind === "worker") {
+    // A workshop's hand (docs/plan-ateliers.md § 7.2): a soft cap of wood, its brim forward.
+    dome(g, 0.175, 0, 1.2, 0, P.m("wood"), 0.75);
+    box(g, 0.2, 0.025, 0.14, 0, 1.2, 0.15, P.m("wood"), 0.01);
   }
   if (kind === "soldier") {
     // The spear held upright at the side.

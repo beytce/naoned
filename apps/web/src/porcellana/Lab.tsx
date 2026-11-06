@@ -23,6 +23,7 @@ import {
   Vector3,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { ATELIER, AtelierOverlay } from "./LabAtelier.js";
 import { BATTLE, PAWNS, PORTA, PortaOverlay } from "./LabPorta.js";
 import { PlaceCard, type PlaceCardHandle, type PlaceCardInfo } from "./PlaceCard.js";
 import { Stage } from "./Stage.js";
@@ -231,7 +232,9 @@ export default function PorcellanaLab() {
           ? BATTLE
           : view === "pions"
             ? PAWNS
-            : KIT;
+            : view === "atelier"
+              ? ATELIER
+              : KIT;
   const [chosen, setChosen] = useState<string | null>(null);
   const [running, setRunning] = useState(true);
   const [family, setFamily] = useState<Family | null>(null);
@@ -291,6 +294,8 @@ export default function PorcellanaLab() {
             className="pc-pin"
             data-on={String(p.id === chosen)}
             data-plus={String(!!p.plus)}
+            data-tag={p.tag ? "true" : undefined}
+            data-hot={p.hot ? "true" : undefined}
             data-out="false"
             aria-label={p.info.name}
             ref={(el) => {
@@ -314,14 +319,20 @@ export default function PorcellanaLab() {
         >
           Catalogue
         </a>
-        {(["porta", "bataille", "pions"] as const).map((v) => (
+        {(["porta", "bataille", "pions", "atelier"] as const).map((v) => (
           <a
             key={v}
             className="pc-tool"
             href={`?lab=porcellana&vue=${v}`}
             aria-current={view === v}
           >
-            {v === "porta" ? "Porta" : v === "bataille" ? "Bataille" : "Pions"}
+            {v === "porta"
+              ? "Porta"
+              : v === "bataille"
+                ? "Bataille"
+                : v === "pions"
+                  ? "Pions"
+                  : "Atelier"}
           </a>
         ))}
         <button
@@ -354,6 +365,7 @@ export default function PorcellanaLab() {
         </div>
       ) : null}
       {view === "porta" || view === "bataille" ? <PortaOverlay view={view} /> : null}
+      {view === "atelier" ? <AtelierOverlay /> : null}
       {current ? (
         <PlaceCard
           ref={(h) => {

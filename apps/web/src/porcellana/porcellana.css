@@ -73,6 +73,22 @@
   font-size: 16px;
   color: var(--pc-ink);
 }
+.pc-pin[data-tag="true"] {
+  width: auto;
+  height: 26px;
+  margin: 0;
+  translate: -50% -50%;
+  padding: 0 10px;
+  border-radius: 999px;
+  border-width: 2px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.pc-pin[data-hot="true"] {
+  background: var(--pc-accent);
+  color: var(--pc-accent-ink);
+  box-shadow: 0 3px 0 #8f2820, 0 8px 16px -6px rgba(143, 40, 32, 0.45);
+}
 .pc-pin[data-out="false"] {
   opacity: 0;
   pointer-events: none;
