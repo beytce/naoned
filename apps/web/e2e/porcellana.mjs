@@ -11,7 +11,9 @@ import { chromium } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SHOTS = resolve(process.env.SHOTS ?? join(here, "..", "e2e-shots", "porcellana"));
-const SIZES = (process.env.SIZES ?? "1280x800,390x844").split(",").map((s) => s.split("x").map(Number));
+const SIZES = (process.env.SIZES ?? "1280x800,390x844")
+  .split(",")
+  .map((s) => s.split("x").map(Number));
 const log = join(SHOTS, "server.log");
 
 async function startServer() {
@@ -90,7 +92,10 @@ try {
     await page.getByRole("button", { name: /fonder la maison/i }).click({ timeout: 15_000 });
     await page.waitForSelector("[data-intro]");
     for (let i = 0; i < 3; i++)
-      await page.locator("[data-intro]").getByRole("button", { name: /suivant|commencer/i }).click();
+      await page
+        .locator("[data-intro]")
+        .getByRole("button", { name: /suivant|commencer/i })
+        .click();
     await page.waitForSelector("[data-porcellana-map]", { timeout: 30_000 });
     await shot("1-carte", 20_000);
     // The Fondaco touched by its pin: its card beside it.
