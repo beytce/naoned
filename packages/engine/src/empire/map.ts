@@ -238,6 +238,7 @@ function ownedAtStart(h: EmpireHouse, s: EmpireSettings): string[] {
   const home = homeCell(s);
   const built = [
     ...(h.posts ?? []).map((p) => p.cell),
+    ...(h.home ? [h.home.cell] : []),
     ...[h.depot, h.camp, h.arsenal].filter((c): c is string => typeof c === "string"),
     // On square tiles, the workshops' tiles too (D7).
     ...h.workshops.map((w) => w.tile).filter((t): t is string => typeof t === "string"),
@@ -655,7 +656,15 @@ export function freeTileFault(
  * house's workshops so too, the first time its world turns to square tiles (M4).
  */
 function seatWorkshops(h: EmpireHouse, s: EmpireSettings): void {
-  if (!squareGrid(s) || h.workshops.every((w) => w.tile)) return;
+  if (!squareGrid(s)) return;
+  // On square tiles the board starts from the first fondaco: it stands on the world's tile at once
+  // (docs/plan-porcellana.md lot 3), and the house's domain grows from there.
+  if (!h.home && s.map.home) {
+    const cell = cellAtPoint(s.map.home.x, s.map.home.y, s);
+    h.home = { cell, x: s.map.home.x, y: s.map.home.y };
+    if (s.map.unlock) h.unlocked = [...new Set([...unlockedOf(h, s), cell])];
+  }
+  if (h.workshops.every((w) => w.tile)) return;
   if (s.map.home && !h.home) return;
   const posts = standingPosts(h, s);
   for (const w of h.workshops) {

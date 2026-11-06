@@ -87,6 +87,7 @@
 }
 .pc-card {
   position: absolute;
+  z-index: 45;
   left: 0;
   top: 0;
   display: flex;
@@ -151,7 +152,8 @@
     left: max(16px, env(safe-area-inset-left, 0px)) !important;
     right: max(16px, env(safe-area-inset-right, 0px));
     top: auto !important;
-    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    /* Above the game's foot: the bar of the places and Lorenzo's card. */
+    bottom: calc(176px + env(safe-area-inset-bottom, 0px));
     max-width: none;
     transform: none !important;
   }

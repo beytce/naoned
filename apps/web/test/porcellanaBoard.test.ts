@@ -24,6 +24,7 @@ function payload(over: Record<string, unknown> = {}): EmpirePayload {
     buyable: [
       { cell: "4,1", region: "veneto", coast: false, casa: 1 },
       { cell: "3,0", region: "lombardia", coast: false, casa: 4 },
+      { cell: "9,9", region: "levante", coast: true, casa: 4 },
     ],
     sectorCost: "7500",
     covered: [],
@@ -92,6 +93,7 @@ describe("the board of the house", () => {
     expect(at("5,3")?.model).toBe("town");
     expect(at("4,1")?.model).toBe("plot");
     expect(at("3,0")?.model).toBe("locked");
+    expect(at("9,9")).toBeUndefined(); // across the sea, of a region closed: not drawn
     expect(at("1,2")?.water).toBe(true);
     expect(b?.roads).toHaveLength(1);
   });

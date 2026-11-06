@@ -227,3 +227,23 @@ describe("the square map's view", () => {
     }
   });
 });
+
+describe("the first fondaco on square tiles", () => {
+  it("stands at once on the world's tile, its own, the first workshops round it", () => {
+    const w = new World(
+      makeContext({
+        empire: {
+          ...empire,
+          start: { capitalDucats: 1_000_000, workshops: [{ type: "farm", recipe: "grow_wheat" }] },
+          map: { ...empire.map, home: { x: 35, y: 15 } },
+        },
+      }),
+    );
+    w.do({ type: "empireJoin", playerId: "a" });
+    const h = house(w);
+    expect(h.home).toEqual({ cell: "3,1", x: 35, y: 15 });
+    expect(h.unlocked).toEqual(expect.arrayContaining(["3,1"]));
+    expect(h.workshops[0]?.tile).toBeDefined();
+    expect(map(w)?.home.placed).toBe(true);
+  });
+});

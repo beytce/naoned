@@ -79,6 +79,8 @@ type SheetId =
 
 // The Porta's scenes in 3D, loaded only once their place is first opened: three.js and the
 // figurines no longer weigh on the start of the game (audit of 4 November, 3D B1).
+/** The Carte on square tiles (docs/plan-porcellana.md lot 3): its own chunk, fetched only then. */
+const PorcellanaMap = lazy(() => import("../porcellana/board/PorcellanaMap.js"));
 const ArmsScene = lazy(() =>
   import("./porta/ArmsScene.js").then((m) => ({ default: m.ArmsScene })),
 );
@@ -494,46 +496,66 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-night">
-      <EmpireMap
-        ref={map}
-        p={p}
-        now={now}
-        busy={busy}
-        act={act}
-        onTarget={(x) => {
-          if (placing) return;
-          // A vehicle chosen: its panel; anything else: the vehicle stays chosen behind it.
-          if (x?.kind === "vehicle") setVehicle(x.id);
-          if (!x) {
-            setVehicle(null);
+      {p.view?.map?.grid === "square" ? (
+        <Suspense fallback={null}>
+          <PorcellanaMap
+            ref={map}
+            p={p}
+            now={now}
+            target={target}
+            onTarget={(x) => {
+              if (placing) return;
+              if (x?.kind === "vehicle") setVehicle(x.id);
+              if (!x) {
+                setVehicle(null);
+                setAiming(false);
+              }
+              setTarget(x);
+            }}
+          />
+        </Suspense>
+      ) : (
+        <EmpireMap
+          ref={map}
+          p={p}
+          now={now}
+          busy={busy}
+          act={act}
+          onTarget={(x) => {
+            if (placing) return;
+            // A vehicle chosen: its panel; anything else: the vehicle stays chosen behind it.
+            if (x?.kind === "vehicle") setVehicle(x.id);
+            if (!x) {
+              setVehicle(null);
+              setAiming(false);
+            }
+            setTarget(x);
+          }}
+          selected={vehicle}
+          aiming={aiming}
+          onMove={(vehicleId, to) => {
             setAiming(false);
-          }
-          setTarget(x);
-        }}
-        selected={vehicle}
-        aiming={aiming}
-        onMove={(vehicleId, to) => {
-          setAiming(false);
-          setVehicle(vehicleId);
-          setTarget({ kind: "vehicle", id: vehicleId });
-          void act({ type: "empireMove", vehicleId, to });
-        }}
-        onArrive={settle}
-        placing={placing}
-        picked={picked}
-        onPick={setPicked}
-        onCamp={() => setSheet("company:terra")}
-        houseName={account.pseudo ?? ""}
-        onDomain={setDomain}
-        chosenWorkshop={target?.kind === "workshop" ? target.id : null}
-        road={target?.kind === "city" ? road : null}
-        round={round}
-        onRound={(r) => {
-          if (r) setTarget(null);
-          setRound(r);
-        }}
-        onRoundGo={goRound}
-      />
+            setVehicle(vehicleId);
+            setTarget({ kind: "vehicle", id: vehicleId });
+            void act({ type: "empireMove", vehicleId, to });
+          }}
+          onArrive={settle}
+          placing={placing}
+          picked={picked}
+          onPick={setPicked}
+          onCamp={() => setSheet("company:terra")}
+          houseName={account.pseudo ?? ""}
+          onDomain={setDomain}
+          chosenWorkshop={target?.kind === "workshop" ? target.id : null}
+          road={target?.kind === "city" ? road : null}
+          round={round}
+          onRound={(r) => {
+            if (r) setTarget(null);
+            setRound(r);
+          }}
+          onRoundGo={goRound}
+        />
+      )}
 
       <Hud p={p} name={account.pseudo ?? t.title} onHouse={() => setSheet("house")} />
       <Trips

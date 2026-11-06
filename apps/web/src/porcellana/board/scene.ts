@@ -128,8 +128,16 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
   // The plots one may buy round the house's tiles.
   const price = BigInt(map.sectorCost);
   const ducats = Number(price / 100n);
+  // Those next to the house's tiles by a side; across the sea, only the coasts of a region open.
+  const touches = (k: string) => {
+    const [i, j] = parse(k);
+    return [`${i},${j - 1}`, `${i + 1},${j}`, `${i},${j + 1}`, `${i - 1},${j}`].some((n) =>
+      owned.has(n),
+    );
+  };
   for (const b of map.buyable) {
     const open = b.casa <= house.casa;
+    if (!touches(b.cell) && !open) continue;
     put(b.cell, {
       water: false,
       model: open ? "plot" : "locked",
