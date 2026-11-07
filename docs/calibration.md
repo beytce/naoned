@@ -2634,3 +2634,24 @@ Le lot 1 sert de référence (6 cibles sur 9 sur les trois graines). Les essais 
 **Décision du porteur (7 novembre 2026)** : le plafond reste tel quel ; l'écart de la fin de partie (4 cibles sur 9 au lieu de 6, les Casa 16 à 20 trop tôt) est accepté pour l'instant. Le rythme de la fin de partie (les exigences d'ateliers des Casa 9 à 20) se recalera dans une passe à part, après les lots des premiers pas.
 
 Reproduire : les scénarios des essais s'écrivent à partir de `scenarios/cases-carrees.json` (la carte du scénario remplace celle du thème : y mettre `reach.byCasa` pour la zone liée) ; `npx tsx src/empire-cli.ts --seeds 1 --cohort 60 --scenario <essai>.json`.
+
+## Les premiers pas : la Porta au niveau 4 (7 novembre 2026)
+
+Lot 6 de docs/plan-premiers-pas.md, choix du porteur du 6 novembre : la Porta à la Casa 4 (au lieu de 10), pour 600 ducats (au lieu de 4 000, le prix du Campo du même niveau) ; le cavalier (400 ducats au lieu de 1 500) et les premières armes (lances 250, arbalètes 300, pavois 300, cuirasse 200, au lieu de 800, 1 000, 900 et 700) à la Casa 4 aussi (au lieu de 9). Les niveaux de la Porta gardent leur prix (4 000 × 2ⁿ ducats) : seul son premier palier s'ouvre tôt.
+
+### Les essais (24 mois, cohortes de 200, scénario G)
+
+| Cible | Plafond (lot 3, g. 1 / 2 / 3) | Porta au niveau 4 (g. 1 / 2 / 3) |
+| --- | --- | --- |
+| Cibles tenues sur 9 | 4 / 4 / 4 | **4 / 4 / 4** |
+| Calendrier de la Casa | ✗ 16 à 20 trop tôt | ✗ 16 à 20 trop tôt (Casa 19 au jour 270) |
+| Prochain palier en jours de revenu (2 à 7) | ✗ 1,8 à 9,1 / 1,9 à 9,2 / 2,0 à 9,2 | ✗ 1,9 à 9,0 / 1,9 à 9,0 / 2,0 à 8,5 |
+| Puits ÷ sources, jeunes puis anciennes | ✓ 0,76 puis 0,94 / 0,76 puis 0,96 / 0,74 puis 0,96 | ✓ 0,74 puis 0,96 / 0,75 puis 0,95 / 0,75 puis 0,96 |
+| Part des commandes (60 à 85 %) | ✗ 87,2 / 86,7 / 87,2 % | ✗ 87,7 / 87,7 / 87,3 % |
+
+**Lecture.**
+- Rien ne se dégrade : les mêmes quatre cibles tenues, les mêmes manquées (la fin de partie, laissée à une passe à part par le porteur le 7 novembre).
+- Le milieu de partie est à peine plus lent (la Casa 6 au jour 11 contre 9,6) : les jeunes maisons paient la Porta et ses armes.
+- La Porta (graine 1) : 400 maisons l'ont posée, 119 batailles par jour, 87 % gagnées, aucun véhicule de combat perdu (702 transports perdus, 10 481 retours abîmés) ; meilleur palier gagné : 3. L'antiquaire a payé 1,7 million de ducats de reliques, à peine 1 % de ce que paient les commandes.
+
+Reproduire : `cd apps/simulator && npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/cases-carrees.json` (une graine par processus ; environ 80 minutes par graine).
