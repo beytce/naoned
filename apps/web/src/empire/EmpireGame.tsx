@@ -12,6 +12,7 @@ import { useOnline } from "../game/online.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { sound } from "../sound.js";
+import { applyPalette } from "../theme.js";
 import { Badge, GoldLayer, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { suppliable } from "./Company.js";
 import { CompanySheet } from "./CompanyTab.js";
@@ -137,6 +138,8 @@ const ZOOM_KEY = 1.4;
 
 export function EmpireGame({ account, first }: { account: Account; first: EmpireAnswer }) {
   const [p, setP] = useState<EmpireAnswer>(first);
+  // Porcellana alone in the empire (docs/plan-publication.md D9): one palette, one red accent.
+  useEffect(() => applyPalette("porcellana"), []);
   const skew = useRef(first.now - Date.now());
   const [now, setNow] = useState(first.now);
   const [sheet, setSheet] = useState<SheetId | null>(first.view?.away ? "away" : null);

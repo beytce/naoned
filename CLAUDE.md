@@ -24,7 +24,7 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage qui fait
 Elles font foi pour toute mécanique, toute fonctionnalité et tout mode de jeu ; en cas de conflit, elles priment.
 1. **Ton empire t'appartient.** Personne ne peut piller ni prendre ce que tu as bâti.
 2. **Le risque vient des terres de Rome, jamais d'un autre joueur.** Un véhicule détruit au combat de la Porta rentre abîmé ; un véhicule encore à la Porta à sa fermeture est perdu ; la perte définitive à chaque combat n'existe qu'à la Porta noire, que le joueur choisit.
-3. **L'absence ne coûte rien, mais rien ne s'accumule sans fin.** Stocks, production et commandes ont un plafond : une fois plein, ça s'arrête, sans rien perdre.
+3. **Rien ne s'accumule sans fin, et rien ne tourne sans toi.** Stocks, production et commandes ont un plafond : une fois plein, ça s'arrête, sans rien perdre. Un atelier aux lots prêts s'arrête et attend la récolte : rien de perdu, mais on ne gagne pas sans jouer (7 novembre 2026, docs/plan-publication.md D4).
 4. **Le temps s'achète, la puissance jamais.** Les perle (monnaie précieuse, achetée ou gagnée en jouant) accélèrent les chantiers et les recherches. On ne vend jamais ni ducats, ni marchandises, ni modules, ni plans, ni reliques, ni Sceaux, ni chantier ou place en plus ; la Terraferme et la Contesa restent à armes égales.
 5. **Les hauts niveaux se gagnent en jouant.** Au-delà d'un certain niveau, les modules demandent des plans, qui viennent des reliques de la Porta.
 6. **On affronte des joueurs de son niveau.** Combats, classements et appariements se font par bande de Puissance, calculée sur ce qui est bâti, jamais sur la caisse.
@@ -32,6 +32,7 @@ Elles font foi pour toute mécanique, toute fonctionnalité et tout mode de jeu 
 8. **Tout se voit.** Toute fonctionnalité, tout mode de jeu est d'abord visuel : sur la carte, par des objets qu'on touche, des mouvements et des animations. Ni tableur ni jeu de texte : un chiffre ou une liste accompagnent l'image, jamais ne la remplacent.
 
 ## Façon de travailler
+- **Le plan de publication** (7 novembre 2026, validé par le porteur, issu de l'audit des joueurs `docs/audit-joueurs-2026-11-07/`) : décisions D1 à D12 (glossaire et « tu », règle 3 réécrite, bêta sans perle, Porcellana seule…) et lots 0 à 7 dans docs/plan-publication.md ; il prime sur les plans antérieurs en cas de conflit.
 - Chaque système absorbe les anciens au lieu de s'y ajouter : une douzaine de systèmes visibles, pas trente.
 - Commencer chaque tâche en mode plan, attendre validation avant de coder.
 - Écrire les tests avant le code pour packages/engine. Les tests du moteur utilisent la fixture figée test/fixture.ts, jamais les paramètres de Venise.

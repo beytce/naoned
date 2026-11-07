@@ -85,13 +85,13 @@ describe("the empire's world", () => {
     expect(body.cash).toBe("65000");
     const rows = await database.db.select().from(players);
     expect(rows).toHaveLength(1);
-    // The first at 120 ducats, the next two at 48 once the house has one (« le savoir circule »).
+    // Each at its fixed price, 120 ducats (« le savoir circule » off, docs/plan-publication.md D6).
     await joinAtWork(post, cookie, (ms) => {
       now += ms;
     });
     const after = (await get(cookie)).json();
     expect(after.view.house.workshops).toHaveLength(3);
-    expect(after.cash).toBe("43400");
+    expect(after.cash).toBe("29000");
   });
 
   it("relaunches, sells, builds, and the site ends while away", async () => {

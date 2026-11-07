@@ -493,7 +493,10 @@ export const venice1450Empire: EmpireSettingsInput = {
     // The first band left in 4 to 6 months (the owner's target of 30 October 2026).
     bands: [0, 4_000, 6_500, 9_000, 11_500],
   },
-  catchup: { fromShareBps: 3_500, maxCostCutBps: 6_000, maxTimeCutBps: 7_000 },
+  // « Le savoir circule » off (docs/plan-publication.md D6, the owner's decision of 7 November
+  // 2026): a workshop's or a level's price no longer falls with the share of the world that owns
+  // it; prices fixed and readable. A share of 100 % never passes the threshold.
+  catchup: { fromShareBps: 10_000, maxCostCutBps: 0, maxTimeCutBps: 0 },
   prices: { floorBps: 6_000, ceilBps: 15_000, impactBps: 1_200, halfLifeHours: 36 },
   regions: REGIONS,
   modules: MODULES,

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Lorenzo } from "../art/scenes.js";
 import { DockDoor } from "../dock.js";
-import { PalettePicker } from "../game/Profil.js";
 import { PushSettings } from "../game/PushSettings.js";
 import { d, hourOf } from "../game/format.js";
 import { GOLD } from "../game/gold.js";
@@ -275,6 +274,9 @@ export function Intro({ p }: { p: EmpirePayload }) {
   );
 }
 
+/** The Fondaco level from which the Power and its band are shown (the Porta's). */
+const MEASURES_FROM = 4;
+
 /** The house's measures, out of the header: the Casa, the Power and its band, the Favour, the Seals. */
 export function HouseSheet({
   p,
@@ -332,15 +334,17 @@ export function HouseSheet({
       )}
       <div className="grid grid-cols-2 gap-2" data-house-sheet>
         <Stat label={<Term code="casa">{h.casa}</Term>} value={view.house.casa} tone="gold" />
-        <Stat label={<Term code="power">{h.power}</Term>} value={view.power} />
-        <Stat label={<Term code="band">{h.band}</Term>} value={view.band + 1} />
+        {/* Shown once they serve (docs/plan-publication.md D1): the Power and its band from the
+            Porta's level, where they pair the houses; the Seals once there are some. */}
+        {view.house.casa >= MEASURES_FROM && (
+          <>
+            <Stat label={<Term code="power">{h.power}</Term>} value={view.power} />
+            <Stat label={<Term code="band">{h.band}</Term>} value={view.band + 1} />
+          </>
+        )}
         <Stat label={<Term code="favour">{h.favour}</Term>} value={view.house.favour} />
-        <Stat label={h.seals} value={view.house.seals} />
+        {view.house.seals > 0 && <Stat label={h.seals} value={view.house.seals} />}
         <Stat label={<Term code="income">{h.income}</Term>} value={d(view.incomePerDay)} />
-      </div>
-      <div className="mt-6">
-        {/* The palettes of the monthly profile; the Pass's own stays out of the empire. */}
-        <PalettePicker pass={false} offered={false} />
       </div>
       {/* The empire's notices, asked for, three kinds (decision of the owner, 4 November). */}
       <div className="mt-6" data-house-push>
