@@ -185,7 +185,7 @@ export function OrdersPanel({
         ) : (
           <>
             <ul className="grid grid-cols-3 gap-2.5" data-city-orders={city}>
-              {plan.orders.map(({ o, have, covered }) => {
+              {plan.orders.map(({ o, have, covered, better, pay }) => {
                 const on = picked.has(o.id);
                 return (
                   <li key={o.id}>
@@ -210,9 +210,22 @@ export function OrdersPanel({
                       </span>
                       {covered ? (
                         <span className="font-display text-sm font-bold tabular-nums text-gold">
-                          {d(o.pay)}
+                          {d(pay.toString())}
                         </span>
-                      ) : (
+                      ) : null}
+                      {covered && better > 0 ? (
+                        // Its better pieces go with it, paid more (lot A8, « B »).
+                        <span
+                          className="rounded-full bg-gold px-2 py-0.5 text-[0.6875rem] font-bold text-ink"
+                          data-order-better={better}
+                        >
+                          {t().better(
+                            Math.round(
+                              (Number(pay - BigInt(o.pay)) * 100) / Number(BigInt(o.pay) || 1n),
+                            ),
+                          )}
+                        </span>
+                      ) : covered ? null : (
                         <span className="text-xs text-cream-dim">{t().lack(o.qty - have)}</span>
                       )}
                     </ChoiceCard>

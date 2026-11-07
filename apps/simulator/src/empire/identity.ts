@@ -71,6 +71,8 @@ function shadow(h: House): EmpireHouse {
       recipe: "",
       level: x.level,
       job: null,
+      // With the insides, its inside (the knowledge of the craft no longer gives it a yield).
+      ...(x.inside ? { interior: x.inside } : {}),
     }),
   );
   return id;
@@ -121,8 +123,15 @@ export function masterWorked(w: World, h: House, workshop: number, hours: number
 }
 
 /** The fine goods made: kept for the court, the exquisite share apart. */
-export function makeFine(w: World, h: House, good: string, qty: number, workshop: number): number {
-  const q = Math.min(10_000, identityEffect(w, h, "quality", workshop));
+export function makeFine(
+  w: World,
+  h: House,
+  good: string,
+  qty: number,
+  workshop: number,
+  insideBps = 0,
+): number {
+  const q = Math.min(10_000, identityEffect(w, h, "quality", workshop) + insideBps);
   const better = Math.floor((qty * q) / 10_000);
   if (better <= 0) return 0;
   const exquisite = Math.floor((better * w.s.qualities.exquisiteShareBps) / 10_000);
@@ -213,7 +222,10 @@ const signature = (id: EmpireHouse) =>
 
 function addMaster(w: World, h: House, rarity: string) {
   const staff = h.ident.staff ?? [];
-  const free = h.workshops.findIndex((_, i) => !staff.some((m) => m.placedAt === String(i)));
+  // With the insides, no master is placed on a workshop (its hands are hired at its door).
+  const free = w.s.interior
+    ? -1
+    : h.workshops.findIndex((_, i) => !staff.some((m) => m.placedAt === String(i)));
   staff.push({
     id: String(staff.length),
     role: "master",

@@ -86,6 +86,10 @@ import type { EmpireMapHandle, Picked } from "../porcellana/board/PorcellanaMap.
 const ArmsScene = lazy(() =>
   import("./porta/ArmsScene.js").then((m) => ({ default: m.ArmsScene })),
 );
+// The workshops' insides (docs/plan-ateliers.md lot A5), loaded at the first entry.
+const InteriorScene = lazy(() =>
+  import("./interior/InteriorScene.js").then((m) => ({ default: m.InteriorScene })),
+);
 const PortaScene = lazy(() =>
   import("./porta/PortaScene.js").then((m) => ({ default: m.PortaScene })),
 );
@@ -140,7 +144,18 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // A battle closed to look at the map stays closed until the next.
   const [leftBattle, setLeftBattle] = useState<string | null>(null);
   // The place of the map touched, its panel open at the foot of the screen.
-  const [target, setTarget] = useState<Target | null>(null);
+  const [target, setTargetRaw] = useState<Target | null>(null);
+  // A workshop with its inside opens its inside, not a dock (docs/plan-ateliers.md lot A7).
+  const interiorsRef = useRef<Record<string, unknown> | undefined>(undefined);
+  interiorsRef.current = p.view?.interiors;
+  const setTarget = useCallback((x: Target | null) => {
+    if (x?.kind === "workshop" && interiorsRef.current?.[x.id]) {
+      setInside(x.id);
+      setTargetRaw(null);
+      return;
+    }
+    setTargetRaw(x);
+  }, []);
   // Putting a counter or the Arsenal down: the map lights the cells, a touch picks one.
   const [placing, setPlacing] = useState<Placing | null>(null);
   const [picked, setPicked] = useState<Picked | null>(null);
@@ -172,6 +187,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   });
   // A fondaco's domain plunged into (3D): its bar at the foot instead of the round buttons.
   const [domain, setDomain] = useState<string | null>(null);
+  // The workshop one has stepped into (its inside over the map), if any.
+  const [inside, setInside] = useState<string | null>(null);
   const domainNow = useRef(domain);
   domainNow.current = domain;
   const [busy, setBusy] = useState(false);
@@ -336,7 +353,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         // A sheet open closes by itself; the domain is left only from the map.
         else if (domainNow.current && !targetNow.current && !sheetNow.current) map.current?.leave();
         else {
-          setTarget(null);
+          setTargetRaw(null);
           setVehicle(null);
         }
       } else if (e.key === ",") keys.current.cycle(-1);
@@ -923,6 +940,20 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         {/* The Remise's arms and the Porta: their scene and their dock; without WebGL, the same dock
           over a plain ground (docs/plan-dock.md, lot 6). */}
         <LazyArms p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
+        {inside ? (
+          <GoldLayer depth={GOLD.scene}>
+            <Suspense fallback={null}>
+              <InteriorScene
+                p={p}
+                workshopId={inside}
+                now={now}
+                busy={busy}
+                act={act}
+                onClose={() => setInside(null)}
+              />
+            </Suspense>
+          </GoldLayer>
+        ) : null}
         <PortaPlace
           p={p}
           now={now}

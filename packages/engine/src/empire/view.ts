@@ -39,6 +39,8 @@ import {
   workshopPlaces,
   workshopTop,
 } from "./house.js";
+import type { InteriorSettings } from "./interior/settings.js";
+import { type InteriorView, interiorRulesOf, interiorsOf } from "./interior/view.js";
 import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import {
   buyableOf,
@@ -203,6 +205,10 @@ export interface EmpireView {
   };
   /** The workshops' places for modules, and their neighbourhood's bonus (bps). */
   workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
+  /** The workshops' insides, by workshop (docs/plan-ateliers.md § 5.6); none without them. */
+  interiors: Record<string, InteriorView>;
+  /** Their rules, for the screen to reckon a rate while a machine is dragged; null without them. */
+  interiorRules: InteriorSettings | null;
   /** What the court of Venice still takes today. */
   courtLeft: number;
   identity: EmpireIdentity;
@@ -530,6 +536,8 @@ export function empireView(
     moves: s.moves,
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
+    interiors: interiorsOf(house, s, now),
+    interiorRules: interiorRulesOf(s),
     workshopPlaces: Object.fromEntries(
       house.workshops.map((w) => [
         w.id,
@@ -684,11 +692,14 @@ function identityOf(house: EmpireHouse, s: EmpireSettings): EmpireIdentity {
         ...m,
         tiersOpen: Math.max(0, Math.floor(m.level / s.staff.tierEvery) - m.skills.length),
       })),
-      roles: Object.entries(s.staff.roles).map(([role, r]) => ({
-        role,
-        place: r.place,
-        paths: r.paths,
-      })),
+      roles: Object.entries(s.staff.roles)
+        // No more master for a workshop where the insides are: its hands are hired at its door.
+        .filter(([, r]) => !(s.interior && r.place === "workshop"))
+        .map(([role, r]) => ({
+          role,
+          place: r.place,
+          paths: r.paths,
+        })),
     },
     family: {
       generation: house.generation?.number ?? 1,
@@ -913,7 +924,10 @@ function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s
 
 function researchOf(house: EmpireHouse, s: EmpireSettings): EmpireView["research"] {
   const open = s.modules.filter(
-    (m) => s.research.available.length === 0 || s.research.available.includes(m.code),
+    (m) =>
+      (s.research.available.length === 0 || s.research.available.includes(m.code)) &&
+      // The insides replace the workshop modules (docs/plan-ateliers.md lot A7).
+      !(s.interior && m.kind === "workshop"),
   );
   return {
     slots: casaLevelOf(house.casa, s).researchSlots,

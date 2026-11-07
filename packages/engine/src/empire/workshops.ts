@@ -16,6 +16,7 @@ import { tilesTouch } from "./grid.js";
 import { empireSettings, ownHouse } from "./house.js";
 import {
   interiorByproduct,
+  interiorInputsBps,
   interiorPaceBps,
   interiorQualityBps,
   interiorXp,
@@ -153,7 +154,11 @@ export function relaunchWorkshop(
   const queueEnd = ws.job ? ws.job.startedAt + ws.job.batches * batchMs : tx.now;
   let add = Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs);
   // The furnace saves inputs: a share of a lot's, in whole units over the queue.
-  const saved = Math.min(9_000, houseEffect(h, "inputs", s, place));
+  // And a well-tended inside wastes less (docs/plan-ateliers.md lot A8).
+  const saved = Math.min(
+    9_000,
+    houseEffect(h, "inputs", s, place) + interiorInputsBps(ws, h, s, tx.now),
+  );
   // From its counter's stock (the map that grows).
   const post = workshopPost(h, s, ws);
   const held = (good: string) => storeOf(tx, h, playerId, post, good);
@@ -274,6 +279,8 @@ export function fitModule(
   if (!ws) fail("unknown_building");
   const m = s.modules.find((x) => x.code === code);
   if (!m || m.kind !== "workshop" || !(h.modules?.[code] ?? 0)) fail("unknown_building_type");
+  // A workshop with its inside takes stations, not modules (docs/plan-ateliers.md lot A7).
+  if (s.interior?.buildings[ws.type]) fail("locked");
   if (!Number.isInteger(slot) || slot < 0 || slot >= moduleSlotsOf(ws.level, s, h)) fail("no_room");
   const fitted = [...(ws.fitted ?? [])];
   if (fitted.some((x, i) => x === code && i !== slot)) fail("built");

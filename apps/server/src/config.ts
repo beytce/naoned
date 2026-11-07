@@ -56,6 +56,12 @@ const schema = z
      */
     EMPIRE_GRID: z.enum(["hex", "square"]).default("square"),
     /**
+     * The workshops' insides (docs/plan-ateliers.md), off unless « on »: they change the trade, so
+     * they are switched on in production only on the owner's decision, announced in the chapter's
+     * notes first.
+     */
+    EMPIRE_INTERIOR: z.enum(["off", "on"]).default("off"),
+    /**
      * The switch (CADRAGE-v3 § 12), off unless set: from this instant (ISO), the month that ends
      * opens the persistent empire in its place, and a server started after it opens the empire.
      * Set in production only on the decision of the game's owner.

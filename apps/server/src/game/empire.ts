@@ -62,6 +62,67 @@ export function empirePayload(ctx: WorldContext, state: WorldState, playerId: st
   });
 }
 
+const id = z.string().max(32);
+const coord = z.number().int().min(0).max(16);
+const rot = z.number().int().min(0).max(3);
+/** The commands of the workshops' insides: what the client may send, nothing more. */
+const interiorActions = [
+  z.object({
+    type: z.literal("empireInteriorPlace"),
+    workshopId: id,
+    kind: z.string().max(40),
+    x: coord,
+    y: coord,
+    rot,
+  }),
+  z.object({
+    type: z.literal("empireInteriorMove"),
+    workshopId: id,
+    stationId: id,
+    x: coord,
+    y: coord,
+    rot,
+  }),
+  z.object({ type: z.literal("empireInteriorRemove"), workshopId: id, stationId: id }),
+  z.object({ type: z.literal("empireInteriorUpgrade"), workshopId: id, stationId: id }),
+  z.object({
+    type: z.literal("empireInteriorLink"),
+    workshopId: id,
+    from: id,
+    to: id,
+    via: z
+      .array(z.tuple([coord, coord]))
+      .min(1)
+      .max(64),
+  }),
+  z.object({ type: z.literal("empireInteriorUnlink"), workshopId: id, from: id, to: id }),
+  z.object({
+    type: z.literal("empireInteriorBuffer"),
+    workshopId: id,
+    link: z.string().max(81),
+    size: z.number().int().min(0).max(64),
+  }),
+  z.object({
+    type: z.literal("empireInteriorCare"),
+    workshopId: id,
+    stationId: id,
+    care: z.number().int().min(0).max(10_000),
+  }),
+  z.object({
+    type: z.literal("empireInteriorMaintain"),
+    workshopId: id,
+    stationId: id.optional(),
+  }),
+  z.object({ type: z.literal("empireInteriorHire"), workshopId: id, trade: z.string().max(40) }),
+  z.object({
+    type: z.literal("empireInteriorAssign"),
+    workshopId: id,
+    handId: id,
+    stationId: id.nullable(),
+    shift: z.enum(["day", "night"]),
+  }),
+] as const;
+
 const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("empireBuildCasa") }),
   z.object({
@@ -79,6 +140,8 @@ const action = z.discriminatedUnion("type", [
     recipe: z.string().max(40).optional(),
   }),
   z.object({ type: z.literal("empireRelaunchAll") }),
+  // The workshops' insides (docs/plan-ateliers.md § 5.5).
+  ...interiorActions,
   z.object({
     type: z.literal("empireSell"),
     good: z.string().max(40),

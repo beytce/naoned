@@ -1,3 +1,4 @@
+import { type Tending, tendingOf } from "./interior.js";
 import { median } from "./metrics.js";
 import { DAY, MONTH, type Trade } from "./model.js";
 import type { EmpireResult } from "./run.js";
@@ -202,6 +203,38 @@ export function evaluate(r: EmpireResult): Check[] {
     value: pct(ordersBps),
     pass: ordersBps >= 6_000 && ordersBps <= 8_500,
   });
+  // The workshops' insides (docs/plan-ateliers.md § 9), when the world has them.
+  if (w.s.interior) {
+    const pace = (how: Tending) => {
+      const ws = hs
+        .filter((h) => tendingOf(h) === how)
+        .flatMap((h) => h.workshops)
+        .filter((x) => x.inside);
+      return ws.length ? ws.reduce((n, x) => n + (x.pace ?? 10_000), 0) / ws.length / 10_000 : 0;
+    };
+    const hasty = pace("hasty");
+    // (What tending pays is read against a run without the insides: src/interior-paired.ts. The
+    // pace's ratios mislead where the cities' demand bounds the trade: a quicker workshop fills
+    // its stores, then stops.)
+    checks.push({
+      code: "interior-hasty",
+      label: "Intérieurs : un atelier pressé ne fait pas moins qu'avant (cadence ≥ 1)",
+      target: "≥ 1,00",
+      value: hasty.toFixed(2),
+      pass: hasty >= 1,
+    });
+    const careHouses = hs.filter((h) => tendingOf(h) === "careful");
+    const sessionsC = careHouses.reduce((n, h) => n + h.sessions, 0);
+    const gestures = careHouses.reduce((n, h) => n + (h.interiorGestures ?? 0), 0);
+    const perSession = sessionsC ? gestures / sessionsC : 0;
+    checks.push({
+      code: "interior-time",
+      label: "Intérieurs : gestes d'un joueur appliqué par séance (règle 7)",
+      target: "≤ 6",
+      value: perSession.toFixed(1),
+      pass: perSession <= 6,
+    });
+  }
   return checks;
 }
 

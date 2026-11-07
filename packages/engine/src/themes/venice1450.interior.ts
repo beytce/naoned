@@ -77,7 +77,7 @@ const STATIONS = {
   barking: station(["labourer"], 35, 1, 1),
   saw_bench: station(["sawyer"], 110, 2, 1, { size: [2, 1], cost: 90 }),
   drying_shed: station([], 50, 2, 0),
-  planing: station(["carpenter"], 35, 1, 1),
+  planing: station(["carpenter"], 28, 1, 1),
   // The brickworks: to mix, to mould, to dry, to fire.
   clay_mixer: station(["brickmaker"], 30, 1, 1),
   brick_mould: station(["brickmaker"], 40, 1, 1),
@@ -306,14 +306,30 @@ export const venice1450Interior: Interior = {
   handlingSPerTile: 4,
   conveyorHandlingS: 1,
   buffer: { max: 8, lossBps: 800, fullAt: 4 },
-  wear: { slowdownBps: 4_000, floorBps: 7_000, careCostDucats: 20 },
-  fatigue: { perHourBps: 400, restPerHourBps: 800, floorBps: 6_000 },
+  wear: { slowdownBps: 4_000, floorBps: 8_000, careCostDucats: 20 },
+  fatigue: { perHourBps: 400, restPerHourBps: 800, floorBps: 7_500 },
+  // A pace of 10 000 is the default plan worn and tired (lot A8): a house that never mends nor
+  // rests its workshops makes no less than before the insides; one that tends them makes more.
+  reference: "worn",
+  // The default plan worn makes a tenth more than the workshop of before: the workshop modules
+  // of the Scuola are gone, their yield is here (lot A8).
+  basePaceBps: 10_000,
+  // A full hall makes twice and a fifth the workshop of before: its level grows it beyond.
+  maxPaceBps: 22_000,
   tradeFit: { same: 10_000, labourer: 7_000, other: 5_000 },
   skillPerLevelBps: 150,
   care: { slowdownBps: 4_000, qualityBps: 5_000 },
   hands: { hireCostDucats: 40, perSeat: 2 },
   conveyorCostDucats: 15,
   refundBps: 5_000,
+  // The knowledge of the craft opens the higher stations (decided 6 November 2026): level 4 with
+  // the mestiere, level 5 with the bottega.
+  unlocks: { baseLevel: 3, byKnowledge: { mestiere: 4, bottega: 5 } },
+  // What a well-tended inside pays where the cities' demand bounds the trade (lot A8, decision
+  // of the owner, 7 November 2026): fewer inputs — a quarter at most — and its better pieces in
+  // the orders, a fine piece a quarter dearer, an exquisite three fifths.
+  waste: { careSaveBps: 2_000, upkeepSaveBps: 1_000, skillSaveBps: 80, maxSaveBps: 3_500 },
+  orderQuality: { fineBps: 15_000, exquisiteBps: 20_000 },
   stations: STATIONS,
   buildings: BUILDINGS,
 };

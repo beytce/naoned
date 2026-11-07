@@ -371,6 +371,8 @@ export function startResearch(tx: Tx, playerId: PlayerId, code: string): void {
   if (!m || (s.research.available.length > 0 && !s.research.available.includes(code)))
     fail("unknown_building_type");
   if (!openedFor(h, m.kind, s)) fail("requirement_unmet");
+  // The workshops' insides replace the workshop modules (docs/plan-ateliers.md lot A7).
+  if (s.interior && m.kind === "workshop") fail("locked");
   if ((h.research ?? []).some((r) => r.code === code)) fail("building_busy");
   if ((h.research ?? []).length >= casaLevelOf(h.casa, s).researchSlots) fail("no_build_slot");
   const level = (h.modules?.[code] ?? 0) + 1;

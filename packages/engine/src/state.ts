@@ -379,6 +379,12 @@ export interface WorkshopInterior {
   buffers: Record<string, number>;
   /** Its hands, hired at its door. */
   hands?: InteriorHand[];
+  /**
+   * What the workshop of before made beyond what its hall can hold yet (docs/plan-ateliers.md lot
+   * A7): its modules turned into stations as far as room allowed, the rest kept as a share of
+   * pace, so that no house makes less at the switch. Shown as « acquis » on its head.
+   */
+  legacyBps?: number;
   /** When its wear and fatigue were last settled. */
   settledAt: number;
   /** Seed of its incidents. */
@@ -553,7 +559,12 @@ export interface EmpireHouse {
     /** Of before (goods in bulk): put back into their counter once. */
     cargo?: Record<string, { qty: number; from: string; routed?: number }>;
     /** The orders aboard, each a place of its hold, delivered at their city. */
-    loads?: (EmpireOrder & { from: string })[];
+    loads?: (EmpireOrder & {
+      from: string;
+      /** Of its units, so many fine and so many exquisite (the insides' worlds), paid more. */
+      fine?: number;
+      exquisite?: number;
+    })[];
     /** Its stops to come, hop by hop (after Hades' Star): each leaves when the one before arrives. */
     legs?: EmpireLeg[];
   }[];

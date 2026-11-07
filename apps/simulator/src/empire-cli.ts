@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { venice1450Empire } from "@comptoirs/engine";
+import { venice1450Empire, venice1450Interior } from "@comptoirs/engine";
 import { evaluate, reportMarkdown } from "./empire/report.js";
 import { DEFAULT_EMPIRE_OPTIONS, type EmpireResult, runEmpire } from "./empire/run.js";
 import { power } from "./empire/world.js";
@@ -16,6 +16,8 @@ const { values } = parseArgs({
     /** A JSON of { settings?: partial empire settings, model?: partial SimModel }. */
     scenario: { type: "string" },
     out: { type: "string", default: join(here, "..", "out") },
+    /** The workshops' insides switched on (docs/plan-ateliers.md lot A8). */
+    interior: { type: "boolean", default: false },
   },
 });
 
@@ -27,7 +29,11 @@ for (const seed of values.seeds.split(",").map(Number)) {
     seed,
     months: Number(values.months),
     cohortSize: Number(values.cohort),
-    settings: { ...venice1450Empire, ...scenario.settings },
+    settings: {
+      ...venice1450Empire,
+      ...(values.interior ? { interior: venice1450Interior } : {}),
+      ...scenario.settings,
+    },
     model: scenario.model,
   });
   results.push(r);

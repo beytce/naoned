@@ -2655,3 +2655,74 @@ Lot 6 de docs/plan-premiers-pas.md, choix du porteur du 6 novembre : la Porta à
 - La Porta (graine 1) : 400 maisons l'ont posée, 119 batailles par jour, 87 % gagnées, aucun véhicule de combat perdu (702 transports perdus, 10 481 retours abîmés) ; meilleur palier gagné : 3. L'antiquaire a payé 1,7 million de ducats de reliques, à peine 1 % de ce que paient les commandes.
 
 Reproduire : `cd apps/simulator && npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/cases-carrees.json` (une graine par processus ; environ 80 minutes par graine).
+
+## Les ateliers de l'intérieur (lot A8, 6 novembre 2026) — en cours, non allumé
+
+Plan : docs/plan-ateliers.md § 9. Les intérieurs ne sont **pas** allumés dans les mondes de Venise (`EMPIRE_INTERIOR=off`).
+
+### Le modèle
+
+Le simulateur de 24 mois porte un intérieur par atelier, joué avec les fonctions du moteur (`apps/simulator/src/empire/interior.ts`) : la cadence figée à chaque relance, l'usure et la fatigue réglées sur les heures où la file a tourné, le conseil de Lorenzo (`adviseInterior`, le même que l'écran). Trois façons de tenir ses ateliers, un tiers des Maisons chacune : **pressé** (plan par défaut, jamais d'entretien), **moyen** (casse une fois le goulot principal, entretient sous 80 %), **appliqué** (joue le conseil, entretient tout, met une équipe de nuit, monte le goulot jusqu'au niveau ouvert puis pose un poste de même sorte à côté). Règle 7 : six ateliers soignés par séance pour l'appliqué, quatre pour le moyen, les plus usés d'abord. Les modules d'atelier, les maîtres sur atelier et le rendement du `mestiere` ne comptent plus (lot A7).
+
+### Le défaut du simulateur trouvé en chemin (et corrigé)
+
+Premiers essais : plus un atelier allait vite, plus les Maisons progressaient lentement. Des essais contrôlés de 6 mois (même monde, seule la cadence change) l'ont isolé : **les ateliers du modèle tournaient sans fin, leurs magasins jamais pleins** — la scierie changeait en planches (1,2 million après un mois) le bois que les commandes demandaient. La règle 3 (« une fois plein, ça s'arrête ») manquait au modèle. Corrigé : un atelier dont la marchandise dépasse 3 jours de sa production s'arrête, ses intrants intacts (`surplus.storeDays` du modèle, `storesFull` dans `bots.ts`). Une cadence plus forte fait désormais progresser plus vite (Casa 8 en 25,7, 21,2 puis 18,7 jours à des cadences de 1,0, 1,3 et 1,6).
+
+**Cette correction change le monde témoin lui-même** : la Casa 8 en 25 jours (51 avant), les commandes à 1,18 milliard de deniers (0,72 avant) sur 24 mois, et le calendrier de la Casa dans ses bornes sauf le dernier palier. Tous les essais d'équilibrage antérieurs ont été faits sans elle : à revoir sur toutes les graines, en cohortes de 200, avant toute autre bascule.
+
+### Les réglages retenus (Venise, `venice1450.interior.ts`)
+
+Référence « usée » (`reference: "worn"` : 10 000 = le plan par défaut au plancher d'usure et de fatigue) ; planchers 80 % (usure) et 75 % (fatigue) ; `basePaceBps` 11 000 (le plan par défaut usé fait un dixième de plus que l'atelier d'avant, à la place des modules d'atelier) ; plafond de la halle `maxPaceBps` 22 000.
+
+### Les essais
+
+**Le banc** (`npx tsx src/interior-bench.ts 60` : chaque atelier aux niveaux 1, 5 et 12, 60 jours, argent illimité) : pressé 1,00, moyen **1,40**, appliqué **2,00** (rapports au pressé), un geste par séance et par atelier : les cibles du plan § 9 tenues.
+
+**Le monde** (graine 1, cohortes de 40, 24 mois, simulateur corrigé) :
+
+| Cible | Témoin sans intérieurs | Avec intérieurs |
+| --- | --- | --- |
+| Calendrier de la Casa | ✗ 1 hors bornes (20) | ✗ 6 hors bornes (15 à 20 : trop rapides) |
+| Tournées avec un objectif | ✓ 99,5 % | ✓ 99,2 % |
+| Prochain palier en jours de revenu | ✗ 2,7 à 19,9 | ✗ 2,5 à 19,3 |
+| Cohorte du mois 12 hors de la 1re bande | ✗ 1,9 mois | ✗ 1,9 mois |
+| Indice des prix | ✓ 92 à 103 | ✓ 93 à 103 |
+| Puits ÷ sources | ✗ 0,85 puis 0,95 | ✗ 0,85 puis 0,95 |
+| Terraferme | ✓ 0 % | ✓ 0 % |
+| Bruts des jeunes à Venise | ✗ 3,1 % | ✗ 3,1 % |
+| Part des commandes | ✓ 67,3 % | ✓ 69,0 % |
+| Commandes créées | 1,181 milliard | 1,189 milliard |
+| Casa 8 / 14 / 20 (cohorte 0) | 25 / 134 / 368 j | 22 / 106 / 296 j |
+| Appliqué / pressé | — | ✗ 1,45 |
+| Moyen / pressé | — | ✗ 1,09 |
+| Pressé (≥ 1) | — | ✓ 1,16 |
+| Gestes par séance (≤ 6) | — | ✓ 5,5 |
+
+**Lecture.**
+- **L'économie tient** : prix, commandes, épargne, part des commandes, tout se lit comme au témoin. Les Maisons vont un peu plus vite en fin de partie (Casa 14 en 106 jours contre 134), un pas qu'on rattrape au calendrier.
+- **Personne ne perd** : un atelier jamais entretenu fait 1,16 fois l'atelier d'avant.
+- **L'écart entre joueurs ne se voit pas au monde** (1,45 et 1,09 contre 2,00 et 1,40 au banc), et ce que gagnent les Maisons ne dépend presque pas de leur façon de tenir leurs ateliers : leurs revenus sont bornés par **les commandes des villes**, pas par la production ; un atelier plus rapide remplit plus vite son magasin, puis s'arrête. Une cadence moyenne mesurée sur des ateliers souvent arrêtés écrase l'écart.
+- **Question de conception pour le porteur** : pour que l'optimisation paie quand la demande borne tout, il faudrait qu'elle rapporte autre chose que du volume (moins d'intrants pour la même production, une part de belles pièces plus grande pour la cour, des commandes de prestige) : voir docs/plan-ateliers.md, lot A8.
+
+### « A + B » : ce que paie un atelier bien tenu (décision du porteur du 7 novembre 2026)
+
+Puisque la demande des villes borne les revenus, un atelier bien tenu paie **par lot vendu** plutôt qu'en volume, et seulement dans les mondes à intérieurs :
+- **A, le rendement matière** : il économise de ses intrants selon son soin moyen, l'entretien de ses machines (la part non usée) et le savoir-faire de ses ouvriers, jusqu'à un plafond (`interior.waste`) ; affiché en tête de l'atelier (« −12 % d'intrants »).
+- **B, les belles pièces dans les commandes** : ses pièces fines et exquises remplissent les commandes des villes à la place des ordinaires, les exquises d'abord, et la commande est payée selon leur part (`interior.orderQuality`) ; avant, seule la cour les achetait.
+
+Au simulateur : l'appliqué règle ses postes sur « soigné » (6 000, et 10 000 là où ses magasins sont pleins : la vitesse ne s'y vend plus), le moyen à 3 000 ; l'appliqué n'achète plus de niveaux ni de postes pour un atelier dont le magasin est plein. Ce que rapporte la tenue se lit **contre un monde sans intérieurs, Maison par Maison** (`npx tsx src/interior-paired.ts`, mêmes graines et cohortes) : la cadence moyenne trompe là où les ateliers s'arrêtent magasins pleins, et une graine en cohortes de 40 est trop bruitée (l'appliqué y gagne de 0,93 à 1,26 fois le pressé selon la graine). D'où des cohortes de 120.
+
+| Réglage (cohortes de 120) | Graines | Pressé / témoin | Moyen / pressé | Appliqué / pressé |
+| --- | --- | --- | --- | --- |
+| Modéré (fine ×1,25, exquise ×1,6, intrants −25 % au plus, base 1,10) | 1, 2, 3 | 1,13 à 1,19 | 1,04 à 1,09 | 1,03 à 1,08 |
+| Modéré, l'appliqué soigne au lieu d'agrandir | 1, 2 | 1,11 à 1,17 | 1,05 à 1,13 | 1,03 à 1,16 |
+| **Fort, retenu** (fine ×1,5, exquise ×2, intrants −35 % au plus, base 1,00) | 1, 2 | 1,17 | **1,12 à 1,14** | **1,12 à 1,17** |
+
+Avec le réglage fort, au monde (graines 1 et 2) : indice des prix 92 à 103 ✓, épargne des Maisons 0,75 puis 0,99 ✓ (le témoin : 0,88 puis 0,96 ✗), part des commandes 76 % ✓, un atelier jamais entretenu à 1,06 fois celui d'avant ✓, 5,7 gestes par séance ✓ ; **le calendrier de la Casa va trop vite en fin de partie** (paliers 14 à 20 sous la moitié de leur cible, contre 16, 19 et 20 au témoin) : toutes les Maisons s'enrichissent de 17 à 37 %.
+
+**Lecture.**
+- **La tenue paie désormais** : 12 à 17 % de plus qu'un joueur pressé, sans déranger les prix ni les commandes. C'est en deçà de l'écart visé au départ en cadence (1,6 à 2,2), qui n'a pas de sens dans une économie bornée par la demande.
+- **L'appliqué ne gagne guère plus que le moyen** : au-delà d'un bon soin et d'un goulot cassé, monter les postes et poser des équipes de nuit apporte du volume que les villes ne prennent pas. La profondeur de l'optimisation paie peu tant que la demande ne grandit pas avec elle (piste C, les commandes de prestige, au lot A9).
+- **La fin de partie s'accélère** : à corriger au calendrier (prix des Casa hautes), avec le rééquilibrage général au simulateur corrigé (toutes les graines, cohortes de 200).
+
+Reproduire : `cd apps/simulator && npx tsx src/interior-bench.ts 60` ; `npx tsx src/empire-cli.ts --seeds 1 --cohort 40 --interior` (environ 6 minutes ; le témoin sans `--interior`, environ 4 minutes).

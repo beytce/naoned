@@ -1,3 +1,4 @@
+import type { InteriorView } from "@comptoirs/engine";
 import type { TerraAction } from "../game/types.js";
 import type { PortaAction, PortaView } from "./porta/types.js";
 
@@ -200,6 +201,10 @@ export interface EmpireView {
     }[];
   };
   workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
+  /** The workshops' insides, by workshop (docs/plan-ateliers.md § 5.6); absent or empty when off. */
+  interiors?: Record<string, InteriorView>;
+  /** Their rules (the stations' footprints and levels), for the screen's own reckoning. */
+  interiorRules?: InteriorRules | null;
   courtLeft: number;
   identity: EmpireIdentity;
   terra: {
@@ -374,6 +379,28 @@ export interface EmpireRecipe {
   minutes: number;
 }
 
+/** The rules of the insides as the server sends them (its money as strings). */
+export interface InteriorRules {
+  wear?: { careCostDucats: string };
+  /** Its better pieces in the cities' orders, paid at these rates (« B »). */
+  orderQuality?: { fineBps: number; exquisiteBps: number };
+  hands?: { hireCostDucats: string; perSeat: number };
+  stations: Record<
+    string,
+    {
+      size: [number, number];
+      trades: string[];
+      levels: {
+        cycleS: number;
+        capacity: number;
+        seats: number;
+        costDucats: string;
+        buildMinutes: number;
+      }[];
+    }
+  >;
+}
+
 export interface EmpirePayload {
   kind: "empire";
   now: number;
@@ -389,6 +416,35 @@ export interface EmpirePayload {
 
 export type EmpireAction =
   | PortaAction
+  // The workshops' insides (docs/plan-ateliers.md § 5.5).
+  | {
+      type: "empireInteriorPlace";
+      workshopId: string;
+      kind: string;
+      x: number;
+      y: number;
+      rot: number;
+    }
+  | {
+      type: "empireInteriorMove";
+      workshopId: string;
+      stationId: string;
+      x: number;
+      y: number;
+      rot: number;
+    }
+  | { type: "empireInteriorRemove"; workshopId: string; stationId: string }
+  | { type: "empireInteriorUpgrade"; workshopId: string; stationId: string }
+  | { type: "empireInteriorCare"; workshopId: string; stationId: string; care: number }
+  | { type: "empireInteriorMaintain"; workshopId: string; stationId?: string }
+  | { type: "empireInteriorHire"; workshopId: string; trade: string }
+  | {
+      type: "empireInteriorAssign";
+      workshopId: string;
+      handId: string;
+      stationId: string | null;
+      shift: "day" | "night";
+    }
   | { type: "empireBuildCasa" }
   | {
       type: "empireBuildWorkshop";

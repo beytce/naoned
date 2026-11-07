@@ -23,6 +23,12 @@ export interface Workshop {
   region: string;
   good: string;
   level: number;
+  /** Its inside (docs/plan-ateliers.md lot A8), when the world has them. */
+  inside?: import("@comptoirs/engine").WorkshopInterior;
+  /** Its pace, in bps of its default plan, frozen at its last relaunch. */
+  pace?: number;
+  /** The plan Lorenzo last looked at (the simulator asks again only when it changed). */
+  advised?: string;
 }
 
 export interface Vehicle {
@@ -112,6 +118,9 @@ export interface House {
   stock: Map<string, number>;
   builds: Build[];
   research: Research[];
+  /** What it spent on its insides, and the gestures it took there (lot A8). */
+  interiorSpent?: Deniers;
+  interiorGestures?: number;
   /** The last time its workshops were relaunched: they work 12 h past it, no more. */
   relaunchedAt: number;
   lastSession: number;
@@ -287,6 +296,13 @@ export interface SimModel {
   galleyStrength: number;
   /** A house's raw goods count as young while its Casa is at most this. */
   youngCasa: number;
+  /**
+   * How a house sells what it does not deliver (lot A8 of docs/plan-ateliers.md): it keeps
+   * `orderReserveDays` of its making for the orders to come, sells the rest at no less than
+   * `surplusFloorBps` of the good's reference, and sells anyway past `storeDays` of its making
+   * (its stores full). 0, 0, 0: everything spare sold at once, at any price (before).
+   */
+  surplus: { orderReserveDays: number; surplusFloorBps: number; storeDays: number };
   /** What a plan sells for between houses, in ducats. */
   planPriceDucats: number;
   plansPerRelic: number;

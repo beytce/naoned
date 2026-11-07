@@ -49,6 +49,14 @@ import {
   sellToCourt,
 } from "./identity.js";
 import {
+  insideInputsBps,
+  insideQualityBps,
+  insidesOn,
+  paceOf,
+  settleInsides,
+  tendInsides,
+} from "./interior.js";
+import {
   type Activity,
   type Bent,
   type Build,
@@ -177,11 +185,16 @@ export function playsNow(w: World, h: House, rng: Rng): boolean {
 
 function rateOf(w: World, h: House, ws: { good: string; level: number }): number {
   const base = w.m.rates[ws.good] ?? (w.m.recipes[ws.good] ? w.m.craftedPerHour : w.m.rawPerHour);
-  const tools = h.modules.tools ? effectOf({ tools: h.modules.tools }, "workshopYield", w.s) : 0;
+  // With the insides, the tools are stations (docs/plan-ateliers.md lot A7): the pace says it.
+  const tools =
+    h.modules.tools && !insidesOn(w)
+      ? effectOf({ tools: h.modules.tools }, "workshopYield", w.s)
+      : 0;
   // Its identity: the Arte's chain, the knowledge, its master, the lineage, its neighbourhood.
   const i = h.workshops.indexOf(ws as Workshop);
   const identity = identityEffect(w, h, "workshopYield", i) + neighbourEffect(w, h, i);
-  return (base * lotYieldBps(ws.level, w.s) * (10_000 + tools + identity)) / 1e8;
+  const pace = insidesOn(w) ? paceOf(ws as Workshop) : 10_000;
+  return (base * lotYieldBps(ws.level, w.s) * (10_000 + tools + identity) * pace) / 1e12;
 }
 
 /** The raw goods of Venetia a workshop's high recipe may eat: the listed ones but its own good. */
@@ -207,7 +220,13 @@ function collect(w: World, h: House) {
   if (hours > 0)
     for (const [i, ws] of h.workshops.entries()) {
       masterWorked(w, h, i, hours);
-      const saved = Math.min(9_000, identityEffect(w, h, "inputs", i));
+      // Rule 3: a workshop whose goods fill the stores stops, its inputs untouched (lot A8: the
+      // model made planks of the wood the orders wanted, without end).
+      if (storesFull(w, h, ws.good)) continue;
+      const saved = Math.min(
+        9_000,
+        identityEffect(w, h, "inputs", i) + insideInputsBps(w, h, ws, i),
+      );
       let qty = Math.floor(rateOf(w, h, ws) * hours);
       const recipe = w.m.recipes[ws.good];
       if (recipe)
@@ -232,8 +251,10 @@ function collect(w: World, h: House) {
         for (const [g, per] of Object.entries(recipe))
           takeStock(h, g, Math.ceil((qty * per * (10_000 - saved)) / 10_000));
       takeRaw(h, raws, highRecipeRaw(ws.level, qty, w.s));
-      addStock(h, ws.good, qty - makeFine(w, h, ws.good, qty, i));
+      addStock(h, ws.good, qty - makeFine(w, h, ws.good, qty, i, insideQualityBps(w, h, ws, i)));
     }
+  // The insides: wear and fatigue over the queue that ran, the pace of the next one.
+  settleInsides(w, h);
   h.relaunchedAt = w.now;
   // Inputs for the next queue, bought where the house is; Venetia's raw goods, in Venice.
   const wanted = wantedIn(w, h);
@@ -405,14 +426,31 @@ function deliverOrders(w: World, h: House, _sinceHours: number) {
     for (const x of order) {
       if (places <= 0) break;
       if (!homesOf(h, x.good).has(c.region)) continue;
-      if ((h.stock.get(x.good) ?? 0) < x.qty) continue;
-      takeStock(h, x.good, x.qty);
+      // With the insides, its better pieces count, the best first, paid more (lot A8, « B »).
+      const q = w.s.interior?.orderQuality;
+      const better = q ? ["exquisite", "fine"] : [];
+      const held =
+        (h.stock.get(x.good) ?? 0) +
+        better.reduce((n, k) => n + (h.fine.get(`${x.good}:${k}`) ?? 0), 0);
+      if (held < x.qty) continue;
+      let left = x.qty;
+      let weight = 0;
+      for (const k of better) {
+        const n = Math.min(left, h.fine.get(`${x.good}:${k}`) ?? 0);
+        if (n <= 0) continue;
+        h.fine.set(`${x.good}:${k}`, (h.fine.get(`${x.good}:${k}`) ?? 0) - n);
+        weight += n * ((k === "exquisite" ? q?.exquisiteBps : q?.fineBps) ?? 10_000);
+        left -= n;
+      }
+      if (left > 0) takeStock(h, x.good, left);
+      weight += left * 10_000;
+      const pay = (x.pay * BigInt(weight)) / BigInt(x.qty * 10_000);
       places--;
       rec.list.splice(rec.list.indexOf(x), 1);
       // A place freed in a full city: its next order an interval later.
       const { every, cap } = sizeRule(w, c.size);
       if (rec.list.length === cap - 1 && rec.next <= w.now) rec.next = w.now + every;
-      const gross = applyBpsFloor(x.pay, 10_000 + convoy);
+      const gross = applyBpsFloor(pay, 10_000 + convoy);
       receive(w, h, gross, "orders", "orders");
       h.ordersValue += gross;
       h.favour += Number(gross / (100n * DENIERS_PER_DUCAT)) * w.m.favourPer100Ducats;
@@ -526,7 +564,18 @@ function sellSurplus(w: World, h: House) {
         best = region;
       }
     }
-    takeStock(h, good, sellToMarket(w, h, best, good, spare, "market"));
+    // A day's making kept for the orders to come; the rest sold if the price holds, or anyway
+    // once the stores are full (lot A8: a merchant does not sell below its worth).
+    const { orderReserveDays, surplusFloorBps, storeDays } = w.m.surplus;
+    const day = h.workshops
+      .filter((x) => x.good === good)
+      .reduce((n, x) => n + rateOf(w, h, x) * DAY, 0);
+    const sell = Math.floor(qty - Math.max(keep[good] ?? 0, day * orderReserveDays));
+    if (sell <= 0) continue;
+    const full = storeDays > 0 && qty > day * storeDays;
+    const ref = market(w, best, good).ref;
+    if (!full && bestPrice * 10_000n < ref * BigInt(surplusFloorBps)) continue;
+    takeStock(h, good, sellToMarket(w, h, best, good, sell, "market"));
   }
 }
 
@@ -621,6 +670,16 @@ function spendable(w: World, h: House): Deniers {
 }
 
 /** A good piles up when its stock passes a day of what the house makes of it. */
+/** The stores of a good are full: past `storeDays` of what the house makes of it. */
+function storesFull(w: World, h: House, good: string): boolean {
+  const days = w.m.surplus.storeDays;
+  if (days <= 0) return false;
+  const day = h.workshops
+    .filter((x) => x.good === good)
+    .reduce((n, x) => n + rateOf(w, h, x) * DAY, 0);
+  return (h.stock.get(good) ?? 0) > Math.max(day * days, 50);
+}
+
 function pilesUp(w: World, h: House, good: string): boolean {
   // Near the Fondaco's cap, it piles up: the house raises no workshop of it (the first steps,
   // lot 3), as a player would not.
@@ -1157,6 +1216,8 @@ function research(w: World, h: House) {
     const cost = researchCost(level, w.s);
     if (spendable(w, h) < cost) return;
     if (!w.s.modules.some((m) => m.code === code)) continue;
+    // The insides replace the workshop modules (docs/plan-ateliers.md lot A7).
+    if (insidesOn(w) && w.s.modules.find((m) => m.code === code)?.kind === "workshop") continue;
     if (w.s.research.available.length > 0 && !w.s.research.available.includes(code)) continue;
     destroy(w, h, cost, "research");
     h.research.push({ code, level, endsAt: w.now + hoursOf(researchMinutesOf(level, w.s)) });
@@ -1226,6 +1287,13 @@ export function session(w: World, h: House, rng: Rng) {
   sellSurplus(w, h);
   sellToCourt(w, h);
   if (h.bent === "armourer") expedition(w, h, rng);
+  // The insides first: mending is cheap and pays at once.
+  tendInsides(
+    w,
+    h,
+    () => spendable(w, h),
+    (g) => storesFull(w, h, g),
+  );
   build(w, h);
   research(w, h);
   growIdentity(w, h, () => spendable(w, h));

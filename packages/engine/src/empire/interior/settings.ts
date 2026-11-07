@@ -93,6 +93,44 @@ export const interiorSettingsSchema = z
     conveyorCostDucats: money,
     /** What a station taken down (or a conveyor) gives back of what it cost. */
     refundBps: bps,
+    /**
+     * The stations' levels open to a house (decided 6 November 2026: the knowledge of the craft
+     * opens higher stations instead of a yield): up to `baseLevel`, then each knowledge listed
+     * opens up to its level.
+     */
+    /**
+     * What a pace of 10 000 is: the default plan « fresh » (new machines, rested hands), or
+     * « worn » (its machines and hands at their floors: what a house that never mends nor rests
+     * them comes to), so that such a house makes no less than before the insides.
+     */
+    reference: z.enum(["fresh", "worn"]).prefault("fresh"),
+    /**
+     * The most a hall gives, in bps of its reference (lot A8): past it, more stations and levels
+     * make it no quicker — « the hall runs full »; its level (its floor) is what grows it then.
+     */
+    maxPaceBps: positive.prefault(1_000_000),
+    /**
+     * The pace of the reference itself (lot A8): above 10 000, the default plan worn makes more
+     * than the workshop of before, in place of the workshop modules it no longer researches.
+     */
+    basePaceBps: positive.prefault(10_000),
+    /**
+     * What a well-tended inside saves of its inputs (lot A8, « A »): its mean care, its machines'
+     * upkeep (none worn), its hands' skill (a level past the first each), to a ceiling.
+     */
+    waste: z
+      .object({ careSaveBps: bps, upkeepSaveBps: bps, skillSaveBps: bps, maxSaveBps: bps })
+      .prefault({ careSaveBps: 0, upkeepSaveBps: 0, skillSaveBps: 0, maxSaveBps: 0 }),
+    /**
+     * Its better pieces fill the cities' orders in place of plain ones (lot A8, « B »), the
+     * exquisite first: an order is paid at these rates for its share of them (10 000: no more).
+     */
+    orderQuality: z
+      .object({ fineBps: bps, exquisiteBps: bps })
+      .prefault({ fineBps: 10_000, exquisiteBps: 10_000 }),
+    unlocks: z
+      .object({ baseLevel: positive, byKnowledge: z.record(z.string(), positive) })
+      .prefault({ baseLevel: 99, byKnowledge: {} }),
     stations: z.record(z.string(), stationKind),
     buildings: z.record(z.string(), building),
   })

@@ -733,8 +733,18 @@ export function deliveryPlan(
   city: string,
   chosen: Set<string> | null = null,
 ): {
-  /** Each order, the stock of it at the best counter, and whether that alone covers it. */
-  orders: { o: EmpireOrderView; have: number; covered: boolean }[];
+  /**
+   * Each order, the stock of it at the best counter, and whether that alone covers it; with the
+   * workshops' insides, its better pieces count, and `better` of them would go (the exquisite
+   * first), its `pay` raised for them (docs/plan-ateliers.md lot A8, « B »).
+   */
+  orders: {
+    o: EmpireOrderView;
+    have: number;
+    covered: boolean;
+    better: number;
+    pay: bigint;
+  }[];
   picks: string[];
   vehicle: Mine | null;
   pay: bigint;
@@ -747,13 +757,45 @@ export function deliveryPlan(
   const none = { orders: [], picks: [], vehicle: null, pay: 0n, freeAt: null };
   if (!view || !at) return { ...none, reason: "reach" };
   const posts = at.posts ?? view.stores.map((s) => s.post);
-  const stockAt = (post: string, good: string) =>
-    view.stores.find((s) => s.post === post)?.goods[good] ?? 0;
+  const goodsAt = (post: string) => view.stores.find((s) => s.post === post)?.goods ?? {};
+  // With the insides, the better pieces of a good count for its orders, paid more (« B »).
+  const q = view.interiorRules?.orderQuality;
+  const qualities = !!q && (q.fineBps > 10_000 || q.exquisiteBps > 10_000);
+  const finer = (post: string, good: string) => {
+    const g = goodsAt(post);
+    return qualities
+      ? { exquisite: g[`${good}:exquisite`] ?? 0, fine: g[`${good}:fine`] ?? 0 }
+      : { exquisite: 0, fine: 0 };
+  };
+  const stockAt = (post: string, good: string) => {
+    const f = finer(post, good);
+    return (goodsAt(post)[good] ?? 0) + f.exquisite + f.fine;
+  };
+  /** An order's pay and its better pieces, filled from a counter's stock as the engine fills it. */
+  const paid = (o: EmpireOrderView, post: string | undefined) => {
+    const base = BigInt(o.pay);
+    if (!qualities || post === undefined || o.qty <= 0) return { better: 0, pay: base };
+    const f = finer(post, o.good);
+    const exquisite = Math.min(o.qty, f.exquisite);
+    const fine = Math.min(o.qty - exquisite, f.fine);
+    const weight =
+      (o.qty - exquisite - fine) * 10_000 +
+      fine * (q?.fineBps ?? 10_000) +
+      exquisite * (q?.exquisiteBps ?? 10_000);
+    return { better: exquisite + fine, pay: (base * BigInt(weight)) / BigInt(o.qty * 10_000) };
+  };
   const asked = [...at.orders]
     .filter((o) => !chosen || chosen.has(o.id))
     .sort((a, b) => (BigInt(b.pay) > BigInt(a.pay) ? 1 : BigInt(b.pay) < BigInt(a.pay) ? -1 : 0));
   const best = (good: string) => Math.max(0, ...posts.map((post) => stockAt(post, good)));
-  const orders = at.orders.map((o) => ({ o, have: best(o.good), covered: best(o.good) >= o.qty }));
+  const bestPost = (good: string) =>
+    [...posts].sort((a, b) => stockAt(b, good) - stockAt(a, good))[0];
+  const orders = at.orders.map((o) => ({
+    o,
+    have: best(o.good),
+    covered: best(o.good) >= o.qty,
+    ...paid(o, bestPost(o.good)),
+  }));
   if (asked.length === 0) return { ...none, orders, reason: "none" };
   const docked = (v: Mine) =>
     v.legs.length === 0 &&
@@ -782,10 +824,11 @@ export function deliveryPlan(
       pick = { v, ids };
   }
   if (pick) {
-    const pay = pick.ids.reduce(
-      (sum, id) => sum + BigInt(at.orders.find((o) => o.id === id)?.pay ?? 0),
-      0n,
-    );
+    const at2 = pick.v.at;
+    const pay = pick.ids.reduce((sum, id) => {
+      const o = at.orders.find((x) => x.id === id);
+      return sum + (o ? paid(o, at2).pay : 0n);
+    }, 0n);
     return { orders, picks: pick.ids, vehicle: pick.v, pay, reason: null, freeAt: null };
   }
   const anyDocked = view.vehicles.mine.some(docked);
