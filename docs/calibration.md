@@ -2599,3 +2599,38 @@ Retours du porteur du 6 novembre 2026 (docs/plan-premiers-pas.md, lot 1) : une m
 - Le haut du « prochain palier en jours de revenu » monte (30 à 41 jours contre 19 à 22). Cette cible était déjà manquée, et sa borne haute est la médiane d'un mois de fin de partie, très sensible à la trajectoire ; les premières maisons du monde, qui paient leurs trois ateliers au prix plein, partent avec 290 ducats au lieu de 500. À suivre à la prochaine passe d'équilibrage de la fin de partie, avec les plafonds des villes de taille 5.
 
 Reproduire : `cd apps/simulator && npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/cases-carrees.json` (une graine par processus en parallèle : `--seeds 1 --out out/g1`, etc. ; environ 95 minutes par graine).
+
+## Les premiers pas : le plafond de stock et la zone du Fondaco (6 et 7 novembre 2026)
+
+Lot 3 de docs/plan-premiers-pas.md : chaque niveau du Fondaco (la Casa) fixe ce qu'un fondaco garde de chaque marchandise (`casa[].storeCap`, de 300 à 700 000) ; une fois plein, les lots attendent dans la file. La zone du premier fondaco suit la Casa (`map.reach.byCasa`).
+
+### Ce que le simulateur montrait avant le plafond
+
+Mesuré au simulateur (12 mois, cohortes de 60), le plus gros stock d'une marchandise par maison : médiane 300 à 600 jusqu'à la Casa 5, puis 41 000 à la Casa 8, 400 000 à la Casa 10, 8 millions à la Casa 20 (centile 90 : 13 millions). Des marchandises fabriquées, intrants achetés, jamais vendues : ce que la règle d'or 3 interdit.
+
+### Les essais
+
+Le lot 1 sert de référence (6 cibles sur 9 sur les trois graines). Les essais A à H sont sur la graine 1, cohortes de 60 (environ 25 minutes chacun) ; le premier sur les trois graines, cohortes de 200.
+
+| Essai | Cibles | Casa 8 / 19 (jours, cohorte 0) | Part des commandes |
+| --- | --- | --- | --- |
+| Lot 1 (sans plafond, 3 graines) | 6, 6, 6 | 45,7 / 360 | 81,7 à 82,9 % |
+| Plafond (3 graines × 200) | 4, 4, 4 | 35,7 / 269 | 86,7 à 87,2 % |
+| A : plafond, zone liée à la Casa | 4 | 35,6 / 268 | 86,9 % |
+| B : idem, zone qui grandit deux fois moins | 4 | 35,2 / 269 | 87,2 % |
+| C : plafond seul | 4 | 36,7 / 270 | 87,7 % |
+| E : C, robots qui ne montent plus un atelier près du plafond | 4 | 36,2 / 270 | 86,5 % |
+| F : A et E | 4 | 34,7 / 267 | 87,8 % |
+| G : F, Casa 13 à 20 une fois et demie plus chères | 4 | 34,7 / 267 | 87,2 % |
+| H : F, plafonds quatre fois plus hauts | 4 | 42,7 / 281 | 87,3 % |
+
+**Lecture.**
+- Le plafond fait aller la partie plus vite à partir de la Casa 7 : les Casa 16 à 20 tombent sous la moitié de leur cible (la Casa 19 au jour 268 pour 600). Sans plafond, les maisons dépensaient en intrants pour des marchandises qui s'entassaient ; ce gaspillage tenait la fin de partie.
+- La zone liée à la Casa ne change presque rien (A, B contre C).
+- Le prix des dernières Casa non plus (G) : ce sont les exigences d'ateliers (à partir de la Casa 9, tant d'ateliers à tel niveau) qui règlent la fin de partie.
+- Des plafonds quatre fois plus hauts (H) rendent le milieu de partie (Casa 8 au jour 43) sans rattraper la fin.
+- En contrepartie, le prochain palier en jours de revenu se rapproche beaucoup de sa cible (2 à 9 jours contre 2 à 41).
+
+**Décision du porteur attendue** : garder le plafond tel quel et rouvrir le rythme de la fin de partie (les exigences d'ateliers des Casa 9 à 20), ou un plafond plus lâche. Rien n'est appliqué au-delà du lot 3 tel que poussé.
+
+Reproduire : les scénarios des essais s'écrivent à partir de `scenarios/cases-carrees.json` (la carte du scénario remplace celle du thème : y mettre `reach.byCasa` pour la zone liée) ; `npx tsx src/empire-cli.ts --seeds 1 --cohort 60 --scenario <essai>.json`.
