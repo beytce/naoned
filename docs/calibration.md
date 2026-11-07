@@ -2633,7 +2633,18 @@ Au simulateur : l'appliqué règle ses postes sur « soigné » (6 000, et 10 00
 
 Avec le réglage fort, au monde (graines 1 et 2) : indice des prix 92 à 103 ✓, épargne des Maisons 0,75 puis 0,99 ✓ (le témoin : 0,88 puis 0,96 ✗), part des commandes 76 % ✓, un atelier jamais entretenu à 1,06 fois celui d'avant ✓, 5,7 gestes par séance ✓ ; **le calendrier de la Casa va trop vite en fin de partie** (paliers 14 à 20 sous la moitié de leur cible, contre 16, 19 et 20 au témoin) : toutes les Maisons s'enrichissent de 17 à 37 %.
 
+**La validation complète** (réglage fort, trois graines, cohortes de 200, avec et sans intérieurs ; environ 19 minutes par témoin, 31 par monde à intérieurs) :
+
+| Graine | Pressé / témoin | Moyen / pressé | Appliqué / pressé | Casa 8 / 14 / 20, témoin | avec intérieurs |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 1,17 | 1,11 | **1,30** | 26 / 118 / 317 j | 21 / 104 / 293 j |
+| 2 | 1,18 | 1,13 | **1,33** | 26 / 121 / 319 j | 21 / 103 / 293 j |
+| 3 | 1,21 | 1,08 | **1,18** | 26 / 119 / 319 j | 22 / 105 / 294 j |
+
+Sur les trois graines, avec intérieurs : indice des prix 91 à 103 ✓, épargne des Maisons 0,74 à 0,76 puis 0,99 à 1,00 ✓ (le témoin, 0,86 à 0,88 puis 0,95 à 0,97 : ✗), part des commandes 76 à 78 % ✓ (témoin 68 à 69 %), un atelier jamais entretenu à 1,06 fois celui d'avant ✓, 5,9 gestes par séance ✓. Le calendrier de la Casa : 6 ou 7 paliers trop rapides (14 ou 15 à 20), contre 4 ou 5 au témoin (16 à 20). **Le témoin lui-même, sur le simulateur corrigé, a sa fin de partie trop rapide** : le jeu en service aussi, sans doute (voir plus haut, « Le défaut du simulateur »).
+
 **Lecture.**
+- **À grande échelle, la tenue paie, et dans le bon ordre** : un joueur moyen gagne 8 à 13 % de plus qu'un pressé, un appliqué 18 à 33 %. Aux cohortes de 120, l'appliqué et le moyen se confondaient : le bruit, plus que l'effet.
 - **La tenue paie désormais** : 12 à 17 % de plus qu'un joueur pressé, sans déranger les prix ni les commandes. C'est en deçà de l'écart visé au départ en cadence (1,6 à 2,2), qui n'a pas de sens dans une économie bornée par la demande.
 - **L'appliqué ne gagne guère plus que le moyen** : au-delà d'un bon soin et d'un goulot cassé, monter les postes et poser des équipes de nuit apporte du volume que les villes ne prennent pas. La profondeur de l'optimisation paie peu tant que la demande ne grandit pas avec elle (piste C, les commandes de prestige, au lot A9).
 - **La fin de partie s'accélère** : à corriger au calendrier (prix des Casa hautes), avec le rééquilibrage général au simulateur corrigé (toutes les graines, cohortes de 200).

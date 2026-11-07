@@ -1,6 +1,6 @@
 # Notes du chapitre : les ateliers de l'intérieur (brouillon)
 
-**Brouillon, à ne pas publier tel quel.** La règle veut qu'un changement du commerce s'annonce dans les notes du chapitre (le mois) avant de s'appliquer : ce texte annonce la bascule des ateliers de l'intérieur (`EMPIRE_INTERIOR=on`), à la date que choisira le porteur. Les chiffres viennent du simulateur de 24 mois (docs/calibration.md, « Les ateliers de l'intérieur ») et sont à confirmer par la validation complète (trois graines, cohortes de 200) avant publication.
+**Brouillon, à ne pas publier tel quel.** La règle veut qu'un changement du commerce s'annonce dans les notes du chapitre (le mois) avant de s'appliquer : ce texte annonce la bascule des ateliers de l'intérieur (`EMPIRE_INTERIOR=on`), à la date que choisira le porteur. Les chiffres viennent du simulateur de 24 mois (docs/calibration.md, « Les ateliers de l'intérieur ») et ont été validés sur trois graines en cohortes de 200 : un atelier jamais entretenu produit au moins autant qu'avant ; un joueur qui soigne ses ateliers gagne 8 à 13 % de plus, un joueur appliqué 18 à 33 %.
 
 ## Ce qui change pour vous
 
