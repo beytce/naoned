@@ -162,7 +162,7 @@ de règles du commerce s'annoncent dans les notes du chapitre.
 
 | Lot | État | PR |
 |---|---|---|
-| 0 | à faire | |
+| 0 | fait : clés réservées refusées (fuzz du moteur, 4 graines), plafond et prix montant à l'achat, part du jour par maison, trajets échus réglés à la lecture, lot d'accueil jamais recadencé, refus toujours dits (test sur tous les codes de l'empire) | |
 | 1 | à faire | |
 | 2 | à faire | |
 | 3 | à faire | |

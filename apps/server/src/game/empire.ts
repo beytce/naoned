@@ -381,6 +381,12 @@ export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps
     const account = await deps.requireAccount(req, reply);
     if (!account) return;
     if (!isEmpire()) return { kind: "season" };
+    // A trip that arrived while the house was away is settled at the reading (CADRAGE-v3 § 13,
+    // step 4; the players' audit of 7 November 2026, QA-04): the delivery is paid on return.
+    const now = world.now();
+    const view = empireView(world.ctx, world.current, account.id, now);
+    const due = (view?.vehicles?.mine ?? []).some((v) => v.legs.some((l) => l.arrivesAt <= now));
+    if (due) await world.execute({ type: "empireSettle", playerId: account.id });
     return payload(account.id);
   });
 

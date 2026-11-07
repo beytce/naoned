@@ -2737,3 +2737,23 @@ Sur les trois graines, avec intérieurs : indice des prix 91 à 103 ✓, épargn
 - **La fin de partie s'accélère** : à corriger au calendrier (prix des Casa hautes), avec le rééquilibrage général au simulateur corrigé (toutes les graines, cohortes de 200).
 
 Reproduire : `cd apps/simulator && npx tsx src/interior-bench.ts 60` ; `npx tsx src/empire-cli.ts --seeds 1 --cohort 40 --interior` (environ 6 minutes ; le témoin sans `--interior`, environ 4 minutes).
+
+## Plan de publication, lot 0 : le Marché durci (7 novembre 2026)
+
+Trois changements du Marché, issus de l'audit des joueurs du 7 novembre 2026 (QA-02, QA-03, et la
+« Dogana au premier arrivé » de l'expert) :
+
+- **Le plafond de l'Entrepôt vaut à l'achat** (règle d'or 3) : un achat s'arrête à la place libre du
+  Fondaco pour cette marchandise (qualités comprises) ; plein, il est refusé (`store_full`).
+- **Le prix monte unité par unité** pendant un achat : l'ordre paie au prix du milieu de sa propre
+  poussée (`pressureAfterTrade` à mi-quantité), au lieu du prix d'avant l'ordre.
+- **Chaque maison a sa part du jour** : la profondeur d'un marché (`depthBase + depthPerHouse ×
+  présents`) se partage entre les maisons présentes, `max(depthPerHouse, ⌈profondeur / présents⌉)`
+  chacune, à la vente comme à l'achat. Le total de la région ne change pas ; seul le « premier
+  arrivé vide la région » disparaît.
+
+**Effet sur l'équilibre** : neutre en agrégat. Le simulateur de 24 mois modélise la profondeur par
+région, partagée entre ses maisons ; la part équitable ne change pas ce total, et ses maisons
+n'achetaient jamais au-delà du plafond (elles achètent pour livrer). L'achat plus cher d'un gros
+ordre ne touche que les ordres de plus de quelques unités, que le simulateur ne passe pas. Les
+lots 2 et 4, qui changent la production et les commandes, passent au simulateur complet.

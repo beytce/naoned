@@ -147,9 +147,20 @@ function marketSize(
   };
 }
 
-/** A house's own day's depth at a market, to sell as to buy (each its own, no one empties it). */
-function houseDepth(s: EmpireSettings): number {
-  return s.markets.depthBase + s.markets.depthPerHouse;
+/**
+ * A house's own share of a market's day's depth, to sell as to buy: the region's depth shared
+ * among the houses present (the players' audit of 7 November 2026: no first comer empties it for
+ * the others), never under what one house adds to it. The region's total stays as calibrated.
+ */
+function houseDepth(
+  houses: Record<string, EmpireHouse>,
+  region: string,
+  now: number,
+  s: EmpireSettings,
+): number {
+  const present = Math.max(1, presentIn(houses, region, now, s));
+  const { depth } = marketSize(houses, region, now, s);
+  return Math.max(s.markets.depthPerHouse, Math.ceil(depth / present));
 }
 
 /** What the house sold and bought today at the markets, reset each day. */
@@ -292,7 +303,7 @@ export function sellAt(
   const key = `${region}:${good}`;
   const n = Math.min(
     qty,
-    houseDepth(s) - (book.sold[key] ?? 0),
+    houseDepth(tx.s.empire?.houses ?? {}, region, tx.now, s) - (book.sold[key] ?? 0),
     heldAt(tx, h, playerId, posts, good),
   );
   if (n <= 0) return 0;
@@ -344,7 +355,11 @@ export function buyAt(
       : cap - have(good) - have(`${good}:fine`) - have(`${good}:exquisite`);
   const book = houseMarket(h, tx.now);
   const key = `${region}:${good}`;
-  const most = Math.min(qty, room, houseDepth(s) - (book.bought[key] ?? 0));
+  const most = Math.min(
+    qty,
+    room,
+    houseDepth(tx.s.empire?.houses ?? {}, region, tx.now, s) - (book.bought[key] ?? 0),
+  );
   if (room <= 0) return -1;
   if (most <= 0) return 0;
   // The price rises unit by unit as the order buys: each pays at the market it leaves.
@@ -581,7 +596,7 @@ export function empireQuotes(
         ref,
         price: priceAt(ref, pressureAt(mk, asOf, s), s),
         asked: good in r.demands,
-        depthLeft: Math.max(0, (h ? houseDepth(s) : size.depth) - sold),
+        depthLeft: Math.max(0, (h ? houseDepth(houses, r.code, now, s) : size.depth) - sold),
         boardLeft: board?.day === day ? board.left : size.board,
         asOf,
       };
@@ -644,7 +659,11 @@ export function buyGoods(
   if (n < 0) fail("store_full");
   if (n === 0) {
     const key = `${at.region}:${good}`;
-    if ((houseMarket(h, tx.now).bought[key] ?? 0) >= houseDepth(s)) fail("no_liquidity");
+    if (
+      (houseMarket(h, tx.now).bought[key] ?? 0) >=
+      houseDepth(tx.s.empire?.houses ?? {}, at.region, tx.now, s)
+    )
+      fail("no_liquidity");
     fail("insufficient_funds");
   }
   return n;

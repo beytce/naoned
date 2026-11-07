@@ -294,6 +294,37 @@ describe("a vehicle's hops (after Hades' Star)", () => {
     });
     expect(bad.statusCode).toBe(400);
   });
+
+  it("settles at the reading a trip that came while the house was away", async () => {
+    const cookie = await login("away@example.org");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
+    const vehicle = (await get(cookie)).json().view.vehicles.mine[0];
+    const sent = await act(cookie, {
+      type: "empireMove",
+      vehicleId: vehicle.id,
+      to: "city:padova",
+    });
+    expect(sent.json().view.vehicles.mine[0].legs).toHaveLength(1);
+    // The page closed; it comes back hours later and only reads.
+    now += 6 * 3_600_000;
+    const back = (await get(cookie)).json();
+    expect(back.view.vehicles.mine[0].legs).toEqual([]);
+  });
+
+  it("refuses an input named after an object's machinery, and the world plays on", async () => {
+    const cookie = await login("proto@example.org");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
+    const bad = await act(cookie, { type: "empireSell", good: "__proto__", qty: 1 });
+    expect(bad.statusCode).toBe(422);
+    expect(bad.json().error).toBe("bad_key");
+    expect(({} as Record<string, unknown>).available).toBeUndefined();
+    const ok = await act(cookie, { type: "empireRelaunchAll" });
+    expect(ok.statusCode).toBe(200);
+  });
 });
 
 describe("the house's identity", () => {

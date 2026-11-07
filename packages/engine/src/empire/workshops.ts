@@ -238,7 +238,8 @@ function freshBatchMs(
  */
 export function repaceWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop): void {
   const job = ws.job;
-  if (!job) return;
+  // The welcome's quick lot keeps its pace, whatever is done inside (QA-10).
+  if (!job || job.once) return;
   const fresh = freshBatchMs(tx, ownHouse(tx, playerId), ws, empireSettings(tx.ctx));
   if (fresh === null || fresh === job.batchMs) return;
   const firstEnds = job.startedAt + job.batchMs;

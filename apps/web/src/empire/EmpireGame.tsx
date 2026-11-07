@@ -105,6 +105,9 @@ function useOnce(on: boolean) {
 
 const t = fr.empire;
 const unknownError = fr.errors.unknown ?? "";
+/** A refusal's words: the empire's, else the world's of before, never a silent one (P0-11). */
+const refusal = (code: string) =>
+  t.errors[code] ?? (fr.game.errors as Record<string, string>)[code] ?? unknownError;
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
 
@@ -224,7 +227,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     last.current = next;
     skew.current = next.now - Date.now();
     setP(next);
-    if (next.error) setToast(t.errors[next.error] ?? unknownError);
+    if (next.error) setToast(refusal(next.error));
   }, []);
   const refresh = useCallback(async () => {
     const next = await empireApi.view().catch(() => null);
@@ -282,7 +285,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         if (guess && last.current) setP(last.current);
         setToast(
           err instanceof ApiError
-            ? (t.errors[err.code] ?? unknownError)
+            ? refusal(err.code)
             : ((!navigator.onLine ? fr.errors.offline : fr.errors.network) ?? unknownError),
         );
       } finally {
@@ -320,6 +323,16 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     .flatMap((v) => v.legs.map((l) => l.arrivesAt))
     .filter((t) => t > p.now)
     .reduce((a, b) => Math.min(a, b), Number.POSITIVE_INFINITY);
+  // A hop already due (the page was closed, or offline, when it came): settled at once.
+  const due = (p.view?.vehicles?.mine ?? []).some((v) => v.legs.some((l) => l.arrivesAt <= p.now));
+  useEffect(() => {
+    if (due) settle();
+  }, [due, settle]);
+  useEffect(() => {
+    const back = () => settle();
+    window.addEventListener("online", back);
+    return () => window.removeEventListener("online", back);
+  }, [settle]);
   useEffect(() => {
     if (!Number.isFinite(arrival)) return;
     const wait = Math.max(0, arrival - (Date.now() + skew.current)) + 300;
