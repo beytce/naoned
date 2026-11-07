@@ -10,6 +10,7 @@ import { grove, plot } from "./models/ground.js";
 import { market } from "./models/market.js";
 import type { Built, ModelOpts } from "./models/model.js";
 import { arsenal, campo, depot, porta, post } from "./models/places.js";
+import { bombarda, borgo, flagCloth, mura, porto, rocca, warCamp } from "./models/terra.js";
 import { salute, town, veniceHouses } from "./models/towns.js";
 import { type Vehicle, cart, gondola, mule, rider, ship } from "./models/vehicles.js";
 import {
@@ -25,12 +26,13 @@ import {
   sawmill,
 } from "./models/workshops.js";
 
-export type Family = "ateliers" | "lieux" | "villes" | "decor" | "vehicules";
+export type Family = "ateliers" | "lieux" | "villes" | "guerre" | "decor" | "vehicules";
 
 export const FAMILIES: { key: Family; name: string }[] = [
   { key: "ateliers", name: "Ateliers" },
   { key: "lieux", name: "Lieux" },
   { key: "villes", name: "Villes" },
+  { key: "guerre", name: "Terraferme" },
   { key: "decor", name: "Décor" },
   { key: "vehicules", name: "Véhicules" },
 ];
@@ -244,6 +246,55 @@ export const CATALOGUE: Entry[] = [
     sign: "",
     make: (P) => salute(P),
     water: true,
+  },
+  {
+    key: "war_camp",
+    family: "guerre",
+    name: "Camp de guerre",
+    sub: "La capitale d'un marchand à la Terraferme",
+    sign: "Son drapeau flotte à sa couleur.",
+    make: (P) => warCamp(P, P.accentCloth),
+  },
+  {
+    key: "rocca",
+    family: "guerre",
+    name: "Fort",
+    sub: "Défense ×1,6 sur sa case et ses voisines",
+    sign: "Son drapeau flotte à sa couleur.",
+    make: (P) => rocca(P, P.accentCloth),
+  },
+  {
+    key: "borgo",
+    family: "guerre",
+    name: "Bourg",
+    sub: "+20 troupes max, recrues +10 %",
+    sign: "Son drapeau flotte à sa couleur.",
+    make: (P) => borgo(P, P.accentCloth),
+  },
+  {
+    key: "porto",
+    family: "guerre",
+    name: "Port",
+    sub: "Les barques débarquent sur les rives de ces eaux",
+    sign: "La barque tangue, sa voile à la couleur du marchand.",
+    make: (P) => porto(P, P.accentCloth),
+    water: true,
+  },
+  {
+    key: "bombarda",
+    family: "guerre",
+    name: "Bombarde",
+    sub: "Un tir par jour : des terres ennemies redeviennent libres",
+    sign: "Son drapeau flotte à sa couleur.",
+    make: (P) => bombarda(P, P.accentCloth),
+  },
+  {
+    key: "mura",
+    family: "guerre",
+    name: "Remparts",
+    sub: "Aucune bombarde n'atteint cette terre ni ses voisines",
+    sign: "Son drapeau flotte à sa couleur.",
+    make: (P) => mura(P, flagCloth("#2A2725")),
   },
   {
     key: "grove",

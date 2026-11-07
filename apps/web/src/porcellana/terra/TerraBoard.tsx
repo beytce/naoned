@@ -32,8 +32,11 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import { Stage } from "../Stage.js";
 import { palette } from "../TileBoard.js";
 import { easeOutCubic } from "../arrival.js";
+import type { Built } from "../models/model.js";
+import { TERRA_MODELS, flagCloth, warCamp } from "../models/terra.js";
 import { town } from "../models/towns.js";
 import { BOARD, CAMERA, COL, ROUGH, SELECT } from "../tokens.js";
+import { type BuildingPic, shotsBetween } from "./buildings.js";
 import { type FrontDraw, FrontLayer } from "./frontLayer.js";
 import { frontHead, frontTone } from "./fronts.js";
 import { FLOW_MS, type Flow, flowsBetween } from "./glaze.js";
@@ -46,6 +49,14 @@ const PITCH = BOARD.tile + BOARD.gap;
 const HEIGHT = { free: BOARD.thick, held: BOARD.thick + 0.35, mine: BOARD.thick + 0.8 };
 const RELIEF = { h: 0.3, M: 0.5 } as Record<string, number>;
 const WAVE = 2.2;
+/** A bombard's ball in the air, then its puff of porcelain dust. */
+const SHOT_MS = 1100;
+const PUFF_MS = 900;
+const backOut = (p: number) => {
+  const c = 1.7;
+  const q = p - 1;
+  return 1 + (c + 1) * q ** 3 + c * q ** 2;
+};
 
 export interface TerraSceneProps {
   pic: TerraPicture & {
@@ -54,6 +65,8 @@ export interface TerraSceneProps {
     cities: { cell: number; code: string }[];
     /** Each holder's camp (its capital), the holder, and the colour of its flag. */
     camps: { cell: number; holder: number; flag: string }[];
+    /** The buildings on the land: the fort, the borough, the port, the bombard, the walls. */
+    buildings: BuildingPic[];
     /** The fronts marching: whose, how many men, the merchant's or a threat, what they take next. */
     fronts: {
       id: string;
@@ -175,29 +188,44 @@ export function TerraBoard({ pic, chosen, onCell, labels, home, phone }: TerraSc
       standing.set(c.cell, t.group);
       root.add(t.group);
     }
+    // The camps: the war camp of each holder, its flag at its colour (lot T4).
+    const waving: Built[] = [];
     for (const camp of pic.camps) {
       if (standing.has(camp.cell)) continue;
-      const g = new Group();
-      const flagMat = new MeshStandardMaterial({ color: camp.flag, roughness: ROUGH.accent });
-      const tent = new Mesh(new CylinderGeometry(1.35, 1.45, 1.1, 8), P.m("wall", true));
-      tent.position.y = 0.55;
-      const roof = new Mesh(new ConeGeometry(1.7, 1.5, 8), P.m("wall2", true));
-      roof.position.y = 1.85;
-      const pole = new Mesh(new CylinderGeometry(0.06, 0.06, 2.6, 6), P.ink);
-      pole.position.y = 2.6;
-      const flag = new Mesh(new BoxGeometry(1.3, 0.75, 0.05), flagMat);
-      flag.position.set(0.68, 3.5, 0);
-      for (const mesh of [tent, roof, pole, flag]) {
-        mesh.castShadow = true;
-        g.add(mesh);
-      }
-      standing.set(camp.cell, g);
-      root.add(g);
+      const built = warCamp(P, flagCloth(camp.flag));
+      built.group.traverse((o) => {
+        o.castShadow = true;
+      });
+      waving.push(built);
+      standing.set(camp.cell, built.group);
+      root.add(built.group);
     }
     const fronts = new FrontLayer(BOARD.tile);
     root.add(fronts.group);
-    return { root, land, bodies, tops, mountMesh, hillMesh, mounts, hills, standing, fronts };
+    return {
+      root,
+      land,
+      bodies,
+      tops,
+      mountMesh,
+      hillMesh,
+      mounts,
+      hills,
+      standing,
+      fronts,
+      waving,
+    };
   }, [W, H, sheet]);
+
+  /** The turn of a port toward its water (the model faces +z). */
+  const waterSide = (c: number) => {
+    const i = c % W;
+    const j = Math.floor(c / W);
+    if (j + 1 < H && pic.terrain[c + W] === "w") return 0;
+    if (i + 1 < W && pic.terrain[c + 1] === "w") return Math.PI / 2;
+    if (i > 0 && pic.terrain[c - 1] === "w") return -Math.PI / 2;
+    return Math.PI;
+  };
 
   // The fronts to draw: each from its holder's camp to its head.
   const draws = useMemo<FrontDraw[]>(
@@ -224,9 +252,15 @@ export function TerraBoard({ pic, chosen, onCell, labels, home, phone }: TerraSc
     /** The flows whose last frame is painted: a slow frame never leaves a cell half poured. */
     settled: new Set<Flow>(),
     painted: false,
+    /** The buildings standing (or rising, or razed and sinking), by their cell and kind. */
+    builds: new Map<string, { built: Built; cell: number; born: number; dying: number | null }>(),
+    /** The bombards' balls in the air: from, to, when. */
+    shots: [] as { from: number; to: number; start: number; ball: Mesh; puff: Mesh[] }[],
+    first: true,
     t: 0,
     lift: new Float32Array(W * H),
   });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: run for each new picture; the palette and the board are the scene's own.
   useEffect(() => {
     const s = state.current;
     const now = performance.now();
@@ -236,15 +270,62 @@ export function TerraBoard({ pic, chosen, onCell, labels, home, phone }: TerraSc
       s.painted = true;
     }
     const fresh = flowsBetween(pic, s.owner, pic.owner, now);
+    // A bombard's shot: the ball flies first, the cells it hits lose their glaze when it lands.
+    const hit = new Map<number, number>();
+    if (live && !s.first)
+      for (const shot of shotsBetween(pic, s.owner, pic.owner, pic.buildings)) {
+        const to = shot.cells[0] as number;
+        const ball = new Mesh(new SphereGeometry(0.55, 16, 12), P.ink);
+        ball.castShadow = true;
+        const puff = [0, 1, 2, 3, 4, 5].map(
+          () =>
+            new Mesh(
+              new SphereGeometry(1, 12, 8),
+              new MeshStandardMaterial({
+                color: COL.trim,
+                roughness: ROUGH.matt,
+                transparent: true,
+              }),
+            ),
+        );
+        for (const m of [ball, ...puff]) {
+          m.visible = false;
+          board.root.add(m);
+        }
+        s.shots.push({ from: shot.from, to, start: now, ball, puff });
+        for (const c of shot.cells) hit.set(c, now + SHOT_MS);
+      }
     if (fresh.length) {
       // A few at a time, one after the other, as the fronts take them.
       fresh.forEach((f, k) => {
-        f.start = now + (live ? Math.min(k, 24) * 90 : -FLOW_MS);
+        f.start = hit.get(f.cell) ?? now + (live ? Math.min(k, 24) * 90 : -FLOW_MS);
       });
       s.flows = [...s.flows.filter((f) => !s.settled.has(f)), ...fresh];
       s.settled.clear();
     }
     s.owner = [...pic.owner];
+    // The buildings: a new one rises into place, one gone (razed with its cell) sinks away.
+    const flagOfHolder = new Map(pic.camps.map((c) => [c.holder, c.flag]));
+    const want = new Set<string>();
+    for (const b of pic.buildings) {
+      const key = `${b.cell}:${b.kind}`;
+      want.add(key);
+      const had = s.builds.get(key);
+      if (had) {
+        had.dying = null;
+        continue;
+      }
+      const built = TERRA_MODELS[b.kind](P, flagCloth(flagOfHolder.get(b.owner) ?? COL.ink));
+      built.group.traverse((o) => {
+        o.castShadow = true;
+      });
+      if (b.kind === "porto") built.group.rotation.y = waterSide(b.cell);
+      board.root.add(built.group);
+      s.builds.set(key, { built, cell: b.cell, born: s.first || !live ? -1e9 : now, dying: null });
+    }
+    for (const [key, b] of s.builds)
+      if (!want.has(key) && b.dying === null) b.dying = live ? now : -1e9;
+    s.first = false;
     if (sheet.ctx && fresh.length && !live) {
       paintGlaze(sheet.ctx, pic, [], now, PPC);
       sheet.tex.needsUpdate = true;
@@ -413,14 +494,83 @@ export function TerraBoard({ pic, chosen, onCell, labels, home, phone }: TerraSc
     bodies.instanceMatrix.needsUpdate = true;
     if (bodies.instanceColor) bodies.instanceColor.needsUpdate = true;
     tops.instanceMatrix.needsUpdate = true;
+    // The relief gives way to what is built on it.
+    const built = new Set(
+      [...s.builds.values()].filter((b) => b.dying === null).map((b) => b.cell),
+    );
     board.mounts.forEach((c, k) => {
-      m.makeTranslation(wx(c % W), heights[c] ?? 0, wz(Math.floor(c / W)));
+      if (built.has(c)) m.makeScale(0, 0, 0);
+      else m.makeTranslation(wx(c % W), heights[c] ?? 0, wz(Math.floor(c / W)));
       board.mountMesh.setMatrixAt(k, m);
     });
     board.mountMesh.instanceMatrix.needsUpdate = true;
     board.hills.forEach((c, k) => {
-      m.makeTranslation(wx(c % W) + 0.4, heights[c] ?? 0, wz(Math.floor(c / W)) + 0.3);
+      if (built.has(c)) m.makeScale(0, 0, 0);
+      else m.makeTranslation(wx(c % W) + 0.4, heights[c] ?? 0, wz(Math.floor(c / W)) + 0.3);
       board.hillMesh.setMatrixAt(k, m);
+    });
+    // The buildings rise into place, sink when razed; their flags wave.
+    for (const [key, b] of s.builds) {
+      const h = heights[b.cell] ?? HEIGHT.free;
+      const g = b.built.group;
+      let y = h;
+      let k = 1;
+      if (b.dying !== null) {
+        const p = (now - b.dying) / 1400;
+        if (p >= 1) {
+          board.root.remove(g);
+          s.builds.delete(key);
+          continue;
+        }
+        y = h - easeOutCubic(p) * 4;
+        k = 1 - 0.4 * p;
+      } else {
+        const p = Math.min(1, Math.max(0, (now - b.born) / 700));
+        y = h - (1 - backOut(p)) * 5;
+      }
+      g.position.set(wx(b.cell % W), y, wz(Math.floor(b.cell / W)));
+      g.scale.setScalar(k);
+      if (live) b.built.tick?.(s.t, dt);
+    }
+    if (live) for (const w of board.waving) w.tick?.(s.t, dt);
+    // The bombards' balls: an arc from the gun to the cell, then a puff of dust.
+    s.shots = s.shots.filter((sh) => {
+      const p = (now - sh.start) / SHOT_MS;
+      const a = new Vector3(
+        wx(sh.from % W),
+        (heights[sh.from] ?? HEIGHT.free) + 2.2,
+        wz(Math.floor(sh.from / W)),
+      );
+      const b = new Vector3(
+        wx(sh.to % W),
+        (heights[sh.to] ?? HEIGHT.free) + 0.6,
+        wz(Math.floor(sh.to / W)),
+      );
+      if (p < 1) {
+        sh.ball.visible = p >= 0;
+        const q = Math.max(0, p);
+        sh.ball.position.lerpVectors(a, b, q);
+        sh.ball.position.y += Math.sin(Math.PI * q) * (6 + a.distanceTo(b) * 0.35);
+        return true;
+      }
+      sh.ball.visible = false;
+      const f = (now - sh.start - SHOT_MS) / PUFF_MS;
+      if (f >= 1) {
+        for (const o of [sh.ball, ...sh.puff]) board.root.remove(o);
+        return false;
+      }
+      sh.puff.forEach((o, i) => {
+        const ang = (i / sh.puff.length) * Math.PI * 2;
+        o.visible = true;
+        o.position.set(
+          b.x + Math.cos(ang) * (0.6 + f * 2.2),
+          b.y + 0.5 + f * 1.6 + (i % 2) * 0.4,
+          b.z + Math.sin(ang) * (0.6 + f * 2.2),
+        );
+        o.scale.setScalar(0.9 + f * 0.6);
+        (o.material as MeshStandardMaterial).opacity = 1 - f;
+      });
+      return true;
     });
     board.hillMesh.instanceMatrix.needsUpdate = true;
     for (const [c, g] of board.standing)

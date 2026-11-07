@@ -8,7 +8,10 @@
 import {
   type TerraState,
   advanceTerra,
+  bombardTargets,
+  buildOnTerra,
   cellsOf,
+  fireBombard,
   forecastFronts,
   isNation,
   launchFront,
@@ -63,10 +66,34 @@ function setUp() {
   return { cfg, s };
 }
 
-/** Each house with troops to spare strikes at the nearest cell along its border. */
+const KINDS = ["rocca", "bombarda", "borgo", "mura", "porto"] as const;
+
+/**
+ * Each house with troops to spare strikes at the nearest cell along its border; now and then it
+ * builds (the first kind it has room for, on a cell of its border) and fires its bombard.
+ */
 function play(cfg: NonNullable<ReturnType<typeof setUp>["cfg"]>, s: TerraState, now: number) {
   for (const id of Object.keys(s.players)) {
     if (isNation(id)) continue;
+    const own = cellsOf(s, id);
+    for (const kind of KINDS) {
+      const spot = own.find(
+        (c) => !s.buildings?.[c] && c !== s.players[id]?.capital && (now / 3_600_000 + c) % 5 < 1,
+      );
+      if (spot === undefined) continue;
+      try {
+        buildOnTerra(s, cfg, id, spot, kind);
+        break;
+      } catch {
+        // no room yet, or not by the water
+      }
+    }
+    try {
+      const aim = bombardTargets(s, cfg, id, now).cells[0];
+      if (aim !== undefined) fireBombard(s, cfg, id, aim, now);
+    } catch {
+      // no shot left today
+    }
     const p = s.players[id];
     if (!p || p.troops < 25 || s.fronts.some((f) => f.owner === id)) continue;
     const mine = new Set(cellsOf(s, id));

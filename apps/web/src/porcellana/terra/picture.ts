@@ -30,6 +30,7 @@ export function pictureOfView(v: TerraView): BoardPicture {
     styles,
     me: v.holders.findIndex((h) => h.me),
     cities: v.map.cities,
+    buildings: v.buildings.map((b) => ({ cell: b.cell, kind: b.kind, owner: b.owner })),
     fronts: v.fronts.map((f) => ({
       id: f.id,
       owner: f.owner,
@@ -81,6 +82,11 @@ export function pictureOfState(
     styles: ids.map((id, i) => holderStyle(like(id), i)),
     me: index.get(me) ?? -1,
     cities: s.map.cityCode.flatMap((code, cell) => (code ? [{ cell, code }] : [])),
+    buildings: Object.entries(s.buildings ?? {}).map(([cell, b]) => ({
+      cell: Number(cell),
+      kind: b.kind,
+      owner: index.get(b.owner) ?? -1,
+    })),
     fronts: s.fronts.map((f) => ({
       id: f.id,
       owner: index.get(f.owner) ?? -1,
