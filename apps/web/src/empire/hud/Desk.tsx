@@ -503,7 +503,7 @@ export function SidePanel({
   });
   return (
     <aside
-      className="glass pointer-events-auto fixed bottom-5 left-5 top-28 z-20 hidden w-[24rem] flex-col gap-5 overflow-y-auto overscroll-contain rounded-[2.25rem] p-6 lg:flex"
+      className="pointer-events-auto fixed left-5 top-28 z-20 hidden max-h-[calc(100dvh-8.25rem)] w-[22rem] flex-col gap-5 overflow-y-auto overscroll-contain rounded-[2.25rem] bg-night-2 p-6 shadow-[var(--lift)] ring-1 ring-line lg:flex"
       data-side-panel
     >
       {guide}

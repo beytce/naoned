@@ -163,7 +163,7 @@ de règles du commerce s'annoncent dans les notes du chapitre.
 | Lot | État | PR |
 |---|---|---|
 | 0 | fait : clés réservées refusées (fuzz du moteur, 4 graines), plafond et prix montant à l'achat, part du jour par maison, trajets échus réglés à la lecture, lot d'accueil jamais recadencé, refus toujours dits (test sur tous les codes de l'empire) | |
-| 1 | à faire | |
+| 1 | fait : règle 3 réécrite (CADRAGE-v3, CLAUDE.md), accueil de l'empire, glossaire et « tu » (test), `{cash}`, Porcellana seule et un seul rouge (la sélection à l'encre bleue, test daltonisme), « le savoir circule » éteint, Puissance et Sceaux masqués avant usage, ce qui manque au Fondaco dit, salaires dits, noms à espaces, sortie de l'intérieur, listes stables, panneau opaque, cristallo. Reportés : équipe de nuit (le moteur la fait relayer contre la fatigue, c'est l'écran qui ne le montre pas → lot 4) ; badges, cibles de 44 px, unités par durée (→ lot 3) ; le sel (→ lot 7) | |
 | 2 | à faire | |
 | 3 | à faire | |
 | 4 | à faire | |
