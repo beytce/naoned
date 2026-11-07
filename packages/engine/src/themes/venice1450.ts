@@ -20,7 +20,8 @@ export const venice1450: Theme = {
     // The luxury chains, opened by the merchant titles (recommendations of 20 October 2026).
     { code: "sand", name: "Sable", chain: "glass", tier: "raw" },
     { code: "glass", name: "Verre", chain: "glass", tier: "intermediate" },
-    { code: "mirrors", name: "Miroirs", chain: "glass", tier: "finished" },
+    // The cristallo of Murano (Barovier, about 1450): the glass mirror came half a century after (D11).
+    { code: "mirrors", name: "Cristallo", chain: "glass", tier: "finished" },
     { code: "wool", name: "Laine", chain: "drapery", tier: "raw" },
     { code: "drape", name: "Drap de laine", chain: "drapery", tier: "intermediate" },
     { code: "garments", name: "Vêtements", chain: "drapery", tier: "finished" },
@@ -51,7 +52,7 @@ export const venice1450: Theme = {
     { type: "palazzo", name: "Palais" },
     { type: "sand_pit", name: "Sablière" },
     { type: "glassworks", name: "Verrerie de Murano" },
-    { type: "mirrorworks", name: "Miroiterie" },
+    { type: "mirrorworks", name: "Atelier du cristallo" },
     { type: "sheepfold", name: "Bergerie" },
     { type: "loom", name: "Métier à tisser" },
     { type: "tailor", name: "Atelier de tailleur" },
