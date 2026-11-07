@@ -81,7 +81,9 @@ Ce qui est proposé :
 - **La ration de la République reste** et passe en premier : l'intendance ne sert qu'au-delà, pour que l'égalité d'entrée tienne.
 - Mesure au simulateur de 24 mois : le temps de véhicule pris au commerce, le revenu, la part de joueurs qui tiennent leur intendance.
 
-Trois questions au porteur avant de coder :
+**Décisions du porteur (7 novembre 2026)** : le pain et les matériaux se prennent **d'abord au magasin du Campo, puis à Venise** (celui qui ne livre pas joue quand même) ; **l'entrée reste prise à Venise** d'un geste ; **livrer ne rapporte rien** de plus (c'est de la logistique) ; **le Bourg est gardé** parmi les bâtiments.
+
+Les questions posées :
 1. **Le magasin du Campo seul, ou d'abord lui puis Venise ?** Seul : le lien est fort (sans convoi, plus de pain au-delà de la ration). D'abord lui puis Venise : le joueur qui ne livre pas joue quand même, comme aujourd'hui.
 2. **L'entrée de la semaine** (20 planches) : livrée au Campo avant de s'inscrire, ou toujours prise à Venise d'un geste ?
 3. **Une récompense pour livrer ?** Aucune (c'est de la logistique), ou un peu de Faveur dans le plafond de la Terraferme ?
