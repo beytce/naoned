@@ -34,6 +34,8 @@ import { palette } from "../TileBoard.js";
 import { easeOutCubic } from "../arrival.js";
 import { town } from "../models/towns.js";
 import { BOARD, CAMERA, COL, ROUGH, SELECT } from "../tokens.js";
+import { type FrontDraw, FrontLayer } from "./frontLayer.js";
+import { frontHead, frontTone } from "./fronts.js";
 import { FLOW_MS, type Flow, flowsBetween } from "./glaze.js";
 import { type TerraPicture, flowRegion, paintGlaze } from "./paint.js";
 
@@ -52,6 +54,16 @@ export interface TerraSceneProps {
     cities: { cell: number; code: string }[];
     /** Each holder's camp (its capital), the holder, and the colour of its flag. */
     camps: { cell: number; holder: number; flag: string }[];
+    /** The fronts marching: whose, how many men, the merchant's or a threat, what they take next. */
+    fronts: {
+      id: string;
+      owner: number;
+      troops: number;
+      mine: boolean;
+      threat: boolean;
+      aim: number;
+      next: number[];
+    }[];
   };
   chosen: number | null;
   onCell: (cell: number | null) => void;
@@ -182,8 +194,28 @@ export function TerraBoard({ pic, chosen, onCell, labels, home, phone }: TerraSc
       standing.set(camp.cell, g);
       root.add(g);
     }
-    return { root, land, bodies, tops, mountMesh, hillMesh, mounts, hills, standing };
+    const fronts = new FrontLayer(BOARD.tile);
+    root.add(fronts.group);
+    return { root, land, bodies, tops, mountMesh, hillMesh, mounts, hills, standing, fronts };
   }, [W, H, sheet]);
+
+  // The fronts to draw: each from its holder's camp to its head.
+  const draws = useMemo<FrontDraw[]>(
+    () =>
+      pic.fronts.map((f) => {
+        const camp = pic.camps.find((c) => c.holder === f.owner)?.cell ?? f.aim;
+        return {
+          id: f.id,
+          tone: frontTone(f),
+          troops: f.troops,
+          from: camp,
+          head: frontHead(pic, pic.owner, f, camp),
+          next: f.next.slice(0, 2),
+        };
+      }),
+    [pic],
+  );
+  useEffect(() => () => board.fronts.dispose(), [board]);
 
   // What changed hands since the last picture: the flows to pour, the sheet to paint again.
   const state = useRef({
@@ -401,7 +433,22 @@ export function TerraBoard({ pic, chosen, onCell, labels, home, phone }: TerraSc
     }
 
     // The labels follow their cells.
+    // The fronts: their ribbons from the camps to the heads, the next cells marked.
+    board.fronts.update(
+      draws,
+      (c) => new Vector3(wx(c % W), heights[c] ?? HEIGHT.free, wz(Math.floor(c / W))),
+      dt,
+      live,
+    );
     for (const [key, el] of labels) {
+      if (key.startsWith("front:")) {
+        const at = board.fronts.headOf(key.split(":")[2] ?? "");
+        if (!at) continue;
+        tmp.set(at.x, at.y + 4.6, at.z).project(camera);
+        el.style.transform = `translate(${((tmp.x * 0.5 + 0.5) * size.width).toFixed(1)}px,${((-tmp.y * 0.5 + 0.5) * size.height).toFixed(1)}px)`;
+        el.dataset.out = "true";
+        continue;
+      }
       const c = Number(key.split(":")[1]);
       if (!Number.isFinite(c)) continue;
       tmp.set(wx(c % W), (heights[c] ?? 0) + 3.2, wz(Math.floor(c / W))).project(camera);

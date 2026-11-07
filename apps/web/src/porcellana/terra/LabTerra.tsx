@@ -9,6 +9,7 @@ import {
   type TerraState,
   advanceTerra,
   cellsOf,
+  forecastFronts,
   isNation,
   launchFront,
   newTerra,
@@ -105,7 +106,17 @@ export default function LabTerra() {
     return () => clearInterval(t);
   }, [running, world]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the state moves in place; the clock says when.
-  const pic = useMemo(() => pictureOfState(world.s, "house0"), [world, clock]);
+  const pic = useMemo(() => {
+    // The next cells of the merchant's fronts and of those against it, as the engine foresees them.
+    const watched = world.s.fronts
+      .filter((f) => f.owner === "house0" || f.against === "house0")
+      .map((f) => f.id);
+    const seen = forecastFronts(world.s, world.cfg, watched, clock + 24 * 3_600_000);
+    const next = Object.fromEntries(
+      Object.entries(seen).map(([id, f]) => [id, f.takes.map((x) => x.cell)]),
+    );
+    return pictureOfState(world.s, "house0", next);
+  }, [world, clock]);
   const flat = new URLSearchParams(window.location.search).get("plat") === "1";
   const day = Math.floor((clock - START) / 86_400_000);
   const hour = new Date(clock + 3_600_000).getUTCHours();

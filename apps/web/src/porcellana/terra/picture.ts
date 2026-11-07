@@ -30,6 +30,15 @@ export function pictureOfView(v: TerraView): BoardPicture {
     styles,
     me: v.holders.findIndex((h) => h.me),
     cities: v.map.cities,
+    fronts: v.fronts.map((f) => ({
+      id: f.id,
+      owner: f.owner,
+      troops: f.troops,
+      mine: f.mine,
+      threat: f.threat,
+      aim: f.aim,
+      next: f.takes.map((x) => x.cell),
+    })),
     camps: v.holders.flatMap((h, holder) =>
       h.capital === null ? [] : [{ cell: h.capital, holder, flag: flagOf(h) }],
     ),
@@ -44,8 +53,15 @@ const LETTER: Record<string, string> = {
   water: "w",
 };
 
-/** The board's picture of an engine's state, seen by `me` (the laboratory). */
-export function pictureOfState(s: TerraState, me: string): BoardPicture & { ids: string[] } {
+/**
+ * The board's picture of an engine's state, seen by `me` (the laboratory); `next` the cells each
+ * front takes next (the engine's forecast).
+ */
+export function pictureOfState(
+  s: TerraState,
+  me: string,
+  next: Record<string, number[]> = {},
+): BoardPicture & { ids: string[] } {
   const ids = [...new Set(s.owner.filter((o): o is string => o !== null))].sort();
   for (const id of Object.keys(s.players)) if (!ids.includes(id)) ids.push(id);
   const index = new Map(ids.map((id, i) => [id, i]));
@@ -65,6 +81,15 @@ export function pictureOfState(s: TerraState, me: string): BoardPicture & { ids:
     styles: ids.map((id, i) => holderStyle(like(id), i)),
     me: index.get(me) ?? -1,
     cities: s.map.cityCode.flatMap((code, cell) => (code ? [{ cell, code }] : [])),
+    fronts: s.fronts.map((f) => ({
+      id: f.id,
+      owner: index.get(f.owner) ?? -1,
+      troops: f.troops,
+      mine: f.owner === me,
+      threat: f.against === me,
+      aim: f.aim,
+      next: next[f.id] ?? [],
+    })),
     camps: ids.flatMap((id) => {
       const c = s.players[id]?.capital;
       return c === undefined

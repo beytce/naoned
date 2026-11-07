@@ -22,8 +22,21 @@ export interface TerraSceneOuter extends Omit<TerraSceneProps, "labels"> {
 export function TerraScene(props: TerraSceneOuter) {
   const { pic, townName, campName } = props;
   const labels = useMemo(() => new Map<string, HTMLElement>(), []);
-  const keyed = [
+  const keyed: { key: string; text: string; camp: boolean; front?: string }[] = [
     ...pic.cities.map((c) => ({ key: `town:${c.cell}`, text: townName(c.code), camp: false })),
+    // The count of men at the head of the merchant's fronts and of those that threaten it.
+    ...pic.fronts.flatMap((f) =>
+      f.mine || f.threat
+        ? [
+            {
+              key: `front:x:${f.id}`,
+              text: String(f.troops),
+              camp: false,
+              front: f.mine ? "mine" : "threat",
+            },
+          ]
+        : [],
+    ),
     ...pic.camps.flatMap((c) => {
       const t = campName?.(c.cell);
       return t && pic.owner[c.cell] === c.holder && !pic.cities.some((x) => x.cell === c.cell)
@@ -53,7 +66,8 @@ export function TerraScene(props: TerraSceneOuter) {
               if (el) labels.set(k.key, el);
               else labels.delete(k.key);
             }}
-            className={k.camp ? "pc-terra-camp" : "pc-terra-town"}
+            className={k.front ? "pc-terra-front" : k.camp ? "pc-terra-camp" : "pc-terra-town"}
+            data-tone={k.front}
             data-out="false"
           >
             {k.text}

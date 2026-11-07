@@ -318,3 +318,25 @@
 .pc-terra-camp[data-out="false"] {
   opacity: 0;
 }
+/* A front's men (lot T3): a paper pastille at its head, ringed in the merchant's red or in ink. */
+.pc-terra-front {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #fff;
+  border: 3px solid var(--pc-ink);
+  font: 900 13px / 24px var(--pc-display);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--pc-ink);
+  box-shadow: 0 3px 0 rgba(23, 21, 15, 0.12), 0 8px 16px -6px rgba(23, 21, 15, 0.35);
+  pointer-events: none;
+}
+.pc-terra-front[data-tone="mine"] {
+  border-color: var(--pc-accent);
+}
