@@ -29,6 +29,7 @@ import {
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import type { PlaceCardHandle } from "../PlaceCard.js";
 import { Stage } from "../Stage.js";
 import { palette } from "../TileBoard.js";
 import { easeOutCubic } from "../arrival.js";
@@ -85,11 +86,25 @@ export interface TerraSceneProps {
   /** A cell to centre on at the start (the merchant's camp). */
   home?: number | null;
   phone?: boolean;
+  /** Cells lit by the dock: a bombard's targets, a front's aim (lot T5). */
+  marked?: number[];
+  /** The place card, set beside the chosen cell at each frame (lot T5). */
+  card?: { current: PlaceCardHandle | null };
 }
 
 const PHONE = () => window.innerWidth < 640;
 
-export function TerraBoard({ pic, chosen, onCell, labels, home, phone }: TerraSceneProps) {
+export function TerraBoard({
+  pic,
+  chosen,
+  onCell,
+  labels,
+  home,
+  phone,
+  marked,
+  card,
+}: TerraSceneProps) {
+  const lit = useMemo(() => new Set(marked ?? []), [marked]);
   const { camera, gl, size } = useThree();
   const live = useMemo(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, []);
   const P = palette();
@@ -489,6 +504,7 @@ export function TerraBoard({ pic, chosen, onCell, labels, home, phone }: TerraSc
       colour.copy(porcelain);
       if (st) colour.lerp(tintOf(st.colour), Math.min(0.7, st.alpha * 1.05));
       if (c === chosen) colour.lerp(tintOf("#C23B2E"), SELECT.blush);
+      else if (lit.has(c)) colour.lerp(tintOf("#C23B2E"), 0.18 + 0.12 * Math.sin(s.t * 4) ** 2);
       bodies.setColorAt(k, colour);
     });
     bodies.instanceMatrix.needsUpdate = true;
@@ -606,6 +622,18 @@ export function TerraBoard({ pic, chosen, onCell, labels, home, phone }: TerraSc
       const y = (-tmp.y * 0.5 + 0.5) * size.height;
       el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
       el.dataset.out = String(cam.zoom > 1.3 || key.startsWith("camp:"));
+    }
+    // The card beside the chosen cell.
+    if (chosen !== null && card?.current) {
+      tmp
+        .set(wx(chosen % W), (heights[chosen] ?? 0) + 1.5, wz(Math.floor(chosen / W)))
+        .project(camera);
+      card.current.place(
+        (tmp.x * 0.5 + 0.5) * size.width,
+        (-tmp.y * 0.5 + 0.5) * size.height,
+        size.width,
+        size.height,
+      );
     }
   });
 

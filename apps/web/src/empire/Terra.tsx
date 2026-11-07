@@ -16,6 +16,7 @@ import { fr } from "../i18n.js";
 import { TerraScene } from "../porcellana/terra/TerraScene.js";
 import { pictureOfView } from "../porcellana/terra/picture.js";
 import { Label, Slab } from "../ui.js";
+import { TerraPlay } from "./TerraPlay.js";
 import { empireApi } from "./api.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
@@ -259,10 +260,14 @@ export function TerraBody({
                 : t.theatre(theatre.band + 1, theatre.members)}
             </p>
             {board ? (
-              <>
-                <Board v={board} cell={cell} onCell={setCell} />
-                <CellActions v={board} cell={cell} now={now} busy={busy} send={send} />
-              </>
+              board.map.grid === "square" ? (
+                <TerraPlay v={board} now={now} busy={busy} send={send} />
+              ) : (
+                <>
+                  <Board v={board} cell={cell} onCell={setCell} />
+                  <CellActions v={board} cell={cell} now={now} busy={busy} send={send} />
+                </>
+              )
             ) : (
               <p className="mt-2 text-sm text-cream-dim">{t.loading}</p>
             )}

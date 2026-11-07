@@ -23,7 +23,10 @@ import {
   venice1450Settings,
 } from "@comptoirs/engine";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { TerraPlay } from "../../empire/TerraPlay.js";
+import { fr } from "../../i18n.js";
 import { TerraScene } from "./TerraScene.js";
+import { labAct, labView } from "./labView.js";
 import { pictureOfState } from "./picture.js";
 
 const START = Date.UTC(2026, 10, 9, 7, 0); // a Monday, 8 h in Venice
@@ -72,9 +75,14 @@ const KINDS = ["rocca", "bombarda", "borgo", "mura", "porto"] as const;
  * Each house with troops to spare strikes at the nearest cell along its border; now and then it
  * builds (the first kind it has room for, on a cell of its border) and fires its bombard.
  */
-function play(cfg: NonNullable<ReturnType<typeof setUp>["cfg"]>, s: TerraState, now: number) {
+function play(
+  cfg: NonNullable<ReturnType<typeof setUp>["cfg"]>,
+  s: TerraState,
+  now: number,
+  skip: string | null,
+) {
   for (const id of Object.keys(s.players)) {
-    if (isNation(id)) continue;
+    if (isNation(id) || id === skip) continue;
     const own = cellsOf(s, id);
     for (const kind of KINDS) {
       const spot = own.find(
@@ -118,20 +126,30 @@ export default function LabTerra() {
   const [clock, setClock] = useState(START);
   const [running, setRunning] = useState(true);
   const [chosen, setChosen] = useState<number | null>(null);
+  // &jeu=1: the merchant (the first house) is played by hand, through the real interface (T5).
+  const game = new URLSearchParams(window.location.search).has("jeu");
+  const [rev, setRev] = useState(0);
+  const touch = useRef<((cell: number | null) => void) | null>(null);
+  const [refused, setRefused] = useState<string | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the state moves in place; the clock and the actions say when.
+  const view = useMemo(
+    () => (game ? labView(world.s, world.cfg, "house0", clock) : null),
+    [game, world, clock, rev],
+  );
   const tick = useRef(0);
   useEffect(() => {
     if (!running) return;
     const t = setInterval(() => {
       setClock((c) => {
         const next = c + STEP;
-        play(world.cfg, world.s, c);
+        play(world.cfg, world.s, c, game ? "house0" : null);
         advanceTerra(world.s, world.cfg, next);
         tick.current++;
         return next;
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [running, world]);
+  }, [running, world, game]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the state moves in place; the clock says when.
   const pic = useMemo(() => {
     // The next cells of the merchant's fronts and of those against it, as the engine foresees them.
@@ -147,6 +165,47 @@ export default function LabTerra() {
   const flat = new URLSearchParams(window.location.search).get("plat") === "1";
   const day = Math.floor((clock - START) / 86_400_000);
   const hour = new Date(clock + 3_600_000).getUTCHours();
+  if (game && view)
+    return (
+      <div className="porcellana fixed inset-0" data-porcellana-lab="terraferme">
+        <TerraPlay
+          v={view}
+          now={clock}
+          busy={false}
+          className="absolute inset-0"
+          touch={touch}
+          send={(a) => {
+            setRefused(labAct(world.s, world.cfg, "house0", () => "", a, clock));
+            setRev((r) => r + 1);
+          }}
+        />
+        <nav className="pc-tools pc-pill" aria-label="Laboratoire" style={{ top: 112 }}>
+          <button
+            type="button"
+            className="pc-tool"
+            onClick={() => {
+              const c = Object.keys(view.costs).map(Number)[0];
+              if (c !== undefined) touch.current?.(c);
+            }}
+          >
+            Case du bord
+          </button>
+          <button
+            type="button"
+            className="pc-tool"
+            aria-pressed={running}
+            onClick={() => setRunning((r) => !r)}
+          >
+            {running ? "En marche" : "À l'arrêt"}
+          </button>
+        </nav>
+        {refused && (
+          <p className="pc-pill absolute left-1/2 top-16 -translate-x-1/2 px-4 py-2 text-sm font-bold">
+            {fr.errors[refused] ?? refused}
+          </p>
+        )}
+      </div>
+    );
   return (
     <div className="porcellana fixed inset-0" data-porcellana-lab="terraferme">
       <TerraScene

@@ -18,9 +18,15 @@ export function flagOf(h: HolderLike): string {
   return "#2A2725";
 }
 
-/** The board's picture of a view of the server. */
-export function pictureOfView(v: TerraView): BoardPicture {
-  const styles = v.holders.map((h, i) => holderStyle(h, i));
+/**
+ * The board's picture of a view of the server; with a focus (lot T5), the merchants out of it fade
+ * (the far ones, neither allies nor neighbours), the nations keep their biscuit.
+ */
+export function pictureOfView(v: TerraView, focus?: Set<number>): BoardPicture {
+  const styles = v.holders.map((h, i) => {
+    const st = holderStyle(h, i);
+    return !focus || focus.has(i) || h.nation ? st : { ...st, alpha: st.alpha * 0.4 };
+  });
   return {
     width: v.map.width,
     height: v.map.height,
