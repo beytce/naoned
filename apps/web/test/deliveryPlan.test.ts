@@ -114,3 +114,34 @@ describe("the towns as the 3D board tells them", () => {
     expect(cityLooks(p)[0]?.state).toBe("full");
   });
 });
+
+// The workshops' insides (docs/plan-ateliers.md lot A8, « B »): the better pieces count for the
+// orders, the exquisite first, and the order is paid for them, as the engine does it.
+describe("the better pieces in the delivery", () => {
+  const withRules = (goods: Record<string, number>, rules: object | null) => {
+    const p = payload(goods, [{ id: "big", capacity: 6 }]);
+    (p.view as unknown as { interiorRules: object | null }).interiorRules = rules;
+    return p;
+  };
+  const quality = { orderQuality: { fineBps: 15_000, exquisiteBps: 20_000 }, stations: {} };
+
+  it("covers an order with fine pieces and pays it more", () => {
+    const plan = deliveryPlan(withRules({ "clay:fine": 30 }, quality), "padova");
+    const clay = plan.orders.find((x) => x.o.id === "o2");
+    expect(clay?.covered).toBe(true);
+    expect(clay?.better).toBe(30);
+    expect(clay?.pay).toBe(900n);
+    expect(plan.pay).toBe(900n);
+  });
+
+  it("takes the exquisite first, the plain last, paid by their share", () => {
+    const plan = deliveryPlan(withRules({ "clay:exquisite": 10, clay: 30 }, quality), "padova");
+    // 10 × 2 + 20 × 1, over 30, of 600.
+    expect(plan.orders.find((x) => x.o.id === "o2")?.pay).toBe(800n);
+  });
+
+  it("leaves them out in a world without the insides", () => {
+    const plan = deliveryPlan(withRules({ "clay:fine": 30 }, null), "padova");
+    expect(plan.orders.find((x) => x.o.id === "o2")?.covered).toBe(false);
+  });
+});

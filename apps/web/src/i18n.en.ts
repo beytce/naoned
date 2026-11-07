@@ -557,6 +557,7 @@ export const en: Dictionary = {
       gone: (vehicle: string) => `${vehicle} has left.`,
       recall: "Call back",
       lack: (n: number) => `${n} short`,
+      better: (pct: number) => `Fine pieces · +${pct} %`,
       haveNeed: (have: number) => `${have} in stock`,
       lackOf: (n: number) => `${n} short`,
       forCity: (city: string) => `for ${city}`,

@@ -368,6 +368,8 @@ export interface EmpireRecipe {
 /** The rules of the insides as the server sends them (its money as strings). */
 export interface InteriorRules {
   wear?: { careCostDucats: string };
+  /** Its better pieces in the cities' orders, paid at these rates (« B »). */
+  orderQuality?: { fineBps: number; exquisiteBps: number };
   hands?: { hireCostDucats: string; perSeat: number };
   stations: Record<
     string,

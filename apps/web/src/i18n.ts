@@ -484,6 +484,7 @@ const frDict = {
       gone: (vehicle: string) => `${vehicle} est partie.`,
       recall: "Rappeler",
       lack: (n: number) => `manque ${n}`,
+      better: (pct: number) => `Belles pièces · +${pct} %`,
       haveNeed: (have: number) => `${have} en stock`,
       lackOf: (n: number) => `il en manque ${n}`,
       forCity: (city: string) => `pour ${city}`,
