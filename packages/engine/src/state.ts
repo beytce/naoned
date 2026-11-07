@@ -620,6 +620,11 @@ export interface EmpireHouse {
   research?: { code: string; level: number; startedAt: number; endsAt: number }[];
   /** What is left today of the court's book for its fine and exquisite goods. */
   court?: { day: number; left: number };
+  /**
+   * What the house sold to and bought from the markets today, by `region:good`: each house has its
+   * own day's depth (the players' audit of 7 November 2026), so no one empties it for the others.
+   */
+  market?: { day: number; sold: Record<string, number>; bought: Record<string, number> };
   /** What its land vehicles carried to the cities today. */
   hauled?: { day: number; units: number; at?: Record<string, number> };
   /** What is left today of its private book of orders, by region. */

@@ -175,6 +175,7 @@ import {
   type EngineErrorCode,
   type Tx,
   addStock,
+  checkKeys,
   emit,
   fail,
   removeStock,
@@ -1186,6 +1187,7 @@ export function decide(
   try {
     const next = produce(state, (draft) => {
       const tx = { ctx, s: draft, now, fx };
+      checkKeys(cmd);
       apply(tx, cmd);
       // The monthly season's trackers: the empire has its Carnet instead.
       if (!isEmpire(cmd)) {

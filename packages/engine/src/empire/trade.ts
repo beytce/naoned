@@ -13,6 +13,7 @@ import {
 } from "../state.js";
 import { type Tx, addStock, fail, inventoryLine, removeStock, transfer } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
+import { casaLevelOf } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { capacityOf } from "./fleet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
@@ -36,6 +37,7 @@ import {
   postsIn,
   postsServing,
   putAt,
+  storeOf,
   takeAt,
   takeFrom,
   wherePut,
@@ -143,6 +145,18 @@ function marketSize(
     depth: s.markets.depthBase + s.markets.depthPerHouse * present,
     board: s.markets.boardPerHouse * present,
   };
+}
+
+/** A house's own day's depth at a market, to sell as to buy (each its own, no one empties it). */
+function houseDepth(s: EmpireSettings): number {
+  return s.markets.depthBase + s.markets.depthPerHouse;
+}
+
+/** What the house sold and bought today at the markets, reset each day. */
+function houseMarket(h: EmpireHouse, now: number): NonNullable<EmpireHouse["market"]> {
+  const day = dayOf(now);
+  if (!h.market || h.market.day !== day) h.market = { day, sold: {}, bought: {} };
+  return h.market;
 }
 
 /** The house's counter level in a region: its Casa stands for one in Venetia. */
@@ -274,8 +288,15 @@ export function sellAt(
   const mk = marketNow(tx, region, good);
   const { depth } = marketSize(tx.s.empire?.houses ?? {}, region, tx.now, s);
   const posts = from ?? postsIn(h, s, region);
-  const n = Math.min(qty, depth - mk.soldToday, heldAt(tx, h, playerId, posts, good));
+  const book = houseMarket(h, tx.now);
+  const key = `${region}:${good}`;
+  const n = Math.min(
+    qty,
+    houseDepth(s) - (book.sold[key] ?? 0),
+    heldAt(tx, h, playerId, posts, good),
+  );
   if (n <= 0) return 0;
+  book.sold[key] = (book.sold[key] ?? 0) + n;
   takeFrom(tx, h, playerId, posts, good, n, "empire_sale");
   const bonus = isRaw(tx, good) ? rawBonusBps(h.casa, s) : 0;
   const gross = applyBpsFloor(priceAt(ref, mk.pressureBps, s) * BigInt(n), 10_000 + bonus);
@@ -311,21 +332,44 @@ export function buyAt(
   const ref = r.produces[good] ?? r.demands[good];
   if (ref === undefined) fail("unknown_resource");
   const mk = marketNow(tx, region, good);
-  const unit = applyBpsFloor(priceAt(ref, mk.pressureBps, s), 10_000 + s.markets.taxBps);
-  const cash = tx.s.accounts[cashAccount(playerId)] ?? 0n;
-  const n = Math.min(qty, unit > 0n ? Number(cash / unit) : qty);
-  if (n <= 0) return 0;
-  transfer(
-    tx,
-    cashAccount(playerId),
-    SINK_ACCOUNT,
-    unit * BigInt(n),
-    "empire_purchase",
-    `${region}:${good}`,
-  );
   const h = ownHouse(tx, playerId);
-  putAt(tx, h, playerId, into ?? wherePut(h, s, region), good, n, "empire_purchase");
+  const post = into ?? wherePut(h, s, region);
   const { depth } = marketSize(tx.s.empire?.houses ?? {}, region, tx.now, s);
+  // Golden rule 3: no more than the Fondaco has room for, nor than the house's day's depth.
+  const cap = casaLevelOf(h.casa, s).storeCap;
+  const have = (g: string) => storeOf(tx, h, playerId, post, g);
+  const room =
+    cap === undefined
+      ? Number.POSITIVE_INFINITY
+      : cap - have(good) - have(`${good}:fine`) - have(`${good}:exquisite`);
+  const book = houseMarket(h, tx.now);
+  const key = `${region}:${good}`;
+  const most = Math.min(qty, room, houseDepth(s) - (book.bought[key] ?? 0));
+  if (room <= 0) return -1;
+  if (most <= 0) return 0;
+  // The price rises unit by unit as the order buys: each pays at the market it leaves.
+  const costOf = (k: number) =>
+    applyBpsFloor(
+      priceAt(
+        ref,
+        pressureAfterTrade(mk.pressureBps, Math.floor(k / 2), Math.max(1, depth), "buy", s),
+        s,
+      ),
+      10_000 + s.markets.taxBps,
+    ) * BigInt(k);
+  const cash = tx.s.accounts[cashAccount(playerId)] ?? 0n;
+  let lo = 0;
+  let hi = most;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (costOf(mid) <= cash) lo = mid;
+    else hi = mid - 1;
+  }
+  const n = lo;
+  if (n <= 0) return 0;
+  transfer(tx, cashAccount(playerId), SINK_ACCOUNT, costOf(n), "empire_purchase", key);
+  putAt(tx, h, playerId, post, good, n, "empire_purchase");
+  book.bought[key] = (book.bought[key] ?? 0) + n;
   mk.pressureBps = pressureAfterTrade(mk.pressureBps, n, Math.max(1, depth), "buy", s);
   remember(mk, tx.now);
   return n;
@@ -522,7 +566,14 @@ export function empireQuotes(
     return goods.map((good) => {
       const ref = (r.demands[good] ?? r.produces[good]) as Deniers;
       const mk = state.empire?.markets?.[`${r.code}:${good}`];
-      const sold = mk && mk.day === day ? mk.soldToday : 0;
+      const key = `${r.code}:${good}`;
+      const sold = h
+        ? h.market?.day === day
+          ? (h.market.sold[key] ?? 0)
+          : 0
+        : mk && mk.day === day
+          ? mk.soldToday
+          : 0;
       const board = state.empire?.boards?.[`${r.code}:${good}`];
       return {
         region: r.code,
@@ -530,7 +581,7 @@ export function empireQuotes(
         ref,
         price: priceAt(ref, pressureAt(mk, asOf, s), s),
         asked: good in r.demands,
-        depthLeft: Math.max(0, size.depth - sold),
+        depthLeft: Math.max(0, (h ? houseDepth(s) : size.depth) - sold),
         boardLeft: board?.day === day ? board.left : size.board,
         asOf,
       };
@@ -590,6 +641,11 @@ export function buyGoods(
   const r = regionOf(at.region, s);
   if (r.produces[good] === undefined && r.demands[good] === undefined) fail("unknown_resource");
   const n = buyAt(tx, playerId, good, qty, at.region, post);
-  if (n <= 0) fail("insufficient_funds");
+  if (n < 0) fail("store_full");
+  if (n === 0) {
+    const key = `${at.region}:${good}`;
+    if ((houseMarket(h, tx.now).bought[key] ?? 0) >= houseDepth(s)) fail("no_liquidity");
+    fail("insufficient_funds");
+  }
   return n;
 }

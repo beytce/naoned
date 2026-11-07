@@ -39,6 +39,8 @@ export type EngineErrorCode =
   | "unknown_project"
   | "not_owner"
   | "invalid_quantity"
+  | "bad_key"
+  | "store_full"
   | "invalid_price"
   | "insufficient_funds"
   | "insufficient_stock"
@@ -305,13 +307,40 @@ export function transfer(
   recordTurnover(tx.s as WorldState, entry);
 }
 
+/**
+ * The names an object answers to by itself (its prototype's): a player's input never names one,
+ * or a lookup by it would reach the prototype of every object (the players' audit of 7 November
+ * 2026, QA-01).
+ */
+const RESERVED_KEYS = new Set([
+  ...Object.getOwnPropertyNames(Object.prototype),
+  "__proto__",
+  "prototype",
+]);
+
+/** Fails on any string of a command, however deep, that names an object's own machinery. */
+export function checkKeys(value: unknown, depth = 0): void {
+  if (depth > 8) return;
+  if (typeof value === "string") {
+    if (RESERVED_KEYS.has(value)) fail("bad_key");
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const v of value) checkKeys(v, depth + 1);
+    return;
+  }
+  if (value !== null && typeof value === "object")
+    for (const v of Object.values(value)) checkKeys(v, depth + 1);
+}
+
 export function inventoryLine(tx: Tx, playerId: PlayerId, resource: ResourceCode): InventoryLine {
+  if (RESERVED_KEYS.has(resource)) fail("bad_key");
   let inv = tx.s.inventories[playerId];
   if (!inv) {
     inv = {};
     tx.s.inventories[playerId] = inv;
   }
-  let line = inv[resource];
+  let line = Object.hasOwn(inv, resource) ? inv[resource] : undefined;
   if (!line) {
     line = { available: 0, escrow: 0 };
     inv[resource] = line;
