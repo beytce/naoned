@@ -285,7 +285,7 @@ export function Intro({ p }: { p: EmpirePayload }) {
 }
 
 /** The Fondaco level from which the Power and its band are shown (the Porta's). */
-const MEASURES_FROM = 4;
+const MEASURES_FROM = 3;
 
 /** The house's measures, out of the header: the Casa, the Power and its band, the Favour, the Seals. */
 export function HouseSheet({

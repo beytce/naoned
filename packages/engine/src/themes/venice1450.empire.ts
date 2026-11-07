@@ -16,7 +16,9 @@ const D = 100; // deniers a ducat
 const CASA: [number, Record<string, number>, number, string[]][] = [
   [0, {}, 0, []],
   [50, { bricks: 5, planks: 5 }, 2, []],
-  [100, { bricks: 10, planks: 10 }, 10, ["cart", "limitOrders"]],
+  // Levels 2 to 5 on one slope, about ×5 a level (the publication plan D7: the 4 cost twelve times
+  // the 3, and opened three systems at once).
+  [250, { bricks: 20, planks: 20 }, 10, ["cart", "limitOrders", "porta"]],
   [1_200, { bricks: 60, planks: 60 }, 30, ["scuola", "tradeModules"]],
   [6_400, { bricks: 180, planks: 180 }, 60, ["burchio", "extraction"]],
   [11_000, { bricks: 300, planks: 300 }, 120, ["lombardia", "datedNews"]],
@@ -179,6 +181,9 @@ const MODULES = [
 ];
 
 export const venice1450Empire: EmpireSettingsInput = {
+  // Golden rule 3 rewritten (D4, 7 November 2026): a workshop works four hours once launched, then
+  // waits for its harvest; a visit every few hours yields in full, a night yields one queue.
+  queueHours: 4,
   casa: CASA.map(([ducats, materials, buildMinutes, opens], i) => {
     const level = i + 1;
     return {
@@ -244,7 +249,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     costStepBps: 2_500,
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
     // fell short of their share, calibration.md).
-    camp: { costDucats: 600, casa: 4, minutes: 240 },
+    // The Terraferma from the 5 (D7: the openings spread, the Porta at 3, the Scuola at 4).
+    camp: { costDucats: 600, casa: 5, minutes: 240 },
     // The Remise, where the vehicles are bought and their models raised, the ships too.
     depot: { costDucats: 200, casa: 2, minutes: 120 },
   },
@@ -516,17 +522,19 @@ export const venice1450Empire: EmpireSettingsInput = {
     // The Porta (plan-porta.md § 3), from the Casa 4 (the first steps, lot 6, the owner's choice of
     // 6 November 2026: discovered early), at the Campo's price; its levels as before, so that only
     // its first tier opens early.
+    // The Porta of discovery (D7, 7 November 2026): from the Casa 3, its first tier alone, its
+    // building and first rider cheaper; the rest of its arms at the Casa 4 as before.
     building: {
-      casa: 4,
-      costDucats: 600,
-      minutes: 360,
+      casa: 3,
+      costDucats: 300,
+      minutes: 120,
       levelCostDucats: 4_000,
       levelMinutes: 120,
       travelMinutesPerCell: 10,
     },
     models: {
       // The first combat model and its first arms, at the Porta's Casa and at its measure.
-      cavaliere: { casa: 4, costDucats: 400, hp: 1_200, speedCenti: 600, places: ["weapon"] },
+      cavaliere: { casa: 3, costDucats: 250, hp: 1_200, speedCenti: 600, places: ["weapon"] },
       carro: {
         casa: 11,
         costDucats: 4_000,
@@ -549,7 +557,7 @@ export const venice1450Empire: EmpireSettingsInput = {
       lances: {
         kind: "weapon",
         effect: "lances",
-        casa: 4,
+        casa: 3,
         costDucats: 250,
         power: 40,
         perLevelBps: 2_000,

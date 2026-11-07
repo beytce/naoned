@@ -841,6 +841,7 @@ const frDict = {
       opensNames: {
         ambassadors: "Les ambassadeurs",
         arms: "Les armes de la Porta",
+        porta: "La Porta de découverte",
         arte: "L'Arte",
         burchio: "Le burchio",
         cart: "La charrette",

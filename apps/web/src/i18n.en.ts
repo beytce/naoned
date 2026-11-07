@@ -914,6 +914,7 @@ export const en: Dictionary = {
       opensNames: {
         ambassadors: "Ambassadors",
         arms: "The Porta's arms",
+        porta: "The Porta of discovery",
         arte: "The Arte",
         burchio: "The burchio",
         cart: "The cart",

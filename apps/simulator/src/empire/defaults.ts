@@ -60,7 +60,8 @@ export const DEFAULT_MODEL: SimModel = {
     cloth: { wool: 2 },
     ...VENETIA.recipes,
   },
-  queueHours: 12,
+  // The theme's queue (D4 of the publication plan): four hours, then the workshop waits.
+  queueHours: 4,
   boardPerActive: 5,
   smallShareBps: 5_000,
   smallCasa: 10,
