@@ -1163,6 +1163,8 @@ export interface TerraView {
     height: number;
     origin: [number, number];
     size: number;
+    /** Square cells, four neighbours (Porcellana, lot 9); absent or hex: pointy hexagons. */
+    grid?: "hex" | "square";
     /** One letter a cell: p plain, h hill, m marsh, M mountain, w water. */
     terrain: string;
     cities: { cell: number; code: string }[];

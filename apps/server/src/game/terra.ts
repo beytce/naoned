@@ -189,6 +189,8 @@ export function terraView(
       height: s.map.height,
       origin: s.map.origin,
       size: s.map.size,
+      /** Square cells (Porcellana, lot 9), else hexagons. */
+      grid: s.map.grid ?? "hex",
       terrain: s.map.terrain.map((k) => TERRAIN_LETTER[k] ?? "p").join(""),
       cities: s.map.cityCode
         .map((code, cell) => (code ? { cell, code } : null))

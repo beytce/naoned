@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../api.js";
 import { gameApi } from "../game/api.js";
 import { hourOf } from "../game/format.js";
@@ -13,6 +13,8 @@ import {
 import { cellAt } from "../game/terraShapes.js";
 import type { CompanyView, TerraAction, TerraView } from "../game/types.js";
 import { fr } from "../i18n.js";
+import { TerraScene } from "../porcellana/terra/TerraScene.js";
+import { pictureOfView } from "../porcellana/terra/picture.js";
 import { Label, Slab } from "../ui.js";
 import { empireApi } from "./api.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
@@ -26,7 +28,53 @@ const goodName = (p: EmpirePayload, code: string) =>
  * A map of the Terraferma on its own (Lagune): the land and its holders, the fronts marching; a
  * touch picks a cell. The theatre's and the Condotta's both.
  */
-function Board({
+function Board(props: {
+  v: TerraView;
+  cell: number | null;
+  onCell: (cell: number | null) => void;
+}) {
+  return props.v.map.grid === "square" ? <SquareBoard {...props} /> : <HexBoard {...props} />;
+}
+
+/** The week's map on square cells: Porcellana's board (docs/plan-terraferme-porcellana.md, T2). */
+function SquareBoard({
+  v,
+  cell,
+  onCell,
+}: {
+  v: TerraView;
+  cell: number | null;
+  onCell: (cell: number | null) => void;
+}) {
+  const pic = useMemo(() => pictureOfView(v), [v]);
+  const me = v.holders.find((h) => h.me);
+  return (
+    <div
+      className="relative mt-2 h-[62vh] min-h-[22rem] overflow-hidden rounded-2xl"
+      aria-label={t.board}
+    >
+      <TerraScene
+        pic={pic}
+        chosen={cell}
+        onCell={onCell}
+        home={me?.capital ?? null}
+        townName={(code) =>
+          fr.themeNames.city[code] ?? code.charAt(0).toUpperCase() + code.slice(1)
+        }
+        campName={(c) => {
+          const h = v.holders[v.owner[c] ?? -1];
+          if (!h) return null;
+          return h.me
+            ? "Toi"
+            : (h.pseudo ?? (h.nation ? (fr.game.terra.nations[h.nation] ?? h.nation) : null));
+        }}
+      />
+    </div>
+  );
+}
+
+/** The week's map on hexagons (the board of before). */
+function HexBoard({
   v,
   cell,
   onCell,

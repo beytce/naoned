@@ -7,7 +7,7 @@
  */
 import "./porcellana.css";
 import { Canvas } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import {
   CanvasTexture,
   Group,
@@ -221,8 +221,20 @@ const CAT: Spec = {
   },
 };
 
+const LabTerra = lazy(() => import("./terra/LabTerra.js"));
+
 export default function PorcellanaLab() {
   const view = new URLSearchParams(window.location.search).get("vue");
+  if (view === "terraferme")
+    return (
+      <Suspense fallback={null}>
+        <LabTerra />
+      </Suspense>
+    );
+  return <KitLab view={view} />;
+}
+
+function KitLab({ view }: { view: string | null }) {
   const spec =
     view === "catalogue"
       ? CAT
@@ -335,6 +347,9 @@ export default function PorcellanaLab() {
                   : "Atelier"}
           </a>
         ))}
+        <a className="pc-tool" href="?lab=porcellana&vue=terraferme">
+          Terraferme
+        </a>
         <button
           type="button"
           className="pc-tool"
