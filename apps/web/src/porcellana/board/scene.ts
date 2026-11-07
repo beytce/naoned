@@ -164,9 +164,14 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       owned.has(n),
     );
   };
+  // The plots on the way to a town in reach not yet linked (7 November 2026): they call, in accent.
+  const onWay = new Map<string, string>();
+  for (const [code, tiles] of Object.entries(map.toLink ?? {}))
+    for (const k of tiles) if (!onWay.has(k)) onWay.set(k, t.cityNames[code] ?? code);
   for (const b of map.buyable) {
     const open = b.casa <= house.casa;
     if (!touches(b.cell) && !open) continue;
+    const way = open ? onWay.get(b.cell) : undefined;
     put(b.cell, {
       water: false,
       model: open ? "plot" : "locked",
@@ -176,10 +181,14 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         target: { kind: "sector", cell: b.cell },
         name: open ? t.porcellana.plot : t.porcellana.locked,
         sub: open ? t.porcellana.plotPrice(ducats) : t.porcellana.lockedCasa(b.casa),
-        line: open ? t.porcellana.plotLine : t.porcellana.lockedLine,
+        line: way
+          ? t.porcellana.plotLink(way)
+          : open
+            ? t.porcellana.plotLine
+            : t.porcellana.lockedLine,
         go: open ? t.porcellana.buy : t.porcellana.see,
         pin: "+",
-        ready: false,
+        ready: way !== undefined,
         plus: true,
         ...(open ? {} : { badge: { kind: "lock" as const, casa: b.casa } }),
       },
@@ -219,6 +228,8 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     // Venice's market (San Marco) is open to all, in the zone or not.
     const inZone =
       venice || !map.covered || map.covered.length === 0 || map.covered.includes(c.code);
+    // In the zone but not linked by the house's own tiles: its mules cannot go (7 November 2026).
+    const toLink = inZone && !venice ? map.toLink?.[c.code] : undefined;
     const crates = waiting > 0 ? deliveryPlan(p, c.code).orders.map((x) => x.covered) : [];
     put(k, {
       crates,
@@ -235,15 +246,17 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
           : `${t.regionNames[c.region] ?? c.region} · ${t.porcellana.townSize(c.size ?? 1)}`,
         line: !inZone
           ? t.porcellana.outOfZone(map.zoneCasa?.[c.code] ?? null)
-          : waiting > 0
-            ? t.porcellana.cityOrders(waiting)
-            : t.porcellana.cityQuiet,
+          : toLink
+            ? t.porcellana.toLink(toLink.length)
+            : waiting > 0
+              ? t.porcellana.cityOrders(waiting)
+              : t.porcellana.cityQuiet,
         go: venice ? t.porcellana.openMarket : t.porcellana.openCity,
         pin: waiting > 0 ? String(waiting) : "",
-        ready: waiting > 0,
+        ready: waiting > 0 && !toLink,
         // Its orders, by their good, in accent when the stock covers them; out of the zone, a lock
         // and the Fondaco's level that reaches it (the first steps, lot 4).
-        ...(!inZone
+        ...(!inZone || toLink
           ? {
               badge: {
                 kind: "lock" as const,

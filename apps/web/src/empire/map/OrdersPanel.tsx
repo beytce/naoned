@@ -118,7 +118,9 @@ export function OrdersPanel({
           : t().blockBusyNone
         : plan.reason === "none"
           ? t().blockNone
-          : null;
+          : plan.reason === "link"
+            ? t().blockLink
+            : null;
   const ring = citiesWithOrders(p);
   const lacking = lack ? plan.orders.find((x) => x.o.id === lack) : undefined;
   return (

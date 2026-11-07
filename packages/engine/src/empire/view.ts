@@ -48,6 +48,7 @@ import {
   cellsWithin,
   citiesCovered,
   citiesFound,
+  citiesToLink,
   citySpot,
   ensureMap,
   hasMap,
@@ -60,6 +61,7 @@ import {
   squareGrid,
   standingPosts,
   unlockedOf,
+  walkableOf,
 } from "./map.js";
 import { researchCost, researchMinutesOf } from "./modules.js";
 import { holdOf, placePoint } from "./moves.js";
@@ -347,6 +349,11 @@ export interface EmpireMapView {
   covered: string[];
   /** The sectors the house owns: its vehicles go anywhere there (the hops). */
   unlocked: string[];
+  /**
+   * On square tiles bought one by one (7 November 2026): the cities in reach the house's own tiles
+   * do not link yet to a counter, each with the fewest tiles to buy to link it. Absent elsewhere.
+   */
+  toLink?: Record<string, string[]>;
   /** The sectors it may buy next (the sectors bought one by one), with the price of the next. */
   buyable: { cell: string; region: string; coast: boolean; casa: number }[];
   sectorCost: Deniers;
@@ -757,18 +764,23 @@ function roadsOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView["roads"] 
   const round = (pts: [number, number][]) =>
     pts.map(([x, y]): [number, number] => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
   const out: EmpireMapView["roads"] = [];
+  const owned = walkableOf(house, s);
   for (const w of house.workshops) {
     if (!w.tile) continue;
     const region = w.region ?? "veneto";
     const post = posts.find((p) => p.id === w.post) ?? posts.find((p) => p.region === region);
     if (!post) continue;
     const at = cellCentreOf(w.tile, s);
-    out.push({ from: w.id, to: post.id, pts: round(roadBetween(at, [post.x, post.y], s)) });
+    out.push({ from: w.id, to: post.id, pts: round(roadBetween(at, [post.x, post.y], s, owned)) });
   }
   const home = posts[0];
   if (house.depot && home) {
     const at = cellCentreOf(house.depot, s);
-    out.push({ from: "depot", to: home.id, pts: round(roadBetween(at, [home.x, home.y], s)) });
+    out.push({
+      from: "depot",
+      to: home.id,
+      pts: round(roadBetween(at, [home.x, home.y], s, owned)),
+    });
   }
   return out;
 }
@@ -811,6 +823,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
     zoneCasa: zoneCasaOf(house, s),
     unlocked: unlockedOf(house, s),
+    ...(walkableOf(house, s) ? { toLink: citiesToLink(house, s) } : {}),
     buyable: buyableOf(house, s).map((cell) => {
       const c = s.map.cells[cell];
       return {
@@ -882,7 +895,10 @@ function legRoad(h: EmpireHouse, s: EmpireSettings, l: EmpireLeg): [number, numb
   const a = placePoint(h, s, l.from);
   const b = placePoint(h, s, l.to);
   if (!a || !b) return undefined;
-  return roadBetween(a, b, s).map(([x, y]) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
+  return roadBetween(a, b, s, walkableOf(h, s)).map(([x, y]) => [
+    Math.round(x * 10) / 10,
+    Math.round(y * 10) / 10,
+  ]);
 }
 
 function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s: EmpireSettings) {

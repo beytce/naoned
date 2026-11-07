@@ -25,6 +25,7 @@ export type EngineErrorCode =
   | "on_city"
   | "post_too_close"
   | "out_of_reach"
+  | "not_linked"
   | "not_adjacent"
   | "locked_cell"
   | "registration_closed"
