@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
 import { GoodsMark } from "../art/goods.js";
 import { DucatCoin } from "../art/plateau/coins.js";
 import { amount, d } from "../game/format.js";
+import { Icon } from "../game/map/icons.js";
 import { fr } from "../i18n.js";
 import { Sheet, Slab } from "../ui.js";
 import { regionName } from "./World.js";
@@ -89,7 +91,7 @@ export function NewWorkshopList({
     region === "veneto" ||
     Object.keys(inputs).length > 0 ||
     Object.keys(outputs).some((g) => r?.produces.includes(g));
-  if (!site) return <p className="text-sm text-cream-dim">{t.workshop.noRoom}</p>;
+  // No room: the workshops stay in sight, each with its lock (the first steps, lot 5).
   return (
     <>
       {
@@ -124,34 +126,190 @@ export function NewWorkshopList({
                             .join(", ")}`}
                       </span>
                     </span>
-                    <Slab
-                      size="sm"
-                      label={t.workshop.newAction(d(site.cost))}
-                      tone={r.code === highlight ? "gold" : "ghost"}
-                      busy={busy}
-                      disabled={!affordable(p.cash, site.cost)}
-                      onClick={() => {
-                        void act({
-                          type: "empireBuildWorkshop",
-                          workshopType: b.type,
-                          recipe: r.code,
-                          ...(region !== "veneto" ? { region } : {}),
-                          ...(at ? { tile: at } : {}),
-                        }).then(onDone);
-                      }}
-                    >
-                      {t.workshop.newVerb}
-                      <span className="inline-flex items-center gap-1">
-                        <DucatCoin size={20} />
-                        {amount(site.cost)}
-                      </span>
-                    </Slab>
+                    {!site ? (
+                      <LockChip text={t.workshop.fullPlaces} />
+                    ) : (
+                      <Slab
+                        size="sm"
+                        label={t.workshop.newAction(d(site.cost))}
+                        tone={r.code === highlight ? "gold" : "ghost"}
+                        busy={busy}
+                        disabled={!affordable(p.cash, site.cost)}
+                        onClick={() => {
+                          void act({
+                            type: "empireBuildWorkshop",
+                            workshopType: b.type,
+                            recipe: r.code,
+                            ...(region !== "veneto" ? { region } : {}),
+                            ...(at ? { tile: at } : {}),
+                          }).then(onDone);
+                        }}
+                      >
+                        {t.workshop.newVerb}
+                        <span className="inline-flex items-center gap-1">
+                          <DucatCoin size={20} />
+                          {amount(site.cost)}
+                        </span>
+                      </Slab>
+                    )}
                   </li>
                 )),
             )}
         </ul>
       }
     </>
+  );
+}
+
+/** A lock and the condition that opens it (the first steps, lot 5). */
+function LockChip({ text }: { text: string }) {
+  return (
+    <span
+      className="flex shrink-0 items-center gap-1 rounded-full bg-night-4 px-2.5 py-1 text-xs font-bold text-cream-dim [&_svg]:h-3.5 [&_svg]:w-3.5"
+      data-lock
+    >
+      {Icon.lock()}
+      {text}
+    </span>
+  );
+}
+
+type PlaceRow = {
+  id: "depot" | "camp" | "porta" | "post";
+  icon: () => ReactNode;
+  name: string;
+  what: string;
+  state:
+    | { kind: "build"; cost: string; action: EmpireAction }
+    | { kind: "built" }
+    | { kind: "rising" }
+    | { kind: "locked"; why: string };
+};
+
+/** The buildings a free tile may take beside the workshops, each with its state. */
+export function placeRows(p: EmpirePayload, tile: string): PlaceRow[] {
+  const view = p.view;
+  if (!view) return [];
+  const w = t.workshop;
+  const casa = view.house.casa;
+  const map = view.map;
+  const builds = view.house.builds ?? [];
+  const rising = (kind: string) => builds.some((b) => b.kind === kind);
+  const site = (
+    done: boolean,
+    kind: string,
+    s: { cost: string; casa: number } | null | undefined,
+    action: EmpireAction,
+  ): PlaceRow["state"] | null => {
+    if (done) return { kind: "built" };
+    if (rising(kind)) return { kind: "rising" };
+    if (!s) return null;
+    if (casa < s.casa) return { kind: "locked", why: w.atLevel(s.casa) };
+    return { kind: "build", cost: s.cost, action };
+  };
+  const rows: PlaceRow[] = [];
+  const depot = site(!!map.depot, "depot", map.depotSite, { type: "empireBuildDepot", cell: tile });
+  if (depot)
+    rows.push({ id: "depot", icon: Icon.cart, name: w.depot, what: w.depotWhat, state: depot });
+  const camp = site(!!map.camp, "camp", map.campSite, { type: "empireBuildCamp", cell: tile });
+  if (camp)
+    rows.push({ id: "camp", icon: Icon.troops, name: w.camp, what: w.campWhat, state: camp });
+  const porta = view.porta
+    ? site(!!view.porta.cell, "porta", view.porta.site, {
+        type: "empireBuildPorta",
+        cell: tile,
+      } as EmpireAction)
+    : null;
+  if (porta)
+    rows.push({ id: "porta", icon: Icon.gate, name: w.porta, what: w.portaWhat, state: porta });
+  // A fondaco opens a region beyond Venetia: on a tile of its own there.
+  const region = map.cells[tile]?.region;
+  const r = region ? view.regions.find((x) => x.code === region) : undefined;
+  const size = map.tileSize ?? 15;
+  const [i = 0, j = 0] = tile.split(",").map(Number);
+  rows.push({
+    id: "post",
+    icon: Icon.fondaco,
+    name: w.post,
+    what: w.postWhat,
+    state:
+      !r || region === "veneto"
+        ? { kind: "locked", why: w.otherRegion }
+        : casa < r.casa
+          ? { kind: "locked", why: w.atLevel(r.casa) }
+          : r.postCost
+            ? {
+                kind: "build",
+                cost: r.postCost,
+                action: {
+                  type: "empirePlaceCounter",
+                  cell: tile,
+                  x: Math.round((i + 0.5) * size),
+                  y: Math.round((j + 0.5) * size),
+                },
+              }
+            : { kind: "built" },
+  });
+  return rows;
+}
+
+/** The buildings of a free tile (the first steps, lot 5): every one, the locked ones in sight. */
+function PlacesList({
+  p,
+  tile,
+  busy,
+  act,
+  onDone,
+}: {
+  p: EmpirePayload;
+  tile: string;
+  busy: boolean;
+  act: (a: EmpireAction) => Promise<void>;
+  onDone: () => void;
+}) {
+  const w = t.workshop;
+  return (
+    <ul className="space-y-1" data-place-rows>
+      {placeRows(p, tile).map((row) => (
+        <li
+          key={row.id}
+          className={`flex items-center gap-3 rounded-[1.4rem] p-2 ${row.state.kind === "locked" ? "opacity-70" : ""}`}
+          data-place-row={row.id}
+          data-state={row.state.kind}
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-night-4 [&_svg]:h-6 [&_svg]:w-6">
+            {row.icon()}
+          </span>
+          <span className="flex-1 text-sm text-cream">
+            <span className="font-display text-base font-extrabold">{row.name}</span>
+            <span className="block text-xs text-cream-dim">{row.what}</span>
+          </span>
+          {row.state.kind === "build" ? (
+            <Slab
+              size="sm"
+              tone="ghost"
+              busy={busy}
+              disabled={!affordable(p.cash, row.state.cost)}
+              onClick={() => {
+                if (row.state.kind === "build") void act(row.state.action).then(onDone);
+              }}
+            >
+              {w.newVerb}
+              <span className="inline-flex items-center gap-1">
+                <DucatCoin size={20} />
+                {amount(row.state.cost)}
+              </span>
+            </Slab>
+          ) : row.state.kind === "locked" ? (
+            <LockChip text={row.state.why} />
+          ) : (
+            <span className="shrink-0 text-xs font-bold text-cream-dim">
+              {row.state.kind === "built" ? w.built : w.rising}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -176,7 +334,13 @@ export function NewWorkshopSheet({
   tile?: string;
 }) {
   return (
-    <Sheet open={open} onClose={onClose} kicker={t.workshop.newTitle} title={regionName(region)}>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      kicker={tile ? t.workshop.hereTitle : t.workshop.newTitle}
+      title={regionName(region)}
+    >
+      {tile && <h3 className="mb-1 font-display text-sm font-black">{t.workshop.workshopsHead}</h3>}
       <NewWorkshopList
         p={p}
         region={region}
@@ -186,6 +350,13 @@ export function NewWorkshopSheet({
         act={act}
         tile={tile}
       />
+      {/* Every building of the game on a free tile, the locked ones in sight (lot 5). */}
+      {tile && (
+        <>
+          <h3 className="mb-1 mt-5 font-display text-sm font-black">{t.workshop.placesHead}</h3>
+          <PlacesList p={p} tile={tile} busy={busy} act={act} onDone={onClose} />
+        </>
+      )}
     </Sheet>
   );
 }

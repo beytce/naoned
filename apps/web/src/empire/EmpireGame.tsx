@@ -19,7 +19,7 @@ import { HelpSheet, HouseSheet, Intro, NextStepCard } from "./Guide.js";
 import { ArteSection, FamilySheet, Knowledge } from "./Identity.js";
 import { MarketSheet } from "./Market.js";
 import { CasaMoment } from "./Moment.js";
-import { NewWorkshopSheet } from "./NewWorkshop.js";
+import { NewWorkshopSheet, freeTileOf } from "./NewWorkshop.js";
 import { GoodSheet } from "./Resources.js";
 import { Safe } from "./Safe.js";
 import { Charroi, RegionPlace, Scuola, regionName } from "./World.js";
@@ -414,6 +414,16 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     }
     if (id.startsWith("place:")) {
       const [, kind = "post", region] = id.split(":");
+      // On square tiles, the Remise, the Campo and the Porta rise from a free tile's list, with
+      // every building (the first steps, lot 5): the nearest free tile, no bar of placing.
+      if (
+        (kind === "depot" || kind === "camp" || kind === "porta") &&
+        p.view?.map.grid === "square"
+      ) {
+        setBuildTile(freeTileOf(p, "veneto") ?? undefined);
+        setSheet("new");
+        return;
+      }
       setSheet(null);
       setPicked(null);
       // Out of a domain first: the map's sectors to pick from.

@@ -415,7 +415,7 @@ export type EmpireAction =
   | { type: "empireUnloadOrder"; vehicleId: string; orderId: string }
   | { type: "empireDeliver"; good: string; qty: number; region?: string; city?: string }
   | { type: "empireClaim"; index: number }
-  | { type: "empirePlaceCounter"; cell: string }
+  | { type: "empirePlaceCounter"; cell: string; x?: number; y?: number }
   | { type: "empireBuildCamp"; cell: string }
   | { type: "empireUnlockCell"; cell: string }
   | { type: "empireBuildDepot"; cell: string }
