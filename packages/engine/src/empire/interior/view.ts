@@ -1,6 +1,12 @@
 import type { EmpireHouse, InteriorHand, InteriorLink, InteriorStation } from "../../state.js";
 import type { EmpireSettings } from "../settings.js";
-import { ensureInterior, interiorPaceBps, settleInterior, stationLevelOpen } from "./run.js";
+import {
+  ensureInterior,
+  interiorInputsBps,
+  interiorPaceBps,
+  settleInterior,
+  stationLevelOpen,
+} from "./run.js";
 import type { InteriorSettings } from "./settings.js";
 import { type InteriorThroughput, hallAt, interiorThroughput } from "./throughput.js";
 
@@ -28,6 +34,8 @@ export interface InteriorView {
   legacyBps: number;
   /** The last station level the house may reach (its knowledge opens more). */
   levelOpen: number;
+  /** What it saves of its inputs, in bps (a well-tended inside wastes less). */
+  inputsSaveBps: number;
 }
 
 /** The insides of a house's workshops, by workshop; settled on the copy it is given. */
@@ -79,6 +87,7 @@ export function interiorsOf(
       paceBps: interiorPaceBps(ws, house, s, now),
       legacyBps: inside.legacyBps ?? 0,
       levelOpen: Math.min(99, stationLevelOpen(house, s)),
+      inputsSaveBps: interiorInputsBps(ws, house, s, now),
     };
   }
   return out;

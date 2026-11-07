@@ -9,6 +9,7 @@ import {
   interiorThroughput,
   wearAfter,
   workersOf,
+  workingLevel,
 } from "./throughput.js";
 
 /**
@@ -235,6 +236,32 @@ export function interiorPaceBps(
   // A full hall: no quicker, whatever is added (the « acquis » of before passes it, never lost).
   const cap = (s.interior?.maxPaceBps ?? pace) + (ws.interior.legacyBps ?? 0);
   return Math.min(pace, cap);
+}
+
+/**
+ * What the inside saves of its workshop's inputs, in bps (lot A8, « A »): its mean care, its
+ * machines' upkeep (the share not worn), its hands' skill, to the world's ceiling.
+ */
+export function interiorInputsBps(
+  ws: EmpireWorkshop,
+  h: EmpireHouse,
+  s: EmpireSettings,
+  at: number,
+): number {
+  const W = s.interior?.waste;
+  const inside = ws.interior;
+  if (!W || !inside || !hasInterior(ws, s) || W.maxSaveBps <= 0) return 0;
+  const stations = inside.stations.filter((st) => workingLevel(st, at) >= 1);
+  if (stations.length === 0) return 0;
+  const mean = (xs: number[]) => (xs.length ? xs.reduce((a, x) => a + x, 0) / xs.length : 0);
+  const care = mean(stations.map((st) => st.care));
+  const upkeep = mean(stations.map((st) => FULL - st.wear));
+  const ids = new Set(stations.map((st) => st.id));
+  const hands = workersOf(ws, h.staff).filter((x) => x.stationId && ids.has(x.stationId));
+  const skill = mean(hands.map((x) => Math.max(0, x.level - 1)));
+  const save =
+    (care * W.careSaveBps) / FULL + (upkeep * W.upkeepSaveBps) / FULL + skill * W.skillSaveBps;
+  return Math.min(W.maxSaveBps, Math.floor(save));
 }
 
 /** The quality the inside adds to its workshop's lots. */

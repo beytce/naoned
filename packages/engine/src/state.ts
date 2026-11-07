@@ -551,7 +551,12 @@ export interface EmpireHouse {
     /** Of before (goods in bulk): put back into their counter once. */
     cargo?: Record<string, { qty: number; from: string; routed?: number }>;
     /** The orders aboard, each a place of its hold, delivered at their city. */
-    loads?: (EmpireOrder & { from: string })[];
+    loads?: (EmpireOrder & {
+      from: string;
+      /** Of its units, so many fine and so many exquisite (the insides' worlds), paid more. */
+      fine?: number;
+      exquisite?: number;
+    })[];
     /** Its stops to come, hop by hop (after Hades' Star): each leaves when the one before arrives. */
     legs?: EmpireLeg[];
   }[];

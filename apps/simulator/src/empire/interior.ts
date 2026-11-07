@@ -5,8 +5,10 @@ import {
   type InteriorStation,
   adviseInterior,
   hallAt,
+  interiorInputsBps,
   interiorLayoutProblem,
   interiorPaceBps,
+  interiorQualityBps,
   interiorThroughput,
   presetInterior,
   settleInterior,
@@ -23,7 +25,7 @@ import { destroy } from "./world.js";
  * wear and its hands' fatigue settled over the hours its queue ran, Lorenzo's advice. Three ways of
  * tending it, by house:
  * - hasty: the default plan, never mended, never rested;
- * - average: breaks the main bottleneck once (a level), mends a machine below 80 %;
+ * - average: breaks the main bottleneck once (a level), mends a machine below 80 %, half care;
  * - careful: plays the advice until nothing betters the plan, mends every machine at each
  *   session, puts a night shift on every staffed station, raises the bottleneck as far as its
  *   knowledge opens, then puts a station of the same kind beside it.
@@ -36,6 +38,9 @@ export const TENDINGS: Tending[] = ["hasty", "average", "careful"];
 export const tendingOf = (h: House): Tending => TENDINGS[h.id % 3] ?? "hasty";
 
 const MS = 3_600_000;
+/** The care a careful house sets its stations to, and an average one. */
+const CAREFUL_CARE = 6_000;
+const AVERAGE_CARE = 3_000;
 const BUILDING_OF: Record<string, string> = Object.fromEntries(
   venice1450.recipes.flatMap((r) => Object.keys(r.outputs).map((g) => [g, r.building])),
 );
@@ -83,6 +88,20 @@ export function settleInsides(w: World, h: House) {
   }
 }
 
+/** What a workshop's inside saves of its inputs, in bps (lot A8, « A »). */
+export function insideInputsBps(w: World, h: House, ws: Workshop, i: number): number {
+  if (!insidesOn(w)) return 0;
+  const e = engineOf(w, h, ws, i);
+  return e ? interiorInputsBps(e, NOBODY, w.s, w.now * MS) : 0;
+}
+
+/** The share of better pieces its inside adds, in bps (lot A8, « B »). */
+export function insideQualityBps(w: World, h: House, ws: Workshop, i: number): number {
+  if (!insidesOn(w)) return 0;
+  const e = engineOf(w, h, ws, i);
+  return e ? interiorQualityBps(e, NOBODY, w.s, w.now * MS) : 0;
+}
+
 const ducats = (n: bigint) => n * DENIERS_PER_DUCAT;
 
 /** What a house's tending does at a session; the gestures it took, counted. */
@@ -124,6 +143,13 @@ export function tendInsides(w: World, h: House, spendable: () => bigint): void {
       mended = true;
     }
     if (mended) gestures++;
+    // Where the cities' demand bounds the trade, speed is spent on care — fewer inputs, more
+    // better pieces (lot A8, « A + B »): much for the careful, some for the average.
+    const care = how === "careful" ? CAREFUL_CARE : AVERAGE_CARE;
+    if (inside.stations.some((x) => x.care < care)) {
+      for (const st of inside.stations) st.care = Math.max(st.care, care);
+      gestures++;
+    }
     // The plan: the careful play the advice until nothing betters it (free, at once).
     // (Reckoned again only when the plan changed: a level, a station, the hall.)
     const key = `${ws.level}|${inside.stations.map((x) => `${x.kind}${x.x},${x.y},${x.rot},${x.level}`).join(";")}`;

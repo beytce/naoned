@@ -139,6 +139,33 @@ export function cancelStop(tx: Tx, playerId: PlayerId, vehicleId: string): void 
  * Loads an order of a city the counter serves (the vehicle docked there): a place of its hold,
  * the lot taken out of the counter's stock; the order leaves its city.
  */
+/**
+ * With the insides (docs/plan-ateliers.md lot A8, « B »), a good's better pieces count for its
+ * orders: the exquisite first, then the fine, then the plain; else only the plain.
+ */
+function qualitiesOn(s: EmpireSettings): boolean {
+  const q = s.interior?.orderQuality;
+  return !!q && (q.fineBps > 10_000 || q.exquisiteBps > 10_000);
+}
+
+/** What a counter holds of a good for its orders, its better pieces counted where they count. */
+function orderStock(
+  tx: Tx,
+  h: EmpireHouse,
+  playerId: PlayerId,
+  s: EmpireSettings,
+  post: string,
+  good: string,
+): number {
+  const plain = storeOf(tx, h, playerId, post, good);
+  if (!qualitiesOn(s)) return plain;
+  return (
+    plain +
+    storeOf(tx, h, playerId, post, `${good}:fine`) +
+    storeOf(tx, h, playerId, post, `${good}:exquisite`)
+  );
+}
+
 export function loadOrder(
   tx: Tx,
   playerId: PlayerId,
@@ -154,10 +181,28 @@ export function loadOrder(
   if ((v.loads?.length ?? 0) >= holdOf(h, v, s)) fail("no_room");
   const o = cityOrdersAt(tx.ctx, h, playerId, s, city, tx.now).list.find((x) => x.id === orderId);
   if (!o) fail("not_ordered");
-  if (storeOf(tx, h, playerId, post, o.good) < o.qty) fail("insufficient_stock");
+  if (orderStock(tx, h, playerId, s, post, o.good) < o.qty) fail("insufficient_stock");
   takeOrder(tx.ctx, h, playerId, s, city, orderId, tx.now);
-  takeAt(tx, h, playerId, post, o.good, o.qty, "empire_voyage");
-  v.loads = [...(v.loads ?? []), { ...o, from: post }];
+  // The best pieces first, where they count (the insides' worlds); then the plain.
+  let left = o.qty;
+  const took = { exquisite: 0, fine: 0 };
+  if (qualitiesOn(s))
+    for (const q of ["exquisite", "fine"] as const) {
+      const n = Math.min(left, storeOf(tx, h, playerId, post, `${o.good}:${q}`));
+      if (n > 0) takeAt(tx, h, playerId, post, `${o.good}:${q}`, n, "empire_voyage");
+      took[q] = n;
+      left -= n;
+    }
+  if (left > 0) takeAt(tx, h, playerId, post, o.good, left, "empire_voyage");
+  v.loads = [
+    ...(v.loads ?? []),
+    {
+      ...o,
+      from: post,
+      ...(took.fine > 0 ? { fine: took.fine } : {}),
+      ...(took.exquisite > 0 ? { exquisite: took.exquisite } : {}),
+    },
+  ];
 }
 
 /**
@@ -171,7 +216,12 @@ export function unloadOrder(tx: Tx, playerId: PlayerId, vehicleId: string, order
   const post = dockedAt(h, s, v, tx.now);
   const o = v.loads?.find((x) => x.id === orderId);
   if (!o) fail("not_ordered");
-  putAt(tx, h, playerId, post, o.good, o.qty, "empire_voyage", v.id);
+  // The very pieces it took, back.
+  const plain = o.qty - (o.fine ?? 0) - (o.exquisite ?? 0);
+  if (plain > 0) putAt(tx, h, playerId, post, o.good, plain, "empire_voyage", v.id);
+  if (o.fine) putAt(tx, h, playerId, post, `${o.good}:fine`, o.fine, "empire_voyage", v.id);
+  if (o.exquisite)
+    putAt(tx, h, playerId, post, `${o.good}:exquisite`, o.exquisite, "empire_voyage", v.id);
   returnOrder(tx.ctx, h, playerId, s, o, tx.now);
   const rest = (v.loads ?? []).filter((x) => x !== o);
   v.loads = rest.length > 0 ? rest : undefined;
@@ -188,8 +238,17 @@ function arrive(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle, leg: Emp
   if (!c || here.length === 0) return;
   const bonus = houseEffect(h, "orderBonus", s, { region: c.region, vehicleId: v.id });
   let paid = 0n;
+  const q = s.interior?.orderQuality;
   for (const o of here) {
-    const pay = applyBpsFloor(o.pay, 10_000 + bonus);
+    // Its better pieces paid more, by their share (lot A8, « B »).
+    const fine = o.fine ?? 0;
+    const exquisite = o.exquisite ?? 0;
+    const weight =
+      (o.qty - fine - exquisite) * 10_000 +
+      fine * (q?.fineBps ?? 10_000) +
+      exquisite * (q?.exquisiteBps ?? 10_000);
+    const base = o.qty > 0 ? (o.pay * BigInt(weight)) / BigInt(o.qty * 10_000) : o.pay;
+    const pay = applyBpsFloor(base, 10_000 + bonus);
     receive(tx, playerId, pay, `orders:${code}:${o.good}`);
     advanceCarnet(h, "deliver", o.qty);
     paid += pay;
@@ -277,7 +336,7 @@ export function deliverCity(tx: Tx, playerId: PlayerId, city: string, orderIds?:
     const picks: string[] = [];
     for (const o of asked) {
       if (room <= 0) break;
-      const have = left.get(o.good) ?? storeOf(tx, h, playerId, post, o.good);
+      const have = left.get(o.good) ?? orderStock(tx, h, playerId, s, post, o.good);
       if (have < o.qty) continue;
       left.set(o.good, have - o.qty);
       picks.push(o.id);

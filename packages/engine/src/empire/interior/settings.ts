@@ -114,6 +114,20 @@ export const interiorSettingsSchema = z
      * than the workshop of before, in place of the workshop modules it no longer researches.
      */
     basePaceBps: positive.prefault(10_000),
+    /**
+     * What a well-tended inside saves of its inputs (lot A8, « A »): its mean care, its machines'
+     * upkeep (none worn), its hands' skill (a level past the first each), to a ceiling.
+     */
+    waste: z
+      .object({ careSaveBps: bps, upkeepSaveBps: bps, skillSaveBps: bps, maxSaveBps: bps })
+      .prefault({ careSaveBps: 0, upkeepSaveBps: 0, skillSaveBps: 0, maxSaveBps: 0 }),
+    /**
+     * Its better pieces fill the cities' orders in place of plain ones (lot A8, « B »), the
+     * exquisite first: an order is paid at these rates for its share of them (10 000: no more).
+     */
+    orderQuality: z
+      .object({ fineBps: bps, exquisiteBps: bps })
+      .prefault({ fineBps: 10_000, exquisiteBps: 10_000 }),
     unlocks: z
       .object({ baseLevel: positive, byKnowledge: z.record(z.string(), positive) })
       .prefault({ baseLevel: 99, byKnowledge: {} }),

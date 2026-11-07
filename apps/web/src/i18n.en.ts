@@ -733,6 +733,7 @@ export const en: Dictionary = {
       pick: "Touch a flagstone: the rate it would give is on it.",
       cancel: "Cancel",
       acquis: (pct: number) => `Kept +${pct} %`,
+      saves: (pct: number) => `−${pct} % inputs`,
       enlarge: (n: number, d: string) => `Enlarge · level ${n} · ${d} d`,
       enlarging: (left: string) => `Enlarging · ends in ${left}`,
       locked: (n: number) => `Level ${n}: a knowledge opens it`,

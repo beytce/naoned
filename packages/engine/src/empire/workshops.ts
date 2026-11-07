@@ -16,6 +16,7 @@ import { tilesTouch } from "./grid.js";
 import { empireSettings, ownHouse } from "./house.js";
 import {
   interiorByproduct,
+  interiorInputsBps,
   interiorPaceBps,
   interiorQualityBps,
   interiorXp,
@@ -108,7 +109,11 @@ export function relaunchWorkshop(
   const queueEnd = ws.job ? ws.job.startedAt + ws.job.batches * batchMs : tx.now;
   let add = Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs);
   // The furnace saves inputs: a share of a lot's, in whole units over the queue.
-  const saved = Math.min(9_000, houseEffect(h, "inputs", s, place));
+  // And a well-tended inside wastes less (docs/plan-ateliers.md lot A8).
+  const saved = Math.min(
+    9_000,
+    houseEffect(h, "inputs", s, place) + interiorInputsBps(ws, h, s, tx.now),
+  );
   // From its counter's stock (the map that grows).
   const post = workshopPost(h, s, ws);
   const held = (good: string) => storeOf(tx, h, playerId, post, good);

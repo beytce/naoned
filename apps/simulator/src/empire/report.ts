@@ -213,22 +213,9 @@ export function evaluate(r: EmpireResult): Check[] {
       return ws.length ? ws.reduce((n, x) => n + (x.pace ?? 10_000), 0) / ws.length / 10_000 : 0;
     };
     const hasty = pace("hasty");
-    const careful = pace("careful") / (hasty || 1);
-    const average = pace("average") / (hasty || 1);
-    checks.push({
-      code: "interior-careful",
-      label: "Intérieurs : cadence moyenne d'un atelier appliqué / pressé (même niveau)",
-      target: "entre 1,6 et 2,2",
-      value: careful.toFixed(2),
-      pass: careful >= 1.6 && careful <= 2.2,
-    });
-    checks.push({
-      code: "interior-average",
-      label: "Intérieurs : cadence moyenne d'un atelier moyen / pressé",
-      target: "environ 1,3 (1,15 à 1,45)",
-      value: average.toFixed(2),
-      pass: average >= 1.15 && average <= 1.45,
-    });
+    // (What tending pays is read against a run without the insides: src/interior-paired.ts. The
+    // pace's ratios mislead where the cities' demand bounds the trade: a quicker workshop fills
+    // its stores, then stops.)
     checks.push({
       code: "interior-hasty",
       label: "Intérieurs : un atelier pressé ne fait pas moins qu'avant (cadence ≥ 1)",

@@ -325,6 +325,11 @@ export const venice1450Interior: Interior = {
   // The knowledge of the craft opens the higher stations (decided 6 November 2026): level 4 with
   // the mestiere, level 5 with the bottega.
   unlocks: { baseLevel: 3, byKnowledge: { mestiere: 4, bottega: 5 } },
+  // What a well-tended inside pays where the cities' demand bounds the trade (lot A8, decision
+  // of the owner, 7 November 2026): fewer inputs — a quarter at most — and its better pieces in
+  // the orders, a fine piece a quarter dearer, an exquisite three fifths.
+  waste: { careSaveBps: 1_200, upkeepSaveBps: 800, skillSaveBps: 60, maxSaveBps: 2_500 },
+  orderQuality: { fineBps: 12_500, exquisiteBps: 16_000 },
   stations: STATIONS,
   buildings: BUILDINGS,
 };

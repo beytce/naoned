@@ -241,6 +241,14 @@ export function InteriorScene({
           >
             {t().gain(gain)}
           </span>
+          {inside.inputsSaveBps > 0 && Object.keys(r?.inputs ?? {}).length > 0 ? (
+            <span
+              className="rounded-full bg-[#EDE8E0] px-2.5 py-1 text-[0.6875rem] font-bold text-[#625D55]"
+              data-interior-saves
+            >
+              {t().saves(Math.round(inside.inputsSaveBps / 100))}
+            </span>
+          ) : null}
           {inside.legacyBps > 0 ? (
             <span
               className="rounded-full bg-[#EDE8E0] px-2.5 py-1 text-[0.6875rem] font-bold text-[#625D55]"

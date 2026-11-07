@@ -660,6 +660,7 @@ const frDict = {
       pick: "Touche une dalle : le débit qu'elle donnerait est dessus.",
       cancel: "Annuler",
       acquis: (pct: number) => `Acquis +${pct} %`,
+      saves: (pct: number) => `−${pct} % d'intrants`,
       enlarge: (n: number, d: string) => `Agrandir · niveau ${n} · ${d} d`,
       enlarging: (left: string) => `Agrandissement · fin dans ${left}`,
       locked: (n: number) => `Niveau ${n} : un savoir l'ouvre`,

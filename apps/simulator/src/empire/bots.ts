@@ -48,7 +48,14 @@ import {
   newIdentity,
   sellToCourt,
 } from "./identity.js";
-import { insidesOn, paceOf, settleInsides, tendInsides } from "./interior.js";
+import {
+  insideInputsBps,
+  insideQualityBps,
+  insidesOn,
+  paceOf,
+  settleInsides,
+  tendInsides,
+} from "./interior.js";
 import {
   type Activity,
   type Bent,
@@ -211,7 +218,10 @@ function collect(w: World, h: House) {
       // Rule 3: a workshop whose goods fill the stores stops, its inputs untouched (lot A8: the
       // model made planks of the wood the orders wanted, without end).
       if (storesFull(w, h, ws.good)) continue;
-      const saved = Math.min(9_000, identityEffect(w, h, "inputs", i));
+      const saved = Math.min(
+        9_000,
+        identityEffect(w, h, "inputs", i) + insideInputsBps(w, h, ws, i),
+      );
       let qty = Math.floor(rateOf(w, h, ws) * hours);
       const recipe = w.m.recipes[ws.good];
       if (recipe)
@@ -227,7 +237,7 @@ function collect(w: World, h: House) {
         for (const [g, per] of Object.entries(recipe))
           takeStock(h, g, Math.ceil((qty * per * (10_000 - saved)) / 10_000));
       takeRaw(h, raws, highRecipeRaw(ws.level, qty, w.s));
-      addStock(h, ws.good, qty - makeFine(w, h, ws.good, qty, i));
+      addStock(h, ws.good, qty - makeFine(w, h, ws.good, qty, i, insideQualityBps(w, h, ws, i)));
     }
   // The insides: wear and fatigue over the queue that ran, the pace of the next one.
   settleInsides(w, h);
@@ -402,14 +412,31 @@ function deliverOrders(w: World, h: House, _sinceHours: number) {
     for (const x of order) {
       if (places <= 0) break;
       if (!homesOf(h, x.good).has(c.region)) continue;
-      if ((h.stock.get(x.good) ?? 0) < x.qty) continue;
-      takeStock(h, x.good, x.qty);
+      // With the insides, its better pieces count, the best first, paid more (lot A8, « B »).
+      const q = w.s.interior?.orderQuality;
+      const better = q ? ["exquisite", "fine"] : [];
+      const held =
+        (h.stock.get(x.good) ?? 0) +
+        better.reduce((n, k) => n + (h.fine.get(`${x.good}:${k}`) ?? 0), 0);
+      if (held < x.qty) continue;
+      let left = x.qty;
+      let weight = 0;
+      for (const k of better) {
+        const n = Math.min(left, h.fine.get(`${x.good}:${k}`) ?? 0);
+        if (n <= 0) continue;
+        h.fine.set(`${x.good}:${k}`, (h.fine.get(`${x.good}:${k}`) ?? 0) - n);
+        weight += n * ((k === "exquisite" ? q?.exquisiteBps : q?.fineBps) ?? 10_000);
+        left -= n;
+      }
+      if (left > 0) takeStock(h, x.good, left);
+      weight += left * 10_000;
+      const pay = (x.pay * BigInt(weight)) / BigInt(x.qty * 10_000);
       places--;
       rec.list.splice(rec.list.indexOf(x), 1);
       // A place freed in a full city: its next order an interval later.
       const { every, cap } = sizeRule(w, c.size);
       if (rec.list.length === cap - 1 && rec.next <= w.now) rec.next = w.now + every;
-      const gross = applyBpsFloor(x.pay, 10_000 + convoy);
+      const gross = applyBpsFloor(pay, 10_000 + convoy);
       receive(w, h, gross, "orders", "orders");
       h.ordersValue += gross;
       h.favour += Number(gross / (100n * DENIERS_PER_DUCAT)) * w.m.favourPer100Ducats;

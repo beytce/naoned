@@ -123,8 +123,15 @@ export function masterWorked(w: World, h: House, workshop: number, hours: number
 }
 
 /** The fine goods made: kept for the court, the exquisite share apart. */
-export function makeFine(w: World, h: House, good: string, qty: number, workshop: number): number {
-  const q = Math.min(10_000, identityEffect(w, h, "quality", workshop));
+export function makeFine(
+  w: World,
+  h: House,
+  good: string,
+  qty: number,
+  workshop: number,
+  insideBps = 0,
+): number {
+  const q = Math.min(10_000, identityEffect(w, h, "quality", workshop) + insideBps);
   const better = Math.floor((qty * q) / 10_000);
   if (better <= 0) return 0;
   const exquisite = Math.floor((better * w.s.qualities.exquisiteShareBps) / 10_000);
