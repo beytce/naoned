@@ -237,7 +237,7 @@ function Board({
   const minI = useRef(0);
   const minJ = useRef(0);
 
-  // The camera: orthographic, three quarters, a little turn allowed; over the first fondaco.
+  // The camera: orthographic, three quarters, turning all the way round; over the first fondaco.
   useEffect(() => {
     const cam = camera as OrthographicCamera;
     const aspect = size.width / size.height;
@@ -259,8 +259,6 @@ function Board({
     c.maxZoom = CAMERA.maxZoom;
     c.minPolarAngle = CAMERA.minPolar;
     c.maxPolarAngle = CAMERA.maxPolar;
-    c.minAzimuthAngle = CAMERA.azimuth - CAMERA.turn;
-    c.maxAzimuthAngle = CAMERA.azimuth + CAMERA.turn;
     c.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE };
     c.touches = { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_ROTATE };
     return c;

@@ -273,8 +273,6 @@ export function TileBoard({
     c.maxZoom = CAMERA.maxZoom;
     c.minPolarAngle = CAMERA.minPolar;
     c.maxPolarAngle = CAMERA.maxPolar;
-    c.minAzimuthAngle = az - CAMERA.turn;
-    c.maxAzimuthAngle = az + CAMERA.turn;
     c.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE };
     c.touches = { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_ROTATE };
     return c;
@@ -314,15 +312,17 @@ export function TileBoard({
           : 1;
       // Above the dock: the point aimed at in the middle of the room left, not of the screen.
       const unitsPerPx = (cam.top - cam.bottom) / f.z1 / size.height;
+      // The turn the camera has now (it goes all the way round).
+      const az = controls.getAzimuthalAngle();
       if (sh.inset) {
         const d = ((sh.inset / 2) * unitsPerPx) / Math.sin(CAMERA.elevation);
-        f.to.x += Math.sin(CAMERA.azimuth) * d;
-        f.to.z += Math.cos(CAMERA.azimuth) * d;
+        f.to.x += Math.sin(az) * d;
+        f.to.z += Math.cos(az) * d;
       }
       if (sh.insetRight) {
         const d = (sh.insetRight / 2) * unitsPerPx;
-        f.to.x += Math.cos(CAMERA.azimuth) * d;
-        f.to.z -= Math.sin(CAMERA.azimuth) * d;
+        f.to.x += Math.cos(az) * d;
+        f.to.z -= Math.sin(az) * d;
       }
       f.t = live ? 0 : 1;
       if (!live) {
