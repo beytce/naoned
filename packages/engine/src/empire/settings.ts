@@ -135,6 +135,11 @@ export const empireSettingsSchema = z.object({
       madeWeight: positive.prefault(1),
       distanceBps: bps.prefault(0),
       distanceMaxBps: bps.prefault(0),
+      /**
+       * The house that learns (docs/plan-publication.md, lot 2): for its first `hours`, each town
+       * asks at least every `everyMinutes`, then at its own pace. None: its own pace from the start.
+       */
+      learning: z.object({ hours: positive, everyMinutes: positive }).optional(),
     })
     .nullable()
     .prefault(null),

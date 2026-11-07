@@ -4,6 +4,7 @@ import {
   type EmpireCityOrders,
   type EmpireHouse,
   type EmpireOrder,
+  HOUR_MS,
   MINUTE_MS,
   type PlayerId,
   type WorldContext,
@@ -161,13 +162,24 @@ export function cityOrdersAt(
     Number.POSITIVE_INFINITY,
     ...standingPosts(h, s).map((p) => Math.hypot(p.x - cx, p.y - cy)),
   );
+  // A house that learns is asked more often for its first hours (lot 2 of the publication plan).
+  const learning = s.orders.learning;
+  const learnsUntil = learning ? h.joinedAt + learning.hours * HOUR_MS : 0;
+  const everyAt = (at: number) =>
+    learning && at < learnsUntil ? Math.min(every, learning.everyMinutes * MINUTE_MS) : every;
   let next = kept?.next ?? now;
   let seq = kept?.seq ?? 0;
-  for (; next <= now && list.length < cap; next += every) {
+  while (next <= now && list.length < cap) {
     const o = drawOrder(ctx, s, playerId, code, c.region, seq, goods, distance);
-    if (!o) continue;
+    // Nothing the house could be asked for yet: the town keeps its turn for when there is
+    // (the players' audit of 7 November 2026, P0-05: the turn was burnt, two hours of nothing).
+    if (!o) {
+      next = now;
+      break;
+    }
     list.push(o);
     seq++;
+    next += everyAt(next);
   }
   // Full: the next comes an interval after a place is freed, none owed for the time passed.
   if (list.length >= cap && next <= now) next = now + every;

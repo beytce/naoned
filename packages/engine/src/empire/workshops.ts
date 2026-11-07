@@ -130,6 +130,8 @@ export function relaunchWorkshop(
   playerId: PlayerId,
   workshopId: string,
   recipe?: string,
+  /** At most so many lots more in its queue (a first share for each, before any fills up). */
+  maxLots = Number.POSITIVE_INFINITY,
 ): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
@@ -152,7 +154,7 @@ export function relaunchWorkshop(
   if (ws.job?.once) return;
   const batchMs = ws.job?.batchMs ?? (fresh as number);
   const queueEnd = ws.job ? ws.job.startedAt + ws.job.batches * batchMs : tx.now;
-  let add = Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs);
+  let add = Math.min(maxLots, Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs));
   // The furnace saves inputs: a share of a lot's, in whole units over the queue.
   // And a well-tended inside wastes less (docs/plan-ateliers.md lot A8).
   const saved = Math.min(
@@ -254,6 +256,9 @@ export function relaunchAll(tx: Tx, playerId: PlayerId): void {
     (a, b) =>
       Object.keys(recipeOf(tx, a).inputs).length - Object.keys(recipeOf(tx, b).inputs).length,
   );
+  // A first lot for each before any fills its queue (the players' audit of 7 November 2026, B4:
+  // the sawmill took all the wood, the brickworks starved), then the rest in the same order.
+  for (const ws of order) relaunchWorkshop(tx, playerId, ws.id, undefined, 1);
   for (const ws of order) relaunchWorkshop(tx, playerId, ws.id);
 }
 

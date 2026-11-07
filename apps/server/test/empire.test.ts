@@ -123,6 +123,9 @@ describe("the empire's world", () => {
     await act(cookie, { type: "empireRelaunchAll" });
     now += 60 * 60_000;
     await act(cookie, { type: "empireRelaunchAll" });
+    // Its first lot of bricks starts with the wood of the hour, and is done within the next.
+    now += 60 * 60_000;
+    await act(cookie, { type: "empireRelaunchAll" });
     const built = await act(cookie, { type: "empireBuildCasa" });
     expect(built.json().error).toBeUndefined();
     now += 60 * 60_000;

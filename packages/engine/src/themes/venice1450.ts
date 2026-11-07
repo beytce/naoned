@@ -77,7 +77,9 @@ export const venice1450: Theme = {
       code: "cut_wood",
       building: "lumber_camp",
       inputs: {},
-      outputs: { wood: 11 },
+      // A lot of wood is a sawmill's lot and a brickworks' (10 + 2), a lot of clay a brickworks'
+      // (the players' audit of 7 November 2026, P1-22: the chains did not fit).
+      outputs: { wood: 12 },
       durationMinutes: 30,
     },
     {
@@ -97,7 +99,7 @@ export const venice1450: Theme = {
     {
       code: "fire_bricks",
       building: "brickworks",
-      inputs: { clay: 10, wood: 2 },
+      inputs: { clay: 8, wood: 2 },
       outputs: { bricks: 6 },
       durationMinutes: 30,
     },

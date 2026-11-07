@@ -329,6 +329,9 @@ export const venice1450Empire: EmpireSettingsInput = {
     madeWeight: 3,
     distanceBps: 100,
     distanceMaxBps: 1_500,
+    // The house that learns (docs/plan-publication.md, lot 2): an order every twelve minutes a
+    // town for its first two hours, then each town's own pace.
+    learning: { hours: 2, everyMinutes: 12 },
   },
   // A hop: ten seconds to leave (left at once, or taken back), then eleven seconds a unit of the
   // chart (3 November, the long voyages): five minutes from the first fondaco to Venice, seven to
