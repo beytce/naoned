@@ -71,6 +71,21 @@ Aucune pièce nouvelle : la fiche, le dock, `ChoiceCard`, `CostChips`, la touche
 - **① L'intendance par la route** : le Campo devient un lieu qu'on livre en tournée, comme une ville. Ses besoins de la semaine (pain des troupes, planches et briques des bâtiments) s'affichent en caisses au quai ; les véhicules les portent du Fondaco sur les routes. La ration reste plafonnée et égale : livrer remplit jusqu'au plafond, jamais au-delà. Elle remplace le paiement d'entrée dans un menu (lot T5).
 - **⑤ Les villes tenues** : les villes du plateau sont celles de la carte du commerce ; qui en tient une à la clôture y plante sa bannière la semaine suivante sur la carte de tous, et reçoit une lettre de la Signoria pour la région de cette ville (une part de la Faveur d'une charte). Dans le plafond de 10 à 15 % de la progression de la semaine, mesuré au simulateur de 24 mois (lot T6).
 
+## 4 quater. L'intendance par la route : le détail technique (à valider, 7 novembre 2026)
+
+Ce que le moteur fait aujourd'hui dans l'empire : l'entrée (20 planches) se prend dans le stock de Venise au moment de s'inscrire ; le pain des troupes vient d'abord de la ration de la République (20 pains par jour, la même pour tous), puis du stock du marchand ; les matériaux des bâtiments se prennent dans le stock au moment de bâtir. Rien ne roule sur la carte.
+
+Ce qui est proposé :
+- **Le Campo reçoit des commandes d'intendance**, comme une ville : chaque jour, ce que la guerre mangera (le pain au-delà de la ration, les planches et les briques des bâtiments possibles), en caisses à son quai. On les livre avec les mêmes gestes que les villes (« Livrer », la tournée tracée au doigt) : le Campo devient un arrêt possible d'une tournée.
+- **Ce qui arrive va dans le magasin du Campo**, plafonné au besoin de la semaine (règle d'or 3 : une fois plein, plus de commande). La Terraferme prend son pain et ses matériaux dans ce magasin.
+- **La ration de la République reste** et passe en premier : l'intendance ne sert qu'au-delà, pour que l'égalité d'entrée tienne.
+- Mesure au simulateur de 24 mois : le temps de véhicule pris au commerce, le revenu, la part de joueurs qui tiennent leur intendance.
+
+Trois questions au porteur avant de coder :
+1. **Le magasin du Campo seul, ou d'abord lui puis Venise ?** Seul : le lien est fort (sans convoi, plus de pain au-delà de la ration). D'abord lui puis Venise : le joueur qui ne livre pas joue quand même, comme aujourd'hui.
+2. **L'entrée de la semaine** (20 planches) : livrée au Campo avant de s'inscrire, ou toujours prise à Venise d'un geste ?
+3. **Une récompense pour livrer ?** Aucune (c'est de la logistique), ou un peu de Faveur dans le plafond de la Terraferme ?
+
 ## 5. Les lots
 
 | Lot | Contenu | Vérification |
