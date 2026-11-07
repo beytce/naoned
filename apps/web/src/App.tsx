@@ -369,7 +369,7 @@ function PseudoForm({ onDone }: { onDone: (account: Account) => void }) {
     e.preventDefault();
     setError(null);
     // The server's rule, said precisely before asking it.
-    if (!/^[\p{L}\p{N}_-]{3,20}$/u.test(pseudo)) {
+    if (!/^(?=.{3,20}$)[\p{L}\p{N}_-]+(?: [\p{L}\p{N}_-]+)*$/u.test(pseudo)) {
       setError(fr.pseudoInvalid);
       return;
     }

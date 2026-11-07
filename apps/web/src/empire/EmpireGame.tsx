@@ -195,6 +195,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [domain, setDomain] = useState<string | null>(null);
   // The workshop one has stepped into (its inside over the map), if any.
   const [inside, setInside] = useState<string | null>(null);
+  // Échap (and the back of Android, through the same key) leaves the inside of a workshop (P1-05).
+  useEffect(() => {
+    if (!inside) return;
+    const away = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setInside(null);
+    };
+    window.addEventListener("keydown", away);
+    return () => window.removeEventListener("keydown", away);
+  }, [inside]);
   const domainNow = useRef(domain);
   domainNow.current = domain;
   const [busy, setBusy] = useState(false);
@@ -506,6 +515,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           ? "fondaco"
           : "map";
   const goPlace = (id: PlaceId) => {
+    // A tab leaves any full-screen scene, the inside of a workshop first (P1-05).
+    setInside(null);
     setTarget(null);
     setVehicle(null);
     setAiming(false);
@@ -1309,6 +1320,24 @@ function CasaSheet({
               <FondacoGains p={p} />
             </p>
           </div>
+          {!canCasa && !view.house.builds.some((b) => b.kind === "casa") && (
+            // Why the button is grey, in words (the players' audit, P1-12).
+            <p className="text-sm font-semibold text-vermilion" data-casa-missing>
+              {t.casa.missing(
+                [
+                  BigInt(p.cash) < BigInt(next.cost)
+                    ? d(String(BigInt(next.cost) - BigInt(p.cash)))
+                    : null,
+                  ...Object.entries(next.materials)
+                    .filter(([g, n]) => (p.stock[g] ?? 0) < n)
+                    .map(([g, n]) => `${n - (p.stock[g] ?? 0)} ${goodName(p, g).toLowerCase()}`),
+                  next.requirementMet ? null : t.casa.requiresMissing,
+                ]
+                  .filter(Boolean)
+                  .join(", "),
+              )}
+            </p>
+          )}
           {view.house.builds.some((b) => b.kind === "casa") ? (
             <p className="text-sm text-cream-dim">{t.casa.busy}</p>
           ) : (

@@ -87,6 +87,8 @@ export interface EmpireView {
     next: { level: number; vehicles: number; casa: number; cost: string; minutes: number } | null;
   } | null;
   incomePerDay: string;
+  /** The share of each receipt the hands take as wages, in bps. */
+  wagesBps?: number;
   asleep: boolean;
   nextCasa:
     | (EmpireSite & {

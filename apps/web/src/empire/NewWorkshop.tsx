@@ -96,65 +96,64 @@ export function NewWorkshopList({
     <>
       {
         <ul className="space-y-1">
-          {[...p.catalog]
-            // The workshop the next step points at comes first, its button in gold.
-            .sort(
-              (a, b) =>
-                Number(b.recipes.some((r) => r.code === highlight)) -
-                Number(a.recipes.some((r) => r.code === highlight)),
-            )
-            .flatMap((b) =>
-              b.recipes
-                .filter((x) => allowed(x.outputs, x.inputs))
-                .map((r) => (
-                  <li
-                    key={r.code}
-                    className={`flex items-center gap-3 rounded-[1.4rem] p-2 ${r.code === highlight ? "bg-face/10" : ""}`}
-                  >
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-night-4">
-                      <GoodsMark code={Object.keys(r.outputs)[0] ?? ""} size={28} />
-                    </span>
-                    <span className="flex-1 text-sm text-cream">
-                      <span className="font-display text-base font-extrabold">{b.name}</span>
-                      <span className="block text-xs text-cream-dim">
-                        {Object.entries(r.outputs)
+          {/* A stable order (P1-07): the workshop the next step points at is lit in place. */}
+          {[...p.catalog].flatMap((b) =>
+            b.recipes
+              .filter((x) => allowed(x.outputs, x.inputs))
+              .map((r) => (
+                <li
+                  key={r.code}
+                  ref={
+                    r.code === highlight
+                      ? (el) => el?.scrollIntoView({ block: "nearest" })
+                      : undefined
+                  }
+                  className={`flex items-center gap-3 rounded-[1.4rem] p-2 ${r.code === highlight ? "bg-face/10" : ""}`}
+                >
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-night-4">
+                    <GoodsMark code={Object.keys(r.outputs)[0] ?? ""} size={28} />
+                  </span>
+                  <span className="flex-1 text-sm text-cream">
+                    <span className="font-display text-base font-extrabold">{b.name}</span>
+                    <span className="block text-xs text-cream-dim">
+                      {Object.entries(r.outputs)
+                        .map(([g, n]) => `${n} ${goodName(p, g)}`)
+                        .join(", ")}
+                      {Object.keys(r.inputs).length > 0 &&
+                        ` · ${t.workshop.from} ${Object.entries(r.inputs)
                           .map(([g, n]) => `${n} ${goodName(p, g)}`)
-                          .join(", ")}
-                        {Object.keys(r.inputs).length > 0 &&
-                          ` · ${t.workshop.from} ${Object.entries(r.inputs)
-                            .map(([g, n]) => `${n} ${goodName(p, g)}`)
-                            .join(", ")}`}
-                      </span>
+                          .join(", ")}`}
                     </span>
-                    {!site ? (
-                      <LockChip text={t.workshop.fullPlaces} />
-                    ) : (
-                      <Slab
-                        size="sm"
-                        label={t.workshop.newAction(d(site.cost))}
-                        tone={r.code === highlight ? "gold" : "ghost"}
-                        busy={busy}
-                        disabled={!affordable(p.cash, site.cost)}
-                        onClick={() => {
-                          void act({
-                            type: "empireBuildWorkshop",
-                            workshopType: b.type,
-                            recipe: r.code,
-                            ...(region !== "veneto" ? { region } : {}),
-                            ...(at ? { tile: at } : {}),
-                          }).then(onDone);
-                        }}
-                      >
-                        {t.workshop.newVerb}
-                        <span className="inline-flex items-center gap-1">
-                          <DucatCoin size={20} />
-                          {amount(site.cost)}
-                        </span>
-                      </Slab>
-                    )}
-                  </li>
-                )),
-            )}
+                  </span>
+                  {!site ? (
+                    <LockChip text={t.workshop.fullPlaces} />
+                  ) : (
+                    <Slab
+                      size="sm"
+                      label={t.workshop.newAction(d(site.cost))}
+                      tone={r.code === highlight ? "gold" : "ghost"}
+                      busy={busy}
+                      disabled={!affordable(p.cash, site.cost)}
+                      onClick={() => {
+                        void act({
+                          type: "empireBuildWorkshop",
+                          workshopType: b.type,
+                          recipe: r.code,
+                          ...(region !== "veneto" ? { region } : {}),
+                          ...(at ? { tile: at } : {}),
+                        }).then(onDone);
+                      }}
+                    >
+                      {t.workshop.newVerb}
+                      <span className="inline-flex items-center gap-1">
+                        <DucatCoin size={20} />
+                        {amount(site.cost)}
+                      </span>
+                    </Slab>
+                  )}
+                </li>
+              )),
+          )}
         </ul>
       }
     </>

@@ -579,6 +579,8 @@ export const en: Dictionary = {
       lacking: (n: number) => `${n} short`,
       inStock: (have: number) => `${have} in stock`,
       pick: "Touch an order to take it out or put it back.",
+      wages: (gross: string, wages: string, net: string) =>
+        `${gross} − ${wages} in wages: you receive ${net}`,
       blockStock: "Nothing in stock for these orders: make them first.",
       blockShort: (missing: number, good: string, have: number, qty: number) =>
         `${missing} ${good.toLowerCase()} missing: ${have} in stock of ${qty}.`,
@@ -908,6 +910,7 @@ export const en: Dictionary = {
       knowledge: (pct: number) => `Knowledge goes round: −${pct}%`,
       action: (n: number) => `Raise the Fondaco to level ${n}`,
       busy: "A Fondaco site is already under way",
+      missing: (what: string) => `Still missing: ${what}.`,
       opensNames: {
         ambassadors: "Ambassadors",
         arms: "The Porta's arms",

@@ -19,7 +19,10 @@ export const emailSchema = z.string().trim().toLowerCase().email().max(254);
 export const pseudoSchema = z
   .string()
   .trim()
-  .regex(/^[\p{L}\p{N}_-]{3,20}$/u, "3 à 20 lettres, chiffres, _ ou -");
+  .regex(
+    /^(?=.{3,20}$)[\p{L}\p{N}_-]+(?: [\p{L}\p{N}_-]+)*$/u,
+    "3 à 20 lettres, chiffres, espaces simples, _ ou -",
+  );
 
 export interface Crest {
   shape: string;

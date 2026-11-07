@@ -69,6 +69,7 @@ import { type CityOrders, ordersOf } from "./orders.js";
 import { type PortaView, portaViewOf } from "./porta/view.js";
 import { bandOf } from "./power.js";
 import { regionOf } from "./prices.js";
+import { salaryBps } from "./salaries.js";
 import type { EmpireSettings } from "./settings.js";
 import { roadBetween } from "./slots.js";
 import { staffHireCost, staffSlots } from "./staff.js";
@@ -102,6 +103,8 @@ export interface EmpireView {
   } | null;
   power: number;
   band: number;
+  /** The share of each receipt the hands take as wages, in bps (said on the screen, P1-15). */
+  wagesBps: number;
   /** Receipts a day (the last full days), in deniers. */
   incomePerDay: Deniers;
   asleep: boolean;
@@ -485,6 +488,7 @@ export function empireView(
     ...(house.welcome && s.welcome ? { welcome: { workshop: s.welcome.workshop } } : {}),
     power,
     band: bandOf(power, s),
+    wagesBps: salaryBps(power, s),
     incomePerDay: incomePerDay(house, now),
     asleep: isAsleep(house, now, s),
     nextCasa: nextLine

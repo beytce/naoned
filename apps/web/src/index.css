@@ -166,12 +166,12 @@
     --face-deep: 160 44 34;
     --face-ink: 255 255 255;
     --lagoon: 22 112 98;
-    --rumour: 36 33 30;
+    --rumour: 30 60 140;
     --lagoon-deep: 16 84 74;
     --lagoon-soft: 150 206 196;
     --vermilion: 172 54 36;
     --vermilion-deep: 128 38 24;
-    --info: 36 33 30;
+    --info: 30 60 140;
     --info-deep: 128 34 26;
     --glow-a: 255 255 255;
     --glow-b: 236 231 223;
@@ -183,8 +183,9 @@
     /* The playful surfaces (D4 bis): a solid foot under what is touched, a soft shadow round it. */
     --foot: 0 4px 0 rgb(23 21 15 / 0.07);
     --lift: 0 14px 40px rgb(23 21 15 / 0.1);
-    /* One accent, the red of Venice (docs/plan-publication.md D9): the gold and the selection's
-       violet of the earlier directions read in red and in ink. */
+    /* One accent, the red of Venice (docs/plan-publication.md D9): the gold of the earlier
+       directions reads in red, the selection's violet in the blue ink of the ledgers (the
+       colour-blind test keeps it apart from the red and the green). */
   }
   [data-palette="jour"] {
     color-scheme: light;

@@ -92,12 +92,13 @@ const frDict = {
   invalidLink: "Ce lien est invalide ou a expiré.",
   askNewLink: "Demander un nouveau lien",
   choosePseudo: "Ton nom de marchand",
-  pseudoHelp: "3 à 20 caractères : lettres, chiffres, _ ou -. Il sera visible des autres joueurs.",
+  pseudoHelp:
+    "3 à 20 caractères : lettres, chiffres, espaces, _ ou -. Il sera visible des autres joueurs.",
   pseudoLabel: "Nom de marchand",
   pseudoProposed:
     "Un nom proposé pour commencer tout de suite : tu pourras le changer une fois, gratuitement, dans le Profil.",
   pseudoInvalid:
-    "De 3 à 20 caractères, avec seulement des lettres, des chiffres, _ ou - (pas d'espace ni de ponctuation).",
+    "De 3 à 20 caractères : des lettres, des chiffres, des espaces simples, _ ou - (pas de ponctuation).",
   confirm: "Valider",
   logout: "Se déconnecter",
 
@@ -502,6 +503,9 @@ const frDict = {
       lacking: (n: number) => `Il en manque ${n}`,
       inStock: (have: number) => `${have} en stock`,
       pick: "Toucher une commande pour la retirer ou l'ajouter.",
+      /** The wages taken from a delivery's pay, said under its button (P1-15). */
+      wages: (gross: string, wages: string, net: string) =>
+        `${gross} − ${wages} de salaires : tu reçois ${net}`,
       blockStock: "Rien à l'Entrepôt pour ces commandes : produis-les d'abord.",
       blockShort: (missing: number, good: string, have: number, qty: number) =>
         `Il manque ${missing} ${good.toLowerCase()} : ${have} en stock sur ${qty}.`,
@@ -832,6 +836,8 @@ const frDict = {
       knowledge: (pct: number) => `Le savoir circule : −${pct} %`,
       action: (n: number) => `Monter le Fondaco au niveau ${n}`,
       busy: "Un chantier du Fondaco est déjà en cours",
+      /** What stands between the house and its next level, said before the grey button (P1-12). */
+      missing: (what: string) => `Il manque : ${what}.`,
       opensNames: {
         ambassadors: "Les ambassadeurs",
         arms: "Les armes de la Porta",

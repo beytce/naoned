@@ -245,7 +245,11 @@ describe("pseudo", () => {
     const bob = await login("bob@example.org");
     expect((await setPseudo(bob, "doge_ada")).statusCode).toBe(409);
     expect((await setPseudo(bob, "x")).statusCode).toBe(400);
-    expect((await setPseudo(bob, "Marchand de Venise")).statusCode).toBe(400);
+    // Single spaces between words are a name (the players' audit, P1-11); a double one or a
+    // sign of punctuation is not.
+    expect((await setPseudo(bob, "Marchand  Venise")).statusCode).toBe(400);
+    expect((await setPseudo(bob, "Marchand, Venise")).statusCode).toBe(400);
+    expect((await setPseudo(bob, " Marchand")).statusCode).toBe(200);
     expect((await setPseudo(bob, "Bérénice")).statusCode).toBe(200);
   });
 });
