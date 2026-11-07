@@ -38,6 +38,16 @@ const CASA: [number, Record<string, number>, number, string[]][] = [
 
 const slots = (level: number, at: number[]) => at.filter((l) => level >= l).length;
 
+/**
+ * What a fondaco holds of each good at the Casa 1 to 20 (the first steps, lot 3; golden rule 3):
+ * above half a day of what the house makes at each level, so that an absence loses nothing, far
+ * below the piles the simulator saw from the Casa 8 (hundreds of thousands, then millions).
+ */
+const STORE_CAPS = [
+  300, 500, 800, 1_200, 2_000, 3_000, 5_000, 8_000, 12_000, 20_000, 30_000, 45_000, 65_000, 90_000,
+  130_000, 180_000, 250_000, 350_000, 500_000, 700_000,
+];
+
 /** The ten regions, by their order of opening (CADRAGE-v3 § 3.4). */
 const REGIONS: EmpireSettingsInput["regions"] = [
   {
@@ -179,6 +189,7 @@ export const venice1450Empire: EmpireSettingsInput = {
       buildSlots: 1 + slots(level, [5, 15, 19]),
       researchSlots: slots(level, [4, 12, 18]),
       opens,
+      storeCap: STORE_CAPS[i],
       // From the Casa 9: so many workshops at the level just below (the empire follows).
       requires:
         level >= 9
@@ -217,7 +228,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     version: 5,
     hexSize: 24,
     unlock: { costDucats: 300, stepBps: 2_000, seaHops: 3 },
-    reach: { base: 36, perLevel: 8 },
+    // The first fondaco's zone follows the Casa (the first steps, lot 3), up to the counters' top.
+    reach: { base: 36, perLevel: 8, byCasa: true },
     postSpacing: 8,
     // The first fondaco is no town (1 November 2026): put down by the player in Venice's sector,
     // at this point until then: the small tile kept free there, two tiles from Venice and from
@@ -252,16 +264,26 @@ export const venice1450Empire: EmpireSettingsInput = {
       { vehicles: 16, casa: 19, costDucats: 36_000, minutes: 10_080 },
     ],
   },
-  // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the
-  // fourth place, a brickworks, the first choice (a farm instead would leave the Casa waiting).
+  // The first steps (decision of the owner, 6 November 2026, docs/plan-premiers-pas.md): no
+  // workshop at the start, the player builds them, the guide's first a lumber camp. The three
+  // workshops given before are paid from the capital, on three free tiles round the fondaco, so
+  // that the economy stays the same: a first level is 120 ducats, 48 once most houses have it
+  // (« le savoir circule », 60 % off), so 500 + 3 × 48, rounded.
   start: {
-    capitalDucats: 500,
-    workshops: [
-      { type: "clay_pit", recipe: "dig_clay" },
-      { type: "lumber_camp", recipe: "cut_wood" },
-      { type: "sawmill", recipe: "saw_planks" },
-    ],
+    capitalDucats: 650,
+    workshops: [],
+    freeTiles: 3,
     vehicles: ["mule", "mule"],
+  },
+  // The welcome (the first steps, lot 2, the owner's choice of 6 November 2026): the lumber camp
+  // first (wood, raw, no input, asked by Venetia's towns), raised at once; its first lot in thirty
+  // seconds, an order of welcome for it in the nearest town, brought in forty-five, paid a hundred
+  // ducats (a lot of wood is worth some thirty: the first delivery is felt). Once a house.
+  welcome: {
+    workshop: { type: "lumber_camp", recipe: "cut_wood" },
+    batchSeconds: 30,
+    tripSeconds: 45,
+    payDucats: 100,
   },
   // The vehicles of step 4 (CADRAGE-v3 § 3.3), as the 24-month simulator has them; the ships come
   // with the sea.
@@ -485,17 +507,20 @@ export const venice1450Empire: EmpireSettingsInput = {
   },
   // The Porta's arms (docs/plan-porta.md §§ 4–5), to calibrate at the 24-month simulator (lot 6).
   porta: {
-    // The Porta (plan-porta.md § 3), from the Casa 10.
+    // The Porta (plan-porta.md § 3), from the Casa 4 (the first steps, lot 6, the owner's choice of
+    // 6 November 2026: discovered early), at the Campo's price; its levels as before, so that only
+    // its first tier opens early.
     building: {
-      casa: 10,
-      costDucats: 4_000,
+      casa: 4,
+      costDucats: 600,
       minutes: 360,
       levelCostDucats: 4_000,
       levelMinutes: 120,
       travelMinutesPerCell: 10,
     },
     models: {
-      cavaliere: { casa: 9, costDucats: 1_500, hp: 1_200, speedCenti: 600, places: ["weapon"] },
+      // The first combat model and its first arms, at the Porta's Casa and at its measure.
+      cavaliere: { casa: 4, costDucats: 400, hp: 1_200, speedCenti: 600, places: ["weapon"] },
       carro: {
         casa: 11,
         costDucats: 4_000,
@@ -518,8 +543,8 @@ export const venice1450Empire: EmpireSettingsInput = {
       lances: {
         kind: "weapon",
         effect: "lances",
-        casa: 9,
-        costDucats: 800,
+        casa: 4,
+        costDucats: 250,
         power: 40,
         perLevelBps: 2_000,
         rangeCenti: 150,
@@ -530,8 +555,8 @@ export const venice1450Empire: EmpireSettingsInput = {
       crossbows: {
         kind: "weapon",
         effect: "crossbows",
-        casa: 9,
-        costDucats: 1_000,
+        casa: 4,
+        costDucats: 300,
         power: 18,
         perLevelBps: 2_000,
         rangeCenti: 200,
@@ -549,8 +574,8 @@ export const venice1450Empire: EmpireSettingsInput = {
       pavise: {
         kind: "defense",
         effect: "pavise",
-        casa: 9,
-        costDucats: 900,
+        casa: 4,
+        costDucats: 300,
         power: 500,
         perLevelBps: 2_500,
         durationS: 10,
@@ -559,8 +584,8 @@ export const venice1450Empire: EmpireSettingsInput = {
       cuirass: {
         kind: "defense",
         effect: "cuirass",
-        casa: 9,
-        costDucats: 700,
+        casa: 4,
+        costDucats: 200,
         power: 1_500,
         perLevelBps: 3_334,
       },

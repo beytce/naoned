@@ -62,6 +62,37 @@ function wordsOf(p: EmpirePayload, s: NextStep): { what: string; why: string; bu
       return { what: t.claim, why: t.claimWhy, button: t.claimAction };
     case "wait":
       return { what: s.at ? t.wait(hourOf(s.at)) : t.waitNone, why: t.waitWhy };
+    case "welcome":
+      return welcomeWords(p, s);
+  }
+}
+
+/** The welcome's words (the first steps, lot 2): one gesture at a time, and why. */
+function welcomeWords(
+  p: EmpirePayload,
+  s: Extract<NextStep, { kind: "welcome" }>,
+): { what: string; why: string; button?: string } {
+  const w = t.welcome;
+  const name = buildingName(p, s.type);
+  const good = goodName(p, s.good);
+  const city = s.city ? (fr.empire.cityNames[s.city] ?? s.city) : w.town;
+  switch (s.phase) {
+    case "build":
+      return { what: w.build(name), why: w.buildWhy(good), button: w.buildAction(name) };
+    case "launch":
+      return { what: w.launch(name), why: w.launchWhy, button: w.launchAction };
+    case "making":
+      return { what: w.making(good), why: s.city ? w.makingWhy(city) : w.makingWhyNone };
+    case "collect":
+      return { what: w.collect(good), why: w.collectWhy(city), button: w.collectAction };
+    case "deliver":
+      return {
+        what: w.deliver(city, s.qty ?? 0, good),
+        why: w.deliverWhy(d(s.pay ?? 0n)),
+        button: w.deliverAction,
+      };
+    case "onWay":
+      return { what: w.onWay(city), why: w.onWayWhy };
   }
 }
 
@@ -99,10 +130,14 @@ export function NextStepCard({
     }
     was.current = step.kind;
   }, [step.kind]);
-  const button = known.has(step.kind) ? undefined : w.button;
+  // The welcome's button stays: it is the guide of the first order (the first steps, lot 2).
+  const button = step.kind === "welcome" || !known.has(step.kind) ? w.button : undefined;
   const go = () => {
     if (step.kind === "build") onBuild(step.recipe);
-    else if (step.kind !== "wait") void act(step.action);
+    else if (step.kind === "welcome") {
+      if (step.phase === "build") onBuild(step.recipe);
+      else if (step.action) void act(step.action);
+    } else if (step.kind !== "wait") void act(step.action);
   };
   if (compact)
     return (
@@ -121,6 +156,7 @@ export function NextStepCard({
                 {w.what}
               </p>
               {step.kind === "wait" && <WaitArc p={p} now={now} />}
+              {step.kind === "welcome" && <WelcomeArc step={step} now={now} />}
             </div>
             {button && (
               <Slab tone="gold" size="sm" busy={busy} shine onClick={go}>
@@ -149,6 +185,7 @@ export function NextStepCard({
           <p className="font-display font-bold text-cream">{w.what}</p>
           <p className="mt-0.5 text-sm text-cream-dim">{w.why}</p>
           {step.kind === "wait" && <WaitArc p={p} now={now} />}
+          {step.kind === "welcome" && <WelcomeArc step={step} now={now} />}
         </LorenzoCard>
       </div>
     </GoldLayer>
@@ -163,6 +200,19 @@ function WaitArc({ p, now }: { p: EmpirePayload; now: number }) {
     .sort((a, b) => (a.state === "running" && b.state === "running" ? a.left - b.left : 0))[0];
   if (!soonest || soonest.state !== "running") return null;
   return <Ribbon value={soonest.progress} label={clock(soonest.left)} />;
+}
+
+/** The welcome's lot under way, or its vehicle on the road: the time left, in an arc. */
+function WelcomeArc({
+  step,
+  now,
+}: {
+  step: Extract<NextStep, { kind: "welcome" }>;
+  now: number;
+}) {
+  if (step.from === undefined || step.at === undefined || step.at <= now) return null;
+  const span = Math.max(1, step.at - step.from);
+  return <Ribbon value={Math.min(1, (now - step.from) / span)} label={clock(step.at - now)} />;
 }
 
 const INTRO_KEY = "empireIntroSeen";

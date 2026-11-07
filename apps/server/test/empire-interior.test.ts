@@ -7,6 +7,7 @@ import { accounts, influenceEntries, ledgerEntries, players, worlds } from "../s
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
+import { joinAtWork } from "./empire-start.js";
 
 let database: Database;
 let dbUrl: string;
@@ -88,7 +89,9 @@ async function sawmill(cookie: string) {
 describe("the workshops' insides", () => {
   it("shows each workshop's inside, its default plan never slower than before", async () => {
     const cookie = await login("ada@example.org");
-    await post(cookie, "/api/empire/join");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
     const { inside, body } = await sawmill(cookie);
     // Never less than before the insides; new machines and rested hands, more.
     expect(inside.paceBps).toBeGreaterThanOrEqual(10_000);
@@ -104,7 +107,9 @@ describe("the workshops' insides", () => {
 
   it("places, moves and mends a station, its price in the ledger", async () => {
     const cookie = await login("ada@example.org");
-    await post(cookie, "/api/empire/join");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
     const { id } = await sawmill(cookie);
     const before = (await get(cookie)).json().cash;
     const placed = await act(cookie, {
@@ -141,7 +146,9 @@ describe("the workshops' insides", () => {
 
   it("hires at the door and places the hand on a shift", async () => {
     const cookie = await login("ada@example.org");
-    await post(cookie, "/api/empire/join");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
     const { id } = await sawmill(cookie);
     const hired = await act(cookie, {
       type: "empireInteriorHire",
@@ -164,7 +171,9 @@ describe("the workshops' insides", () => {
 
   it("refuses what the schema does not know, and what the engine refuses", async () => {
     const cookie = await login("ada@example.org");
-    await post(cookie, "/api/empire/join");
+    await joinAtWork(post, cookie, (ms) => {
+      now += ms;
+    });
     const { id } = await sawmill(cookie);
     const bad = await act(cookie, {
       type: "empireInteriorCare",
@@ -192,7 +201,9 @@ describe("the workshops' insides", () => {
     await start();
     try {
       const cookie = await login("ada@example.org");
-      await post(cookie, "/api/empire/join");
+      await joinAtWork(post, cookie, (ms) => {
+        now += ms;
+      });
       const body = (await get(cookie)).json();
       expect(body.view.interiors).toEqual({});
       const ws = body.view.house.workshops[0];

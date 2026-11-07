@@ -469,7 +469,7 @@ function Ring({
   );
 }
 
-/** The panel on the left (a computer): Lorenzo, what waits, the workshops. */
+/** The panel on the left (a computer): Lorenzo and the workshops. */
 export function SidePanel({
   p,
   now,
@@ -496,8 +496,6 @@ export function SidePanel({
 }) {
   const view = p.view;
   if (!view) return null;
-  const towns = view.orders.filter((o) => o.orders.length > 0).slice(0, 3);
-  const open = (view.map.buyable ?? []).find((b) => b.casa <= view.house.casa);
   const workshops = [...view.house.workshops].sort((a, b) => {
     const ra = workshopStatus(p, a, now).state === "ready" ? 0 : 1;
     const rb = workshopStatus(p, b, now).state === "ready" ? 0 : 1;
@@ -509,46 +507,8 @@ export function SidePanel({
       data-side-panel
     >
       {guide}
-      <section>
-        <h2 className="mb-2.5 font-display text-[0.9375rem] font-black">{t.waits}</h2>
-        <div className="flex flex-wrap gap-2">
-          {towns.map((o) => (
-            <button
-              key={o.city}
-              type="button"
-              onClick={() => onTarget({ kind: "city", code: o.city })}
-              className="flex h-10 items-center gap-2 rounded-full border-2 border-cream bg-night-3 pl-1 pr-3.5 text-[0.8125rem] font-bold transition active:translate-y-0.5"
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cream font-display text-xs font-black text-night-3">
-                {o.orders.length}
-              </span>
-              {t.orders(cityName(o.city))}
-            </button>
-          ))}
-          {open && (
-            <button
-              type="button"
-              onClick={() => onTarget({ kind: "sector", cell: open.cell })}
-              className="flex h-10 items-center gap-1.5 rounded-full border-2 border-line bg-night-3 pl-1 pr-3.5 text-[0.8125rem] font-semibold transition active:translate-y-0.5"
-            >
-              <DucatCoin size={28} />
-              {t.plot} {amount(view.map.sectorCost)}
-            </button>
-          )}
-          {view.porta && (
-            <button
-              type="button"
-              onClick={() => onPlace("porta")}
-              className="flex h-10 items-center gap-2 rounded-full border-2 border-line bg-night-3 pl-1 pr-3.5 text-[0.8125rem] font-semibold transition active:translate-y-0.5"
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night-4 [&_svg]:h-4 [&_svg]:w-4">
-                {portaCasa !== null ? Icon.lock() : Icon.gate()}
-              </span>
-              {portaCasa !== null ? t.portaAt(portaCasa) : t.porta}
-            </button>
-          )}
-        </div>
-      </section>
+      {/* « Ça t'attend » is gone (the first steps, lot 4): the towns' orders, the plots and the
+          Porta read on the map, by their pins. */}
       <section className="min-h-0">
         <div className="mb-2 flex items-baseline justify-between">
           <h2 className="font-display text-[0.9375rem] font-black">{t.workshops}</h2>

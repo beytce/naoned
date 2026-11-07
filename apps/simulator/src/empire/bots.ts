@@ -156,6 +156,11 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
   joinCompany(w, h);
   w.houses.push(h);
   create(w, h, d(w.m.startCapitalDucats), "start");
+  // The first workshops, built by the player at the guide's hand in the first minutes: paid,
+  // their first level cut as the world has it (« le savoir circule »).
+  const cut = catchupCut(w.workshopShare[0] ?? 0, w.s);
+  for (const _ of h.workshops)
+    destroy(w, h, applyBpsFloor(levelCost(1, w.s), 10_000 - cut.costCutBps), "workshops");
   h.bookLeft.set("veneto", bookOf(w, h, "veneto", 1));
   return h;
 }
@@ -232,6 +237,15 @@ function collect(w: World, h: House) {
       const have = stockOf(h, raws);
       while (qty > 0 && highRecipeRaw(ws.level, qty, w.s) > have)
         qty = Math.floor((qty * have) / highRecipeRaw(ws.level, qty, w.s));
+      // The Fondaco's cap (the first steps, lot 3): once full, the workshop stops, nothing lost.
+      const cap = casaLevelOf(h.casa, w.s).storeCap;
+      if (cap !== undefined) {
+        const held =
+          (h.stock.get(ws.good) ?? 0) +
+          (h.fine.get(`${ws.good}:fine`) ?? 0) +
+          (h.fine.get(`${ws.good}:exquisite`) ?? 0);
+        qty = Math.min(qty, Math.max(0, cap - held));
+      }
       if (qty <= 0) continue;
       if (recipe)
         for (const [g, per] of Object.entries(recipe))
@@ -667,6 +681,10 @@ function storesFull(w: World, h: House, good: string): boolean {
 }
 
 function pilesUp(w: World, h: House, good: string): boolean {
+  // Near the Fondaco's cap, it piles up: the house raises no workshop of it (the first steps,
+  // lot 3), as a player would not.
+  const cap = casaLevelOf(h.casa, w.s).storeCap;
+  if (cap !== undefined && (h.stock.get(good) ?? 0) >= Math.floor((cap * 8) / 10)) return true;
   const day = h.workshops
     .filter((x) => x.good === good)
     .reduce((n, x) => n + rateOf(w, h, x) * DAY, 0);
@@ -933,7 +951,7 @@ function startTiles(w: World): string[] {
   return regionCells(w.s, "veneto")
     .filter((c) => c !== from && !towns.has(c))
     .sort((a, b) => cellDistance(from, a, w.s) - cellDistance(from, b, w.s) || a.localeCompare(b))
-    .slice(0, w.m.startWorkshops.length)
+    .slice(0, Math.max(w.s.start.freeTiles, w.m.startWorkshops.length))
     .concat(home ? [from] : []);
 }
 
@@ -997,6 +1015,9 @@ function tryCounter(w: World, h: House): boolean {
   // Else a counter grows (its private book with it), up to level 10.
   for (const [code, level] of h.counters) {
     if (level >= w.s.counters.maxLevel) continue;
+    // Venetia's own fondaco grows with the Casa (the first steps, lot 3): not raised apart, as in
+    // the game.
+    if (code === "veneto" && w.s.map.reach?.byCasa) continue;
     const up = levelCost(level + 1, w.s) * BigInt(w.s.counters.costTimes);
     const quick = counterPaysBack(w, h, code, up);
     if ((quick ? h.cash : spendable(w, h)) < up) continue;

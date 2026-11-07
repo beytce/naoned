@@ -8,7 +8,15 @@
  */
 import "../porcellana.css";
 import { Canvas, type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   CanvasTexture,
   Group,
@@ -25,10 +33,12 @@ import {
   Vector3,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GoodsMark } from "../../art/goods.js";
 import type { Placing, Target } from "../../empire/map/logic.js";
 import { vehiclePose } from "../../empire/map/logic.js";
 import { Guard3D } from "../../empire/map3d/Guard.js";
 import { MAP_3D } from "../../empire/map3d/flag.js";
+import { welcomeStep } from "../../empire/next.js";
 import type { EmpirePayload } from "../../empire/types.js";
 import { fr } from "../../i18n.js";
 import { PlaceCard, type PlaceCardHandle } from "../PlaceCard.js";
@@ -44,7 +54,13 @@ import { Blush } from "../selection.js";
 import { BOARD, CAMERA, RIBBON, SELECT } from "../tokens.js";
 import { FlatBoard } from "./FlatBoard.js";
 import { PARK, modelOf, vehicleModel } from "./models.js";
-import { type BoardPlace, type BoardScene, type BoardTile, boardOf } from "./scene.js";
+import {
+  type BoardPlace,
+  type BoardScene,
+  type BoardTile,
+  type PinBadge,
+  boardOf,
+} from "./scene.js";
 
 const S = BOARD.tile + BOARD.gap;
 const PHONE = () => window.innerWidth < 640;
@@ -76,6 +92,11 @@ interface Shared {
   p: EmpirePayload;
   now: number;
   nowAt: number;
+  /**
+   * A place the camera goes to by itself, its card closed: the welcome's town while its order is
+   * delivered (the first steps, lot 4), so that the mule is seen arriving.
+   */
+  focus: string | null;
   /** Keys asked of the map: a step to pan (in screens), a factor to zoom. */
   pan: [number, number];
   zoom: number;
@@ -265,6 +286,7 @@ function Board({
     minI.current = Math.min(...sh.scene.tiles.map((t) => t.i));
     minJ.current = Math.min(...sh.scene.tiles.map((t) => t.j));
     sync(sh.scene);
+    syncZone(sh.scene);
     look(homeAt());
   }, []);
 
@@ -277,6 +299,51 @@ function Board({
     last: "",
     home: 0,
   });
+  // The Fondaco's zone (the first steps, lot 3): a pale ring of accent round it, and the next
+  // level's, fainter, while the Fondaco is chosen.
+  const zone = useRef<{ sig: string; now: Mesh | null; next: Mesh | null }>({
+    sig: "",
+    now: null,
+    next: null,
+  });
+  const zoneRing = (radius: number, opacity: number) => {
+    const m = new Mesh(
+      new RingGeometry(Math.max(0.1, radius - 0.18), radius, 128),
+      new MeshBasicMaterial({
+        color: P.accentColour,
+        transparent: true,
+        opacity,
+        toneMapped: false,
+        depthWrite: false,
+      }),
+    );
+    m.rotation.x = -Math.PI / 2;
+    m.renderOrder = 1;
+    root.add(m);
+    return m;
+  };
+  const syncZone = (scene: BoardScene) => {
+    const z = scene.zone;
+    const sig = z ? `${z.x},${z.y},${z.reach},${z.next ?? ""},${scene.tileSize}` : "";
+    if (sig === zone.current.sig) return;
+    for (const m of [zone.current.now, zone.current.next])
+      if (m) {
+        root.remove(m);
+        m.geometry.dispose();
+        (m.material as MeshBasicMaterial).dispose();
+      }
+    zone.current = { sig, now: null, next: null };
+    if (!z) return;
+    const size = scene.tileSize;
+    const at = (m: Mesh) =>
+      m.position.set((z.x / size - 0.5) * S, RIBBON.lift + 0.02, (z.y / size - 0.5) * S);
+    const now = zoneRing((z.reach / size) * S, 0.42);
+    at(now);
+    const next = z.next ? zoneRing((z.next / size) * S, 0) : null;
+    if (next) at(next);
+    zone.current = { sig, now, next };
+  };
+
   const tmp = useMemo(() => new Vector3(), []);
   const lastScene = useRef(sh.scene);
 
@@ -288,6 +355,15 @@ function Board({
     if (lastScene.current !== sh.scene) {
       lastScene.current = sh.scene;
       sync(sh.scene);
+      syncZone(sh.scene);
+    }
+    // The next level's zone shows while the Fondaco is chosen.
+    const nextZone = zone.current.next;
+    if (nextZone) {
+      const mat = nextZone.material as MeshBasicMaterial;
+      const want = sh.chosen?.startsWith("fondaco:") ? 0.3 : 0;
+      mat.opacity += (want - mat.opacity) * Math.min(1, dt * 6);
+      nextZone.visible = mat.opacity > 0.01;
     }
     const cam = camera as OrthographicCamera;
     const byKey = new Map(sh.scene.tiles.map((t) => [t.key, t]));
@@ -296,17 +372,27 @@ function Board({
 
     // The camera glides to what is chosen, or home when asked.
     const f = fly.current;
-    const want = `${sh.chosen ?? ""}|${sh.goHome}`;
+    const want = `${sh.chosen ?? ""}|${sh.goHome}|${sh.focus ?? ""}`;
     if (want !== f.last) {
       const homeAsked = sh.goHome !== f.home;
       f.home = sh.goHome;
       f.last = want;
-      if (chosen || homeAsked) {
+      const focusKey = sh.focus
+        ? sh.scene.tiles.find((t) => t.place?.id === sh.focus)?.key
+        : undefined;
+      const focused = !chosen && focusKey ? (tiles.current.get(focusKey) ?? null) : null;
+      if (chosen || homeAsked || focused) {
         f.from.copy(controls.target);
-        f.to.copy(chosen ? chosen.group.position : homeAt());
+        f.to.copy(chosen ? chosen.group.position : focused ? focused.group.position : homeAt());
         f.to.y = 0;
         f.z0 = cam.zoom;
-        f.z1 = chosen ? (PHONE() ? SELECT.zoomPhone : SELECT.zoomDesk) : sh.homeZoom;
+        f.z1 = chosen
+          ? PHONE()
+            ? SELECT.zoomPhone
+            : SELECT.zoomDesk
+          : focused
+            ? cam.zoom
+            : sh.homeZoom;
         f.t = live ? 0 : 1;
         if (!live) {
           camera.position.add(f.to.clone().sub(controls.target));
@@ -541,6 +627,7 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       card: null,
       target: new Vector3(),
       goHome: 0,
+      focus: null,
       homeZoom: 1,
       placing: false,
       p,
@@ -558,6 +645,9 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       sh.current.nowAt = performance.now();
     }
     sh.current.chosen = chosen;
+    const w = welcomeStep(p, now);
+    sh.current.focus =
+      w && (w.phase === "deliver" || w.phase === "onWay") && w.city ? `city:${w.city}` : null;
   }
   // A plot bought: its purchase panel has nothing left to say, the plot is let go.
   const bought = target?.kind === "sector" && (p.view?.map?.unlocked ?? []).includes(target.cell);
@@ -679,7 +769,10 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
             className="pc-pin"
             data-place={x.id}
             data-on={String(x.id === chosen || x.ready)}
-            data-plus={String(!!x.plus)}
+            data-plus={String(!!x.plus && !x.badge)}
+            data-badge={x.badge?.kind ?? (x.pin || x.plus ? "text" : "none")}
+            data-state={x.badge?.kind === "work" ? x.badge.state : undefined}
+            data-hot={x.badge?.kind === "orders" ? String(x.badge.covered) : undefined}
             data-out="false"
             aria-label={x.name}
             ref={(el) => {
@@ -688,7 +781,7 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
             }}
             onClick={() => pick(x.id)}
           >
-            {x.pin}
+            {x.badge ? <PinFace badge={x.badge} /> : x.pin}
           </button>
         ))}
       </div>
@@ -715,5 +808,50 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
     </div>
   );
 });
+
+/**
+ * What a pin shows (the first steps, lot 4): a workshop's good in its ring (the lot under way, its
+ * lots ready, « ! » short of an input, full), a town's orders and their good, a lock and its level.
+ */
+function PinFace({ badge }: { badge: PinBadge }) {
+  const tp = fr.empire.porcellana;
+  switch (badge.kind) {
+    case "work":
+      return (
+        <>
+          <span
+            className="pc-pin-ring"
+            style={{ "--p": badge.state === "running" ? badge.progress : 0 } as CSSProperties}
+          />
+          <GoodsMark code={badge.good} size={18} />
+          {badge.state === "ready" && <span className="pc-pin-count">{badge.n}</span>}
+          {badge.state === "blocked" && <span className="pc-pin-count">!</span>}
+          {badge.state === "full" && <span className="pc-pin-tag">{tp.full}</span>}
+        </>
+      );
+    case "orders":
+      return (
+        <>
+          <GoodsMark code={badge.good} size={16} />
+          <span>{badge.n}</span>
+        </>
+      );
+    case "lock":
+      return (
+        <>
+          <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+            <path
+              d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2M3.5 7h9v7h-9z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {badge.casa !== undefined && <span>{tp.lockLevel(badge.casa)}</span>}
+        </>
+      );
+  }
+}
 
 export default PorcellanaMap;

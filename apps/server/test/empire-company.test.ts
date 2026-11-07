@@ -8,6 +8,7 @@ import { CondottaHub } from "../src/game/condotta.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
+import { joinAtWork } from "./empire-start.js";
 
 let database: Database;
 let dbUrl: string;
@@ -79,7 +80,9 @@ const view = async (cookie: string) =>
 /** A merchant of the empire, joined. */
 async function merchant(email: string) {
   const cookie = await login(email);
-  await post(cookie, "/api/empire/join");
+  await joinAtWork(post, cookie, (ms) => {
+    now += ms;
+  });
   return cookie;
 }
 

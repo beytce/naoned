@@ -71,6 +71,8 @@ export interface ProductionJob {
   level: number;
   /** Duration of one batch of this job (shorter for a tutorial batch). */
   batchMs: number;
+  /** The welcome's quick lot (the first steps, lot 2): nothing is queued after it. */
+  once?: true;
 }
 
 export interface Building {
@@ -496,6 +498,12 @@ export interface EmpireHouse {
   casa: number;
   joinedAt: number;
   lastActionAt: number;
+  /**
+   * The welcome of a house founded with it (docs/plan-premiers-pas.md lot 2), each haste once:
+   * the first workshop raised, its first lot, the order of welcome given (its id), its delivery
+   * sent, and paid. Absent for the houses of before.
+   */
+  welcome?: { built?: true; batch?: true; order?: string; trip?: true; done?: true };
   workshops: EmpireWorkshop[];
   builds: EmpireBuild[];
   /** Its counters beyond Venetia, by region: their level (CADRAGE-v3 § 3.4). */

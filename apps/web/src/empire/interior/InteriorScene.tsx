@@ -384,7 +384,9 @@ export function InteriorScene({
               className="flex min-h-11 w-full items-center justify-center rounded-full bg-white/80 px-5 text-xs font-bold text-[#625D55] sm:w-auto"
               data-interior-blocked
             >
-              {fr.empire.dock.waits(p.goods[status.resource] ?? status.resource)}
+              {status.state === "full"
+                ? fr.empire.orbit.full(p.goods[status.good] ?? status.good)
+                : fr.empire.dock.waits(p.goods[status.resource] ?? status.resource)}
             </span>
           )}
           <button

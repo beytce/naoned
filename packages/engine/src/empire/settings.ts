@@ -35,6 +35,11 @@ const casaLevel = z.object({
    * level asks the rest to follow, as Hades' Star's). None by default.
    */
   requires: z.object({ workshops: qty, level: qty }).prefault({ workshops: 0, level: 0 }),
+  /**
+   * What a fondaco holds of each good at this level (the first steps, lot 3; golden rule 3): once
+   * full, a workshop's lots wait in its queue, nothing lost. None: no cap.
+   */
+  storeCap: positive.optional(),
 });
 
 const region = z.object({
@@ -74,8 +79,13 @@ export const empireSettingsSchema = z.object({
       workshops: z.array(z.object({ type: z.string(), recipe: z.string() })),
       /** Its first vehicles, by type. */
       vehicles: z.array(z.string()).prefault([]),
+      /**
+       * On square tiles, the free tiles given round the first fondaco at the founding (the first
+       * steps, docs/plan-premiers-pas.md lot 1): the house builds its first workshops there.
+       */
+      freeTiles: z.number().int().min(0).prefault(0),
     })
-    .prefault({ capitalDucats: 0, workshops: [], vehicles: [] }),
+    .prefault({ capitalDucats: 0, workshops: [], vehicles: [], freeTiles: 0 }),
   /**
    * The vehicles (CADRAGE-v3 § 3.3): the Casa that opens each, its hold, its price in ducats, the
    * regions it goes between (one only: a land vehicle of the deliveries), its speed in bps.
@@ -128,6 +138,20 @@ export const empireSettingsSchema = z.object({
     })
     .nullable()
     .prefault(null),
+  /**
+   * The welcome of a new house (the first steps, docs/plan-premiers-pas.md lot 2): the workshop
+   * the guide has built first, at once; its first lot in `batchSeconds`; an order of welcome in the
+   * nearest town for exactly that lot, paid `payDucats`; its first delivery in `tripSeconds`. Once,
+   * for the houses founded with it. None: no welcome.
+   */
+  welcome: z
+    .object({
+      workshop: z.object({ type: z.string(), recipe: z.string() }),
+      batchSeconds: positive,
+      tripSeconds: positive,
+      payDucats: positive,
+    })
+    .optional(),
   /** The vehicles' hops (after Hades' Star): seconds before leaving, speed, stops queued at most. */
   moves: z
     .object({
@@ -511,7 +535,14 @@ export const empireSettingsSchema = z.object({
        * A counter's reach (the map that grows, 31 October 2026): the cities within `base` units,
        * and `perLevel` more a level beyond the first, are served by it. None: every city found is.
        */
-      reach: z.object({ base: positive, perLevel: qty }).nullable().prefault(null),
+      /**
+       * A counter's reach: `base`, and `perLevel` a level more. With `byCasa`, the first fondaco's
+       * level is the Casa's (the first steps, lot 3), up to the counters' top level.
+       */
+      reach: z
+        .object({ base: positive, perLevel: qty, byCasa: z.boolean().prefault(false) })
+        .nullable()
+        .prefault(null),
       /**
        * The sectors bought one by one (decision of the owner, 1 November 2026): one next to a
        * sector of one's own, or a coast within `seaHops` of a coast of one's own; its price, dearer

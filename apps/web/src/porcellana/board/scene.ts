@@ -7,6 +7,7 @@
 import { tileAt } from "@comptoirs/engine";
 import { buildingName, workshopStatus } from "../../empire/logic.js";
 import { type Target, deliveryPlan } from "../../empire/map/logic.js";
+import { welcomeStep } from "../../empire/next.js";
 import type { EmpirePayload } from "../../empire/types.js";
 import { fr } from "../../i18n.js";
 
@@ -66,7 +67,26 @@ export interface BoardPlace {
   plus?: boolean;
   /** No pin until chosen (a free tile of the house's: the board stays quiet). */
   quiet?: boolean;
+  /** What the pin shows, when it says more than a figure (the first steps, lot 4). */
+  badge?: PinBadge;
 }
+
+/**
+ * A pin that speaks (the first steps, lot 4: « the black dots are all the same »): a workshop's good
+ * and its state, a town's orders, a lock and the level that opens it. No badge and no text: no pin.
+ */
+export type PinBadge =
+  | {
+      kind: "work";
+      good: string;
+      state: "running" | "ready" | "blocked" | "full" | "idle";
+      /** The lot under way, 0 to 1. */
+      progress: number;
+      /** Lots ready. */
+      n: number;
+    }
+  | { kind: "orders"; n: number; good: string; covered: boolean }
+  | { kind: "lock"; casa?: number };
 
 export interface BoardTile {
   key: string;
@@ -99,6 +119,11 @@ export interface BoardScene {
   roads: BoardRoad[];
   /** The first fondaco's tile: where the camera starts. */
   home: string;
+  /**
+   * The first fondaco's zone (the first steps, lot 3): its middle and reach in the chart's units,
+   * and the reach at the next Casa, drawn while the Fondaco is chosen.
+   */
+  zone?: { x: number; y: number; reach: number; next?: number };
 }
 
 const parse = (k: string): [number, number] => {
@@ -156,11 +181,15 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         pin: "+",
         ready: false,
         plus: true,
+        ...(open ? {} : { badge: { kind: "lock" as const, casa: b.casa } }),
       },
     });
   }
 
   // The house's own tiles: plain land, its dressing round the roads; free, a workshop may rise there.
+  // While the welcome asks the first workshop (the first steps, lot 2), the free tiles call: a « + »
+  // in accent over each, the one to touch.
+  const calling = welcomeStep(p, now)?.phase === "build";
   for (const k of owned)
     put(k, {
       water: false,
@@ -173,9 +202,9 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         sub: t.porcellana.freeSub,
         line: t.porcellana.freeLine,
         go: t.porcellana.build,
-        pin: "",
-        ready: false,
-        quiet: true,
+        pin: calling ? "+" : "",
+        ready: calling,
+        quiet: !calling,
       },
     });
 
@@ -186,6 +215,10 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     const o = orders.get(c.code);
     const waiting = o?.orders.length ?? 0;
     const venice = c.code === "venezia";
+    // In the Fondaco's zone (its orders come), or out of it (the first steps, lot 4).
+    // Venice's market (San Marco) is open to all, in the zone or not.
+    const inZone =
+      venice || !map.covered || map.covered.length === 0 || map.covered.includes(c.code);
     const crates = waiting > 0 ? deliveryPlan(p, c.code).orders.map((x) => x.covered) : [];
     put(k, {
       crates,
@@ -200,10 +233,33 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         sub: venice
           ? t.porcellana.marketSub
           : `${t.regionNames[c.region] ?? c.region} · ${t.porcellana.townSize(c.size ?? 1)}`,
-        line: waiting > 0 ? t.porcellana.cityOrders(waiting) : t.porcellana.cityQuiet,
+        line: !inZone
+          ? t.porcellana.outOfZone(map.zoneCasa?.[c.code] ?? null)
+          : waiting > 0
+            ? t.porcellana.cityOrders(waiting)
+            : t.porcellana.cityQuiet,
         go: venice ? t.porcellana.openMarket : t.porcellana.openCity,
         pin: waiting > 0 ? String(waiting) : "",
         ready: waiting > 0,
+        // Its orders, by their good, in accent when the stock covers them; out of the zone, a lock
+        // and the Fondaco's level that reaches it (the first steps, lot 4).
+        ...(!inZone
+          ? {
+              badge: {
+                kind: "lock" as const,
+                ...(map.zoneCasa?.[c.code] ? { casa: map.zoneCasa[c.code] } : {}),
+              },
+            }
+          : waiting > 0
+            ? {
+                badge: {
+                  kind: "orders" as const,
+                  n: waiting,
+                  good: o?.orders[0]?.good ?? "",
+                  covered: crates.some(Boolean),
+                },
+              }
+            : {}),
       },
     });
   }
@@ -281,7 +337,10 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     { kind: "casa" },
     t.porcellana.fondaco,
     t.porcellana.casa(house.casa),
-    t.porcellana.fondacoLine,
+    // Its stock and its zone, what its level gives (the first steps, lot 3).
+    v.storeCap != null
+      ? t.fondaco.storeLine(new Intl.NumberFormat("fr-FR").format(v.storeCap), v.orders.length)
+      : t.porcellana.fondacoLine,
   );
 
   // The workshops on their tiles, working when the game says so.
@@ -306,10 +365,23 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
               ? t.porcellana.running
               : st.state === "blocked"
                 ? t.porcellana.blocked(goodName(p, st.resource))
-                : t.porcellana.idle,
+                : st.state === "full"
+                  ? t.orbit.full(goodName(p, st.good))
+                  : t.porcellana.idle,
         go: t.porcellana.enter,
         pin: lots > 0 ? String(lots) : "",
         ready: lots > 0,
+        badge: {
+          kind: "work",
+          good:
+            Object.keys(
+              p.catalog.find((b) => b.type === w.type)?.recipes.find((r) => r.code === w.recipe)
+                ?.outputs ?? {},
+            )[0] ?? "",
+          state: st.state,
+          progress: st.state === "running" ? st.progress : 0,
+          n: lots,
+        },
       },
     });
   }
@@ -319,5 +391,17 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     tiles: [...out.values()].sort((a, b) => a.j - b.j || a.i - b.i),
     roads: (map.roads ?? []).map((r) => ({ from: r.from, to: r.to, pts: r.pts })),
     home: homeTile,
+    ...(map.home.reach > 0
+      ? {
+          zone: {
+            x: map.home.x,
+            y: map.home.y,
+            reach: map.home.reach,
+            ...(v.nextCasa?.reach && v.nextCasa.reach > map.home.reach
+              ? { next: v.nextCasa.reach }
+              : {}),
+          },
+        }
+      : {}),
   };
 }

@@ -99,11 +99,21 @@ export function reachOf(level: number, s: EmpireSettings): number {
 }
 
 /**
+ * The first fondaco's level: its own, or with `reach.byCasa` the Casa's when higher (the first
+ * steps, lot 3), up to the counters' top level.
+ */
+export function homeLevelOf(h: Pick<EmpireHouse, "homeLevel" | "casa">, s: EmpireSettings): number {
+  const own = h.homeLevel ?? 1;
+  if (!s.map.reach?.byCasa) return own;
+  return Math.max(own, Math.min(s.counters.maxLevel, h.casa ?? 1));
+}
+
+/**
  * The house's first fondaco, with its level: where the player put it down, else at the world's
  * point, else (a world without one) at Venice's place, as before.
  */
 export function homePost(h: EmpireHouse, s: EmpireSettings) {
-  const level = h.homeLevel ?? 1;
+  const level = homeLevelOf(h, s);
   if (h.home) return { id: "home", region: HOME, ...h.home, level };
   const at = s.map.home;
   if (at) return { id: "home", cell: cellAtPoint(at.x, at.y, s), region: HOME, ...at, level };
@@ -459,6 +469,7 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   namePosts(h, s);
   // The sectors owned: Venice's, and those of its counters and buildings.
   if (s.map.unlock) h.unlocked = ownedAtStart(h, s);
+  if (!moved) giveStartTiles(h, s);
   if (h.camp && moved) h.camp = homeCell(s) ?? h.camp;
   if (h.depot && moved) h.depot = homeCell(s) ?? h.depot;
   // The sites under way on the cells of before end where they now stand.
@@ -655,6 +666,24 @@ export function freeTileFault(
  * workshops are seated once its first fondaco stands (where the player put it down); an older
  * house's workshops so too, the first time its world turns to square tiles (M4).
  */
+/**
+ * A new house on square tiles, nothing built yet, is given its first free tiles round the fondaco,
+ * nearest first, of Venetia, clear of the towns and of what stands: it builds its first workshops
+ * there (the first steps, docs/plan-premiers-pas.md lot 1).
+ */
+function giveStartTiles(h: EmpireHouse, s: EmpireSettings): void {
+  if (!squareGrid(s) || !s.map.unlock || !h.home || s.start.freeTiles <= 0) return;
+  if (h.workshops.length > 0 || h.builds.length > 0) return;
+  const from = h.home.cell;
+  const taken = takenTiles(h, s);
+  const owned = new Set(unlockedOf(h, s));
+  const given = Object.keys(s.map.cells)
+    .filter((t) => s.map.cells[t]?.region === HOME && !taken.has(t) && !owned.has(t))
+    .sort((a, b) => cellDistance(from, a, s) - cellDistance(from, b, s) || a.localeCompare(b))
+    .slice(0, s.start.freeTiles);
+  h.unlocked = [...owned, ...given];
+}
+
 function seatWorkshops(h: EmpireHouse, s: EmpireSettings): void {
   if (!squareGrid(s)) return;
   // On square tiles the board starts from the first fondaco: it stands on the world's tile at once

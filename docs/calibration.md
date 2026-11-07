@@ -2569,6 +2569,93 @@ Décision du porteur du 5 novembre 2026 (docs/plan-porcellana.md, D1 et D7) : la
 
 Reproduire : `cd apps/simulator && npx tsx src/scenario-cases.ts`, puis `npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/cases-carrees.json` (environ 95 minutes par graine).
 
+## Les premiers pas : le départ sans atelier (6 novembre 2026)
+
+Retours du porteur du 6 novembre 2026 (docs/plan-premiers-pas.md, lot 1) : une maison neuve démarre sans atelier et les bâtit elle-même.
+
+### Ce qui change
+
+- **Le départ** (`venice1450.empire.ts`, `start`) : aucun atelier ; trois cases libres données autour du premier fondaco (`start.freeTiles`, `giveStartTiles` dans `map.ts`) ; le capital passe de 500 à **650 ducats**. Le premier niveau d'un atelier coûte 120 ducats, 48 une fois que la plupart des maisons l'ont (« le savoir circule », 60 % de moins) : 500 + 3 × 48, arrondi. Les maisons déjà fondées gardent leurs ateliers.
+- **Le simulateur** : ses maisons gardent leurs trois premiers ateliers (glaisière, bûcherons, scierie), payés au départ au prix du monde (le rattrapage compté), sur les trois cases données. C'est ce que fait le joueur guidé dans ses premières minutes.
+- **L'accueil** (lot 2) : une seule commande de 100 ducats par maison neuve, la première, hors simulateur (un apport unique, sans effet à l'échelle de 24 mois).
+
+### Les essais (24 mois, cohortes de 200, scénario G `scenarios/cases-carrees.json`)
+
+| Cible | G (g. 1 / 2 / 3) | Premiers pas (g. 1 / 2 / 3) |
+| --- | --- | --- |
+| Cibles tenues sur 9 | 6 / 6 / 6 | **6 / 6 / 6** |
+| Calendrier de la Casa | ✓ / ✓ / ✓ | ✓ / ✓ / ✓ |
+| Tournées avec un objectif à moins de 24 h | ✓ 99,8 / 99,8 / 99,8 % | ✓ 99,7 / 99,8 / 99,9 % |
+| Prochain palier en jours de revenu (2 à 7) | ✗ 2,9 à 22,1 / 2,5 à 19,1 / 2,4 à 21,6 | ✗ 2,4 à 40,6 / 2,7 à 34,2 / 2,4 à 29,8 |
+| Cohorte du mois 12 hors de la 1re bande (4 à 6 mois) | ✗ 2,4 / 2,5 / 2,4 | ✗ 2,6 / 2,5 / 2,4 |
+| Indice des prix | ✓ 95 à 103 | ✓ 95 à 103 / 96 à 103 / 95 à 103 |
+| Puits ÷ sources, jeunes puis anciennes | ✓ 0,75 puis 0,99 / 0,71 puis 1,00 / 0,73 puis 0,99 | ✓ 0,72 puis 1,00 / 0,69 puis 0,99 / 0,68 puis 0,99 |
+| Part de la Terraferme | ✓ | ✓ |
+| Bruts des jeunes Maisons à Venise (≥ 10 %) | ✗ 6,3 / 6,2 / 6,6 % | ✗ 6,3 / 6,3 / 6,1 % |
+| Part des commandes (60 à 85 %) | ✓ 80,8 / 82,0 / 81,3 % | ✓ 81,7 / 82,9 / 81,6 % |
+
+**Lecture.**
+- Les mêmes six cibles tenues sur les trois graines ; le calendrier de la Casa, l'épargne et la part des commandes restent dans leurs bornes.
+- Le haut du « prochain palier en jours de revenu » monte (30 à 41 jours contre 19 à 22). Cette cible était déjà manquée, et sa borne haute est la médiane d'un mois de fin de partie, très sensible à la trajectoire ; les premières maisons du monde, qui paient leurs trois ateliers au prix plein, partent avec 290 ducats au lieu de 500. À suivre à la prochaine passe d'équilibrage de la fin de partie, avec les plafonds des villes de taille 5.
+
+Reproduire : `cd apps/simulator && npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/cases-carrees.json` (une graine par processus en parallèle : `--seeds 1 --out out/g1`, etc. ; environ 95 minutes par graine).
+
+## Les premiers pas : le plafond de stock et la zone du Fondaco (6 et 7 novembre 2026)
+
+Lot 3 de docs/plan-premiers-pas.md : chaque niveau du Fondaco (la Casa) fixe ce qu'un fondaco garde de chaque marchandise (`casa[].storeCap`, de 300 à 700 000) ; une fois plein, les lots attendent dans la file. La zone du premier fondaco suit la Casa (`map.reach.byCasa`).
+
+### Ce que le simulateur montrait avant le plafond
+
+Mesuré au simulateur (12 mois, cohortes de 60), le plus gros stock d'une marchandise par maison : médiane 300 à 600 jusqu'à la Casa 5, puis 41 000 à la Casa 8, 400 000 à la Casa 10, 8 millions à la Casa 20 (centile 90 : 13 millions). Des marchandises fabriquées, intrants achetés, jamais vendues : ce que la règle d'or 3 interdit.
+
+### Les essais
+
+Le lot 1 sert de référence (6 cibles sur 9 sur les trois graines). Les essais A à H sont sur la graine 1, cohortes de 60 (environ 25 minutes chacun) ; le premier sur les trois graines, cohortes de 200.
+
+| Essai | Cibles | Casa 8 / 19 (jours, cohorte 0) | Part des commandes |
+| --- | --- | --- | --- |
+| Lot 1 (sans plafond, 3 graines) | 6, 6, 6 | 45,7 / 360 | 81,7 à 82,9 % |
+| Plafond (3 graines × 200) | 4, 4, 4 | 35,7 / 269 | 86,7 à 87,2 % |
+| A : plafond, zone liée à la Casa | 4 | 35,6 / 268 | 86,9 % |
+| B : idem, zone qui grandit deux fois moins | 4 | 35,2 / 269 | 87,2 % |
+| C : plafond seul | 4 | 36,7 / 270 | 87,7 % |
+| E : C, robots qui ne montent plus un atelier près du plafond | 4 | 36,2 / 270 | 86,5 % |
+| F : A et E | 4 | 34,7 / 267 | 87,8 % |
+| G : F, Casa 13 à 20 une fois et demie plus chères | 4 | 34,7 / 267 | 87,2 % |
+| H : F, plafonds quatre fois plus hauts | 4 | 42,7 / 281 | 87,3 % |
+
+**Lecture.**
+- Le plafond fait aller la partie plus vite à partir de la Casa 7 : les Casa 16 à 20 tombent sous la moitié de leur cible (la Casa 19 au jour 268 pour 600). Sans plafond, les maisons dépensaient en intrants pour des marchandises qui s'entassaient ; ce gaspillage tenait la fin de partie.
+- La zone liée à la Casa ne change presque rien (A, B contre C).
+- Le prix des dernières Casa non plus (G) : ce sont les exigences d'ateliers (à partir de la Casa 9, tant d'ateliers à tel niveau) qui règlent la fin de partie.
+- Des plafonds quatre fois plus hauts (H) rendent le milieu de partie (Casa 8 au jour 43) sans rattraper la fin.
+- En contrepartie, le prochain palier en jours de revenu se rapproche beaucoup de sa cible (2 à 9 jours contre 2 à 41).
+
+**Décision du porteur (7 novembre 2026)** : le plafond reste tel quel ; l'écart de la fin de partie (4 cibles sur 9 au lieu de 6, les Casa 16 à 20 trop tôt) est accepté pour l'instant. Le rythme de la fin de partie (les exigences d'ateliers des Casa 9 à 20) se recalera dans une passe à part, après les lots des premiers pas.
+
+Reproduire : les scénarios des essais s'écrivent à partir de `scenarios/cases-carrees.json` (la carte du scénario remplace celle du thème : y mettre `reach.byCasa` pour la zone liée) ; `npx tsx src/empire-cli.ts --seeds 1 --cohort 60 --scenario <essai>.json`.
+
+## Les premiers pas : la Porta au niveau 4 (7 novembre 2026)
+
+Lot 6 de docs/plan-premiers-pas.md, choix du porteur du 6 novembre : la Porta à la Casa 4 (au lieu de 10), pour 600 ducats (au lieu de 4 000, le prix du Campo du même niveau) ; le cavalier (400 ducats au lieu de 1 500) et les premières armes (lances 250, arbalètes 300, pavois 300, cuirasse 200, au lieu de 800, 1 000, 900 et 700) à la Casa 4 aussi (au lieu de 9). Les niveaux de la Porta gardent leur prix (4 000 × 2ⁿ ducats) : seul son premier palier s'ouvre tôt.
+
+### Les essais (24 mois, cohortes de 200, scénario G)
+
+| Cible | Plafond (lot 3, g. 1 / 2 / 3) | Porta au niveau 4 (g. 1 / 2 / 3) |
+| --- | --- | --- |
+| Cibles tenues sur 9 | 4 / 4 / 4 | **4 / 4 / 4** |
+| Calendrier de la Casa | ✗ 16 à 20 trop tôt | ✗ 16 à 20 trop tôt (Casa 19 au jour 270) |
+| Prochain palier en jours de revenu (2 à 7) | ✗ 1,8 à 9,1 / 1,9 à 9,2 / 2,0 à 9,2 | ✗ 1,9 à 9,0 / 1,9 à 9,0 / 2,0 à 8,5 |
+| Puits ÷ sources, jeunes puis anciennes | ✓ 0,76 puis 0,94 / 0,76 puis 0,96 / 0,74 puis 0,96 | ✓ 0,74 puis 0,96 / 0,75 puis 0,95 / 0,75 puis 0,96 |
+| Part des commandes (60 à 85 %) | ✗ 87,2 / 86,7 / 87,2 % | ✗ 87,7 / 87,7 / 87,3 % |
+
+**Lecture.**
+- Rien ne se dégrade : les mêmes quatre cibles tenues, les mêmes manquées (la fin de partie, laissée à une passe à part par le porteur le 7 novembre).
+- Le milieu de partie est à peine plus lent (la Casa 6 au jour 11 contre 9,6) : les jeunes maisons paient la Porta et ses armes.
+- La Porta (graine 1) : 400 maisons l'ont posée, 119 batailles par jour, 87 % gagnées, aucun véhicule de combat perdu (702 transports perdus, 10 481 retours abîmés) ; meilleur palier gagné : 3. L'antiquaire a payé 1,7 million de ducats de reliques, à peine 1 % de ce que paient les commandes.
+
+Reproduire : `cd apps/simulator && npx tsx src/empire-cli.ts --seeds 1,2,3 --scenario scenarios/cases-carrees.json` (une graine par processus ; environ 80 minutes par graine).
+
 ## Les ateliers de l'intérieur (lot A8, 6 novembre 2026) — en cours, non allumé
 
 Plan : docs/plan-ateliers.md § 9. Les intérieurs ne sont **pas** allumés dans les mondes de Venise (`EMPIRE_INTERIOR=off`).

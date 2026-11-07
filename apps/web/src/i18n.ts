@@ -172,6 +172,12 @@ const frDict = {
       cityOrders: (n: number) =>
         n > 1 ? `${n} commandes en caisses au quai.` : "Une commande en caisse au quai.",
       cityQuiet: "Aucune commande pour l'instant.",
+      outOfZone: (casa: number | null) =>
+        casa
+          ? `Hors de ta zone : ton Fondaco l'atteint au niveau ${casa}.`
+          : "Hors de ta zone : un comptoir l'atteindra.",
+      lockLevel: (casa: number) => `Niv. ${casa}`,
+      full: "plein",
       openMarket: "Ouvrir la Dogana",
       openCity: "Voir ses commandes",
       enter: "Entrer",
@@ -293,9 +299,27 @@ const frDict = {
       arms: "Armes",
       workshops: "Ateliers",
       sweep: "Touchez les ateliers prêts, ou glissez de l'un à l'autre.",
+      // What the next level brings (the first steps, lot 3).
+      gainStore: (a: string, b: string) => `Stock ${a} → ${b}`,
+      gainCities: (n: number, names: string) =>
+        n === 1 ? `+1 ville : ${names}` : `+${n} villes : ${names}`,
+      gainZone: "Zone plus large",
+      gainsTitle: "Ton Fondaco gagne",
+      storeLine: (cap: string, towns: number) =>
+        `${cap} de chaque marchandise · ${towns} ${towns > 1 ? "villes" : "ville"} dans sa zone`,
     },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
+      bologna: "Bologne",
+      firenze: "Florence",
+      genova: "Gênes",
+      cremona: "Crémone",
+      trento: "Trente",
+      vienna: "Vienne",
+      salonicco: "Salonique",
+      nicosia: "Nicosie",
+      damasco: "Damas",
+      trebisonda: "Trébizonde",
       venezia: "Venise",
       verona: "Vérone",
       padova: "Padoue",
@@ -760,6 +784,23 @@ const frDict = {
       newAction: (cost: string) => `Bâtir · ${cost}`,
       newVerb: "Bâtir",
       noRoom: "Toutes les places sont prises : la Casa en ouvre d'autres.",
+      // A free tile: every building of the game, the locked ones too (the first steps, lot 5).
+      hereTitle: "Bâtir ici",
+      workshopsHead: "Ateliers",
+      placesHead: "Bâtiments",
+      built: "Déjà bâti",
+      rising: "En chantier",
+      atLevel: (n: number) => `Fondaco niv. ${n}`,
+      fullPlaces: "Plus de place : monte ton Fondaco",
+      otherRegion: "Hors de Vénétie",
+      depot: "La Remise",
+      depotWhat: "Achète et monte tes véhicules",
+      camp: "Le Campo",
+      campWhat: "La porte de la Terraferme",
+      porta: "La Porta",
+      portaWhat: "Vers les terres de Rome : combats et reliques",
+      post: "Un fondaco",
+      postWhat: "Ouvre la région de sa case et ses villes",
     },
     stock: {
       title: "Entrepôt",
@@ -915,6 +956,7 @@ const frDict = {
       ready: "Prêt · touchez",
       idle: "À lancer",
       waits: (good: string) => `attend ${good.toLowerCase()}`,
+      full: (good: string) => `${good} : entrepôt plein`,
       level: (n: number) => `niv. ${n}`,
     },
     moment: {
@@ -989,10 +1031,34 @@ const frDict = {
       wait: (at: string) => `Tout tourne. Prochain lot à ${at}.`,
       waitNone: "Tout tourne.",
       waitWhy: "Revenez plus tard : rien ne se perd pendant votre absence.",
+      // The welcome of a new house (docs/plan-premiers-pas.md lot 2), a gesture at a time.
+      welcome: {
+        build: (name: string) => `Touchez une case libre et bâtissez-y un ${name.toLowerCase()}.`,
+        buildWhy: (good: string) =>
+          `Votre premier atelier : il se dresse tout de suite et fera du ${good.toLowerCase()}.`,
+        buildAction: (_name: string) => "Bâtir",
+        launch: (name: string) => `Votre ${name.toLowerCase()} est debout : lancez-le.`,
+        launchWhy: "Le premier lot sera prêt en quelques secondes.",
+        launchAction: "Lancer la production",
+        making: (good: string) => `Votre premier ${good.toLowerCase()} se fait…`,
+        makingWhy: (city: string) =>
+          `${city} vous en a déjà commandé : regardez sa caisse sur la carte.`,
+        makingWhyNone: "Encore un instant.",
+        collect: (good: string) => `Votre ${good.toLowerCase()} est prêt.`,
+        collectWhy: (city: string) => `Ramassez-le : ${city} l'attend.`,
+        collectAction: "Ramasser",
+        deliver: (city: string, qty: number, good: string) =>
+          `${city} attend ${qty} ${good.toLowerCase()} : livrez-les.`,
+        deliverWhy: (pay: string) => `Votre mule part tout de suite, et vous êtes payé ${pay}.`,
+        deliverAction: "Livrer",
+        onWay: (city: string) => `Votre mule est en route pour ${city}.`,
+        onWayWhy: "Vous serez payé à son arrivée, puis elle rentre seule au Fondaco.",
+        town: "la ville",
+      },
       intro: [
         [
           "Bienvenue à Venise.",
-          "Vos ateliers produisent, vous vendez, et avec les ducats vous bâtissez la Casa, qui ouvre la suite du jeu.",
+          "Vous bâtissez vos ateliers, ils produisent, vous livrez les villes, et avec les ducats vous faites grandir votre Fondaco.",
         ],
         [
           "Votre caisse : {cash}.",

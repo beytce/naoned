@@ -246,4 +246,59 @@ describe("the first fondaco on square tiles", () => {
     expect(h.workshops[0]?.tile).toBeDefined();
     expect(map(w)?.home.placed).toBe(true);
   });
+
+  // The first steps (docs/plan-premiers-pas.md, lot 1): no workshop at the start, the player builds
+  // them; the tiles they stood on are given free, nearest the fondaco, clear of the towns.
+  it("gives a house without workshops its free tiles round the fondaco, to build on", () => {
+    const w = new World(
+      makeContext({
+        empire: {
+          ...empire,
+          start: { capitalDucats: 1_000_000, workshops: [], freeTiles: 3 },
+          map: { ...empire.map, home: { x: 35, y: 15 } },
+        },
+      }),
+    );
+    w.do({ type: "empireJoin", playerId: "a" });
+    const h = house(w);
+    expect(h.workshops).toEqual([]);
+    // Venice's tile is the house's from the start, as before (ownedAtStart).
+    const free = (h.unlocked ?? []).filter((k) => k !== "3,1" && k !== "1,1");
+    expect(free).toHaveLength(3);
+    for (const k of free) {
+      expect(cellDistance("3,1", k, s)).toBeLessThanOrEqual(2);
+      expect(cities.map((c) => c.cell)).not.toContain(k);
+    }
+    // A workshop rises on one of them, without buying it; the next free tile stays given.
+    const at = free[0] as string;
+    expect(
+      error(
+        w.try({
+          type: "empireBuildWorkshop",
+          playerId: "a",
+          workshopType: "farm",
+          recipe: "grow_wheat",
+          tile: at,
+        }),
+      ),
+    ).toBe("");
+    w.advance(HOUR);
+    expect(house(w).workshops[0]?.tile).toBe(at);
+    expect(house(w).unlocked).toHaveLength(5);
+  });
+
+  it("gives no free tile to a house of before, which has its fondaco already", () => {
+    const ctx = makeContext({
+      empire: {
+        ...empire,
+        start: { capitalDucats: 1_000_000, workshops: [], freeTiles: 3 },
+        map: { ...empire.map, home: { x: 35, y: 15 } },
+      },
+    });
+    const w = new World(ctx);
+    w.do({ type: "empireJoin", playerId: "a" });
+    const before = [...(house(w).unlocked ?? [])];
+    w.advance(HOUR);
+    expect(house(w).unlocked).toEqual(before);
+  });
 });

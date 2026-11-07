@@ -255,6 +255,12 @@ export const en: Dictionary = {
       cityOrders: (n: number) =>
         n > 1 ? `${n} orders crated on the quay.` : "One order crated on the quay.",
       cityQuiet: "No order for now.",
+      outOfZone: (casa: number | null) =>
+        casa
+          ? `Out of your zone: your Fondaco reaches it at level ${casa}.`
+          : "Out of your zone: a counter will reach it.",
+      lockLevel: (casa: number) => `Lvl ${casa}`,
+      full: "full",
       openMarket: "Open the Dogana",
       openCity: "See its orders",
       enter: "Enter",
@@ -369,9 +375,27 @@ export const en: Dictionary = {
       arms: "Arms",
       workshops: "Workshops",
       sweep: "Touch the ready workshops, or sweep from one to the next.",
+      // What the next level brings (the first steps, lot 3).
+      gainStore: (a: string, b: string) => `Stock ${a} → ${b}`,
+      gainCities: (n: number, names: string) =>
+        n === 1 ? `+1 town: ${names}` : `+${n} towns: ${names}`,
+      gainZone: "Wider zone",
+      gainsTitle: "Your Fondaco gains",
+      storeLine: (cap: string, towns: number) =>
+        `${cap} of each good · ${towns} ${towns > 1 ? "towns" : "town"} in its zone`,
     },
     /** The cities hidden on the map (the map at the centre, step 2). */
     cityNames: {
+      bologna: "Bologna",
+      firenze: "Florence",
+      genova: "Genoa",
+      cremona: "Cremona",
+      trento: "Trent",
+      vienna: "Vienna",
+      salonicco: "Thessalonica",
+      nicosia: "Nicosia",
+      damasco: "Damascus",
+      trebisonda: "Trebizond",
       venezia: "Venice",
       verona: "Verona",
       padova: "Padua",
@@ -833,6 +857,23 @@ export const en: Dictionary = {
       newAction: (cost: string) => `Build · ${cost}`,
       newVerb: "Build",
       noRoom: "Every place is taken: the Casa opens more.",
+      // A free tile: every building of the game, the locked ones too (the first steps, lot 5).
+      hereTitle: "Build here",
+      workshopsHead: "Workshops",
+      placesHead: "Buildings",
+      built: "Already built",
+      rising: "Being built",
+      atLevel: (n: number) => `Fondaco lvl ${n}`,
+      fullPlaces: "No room left: raise your Fondaco",
+      otherRegion: "Beyond Venetia",
+      depot: "The Remise",
+      depotWhat: "Buy and raise your vehicles",
+      camp: "The Campo",
+      campWhat: "The door of the Terraferma",
+      porta: "The Porta",
+      portaWhat: "Towards Rome's lands: fights and relics",
+      post: "A fondaco",
+      postWhat: "Opens its tile's region and towns",
     },
     stock: {
       title: "Store",
@@ -987,6 +1028,7 @@ export const en: Dictionary = {
       ready: "Ready · touch",
       idle: "To launch",
       waits: (good: string) => `waits for ${good.toLowerCase()}`,
+      full: (good: string) => `${good}: warehouse full`,
       level: (n: number) => `lvl ${n}`,
     },
     moment: {
@@ -1058,10 +1100,32 @@ export const en: Dictionary = {
       wait: (at: string) => `All is running. Next lot at ${at}.`,
       waitNone: "All is running.",
       waitWhy: "Come back later: nothing is lost while you are away.",
+      welcome: {
+        build: (name: string) => `Touch a free tile and build a ${name.toLowerCase()} there.`,
+        buildWhy: (good: string) =>
+          `Your first workshop: it rises at once and will make ${good.toLowerCase()}.`,
+        buildAction: (_name: string) => "Build",
+        launch: (name: string) => `Your ${name.toLowerCase()} stands: set it to work.`,
+        launchWhy: "The first lot will be ready in a few seconds.",
+        launchAction: "Start production",
+        making: (good: string) => `Your first ${good.toLowerCase()} is being made…`,
+        makingWhy: (city: string) => `${city} has already ordered it: see its crate on the map.`,
+        makingWhyNone: "One moment more.",
+        collect: (good: string) => `Your ${good.toLowerCase()} is ready.`,
+        collectWhy: (city: string) => `Collect it: ${city} is waiting for it.`,
+        collectAction: "Collect",
+        deliver: (city: string, qty: number, good: string) =>
+          `${city} awaits ${qty} ${good.toLowerCase()}: deliver them.`,
+        deliverWhy: (pay: string) => `Your mule leaves at once, and you are paid ${pay}.`,
+        deliverAction: "Deliver",
+        onWay: (city: string) => `Your mule is on its way to ${city}.`,
+        onWayWhy: "You are paid on its arrival, then it comes back alone to the Fondaco.",
+        town: "the town",
+      },
       intro: [
         [
           "Welcome to Venice.",
-          "Your workshops produce, you sell, and with the ducats you build the Casa, which opens the rest of the game.",
+          "You build your workshops, they produce, you deliver the towns, and with the ducats you grow your Fondaco.",
         ],
         [
           "Your purse: {cash}.",

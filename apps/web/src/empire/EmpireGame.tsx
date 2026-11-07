@@ -19,7 +19,7 @@ import { HelpSheet, HouseSheet, Intro, NextStepCard } from "./Guide.js";
 import { ArteSection, FamilySheet, Knowledge } from "./Identity.js";
 import { MarketSheet } from "./Market.js";
 import { CasaMoment } from "./Moment.js";
-import { NewWorkshopSheet } from "./NewWorkshop.js";
+import { NewWorkshopSheet, freeTileOf } from "./NewWorkshop.js";
 import { GoodSheet } from "./Resources.js";
 import { Safe } from "./Safe.js";
 import { Charroi, RegionPlace, Scuola, regionName } from "./World.js";
@@ -38,6 +38,7 @@ import {
 } from "./logic.js";
 import { ActionPanel } from "./map/ActionPanel.js";
 import { BottomSlot } from "./map/BottomSlot.js";
+import { FondacoGains } from "./map/Domain.js";
 import { DomainBar } from "./map/Domain.js";
 import { Hud } from "./map/Hud.js";
 import { OrdersPanel } from "./map/OrdersPanel.js";
@@ -313,6 +314,19 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         });
     }, 400);
   }, [take]);
+  // The next hop's arrival: settled at its hour, so that a delivery is paid as the vehicle comes
+  // (the welcome's first order among them, docs/plan-premiers-pas.md lot 2).
+  const arrival = (p.view?.vehicles?.mine ?? [])
+    .flatMap((v) => v.legs.map((l) => l.arrivesAt))
+    .filter((t) => t > p.now)
+    .reduce((a, b) => Math.min(a, b), Number.POSITIVE_INFINITY);
+  useEffect(() => {
+    if (!Number.isFinite(arrival)) return;
+    const wait = Math.max(0, arrival - (Date.now() + skew.current)) + 300;
+    if (wait > 2 ** 31 - 1) return;
+    const id = window.setTimeout(settle, wait);
+    return () => window.clearTimeout(id);
+  }, [arrival, settle]);
   /** The vehicle before or after the one chosen. */
   const cycle = (step: 1 | -1) => {
     const mine = p.view?.vehicles.mine ?? [];
@@ -417,6 +431,16 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     }
     if (id.startsWith("place:")) {
       const [, kind = "post", region] = id.split(":");
+      // On square tiles, the Remise, the Campo and the Porta rise from a free tile's list, with
+      // every building (the first steps, lot 5): the nearest free tile, no bar of placing.
+      if (
+        (kind === "depot" || kind === "camp" || kind === "porta") &&
+        p.view?.map.grid === "square"
+      ) {
+        setBuildTile(freeTileOf(p, "veneto") ?? undefined);
+        setSheet("new");
+        return;
+      }
       setSheet(null);
       setPicked(null);
       // Out of a domain first: the map's sectors to pick from.
@@ -512,7 +536,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       act={act}
       onBuild={(recipe) => {
         setHighlight(recipe);
-        setSheet("production");
+        // The welcome's first workshop: straight to the list of a free tile (lot 2).
+        setSheet(step.kind === "welcome" ? "new" : "production");
       }}
     />
   );
@@ -527,7 +552,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         act={act}
         onBuild={(recipe) => {
           setHighlight(recipe);
-          setSheet("production");
+          setSheet(step.kind === "welcome" ? "new" : "production");
         }}
       />
     </div>
@@ -1261,6 +1286,13 @@ function CasaSheet({
               <p className="mt-1 text-sm text-cream">{next.opens.map(opensName).join(" · ")}</p>
             </div>
           )}
+          {/* What the level brings the Fondaco: its stock, its zone (the first steps, lot 3). */}
+          <div>
+            <Label>{fr.empire.fondaco.gainsTitle}</Label>
+            <p className="mt-1">
+              <FondacoGains p={p} />
+            </p>
+          </div>
           {view.house.builds.some((b) => b.kind === "casa") ? (
             <p className="text-sm text-cream-dim">{t.casa.busy}</p>
           ) : (

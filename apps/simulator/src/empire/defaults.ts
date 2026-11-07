@@ -40,8 +40,11 @@ const GALLEY = [...SEA, "levante", "costantinopoli"];
 
 /** The model's first guesses (CADRAGE-v3 § 3.3 for the vehicles), to calibrate. */
 export const DEFAULT_MODEL: SimModel = {
-  startCapitalDucats: 500,
-  // The socle's start (venice1450.empire.ts): the clay, the wood and the planks of the Casa 2.
+  // The game's capital (venice1450.empire.ts), the first workshops paid from it.
+  startCapitalDucats: venice1450Empire.start?.capitalDucats ?? 0,
+  // The first workshops the guide has built in the first minutes (docs/plan-premiers-pas.md,
+  // lot 1): the clay, the wood and the planks of the Casa 2, each paid its first level, on the
+  // free tiles given round the fondaco.
   startWorkshops: [
     { region: "veneto", good: "clay" },
     { region: "veneto", good: "wood" },

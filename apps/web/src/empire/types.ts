@@ -72,7 +72,11 @@ export interface EmpireView {
     modules?: Record<string, number>;
     favour: number;
     seals: number;
+    /** The welcome of a new house (docs/plan-premiers-pas.md lot 2), each haste once. */
+    welcome?: { built?: true; batch?: true; order?: string; trip?: true; done?: true };
   };
+  /** The welcome: the workshop to build first (absent for the houses of before). */
+  welcome?: { workshop: { type: string; recipe: string } };
   power: number;
   band: number;
   /** The fleet capped by the Remise's level (null without the fleet's levels). */
@@ -90,8 +94,16 @@ export interface EmpireView {
         requirementMet: boolean;
         requires: { workshops: number; level: number };
         opens: string[];
+        /** What the next level brings the Fondaco (the first steps, lot 3). */
+        storeCap?: number;
+        reach?: number;
+        newCities?: string[];
       })
     | null;
+  /** What a fondaco holds of each good now (null: no cap). */
+  storeCap?: number | null;
+  /** The workshops whose ready lots wait for room under the cap. */
+  full?: string[];
   /** A workshop's next level, its lot before and after in basis points of the base lot. */
   upgrades: Record<string, (EmpireSite & { yieldBps: number; nextYieldBps: number }) | null>;
   newWorkshop: EmpireSite | null;
@@ -325,6 +337,8 @@ export interface EmpireMapView {
   sectorCost: string;
   /** The cities the house's counters serve. */
   covered: string[];
+  /** The towns out of the zone a higher Casa reaches, with that Casa (the first steps, lot 4). */
+  zoneCasa?: Record<string, number>;
   /** The sectors the house owns: its vehicles go anywhere there (the hops). */
   unlocked: string[];
   sites: { kind: "post" | "camp" | "depot"; cell: string; endsAt: number }[];
@@ -457,7 +471,7 @@ export type EmpireAction =
   | { type: "empireUnloadOrder"; vehicleId: string; orderId: string }
   | { type: "empireDeliver"; good: string; qty: number; region?: string; city?: string }
   | { type: "empireClaim"; index: number }
-  | { type: "empirePlaceCounter"; cell: string }
+  | { type: "empirePlaceCounter"; cell: string; x?: number; y?: number }
   | { type: "empireBuildCamp"; cell: string }
   | { type: "empireUnlockCell"; cell: string }
   | { type: "empireBuildDepot"; cell: string }

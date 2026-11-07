@@ -8,6 +8,7 @@ import { terraResults } from "../src/db/schema.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
+import { joinAtWork } from "./empire-start.js";
 
 let database: Database;
 let dbUrl: string;
@@ -85,7 +86,9 @@ const terra = async (cookie: string) =>
 /** A merchant of the empire with planks made: its workshops relaunched through the night. */
 async function merchant(email: string) {
   const cookie = await login(email);
-  await post(cookie, "/api/empire/join");
+  await joinAtWork(post, cookie, (ms) => {
+    now += ms;
+  });
   return cookie;
 }
 async function planks(cookie: string) {

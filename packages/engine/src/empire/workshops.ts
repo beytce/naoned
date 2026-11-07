@@ -10,7 +10,7 @@ import { type Tx, fail } from "../tx.js";
 
 /** A rate raised by an effect in bps. */
 const applyBps = (base: number, bps: number) => Math.floor((base * (10_000 + bps)) / 10_000);
-import { lotYieldBps } from "./curves.js";
+import { casaLevelOf, lotYieldBps } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { tilesTouch } from "./grid.js";
 import { empireSettings, ownHouse } from "./house.js";
@@ -22,6 +22,7 @@ import {
   interiorXp,
   settleInterior,
 } from "./interior/run.js";
+import { giveWelcomeOrder, welcomeOrderId } from "./orders.js";
 import { highRecipeRaw } from "./recipes.js";
 import type { EmpireSettings } from "./settings.js";
 import { gainXp } from "./staff.js";
@@ -44,13 +45,20 @@ export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop):
   settleInterior(ws, h, s, tx.now);
   const job = ws.job;
   if (!job) return;
-  const done = Math.min(job.batches, Math.floor((tx.now - job.startedAt) / job.batchMs));
+  let done = Math.min(job.batches, Math.floor((tx.now - job.startedAt) / job.batchMs));
   if (done <= 0) return;
   const recipe = recipeOf(tx, ws);
-  const yieldBps = applyBps(
-    lotYieldBps(ws.level, s),
-    houseEffect(h, "workshopYield", s, { workshopId: ws.id }) + neighbourBonus(tx.ctx, h, ws, s),
+  const yieldBps = workshopYieldBps(tx.ctx, h, ws, s);
+  // The Fondaco's cap (the first steps, lot 3; golden rule 3): only the lots that fit under it
+  // come in; the others wait, ready, in the queue, nothing lost.
+  const post = workshopPost(h, s, ws);
+  done = Math.min(
+    done,
+    lotsThatFit(recipe.outputs, yieldBps, casaLevelOf(h.casa, s).storeCap, (g) =>
+      storeOf(tx, h, playerId, post, g),
+    ),
   );
+  if (done <= 0) return;
   // A share of the lots comes out better (the master), a share of those exquisite.
   const quality = Math.min(
     10_000,
@@ -79,6 +87,41 @@ export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop):
 }
 
 /**
+ * How many lots fit under the Fondaco's cap (the first steps, lot 3): for each good a lot makes,
+ * the room left over what its fondaco holds of it (fine and exquisite counted), in whole lots.
+ * Without a cap, as many as there are.
+ */
+export function lotsThatFit(
+  outputs: Partial<Record<string, number>>,
+  yieldBps: number,
+  cap: number | undefined,
+  held: (good: string) => number,
+): number {
+  if (cap === undefined) return Number.POSITIVE_INFINITY;
+  let fit = Number.POSITIVE_INFINITY;
+  for (const [good, qty = 0] of Object.entries(outputs)) {
+    const perLot = Math.ceil((qty * yieldBps) / 10_000);
+    if (perLot <= 0) continue;
+    const have = held(good) + held(`${good}:fine`) + held(`${good}:exquisite`);
+    fit = Math.min(fit, Math.floor(Math.max(0, cap - have) / perLot));
+  }
+  return fit;
+}
+
+/** A workshop's lot now, in bps of its recipe's: its level, its house's effects, its neighbours. */
+export function workshopYieldBps(
+  ctx: WorldContext,
+  h: EmpireHouse,
+  ws: EmpireWorkshop,
+  s: EmpireSettings,
+): number {
+  return applyBps(
+    lotYieldBps(ws.level, s),
+    houseEffect(h, "workshopYield", s, { workshopId: ws.id }) + neighbourBonus(ctx, h, ws, s),
+  );
+}
+
+/**
  * Takes what is done, then fills the night queue up to `queueHours` from now, as far as the
  * inputs allow (taken at once). A full queue makes no more: absence costs nothing, gives no more.
  */
@@ -103,8 +146,10 @@ export function relaunchWorkshop(
   const place = { workshopId: ws.id };
   // The apprentices make a lot quicker; a queue under way keeps its pace.
   const fresh = freshBatchMs(tx, h, ws, s);
-  // An inside that cannot work (a station without its hands) queues nothing.
+  // An inside that cannot work (a station without its hands) queues nothing; nor does the
+  // welcome's quick lot until it is done (lot 2).
   if (!ws.job && fresh === null) return;
+  if (ws.job?.once) return;
   const batchMs = ws.job?.batchMs ?? (fresh as number);
   const queueEnd = ws.job ? ws.job.startedAt + ws.job.batches * batchMs : tx.now;
   let add = Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs);
@@ -124,6 +169,33 @@ export function relaunchWorkshop(
   const raws = s.highRecipes.goods.filter((g) => !(g in r.outputs));
   const rawHeld = raws.reduce((n, g) => n + held(g), 0);
   while (add > 0 && highRecipeRaw(ws.level, add, s) > rawHeld) add--;
+  // The welcome (the first steps, lot 2): the first lot of its workshop in seconds, alone in its
+  // queue, and an order of welcome waiting for exactly it in the nearest town.
+  if (
+    !ws.job &&
+    add > 0 &&
+    h.welcome &&
+    !h.welcome.batch &&
+    s.welcome &&
+    ws.type === s.welcome.workshop.type
+  ) {
+    for (const [good, per = 0] of Object.entries(r.inputs))
+      takeAt(tx, h, playerId, post, good, need(per, 1), "production_input", ws.id);
+    ws.job = {
+      recipe: ws.recipe,
+      startedAt: tx.now,
+      batches: 1,
+      level: ws.level,
+      batchMs: s.welcome.batchSeconds * 1_000,
+      once: true,
+    };
+    h.welcome.batch = true;
+    const [good, qty = 0] = Object.entries(r.outputs)[0] ?? [];
+    const made = Math.floor((qty * lotYieldBps(ws.level, s)) / 10_000);
+    const city = good ? giveWelcomeOrder(tx.ctx, h, playerId, s, good, made, tx.now) : null;
+    if (city) h.welcome.order = welcomeOrderId(city);
+    return;
+  }
   if (add <= 0) return;
   for (const [good, per = 0] of Object.entries(r.inputs))
     takeAt(tx, h, playerId, post, good, need(per, add), "production_input", ws.id);

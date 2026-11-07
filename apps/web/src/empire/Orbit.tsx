@@ -283,8 +283,10 @@ function Star({
         ? clock(s.left)
         : s.state === "idle"
           ? t().idle
-          : t().waits(fr.themeNames.resource[s.resource] ?? p.goods[s.resource] ?? s.resource);
-  const waiting = s.state === "idle" || s.state === "blocked";
+          : s.state === "full"
+            ? t().full(fr.themeNames.resource[s.good] ?? p.goods[s.good] ?? s.good)
+            : t().waits(fr.themeNames.resource[s.resource] ?? p.goods[s.resource] ?? s.resource);
+  const waiting = s.state === "idle" || s.state === "blocked" || s.state === "full";
   const building = p.view?.house.builds.some((b) => b.workshopId === ws.id);
   return (
     <Place x={x} y={y} rank={rank}>
