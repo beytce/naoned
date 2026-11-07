@@ -105,7 +105,13 @@ export function insideQualityBps(w: World, h: House, ws: Workshop, i: number): n
 const ducats = (n: bigint) => n * DENIERS_PER_DUCAT;
 
 /** What a house's tending does at a session; the gestures it took, counted. */
-export function tendInsides(w: World, h: House, spendable: () => bigint): void {
+export function tendInsides(
+  w: World,
+  h: House,
+  spendable: () => bigint,
+  /** Whether a good's stores are full: the cities take no more of it than the house makes. */
+  storesFull: (good: string) => boolean = () => false,
+): void {
   if (!insidesOn(w)) return;
   const how = tendingOf(h);
   if (how === "hasty") return;
@@ -145,7 +151,8 @@ export function tendInsides(w: World, h: House, spendable: () => bigint): void {
     if (mended) gestures++;
     // Where the cities' demand bounds the trade, speed is spent on care — fewer inputs, more
     // better pieces (lot A8, « A + B »): much for the careful, some for the average.
-    const care = how === "careful" ? CAREFUL_CARE : AVERAGE_CARE;
+    // The careful go to full care where their stores are full: speed no longer sells there.
+    const care = how === "careful" ? (storesFull(ws.good) ? 10_000 : CAREFUL_CARE) : AVERAGE_CARE;
     if (inside.stations.some((x) => x.care < care)) {
       for (const st of inside.stations) st.care = Math.max(st.care, care);
       gestures++;
@@ -193,9 +200,11 @@ export function tendInsides(w: World, h: House, spendable: () => bigint): void {
     // at the last level open, a station of the same kind beside it.
     // Nothing more to gain past the hall's ceiling: no money spent there.
     const full = interiorPaceBps({ ...e, job: null }, NOBODY, w.s, at) >= I.maxPaceBps;
+    const stocked = storesFull(ws.good);
     // The average breaks its main bottleneck once (a level), then leaves the plan be.
     const broken = inside.stations.some((x) => x.level > 1);
-    const raise = !full && (how === "careful" || !broken);
+    // Nor where its stores are full: more volume would not sell, care pays there (lot A8).
+    const raise = !full && !stocked && (how === "careful" || !broken);
     if (!raise) continue;
     const r = interiorThroughput(e, NOBODY, w.s, at);
     const neck = inside.stations.find((x) => x.id === r.bottleneck.station);

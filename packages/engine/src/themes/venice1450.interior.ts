@@ -313,7 +313,7 @@ export const venice1450Interior: Interior = {
   reference: "worn",
   // The default plan worn makes a tenth more than the workshop of before: the workshop modules
   // of the Scuola are gone, their yield is here (lot A8).
-  basePaceBps: 11_000,
+  basePaceBps: 10_000,
   // A full hall makes twice and a fifth the workshop of before: its level grows it beyond.
   maxPaceBps: 22_000,
   tradeFit: { same: 10_000, labourer: 7_000, other: 5_000 },
@@ -328,8 +328,8 @@ export const venice1450Interior: Interior = {
   // What a well-tended inside pays where the cities' demand bounds the trade (lot A8, decision
   // of the owner, 7 November 2026): fewer inputs — a quarter at most — and its better pieces in
   // the orders, a fine piece a quarter dearer, an exquisite three fifths.
-  waste: { careSaveBps: 1_200, upkeepSaveBps: 800, skillSaveBps: 60, maxSaveBps: 2_500 },
-  orderQuality: { fineBps: 12_500, exquisiteBps: 16_000 },
+  waste: { careSaveBps: 2_000, upkeepSaveBps: 1_000, skillSaveBps: 80, maxSaveBps: 3_500 },
+  orderQuality: { fineBps: 15_000, exquisiteBps: 20_000 },
   stations: STATIONS,
   buildings: BUILDINGS,
 };

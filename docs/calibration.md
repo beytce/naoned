@@ -2617,4 +2617,25 @@ Référence « usée » (`reference: "worn"` : 10 000 = le plan par défaut au p
 - **L'écart entre joueurs ne se voit pas au monde** (1,45 et 1,09 contre 2,00 et 1,40 au banc), et ce que gagnent les Maisons ne dépend presque pas de leur façon de tenir leurs ateliers : leurs revenus sont bornés par **les commandes des villes**, pas par la production ; un atelier plus rapide remplit plus vite son magasin, puis s'arrête. Une cadence moyenne mesurée sur des ateliers souvent arrêtés écrase l'écart.
 - **Question de conception pour le porteur** : pour que l'optimisation paie quand la demande borne tout, il faudrait qu'elle rapporte autre chose que du volume (moins d'intrants pour la même production, une part de belles pièces plus grande pour la cour, des commandes de prestige) : voir docs/plan-ateliers.md, lot A8.
 
+### « A + B » : ce que paie un atelier bien tenu (décision du porteur du 7 novembre 2026)
+
+Puisque la demande des villes borne les revenus, un atelier bien tenu paie **par lot vendu** plutôt qu'en volume, et seulement dans les mondes à intérieurs :
+- **A, le rendement matière** : il économise de ses intrants selon son soin moyen, l'entretien de ses machines (la part non usée) et le savoir-faire de ses ouvriers, jusqu'à un plafond (`interior.waste`) ; affiché en tête de l'atelier (« −12 % d'intrants »).
+- **B, les belles pièces dans les commandes** : ses pièces fines et exquises remplissent les commandes des villes à la place des ordinaires, les exquises d'abord, et la commande est payée selon leur part (`interior.orderQuality`) ; avant, seule la cour les achetait.
+
+Au simulateur : l'appliqué règle ses postes sur « soigné » (6 000, et 10 000 là où ses magasins sont pleins : la vitesse ne s'y vend plus), le moyen à 3 000 ; l'appliqué n'achète plus de niveaux ni de postes pour un atelier dont le magasin est plein. Ce que rapporte la tenue se lit **contre un monde sans intérieurs, Maison par Maison** (`npx tsx src/interior-paired.ts`, mêmes graines et cohortes) : la cadence moyenne trompe là où les ateliers s'arrêtent magasins pleins, et une graine en cohortes de 40 est trop bruitée (l'appliqué y gagne de 0,93 à 1,26 fois le pressé selon la graine). D'où des cohortes de 120.
+
+| Réglage (cohortes de 120) | Graines | Pressé / témoin | Moyen / pressé | Appliqué / pressé |
+| --- | --- | --- | --- | --- |
+| Modéré (fine ×1,25, exquise ×1,6, intrants −25 % au plus, base 1,10) | 1, 2, 3 | 1,13 à 1,19 | 1,04 à 1,09 | 1,03 à 1,08 |
+| Modéré, l'appliqué soigne au lieu d'agrandir | 1, 2 | 1,11 à 1,17 | 1,05 à 1,13 | 1,03 à 1,16 |
+| **Fort, retenu** (fine ×1,5, exquise ×2, intrants −35 % au plus, base 1,00) | 1, 2 | 1,17 | **1,12 à 1,14** | **1,12 à 1,17** |
+
+Avec le réglage fort, au monde (graines 1 et 2) : indice des prix 92 à 103 ✓, épargne des Maisons 0,75 puis 0,99 ✓ (le témoin : 0,88 puis 0,96 ✗), part des commandes 76 % ✓, un atelier jamais entretenu à 1,06 fois celui d'avant ✓, 5,7 gestes par séance ✓ ; **le calendrier de la Casa va trop vite en fin de partie** (paliers 14 à 20 sous la moitié de leur cible, contre 16, 19 et 20 au témoin) : toutes les Maisons s'enrichissent de 17 à 37 %.
+
+**Lecture.**
+- **La tenue paie désormais** : 12 à 17 % de plus qu'un joueur pressé, sans déranger les prix ni les commandes. C'est en deçà de l'écart visé au départ en cadence (1,6 à 2,2), qui n'a pas de sens dans une économie bornée par la demande.
+- **L'appliqué ne gagne guère plus que le moyen** : au-delà d'un bon soin et d'un goulot cassé, monter les postes et poser des équipes de nuit apporte du volume que les villes ne prennent pas. La profondeur de l'optimisation paie peu tant que la demande ne grandit pas avec elle (piste C, les commandes de prestige, au lot A9).
+- **La fin de partie s'accélère** : à corriger au calendrier (prix des Casa hautes), avec le rééquilibrage général au simulateur corrigé (toutes les graines, cohortes de 200).
+
 Reproduire : `cd apps/simulator && npx tsx src/interior-bench.ts 60` ; `npx tsx src/empire-cli.ts --seeds 1 --cohort 40 --interior` (environ 6 minutes ; le témoin sans `--interior`, environ 4 minutes).
