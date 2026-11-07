@@ -26,3 +26,11 @@ En vigueur dès sa mise en ligne : décision du porteur du 6 novembre 2026 (« o
 - **Le prix de la terre** : une case coûte 75 ducats, chaque case possédée rendant la suivante un peu plus chère (4,7 %). Quatre cases coûtent à peu près ce que coûtait un secteur.
 - **La mer** se franchit d'une côte à une côte à 8 cases au plus.
 - **Les trajets** suivent les routes de case en case ; ils durent à peu près comme avant (un peu moins, environ 10 %).
+
+## Les premiers pas (brouillon, à publier avec le chapitre)
+
+- **Une nouvelle maison démarre sans atelier**, avec 650 ducats et trois cases libres autour de son Fondaco. Lorenzo la mène à sa première commande : un camp de bûcherons bâti tout de suite, un premier lot en trente secondes, une commande qui l'attend dans la ville la plus proche, livrée en quarante-cinq secondes. Les maisons déjà fondées gardent leurs ateliers.
+- **Monter son Fondaco se voit.** Chaque niveau élève ce qu'il garde de chaque marchandise (300 au niveau 1, 20 000 au niveau 10, 700 000 au niveau 20) et élargit la zone d'où viennent ses commandes, jusqu'au niveau 10 ; la zone est dessinée sur la carte. Une fois plein, un atelier s'arrête et ses lots l'attendent : rien ne se perd. Rien ne vous est retiré : ce que vous avez au-delà du plafond reste à vous, seuls les nouveaux lots attendent.
+- **La carte parle** : chaque atelier montre sa marchandise et son état, chaque ville ses commandes, une ville hors de votre zone le niveau du Fondaco qui l'atteindra.
+- **Une case libre propose tout** : les ateliers et les bâtiments (Remise, Campo, Porta, fondaco), même ceux qui ne sont pas encore ouverts, avec ce qui les ouvre.
+- **La Porta s'ouvre au niveau 4** du Fondaco (au lieu de 10), pour 600 ducats ; le cavalier et les premières armes (lances, arbalètes, pavois, cuirasse) aussi, à leur mesure (de 200 à 400 ducats). Les niveaux de la Porta, et donc ses paliers, gardent leur prix.

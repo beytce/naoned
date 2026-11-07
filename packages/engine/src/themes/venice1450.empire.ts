@@ -507,17 +507,20 @@ export const venice1450Empire: EmpireSettingsInput = {
   },
   // The Porta's arms (docs/plan-porta.md §§ 4–5), to calibrate at the 24-month simulator (lot 6).
   porta: {
-    // The Porta (plan-porta.md § 3), from the Casa 10.
+    // The Porta (plan-porta.md § 3), from the Casa 4 (the first steps, lot 6, the owner's choice of
+    // 6 November 2026: discovered early), at the Campo's price; its levels as before, so that only
+    // its first tier opens early.
     building: {
-      casa: 10,
-      costDucats: 4_000,
+      casa: 4,
+      costDucats: 600,
       minutes: 360,
       levelCostDucats: 4_000,
       levelMinutes: 120,
       travelMinutesPerCell: 10,
     },
     models: {
-      cavaliere: { casa: 9, costDucats: 1_500, hp: 1_200, speedCenti: 600, places: ["weapon"] },
+      // The first combat model and its first arms, at the Porta's Casa and at its measure.
+      cavaliere: { casa: 4, costDucats: 400, hp: 1_200, speedCenti: 600, places: ["weapon"] },
       carro: {
         casa: 11,
         costDucats: 4_000,
@@ -540,8 +543,8 @@ export const venice1450Empire: EmpireSettingsInput = {
       lances: {
         kind: "weapon",
         effect: "lances",
-        casa: 9,
-        costDucats: 800,
+        casa: 4,
+        costDucats: 250,
         power: 40,
         perLevelBps: 2_000,
         rangeCenti: 150,
@@ -552,8 +555,8 @@ export const venice1450Empire: EmpireSettingsInput = {
       crossbows: {
         kind: "weapon",
         effect: "crossbows",
-        casa: 9,
-        costDucats: 1_000,
+        casa: 4,
+        costDucats: 300,
         power: 18,
         perLevelBps: 2_000,
         rangeCenti: 200,
@@ -571,8 +574,8 @@ export const venice1450Empire: EmpireSettingsInput = {
       pavise: {
         kind: "defense",
         effect: "pavise",
-        casa: 9,
-        costDucats: 900,
+        casa: 4,
+        costDucats: 300,
         power: 500,
         perLevelBps: 2_500,
         durationS: 10,
@@ -581,8 +584,8 @@ export const venice1450Empire: EmpireSettingsInput = {
       cuirass: {
         kind: "defense",
         effect: "cuirass",
-        casa: 9,
-        costDucats: 700,
+        casa: 4,
+        costDucats: 200,
         power: 1_500,
         perLevelBps: 3_334,
       },
