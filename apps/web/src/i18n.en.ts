@@ -978,7 +978,9 @@ export const en: Dictionary = {
       title: "While you were away",
       ready: "Your queues made",
       sites: (n: number) => (n === 1 ? "1 site finished" : `${n} sites finished`),
-      action: "Collect everything",
+      orders: (n: number) =>
+        n === 1 ? "1 order waits in the towns" : `${n} orders wait in the towns`,
+      action: "Harvest everything",
     },
     sea: {
       arsenal: "The ships",

@@ -906,6 +906,11 @@ const frDict = {
       title: "Pendant ton absence",
       ready: "Tes ateliers ont produit",
       sites: (n: number) => (n === 1 ? "1 chantier achevé" : `${n} chantiers achevés`),
+      /** The towns' orders waiting on return (I1 of the players' audit). */
+      orders: (n: number) =>
+        n === 1
+          ? "1 commande t'attend dans les villes"
+          : `${n} commandes t'attendent dans les villes`,
       action: "Tout récolter",
     },
     sea: {

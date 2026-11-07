@@ -1369,6 +1369,7 @@ function AwaySheet({ p, open, busy, onClose, act }: SheetProps & { open: boolean
   const away = p.view?.away;
   if (!away) return null;
   const ready = Object.entries(away.ready).filter(([, n]) => n > 0);
+  const waiting = (p.view?.orders ?? []).reduce((n, c) => n + c.orders.length, 0);
   return (
     <Sheet open={open} onClose={onClose} kicker={t.away.kicker} title={t.away.title}>
       {ready.length > 0 && (
@@ -1385,6 +1386,11 @@ function AwaySheet({ p, open, busy, onClose, act }: SheetProps & { open: boolean
       )}
       {away.sitesDone > 0 && (
         <p className="mt-3 text-sm text-cream">{t.away.sites(away.sitesDone)}</p>
+      )}
+      {waiting > 0 && (
+        <p className="mt-3 text-sm font-semibold text-cream" data-away-orders>
+          {t.away.orders(waiting)}
+        </p>
       )}
       <Slab
         tone="gold"
