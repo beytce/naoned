@@ -242,6 +242,7 @@ export const en: Dictionary = {
       plot: "Free plot",
       plotPrice: (d: number) => `Tile for sale · ${d.toLocaleString("en-GB")} ducats`,
       plotLine: "Buy it: your domain grows this way, then build a workshop on it.",
+      plotLink: (city: string) => `On the way to ${city}: buy it so your mules can go there.`,
       locked: "Closed plot",
       lockedCasa: (c: number) => `Open from Casa ${c}`,
       lockedLine: "Your Casa does not reach this region yet.",
@@ -255,6 +256,10 @@ export const en: Dictionary = {
       cityOrders: (n: number) =>
         n > 1 ? `${n} orders crated on the quay.` : "One order crated on the quay.",
       cityQuiet: "No order for now.",
+      toLink: (n: number) =>
+        n > 1
+          ? `Not linked yet: buy ${n} tiles up to it, your mules only walk your own land.`
+          : "Not linked yet: buy the tile leading there, your mules only walk your own land.",
       outOfZone: (casa: number | null) =>
         casa
           ? `Out of your zone: your Fondaco reaches it at level ${casa}.`
@@ -578,6 +583,7 @@ export const en: Dictionary = {
       blockBusy: (at: string) => `All your mules are on the road: the first is back at ${at}.`,
       blockBusyNone: "You have no vehicle docked.",
       blockNone: "Choose at least one order.",
+      blockLink: "None of your tiles links this town to a fondaco: buy those on the way.",
       gone: (vehicle: string) => `${vehicle} has left.`,
       recall: "Call back",
       lack: (n: number) => `${n} short`,
@@ -1498,6 +1504,7 @@ export const en: Dictionary = {
       on_city: "Too close to a town: a fondaco stands apart.",
       fleet_full: "The Remise is full: enlarge it for one vehicle more.",
       out_of_reach: "None of your fondaci has this city in its circle.",
+      not_linked: "Your tiles do not lead there: buy those on the way.",
       no_arsenal: "Put the Arsenal on a coast first.",
       built: "Already open.",
       invalid_quantity: "Impossible quantity.",

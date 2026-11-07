@@ -8,6 +8,8 @@
 import {
   gridRoad,
   gridRoadTiles,
+  linkTiles,
+  ownedRoadTiles,
   placeFault,
   placeTowns,
   tileAt,
@@ -336,9 +338,14 @@ export function roadBetween(
   a: [number, number],
   b: [number, number],
   s: EmpireSettings,
+  owned?: Set<string>,
 ): [number, number][] {
-  if (squareGrid(s))
-    return gridRoad(a, b, { tileSize: s.map.tileSize, tiles: s.map.cells }, townTiles(s));
+  if (squareGrid(s)) {
+    // Through the house's own tiles when they link the two (7 November 2026); a hop of before,
+    // begun on a way since unlinked, ends as it was drawn.
+    const through = owned ? (ownedWay(a, b, s, owned) ?? undefined) : undefined;
+    return gridRoad(a, b, { tileSize: s.map.tileSize, tiles: s.map.cells }, townTiles(s), through);
+  }
   const mids = roadTiles(a, b, s)
     .slice(1, -1)
     .map((t) => slotPoint(t.cell, t.k, s));
@@ -355,6 +362,47 @@ export function roadBetween(
     pts = out;
   }
   return pts;
+}
+
+/**
+ * On square tiles, the way from point `a` to point `b` through the house's own tiles only (decision
+ * of the owner, 7 November 2026: a mule walks neither on the sea nor on land not bought), tile
+ * after tile; null when the tiles owned do not link them.
+ */
+export function ownedWay(
+  a: [number, number],
+  b: [number, number],
+  s: EmpireSettings,
+  owned: Set<string>,
+): string[] | null {
+  const size = s.map.tileSize;
+  return ownedRoadTiles(
+    tileAt(a[0], a[1], size),
+    tileAt(b[0], b[1], size),
+    { tileSize: size, tiles: s.map.cells },
+    townTiles(s),
+    owned,
+  );
+}
+
+/**
+ * On square tiles, the tiles to buy to link point `a` to point `b` by the house's own tiles: the
+ * fewest, by land; [] when linked, null when no land joins them.
+ */
+export function tilesToLink(
+  a: [number, number],
+  b: [number, number],
+  s: EmpireSettings,
+  owned: Set<string>,
+): string[] | null {
+  const size = s.map.tileSize;
+  return linkTiles(
+    tileAt(a[0], a[1], size),
+    tileAt(b[0], b[1], size),
+    { tileSize: size, tiles: s.map.cells },
+    townTiles(s),
+    owned,
+  );
 }
 
 /** The towns' tiles, on square tiles (the roads go round them). */

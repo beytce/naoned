@@ -708,19 +708,28 @@ export function roadOf(
     known = new Map();
     roads.set(map, known);
   }
-  const key = `${a[0]},${a[1]}>${b[0]},${b[1]}`;
+  // Through the house's own tiles, where its vehicles walk only those (7 November 2026).
+  const owned = map.toLink ? new Set(map.unlocked) : undefined;
+  const key = `${a[0]},${a[1]}>${b[0]},${b[1]}|${owned ? map.unlocked.length : ""}`;
   const hit = known.get(key);
   if (hit) return hit;
   const s = {
-    map: { hexSize: map.hexSize, tiles: true, cities: map.cities, cells: map.cells },
+    map: {
+      hexSize: map.hexSize,
+      grid: map.grid,
+      tileSize: map.tileSize,
+      tiles: true,
+      cities: map.cities,
+      cells: map.cells,
+    },
   } as unknown as EmpireSettings;
-  const road = roadBetween(a, b, s);
+  const road = roadBetween(a, b, s, owned);
   known.set(key, road);
   return road;
 }
 
 /** Why « Livrer » cannot go: no stock for any order, every vehicle away, out of reach, none. */
-export type DeliveryBlock = "stock" | "busy" | "reach" | "none";
+export type DeliveryBlock = "stock" | "busy" | "reach" | "link" | "none";
 
 /**
  * What a city's « Livrer » would do (decision of the owner, 3 November 2026), as the engine does it
@@ -757,6 +766,8 @@ export function deliveryPlan(
   const none = { orders: [], picks: [], vehicle: null, pay: 0n, freeAt: null };
   if (!view || !at) return { ...none, reason: "reach" };
   const posts = at.posts ?? view.stores.map((s) => s.post);
+  // In reach, but no counter linked to it by the house's own tiles (7 November 2026).
+  const unlinked = view.map?.toLink?.[city] !== undefined;
   const goodsAt = (post: string) => view.stores.find((s) => s.post === post)?.goods ?? {};
   // With the insides, the better pieces of a good count for its orders, paid more (« B »).
   const q = view.interiorRules?.orderQuality;
@@ -796,6 +807,7 @@ export function deliveryPlan(
     covered: best(o.good) >= o.qty,
     ...paid(o, bestPost(o.good)),
   }));
+  if (unlinked) return { ...none, orders, reason: "link" };
   if (asked.length === 0) return { ...none, orders, reason: "none" };
   const docked = (v: Mine) =>
     v.legs.length === 0 &&

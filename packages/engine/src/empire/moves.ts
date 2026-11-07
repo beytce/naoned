@@ -6,7 +6,7 @@ import { houseEffect } from "./effects.js";
 import { holdPlacesOf } from "./fleet.js";
 import { roadLength } from "./grid.js";
 import { empireSettings, ownHouse } from "./house.js";
-import { citiesCovered, citySpot, standingPosts, unlockedOf } from "./map.js";
+import { citiesCovered, citySpot, linkedBy, standingPosts, unlockedOf, walkableOf } from "./map.js";
 import { cityOrdersAt, isWelcomeOrder, returnOrder, takeOrder } from "./orders.js";
 import type { EmpireSettings } from "./settings.js";
 import { roadBetween } from "./slots.js";
@@ -52,11 +52,19 @@ const lastPlace = (v: Vehicle) => v.legs?.at(-1)?.to ?? v.at ?? HOME_POST;
 
 /**
  * A hop's time, in ms: its length at the vehicles' speed (seconds a unit when set, the long
- * voyages; else units a second), a second at the least.
+ * voyages; else units a second), a second at the least. With `owned`, the road walks the house's
+ * own tiles (7 November 2026).
  */
-export function hopMs(s: EmpireSettings, a: [number, number], b: [number, number]): number {
+export function hopMs(
+  s: EmpireSettings,
+  a: [number, number],
+  b: [number, number],
+  owned?: Set<string>,
+): number {
   // On the small tiles, the road's length (3 November: the mules walk roads); else straight.
-  const d = s.map.tiles ? roadLength(roadBetween(a, b, s)) : Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const d = s.map.tiles
+    ? roadLength(roadBetween(a, b, s, owned))
+    : Math.hypot(b[0] - a[0], b[1] - a[1]);
   const per = s.moves.secondsPerUnit;
   return Math.max(1_000, Math.round(per ? d * per * 1_000 : (d / s.moves.unitsPerSecond) * 1_000));
 }
@@ -102,6 +110,10 @@ export function moveVehicle(tx: Tx, playerId: PlayerId, vehicleId: string, to: s
   const a = placePoint(h, s, from);
   const b = placePoint(h, s, to);
   if (!a || !b) fail("unknown_target");
+  // No hop where the house's own tiles do not lead (7 November 2026): not on the sea, nor on land
+  // not bought.
+  const owned = walkableOf(h, s);
+  if (!linkedBy(owned, a, b, s)) fail("not_linked");
   const last = v.legs?.at(-1);
   const departAt = last ? last.arrivesAt : tx.now + s.moves.departSeconds * 1_000;
   // The welcome (the first steps, lot 2): the order of welcome's delivery goes quickly, once.
@@ -111,7 +123,7 @@ export function moveVehicle(tx: Tx, playerId: PlayerId, vehicleId: string, to: s
     h.welcome &&
     !h.welcome.trip &&
     (v.loads ?? []).some((o) => o.city === code && isWelcomeOrder(o.id));
-  const ms = welcome && s.welcome ? s.welcome.tripSeconds * 1_000 : hopMs(s, a, b);
+  const ms = welcome && s.welcome ? s.welcome.tripSeconds * 1_000 : hopMs(s, a, b, owned);
   if (welcome && h.welcome) h.welcome.trip = true;
   const leg: EmpireLeg = { from, to, departAt, arrivesAt: departAt + ms };
   v.legs = [...(v.legs ?? []), leg];
@@ -288,7 +300,7 @@ function sendBack(h: EmpireHouse, s: EmpireSettings, v: Vehicle, at: number): vo
     from: v.at ?? "",
     to: home,
     departAt: at,
-    arrivesAt: at + hopMs(s, a, b),
+    arrivesAt: at + hopMs(s, a, b, walkableOf(h, s)),
   };
   v.legs = [leg];
   v.busyUntil = leg.arrivesAt;
@@ -332,6 +344,8 @@ export function deliverCity(tx: Tx, playerId: PlayerId, city: string, orderIds?:
     .sort((a, b) => (b.pay > a.pay ? 1 : b.pay < a.pay ? -1 : 0));
   if (asked.length === 0) fail("not_ordered");
   const serving = postsServing(h, s, city);
+  // In reach but not linked by the house's own tiles (7 November 2026): say so.
+  if (serving.length === 0 && walkableOf(h, s) && citiesCovered(h, s).has(city)) fail("not_linked");
   let best: { v: Vehicle; picks: string[]; hold: number } | null = null;
   let anyFree = false;
   for (const v of h.vehicles ?? []) {

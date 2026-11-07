@@ -4,7 +4,9 @@ import {
   buyableTiles,
   gridRoad,
   gridRoadTiles,
+  linkTiles,
   neighbours4,
+  ownedRoadTiles,
   parseTile,
   placeFault,
   placeTowns,
@@ -148,5 +150,46 @@ describe("the roads, tile by tile", () => {
     ];
     expect(alongRoad(line, 0.25)).toEqual({ x: 5, y: 0, angle: 0 });
     expect(alongRoad(line, 0.75).y).toBeCloseTo(5);
+  });
+});
+
+// The mules walk the house's own tiles (decision of the owner, 7 November 2026): no way across the
+// sea, nor across land not bought.
+describe("the roads through the house's own tiles", () => {
+  const towns = new Set(["1,1", "6,1"]);
+  it("walks only the tiles owned, from one end to the other", () => {
+    const owned = new Set(["0,0", "1,0", "2,0", "3,0"]);
+    expect(ownedRoadTiles("0,0", "3,0", M, towns, owned)).toEqual(["0,0", "1,0", "2,0", "3,0"]);
+    // The town at 1,1 is reached from the tile by its side.
+    expect(ownedRoadTiles("3,0", "1,1", M, towns, owned)).toEqual(["3,0", "2,0", "1,0", "1,1"]);
+  });
+
+  it("finds no way when a tile between is not owned, nor across the sea", () => {
+    expect(ownedRoadTiles("0,0", "3,0", M, towns, new Set(["0,0", "1,0", "3,0"]))).toBeNull();
+    // Coasts owned on both sides of the sea: no way between.
+    const coasts = new Set(["1,2", "2,2", "2,4", "3,4"]);
+    expect(ownedRoadTiles("2,2", "3,4", M, towns, coasts)).toBeNull();
+  });
+
+  it("goes round the towns among the tiles owned when it can", () => {
+    const owned = new Set(["0,1", "0,0", "1,0", "2,0", "2,1", "1,1"]);
+    expect(ownedRoadTiles("0,1", "2,1", M, towns, owned)).toEqual([
+      "0,1",
+      "0,0",
+      "1,0",
+      "2,0",
+      "2,1",
+    ]);
+  });
+
+  it("names the tiles to buy to link two places, the fewest, by land only", () => {
+    const owned = new Set(["3,1"]);
+    // From 3,1 to the town at 1,1: 2,1 alone between.
+    expect(linkTiles("3,1", "1,1", M, towns, owned)).toEqual(["2,1"]);
+    expect(linkTiles("3,1", "1,1", M, towns, new Set(["3,1", "2,1"]))).toEqual([]);
+    // Across the sea: no link by land.
+    expect(linkTiles("3,1", "2,4", M, towns, owned)).toBeNull();
+    // Never through a town.
+    expect(linkTiles("0,1", "2,1", M, towns, new Set(["0,1"]))).not.toContain("1,1");
   });
 });

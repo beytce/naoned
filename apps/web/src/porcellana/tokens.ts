@@ -67,7 +67,7 @@ export const LIGHT = {
   exposure: 1,
 } as const;
 
-/** The camera: orthographic, three quarters, a little turn allowed. */
+/** The camera: orthographic, three quarters, turning all the way round (7 November 2026). */
 export const CAMERA = {
   azimuth: Math.PI / 4,
   elevation: 0.64,
@@ -76,7 +76,6 @@ export const CAMERA = {
   maxZoom: 4,
   minPolar: 0.62,
   maxPolar: 1.12,
-  turn: 0.55,
   damping: 0.09,
 } as const;
 

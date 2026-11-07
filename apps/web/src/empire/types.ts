@@ -341,6 +341,11 @@ export interface EmpireMapView {
   zoneCasa?: Record<string, number>;
   /** The sectors the house owns: its vehicles go anywhere there (the hops). */
   unlocked: string[];
+  /**
+   * On square tiles bought one by one (7 November 2026): the cities in reach not yet linked to a
+   * counter by the house's own tiles, each with the fewest tiles to buy to link it.
+   */
+  toLink?: Record<string, string[]>;
   sites: { kind: "post" | "camp" | "depot"; cell: string; endsAt: number }[];
   arsenal: string | null;
   camp: string | null;
