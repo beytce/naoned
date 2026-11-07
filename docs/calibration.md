@@ -2631,6 +2631,6 @@ Le lot 1 sert de référence (6 cibles sur 9 sur les trois graines). Les essais 
 - Des plafonds quatre fois plus hauts (H) rendent le milieu de partie (Casa 8 au jour 43) sans rattraper la fin.
 - En contrepartie, le prochain palier en jours de revenu se rapproche beaucoup de sa cible (2 à 9 jours contre 2 à 41).
 
-**Décision du porteur attendue** : garder le plafond tel quel et rouvrir le rythme de la fin de partie (les exigences d'ateliers des Casa 9 à 20), ou un plafond plus lâche. Rien n'est appliqué au-delà du lot 3 tel que poussé.
+**Décision du porteur (7 novembre 2026)** : le plafond reste tel quel ; l'écart de la fin de partie (4 cibles sur 9 au lieu de 6, les Casa 16 à 20 trop tôt) est accepté pour l'instant. Le rythme de la fin de partie (les exigences d'ateliers des Casa 9 à 20) se recalera dans une passe à part, après les lots des premiers pas.
 
 Reproduire : les scénarios des essais s'écrivent à partir de `scenarios/cases-carrees.json` (la carte du scénario remplace celle du thème : y mettre `reach.byCasa` pour la zone liée) ; `npx tsx src/empire-cli.ts --seeds 1 --cohort 60 --scenario <essai>.json`.
