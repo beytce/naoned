@@ -862,7 +862,7 @@ export const en: Dictionary = {
       atCasa: "Top level: raise the Fondaco first",
       building: "Being built",
       queueRule:
-        "The queue covers 12 hours: relaunch before you sleep, nothing is lost while away.",
+        "A launched workshop works a few hours, then stops and waits for your harvest: nothing is lost, but nothing is made without you.",
       newTitle: "New workshop",
       newAction: (cost: string) => `Build · ${cost}`,
       newVerb: "Build",
@@ -1059,7 +1059,7 @@ export const en: Dictionary = {
       dogana:
         "The Market of San Marco: it always buys, at the day's price, up to what it takes a day.",
       carnet: "The week's goals: each gives Favour, a full Ledger a Seal.",
-      queue: "A relaunched workshop works up to 12 hours, even while you are away.",
+      queue: "A launched workshop works a few hours, then waits for your harvest to start again.",
       income: "What your sales and deliveries brought in a day, on average.",
     } as Record<string, string>,
     termHelp: "What is this?",
@@ -1083,7 +1083,7 @@ export const en: Dictionary = {
       collectWhy: "Take them: your stock grows, and the workshops start again for the night.",
       collectAction: "Collect and relaunch",
       relaunch: "A workshop is waiting.",
-      relaunchWhy: "Relaunch: it works up to 12 hours, even while you are away.",
+      relaunchWhy: "Launch it: it works a few hours, then waits for your harvest.",
       relaunchAction: "Relaunch all",
       casa: (n: number) => `All is ready for Fondaco level ${n}.`,
       casaWhy: "Each Fondaco level opens sites, towns and new trades.",
@@ -1092,6 +1092,14 @@ export const en: Dictionary = {
       buildWhy: (casa: number, good: string) =>
         `Fondaco level ${casa} asks for ${good.toLowerCase()}, and none of your workshops makes it.`,
       buildAction: (name: string) => `Build: ${name}`,
+      plot: "No free tile left: buy a plot next to your domain.",
+      plotWhy: "Each workshop stands on a tile of your own; one more plot, and the site can start.",
+      plotAction: "Buy the plot",
+      buy: (name: string, qty: number, good: string) =>
+        `Your ${name.toLowerCase()} waits for ${qty} ${good.toLowerCase()}: buy them at the Market.`,
+      buyWhy:
+        "None of your workshops makes it yet: the Market of San Marco helps out, dearer than making it.",
+      buyAction: "Buy",
       upgrade: (name: string, n: number) => `Raise your ${name.toLowerCase()} to level ${n}.`,
       upgradeWhy: "The next Fondaco level asks for higher workshops.",
       upgradeAction: (n: number) => `Raise to level ${n}`,
@@ -1110,7 +1118,7 @@ export const en: Dictionary = {
       claimAction: "Claim",
       wait: (at: string) => `All is running. Next lot at ${at}.`,
       waitNone: "All is running.",
-      waitWhy: "Come back later: nothing is lost while you are away.",
+      waitWhy: "Come back to harvest: a workshop with lots ready stops and waits for you.",
       welcome: {
         build: (name: string) => `Touch a free tile and build a ${name.toLowerCase()} there.`,
         buildWhy: (good: string) =>

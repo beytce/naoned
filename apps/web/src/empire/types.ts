@@ -89,6 +89,8 @@ export interface EmpireView {
   incomePerDay: string;
   /** The share of each receipt the hands take as wages, in bps. */
   wagesBps?: number;
+  /** How long a workshop's queue runs once launched (12 before the publication plan). */
+  queueHours?: number;
   asleep: boolean;
   nextCasa:
     | (EmpireSite & {

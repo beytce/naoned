@@ -564,7 +564,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       onBuild={(recipe) => {
         setHighlight(recipe);
         // The welcome's first workshop: straight to the list of a free tile (lot 2).
-        setSheet(step.kind === "welcome" ? "new" : "production");
+        // Straight to the list of a free tile, the workshop to build lit (P0-06).
+        setSheet("new");
       }}
     />
   );
@@ -579,7 +580,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         act={act}
         onBuild={(recipe) => {
           setHighlight(recipe);
-          setSheet(step.kind === "welcome" ? "new" : "production");
+          // Straight to the list of a free tile, the workshop to build lit (P0-06).
+          setSheet("new");
         }}
       />
     </div>
@@ -1200,8 +1202,12 @@ function WorkshopsSheet({
                   {t.workshop.open}
                 </button>
               </div>
-              {/* The night queue as a ribbon: its share of the 12 hours still to run. */}
-              {end && end > now && <Ribbon value={Math.min(1, (end - now) / (12 * 3_600_000))} />}
+              {/* The queue as a ribbon: its share of the hours still to run. */}
+              {end && end > now && (
+                <Ribbon
+                  value={Math.min(1, (end - now) / ((p.view?.queueHours ?? 12) * 3_600_000))}
+                />
+              )}
               {r && (
                 <p className="mt-2 text-xs text-cream-dim">
                   {t.workshop.makes}{" "}

@@ -105,6 +105,8 @@ export interface EmpireView {
   band: number;
   /** The share of each receipt the hands take as wages, in bps (said on the screen, P1-15). */
   wagesBps: number;
+  /** How long a workshop's queue runs once launched, then it waits for its harvest (rule 3). */
+  queueHours: number;
   /** Receipts a day (the last full days), in deniers. */
   incomePerDay: Deniers;
   asleep: boolean;
@@ -489,6 +491,7 @@ export function empireView(
     power,
     band: bandOf(power, s),
     wagesBps: salaryBps(power, s),
+    queueHours: s.queueHours,
     incomePerDay: incomePerDay(house, now),
     asleep: isAsleep(house, now, s),
     nextCasa: nextLine

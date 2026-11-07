@@ -18,13 +18,17 @@ export function handTargets(step: NextStep): string[] {
     case "casa":
       return ["[data-casa-road]", "[data-place-tab=fondaco]"];
     case "build":
-      return ["[data-fondaco-door=build]", "[data-place-tab=fondaco]"];
+      return ["[data-place^='free:']", "[data-fondaco-door=build]", "[data-place-tab=map]"];
     case "upgrade":
       return [`[data-workshop="${step.workshopId}"]`, "[data-place-tab=fondaco]"];
     case "sell":
       return ["[data-house-header]"];
     case "claim":
       return ["[data-place-tab=company]"];
+    case "plot":
+      return [`[data-place='sector:${step.cell}']`, "[data-place-tab=map]"];
+    case "buy":
+      return ["[data-house-header]"];
     case "wait":
       return [];
     // The welcome (lot 2): on the map, the object to touch.

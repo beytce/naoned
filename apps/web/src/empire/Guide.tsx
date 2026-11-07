@@ -59,6 +59,14 @@ function wordsOf(p: EmpirePayload, s: NextStep): { what: string; why: string; bu
       };
     case "claim":
       return { what: t.claim, why: t.claimWhy, button: t.claimAction };
+    case "plot":
+      return { what: t.plot, why: t.plotWhy, button: t.plotAction };
+    case "buy":
+      return {
+        what: t.buy(buildingName(p, s.type), s.qty, goodName(p, s.good)),
+        why: t.buyWhy,
+        button: t.buyAction,
+      };
     case "wait":
       return { what: s.at ? t.wait(hourOf(s.at)) : t.waitNone, why: t.waitWhy };
     case "welcome":
@@ -129,8 +137,10 @@ export function NextStepCard({
     }
     was.current = step.kind;
   }, [step.kind]);
-  // The welcome's button stays: it is the guide of the first order (the first steps, lot 2).
-  const button = step.kind === "welcome" || !known.has(step.kind) ? w.button : undefined;
+  // Every step keeps its button that does the gesture (the players' audit, P0-06: a step without
+  // one was a dead end); the hand still shows where the gesture is made by hand.
+  void known;
+  const button = w.button;
   const go = () => {
     if (step.kind === "build") onBuild(step.recipe);
     else if (step.kind === "welcome") {

@@ -788,7 +788,7 @@ const frDict = {
       atCasa: "Niveau maximum : monte d'abord ton Fondaco",
       building: "En chantier",
       queueRule:
-        "La file couvre 12 heures : relance avant de dormir, rien ne se perd pendant l'absence.",
+        "Un atelier lancé travaille quelques heures, puis s'arrête et attend ta récolte : rien n'est perdu, mais rien ne se fait sans toi.",
       newTitle: "Nouvel atelier",
       newAction: (cost: string) => `Bâtir · ${cost}`,
       newVerb: "Bâtir",
@@ -990,7 +990,7 @@ const frDict = {
       dogana:
         "Le Marché de San Marco : il achète toujours, au prix du jour, dans la limite de ce qu'il prend par jour.",
       carnet: "Les objectifs de la semaine : chacun donne de la Faveur, le Carnet plein un Sceau.",
-      queue: "Un atelier relancé travaille jusqu'à 12 heures, même quand tu n'es pas là.",
+      queue: "Un atelier lancé travaille quelques heures, puis attend ta récolte pour repartir.",
       income: "Ce que tes ventes et livraisons ont rapporté par jour, en moyenne.",
     } as Record<string, string>,
     termHelp: "Qu'est-ce que c'est ?",
@@ -1014,7 +1014,7 @@ const frDict = {
       collectWhy: "Récolte-les : l'Entrepôt se remplit, et les ateliers repartent.",
       collectAction: "Récolter et relancer",
       relaunch: "Un atelier attend.",
-      relaunchWhy: "Lance-le : il travaillera jusqu'à 12 heures, même quand tu n'es pas là.",
+      relaunchWhy: "Lance-le : il travaillera quelques heures, puis attendra ta récolte.",
       relaunchAction: "Tout relancer",
       casa: (n: number) => `Tout est prêt pour le Fondaco niveau ${n}.`,
       casaWhy: "Chaque niveau du Fondaco ouvre des chantiers, des villes et de nouveaux métiers.",
@@ -1023,6 +1023,15 @@ const frDict = {
       buildWhy: (casa: number, good: string) =>
         `Le Fondaco niveau ${casa} demande des ${good.toLowerCase()}, et aucun de tes ateliers n'en fabrique.`,
       buildAction: (name: string) => `Bâtir : ${name}`,
+      plot: "Plus de case libre : achète une parcelle à côté de ton domaine.",
+      plotWhy:
+        "Chaque atelier se bâtit sur une case à toi ; une parcelle de plus, et le chantier peut partir.",
+      plotAction: "Acheter la parcelle",
+      buy: (name: string, qty: number, good: string) =>
+        `Ton ${name.toLowerCase()} attend ${qty} ${good.toLowerCase()} : achète-les au Marché.`,
+      buyWhy:
+        "Aucun de tes ateliers n'en fait encore : le Marché de San Marco dépanne, plus cher que produire.",
+      buyAction: "Acheter",
       upgrade: (name: string, n: number) => `Monte ton ${name.toLowerCase()} au niveau ${n}.`,
       upgradeWhy: "Le niveau suivant du Fondaco demande des ateliers plus hauts.",
       upgradeAction: (n: number) => `Monter au niveau ${n}`,
@@ -1040,7 +1049,7 @@ const frDict = {
       claimAction: "Encaisser",
       wait: (at: string) => `Tout tourne. Prochain lot à ${at}.`,
       waitNone: "Tout tourne.",
-      waitWhy: "Reviens plus tard : rien ne se perd pendant ton absence.",
+      waitWhy: "Reviens récolter : un atelier aux lots prêts s'arrête et t'attend.",
       // The welcome of a new house (docs/plan-premiers-pas.md lot 2), a gesture at a time.
       welcome: {
         build: (name: string) => `Touche une case libre et bâtis-y un ${name.toLowerCase()}.`,
