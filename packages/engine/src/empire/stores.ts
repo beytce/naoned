@@ -1,7 +1,7 @@
 import type { StockReason } from "../effects.js";
 import type { EmpireHouse, EmpireWorkshop, PlayerId } from "../state.js";
 import { type Tx, addStock, fail, inventoryLine, removeStock } from "../tx.js";
-import { citySpot, reachOf, standingPosts } from "./map.js";
+import { citySpot, linkedBy, reachOf, standingPosts, walkableOf } from "./map.js";
 import type { EmpireSettings } from "./settings.js";
 
 /**
@@ -26,15 +26,19 @@ export function postsIn(h: EmpireHouse, s: EmpireSettings, region: string): stri
   return region === HOME ? [HOME_POST] : [`@${region}`];
 }
 
-/** The counters that have a city in reach, Venice's first. */
+/**
+ * The counters that have a city in reach, Venice's first; on square tiles bought one by one, only
+ * those the house's own tiles link to it (decision of the owner, 7 November 2026).
+ */
 export function postsServing(h: EmpireHouse, s: EmpireSettings, city: string): string[] {
   const c = s.map.cities.find((x) => x.code === city);
   if (!c) return [];
   const [cx, cy] = citySpot(c, s);
+  const owned = walkableOf(h, s);
   return standingPosts(h, s)
     .filter((p) => {
       const r = reachOf(p.level, s);
-      return (p.x - cx) ** 2 + (p.y - cy) ** 2 <= r * r;
+      return (p.x - cx) ** 2 + (p.y - cy) ** 2 <= r * r && linkedBy(owned, [p.x, p.y], [cx, cy], s);
     })
     .map((p) => p.id);
 }

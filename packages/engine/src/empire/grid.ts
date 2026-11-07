@@ -134,6 +134,84 @@ export function placeTowns<C extends { code: string; x: number; y: number; size?
 }
 
 /**
+ * The cheapest way from one tile to another by their sides (A*, the steps left by the sides never
+ * more than the cost left): `step` the cost of entering a tile, null where one may not go. The same
+ * at every call (ties broken by the tiles' keys). Null when there is no way.
+ */
+function cheapestWay(
+  from: string,
+  to: string,
+  step: (t: string) => number | null,
+): string[] | null {
+  if (from === to) return [from];
+  const left = (t: string) => tileDistance(t, to);
+  const cost = new Map<string, number>([[from, 0]]);
+  const back = new Map<string, string>();
+  // A binary heap on (f, g, key).
+  const heap: { t: string; g: number; f: number }[] = [];
+  const before = (p: (typeof heap)[number], q: (typeof heap)[number]) =>
+    p.f !== q.f ? p.f < q.f : p.g !== q.g ? p.g < q.g : p.t < q.t;
+  const push = (x: (typeof heap)[number]) => {
+    heap.push(x);
+    for (let i = heap.length - 1; i > 0; ) {
+      const up = (i - 1) >> 1;
+      if (!before(heap[i] as typeof x, heap[up] as typeof x)) break;
+      [heap[i], heap[up]] = [heap[up] as typeof x, heap[i] as typeof x];
+      i = up;
+    }
+  };
+  const pop = () => {
+    const top = heap[0] as (typeof heap)[number];
+    const last = heap.pop() as (typeof heap)[number];
+    if (heap.length > 0) {
+      heap[0] = last;
+      for (let i = 0; ; ) {
+        const l = 2 * i + 1;
+        const r = l + 1;
+        let m = i;
+        if (l < heap.length && before(heap[l] as typeof last, heap[m] as typeof last)) m = l;
+        if (r < heap.length && before(heap[r] as typeof last, heap[m] as typeof last)) m = r;
+        if (m === i) break;
+        [heap[i], heap[m]] = [heap[m] as typeof last, heap[i] as typeof last];
+        i = m;
+      }
+    }
+    return top;
+  };
+  push({ t: from, g: 0, f: left(from) });
+  const done = new Set<string>();
+  let found = false;
+  while (heap.length > 0) {
+    const cur = pop();
+    if (done.has(cur.t)) continue;
+    done.add(cur.t);
+    if (cur.t === to) {
+      found = true;
+      break;
+    }
+    for (const n of neighbours4(cur.t)) {
+      if (done.has(n)) continue;
+      const c = step(n);
+      if (c === null) continue;
+      const g = cur.g + c;
+      if (g < (cost.get(n) ?? Number.POSITIVE_INFINITY)) {
+        cost.set(n, g);
+        back.set(n, cur.t);
+        push({ t: n, g, f: g + left(n) });
+      }
+    }
+  }
+  if (!found) return null;
+  const path = [to];
+  for (let t = to; t !== from; ) {
+    const prev = back.get(t) as string;
+    path.unshift(prev);
+    t = prev;
+  }
+  return path;
+}
+
+/**
  * The road's tiles from one tile to another, by their sides: the cheapest way, a step costing one,
  * a town's tile on the way four (the road goes around a town when it can), a tile of the sea five
  * (a ford, a ferry). The same at every call (ties broken by the tiles' keys).
@@ -144,12 +222,6 @@ export function gridRoadTiles(
   map: SquareMap,
   towns: Set<string>,
 ): string[] {
-  if (from === to) return [from];
-  const left = (t: string) => tileDistance(t, to);
-  const cost = new Map<string, number>([[from, 0]]);
-  const back = new Map<string, string>();
-  const open: { t: string; g: number; f: number }[] = [{ t: from, g: 0, f: left(from) }];
-  const done = new Set<string>();
   // The search stays within a margin around the two ends (the sea beyond is never cheaper).
   const [fi, fj] = parseTile(from);
   const [ti, tj] = parseTile(to);
@@ -163,45 +235,62 @@ export function gridRoadTiles(
       j <= Math.max(fj, tj) + pad
     );
   };
-  while (open.length > 0) {
-    open.sort((p, q) => p.f - q.f || p.g - q.g || p.t.localeCompare(q.t));
-    const cur = open.shift() as (typeof open)[number];
-    if (done.has(cur.t)) continue;
-    done.add(cur.t);
-    if (cur.t === to) break;
-    for (const n of neighbours4(cur.t)) {
-      if (done.has(n) || !inBox(n)) continue;
-      const extra = n === to ? 0 : towns.has(n) ? 3 : map.tiles[n] ? 0 : 4;
-      const g = cur.g + 1 + extra;
-      if (g < (cost.get(n) ?? Number.POSITIVE_INFINITY)) {
-        cost.set(n, g);
-        back.set(n, cur.t);
-        open.push({ t: n, g, f: g + left(n) });
-      }
-    }
-  }
-  const path = [to];
-  for (let t = to; t !== from; ) {
-    const prev = back.get(t);
-    if (!prev) return [from, to];
-    path.unshift(prev);
-    t = prev;
-  }
-  return path;
+  const step = (n: string) =>
+    !inBox(n) ? null : n === to ? 1 : towns.has(n) ? 4 : map.tiles[n] ? 1 : 5;
+  return cheapestWay(from, to, step) ?? [from, to];
+}
+
+/**
+ * The road's tiles through the house's own tiles only (decision of the owner, 7 November 2026: a
+ * mule walks neither on the sea nor on land not bought): from `from` to `to`, every tile between
+ * owned, a town's tile owned on the way counting four. Null when the owned tiles do not link them.
+ */
+export function ownedRoadTiles(
+  from: string,
+  to: string,
+  map: SquareMap,
+  towns: Set<string>,
+  owned: Set<string>,
+): string[] | null {
+  const step = (n: string) =>
+    n === to ? 1 : owned.has(n) && map.tiles[n] ? (towns.has(n) ? 4 : 1) : null;
+  return cheapestWay(from, to, step);
+}
+
+/**
+ * The tiles to buy to link two places by the house's own tiles: the fewest, by land only, never
+ * through a town; the owned tiles on the way cost nothing (the shortest among the cheapest). Sorted
+ * from `from` to `to`, [] when linked already, null when no land joins them.
+ */
+export function linkTiles(
+  from: string,
+  to: string,
+  map: SquareMap,
+  towns: Set<string>,
+  owned: Set<string>,
+): string[] | null {
+  const BUY = 1_000;
+  const step = (n: string) =>
+    n === to ? 1 : !map.tiles[n] || towns.has(n) ? null : owned.has(n) ? 1 : BUY;
+  const way = cheapestWay(from, to, step);
+  return way ? way.slice(1, -1).filter((t) => !owned.has(t)) : null;
 }
 
 /**
  * The road as it is walked and drawn: from point `a` to point `b` through the middles of the tiles
- * between, its corners rounded (two passes of Chaikin's cutting).
+ * between (`through`, else the cheapest way), its corners rounded (two passes of Chaikin's cutting).
  */
 export function gridRoad(
   a: [number, number],
   b: [number, number],
   map: SquareMap,
   towns: Set<string>,
+  through?: string[],
 ): [number, number][] {
   const size = map.tileSize;
-  const mids = gridRoadTiles(tileAt(a[0], a[1], size), tileAt(b[0], b[1], size), map, towns)
+  const mids = (
+    through ?? gridRoadTiles(tileAt(a[0], a[1], size), tileAt(b[0], b[1], size), map, towns)
+  )
     .slice(1, -1)
     .map((t) => tileCentre(t, size));
   let pts: [number, number][] = [a, ...mids, b];

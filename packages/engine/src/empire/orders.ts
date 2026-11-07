@@ -317,7 +317,13 @@ export function giveWelcomeOrder(
   if (!home) return null;
   const covered = citiesCovered(h, s);
   const city = s.map.cities
-    .filter((c) => covered.has(c.code) && orderRefOf(s, c.region, good) !== null)
+    .filter(
+      (c) =>
+        covered.has(c.code) &&
+        orderRefOf(s, c.region, good) !== null &&
+        // A town the house's own tiles link to a counter (7 November 2026).
+        postsServing(h, s, c.code).length > 0,
+    )
     .map((c) => {
       const [x, y] = citySpot(c, s);
       return { c, d: Math.hypot(x - home.x, y - home.y) };

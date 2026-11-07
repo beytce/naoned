@@ -6,7 +6,7 @@ import { houseEffect } from "./effects.js";
 import { tileAt, tileCentre, tileDistance } from "./grid.js";
 import { counterCostOf, empireSettings, openSite, ownHouse } from "./house.js";
 import type { EmpireSettings } from "./settings.js";
-import { slotPoint, tileFault } from "./slots.js";
+import { ownedWay, slotPoint, tileFault, tilesToLink } from "./slots.js";
 
 /**
  * The map at the centre of the game (step 2): a hex grid over the Mediterranean, in axial cells
@@ -236,6 +236,47 @@ const homeCell = (s: EmpireSettings) => regionSeat(s, HOME) ?? regionCells(s, HO
 export function startCells(s: EmpireSettings): string[] {
   const home = homeCell(s);
   return s.map.reach && home ? [home] : regionCells(s, HOME);
+}
+
+/**
+ * The tiles a house's vehicles may walk (decision of the owner, 7 November 2026): on square tiles
+ * bought one by one, its own; none asked elsewhere (undefined).
+ */
+export function walkableOf(h: EmpireHouse, s: EmpireSettings): Set<string> | undefined {
+  return squareGrid(s) && s.map.unlock ? new Set(unlockedOf(h, s)) : undefined;
+}
+
+/** Whether the house's own tiles link two points (always, where the rule is not set). */
+export function linkedBy(
+  owned: Set<string> | undefined,
+  a: [number, number],
+  b: [number, number],
+  s: EmpireSettings,
+): boolean {
+  return !owned || ownedWay(a, b, s, owned) !== null;
+}
+
+/**
+ * The cities within reach not yet linked to a counter by the house's own tiles, each with the
+ * fewest tiles to buy to link it to the nearest (by those tiles) counter that has it in reach; a
+ * city no land joins is left out.
+ */
+export function citiesToLink(h: EmpireHouse, s: EmpireSettings): Record<string, string[]> {
+  const owned = walkableOf(h, s);
+  if (!owned) return {};
+  const posts = standingPosts(h, s);
+  const out: Record<string, string[]> = {};
+  for (const c of s.map.cities) {
+    const at = citySpot(c, s);
+    const near = posts.filter((p) => within([p.x, p.y], at, reachOf(p.level, s)));
+    if (near.length === 0 || near.some((p) => linkedBy(owned, [p.x, p.y], at, s))) continue;
+    const best = near
+      .map((p) => tilesToLink([p.x, p.y], at, s, owned))
+      .filter((t): t is string[] => t !== null)
+      .sort((x, y) => x.length - y.length || x.join(";").localeCompare(y.join(";")))[0];
+    if (best) out[c.code] = best;
+  }
+  return out;
 }
 
 /** The sectors a house owns (the sectors bought one by one): Venice's at the least. */
@@ -677,11 +718,21 @@ function giveStartTiles(h: EmpireHouse, s: EmpireSettings): void {
   const from = h.home.cell;
   const taken = takenTiles(h, s);
   const owned = new Set(unlockedOf(h, s));
-  const given = Object.keys(s.map.cells)
-    .filter((t) => s.map.cells[t]?.region === HOME && !taken.has(t) && !owned.has(t))
+  // First the tiles that link the fondaco to its nearest town of Venetia (decision of the owner,
+  // 7 November 2026): the order of welcome is brought there by land of the house's own.
+  const link = citiesToLink(h, s);
+  const towns = s.map.cities
+    .filter((c) => c.region === HOME && link[c.code] !== undefined)
+    .map((c) => ({ code: c.code, tiles: link[c.code] as string[] }))
+    .sort((a, b) => a.tiles.length - b.tiles.length || a.code.localeCompare(b.code));
+  const path = towns[0]?.tiles ?? [];
+  const rest = Object.keys(s.map.cells)
+    .filter(
+      (t) => s.map.cells[t]?.region === HOME && !taken.has(t) && !owned.has(t) && !path.includes(t),
+    )
     .sort((a, b) => cellDistance(from, a, s) - cellDistance(from, b, s) || a.localeCompare(b))
-    .slice(0, s.start.freeTiles);
-  h.unlocked = [...owned, ...given];
+    .slice(0, Math.max(0, s.start.freeTiles - path.length));
+  h.unlocked = [...owned, ...path, ...rest];
 }
 
 function seatWorkshops(h: EmpireHouse, s: EmpireSettings): void {

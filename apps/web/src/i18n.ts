@@ -159,6 +159,8 @@ const frDict = {
       plot: "Parcelle libre",
       plotPrice: (d: number) => `Case à acheter · ${d.toLocaleString("fr-FR")} ducats`,
       plotLine: "Achète-la : ton domaine grandit de ce côté, puis bâtis-y un atelier.",
+      plotLink: (city: string) =>
+        `Sur le chemin de ${city} : achète-la pour que tes mules y aillent.`,
       locked: "Parcelle fermée",
       lockedCasa: (c: number) => `Ouverte à la Casa ${c}`,
       lockedLine: "Ta Casa n'atteint pas encore cette région.",
@@ -172,6 +174,10 @@ const frDict = {
       cityOrders: (n: number) =>
         n > 1 ? `${n} commandes en caisses au quai.` : "Une commande en caisse au quai.",
       cityQuiet: "Aucune commande pour l'instant.",
+      toLink: (n: number) =>
+        n > 1
+          ? `Pas encore reliée : achète ${n} cases jusqu'à elle, tes mules ne vont que sur tes terres.`
+          : "Pas encore reliée : achète la case qui y mène, tes mules ne vont que sur tes terres.",
       outOfZone: (casa: number | null) =>
         casa
           ? `Hors de ta zone : ton Fondaco l'atteint au niveau ${casa}.`
@@ -505,6 +511,8 @@ const frDict = {
       blockBusy: (at: string) => `Toutes vos mules sont en route : la première rentre à ${at}.`,
       blockBusyNone: "Vous n'avez aucun véhicule à quai.",
       blockNone: "Choisissez au moins une commande.",
+      blockLink:
+        "Aucune de vos cases ne relie cette ville à un fondaco : achetez celles du chemin.",
       gone: (vehicle: string) => `${vehicle} est partie.`,
       recall: "Rappeler",
       lack: (n: number) => `manque ${n}`,
@@ -1437,6 +1445,7 @@ const frDict = {
       on_city: "Trop près d'une ville : un fondaco se pose à l'écart.",
       fleet_full: "La Remise est pleine : agrandissez-la pour un véhicule de plus.",
       out_of_reach: "Aucun de vos fondaci n'a cette ville dans son cercle.",
+      not_linked: "Vos cases ne mènent pas jusque-là : achetez celles du chemin.",
       no_arsenal: "Posez d'abord l'Arsenal sur une côte.",
       built: "Déjà ouvert.",
       invalid_quantity: "Quantité impossible.",
