@@ -1,6 +1,6 @@
 # La Terraferme en Porcellana (plan du lot 9, 7 novembre 2026)
 
-*À valider par le porteur avant tout code de jeu.* Le porteur a retenu la recommandation des propositions du 7 novembre (« Ok suis ta recommandation ») et demande en plus de rendre visuels les bâtiments qu'on pose et de penser l'interface autour.
+*Validé par le porteur le 7 novembre 2026 (« je valide le plan »), avec trois ajouts : les liens ① l'intendance par la route et ⑤ les villes tenues des propositions de liens entre les modes (`docs/direction-artistique-2026-11/terraferme/liens-modes.html`), et l'achat de troupes avec les ducats du commerce, qui modifie la règle d'or 4 (§ 4 bis).* Le porteur a retenu la recommandation des propositions du 7 novembre (« Ok suis ta recommandation ») et demande en plus de rendre visuels les bâtiments qu'on pose et de penser l'interface autour.
 
 Références (elles font foi pour l'aspect) :
 - les quatre propositions : `docs/direction-artistique-2026-11/terraferme/propositions.html` (en ligne, privé : https://claude.ai/artifact/GhNwtH8YRi5Vq3SKJhzagd) ;
@@ -60,16 +60,27 @@ Aucune pièce nouvelle : la fiche, le dock, `ChoiceCard`, `CostChips`, la touche
 - Quatre voisins au lieu de six : une case a moins de fronts possibles, un fort couvre cinq cases au lieu de sept, les poches se ferment plus vite. On le mesure au simulateur (`pnpm sim --terra`, toutes les graines) : durée de la semaine, vitesse des fronts, part de terre libre au jeudi. Les réglages qui bougent (milices, `perCells`, rayon des remparts) sont notés dans `docs/calibration.md`.
 - Le changement prend effet le lundi suivant sa mise en ligne (règle de la Terraferme), annoncé dans les notes du chapitre.
 
+## 4 bis. Des troupes achetées avec les ducats (décision du porteur, 7 novembre 2026)
+
+- « + Troupes » dans le dock « Tes terres », à côté de « Max +20 » : 20 troupes pour 100 d, trois fois par jour, jamais au-delà du maximum (`terraferma.troopBuy`, absent : fermé). Les ducats sont détruits.
+- Mesure (`pnpm --filter @comptoirs/simulator terra-buy`, `docs/calibration.md`) : un marchand riche gagnait déjà toutes les semaines par ses forts et ses hausses du maximum ; la vente lui ajoute environ 12 % de Gloire et de cases.
+- La règle d'or 4 est réécrite en conséquence (CLAUDE.md, CADRAGE-v3 § 2) : l'argent réel n'achète toujours rien à la Terraferme.
+
+## 4 ter. Les liens retenus avec les autres modes
+
+- **① L'intendance par la route** : le Campo devient un lieu qu'on livre en tournée, comme une ville. Ses besoins de la semaine (pain des troupes, planches et briques des bâtiments) s'affichent en caisses au quai ; les véhicules les portent du Fondaco sur les routes. La ration reste plafonnée et égale : livrer remplit jusqu'au plafond, jamais au-delà. Elle remplace le paiement d'entrée dans un menu (lot T5).
+- **⑤ Les villes tenues** : les villes du plateau sont celles de la carte du commerce ; qui en tient une à la clôture y plante sa bannière la semaine suivante sur la carte de tous, et reçoit une lettre de la Signoria pour la région de cette ville (une part de la Faveur d'une charte). Dans le plafond de 10 à 15 % de la progression de la semaine, mesuré au simulateur de 24 mois (lot T6).
+
 ## 5. Les lots
 
 | Lot | Contenu | Vérification |
 | --- | --- | --- |
-| T1 | **Moteur** : `terraferma.grid`, voisinage et distance carrés, tests d'abord sur la fixture figée ; la carte carrée de la Vénétie ; mesure au simulateur, `docs/calibration.md` | `pnpm test`, `pnpm sim --terra` |
+| T1 | **Moteur** : `terraferma.grid`, voisinage et distance carrés (`terraNeighbors`, `terraDistance`), tests d'abord sur la fixture figée ; la carte carrée de la Vénétie (tirée de la même géographie) ; l'achat de troupes (`terraferma.troopBuy`, commande `terraBuyTroops`) ; mesure au simulateur, `docs/calibration.md`. **Fait le 7 novembre 2026** ; Venise reste en hexagones jusqu'au plateau du lot T2 | `pnpm test`, `terra`, `terra-buy` |
 | T2 | **Le plateau** : `porcellana/board/TerraBoard.tsx` sur `TileBoard` (instances : hauteur, teinte des côtés, vague) ; l'émail en shader (un champ par marchand rangé dans une texture de données, seuillé sur le dessus des cases, mis à jour quand une case change de main) ; la caméra et le zoom de la Carte ; sans WebGL, la même scène à plat (`FlatBoard`) | captures ordinateur et téléphone |
 | T3 | **Les fronts** : ruban à largeur variable (variante de `ribbon.ts`), chevrons, pastille, équerres, la tête qui glisse avec la coulée ; menaces à l'encre | parcours e2e « lancer un front » |
 | T4 | **Les bâtiments** : `models/terra.ts` (camp, fort, bourg, port, bombarde, remparts), leur arrivée, leur chute, le tir de bombarde | captures du laboratoire `?lab=porcellana` |
-| T5 | **L'interface** : barre, fiche, docks (front, bâtir, voisin, tes terres, viser), panneau des fronts, pied, retours ; textes de `fr.empire.terra` | `pnpm typecheck && pnpm lint && pnpm test`, e2e |
-| T6 | **Le retour** : « pendant votre absence » rejoué en accéléré ; ce qui demande moins de mouvement passe directement à l'état final | e2e |
+| T5 | **L'interface** : barre, fiche, docks (front, bâtir, voisin, tes terres avec « + Troupes », viser), panneau des fronts, pied, retours ; textes de `fr.empire.terra` ; ① l'intendance par la route (le Campo livré en tournée) | `pnpm typecheck && pnpm lint && pnpm test`, e2e |
+| T6 | **Le retour** : « pendant votre absence » rejoué en accéléré ; ce qui demande moins de mouvement passe directement à l'état final ; ⑤ les villes tenues (bannière et lettre de la Signoria), au simulateur de 24 mois | e2e, `empire` |
 | T7 | **Bascule** : `terraferma.grid` à « square » le lundi suivant, notes du chapitre, `docs/design.md` | décision du porteur |
 
 ## 6. Budget
@@ -80,5 +91,5 @@ Aucune pièce nouvelle : la fiche, le dock, `ChoiceCard`, `CostChips`, la touche
 ## 7. Questions au porteur
 
 1. **Le bourg** : le moteur le garde en option (`borgo`), le plan Terraferme du 18 octobre l'avait retiré. On le montre ou non ?
-2. **Le voisinage à quatre** : d'accord pour le mesurer au simulateur et ajuster les réglages, avec un changement le lundi suivant ?
-3. **« Encres »** pour les voisins : d'accord, ou faut-il une teinte par voisin direct au zoom rapproché ?
+2. **« Encres »** pour les voisins : d'accord, ou faut-il une teinte par voisin direct au zoom rapproché ?
+3. **Les riches** : au simulateur, un marchand qui met 2 000 d par jour dans la guerre est Signore à chaque graine, avec ou sans la vente de troupes (forts et maximum relevé suffisent). Faut-il un plafond de dépense par semaine, ou est-ce voulu ?

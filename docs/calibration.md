@@ -2618,3 +2618,41 @@ Référence « usée » (`reference: "worn"` : 10 000 = le plan par défaut au p
 - **Question de conception pour le porteur** : pour que l'optimisation paie quand la demande borne tout, il faudrait qu'elle rapporte autre chose que du volume (moins d'intrants pour la même production, une part de belles pièces plus grande pour la cour, des commandes de prestige) : voir docs/plan-ateliers.md, lot A8.
 
 Reproduire : `cd apps/simulator && npx tsx src/interior-bench.ts 60` ; `npx tsx src/empire-cli.ts --seeds 1 --cohort 40 --interior` (environ 6 minutes ; le témoin sans `--interior`, environ 4 minutes).
+
+## La Terraferme en cases carrées et des troupes achetées avec les ducats (7 novembre 2026, décisions du porteur)
+
+Deux décisions du porteur, mesurées avant la bascule (`docs/plan-terraferme-porcellana.md`, lot T1) :
+
+- **la grille carrée** de Porcellana (`terraferma.grid` : « square », quatre voisins côte à côte au lieu de six), prise par la carte de la semaine suivante ;
+- **des troupes achetées avec les ducats du commerce** (`terraferma.troopBuy`), qui modifie la règle d'or 4 pour la Terraferme.
+
+**Hexagones contre carrés** (`pnpm --filter @comptoirs/simulator terra`, graines 1 à 5, 40 marchands, Venise ; carrés : `--terra '{"grid":"square"}'`) :
+
+| Indicateur (graines 1 à 5) | Hexagones | Carrés |
+| --- | --- | --- |
+| Cases de terre | 1 029 | 993 |
+| Terre libre à 22 h le lundi, le mardi | 25 à 27 %, 7 à 9 % | 32 à 34 %, 6 à 13 % |
+| Terre libre le mercredi soir | 0 à 3 % | 0 à 5 % |
+| Premier front entre marchands | 33 h | 33 h |
+| Fronts lancés | 1 040 à 1 083 | 1 032 à 1 086 |
+| Éliminés en fin de semaine | 6 à 12 | 5 à 12 |
+| Le premier tient | 5 à 7 % de la carte | 6 à 7 % |
+| Les trois premiers | 14 à 17 % | 17 à 20 % |
+| Assidus devant occasionnels (Gloire médiane) | 266 à 495 % | 250 à 388 % |
+| Ducats dépensés par marchand et par jour | 75 à 77 d | 73 à 76 d |
+
+Lecture : avec quatre voisins, la terre libre part un peu plus lentement le premier jour (un camp s'étend sur moins de côtés), puis la semaine se joue comme en hexagones. Les trois premiers prennent un peu plus (17 à 20 % contre 14 à 17 %) : les poches se ferment plus vite. Aucun réglage ne bouge pour l'instant ; la bascule de Venise attend le plateau du lot T2.
+
+**Des troupes achetées** (`pnpm --filter @comptoirs/simulator terra-buy`, grille carrée, graines 1 à 10, 40 marchands dont 4 riches qui mettent 2 000 d par jour dans la guerre ; vente de 20 troupes pour 100 d, trois fois par jour) :
+
+| Indicateur (médianes des graines) | Sans vente | Avec vente |
+| --- | --- | --- |
+| Gloire des riches | 8 166 | 9 170 (+12 %) |
+| Cases des riches | 71 | 80 (+13 %) |
+| Un riche Signore | 10 / 10 | 10 / 10 |
+| Un riche dans les trois premiers | 10 / 10 | 10 / 10 |
+| Ducats détruits par marchand et par jour | 103 d | 132 d |
+
+Lecture : **les ducats décidaient déjà la semaine** avant la vente. Un riche y bâtit ses forts et relève son maximum chaque jour ; il est Signore à chaque graine. La vente ajoute environ 12 % de Gloire et de cases aux riches, et un puits de ducats d'environ 30 d par marchand et par jour. Le profil « riche » est volontairement extrême : il mesure le plafond de l'avantage, pas le joueur médian, dont le budget (50 à 150 d par jour) n'atteint pas un lot.
+
+Réglage de Venise : 20 troupes pour 100 d, trois fois par jour, jamais au-delà du maximum. La vente ne s'ouvre qu'au lundi qui suit sa mise en ligne (règle de la Terraferme) ; l'empire copie ses règles à l'ouverture d'un théâtre.
