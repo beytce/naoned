@@ -8,6 +8,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "inspect": "tsx src/inspect.ts",
     "terra": "tsx src/terra-cli.ts",
+    "terra-buy": "tsx src/terra-buy.ts",
     "condotta": "tsx src/condotta-cli.ts",
     "empire": "tsx src/empire-cli.ts",
     "porta-bench": "tsx src/porta-bench.ts"

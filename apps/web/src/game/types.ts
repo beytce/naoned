@@ -1136,6 +1136,7 @@ export type TerraAction =
   | { type: "terraGift"; to: string; amount: string }
   | { type: "terraEmbargo"; target: string | null }
   | { type: "terraRaise" }
+  | { type: "terraBuyTroops" }
   | { type: "terraDecree"; code: string; target?: string }
   | { type: "terraPeasants"; shareBps: number };
 

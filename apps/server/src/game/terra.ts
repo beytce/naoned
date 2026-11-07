@@ -12,7 +12,6 @@ import {
   cellCost,
   cellsOf,
   forecastFronts,
-  hexNeighbors,
   hourIn,
   hourWithin,
   inBattle,
@@ -20,6 +19,7 @@ import {
   peasantsOf,
   recruitPerHour,
   seaTargets,
+  terraNeighbors,
   terraOn,
   yieldPerHour,
 } from "@comptoirs/engine";
@@ -155,7 +155,7 @@ export function terraView(
   const costs: Record<number, number> = {};
   if (me) {
     for (const i of cellsOf(s, playerId))
-      for (const n of hexNeighbors(s.map, i))
+      for (const n of terraNeighbors(s.map, i))
         if (s.map.land[n] && s.owner[n] !== playerId && !(n in costs))
           costs[n] = cellCost(s, cfg, n);
   }

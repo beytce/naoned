@@ -9,13 +9,13 @@ import {
   cellCost,
   cellsOf,
   closeTerra,
-  hexDistance,
-  hexNeighbors,
   isNation,
   launchFront,
   newTerra,
   placeOnTerra,
   recallFront,
+  terraDistance,
+  terraNeighbors,
 } from "./terraferma.js";
 import { EngineError } from "./tx.js";
 
@@ -144,9 +144,11 @@ function spot(s: TerraState): number {
   for (const room of [6, 0]) {
     for (let i = 0; i < s.owner.length; i++) {
       if (s.owner[i] !== null || !s.map.land[i]) continue;
-      if (hexNeighbors(s.map, i).filter((n) => s.map.land[n] && s.owner[n] === null).length < room)
+      if (
+        terraNeighbors(s.map, i).filter((n) => s.map.land[n] && s.owner[n] === null).length < room
+      )
         continue;
-      const d = held.length === 0 ? 0 : Math.min(...held.map((j) => hexDistance(s.map, i, j)));
+      const d = held.length === 0 ? 0 : Math.min(...held.map((j) => terraDistance(s.map, i, j)));
       if (d >= 2 && d > bestD) {
         best = i;
         bestD = d;
@@ -197,7 +199,7 @@ export function aiMoves(s: TerraState, cfg: TerraConfig, id: string, shareBps = 
   for (let i = 0; i < s.owner.length; i++) {
     const o = s.owner[i] ?? null;
     if (o === id || !s.map.land[i] || aimed.has(i) || (o !== null && busy.has(o))) continue;
-    if (!hexNeighbors(s.map, i).some((n) => s.owner[n] === id)) continue;
+    if (!terraNeighbors(s.map, i).some((n) => s.owner[n] === id)) continue;
     targets.push({ cell: i, against: o });
   }
   targets.sort(

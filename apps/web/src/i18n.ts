@@ -4865,6 +4865,9 @@ const frDict = {
       built: "Un bâtiment s'y dresse déjà.",
       no_room: "Il vous faut plus de terres pour bâtir encore.",
       raise_limit: "Plus de hausse des troupes max aujourd'hui.",
+      no_troop_buy: "On n'achète pas de troupes cette semaine.",
+      buy_limit: "Plus d'achat de troupes aujourd'hui.",
+      troops_full: "Tes troupes sont déjà au maximum.",
       decree_repeat:
         "Ce décret est déjà en vigueur : il ne peut pas l'être deux semaines de suite.",
     } as Record<string, string>,

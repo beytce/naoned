@@ -398,6 +398,12 @@ export const worldSettingsSchema = z.object({
        * Switched on at a season's opening, never during one.
        */
       live: z.boolean().prefault(false),
+      /**
+       * The cells' shape (docs/plan-terraferme-porcellana.md § 4): hexagons, six neighbours, or
+       * the squares of Porcellana, four neighbours side by side. A new week's map takes it, so a
+       * change made during a week plays from the next Monday.
+       */
+      grid: z.enum(["hex", "square"]).prefault("hex"),
       /** Land cells per active merchant (at least `minActive` merchants counted). */
       cellsPerActive: positive,
       minActive: positive,
@@ -666,6 +672,12 @@ export const worldSettingsSchema = z.object({
           rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 },
           borgo: { price: 5_000, capBonus: 20, regenBonusBps: 1_000, perCells: 20 },
         }),
+      /**
+       * Troops bought with ducats (destroyed by the caller), `amount` a time, `perDay` times a
+       * day, never past the cap. Decision of the owner of 7 November 2026, which amends golden
+       * rule 4 for the Terraferma: commerce may buy troops. Absent: closed.
+       */
+      troopBuy: z.object({ amount: positive, price: money, perDay: positive }).optional(),
       /** The cap raised for ducats (destroyed by the caller), a few times a day. */
       capRaise: z
         .object({ amount: qty, price: money, perDay: qty })

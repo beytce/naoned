@@ -7,18 +7,19 @@ import {
   advanceTerra,
   alliesOf,
   buildOnTerra,
+  buyTroops,
   capOf,
   cellCost,
   cellsOf,
   chooseDecree,
   closeTerra,
   countRankedSkirmish,
-  hexNeighbors,
   launchFront,
   newTerra,
   placeOnTerra,
   proposeAlliance,
   raiseCap,
+  terraNeighbors,
 } from "@comptoirs/engine";
 
 /**
@@ -80,6 +81,19 @@ export const TERRA_PROFILES: Record<string, TerraProfile> = {
     fromDay: 3,
     budget: 10_000n,
     skirmishes: 0,
+  },
+  /**
+   * A rich merchant (its commerce pays 2 000 d a day into the war), the régulier's sessions:
+   * the measure of troops bought with ducats (decision of the owner, 7 November 2026). Not in
+   * the default mix; `--mix` brings it in.
+   */
+  rich: {
+    name: "riche",
+    sessions: 4,
+    shareBps: 5_000,
+    fromDay: 0,
+    budget: 200_000n,
+    skirmishes: 1,
   },
 };
 
@@ -330,7 +344,9 @@ function play(
   const player = s.players[id];
   if (!player) {
     // A free inner cell of land, tried in an order of its own; failing that, the edge of Milan.
-    const inner = (i: number) => hexNeighbors(s.map, i).filter((n) => s.map.land[n]).length === 6;
+    const inner = (i: number) =>
+      terraNeighbors(s.map, i).filter((n) => s.map.land[n]).length ===
+      (s.map.grid === "square" ? 4 : 6);
     const order = (a: number, b: number) => hash(`${seed}:${id}:${a}`) - hash(`${seed}:${id}:${b}`);
     const cells = s.owner
       .map((_, i) => i)
@@ -344,7 +360,7 @@ function play(
       .filter(
         (i) =>
           s.owner[i] === MILAN &&
-          hexNeighbors(s.map, i).some((n) => s.map.land[n] && s.owner[n] !== MILAN),
+          terraNeighbors(s.map, i).some((n) => s.map.land[n] && s.owner[n] !== MILAN),
       )
       .sort(order);
     for (const cell of edge.slice(0, 10)) {
@@ -367,7 +383,7 @@ function play(
   if (alliesOf(s, id).length === 0 && (s.requests ?? []).every((r) => r.from !== id)) {
     const neighbours = new Set<string>();
     for (const c of cellsOf(s, id)) {
-      for (const n of hexNeighbors(s.map, c)) {
+      for (const n of terraNeighbors(s.map, c)) {
         const o = s.owner[n];
         if (o && o !== id && o !== MILAN) neighbours.add(o);
       }
@@ -385,7 +401,7 @@ function play(
     }
   };
   const borderCell = cellsOf(s, id).find((c) =>
-    hexNeighbors(s.map, c).some((n) => {
+    terraNeighbors(s.map, c).some((n) => {
       const o = s.owner[n];
       return o && o !== id && o !== MILAN && !alliesOf(s, id).includes(o);
     }),
@@ -397,6 +413,11 @@ function play(
   if (inner !== undefined && borgo && purse.left >= borgo.price)
     spend(() => buildOnTerra(s, cfg, id, inner, "borgo"));
   if (purse.left >= cfg.capRaise.price) spend(() => raiseCap(s, cfg, id, now));
+  // Troops bought with ducats (decision of the owner, 7 November 2026), while the purse allows.
+  const buy = cfg.troopBuy;
+  if (buy)
+    for (let k = 0; k < buy.perDay && purse.left >= buy.price; k++)
+      spend(() => buyTroops(s, cfg, id, now));
   const cap = capOf(s, cfg, id);
   if (player.troops * 10 < cap * 3) return;
   if (s.fronts.filter((f) => f.owner === id).length >= cfg.fronts.max) return;
@@ -405,7 +426,7 @@ function play(
   for (let i = 0; i < s.owner.length; i++) {
     const o = s.owner[i] ?? null;
     if (o === id || !s.map.land[i]) continue;
-    if (!hexNeighbors(s.map, i).some((n) => s.owner[n] === id)) continue;
+    if (!terraNeighbors(s.map, i).some((n) => s.owner[n] === id)) continue;
     border.set(o, [...(border.get(o) ?? []), i]);
   }
   const attacked = new Set(s.fronts.filter((f) => f.owner === id).map((f) => f.against));
