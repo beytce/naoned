@@ -263,7 +263,9 @@ export function Intro({ p }: { p: EmpirePayload }) {
             </div>
           }
         >
-          <p className="font-display font-bold text-cream">{t.intro[page]?.[0]}</p>
+          <p className="font-display font-bold text-cream">
+            {(t.intro[page]?.[0] ?? "").replace("{cash}", d(p.cash))}
+          </p>
           <p className="mt-1 text-sm text-cream-dim">
             {(t.intro[page]?.[1] ?? "").replace("{cash}", d(p.cash))}
           </p>
