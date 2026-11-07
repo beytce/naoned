@@ -349,6 +349,11 @@ export interface EmpireMapView {
   arsenal: string | null;
   /** The Campo's cell, the door of the Terraferma. */
   camp: string | null;
+  /**
+   * The towns out of the first fondaco's zone that a higher Casa will reach, with that Casa (the
+   * first steps, lot 4: the lock on a town says the level); empty without `reach.byCasa`.
+   */
+  zoneCasa: Record<string, number>;
   /** The cities found, on their cell, at their point (on square tiles, those of the regions reached). */
   cities: { code: string; cell: string; region: string; x: number; y: number; size: number }[];
   /**
@@ -793,6 +798,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     water: s.map.water,
     transferUnitsPerHour: s.map.transferUnitsPerHour,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
+    zoneCasa: zoneCasaOf(house, s),
     unlocked: unlockedOf(house, s),
     buyable: buyableOf(house, s).map((cell) => {
       const c = s.map.cells[cell];
@@ -956,4 +962,16 @@ function fullWorkshops(
       );
     })
     .map((ws) => ws.id);
+}
+
+/** For each town out of the zone, the lowest Casa whose zone reaches it (the first steps, lot 4). */
+function zoneCasaOf(house: EmpireHouse, s: EmpireSettings): Record<string, number> {
+  if (!s.map.reach?.byCasa) return {};
+  const now = citiesCovered(house, s);
+  const out: Record<string, number> = {};
+  const top = Math.min(s.casa.length, Math.max(house.casa, s.counters.maxLevel));
+  for (let casa = house.casa + 1; casa <= top; casa++)
+    for (const c of citiesCovered({ ...house, casa }, s))
+      if (!now.has(c) && out[c] === undefined) out[c] = casa;
+  return out;
 }

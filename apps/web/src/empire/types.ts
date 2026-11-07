@@ -332,6 +332,8 @@ export interface EmpireMapView {
   sectorCost: string;
   /** The cities the house's counters serve. */
   covered: string[];
+  /** The towns out of the zone a higher Casa reaches, with that Casa (the first steps, lot 4). */
+  zoneCasa?: Record<string, number>;
   /** The sectors the house owns: its vehicles go anywhere there (the hops). */
   unlocked: string[];
   sites: { kind: "post" | "camp" | "depot"; cell: string; endsAt: number }[];

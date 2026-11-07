@@ -67,7 +67,26 @@ export interface BoardPlace {
   plus?: boolean;
   /** No pin until chosen (a free tile of the house's: the board stays quiet). */
   quiet?: boolean;
+  /** What the pin shows, when it says more than a figure (the first steps, lot 4). */
+  badge?: PinBadge;
 }
+
+/**
+ * A pin that speaks (the first steps, lot 4: « the black dots are all the same »): a workshop's good
+ * and its state, a town's orders, a lock and the level that opens it. No badge and no text: no pin.
+ */
+export type PinBadge =
+  | {
+      kind: "work";
+      good: string;
+      state: "running" | "ready" | "blocked" | "full" | "idle";
+      /** The lot under way, 0 to 1. */
+      progress: number;
+      /** Lots ready. */
+      n: number;
+    }
+  | { kind: "orders"; n: number; good: string; covered: boolean }
+  | { kind: "lock"; casa?: number };
 
 export interface BoardTile {
   key: string;
@@ -162,6 +181,7 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         pin: "+",
         ready: false,
         plus: true,
+        ...(open ? {} : { badge: { kind: "lock" as const, casa: b.casa } }),
       },
     });
   }
@@ -195,6 +215,10 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     const o = orders.get(c.code);
     const waiting = o?.orders.length ?? 0;
     const venice = c.code === "venezia";
+    // In the Fondaco's zone (its orders come), or out of it (the first steps, lot 4).
+    // Venice's market (San Marco) is open to all, in the zone or not.
+    const inZone =
+      venice || !map.covered || map.covered.length === 0 || map.covered.includes(c.code);
     const crates = waiting > 0 ? deliveryPlan(p, c.code).orders.map((x) => x.covered) : [];
     put(k, {
       crates,
@@ -209,10 +233,33 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         sub: venice
           ? t.porcellana.marketSub
           : `${t.regionNames[c.region] ?? c.region} · ${t.porcellana.townSize(c.size ?? 1)}`,
-        line: waiting > 0 ? t.porcellana.cityOrders(waiting) : t.porcellana.cityQuiet,
+        line: !inZone
+          ? t.porcellana.outOfZone(map.zoneCasa?.[c.code] ?? null)
+          : waiting > 0
+            ? t.porcellana.cityOrders(waiting)
+            : t.porcellana.cityQuiet,
         go: venice ? t.porcellana.openMarket : t.porcellana.openCity,
         pin: waiting > 0 ? String(waiting) : "",
         ready: waiting > 0,
+        // Its orders, by their good, in accent when the stock covers them; out of the zone, a lock
+        // and the Fondaco's level that reaches it (the first steps, lot 4).
+        ...(!inZone
+          ? {
+              badge: {
+                kind: "lock" as const,
+                ...(map.zoneCasa?.[c.code] ? { casa: map.zoneCasa[c.code] } : {}),
+              },
+            }
+          : waiting > 0
+            ? {
+                badge: {
+                  kind: "orders" as const,
+                  n: waiting,
+                  good: o?.orders[0]?.good ?? "",
+                  covered: crates.some(Boolean),
+                },
+              }
+            : {}),
       },
     });
   }
@@ -324,6 +371,17 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         go: t.porcellana.enter,
         pin: lots > 0 ? String(lots) : "",
         ready: lots > 0,
+        badge: {
+          kind: "work",
+          good:
+            Object.keys(
+              p.catalog.find((b) => b.type === w.type)?.recipes.find((r) => r.code === w.recipe)
+                ?.outputs ?? {},
+            )[0] ?? "",
+          state: st.state,
+          progress: st.state === "running" ? st.progress : 0,
+          n: lots,
+        },
       },
     });
   }

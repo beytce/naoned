@@ -172,6 +172,12 @@ const frDict = {
       cityOrders: (n: number) =>
         n > 1 ? `${n} commandes en caisses au quai.` : "Une commande en caisse au quai.",
       cityQuiet: "Aucune commande pour l'instant.",
+      outOfZone: (casa: number | null) =>
+        casa
+          ? `Hors de ta zone : ton Fondaco l'atteint au niveau ${casa}.`
+          : "Hors de ta zone : un comptoir l'atteindra.",
+      lockLevel: (casa: number) => `Niv. ${casa}`,
+      full: "plein",
       openMarket: "Ouvrir la Dogana",
       openCity: "Voir ses commandes",
       enter: "Entrer",

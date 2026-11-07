@@ -255,6 +255,12 @@ export const en: Dictionary = {
       cityOrders: (n: number) =>
         n > 1 ? `${n} orders crated on the quay.` : "One order crated on the quay.",
       cityQuiet: "No order for now.",
+      outOfZone: (casa: number | null) =>
+        casa
+          ? `Out of your zone: your Fondaco reaches it at level ${casa}.`
+          : "Out of your zone: a counter will reach it.",
+      lockLevel: (casa: number) => `Lvl ${casa}`,
+      full: "full",
       openMarket: "Open the Dogana",
       openCity: "See its orders",
       enter: "Enter",

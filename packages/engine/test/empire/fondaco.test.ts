@@ -76,6 +76,20 @@ describe("the Fondaco's zone", () => {
     const now = citiesCovered(house(w), s);
     for (const c of next?.newCities ?? []) expect(now.has(c)).toBe(false);
   });
+
+  // Lot 4: a town out of the zone shows the Fondaco's level that reaches it, on its lock.
+  it("tells, for each town out of the zone, the Casa that will reach it", () => {
+    const w = world();
+    const m = view(w)?.map;
+    const zone = m?.zoneCasa ?? {};
+    expect(Object.keys(zone).length).toBeGreaterThan(0);
+    for (const c of m?.covered ?? []) expect(zone[c]).toBeUndefined();
+    for (const [code, casa] of Object.entries(zone)) {
+      expect(casa).toBeGreaterThan(1);
+      expect(citiesCovered({ ...house(w), casa }, s).has(code)).toBe(true);
+      expect(citiesCovered({ ...house(w), casa: casa - 1 }, s).has(code)).toBe(false);
+    }
+  });
 });
 
 describe("the Fondaco's stock", () => {
