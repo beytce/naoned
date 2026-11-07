@@ -18,7 +18,7 @@ function world(over: Partial<EmpireSettingsInput> = {}) {
 
 describe("a town's turn while the house makes nothing", () => {
   it("is not burnt: the first order comes as soon as there is a good to ask for", () => {
-    const w = world({ start: { ...ordersEmpire.start, workshops: [] } });
+    const w = world({ start: { capitalDucats: 10_000, workshops: [], vehicles: ["cart"] } });
     expect(count(w, "venezia")).toBe(0);
     // Hours without a workshop, read and settled now and then.
     for (let i = 0; i < 6; i++) {
