@@ -211,9 +211,11 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         sub: t.porcellana.freeSub,
         line: t.porcellana.freeLine,
         go: t.porcellana.build,
-        pin: calling ? "+" : "",
+        // A « + » on each free tile of the house's, always (the players' audit, P0-12: free tiles
+        // were invisible out of the guide); in accent when the guide calls for one.
+        pin: "+",
+        plus: true,
         ready: calling,
-        quiet: !calling,
       },
     });
 

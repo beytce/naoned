@@ -517,10 +517,10 @@ function Board({
       const x = (tmp.x * 0.5 + 0.5) * w;
       const y = (-tmp.y * 0.5 + 0.5) * h;
       el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
+      // A pin with something to say stays in sight at every zoom (P0-12): a lot ready, a « + ».
       const out =
-        (!tile.place.quiet || sh.chosen === tile.place.id || sh.placing) &&
-        pinOut(c.t, l.from) &&
-        !(tile.place.plus && cam.zoom < 1.25 && sh.chosen !== tile.place.id);
+        (!tile.place.quiet || sh.chosen === tile.place.id || sh.placing || tile.place.ready) &&
+        pinOut(c.t, l.from);
       el.dataset.out = String(out);
       if (tile.place.id === sh.chosen) sh.card?.place(x, y, w, h);
     }
@@ -780,6 +780,12 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
             onClick={() => pick(x.id)}
           >
             {x.badge ? <PinFace badge={x.badge} /> : x.pin}
+            {/* Each town and the Market named on the map, always (P0-12: no name on screen). */}
+            {x.id.startsWith("city:") && (
+              <span className="pc-pin-name" data-map-label>
+                {x.name}
+              </span>
+            )}
           </button>
         ))}
       </div>
