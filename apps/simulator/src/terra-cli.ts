@@ -31,10 +31,18 @@ const { values } = parseArgs({
     seeds: { type: "string", default: "1,2,3,4,5" },
     /** Only the Signore among n people and the computer's houses (the 24 October 2026 fix). */
     humans: { type: "string" },
+    /** Settings laid over Venice's Terraferma, in JSON (e.g. '{"grid":"square"}'). */
+    terra: { type: "string" },
     out: { type: "string", default: join(here, "..", "out") },
   },
 });
-const cfg = parseSettings(venice1450Settings).terraferma;
+const cfg = parseSettings({
+  ...venice1450Settings,
+  terraferma: {
+    ...venice1450Settings.terraferma,
+    ...(values.terra ? (JSON.parse(values.terra) as object) : {}),
+  },
+} as typeof venice1450Settings).terraferma;
 if (!cfg) throw new Error("Venice has no Terraferma");
 const seeds = (values.seeds ?? "1").split(",").map(Number);
 

@@ -1,0 +1,937 @@
+<title>Terraferme, maquette jouable</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Cormorant+Garamond:ital,wght@1,600&display=swap">
+<style>
+/* Layout: the page frames one live game screen (computer or phone), with the buildings and the interface's pieces laid out beneath like a kit. Single light look on purpose: Porcellana is a white world. */
+:root{
+  --porcelain:#E9E6E0;   /* board ground (COL.bg) */
+  --paper:#FFFFFF;       /* surfaces: white on a solid foot (Porcellana ludique) */
+  --ink:#17150F;         /* text, ink pills */
+  --ink-soft:#625D55;    /* secondary text */
+  --hair:#DDD7CD;        /* hairlines, ghost rings */
+  --accent:#C23B2E;      /* rosso veneziano: yours, the one action */
+  --accent-deep:#A02C22; /* the key's foot */
+  --lagune:#16897A;      /* allies */
+  --gold:#D49A16;        /* the ducat only */
+  --font-ui:Nunito,"Avenir Next","Segoe UI",system-ui,sans-serif;
+  --font-place:"Cormorant Garamond","Iowan Old Style",Georgia,serif;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+html{background:var(--porcelain)}
+body{background:var(--porcelain);color:var(--ink);font:600 15px/1.55 var(--font-ui);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding-block:36px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:40px}
+header{display:grid;gap:10px;max-width:74ch}
+.kicker{font-size:13px;font-weight:800;color:var(--ink-soft)}
+h1{margin:0;font:900 clamp(32px,5vw,50px)/1.02 var(--font-ui);letter-spacing:-.01em;text-wrap:balance}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{margin:0;font-size:16px;font-weight:600;max-width:66ch}
+h2{margin:0;font:900 clamp(24px,3.4vw,32px)/1.1 var(--font-ui);text-wrap:balance}
+.sub{margin:0;color:var(--ink-soft);font-size:14.5px;max-width:70ch}
+
+/* controls above the device */
+.ctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between}
+.seg{display:flex;gap:4px;background:var(--paper);border-radius:999px;padding:4px;box-shadow:inset 0 0 0 1.5px var(--hair),0 3px 0 rgba(23,21,15,.08);flex-wrap:wrap}
+.seg button{border:0;background:transparent;border-radius:999px;padding:7px 13px;font:800 13px var(--font-ui);color:var(--ink);cursor:pointer;white-space:nowrap}
+.seg button:hover{background:rgba(23,21,15,.06)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff;box-shadow:0 3px 0 #000}
+button:focus-visible,input:focus-visible{outline:2px solid #3C286E;outline-offset:2px}
+
+/* the device */
+.stagebox{display:grid;justify-items:center}
+.device{position:relative;width:100%;height:clamp(560px,64vw,760px);border-radius:18px;overflow:hidden;background:var(--porcelain);box-shadow:0 1px 0 var(--hair),0 30px 60px -36px rgba(70,55,40,.55);user-select:none;-webkit-user-select:none}
+.device.phone{width:390px;max-width:100%;height:800px;border-radius:44px;box-shadow:0 0 0 10px #1d1b18,0 0 0 11px #3a3631,0 40px 70px -30px rgba(40,30,20,.6)}
+.device #cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;display:block}
+.device #cv.hot{cursor:pointer}
+.vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(120,108,92,.13) 100%)}
+
+/* surfaces: white on a solid foot */
+.pill{background:var(--paper);border-radius:999px;box-shadow:0 4px 0 rgba(23,21,15,.07),0 14px 40px rgba(23,21,15,.10);display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;font-weight:800;font-variant-numeric:lining-nums tabular-nums;white-space:nowrap}
+.medal{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:inset 0 0 0 3px var(--accent),inset 0 0 0 5px #fff,0 4px 0 var(--accent-deep);flex:none}
+.medal svg{width:22px;height:22px}
+.coin{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#F6D88A,#D49A16 60%,#9C6E0C);box-shadow:inset 0 0 0 1.5px rgba(120,80,10,.45);display:inline-block;flex:none}
+.bread{width:20px;height:16px;border-radius:10px 10px 6px 6px;background:linear-gradient(#E7C38A,#C98F48);box-shadow:inset 0 -2px 0 rgba(120,70,20,.3);display:inline-block;flex:none}
+
+.top{position:absolute;left:0;right:0;top:0;padding:14px 16px;display:flex;gap:10px;align-items:flex-start;justify-content:space-between;pointer-events:none}
+.top>*{pointer-events:auto}
+.top .l,.top .r{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.top .r{justify-content:flex-end}
+.back{border:0;cursor:pointer;font:800 13px var(--font-ui);padding:9px 14px}
+.who{padding:5px 16px 5px 5px}
+.who b{display:block;font-size:15px;line-height:1.1}
+.who small{display:block;font-size:12px;color:var(--ink-soft);font-weight:700}
+.phase{padding:8px 14px;font-size:13px}
+.phase i{font-style:normal;color:var(--gold)}
+.troops{padding:5px 14px 5px 5px;gap:10px;cursor:pointer;border:0;font-family:var(--font-ui)}
+.ring{width:40px;height:40px;flex:none}
+.troops b{font-size:16px;color:var(--ink)}
+.troops small{display:block;font-size:12px;color:var(--ink-soft);font-weight:800;text-align:left}
+.cash{padding:8px 14px 8px 8px;font-size:14px}
+
+.side{position:absolute;left:16px;top:84px;width:260px;display:grid;gap:10px}
+.panel{background:var(--paper);border-radius:18px;box-shadow:0 4px 0 rgba(23,21,15,.07),0 14px 40px rgba(23,21,15,.10);padding:12px 14px;display:grid;gap:8px}
+.panel h3{margin:0;font:900 15px var(--font-ui);display:flex;justify-content:space-between;align-items:baseline}
+.panel h3 small{font-size:12px;color:var(--ink-soft);font-weight:800}
+.frow{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;font-size:13px;line-height:1.3}
+.frow .bar{height:22px;display:flex;align-items:center}
+.frow .bar i{display:block;width:100%;border-radius:99px;background:var(--accent)}
+.frow.them .bar i{background:var(--ink)}
+.frow b{display:block;font-size:13.5px}
+.frow small{color:var(--ink-soft);font-weight:700}
+.ghost{border:0;background:var(--paper);border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--hair),0 3px 0 rgba(23,21,15,.08);padding:7px 12px;font:800 12.5px var(--font-ui);color:var(--ink);cursor:pointer;white-space:nowrap}
+.ghost:active{transform:translateY(2px);box-shadow:inset 0 0 0 1.5px var(--hair),0 1px 0 rgba(23,21,15,.08)}
+.key{border:0;background:var(--accent);color:#fff;border-radius:999px;padding:13px 22px;font:900 15px var(--font-ui);cursor:pointer;box-shadow:0 4px 0 var(--accent-deep),0 10px 22px -10px rgba(194,59,46,.55);display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.key:active{transform:translateY(3px);box-shadow:0 1px 0 var(--accent-deep)}
+.key[disabled]{background:#D8D2C8;color:#7d766c;box-shadow:0 4px 0 #BDB5A8;cursor:not-allowed}
+.rank{display:flex;gap:10px;align-items:center;font-size:13px}
+.rank b{font-size:22px;font-weight:900}
+
+.foot{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;display:flex;gap:4px;background:var(--paper);border-radius:22px;padding:6px;box-shadow:0 4px 0 rgba(23,21,15,.07),0 14px 40px rgba(23,21,15,.10)}
+.foot button{border:0;background:transparent;border-radius:16px;padding:6px 14px;font:800 12.5px var(--font-ui);color:var(--ink);cursor:pointer;display:grid;justify-items:center;gap:2px;min-width:72px;position:relative}
+.foot button svg{width:20px;height:20px}
+.foot button:hover{background:rgba(23,21,15,.05)}
+.foot button[aria-pressed="true"]{background:#EEF0F7;color:#3C286E}
+.foot .badge{position:absolute;top:2px;right:12px;background:var(--accent);color:#fff;border-radius:99px;font-size:10.5px;min-width:17px;height:17px;display:grid;place-items:center;padding:0 4px;box-shadow:0 2px 0 var(--accent-deep)}
+.zoom{position:absolute;right:16px;bottom:16px;display:grid;gap:6px}
+.zoom button{width:40px;height:40px;border-radius:50%;border:0;background:var(--paper);box-shadow:0 3px 0 rgba(23,21,15,.08),inset 0 0 0 1.5px var(--hair);font:900 18px var(--font-ui);cursor:pointer;display:grid;place-items:center;color:var(--ink)}
+.zoom svg{width:18px;height:18px}
+
+/* the card at the touch (la fiche) */
+.fiche{position:absolute;left:0;top:0;display:flex;align-items:center;gap:16px;background:var(--paper);border-radius:18px;padding:14px 14px 14px 18px;box-shadow:0 4px 0 rgba(23,21,15,.07),0 18px 40px -14px rgba(50,40,30,.45);max-width:330px;min-width:240px;z-index:3}
+.fiche h4{margin:0;font:900 19px/1.1 var(--font-ui);text-wrap:balance}
+.fiche .role{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);font-weight:800}
+.fiche .state{margin:6px 0 0;font-size:13px;line-height:1.4;max-width:26ch}
+.fiche .go{flex:none;width:48px;height:48px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 0 var(--accent-deep)}
+.fiche .go:active{transform:translateY(3px);box-shadow:0 1px 0 var(--accent-deep)}
+.fiche .go[disabled]{background:#D8D2C8;box-shadow:0 4px 0 #BDB5A8;cursor:not-allowed}
+.fiche .go svg{width:18px;height:18px}
+.fiche .x,.dock .x{position:absolute;top:-10px;left:-10px;width:28px;height:28px;border-radius:50%;border:0;background:var(--ink);color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 3px 0 #000}
+.fiche .x svg,.dock .x svg{width:10px;height:10px}
+.tag{display:inline-block;transform:rotate(-4deg);background:var(--accent);color:#fff;border-radius:8px;padding:1px 8px;font-size:12px;font-weight:900;box-shadow:0 3px 0 var(--accent-deep);margin-left:6px;vertical-align:2px}
+
+/* the dock: one decision, the scene stays above */
+.dock{position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:min(640px,calc(100% - 32px));max-height:55%;background:var(--paper);border-radius:28px 28px 0 0;box-shadow:0 -12px 44px rgba(23,21,15,.14);display:flex;flex-direction:column;z-index:4;animation:rise .28s cubic-bezier(.2,.9,.3,1.15) both}
+@keyframes rise{from{transform:translate(-50%,40px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+.dock .handle{width:44px;height:5px;border-radius:9px;background:#E2DDD4;margin:10px auto 0}
+.dock header{display:flex;align-items:center;gap:12px;padding:8px 20px 6px;position:relative}
+.dock header .k{font-size:13px;font-weight:800;color:var(--ink-soft)}
+.dock header h4{margin:0;font:900 22px/1.1 var(--font-ui)}
+.dock header .close{margin-left:auto;width:40px;height:40px;border-radius:50%;border:0;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--hair),0 3px 0 rgba(23,21,15,.08);cursor:pointer;display:grid;place-items:center;flex:none}
+.dock header .close svg{width:12px;height:12px}
+.dock .body{overflow:auto;padding:6px 20px 18px;display:grid;gap:14px}
+.dock .act{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-top:2px}
+.dock .act .key{flex:1 1 auto}
+.rows{display:grid;gap:6px;font-size:13.5px}
+.rows div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--hair);padding-bottom:5px}
+.rows div span:first-child{color:var(--ink-soft);font-weight:700}
+.rows div b{font-weight:900;text-align:right;font-variant-numeric:lining-nums tabular-nums}
+.slider{display:grid;gap:6px}
+.slider label{display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:var(--ink-soft)}
+.slider label b{color:var(--ink);font-size:20px;font-weight:900}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:12px;border-radius:99px;background:linear-gradient(90deg,var(--accent) 0 var(--v,50%),#ECE7DF var(--v,50%));box-shadow:inset 0 2px 0 rgba(0,0,0,.06)}
+input[type=range]::-moz-range-track{height:12px;border-radius:99px;background:linear-gradient(90deg,var(--accent) 0 var(--v,50%),#ECE7DF var(--v,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;margin-top:-9px;box-shadow:inset 0 0 0 3px var(--accent),0 3px 0 rgba(23,21,15,.15);cursor:grab}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 3px 0 rgba(23,21,15,.15);cursor:grab}
+.ticks{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft);font-weight:800}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.card{border:0;background:var(--paper);border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--hair),0 4px 0 rgba(23,21,15,.07);padding:8px 10px 10px;display:grid;gap:3px;text-align:left;cursor:pointer;font-family:var(--font-ui);color:var(--ink);transition:transform .15s}
+.card:hover{transform:translateY(-2px)}
+.card[aria-pressed="true"]{box-shadow:inset 0 0 0 2.5px var(--ink),0 4px 0 #000;transform:translateY(-2px)}
+.card[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+.card canvas{width:100%;height:70px;display:block}
+.card b{font-size:15px;font-weight:900}
+.card span{font-size:12px;line-height:1.35;color:var(--ink-soft);font-weight:700}
+.card .price{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:900;color:var(--ink);margin-top:2px}
+.card .price small{margin-left:auto;font-size:11.5px;color:var(--ink-soft)}
+.who-row{display:flex;gap:12px;align-items:center}
+.blason{width:52px;height:60px;flex:none}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{background:#F5F2EC;border-radius:12px;padding:6px 10px;font-size:12px;font-weight:800;color:var(--ink-soft)}
+.stat b{display:block;color:var(--ink);font-size:17px;font-weight:900}
+.stickers{display:flex;gap:10px;flex-wrap:wrap}
+.sticker{border:0;background:var(--paper);border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--hair),0 3px 0 rgba(23,21,15,.08);padding:6px 12px 6px 6px;font:800 13px var(--font-ui);display:flex;gap:7px;align-items:center;cursor:pointer;color:var(--ink)}
+.sticker i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;color:#fff;font-size:13px}
+.hint{font-size:13px;color:var(--ink-soft);font-weight:700;margin:0}
+.toast{position:absolute;left:50%;top:76px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-weight:800;font-size:13.5px;box-shadow:0 3px 0 #000;z-index:6;white-space:nowrap;transition:opacity .3s,transform .3s}
+.toast[data-off]{opacity:0;transform:translate(-50%,-8px);pointer-events:none}
+
+/* phone layout of the same pieces */
+.phone .top{padding:44px 12px 0}
+.phone .back,.phone .phase,.phone .who small,.phone .cash{display:none}
+.phone .who b{font-size:13px}
+.phone .side{display:none}
+.phone .foot{bottom:22px;width:calc(100% - 24px);justify-content:space-between}
+.phone .foot button{min-width:0;flex:1;padding:6px 4px}
+.phone .zoom{bottom:104px;right:12px}
+.phone .zoom button{width:36px;height:36px}
+.phone .fiche{left:12px!important;right:12px;top:auto!important;bottom:100px;max-width:none}
+.phone .dock{width:100%;max-height:62%;border-radius:28px 28px 40px 40px}
+.phone .toast{top:150px}
+.phone .phonephase{display:flex}
+.phonephase{display:none;position:absolute;left:50%;transform:translateX(-50%);top:104px;font-size:12px;padding:6px 12px}
+
+/* kit below */
+.kit{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.bld{background:var(--paper);border-radius:18px;box-shadow:0 4px 0 rgba(23,21,15,.07),0 14px 40px -20px rgba(23,21,15,.25);padding:10px 16px 16px;display:grid;gap:4px;min-width:0}
+.bld canvas{width:100%;height:auto;aspect-ratio:560/400;display:block}
+.bld h3{margin:0;font:900 20px var(--font-ui);display:flex;align-items:center;gap:8px}
+.bld h3 small{margin-left:auto;font-size:13px;display:flex;gap:5px;align-items:center}
+.bld p{margin:0;font-size:13.5px;line-height:1.45}
+.bld .zone{color:var(--ink-soft);font-size:12.5px;font-weight:700}
+.parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 28px;margin:0;padding:0;list-style:none}
+.parts li{border-top:2px solid var(--ink);padding-top:10px;font-size:14px;min-width:0}
+.parts b{display:block;font-size:16px;font-weight:900;margin-bottom:2px}
+.note{font-size:13px;color:var(--ink-soft);max-width:80ch}
+@media (max-width:860px){.side{display:none}}
+@media (max-width:620px){.device:not(.phone){height:640px}.device:not(.phone) .phase,.device:not(.phone) .back{display:none}}
+@media (prefers-reduced-motion:reduce){.dock{animation:none}.card{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="kicker">Fondaco · Terraferme · Porcellana · 7 novembre 2026</div>
+    <h1>La Terraferme, <em>sur le plateau du jeu</em></h1>
+    <p class="lede">La recommandation retenue, en maquette jouable : le plateau en relief, l'émail qui coule de case en case, les fronts en rubans dont l'épaisseur suit les hommes, les équerres sur les prochaines cases. S'y ajoutent les cinq bâtiments qu'on peut poser et l'interface autour, faite des pièces du jeu : la fiche, le dock, la touche rouge, la barre.</p>
+  </header>
+
+  <div class="ctl">
+    <div class="seg" role="group" aria-label="Appareil">
+      <button id="dv-desk" aria-pressed="true">Ordinateur</button>
+      <button id="dv-phone" aria-pressed="false">Téléphone</button>
+    </div>
+    <div class="seg" role="group" aria-label="Parcours">
+      <button data-go="over" aria-pressed="true">Vue d'ensemble</button>
+      <button data-go="attack" aria-pressed="false">Lancer un front</button>
+      <button data-go="build" aria-pressed="false">Bâtir</button>
+      <button data-go="neigh" aria-pressed="false">Un voisin</button>
+      <button data-go="bomb" aria-pressed="false">Bombarder</button>
+    </div>
+  </div>
+
+  <div class="stagebox">
+    <div class="device" id="dev">
+      <canvas id="cv" aria-label="Plateau de la Terraferme : touchez une case"></canvas>
+      <div class="vignette"></div>
+      <div class="top">
+        <div class="l">
+          <button class="pill back" id="back" aria-label="Retour à la carte">‹ Carte</button>
+          <div class="pill who"><span class="medal" aria-hidden="true"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.6 6.1 6.4.5-4.9 4.2 1.5 6.3L12 15.8 6.4 19.1l1.5-6.3L3 8.6l6.4-.5z"/></svg></span><span><b>Ta Maison</b><small id="rank-s">4e sur 32 · 212 points</small></span></div>
+        </div>
+        <div class="pill phase" id="phase">☀ Jour · <i>⚔</i> bataille à 20 h · fin dans 3 j 04 h</div>
+        <div class="r">
+          <button class="pill troops" id="troops" aria-label="Tes troupes"><svg class="ring" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="none" stroke="#ECE7DF" stroke-width="6"/><circle id="ring-v" cx="20" cy="20" r="16" fill="none" stroke="#C23B2E" stroke-width="6" stroke-linecap="round" stroke-dasharray="100.5" stroke-dashoffset="40" transform="rotate(-90 20 20)"/><text x="20" y="24.5" text-anchor="middle" font-size="13" font-weight="900" fill="#17150F" font-family="Nunito,sans-serif">⚔</text></svg><span><b id="tr-v">96 / 180</b><small id="tr-r">+13/h · pain 4 j</small></span></button>
+          <div class="pill cash"><span class="coin" aria-hidden="true"></span><span id="cash-v">1 240</span></div>
+        </div>
+      </div>
+      <div class="pill phonephase">☀ Jour · bataille à 20 h</div>
+      <aside class="side" aria-label="Tes fronts">
+        <div class="panel"><h3>Tes fronts <small id="fr-n">2 sur 3</small></h3><div id="fr-list" style="display:grid;gap:8px"></div></div>
+        <div class="panel"><h3>Menaces</h3><div id="th-list" style="display:grid;gap:8px"></div></div>
+        <div class="panel rank"><b>4e</b><span>sur 32 marchands<br><small style="color:var(--ink-soft)">212 points de conquête</small></span></div>
+      </aside>
+      <nav class="foot" aria-label="Terraferme">
+        <button id="ft-lands"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11zM9 20v-6h6v6"/></svg>Mes terres</button>
+        <button id="ft-fronts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19L19 5M14 5h5v5M5 14l5 5"/></svg>Fronts<span class="badge" id="ft-badge">2</span></button>
+        <button id="ft-allies"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 11a3 3 0 100-6 3 3 0 000 6zM16 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3 2-5 5-5s5 2 5 5M11 20c0-3 2-5 5-5s5 2 5 5"/></svg>Alliés</button>
+        <button id="ft-rank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 20h16M6 20v-6h4v6M10 20V8h4v12M14 20v-9h4v9"/></svg>Classement</button>
+      </nav>
+      <div class="zoom"><button id="z-in" aria-label="Rapprocher">+</button><button id="z-out" aria-label="Éloigner">−</button><button id="z-me" aria-label="Centrer sur mes terres"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button></div>
+      <div class="fiche" id="fiche" hidden role="dialog" aria-live="polite">
+        <button class="x" id="fi-x" aria-label="Fermer"><svg viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 1l8 8M9 1l-8 8"/></svg></button>
+        <div><h4 id="fi-n"></h4><p class="role" id="fi-r"></p><p class="state" id="fi-s"></p></div>
+        <button class="go" id="fi-go" aria-label="Ouvrir"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l5 5-5 5"/></svg></button>
+      </div>
+      <section class="dock" id="dock" hidden aria-label="Décision">
+        <div class="handle"></div>
+        <header><div><div class="k" id="dk-k"></div><h4 id="dk-t"></h4></div><button class="close" id="dk-x" aria-label="Fermer"><svg viewBox="0 0 12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 1l10 10M11 1L1 11"/></svg></button></header>
+        <div class="body" id="dk-b"></div>
+      </section>
+      <div class="toast" id="toast" data-off></div>
+    </div>
+  </div>
+  <p class="note">Maquette autonome, règles simplifiées et temps accéléré (une case toutes les secondes au lieu de quelques-unes par heure). Touche une case pour ouvrir sa fiche, puis la flèche rouge pour décider dans le dock. Glisser déplace la vue ; molette ou pincement pour zoomer.</p>
+
+  <section style="display:grid;gap:16px" aria-labelledby="b-t">
+    <h2 id="b-t">Les bâtiments qu'on pose</h2>
+    <p class="sub">Les cinq bâtiments du moteur (<code>terraferma.buildings</code>) et le camp, en porcelaine comme les ateliers : une silhouette qu'on nomme au premier regard, le drapeau à la couleur du marchand. Quand on en choisit un dans le dock, sa zone d'effet s'allume sur le plateau avant de payer. Prix indicatifs : ils viennent des réglages.</p>
+    <div class="kit" id="kit"></div>
+  </section>
+
+  <section style="display:grid;gap:16px" aria-labelledby="i-t">
+    <h2 id="i-t">L'interface autour</h2>
+    <ul class="parts">
+      <li><b>La barre du haut</b>Ta Maison et ton rang, la phase (jour, nuit, bataille du soir, fin de semaine), puis à droite les troupes en anneau qui se remplit, le pain, les ducats. Touchées, les troupes ouvrent tes terres.</li>
+      <li><b>La fiche au toucher</b>Une case touchée se soulève, sa fiche se pose à côté : à qui elle est, son terrain, ce qu'elle coûte à prendre ou ce qui la défend. La flèche rouge ouvre la décision.</li>
+      <li><b>Le dock, une décision</b>Lancer un front (curseur des hommes engagés, le ruban grossit en direct, les équerres montrent les cases), bâtir (des cartes avec le bâtiment dessiné et sa zone), un voisin (alliance, troupes, signaux). Une seule touche rouge.</li>
+      <li><b>Les fronts à gauche</b>Sur ordinateur, chaque front en ruban à l'épaisseur de ses hommes, avec « Rappeler » ; les menaces à l'encre. Sur téléphone, derrière « Fronts » au pied.</li>
+      <li><b>Le pied</b>Mes terres, Fronts, Alliés, Classement. Le reste se touche sur le plateau.</li>
+      <li><b>Les retours</b>Une pilule d'encre dit ce qui vient de se passer : front lancé, fort bâti, front rentré avec ses hommes.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+"use strict";
+// ================= World =================
+const W = 20, H = 12, N = W * H, D = 0.8, Q = 0.6, G = 0.05;
+const idx = (x, y) => y * W + x, X = c => c % W, Y = c => (c / W) | 0;
+const COL = { wall:"#F6F4F0", wall2:"#ECE7DF", roof:"#E0D8CB", trim:"#FCFBF9", wood:"#DED5C7", water:"#C9D3D6", ink:"#2A2725", bg:"#E9E6E0", accent:"#C23B2E", lagune:"#16897A", soft:"#6F685F", metal:"#D3D0CB" };
+function hash(x, y) { let h = (x * 374761393 + y * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+const water = new Array(N).fill(false), terr = new Array(N).fill("plain");
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+  const c = idx(x, y);
+  if ((x === 19 && y >= 5) || (x === 18 && y >= 8) || (x === 17 && y >= 10)) water[c] = true;
+  else if ((y === 0 && x < 18) || (y === 1 && x >= 4 && x <= 8)) terr[c] = "mount";
+  else if ((x >= 15 && y >= 9) || (y === 11 && x >= 3 && x <= 6)) terr[c] = "marsh";
+  else if (y >= 2 && y <= 6 && hash(x, y) < 0.26) terr[c] = "hill";
+}
+const nb4 = c => { const x = X(c), y = Y(c), r = []; if (x > 0) r.push(c - 1); if (x < W - 1) r.push(c + 1); if (y > 0) r.push(c - W); if (y < H - 1) r.push(c + W); return r; };
+const nb = c => nb4(c).filter(o => !water[o]);
+const coast = c => nb4(c).some(o => water[o]);
+const TERR = { plain: "Plaine", hill: "Colline", marsh: "Marais", mount: "Montagne" };
+const NAME = { 0: "Terre libre", 1: "Toi", 2: "Contarini", 3: "Loredan", 4: "Morosini", 5: "Milan" };
+const CAMP = { 1: idx(12, 7), 2: idx(16, 2), 3: idx(6, 8), 4: idx(9, 3), 5: idx(1, 6) };
+const CAMPS = new Set(Object.values(CAMP));
+const TOWNS = new Map([["Verona", idx(5, 6)], ["Vicenza", idx(9, 5)], ["Padova", idx(13, 9)], ["Treviso", idx(15, 4)], ["Bassano", idx(11, 2)]].map(([n, c]) => [c, n]));
+const PAL = { 1: { c: "#C23B2E", a: .55 }, 2: { c: "#2A2725", a: .26 }, 3: { c: "#2A2725", a: .13, hatch: 1 }, 4: { c: "#7A736A", a: .12, edge: "#16897A" }, 5: { c: "#B39470", a: .36, hatch: 1 } };
+const FLAG = { 1: COL.accent, 2: COL.ink, 3: "#6F685F", 4: COL.lagune, 5: "#9A7A52" };
+
+const BUILD = {
+  rocca: { name: "Fort", price: 40, per: 15, effect: "Défense ×1,6 sur sa case et ses voisines.", zone: "Sa case et les quatre voisines" },
+  borgo: { name: "Bourg", price: 50, per: 20, effect: "+20 troupes max, recrues +10 %.", zone: "Toutes tes terres" },
+  porto: { name: "Port", price: 60, per: 20, effect: "Tes barques débarquent sur les rives de ces eaux ; tes galères les gardent.", zone: "Les rives de la même eau", coast: true },
+  bombarda: { name: "Bombarde", price: 80, per: 25, effect: "Un tir par jour : une terre ennemie à portée et ses voisines redeviennent libres.", zone: "Portée de 4 cases" },
+  mura: { name: "Remparts", price: 50, per: 15, effect: "Aucune bombarde n'atteint cette terre ni ses voisines.", zone: "Sa case et les quatre voisines" },
+};
+
+// ================= State =================
+const st = {};
+function reset() {
+  st.own = new Int8Array(N); st.prev = new Int8Array(N); st.chg = new Float64Array(N).fill(-1e9); st.src = new Int16Array(N).fill(-1);
+  for (let c = 0; c < N; c++) st.own[c] = water[c] ? -1 : (X(c) <= 2 || (X(c) === 3 && Y(c) >= 3 && Y(c) <= 9)) ? 5 : 0;
+  for (const [o, r] of [[1, 4], [2, 4], [3, 2], [4, 2]]) { const cx = X(CAMP[o]), cy = Y(CAMP[o]); for (let c = 0; c < N; c++) if (st.own[c] === 0 && Math.abs(X(c) - cx) + Math.abs(Y(c) - cy) <= r) st.own[c] = o; }
+  st.prev.set(st.own);
+  st.troops = { 1: 150, 2: 120, 3: 60, 4: 70, 5: 200 }; st.cap = 180; st.ducats = 1240;
+  st.builds = new Map([[idx(13, 5), { kind: "rocca", owner: 1, t: -9 }], [idx(15, 3), { kind: "rocca", owner: 2, t: -9 }], [idx(17, 1), { kind: "bombarda", owner: 2, t: -9 }], [idx(6, 9), { kind: "mura", owner: 3, t: -9 }], [idx(16, 8), { kind: "porto", owner: 1, t: -9 }]]);
+  st.own[idx(16, 8)] = 1; st.prev[idx(16, 8)] = 1; st.own[idx(16, 7)] = 1; st.prev[idx(16, 7)] = 1;
+  st.fronts = []; st.shots = []; st.puffs = []; st.rubble = [];
+  st.aiC = 9; st.aiM = 4; st.aiBomb = 22; st.myShot = true;
+}
+let now = 0;
+reset();
+
+const cv = el => { const s = now - st.chg[el]; if (s < 0) return { o: st.prev[el], prev: st.prev[el], p: 1, src: -1 }; if (s < D) return { o: st.own[el], prev: st.prev[el], p: s / D, src: st.src[el] }; return { o: st.own[el], prev: st.own[el], p: 1, src: -1 }; };
+const plural = (n, w) => `${n} ${w}${n > 1 ? "s" : ""}`;
+const ease = p => p <= 0 ? 0 : p >= 1 ? 1 : 1 - Math.pow(1 - p, 3);
+const clamp01 = p => p < 0 ? 0 : p > 1 ? 1 : p;
+const dist = (a, b) => Math.hypot(X(a) - X(b), Y(a) - Y(b));
+const cellsOf = o => { let n = 0; for (let c = 0; c < N; c++) if (st.own[c] === o) n++; return n; };
+function fortNear(c, o) { if (o <= 0) return false; for (const k of [c, ...nb(c)]) { const b = st.builds.get(k); if (b && b.kind === "rocca" && st.own[k] === o) return true; } return false; }
+function costOf(c, own) { const k = { plain: 1, hill: 1.3, marsh: 1.5, mount: 2 }[terr[c]]; return Math.round((own === 0 ? 4 : 7) * k * (fortNear(c, own) ? 1.6 : 1)); }
+
+// The cells a front would take, nearest the target first, while its men pay for them (the engine's order).
+function plan(att, def, target, men, ownArr) {
+  const own = ownArr ? ownArr.slice() : st.own.slice(), out = [];
+  for (let guard = 0; guard < 40; guard++) {
+    let best = -1, bd = 1e9;
+    for (let c = 0; c < N; c++) { if (own[c] !== def || !nb(c).some(o => own[o] === att)) continue; const d = dist(c, target); if (d < bd - 1e-9) { bd = d; best = c; } }
+    if (best < 0) break;
+    const cost = costOf(best, def); if (men < cost) break;
+    men -= cost; own[best] = att; out.push({ c: best, cost });
+  }
+  return { cells: out, left: men };
+}
+function srcFor(c, att) { let s = -1, sd = 1e9; for (const o of nb(c)) if (st.own[o] === att) { const d = dist(o, CAMP[att]); if (d < sd) { sd = d; s = o; } } return s; }
+function capture(c, att, src, delay = 0) {
+  st.prev[c] = (now - st.chg[c] < D) ? st.own[c] : st.own[c];
+  st.prev[c] = st.own[c]; st.own[c] = att; st.chg[c] = now + delay; st.src[c] = src;
+  const b = st.builds.get(c); if (b && b.owner !== att) { st.builds.delete(c); st.rubble.push({ c, t: now + delay, kind: b.kind }); }
+}
+let ver = 0;
+function launch(att, def, target, men) {
+  st.troops[att] -= men;
+  const f = { att, def, target, men, men0: men, next: now + .25, head: srcFor(firstOf(att, def, target), att), lastC: -1, end: null };
+  f.head = f.head < 0 ? CAMP[att] : f.head;
+  st.fronts.push(f); ver++; return f;
+}
+function firstOf(att, def, target) { const p = plan(att, def, target, 9999); return p.cells.length ? p.cells[0].c : target; }
+function tickFront(f) {
+  for (let n = 0; n < 2; n++) {
+    const p = plan(f.att, f.def, f.target, f.men);
+    if (!p.cells.length) { endFront(f); return; }
+    const { c, cost } = p.cells[0];
+    f.men -= cost; if (f.def > 0) st.troops[f.def] = Math.max(0, st.troops[f.def] - Math.round(cost * .6));
+    capture(c, f.att, srcFor(c, f.att), n * .2); f.lastC = c; f.lastT = now + n * .2;
+  }
+  ver++;
+}
+function endFront(f) {
+  if (f.end !== null) return; f.end = now;
+  st.troops[f.att] = Math.min(f.att === 1 ? st.cap : 999, st.troops[f.att] + f.men);
+  if (f.att === 1) toast(`Front rentré · ${f.men} hommes reviennent`);
+  ver++;
+}
+function frontsOf(o) { return st.fronts.filter(f => f.att === o && f.end === null); }
+
+// ================= Simulation step =================
+function step(dt) {
+  now += dt;
+  for (const o of [1, 2, 3, 4, 5]) { const cap = o === 1 ? st.cap : 220; st.troops[o] = Math.min(cap, st.troops[o] + dt * (o === 1 ? 2.2 : 1.6)); }
+  for (const f of st.fronts) if (f.end === null && now >= f.next) { f.next = now + 1.15; tickFront(f); }
+  st.fronts = st.fronts.filter(f => f.end === null || now - f.end < 1.2);
+  // Contarini strikes back at you now and then; Milan eats free land.
+  if (now >= st.aiC) {
+    st.aiC = now + 16;
+    if (!frontsOf(2).length && st.troops[2] > 30) { let best = -1, bd = 1e9; for (let c = 0; c < N; c++) if (st.own[c] === 1 && nb(c).some(o => st.own[o] === 2)) { const d = dist(c, CAMP[2]); if (d < bd) { bd = d; best = c; } } if (best >= 0) launch(2, 1, best, Math.round(st.troops[2] * .4)); }
+  }
+  if (now >= st.aiM) {
+    st.aiM = now + 7;
+    if (!frontsOf(5).length) { let best = -1, bd = 1e9; for (let c = 0; c < N; c++) if (st.own[c] === 0 && nb(c).some(o => st.own[o] === 5)) { const d = dist(c, CAMP[5]); if (d < bd) { bd = d; best = c; } } if (best >= 0) launch(5, 0, best, 26); }
+  }
+  if (now >= st.aiBomb) { st.aiBomb = now + 1e9; const b = [...st.builds].find(([, v]) => v.kind === "bombarda" && v.owner === 2); if (b) { const t = targetsFrom(b[0], 2)[0]; if (t !== undefined) fire(b[0], t, 2); } }
+  for (const s of st.shots) if (!s.hit && now >= s.t + 1.1) { s.hit = true; land(s); }
+  st.shots = st.shots.filter(s => now - s.t < 2.4);
+  st.puffs = st.puffs.filter(p => now - p.t < 1.2);
+  st.rubble = st.rubble.filter(r => now - r.t < 1.4);
+}
+function walled(c) { for (const k of [c, ...nb(c)]) { const b = st.builds.get(k); if (b && b.kind === "mura" && st.own[k] === st.own[c]) return true; } return false; }
+function targetsFrom(from, o) { const out = []; for (let c = 0; c < N; c++) { const h = st.own[c]; if (h > 0 && h !== o && h !== (o === 1 ? 4 : -9) && !CAMPS.has(c) && dist(c, from) <= 4 && !walled(c)) out.push(c); } return out.sort((a, b) => dist(a, CAMP[o === 2 ? 1 : 2]) - dist(b, CAMP[o === 2 ? 1 : 2])); }
+function fire(from, target, o) { st.shots.push({ from, target, o, t: now, hit: false }); ver++; }
+function land(s) {
+  const h = st.own[s.target]; const hit = [s.target, ...nb(s.target).filter(k => st.own[k] === h && !CAMPS.has(k))];
+  for (const c of hit) capture(c, 0, -1, 0);
+  st.puffs.push({ c: s.target, t: now });
+  if (h === 1) toast("Une bombarde de Contarini a frappé tes terres"); else if (s.o === 1) toast(`Tir au but · ${hit.length} terres redeviennent libres`);
+  ver++;
+}
+
+// ================= Drawing =================
+const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const mix = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
+const shade = (a, k) => a.map(v => Math.max(0, Math.min(255, v * k)));
+const rgba = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+let R = null; // the current renderer: { ctx, u, X0, Y0, k }
+const P = (x, y, z) => [R.X0 + (x - y) * R.u, R.Y0 + (x + y) * R.u * Q - z * R.u];
+function poly(pts, fill) { const g = R.ctx; g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); g.closePath(); g.fillStyle = fill; g.fill(); }
+// A prism of porcelain: its visible sides (facing the viewer) shaded by the light from the front left, then its top.
+function prism(pl, z0, h, col, topCol) {
+  const c = hex(col); let cx = 0, cy = 0; pl.forEach(p => { cx += p[0]; cy += p[1]; }); cx /= pl.length; cy /= pl.length;
+  const faces = [];
+  for (let i = 0; i < pl.length; i++) {
+    const a = pl[i], b = pl[(i + 1) % pl.length]; let nx = b[1] - a[1], ny = -(b[0] - a[0]);
+    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; if (nx * (mx - cx) + ny * (my - cy) < 0) { nx = -nx; ny = -ny; }
+    const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l;
+    if (nx + ny > 0.02) faces.push({ a, b, k: .79 + .13 * Math.max(0, ny) - .0 * nx, d: mx + my });
+  }
+  faces.sort((p, q) => p.d - q.d);
+  for (const f of faces) poly([P(f.a[0], f.a[1], z0 + h), P(f.b[0], f.b[1], z0 + h), P(f.b[0], f.b[1], z0), P(f.a[0], f.a[1], z0)], rgba(shade(c, f.k)));
+  poly(pl.map(p => P(p[0], p[1], z0 + h)), topCol || rgba(c));
+}
+function box(x, y, z, w, d, h, col, top) { prism([[x - w / 2, y - d / 2], [x + w / 2, y - d / 2], [x + w / 2, y + d / 2], [x - w / 2, y + d / 2]], z, h, col, top); }
+function pyramid(pl, z0, h, col) {
+  const c = hex(col); let cx = 0, cy = 0; pl.forEach(p => { cx += p[0]; cy += p[1]; }); cx /= pl.length; cy /= pl.length;
+  const ap = P(cx, cy, z0 + h), faces = [];
+  for (let i = 0; i < pl.length; i++) { const a = pl[i], b = pl[(i + 1) % pl.length]; let nx = b[1] - a[1], ny = -(b[0] - a[0]); const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; if (nx * (mx - cx) + ny * (my - cy) < 0) { nx = -nx; ny = -ny; } const l = Math.hypot(nx, ny) || 1; faces.push({ a, b, k: .84 + .16 * (ny / l) - .04 * (nx / l), d: mx + my }); }
+  faces.sort((p, q) => p.d - q.d);
+  for (const f of faces) poly([P(f.a[0], f.a[1], z0), P(f.b[0], f.b[1], z0), ap], rgba(shade(c, Math.min(1.04, f.k))));
+}
+function gable(x, y, z, w, d, rh, col) { // ridge along x
+  const c = hex(col), x0 = x - w / 2, x1 = x + w / 2, y0 = y - d / 2, y1 = y + d / 2;
+  poly([P(x0, y, z + rh), P(x1, y, z + rh), P(x1, y1, z), P(x0, y1, z)], rgba(shade(c, .95)));
+  poly([P(x1, y0, z), P(x1, y1, z), P(x1, y, z + rh)], rgba(shade(c, .8)));
+  poly([P(x0, y0, z), P(x1, y0, z), P(x1, y, z + rh), P(x0, y, z + rh)], rgba(shade(c, 1.02)));
+}
+function octo(x, y, r, n = 8) { const o = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + Math.PI / n; o.push([x + Math.cos(a) * r, y + Math.sin(a) * r]); } return o; }
+function flag(x, y, z, h, col, t) {
+  const g = R.ctx, a = P(x, y, z), b = P(x, y, z + h), s = R.u;
+  g.strokeStyle = COL.ink; g.lineWidth = Math.max(.8, s * .035); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+  const w = s * .34, fh = s * .2, wv = Math.sin(t * 4 + x) * s * .03;
+  g.fillStyle = col; g.beginPath(); g.moveTo(b[0], b[1]); g.quadraticCurveTo(b[0] + w * .5, b[1] + wv, b[0] + w, b[1] + fh * .2 + wv * .5); g.lineTo(b[0] + w, b[1] + fh * 1.1 + wv * .5); g.quadraticCurveTo(b[0] + w * .5, b[1] + fh + wv, b[0], b[1] + fh); g.closePath(); g.fill();
+}
+// --- the buildings, on a cell centred at (x, y), standing at height z ---
+function drawBuilding(kind, x, y, z, owner, t, grow = 1) {
+  const fc = FLAG[owner] || COL.ink;
+  if (grow < 1) z -= (1 - grow) * .9;
+  if (kind === "camp") {
+    box(x, y, z, .66, .66, .05, COL.trim);
+    prism(octo(x, y, .27), z + .05, .2, COL.wall);
+    pyramid(octo(x, y, .3), z + .25, .3, COL.wall);
+    const band = octo(x, y, .275); if (owner === 1) { /* a red band round the tent: yours */ }
+    flag(x, y, z + .55, .42, fc, t);
+  } else if (kind === "rocca") {
+    box(x, y, z, .66, .66, .1, COL.wall2);
+    box(x, y, z + .1, .38, .38, .5, COL.wall);
+    const top = z + .6;
+    for (const [dx, dy] of [[-.15, -.15], [0, -.15], [.15, -.15], [-.15, 0], [-.15, .15]]) box(x + dx, y + dy, top, .08, .08, .08, COL.trim);
+    for (const [dx, dy] of [[.15, 0], [0, .15], [.15, .15]]) box(x + dx, y + dy, top, .08, .08, .08, COL.trim);
+    const g = R.ctx; const a = P(x + .19, y + .02, z + .38), b = P(x + .19, y + .02, z + .26); g.fillStyle = "#AFA699"; g.beginPath(); g.ellipse((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, R.u * .04, R.u * .07, 0, 0, 7); g.fill();
+    flag(x, y, top + .04, .3, fc, t);
+  } else if (kind === "borgo") {
+    box(x - .14, y - .14, z, .26, .22, .2, COL.wall); gable(x - .14, y - .14, z + .2, .3, .26, .14, COL.roof);
+    box(x + .16, y - .08, z, .22, .2, .16, COL.wall2); gable(x + .16, y - .08, z + .16, .26, .24, .12, COL.roof);
+    box(x - .02, y + .18, z, .3, .2, .18, COL.wall); gable(x - .02, y + .18, z + .18, .34, .24, .13, COL.roof);
+    flag(x + .22, y + .2, z, .5, fc, t);
+  } else if (kind === "porto") {
+    // the quay leans toward the water; a boat moored beside it
+    box(x + .1, y + .1, z, .6, .6, .04, COL.wood);
+    for (const [dx, dy] of [[.36, -.12], [.36, .14], [.1, .36]]) box(x + dx, y + dy, z + .04, .05, .05, .09, COL.ink);
+    box(x - .18, y - .18, z, .26, .24, .22, COL.wall); gable(x - .18, y - .18, z + .22, .3, .28, .14, COL.roof);
+    const bz = z + .02; prism([[x + .02, y + .28], [x + .46, y + .2], [x + .56, y + .3], [x + .46, y + .42], [x + .02, y + .38]], bz, .07, COL.ink);
+    const m0 = P(x + .28, y + .32, bz + .07), m1 = P(x + .28, y + .32, bz + .62); const g = R.ctx; g.strokeStyle = COL.ink; g.lineWidth = Math.max(.8, R.u * .03); g.beginPath(); g.moveTo(m0[0], m0[1]); g.lineTo(m1[0], m1[1]); g.stroke();
+    const s0 = P(x + .28, y + .32, bz + .58), s1 = P(x + .28, y + .32, bz + .16), s2 = P(x + .5, y + .26, bz + .2); g.fillStyle = owner === 1 ? COL.accent : COL.trim; g.beginPath(); g.moveTo(s0[0], s0[1]); g.lineTo(s1[0], s1[1]); g.quadraticCurveTo((s0[0] + s2[0]) / 2 + R.u * .12, (s0[1] + s2[1]) / 2, s2[0], s2[1]); g.closePath(); g.fill();
+  } else if (kind === "bombarda") {
+    box(x - .04, y + .02, z, .5, .5, .06, COL.wall2);
+    box(x - .02, y, z + .06, .34, .2, .1, COL.wood);
+    // barrel aimed along +x, a little raised
+    prism([[x - .2, y - .06], [x + .3, y - .05], [x + .3, y + .05], [x - .2, y + .06]], z + .16, .11, COL.metal);
+    const g = R.ctx; for (const dx of [-.1, .1]) { const w = P(x + dx, y + .12, z + .1); g.fillStyle = COL.ink; g.beginPath(); g.ellipse(w[0], w[1], R.u * .07, R.u * .085, -.5, 0, 7); g.fill(); g.fillStyle = COL.wood; g.beginPath(); g.ellipse(w[0], w[1], R.u * .025, R.u * .03, -.5, 0, 7); g.fill(); }
+    for (const [dx, dy, dz] of [[-.2, -.2, 0], [-.12, -.2, 0], [-.16, -.2, .06]]) { const b = P(x + dx, y + dy, z + .1 + dz); g.fillStyle = COL.ink; g.beginPath(); g.arc(b[0], b[1], R.u * .04, 0, 7); g.fill(); }
+    const tip = P(x + .3, y, z + .215); g.fillStyle = "#3a3632"; g.beginPath(); g.ellipse(tip[0], tip[1], R.u * .035, R.u * .05, -.6, 0, 7); g.fill();
+    flag(x - .26, y - .22, z + .06, .4, fc, t);
+  } else if (kind === "mura") {
+    const e = .4, th = .06, h = .16;
+    box(x, y - e, z, e * 2, th, h, COL.wall2); box(x - e, y, z, th, e * 2, h, COL.wall2);
+    box(x - e, y - e, z, .13, .13, .26, COL.wall); pyramid(octo(x - e, y - e, .09, 4), z + .26, .08, COL.roof);
+    box(x + e, y - e, z, .13, .13, .26, COL.wall); box(x - e, y + e, z, .13, .13, .26, COL.wall);
+    box(x + e, y, z, th, e * 2, h, COL.wall2); box(x, y + e, z, e * 2, th, h, COL.wall2);
+    box(x + e, y + e, z, .13, .13, .26, COL.wall);
+    flag(x + e, y + e, z + .26, .3, fc, t);
+  } else if (kind === "town") {
+    box(x, y, z, .7, .7, .04, COL.trim);
+    box(x - .14, y - .12, z + .04, .3, .26, .22, COL.wall); pyramid([[x - .31, y - .27], [x + .03, y - .27], [x + .03, y + .03], [x - .31, y + .03]], z + .26, .14, COL.roof);
+    box(x + .16, y + .14, z + .04, .26, .22, .18, COL.wall2); gable(x + .16, y + .14, z + .22, .3, .26, .12, COL.roof);
+    box(x + .16, y - .16, z + .04, .13, .13, .62, COL.wall); pyramid(octo(x + .16, y - .16, .1, 4), z + .66, .2, COL.roof);
+    box(x - .16, y + .17, z + .04, .22, .2, .14, COL.wall); gable(x - .16, y + .17, z + .18, .26, .24, .1, COL.roof);
+    if (owner > 0) flag(x + .16, y - .16, z + .86, .26, fc, t);
+  }
+}
+
+// --- the glaze: one field per holder, thresholded (marching squares) on a flat sheet, then laid on each tile ---
+const SS = 5, NX = W * SS + 1, NY = H * SS + 1, RAD = 1.05, THR = .66, PPC = 48;
+const glaze = document.createElement("canvas"); glaze.width = W * PPC; glaze.height = H * PPC; const gctx = glaze.getContext("2d");
+function contour(vals, step) {
+  const fill = new Path2D(), line = new Path2D();
+  for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
+    const a = vals[j * NX + i], b = vals[j * NX + i + 1], c = vals[(j + 1) * NX + i + 1], d = vals[(j + 1) * NX + i];
+    if (a <= THR && b <= THR && c <= THR && d <= THR) continue;
+    const x0 = i * step, y0 = j * step, x1 = x0 + step, y1 = y0 + step;
+    if (a > THR && b > THR && c > THR && d > THR) { fill.rect(x0, y0, step, step); continue; }
+    const C = [[x0, y0, a], [x1, y0, b], [x1, y1, c], [x0, y1, d]], pts = [], cr = [];
+    for (let k = 0; k < 4; k++) { const p = C[k], q = C[(k + 1) & 3]; if (p[2] > THR) pts.push([p[0], p[1]]); if ((p[2] > THR) !== (q[2] > THR)) { const tt = (THR - p[2]) / (q[2] - p[2]); const pt = [p[0] + (q[0] - p[0]) * tt, p[1] + (q[1] - p[1]) * tt]; pts.push(pt); cr.push({ pt, out: p[2] > THR }); } }
+    fill.moveTo(pts[0][0], pts[0][1]); for (let k = 1; k < pts.length; k++) fill.lineTo(pts[k][0], pts[k][1]); fill.closePath();
+    for (let m = 0; m < cr.length; m++) if (cr[m].out) { const n2 = cr[(m + 1) % cr.length]; line.moveTo(cr[m].pt[0], cr[m].pt[1]); line.lineTo(n2.pt[0], n2.pt[1]); }
+  }
+  return { fill, line };
+}
+const fields = {}; for (const o of [1, 2, 3, 4, 5]) fields[o] = new Float32Array(NX * NY);
+function paintGlaze(views) {
+  for (const o of [1, 2, 3, 4, 5]) fields[o].fill(0);
+  const add = (o, bx, by, w) => {
+    const v = fields[o]; const i0 = Math.max(0, Math.floor((bx - RAD) * SS)), i1 = Math.min(NX - 1, Math.ceil((bx + RAD) * SS)), j0 = Math.max(0, Math.floor((by - RAD) * SS)), j1 = Math.min(NY - 1, Math.ceil((by + RAD) * SS));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const dx = i / SS - bx, dy = j / SS - by, d2 = (dx * dx + dy * dy) / (RAD * RAD); if (d2 < 1) { const k = 1 - d2; v[j * NX + i] += w * k * k; } }
+  };
+  for (let c = 0; c < N; c++) {
+    const s = views[c], cx = X(c) + .5, cy = Y(c) + .5;
+    if (s.p >= 1) { if (s.o > 0) add(s.o, cx, cy, 1); continue; }
+    const e = ease(s.p);
+    if (s.o > 0) { if (s.src >= 0) { const sx = X(s.src) + .5, sy = Y(s.src) + .5; add(s.o, sx + (cx - sx) * e, sy + (cy - sy) * e, 1 + .3 * Math.sin(Math.PI * s.p)); } else add(s.o, cx, cy, e); }
+    if (s.prev > 0) add(s.prev, cx, cy, 1 - e);
+  }
+  gctx.clearRect(0, 0, glaze.width, glaze.height);
+  for (const o of [5, 3, 4, 2, 1]) {
+    const P0 = PAL[o], col = hex(P0.c), { fill, line } = contour(fields[o], PPC / SS);
+    gctx.fillStyle = rgba(col, P0.a); gctx.fill(fill);
+    if (P0.hatch) { gctx.save(); gctx.clip(fill); gctx.strokeStyle = rgba(shade(col, .8), .5); gctx.lineWidth = 2.2; gctx.beginPath(); for (let d = -glaze.height; d < glaze.width; d += 11) { gctx.moveTo(d, glaze.height); gctx.lineTo(d + glaze.height, 0); } gctx.stroke(); gctx.restore(); }
+    gctx.lineJoin = "round"; gctx.lineCap = "round";
+    gctx.strokeStyle = P0.edge || rgba(shade(col, .82), o === 1 ? .95 : .6); gctx.lineWidth = o === 1 ? 3 : 2.2; gctx.stroke(line);
+    gctx.save(); gctx.translate(-1.3, -1.5); gctx.strokeStyle = "rgba(255,255,255,.65)"; gctx.lineWidth = 1.5; gctx.stroke(line); gctx.restore();
+  }
+}
+
+// --- the ribbon of a front, its chevrons running toward the target ---
+function curve(p0, p1, lift) { const ctl = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2 - lift], pts = []; for (let i = 0; i <= 40; i++) { const s = i / 40, a = (1 - s) * (1 - s), b = 2 * s * (1 - s), c = s * s; pts.push([a * p0[0] + b * ctl[0] + c * p1[0], a * p0[1] + b * ctl[1] + c * p1[1]]); } return pts; }
+function along(pts) { const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); return L; }
+function at(pts, L, d) { let i = 1; while (i < pts.length - 1 && L[i] < d) i++; const k = (d - L[i - 1]) / Math.max(1e-6, L[i] - L[i - 1]); return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * k, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * k, Math.atan2(pts[i][1] - pts[i - 1][1], pts[i][0] - pts[i - 1][0])]; }
+function ribbon(g, pts, w0, w1, col, t, alpha, endGap, ghost) {
+  const L = along(pts), total = L[L.length - 1] - endGap; if (total < 4) return;
+  g.save(); g.globalAlpha = alpha;
+  // a tapering band: thick where it leaves the camp, thinner at the head
+  const left = [], right = []; let last = 0;
+  for (let i = 0; i < pts.length && L[i] <= total; i++) { const s = L[i] / total, w = (w0 + (w1 - w0) * s) / 2, j = Math.min(pts.length - 1, i + 1), k = Math.max(0, i - 1), a = Math.atan2(pts[j][1] - pts[k][1], pts[j][0] - pts[k][0]); left.push([pts[i][0] - Math.sin(a) * w, pts[i][1] + Math.cos(a) * w]); right.push([pts[i][0] + Math.sin(a) * w, pts[i][1] - Math.cos(a) * w]); last = i; }
+  const tip = at(pts, L, total), hw = Math.max(w1 * 1.1, 4);
+  g.beginPath(); g.moveTo(left[0][0], left[0][1]); for (const p of left) g.lineTo(p[0], p[1]);
+  g.lineTo(tip[0] + Math.cos(tip[2] + Math.PI / 2) * hw, tip[1] + Math.sin(tip[2] + Math.PI / 2) * hw);
+  g.lineTo(tip[0] + Math.cos(tip[2]) * hw * 1.4, tip[1] + Math.sin(tip[2]) * hw * 1.4);
+  g.lineTo(tip[0] + Math.cos(tip[2] - Math.PI / 2) * hw, tip[1] + Math.sin(tip[2] - Math.PI / 2) * hw);
+  for (let i = right.length - 1; i >= 0; i--) g.lineTo(right[i][0], right[i][1]); g.closePath();
+  if (ghost) { g.setLineDash([6, 5]); g.strokeStyle = col; g.lineWidth = 2; g.stroke(); g.fillStyle = rgba(hex(col), .18); g.fill(); g.setLineDash([]); }
+  else { g.fillStyle = col; g.fill(); }
+  const period = Math.max(10, (w0 + w1) * 1.1), off = (t * 26) % period;
+  g.strokeStyle = ghost ? rgba(hex(col), .7) : "rgba(255,255,255,.7)"; g.lineCap = "round";
+  for (let d = 8 + off; d < total - 6; d += period) { const [x, y, a] = at(pts, L, d), s = d / total, w = (w0 + (w1 - w0) * s), sz = Math.max(2.5, w * .3); g.lineWidth = Math.max(1, w * .16); const ca = Math.cos(a), sa = Math.sin(a); g.beginPath(); g.moveTo(x - ca * sz - sa * sz, y - sa * sz + ca * sz); g.lineTo(x, y); g.lineTo(x - ca * sz + sa * sz, y - sa * sz - ca * sz); g.stroke(); }
+  g.restore();
+}
+function pastille(g, x, y, r, txt, col, alpha = 1) {
+  g.save(); g.globalAlpha = alpha; g.fillStyle = "rgba(23,21,15,.12)"; g.beginPath(); g.arc(x, y + 3, r, 0, 7); g.fill();
+  g.fillStyle = "#fff"; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.strokeStyle = col; g.lineWidth = 2.5; g.stroke();
+  g.fillStyle = "#17150F"; g.font = `900 ${Math.round(r * .95)}px Nunito,system-ui,sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(txt, x, y + 1); g.restore();
+}
+
+// ================= The device =================
+const dev = document.getElementById("dev"), canvas = document.getElementById("cv"), ctx = canvas.getContext("2d");
+const cam = { k: 1, fx: 0, fy: 0, kTo: 1, fxTo: 0, fyTo: 0 };
+let L = { w: 0, h: 0, dpr: 1, u: 30, X0: 0, Y0: 0 };
+function layout() {
+  const r = dev.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
+  L.w = r.width; L.h = r.height; L.dpr = dpr; canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+  L.u = Math.max(24, Math.min(46, r.width / (W + H + 2))); L.X0 = (H + 1) * L.u; L.Y0 = L.u * 1.5;
+}
+const phone = () => dev.classList.contains("phone");
+function centreOn(c, k) { const p = [L.X0 + (X(c) + .5 - Y(c) - .5) * L.u, L.Y0 + (X(c) + Y(c) + 1) * L.u * Q - .6 * L.u]; cam.fxTo = p[0]; cam.fyTo = p[1] + (phone() ? 0 : -L.u * .3); if (k) cam.kTo = k; }
+function home(snap) {
+  const side = L.w > 860 ? 290 : 0, bw = (W + H) * L.u, bh = (W + H) * L.u * Q + 1.6 * L.u;
+  cam.kTo = phone() ? 1.7 : Math.min((L.w - side - 40) / bw, (L.h - 150) / bh);
+  if (phone()) centreOn(CAMP[1]); else { cam.fxTo = L.X0 + (W - H) / 2 * L.u - side / 2 / cam.kTo; cam.fyTo = L.Y0 + (W + H) / 2 * L.u * Q - L.u * .2; } if (snap) { cam.k = cam.kTo; cam.fx = cam.fxTo; cam.fy = cam.fyTo; } }
+const toScreen = (wx, wy) => [(wx - cam.fx) * cam.k + L.w / 2, (wy - cam.fy) * cam.k + L.h / 2];
+const toWorld = (sx, sy) => [(sx - L.w / 2) / cam.k + cam.fx, (sy - L.h / 2) / cam.k + cam.fy];
+
+// selection, dock, previews
+const ui = { sel: -1, selT: 0, mode: null, zone: new Map(), ghost: null, preview: null, aim: false, bombFrom: -1 };
+const tops = new Array(N), quads = new Array(N);
+
+function heightOf(o) { return o === 1 ? .62 : o > 0 ? .5 : .42; }
+function frame(t) {
+  const g = ctx, views = new Array(N); for (let c = 0; c < N; c++) views[c] = cv(c);
+  paintGlaze(views);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = COL.bg; g.fillRect(0, 0, canvas.width, canvas.height);
+  const k = cam.k, d = L.dpr, tx = L.w / 2 - cam.fx * k, ty = L.h / 2 - cam.fy * k;
+  const camT = () => g.setTransform(d * k, 0, 0, d * k, d * tx, d * ty);
+  camT(); R = { ctx: g, u: L.u, X0: L.X0, Y0: L.Y0, k };
+  // the board's shadow
+  g.fillStyle = "rgba(110,95,75,.10)"; poly([P(0, 0, -.6), P(W, 0, -.6), P(W, H, -.6), P(0, H, -.6)].map(p => [p[0], p[1] + 10]), "rgba(110,95,75,.10)");
+  const rip = new Float32Array(N); for (let c = 0; c < N; c++) { const s = views[c]; if (s.p < 1) for (const o of nb(c)) rip[o] += .1 * Math.sin(Math.PI * clamp01((s.p - .15) / .85)); }
+  const base = hex(COL.wall), selE = ease(clamp01((t - ui.selT) / .3));
+  for (let sum = 0; sum <= W + H - 2; sum++) for (let i = 0; i <= sum; i++) {
+    const j = sum - i; if (i >= W || j >= H) continue;
+    const c = idx(i, j), s = views[c];
+    if (water[c]) { poly([P(i, j, .12), P(i + 1, j, .12), P(i + 1, j + 1, .12), P(i, j + 1, .12)], COL.water); tops[c] = null; continue; }
+    const ke = s.p < 1 ? ease(s.p) : 1;
+    let z = heightOf(s.prev) + (heightOf(s.o) - heightOf(s.prev)) * ke + rip[c];
+    if (s.p < 1) z += .55 * Math.sin(Math.PI * s.p) * (1 - s.p * .3);
+    if (terr[c] === "hill") z += .08; if (terr[c] === "mount") z += .14;
+    if (c === ui.sel) z += .35 * selE;
+    let topC = terr[c] === "mount" ? hex(COL.wall2) : terr[c] === "marsh" ? mix(base, hex(COL.water), .22) : base;
+    const sideTint = o => o > 0 ? mix(topC, hex(PAL[o].c), Math.min(.7, PAL[o].a * 1.1)) : topC;
+    const sideC = s.p < 1 ? mix(sideTint(s.prev), sideTint(s.o), ke) : sideTint(s.o);
+    const a = P(i + G, j + G, z), b = P(i + 1 - G, j + G, z), cc = P(i + 1 - G, j + 1 - G, z), dd = P(i + G, j + 1 - G, z);
+    const bb = P(i + 1 - G, j + G, 0), cb = P(i + 1 - G, j + 1 - G, 0), db = P(i + G, j + 1 - G, 0);
+    poly([dd, cc, cb, db], rgba(shade(sideC, .9))); poly([b, cc, cb, bb], rgba(shade(sideC, .79)));
+    poly([a, b, cc, dd], rgba(topC));
+    // lay this tile's piece of the glaze sheet on its top
+    const sc = L.u / PPC;
+    g.setTransform(d * k * sc, d * k * sc * Q, -d * k * sc, d * k * sc * Q, d * (k * L.X0 + tx), d * (k * (L.Y0 - z * L.u) + ty));
+    const gx = (i + G) * PPC, gy = (j + G) * PPC, gs = (1 - 2 * G) * PPC; g.drawImage(glaze, gx, gy, gs, gs, gx, gy, gs, gs);
+    camT();
+    g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 1 / k; g.beginPath(); g.moveTo(dd[0], dd[1]); g.lineTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+    quads[c] = [a, b, cc, dd]; tops[c] = [(a[0] + cc[0]) / 2, (a[1] + cc[1]) / 2, z];
+    // relief
+    const m = P(i + .5, j + .5, z);
+    if (terr[c] === "mount" && !st.builds.has(c) && !CAMPS.has(c) && !TOWNS.has(c)) pyramid([[i + .2, j + .2], [i + .8, j + .2], [i + .8, j + .8], [i + .2, j + .8]], z, .62, COL.wall);
+    else if (terr[c] === "hill" && !st.builds.has(c) && !CAMPS.has(c) && !TOWNS.has(c)) { g.fillStyle = rgba(shade(topC, .9)); g.beginPath(); g.ellipse(m[0], m[1], L.u * .3, L.u * .17, 0, Math.PI, 0); g.fill(); }
+    else if (terr[c] === "marsh") { g.strokeStyle = COL.water; g.lineWidth = 2 / k; for (const [dx, dy] of [[-.2, -.1], [.05, .08], [-.1, .22]]) { const p0 = P(i + .5 + dx, j + .5 + dy, z), p1 = P(i + .5 + dx + .22, j + .5 + dy, z); g.beginPath(); g.moveTo(p0[0], p0[1]); g.lineTo(p1[0], p1[1]); g.stroke(); } }
+    // zones lit by the dock (a building's reach, the cells a front would take, a bombard's range)
+    const zc = ui.zone.get(c);
+    if (zc) {
+      const pulse = .55 + .45 * Math.sin(t * 4) ** 2;
+      if (zc.fill) poly([a, b, cc, dd], rgba(hex(zc.col), zc.fill * pulse));
+      if (zc.dash) { g.save(); g.setLineDash([5 / k, 4 / k]); g.strokeStyle = zc.col; g.lineWidth = 1.6 / k; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(cc[0], cc[1]); g.lineTo(dd[0], dd[1]); g.closePath(); g.stroke(); g.restore(); }
+      if (zc.corners) equerres(i, j, z, zc.col, pulse, k);
+    }
+    if (c === ui.sel) { g.strokeStyle = COL.accent; g.lineWidth = 2.5 / k; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(cc[0], cc[1]); g.lineTo(dd[0], dd[1]); g.closePath(); g.stroke(); }
+    // what stands on the cell
+    const bd = st.builds.get(c);
+    if (TOWNS.has(c)) drawBuilding("town", i + .5, j + .5, z, s.o, t);
+    else if (CAMPS.has(c)) drawBuilding("camp", i + .5, j + .5, z, s.o > 0 ? (Object.keys(CAMP).find(o => CAMP[o] === c) | 0) : 0, t);
+    if (bd) drawBuilding(bd.kind, i + .5, j + .5, z, bd.owner, t, ease(clamp01((now - bd.t) / .7)));
+    if (ui.ghost && ui.ghost.c === c) { g.save(); g.globalAlpha = .55 + .2 * Math.sin(t * 5); drawBuilding(ui.ghost.kind, i + .5, j + .5, z, 1, t); g.restore(); }
+    const rb = st.rubble.find(r => r.c === c);
+    if (rb) { const p = clamp01((now - rb.t) / 1.4); g.save(); g.globalAlpha = 1 - p; drawBuilding(rb.kind, i + .5, j + .5, z - p * .6, 1, t); g.restore(); }
+  }
+  // the fronts: tapering ribbons above the board, a count at their head
+  const g2 = g;
+  for (const f of st.fronts) {
+    const alpha = f.end === null ? Math.min(1, (now - (f.next - 1.15)) / .3 + .3) : 1 - (now - f.end) / 1.2;
+    const from = tops[CAMP[f.att]], hc = f.lastC >= 0 ? f.lastC : f.head; let hd = tops[hc]; if (!from || !hd) continue;
+    let hx = hd[0], hy = hd[1];
+    if (f.lastC >= 0 && now - st.chg[f.lastC] < D && now >= st.chg[f.lastC] && st.src[f.lastC] >= 0 && tops[st.src[f.lastC]]) { const e = ease((now - st.chg[f.lastC]) / D), s0 = tops[st.src[f.lastC]]; hx = s0[0] + (hd[0] - s0[0]) * e; hy = s0[1] + (hd[1] - s0[1]) * e; }
+    const col = f.att === 1 ? COL.accent : f.att === 5 ? "#8E7150" : COL.ink;
+    const force = Math.sqrt(Math.max(0, f.men) / 150);
+    ribbon(g2, curve([from[0], from[1] - L.u * .5], [hx, hy - L.u * .1], L.u * .9), L.u * (.08 + .3 * force), L.u * (.05 + .14 * force), col, t, Math.max(0, alpha) * .94, L.u * .25, false);
+    if (f.end === null) { const nx = plan(f.att, f.def, f.target, f.men).cells.slice(0, 2); for (const n of nx) { const tp = tops[n.c]; if (tp) equerres(X(n.c), Y(n.c), tp[2], col, .55 + .45 * Math.sin(t * 5) ** 2, k); } }
+    f._hx = hx; f._hy = hy; f._col = col; f._a = alpha;
+  }
+  if (ui.preview) {
+    const p = ui.preview, from = tops[CAMP[1]], last = p.cells.length ? tops[p.cells[Math.min(p.cells.length - 1, 1)].c] : tops[p.target];
+    if (from && last) { const force = Math.sqrt(p.men / 150); ribbon(g2, curve([from[0], from[1] - L.u * .5], [last[0], last[1] - L.u * .1], L.u * .9), L.u * (.08 + .3 * force), L.u * (.05 + .14 * force), COL.accent, t, .95, L.u * .25, true); }
+  }
+  // bombard shots
+  for (const s of st.shots) {
+    const a = tops[s.from], b = tops[s.target]; if (!a || !b) continue; const p = clamp01((now - s.t) / 1.1); if (p >= 1) continue;
+    const x = a[0] + (b[0] - a[0]) * p, y = a[1] + (b[1] - a[1]) * p - Math.sin(Math.PI * p) * L.u * 3.2 - L.u * .4 * (1 - p);
+    g.fillStyle = COL.ink; g.beginPath(); g.arc(x, y, L.u * .09, 0, 7); g.fill();
+    g.strokeStyle = "rgba(42,39,37,.25)"; g.lineWidth = 2 / k; g.setLineDash([3 / k, 4 / k]); g.beginPath(); for (let q = 0; q <= p; q += .04) { const xx = a[0] + (b[0] - a[0]) * q, yy = a[1] + (b[1] - a[1]) * q - Math.sin(Math.PI * q) * L.u * 3.2 - L.u * .4 * (1 - q); q ? g.lineTo(xx, yy) : g.moveTo(xx, yy); } g.stroke(); g.setLineDash([]);
+  }
+  for (const pf of st.puffs) { const b = tops[pf.c]; if (!b) continue; const p = clamp01((now - pf.t) / 1.2); g.save(); g.globalAlpha = 1 - p; for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; g.fillStyle = i % 2 ? "#fff" : COL.trim; g.beginPath(); g.arc(b[0] + Math.cos(a) * L.u * (.2 + p * .9), b[1] - L.u * .2 + Math.sin(a) * L.u * (.1 + p * .45) - p * L.u * .4, L.u * (.18 - p * .08), 0, 7); g.fill(); } g.restore(); }
+  // screen-space marks: names, counts (constant size whatever the zoom)
+  g.setTransform(d, 0, 0, d, 0, 0);
+  for (const [c, n] of TOWNS) { const tp = tops[c]; if (!tp) continue; const [sx, sy] = toScreen(tp[0], tp[1]); label(g, n, sx, sy + 8 * Math.min(1.4, k), "place"); }
+  for (const o of [2, 3, 4, 5]) { const tp = tops[CAMP[o]]; if (!tp) continue; const [sx, sy] = toScreen(tp[0], tp[1]); label(g, `${NAME[o]} · ${Math.round(st.troops[o])}`, sx, sy + 8 * Math.min(1.4, k), "camp", o); }
+  for (const f of st.fronts) { if (f._hx === undefined) continue; const [sx, sy] = toScreen(f._hx, f._hy); pastille(g, sx, sy - 18, 14, String(Math.max(0, f.men)), f._col, Math.max(0, f._a)); }
+  if (ui.preview) { const p = ui.preview, last = p.cells.length ? tops[p.cells[p.cells.length - 1].c] : null; if (last) { const [sx, sy] = toScreen(last[0], last[1]); pastille(g, sx, sy - 18, 14, `${p.cells.length}`, COL.accent, .95); } }
+}
+function equerres(i, j, z, col, alpha, k) {
+  const g = R.ctx, l = .22, n = .1; g.save(); g.globalAlpha = alpha; g.strokeStyle = col; g.lineWidth = 2.4 / k; g.lineCap = "round"; g.lineJoin = "round";
+  for (const [cx, cy, dx, dy] of [[i + n, j + n, 1, 1], [i + 1 - n, j + n, -1, 1], [i + 1 - n, j + 1 - n, -1, -1], [i + n, j + 1 - n, 1, -1]]) { const p0 = P(cx, cy + dy * l, z), p1 = P(cx, cy, z), p2 = P(cx + dx * l, cy, z); g.beginPath(); g.moveTo(p0[0], p0[1]); g.lineTo(p1[0], p1[1]); g.lineTo(p2[0], p2[1]); g.stroke(); }
+  g.restore();
+}
+function label(g, txt, x, y, kind, o) {
+  g.save(); g.textAlign = "center"; g.textBaseline = "top";
+  if (kind === "place") { g.font = 'italic 600 15px "Cormorant Garamond",Georgia,serif'; g.lineWidth = 3.5; g.strokeStyle = "rgba(255,255,255,.9)"; g.strokeText(txt, x, y); g.fillStyle = "#17150F"; g.fillText(txt, x, y); }
+  else { g.font = "800 11.5px Nunito,system-ui,sans-serif"; const w = g.measureText(txt).width + 16; g.fillStyle = "rgba(23,21,15,.08)"; rrect(g, x - w / 2, y + 2, w, 20, 10); g.fill(); g.fillStyle = "#fff"; rrect(g, x - w / 2, y, w, 20, 10); g.fill(); g.fillStyle = FLAG[o]; g.beginPath(); g.arc(x - w / 2 + 9, y + 10, 3.5, 0, 7); g.fill(); g.fillStyle = "#17150F"; g.textAlign = "left"; g.fillText(txt, x - w / 2 + 15, y + 3.5); }
+  g.restore();
+}
+function rrect(g, x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
+
+// ================= Interaction =================
+function pick(sx, sy) {
+  const [wx, wy] = toWorld(sx, sy);
+  for (let sum = W + H - 2; sum >= 0; sum--) for (let i = Math.min(W - 1, sum); i >= 0; i--) { const j = sum - i; if (j >= H) continue; const q = quads[idx(i, j)]; if (q && inQuad(wx, wy, q)) return idx(i, j); }
+  return -1;
+}
+function inQuad(x, y, q) { let s = 0; for (let i = 0; i < 4; i++) { const a = q[i], b = q[(i + 1) % 4], cr = (b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]); if (i === 0) s = Math.sign(cr); else if (Math.sign(cr) !== s && cr !== 0) return false; } return true; }
+const ptrs = new Map(); let drag = null;
+canvas.addEventListener("pointerdown", e => { canvas.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.offsetX, e.offsetY]); drag = { x: e.offsetX, y: e.offsetY, fx: cam.fxTo, fy: cam.fyTo, moved: false, pinch: ptrs.size === 2 ? pinchD() : 0, k: cam.kTo }; });
+canvas.addEventListener("pointermove", e => {
+  if (!ptrs.has(e.pointerId)) { canvas.classList.toggle("hot", pick(e.offsetX, e.offsetY) >= 0); return; }
+  ptrs.set(e.pointerId, [e.offsetX, e.offsetY]);
+  if (ptrs.size === 2 && drag && drag.pinch) { cam.kTo = cam.k = Math.max(.7, Math.min(4, drag.k * pinchD() / drag.pinch)); drag.moved = true; return; }
+  if (!drag) return; const dx = e.offsetX - drag.x, dy = e.offsetY - drag.y;
+  if (Math.hypot(dx, dy) > 6) drag.moved = true;
+  if (drag.moved) { cam.fxTo = cam.fx = drag.fx - dx / cam.k; cam.fyTo = cam.fy = drag.fy - dy / cam.k; }
+});
+function pinchD() { const v = [...ptrs.values()]; return Math.hypot(v[0][0] - v[1][0], v[0][1] - v[1][1]) || 1; }
+canvas.addEventListener("pointerup", e => { ptrs.delete(e.pointerId); if (drag && !drag.moved && ptrs.size === 0) tap(pick(e.offsetX, e.offsetY)); if (ptrs.size === 0) drag = null; });
+canvas.addEventListener("pointercancel", e => { ptrs.delete(e.pointerId); drag = null; });
+canvas.addEventListener("wheel", e => { e.preventDefault(); const f = Math.exp(-e.deltaY * .0015), nk = Math.max(.7, Math.min(4, cam.kTo * f)); const [wx, wy] = toWorld(e.offsetX, e.offsetY); cam.fxTo = wx - (e.offsetX - L.w / 2) / nk; cam.fyTo = wy - (e.offsetY - L.h / 2) / nk; cam.kTo = nk; }, { passive: false });
+const $ = id => document.getElementById(id);
+$("z-in").onclick = () => cam.kTo = Math.min(4, cam.kTo * 1.3);
+$("z-out").onclick = () => cam.kTo = Math.max(.7, cam.kTo / 1.3);
+$("z-me").onclick = () => centreOn(CAMP[1], Math.max(cam.kTo, phone() ? 1.9 : 1.5));
+
+function tap(c) {
+  if (ui.aim && c >= 0) { // a bombard aiming: touch a lit cell to fire
+    if (ui.zone.has(c) && ui.zone.get(c).target) { fire(ui.bombFrom, c, 1); st.myShot = false; toast("Feu ! · le boulet part"); closeAll(); return; }
+  }
+  if (c < 0 || water[c]) { closeAll(); return; }
+  select(c);
+}
+function select(c) {
+  ui.sel = c; ui.selT = now; ui.zone = new Map(); ui.ghost = null; ui.preview = null; ui.aim = false; hideDock();
+  const o = st.own[c], b = st.builds.get(c), town = TOWNS.get(c), isCamp = CAMPS.has(c);
+  let name, role, state, go = null, goOk = true;
+  const ter = TERR[terr[c]];
+  if (o === 1) {
+    if (isCamp) { name = "Ton camp"; role = `${cellsOf(1)} cases · capitale`; state = `${Math.round(st.troops[1])} troupes, +13 par heure de jour.`; go = () => openLands(); }
+    else if (b) { name = `Ton ${BUILD[b.kind].name.toLowerCase()}`; role = `${ter}${town ? " · " + town : ""}`; state = BUILD[b.kind].effect; go = b.kind === "bombarda" ? () => openBombard(c) : () => openBuild(c); if (b.kind === "bombarda" && !st.myShot) { state = "Plus de tir aujourd'hui : il revient demain matin."; } }
+    else { name = town ? town : `Ta ${ter.toLowerCase()}`; role = town ? `Ville · tes terres` : "Tes terres"; state = `${Math.max(1, Math.round(st.troops[1] / cellsOf(1)))} défenseurs par case${fortNear(c, 1) ? ", sous ton fort" : ""}. Touche la flèche pour bâtir.`; go = () => openBuild(c); }
+  } else if (o === 4) {
+    name = "Morosini"; role = `Ton allié · ${cellsOf(4)} cases`; state = "Pas de front entre vous. Tu peux lui envoyer des troupes."; go = () => openNeighbour(4);
+  } else {
+    const adj = nb(c).some(k => st.own[k] === 1);
+    const cost = costOf(c, o);
+    name = town ? town : o === 0 ? `${ter} libre` : `${ter} de ${NAME[o]}`;
+    role = o === 0 ? "Terre libre · tenue par la milice" : `${NAME[o]} · ${cellsOf(o)} cases${b ? " · " + BUILD[b.kind].name.toLowerCase() : ""}`;
+    state = adj ? `${cost} troupes pour la prendre${fortNear(c, o) ? " (un fort la défend ×1,6)" : ""}.` : "Trop loin : touche une terre au bord des tiennes.";
+    if (o > 0 && !adj) { state += ` Ou ouvre la fiche de ${NAME[o]}.`; go = () => openNeighbour(o); }
+    else { go = () => openAttack(c); goOk = adj; }
+  }
+  $("fi-n").innerHTML = name + (o === 1 && isCamp ? '<span class="tag">Toi</span>' : "");
+  $("fi-r").textContent = role; $("fi-s").textContent = state;
+  $("fi-go").disabled = !goOk; $("fi-go").onclick = () => go && go();
+  $("fiche").hidden = false; placeFiche();
+}
+function placeFiche() {
+  const f = $("fiche"); if (f.hidden || ui.sel < 0 || phone()) return;
+  const tp = tops[ui.sel]; if (!tp) return; const [sx, sy] = toScreen(tp[0], tp[1]);
+  const w = f.offsetWidth, h = f.offsetHeight; let x = sx + 34, y = sy - h / 2 - 10;
+  if (x + w > L.w - 16) x = sx - w - 34; y = Math.max(76, Math.min(L.h - h - 90, y)); x = Math.max(16, x);
+  f.style.left = x + "px"; f.style.top = y + "px";
+}
+function closeAll() { ui.sel = -1; ui.zone = new Map(); ui.ghost = null; ui.preview = null; ui.aim = false; $("fiche").hidden = true; hideDock(); syncGo(null); }
+function hideDock() { $("dock").hidden = true; }
+$("fi-x").onclick = closeAll; $("dk-x").onclick = closeAll;
+window.addEventListener("keydown", e => { if (e.key === "Escape") closeAll(); });
+function openDock(kicker, title, html) { $("fiche").hidden = true; $("dk-k").textContent = kicker; $("dk-t").textContent = title; $("dk-b").innerHTML = html; $("dock").hidden = false; }
+
+// --- Lancer un front ---
+function openAttack(c) {
+  const o = st.own[c]; ui.sel = c;
+  openDock(o === 0 ? "Terre libre" : NAME[o], "Lancer un front", `
+    <div class="slider"><label for="men">Hommes engagés <b id="men-v"></b></label><input type="range" id="men" min="10" max="100" step="5" value="50"><div class="ticks"><span>10 %</span><span>ta réserve : ${Math.round(st.troops[1])}</span><span>100 %</span></div></div>
+    <div class="rows" id="atk-rows"></div>
+    <div class="act"><button class="key" id="atk-go">Attaquer</button></div>`);
+  const upd = () => {
+    const v = +$("men").value, men = Math.round(st.troops[1] * v / 100); $("men").style.setProperty("--v", ((v - 10) / 90 * 100) + "%");
+    const p = plan(1, o, c, men); ui.preview = { men, cells: p.cells, target: c };
+    ui.zone = new Map(p.cells.map((x, i) => [x.c, { col: COL.accent, fill: i < 2 ? .22 : .12, corners: i < 2, dash: i >= 2 }]));
+    const spent = men - p.left, home = Math.round(st.troops[1] - men), cells = cellsOf(1);
+    $("men-v").textContent = men;
+    $("atk-rows").innerHTML = `<div><span>Il prendra</span><b>${p.cells.length} case${p.cells.length > 1 ? "s" : ""} · −${spent}</b></div><div><span>Reviendront</span><b>${p.left} hommes</b></div><div><span>Chez toi, par case</span><b>${plural(Math.max(0, Math.round(home / cells)), "défenseur")} au lieu de ${Math.round(st.troops[1] / cells)}</b></div><div><span>Première case</span><b>vers 14 h 20 · dans 40 min</b></div>`;
+    $("atk-go").disabled = p.cells.length === 0 || frontsOf(1).length >= 3;
+    $("atk-go").textContent = frontsOf(1).length >= 3 ? "Trois fronts au plus" : p.cells.length ? `Attaquer · ${men} hommes` : `Il faut au moins ${costOf(c, o)} troupes`;
+  };
+  $("men").oninput = upd; upd();
+  $("atk-go").onclick = () => { const men = ui.preview.men; launch(1, o, c, men); toast(`Front lancé · ${men} hommes en marche ✓`); closeAll(); };
+}
+// --- Bâtir ---
+const cardCanvases = [];
+function openBuild(c, pre) {
+  ui.sel = c; const cells = cellsOf(1);
+  const kinds = Object.keys(BUILD);
+  openDock(`${TERR[terr[c]]} · tes terres`, st.builds.get(c) ? "Ce qui est bâti ici" : "Bâtir ici", `
+    <div class="cards">${kinds.map(k => { const B = BUILD[k], have = [...st.builds.values()].filter(b => b.owner === 1 && b.kind === k).length, max = Math.floor(cells / B.per), bad = st.builds.get(c) ? "Case déjà bâtie" : B.coast && !coast(c) ? "Au bord de l'eau" : have >= max ? `${have} sur ${max} : prends des terres` : st.ducats < B.price ? "Pas assez de ducats" : ""; return `<button class="card" data-k="${k}" aria-pressed="false" ${bad ? 'aria-disabled="true"' : ""}><canvas data-mini="${k}" width="300" height="168"></canvas><b>${B.name}</b><span>${bad || B.effect}</span><div class="price"><i class="coin" style="width:15px;height:15px"></i>${B.price} d<small>${have} / ${Math.max(max, have)}</small></div></button>`; }).join("")}</div>
+    <p class="hint" id="bd-h">Choisis un bâtiment : sa zone s'allume sur le plateau.</p>
+    <div class="act"><button class="key" id="bd-go" disabled>Choisis un bâtiment</button></div>`);
+  document.querySelectorAll("[data-mini]").forEach(m => miniBuilding(m, m.dataset.mini));
+  let chosen = null;
+  const choose = k => {
+    chosen = k; document.querySelectorAll(".card").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === k)));
+    ui.ghost = { c, kind: k }; ui.zone = zoneOf(k, c);
+    $("bd-h").textContent = `${BUILD[k].name} · ${BUILD[k].zone}.`;
+    $("bd-go").disabled = false; $("bd-go").innerHTML = `Bâtir le ${BUILD[k].name.toLowerCase()} · ${BUILD[k].price} <i class="coin" style="width:16px;height:16px"></i>`;
+  };
+  document.querySelectorAll(".card").forEach(b => b.onclick = () => { if (b.getAttribute("aria-disabled") !== "true") choose(b.dataset.k); });
+  $("bd-go").onclick = () => { if (!chosen) return; st.builds.set(c, { kind: chosen, owner: 1, t: now }); st.ducats -= BUILD[chosen].price; toast(`${BUILD[chosen].name} bâti ✓`); const k = chosen; closeAll(); };
+  if (pre) { const card = document.querySelector(`.card[data-k="${pre}"]`); if (card && card.getAttribute("aria-disabled") !== "true") choose(pre); }
+}
+function zoneOf(k, c) {
+  const z = new Map(), fill = (cells, o) => cells.forEach(x => z.set(x, o));
+  if (k === "rocca" || k === "mura") fill([c, ...nb(c)].filter(x => st.own[x] === 1), { col: k === "rocca" ? COL.accent : COL.ink, fill: .22, dash: true });
+  if (k === "borgo") { for (let x = 0; x < N; x++) if (st.own[x] === 1) z.set(x, { col: COL.accent, fill: .1 }); }
+  if (k === "bombarda") for (let x = 0; x < N; x++) if (!water[x] && dist(x, c) <= 4 && st.own[x] !== 1) z.set(x, { col: COL.ink, dash: true, fill: .06 });
+  if (k === "porto") for (let x = 0; x < N; x++) if (!water[x] && coast(x) && st.own[x] !== 1) z.set(x, { col: COL.lagune, fill: .2, dash: true });
+  return z;
+}
+// --- Bombarder ---
+function openBombard(c) {
+  ui.sel = c; const ts = targetsFrom(c, 1);
+  ui.zone = new Map(); for (let x = 0; x < N; x++) if (!water[x] && dist(x, c) <= 4 && st.own[x] !== 1) ui.zone.set(x, { col: COL.ink, dash: true, fill: .04 });
+  for (const x of ts) ui.zone.set(x, { col: COL.accent, fill: .2, corners: true, target: true });
+  ui.aim = st.myShot; ui.bombFrom = c;
+  openDock("Ta bombarde · portée 4", st.myShot ? "Viser" : "Rechargée demain", `
+    <p class="hint">${st.myShot ? "Touche une terre ennemie éclairée : elle et ses voisines du même marchand redeviennent libres. Ni les capitales, ni ce qui est derrière des remparts." : "Un tir par jour. Le prochain revient demain à 8 h."}</p>
+    <div class="rows"><div><span>Tirs aujourd'hui</span><b>${st.myShot ? 1 : 0} sur 1</b></div><div><span>Cibles à portée</span><b>${ts.length} terres</b></div></div>
+    <div class="act"><button class="ghost" id="bm-x">Plus tard</button></div>`);
+  $("bm-x").onclick = closeAll;
+}
+// --- Un voisin ---
+function blason(o) { const c = FLAG[o]; return `<svg class="blason" viewBox="0 0 52 60" aria-hidden="true"><path d="M4 4h44v24c0 15-10 24-22 28C14 52 4 43 4 28z" fill="${c}" stroke="#fff" stroke-width="3"/><path d="M4 4h44v24c0 15-10 24-22 28C14 52 4 43 4 28z" fill="none" stroke="rgba(23,21,15,.15)" stroke-width="1"/><text x="26" y="36" text-anchor="middle" font-family="Cormorant Garamond,Georgia,serif" font-weight="600" font-size="24" fill="#fff">${NAME[o][0]}</text></svg>`; }
+function openNeighbour(o) {
+  ui.sel = CAMP[o]; ui.zone = new Map(); for (let x = 0; x < N; x++) if (st.own[x] === o) ui.zone.set(x, { col: o === 4 ? COL.lagune : COL.ink, dash: true });
+  centreOn(CAMP[o]);
+  const ally = o === 4, nation = o === 5;
+  openDock(ally ? "Ton allié" : nation ? "Puissance de 1450" : "Ton voisin", NAME[o], `
+    <div class="who-row">${blason(o)}<div class="stats"><div class="stat"><b>${cellsOf(o)}</b>cases</div><div class="stat"><b>${Math.round(st.troops[o])}</b>troupes</div><div class="stat"><b>${ally ? "Toi" : o === 2 ? "Loredan" : "—"}</b>allié</div></div></div>
+    ${ally ? `<div class="slider"><label for="send">Envoyer des troupes <b id="send-v"></b></label><input type="range" id="send" min="5" max="45" step="5" value="20"><div class="ticks"><span>encore 45 aujourd'hui</span></div></div>` : ""}
+    <div class="stickers" aria-label="Signaux">${[["À l'aide", "#C23B2E", "!"], ["Cible", "#17150F", "◎"], ["Merci", "#16897A", "♥"], ["Paix", "#8B78A8", "☮"]].map(([n, c, i]) => `<button class="sticker" data-s="${n}"><i style="background:${c}">${i}</i>${n}</button>`).join("")}</div>
+    <div class="act">${ally ? `<button class="ghost" id="nb-break">Rompre (effet dans 2 h)</button><button class="key" id="nb-send">Envoyer</button>` : nation ? `<p class="hint">Milan ne s'allie pas. Il marche sur son voisin le plus faible.</p>` : `<button class="key" id="nb-ally">Proposer l'alliance</button>`}</div>`);
+  const s = $("send"); if (s) { const u = () => { $("send-v").textContent = s.value; s.style.setProperty("--v", ((s.value - 5) / 40 * 100) + "%"); }; s.oninput = u; u(); $("nb-send").onclick = () => { st.troops[1] -= +s.value; st.troops[4] += +s.value; toast(`${s.value} troupes envoyées à Morosini ✓`); closeAll(); }; $("nb-break").onclick = () => { toast("Rupture annoncée : elle prendra effet dans 2 h"); closeAll(); }; }
+  const a = $("nb-ally"); if (a) a.onclick = () => { toast(`Alliance proposée à ${NAME[o]}`); closeAll(); };
+  document.querySelectorAll(".sticker").forEach(b => b.onclick = () => toast(`Signal « ${b.dataset.s} » envoyé à ${NAME[o]}`));
+}
+// --- Tes terres ---
+function openLands() {
+  ui.sel = CAMP[1]; ui.zone = new Map();
+  openDock(`${cellsOf(1)} cases · rang 4e`, "Tes terres", `
+    <div class="rows"><div><span>Troupes</span><b>${Math.round(st.troops[1])} sur ${st.cap}</b></div><div><span>Recrues</span><b>+13 par heure de jour · maximum dans 6 h</b></div><div><span>Pain des troupes</span><b>42 · −10 par jour</b></div><div><span>Points de conquête</span><b>212 · 4e sur 32</b></div></div>
+    <div id="lands-fronts" style="display:grid;gap:8px"></div>
+    <div class="act"><button class="ghost" id="ld-dec" disabled>Décret · au Signore</button><button class="key" id="ld-max">Max +20 · 100 <i class="coin" style="width:16px;height:16px"></i></button></div>`);
+  $("lands-fronts").innerHTML = frontRows();
+  bindRecall($("lands-fronts"));
+  $("ld-max").onclick = () => { st.cap += 20; st.ducats -= 100; toast("Maximum relevé : 200 troupes ✓"); openLands(); };
+}
+function frontRows() {
+  const mine = st.fronts.filter(f => f.att === 1 && f.end === null);
+  if (!mine.length) return `<p class="hint">Aucun front en marche. Touche une terre au bord des tiennes.</p>`;
+  return mine.map(f => { const w = 6 + 16 * Math.sqrt(f.men / 150); return `<div class="frow"><div class="bar"><i style="height:${w.toFixed(1)}px"></i></div><div><b>→ ${NAME[f.def]}</b><small>${Math.max(0, f.men)} hommes · prochaine case dans ${Math.max(1, Math.round((f.next - now) * 10))} min</small></div><button class="ghost" data-recall="${st.fronts.indexOf(f)}">Rappeler</button></div>`; }).join("");
+}
+function bindRecall(root) { root.querySelectorAll("[data-recall]").forEach(b => b.onclick = () => { const f = st.fronts[+b.dataset.recall]; if (f) { endFront(f); } }); }
+$("ft-lands").onclick = () => { syncGo(null); openLands(); };
+$("ft-fronts").onclick = () => { openDock("Tes fronts", `${frontsOf(1).length} sur 3 en marche`, `<div id="lands-fronts" style="display:grid;gap:8px">${frontRows()}</div><div class="rows" id="dk-threats"></div>`); bindRecall($("dk-b")); $("dk-threats").innerHTML = threatRows(); };
+$("ft-allies").onclick = () => openNeighbour(4);
+$("ft-rank").onclick = () => openDock("Semaine 45 · bande de Puissance 3", "Classement", `<div class="rows">${[["1", "Dandolo", 640], ["2", "Contarini", 512], ["3", "Morosini", 301], ["4", "Toi", 212], ["5", "Loredan", 190]].map(([r, n, p]) => `<div><span>${r}. ${n === "Toi" ? "<b style='color:#C23B2E'>Toi</b>" : n}</span><b>${p} points</b></div>`).join("")}</div><p class="hint">À la clôture : Faveur selon ton rang, des Sceaux (deux au plus par semaine), le grade du meilleur rang. Jamais de ducats.</p>`);
+$("troops").onclick = () => openLands();
+$("back").onclick = () => toast("Retour à la carte du commerce");
+function threatRows() { const th = st.fronts.filter(f => f.def === 1 && f.end === null); return th.length ? th.map(f => `<div><span>⚔ ${NAME[f.att]} sur toi</span><b>${Math.max(0, f.men)} hommes</b></div>`).join("") : `<div><span>Aucune menace</span><b>—</b></div>`; }
+
+// mini building on its tile (dock cards and the kit)
+function miniBuilding(cvs, kind, big) {
+  const g = cvs.getContext("2d"), w = cvs.width, h = cvs.height; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h);
+  const u = big ? Math.min(w / 4.8, h / 3.9) : h / 2.7, saved = R; R = { ctx: g, u, X0: w / 2, Y0: big ? h * .62 : h * .52, k: 1 };
+  const z = .36, base = hex(COL.wall), tint = mix(base, hex(PAL[1].c), .55);
+  const tile = (i, j, top) => { const a = P(i + G, j + G, z), b = P(i + 1 - G, j + G, z), cc = P(i + 1 - G, j + 1 - G, z), dd = P(i + G, j + 1 - G, z); poly([dd, cc, P(i + 1 - G, j + 1 - G, 0), P(i + G, j + 1 - G, 0)], rgba(shade(top, .9))); poly([b, cc, P(i + 1 - G, j + 1 - G, 0), P(i + 1 - G, j + G, 0)], rgba(shade(top, .79))); poly([a, b, cc, dd], rgba(top)); };
+  if (big) { for (const [i, j] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) tile(i - .5, j - .5, kind === "porto" && (i === 1 || j === 1) ? hex(COL.water) : (kind === "rocca" || kind === "mura" || kind === "borgo") && Math.abs(i) + Math.abs(j) === 1 ? mix(base, tint, .55) : base); }
+  tile(-.5, -.5, tint);
+  drawBuilding(kind, 0, 0, z, 1, performance.now() / 1000);
+  R = saved;
+}
+
+// ================= Loop, layout, tours =================
+function toast(msg) { const t = $("toast"); t.textContent = msg; delete t.dataset.off; clearTimeout(toast.h); toast.h = setTimeout(() => t.dataset.off = "", 2600); }
+let lastHud = "", lastVer = -1;
+function hud() {
+  const tr = Math.round(st.troops[1]), s = `${tr}|${st.cap}|${st.ducats}`;
+  if (s !== lastHud) { lastHud = s; $("tr-v").textContent = `${tr} / ${st.cap}`; $("ring-v").setAttribute("stroke-dashoffset", (100.5 * (1 - tr / st.cap)).toFixed(1)); $("cash-v").textContent = st.ducats.toLocaleString("fr-FR"); }
+  if (ver !== lastVer || (now * 2 | 0) !== hud.k) { hud.k = now * 2 | 0; lastVer = ver; $("fr-list").innerHTML = frontRows(); bindRecall($("fr-list")); $("fr-n").textContent = `${frontsOf(1).length} sur 3`; $("th-list").innerHTML = `<div class="rows">${threatRows()}</div>`; $("ft-badge").textContent = frontsOf(1).length; $("ft-badge").hidden = !frontsOf(1).length; }
+}
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let last = performance.now();
+function loop(ts) {
+  const dt = Math.min(.1, (ts - last) / 1000); last = ts;
+  step(dt);
+  const e = reduce ? 1 : 1 - Math.pow(.001, dt); cam.k += (cam.kTo - cam.k) * e; cam.fx += (cam.fxTo - cam.fx) * e; cam.fy += (cam.fyTo - cam.fy) * e;
+  frame(now); hud(); placeFiche();
+  requestAnimationFrame(loop);
+}
+function setDevice(p) {
+  dev.classList.toggle("phone", p); $("dv-phone").setAttribute("aria-pressed", String(p)); $("dv-desk").setAttribute("aria-pressed", String(!p));
+  closeAll(); layout(); home(true);
+}
+$("dv-desk").onclick = () => setDevice(false); $("dv-phone").onclick = () => setDevice(true);
+function syncGo(k) { document.querySelectorAll("[data-go]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.go === (k || "over")))); }
+document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
+  const k = b.dataset.go; closeAll(); syncGo(k);
+  if (k === "over") { home(); return; }
+  if (k === "attack") { const c = [...Array(N).keys()].filter(c => st.own[c] === 2 && nb(c).some(o => st.own[o] === 1)).sort((a, b) => dist(a, CAMP[2]) - dist(b, CAMP[2]))[0] ?? [...Array(N).keys()].find(c => st.own[c] === 0 && nb(c).some(o => st.own[o] === 1)); if (c !== undefined) { centreOn(c, phone() ? 1.9 : 1.4); select(c); openAttack(c); } }
+  if (k === "build") { const c = [...Array(N).keys()].filter(c => st.own[c] === 1 && !st.builds.has(c) && !CAMPS.has(c) && !TOWNS.has(c) && terr[c] !== "mount").sort((a, b) => dist(a, idx(15, 5)) - dist(b, idx(15, 5)))[0]; if (c !== undefined) { centreOn(c, phone() ? 1.9 : 1.4); select(c); openBuild(c, "rocca"); } }
+  if (k === "neigh") { select(CAMP[2]); openNeighbour(2); }
+  if (k === "bomb") { let c = [...st.builds].find(([, v]) => v.kind === "bombarda" && v.owner === 1)?.[0]; if (c === undefined) { c = [...Array(N).keys()].filter(c => st.own[c] === 1 && !st.builds.has(c) && !CAMPS.has(c) && !TOWNS.has(c)).sort((a, b) => dist(a, CAMP[2]) - dist(b, CAMP[2]))[0]; st.builds.set(c, { kind: "bombarda", owner: 1, t: now }); st.myShot = true; } centreOn(c, phone() ? 1.7 : 1.25); select(c); openBombard(c); }
+});
+let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { layout(); home(true); }, 60); }).observe(dev);
+
+// the kit: each building on its plot of tiles
+const KIT = [["camp", "Camp", "Ta capitale, posée le lundi. Il recrute ; s'il tombe, la semaine est perdue.", "Toute la semaine", 0], ...Object.entries(BUILD).map(([k, B]) => [k, B.name, B.effect, B.zone, B.price])];
+$("kit").innerHTML = KIT.map(([k, n, e, z, p]) => `<div class="bld"><canvas data-kit="${k}" width="560" height="400"></canvas><h3>${n}${p ? `<small><i class="coin" style="width:15px;height:15px"></i>${p} d</small>` : ""}</h3><p>${e}</p><p class="zone">Zone : ${z}</p></div>`).join("");
+function kit() { document.querySelectorAll("[data-kit]").forEach(c => miniBuilding(c, c.dataset.kit, true)); }
+
+layout(); home(true);
+// start alive: a front already marching on Contarini
+launch(1, 2, idx(17, 4), 80);
+requestAnimationFrame(loop);
+kit(); if (document.fonts) document.fonts.ready.then(kit);
+setInterval(() => { if (!document.hidden) kit(); }, 120);
+})();
+</script>

@@ -1,0 +1,757 @@
+<title>Terraferme en porcelaine</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Work+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one long sheet of porcelain; each proposal is a live diorama with its caption beneath, like plates in a museum catalogue. Single light look on purpose: Porcellana is a white world. */
+:root{
+  --porcelain:#E9E6E0;   /* page + board ground (Porcellana COL.bg) */
+  --paper:#FBFAF7;       /* cards, pins */
+  --ink:#24211E;         /* text */
+  --ink-soft:#6F685F;    /* secondary text */
+  --hair:#DDD7CD;        /* hairlines */
+  --accent:#C23B2E;      /* rosso veneziano: what is yours */
+  --lagune:#16897A;      /* allies only */
+  --font-display:"Cormorant Garamond","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --font-ui:"Work Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+}
+html{background:var(--porcelain)}
+body{background:var(--porcelain);color:var(--ink);font:15px/1.6 var(--font-ui);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--porcelain)}
+.wrap{max-width:1120px;margin:0 auto;padding-block:40px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:56px}
+
+header{display:grid;gap:14px;max-width:72ch}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);display:flex;align-items:center;gap:10px}
+.seal{width:28px;height:28px;border-radius:50%;background:var(--accent);display:grid;place-items:center;flex:none}
+.seal svg{width:15px;height:15px}
+h1{margin:0;font:600 clamp(36px,6vw,58px)/1 var(--font-display);letter-spacing:.005em;text-wrap:balance}
+h1 em{font-style:italic;color:var(--accent)}
+.lede{margin:0;font-size:16.5px;color:var(--ink);max-width:64ch}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:10px 0}
+.bar .group{display:flex;align-items:center;gap:6px;background:rgba(251,250,247,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--hair);border-radius:999px;padding:5px}
+.bar .lab{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);padding:0 6px 0 10px}
+.seg{border:0;background:transparent;border-radius:999px;padding:7px 13px;font:500 12.5px var(--font-ui);color:var(--ink);cursor:pointer;white-space:nowrap}
+.seg:hover{background:rgba(36,33,30,.06)}
+.seg[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seg:focus-visible,.go:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink-soft);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:3px;display:inline-block;box-shadow:inset 0 0 0 1px rgba(36,33,30,.12)}
+
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 28px;margin:0;padding:0;list-style:none}
+.rules li{border-top:1px solid var(--hair);padding-top:10px;font-size:14px;min-width:0}
+.rules b{display:block;font:600 19px/1.2 var(--font-display);margin-bottom:2px}
+
+.plate{display:grid;gap:18px}
+.plate-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px}
+.num{font:600 15px var(--font-display);color:var(--accent);letter-spacing:.06em}
+.plate h2{margin:0;font:600 clamp(28px,4vw,38px)/1.05 var(--font-display);text-wrap:balance}
+.thesis{margin:0;max-width:68ch;font-size:15.5px}
+.stage{position:relative;margin:0;border-radius:6px;overflow:hidden;background:var(--porcelain);box-shadow:0 1px 0 var(--hair),0 24px 50px -30px rgba(70,55,40,.45)}
+.stage canvas{display:block;width:100%;touch-action:pan-y}
+.hud{position:absolute;left:12px;top:12px;display:flex;align-items:center;gap:8px;background:rgba(251,250,247,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--hair);border-radius:999px;padding:5px 12px 5px 6px;font-size:12px;font-variant-numeric:tabular-nums;max-width:calc(100% - 24px)}
+.hud .dot{width:18px;height:18px;border-radius:50%;background:var(--accent);flex:none;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:600}
+.hud span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.notes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 22px}
+.notes div{min-width:0;border-top:1px solid var(--hair);padding-top:8px}
+.notes h3{margin:0 0 4px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.notes p{margin:0;font-size:13.5px;line-height:1.5}
+.cost{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}
+.cost i{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--accent)}
+.cost i.on{background:var(--accent)}
+
+.colours{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.card{background:var(--paper);border-radius:4px;padding:18px 20px;box-shadow:0 18px 40px -26px rgba(50,40,30,.45),0 1px 0 var(--hair);display:grid;gap:10px;min-width:0}
+.card h3{margin:0;font:600 24px/1.1 var(--font-display)}
+.card p{margin:0;font-size:14px}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{display:grid;gap:4px;justify-items:center;font-size:11px;color:var(--ink-soft);width:62px;text-align:center;line-height:1.25}
+.sw i{width:40px;height:40px;border-radius:6px;display:block;box-shadow:inset 0 0 0 1px rgba(36,33,30,.1),0 3px 8px -4px rgba(50,40,30,.4)}
+
+.verdict{background:var(--paper);border-radius:4px;padding:24px 26px;box-shadow:0 18px 40px -26px rgba(50,40,30,.45),0 1px 0 var(--hair);display:grid;gap:12px;max-width:820px}
+.verdict h2{margin:0;font:600 32px/1.05 var(--font-display)}
+.verdict p,.verdict li{font-size:15px;margin:0}
+.verdict ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.foot{font-size:12.5px;color:var(--ink-soft);max-width:70ch}
+.sec-title{margin:0;font:600 clamp(26px,3.6vw,34px)/1.1 var(--font-display)}
+
+@media (max-width:860px){.notes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.notes{grid-template-columns:1fr}.bar{position:static}.hud{font-size:11px}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><span class="seal" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L19 5M14 5h5v5M5 14l5 5M4 20l3-3"/></svg></span>Fondaco · Terraferme · propositions du 7 novembre 2026</div>
+    <h1>La Terraferme <em>en porcelaine</em></h1>
+    <p class="lede">Quatre façons de montrer la même bataille sur le plateau de Porcellana : les mêmes cases carrées, la même porcelaine, le rouge de Venise pour ce qui est à toi. Chaque scène rejoue le même moment de la semaine : ton front de 96 hommes entre chez Contarini, un second prend de la terre libre au sud, Milan grignote l'ouest, puis Contarini riposte sur ton flanc.</p>
+  </header>
+
+  <div class="bar">
+    <div class="group" role="group" aria-label="Règle de couleur">
+      <span class="lab">Couleurs</span>
+      <button class="seg" id="pal-encres" aria-pressed="true">Encres</button>
+      <button class="seg" id="pal-glacures" aria-pressed="false">Glaçures</button>
+    </div>
+    <div class="group" role="group" aria-label="Vitesse">
+      <button class="seg" id="sp-1" aria-pressed="true">Temps réel</button>
+      <button class="seg" id="sp-4" aria-pressed="false">Pendant ton absence ×4</button>
+      <button class="seg" id="play" aria-pressed="false">Pause</button>
+    </div>
+  </div>
+
+  <div class="legend" id="legend" aria-label="Légende"></div>
+
+  <ul class="rules">
+    <li><b>Le plateau du commerce</b>Les cases carrées épaisses, biseautées, aux joints fins ; la lagune d'un seul tenant ; les montagnes, collines et marais en relief, pas en couleur.</li>
+    <li><b>Le rouge est à toi</b>Ton territoire, tes fronts, ton camp. Ce qui te menace est à l'encre. Rien d'autre ne crie.</li>
+    <li><b>Fluide, mais à la case près</b>La fluidité habille la règle sans la cacher : une case prise se voit et se compte.</li>
+    <li><b>Un front dit trois choses</b>D'où il part, où il va (les prochaines cases), et ce qu'il lui reste d'hommes.</li>
+  </ul>
+
+  <section class="plate" id="p1" aria-labelledby="p1-t">
+    <div class="plate-head"><span class="num">I</span><h2 id="p1-t">La coulée d'émail</h2></div>
+    <p class="thesis">Les territoires sont des nappes d'émail versées sur les cases. Quand le front prend une case, l'émail coule de la case voisine et la recouvre, comme une goutte qui s'étale. Les bords restent ronds ; deux émaux ne se touchent jamais, un joint de porcelaine les sépare.</p>
+    <figure class="stage" data-kind="email"><canvas aria-label="Proposition I : territoires en nappes d'émail qui coulent de case en case"></canvas><div class="hud"><span class="dot">⚔</span><span class="hud-t">…</span></div></figure>
+    <div class="notes">
+      <div><h3>Ce qu'on voit</h3><p>Des masses nettes, des frontières douces, une langue d'émail qui avance là où le front mord. Le reflet du bord donne l'épaisseur.</p></div>
+      <div><h3>Lisibilité</h3><p>Le contour suit toujours la grille : c'est un seuil, pas un flou. Une enclave d'une case devient une goutte, qu'on repère d'autant mieux.</p></div>
+      <div><h3>Dans le jeu</h3><p>Un champ calculé par case, passé en texture au shader du dessus des cases ; la coulée glisse du centre de la case source vers la case prise.</p></div>
+      <div><h3>Coût <span class="cost" aria-label="moyen"><i class="on"></i><i class="on"></i><i></i></span></h3><p>Moyen. Le risque : un semis de petites gouttes au loin. On fixe un rayon minimal et on estompe les territoires lointains.</p></div>
+    </div>
+  </section>
+
+  <section class="plate" id="p2" aria-labelledby="p2-t">
+    <div class="plate-head"><span class="num">II</span><h2 id="p2-t">Les tesselles</h2></div>
+    <p class="thesis">Chaque case est une tesselle qu'on remplit. Une case prise se remplit d'émail depuis le côté d'où vient l'attaque, comme un verre qu'on verse, avec un ménisque qui ondule puis se calme. Le front est une route de Porcellana : un ruban rouge à chevrons, de ton camp aux cases visées, marquées d'équerres.</p>
+    <figure class="stage" data-kind="tessere"><canvas aria-label="Proposition II : chaque case se remplit comme un verre, front en ruban à chevrons"></canvas><div class="hud"><span class="dot">⚔</span><span class="hud-t">…</span></div></figure>
+    <div class="notes">
+      <div><h3>Ce qu'on voit</h3><p>Une mosaïque qui change de main tesselle par tesselle ; le sens du remplissage dit d'où vient l'attaque.</p></div>
+      <div><h3>Lisibilité</h3><p>La plus forte des quatre : on compte les cases, les équerres montrent les deux prochaines, le ruban montre le chemin.</p></div>
+      <div><h3>Dans le jeu</h3><p>Reprend le ruban des routes (<code>RIBBON</code>), la plaque des cases et les équerres des parcelles libres.</p></div>
+      <div><h3>Coût <span class="cost" aria-label="faible"><i class="on"></i><i></i><i></i></span></h3><p>Faible. Moins liquide d'ensemble : les grandes masses restent un damier.</p></div>
+    </div>
+  </section>
+
+  <section class="plate" id="p3" aria-labelledby="p3-t">
+    <div class="plate-head"><span class="num">III</span><h2 id="p3-t">Les courants</h2></div>
+    <p class="thesis">Les troupes deviennent un liquide qu'on voit. Un tube rouge part de ton camp ; son épaisseur dit la force du front, des gouttes y courent, et une flaque pousse contre la frontière. Elle se vide à chaque case prise. En face, la flaque d'encre du défenseur. Ta réserve tourne en perles autour du camp.</p>
+    <figure class="stage" data-kind="correnti"><canvas aria-label="Proposition III : les troupes coulent dans un tube jusqu'à une flaque au front"></canvas><div class="hud"><span class="dot">⚔</span><span class="hud-t">…</span></div></figure>
+    <div class="notes">
+      <div><h3>Ce qu'on voit</h3><p>La force sans lire un chiffre : un tube épais et une grosse flaque, c'est un front qui a de la marge ; un filet, c'est la fin.</p></div>
+      <div><h3>Lisibilité</h3><p>La meilleure pour « x % des troupes » : le curseur d'attaque gonfle le tube avant de valider.</p></div>
+      <div><h3>Dans le jeu</h3><p>Un ruban à largeur variable, des gouttes en instances, une flaque en disque déformé. Le sol reste celui des tesselles.</p></div>
+      <div><h3>Coût <span class="cost" aria-label="moyen"><i class="on"></i><i class="on"></i><i></i></span></h3><p>Moyen. Plusieurs fronts croisés tournent au plat de spaghettis ; trois fronts au plus, ça tient.</p></div>
+    </div>
+  </section>
+
+  <section class="plate" id="p4" aria-labelledby="p4-t">
+    <div class="plate-head"><span class="num">IV</span><h2 id="p4-t">La marée en relief</h2></div>
+    <p class="thesis">La vue du plateau de commerce, en trois quarts. Chaque case prise se soulève quand la vague passe dessous, retombe, et prend l'émail du vainqueur ; ses voisines frémissent. Ton territoire est un peu plus haut que les autres : on lit sa terre au relief avant la couleur.</p>
+    <figure class="stage" data-kind="marea"><canvas aria-label="Proposition IV : plateau en trois quarts, les cases prises se soulèvent comme une vague"></canvas><div class="hud"><span class="dot">⚔</span><span class="hud-t">…</span></div></figure>
+    <div class="notes">
+      <div><h3>Ce qu'on voit</h3><p>Le même plateau que la carte du commerce : la même caméra, les mêmes cases qui tombent à l'arrivée. La guerre est un calque, pas un autre jeu.</p></div>
+      <div><h3>Lisibilité</h3><p>Hauteur : qui tient. Vague : ce qui change. Les cases derrière une montagne se cachent ; il faut garder la vue de dessus au zoom arrière.</p></div>
+      <div><h3>Dans le jeu</h3><p>Le <code>TileBoard</code> existant : une hauteur et une teinte par case en instances, la vague en décalage vertical animé.</p></div>
+      <div><h3>Coût <span class="cost" aria-label="moyen"><i class="on"></i><i class="on"></i><i></i></span></h3><p>Moyen, mais le plus cohérent avec le reste du jeu.</p></div>
+    </div>
+  </section>
+
+  <section class="plate" aria-labelledby="col-t">
+    <h2 class="sec-title" id="col-t">Deux règles de couleur à trancher</h2>
+    <p class="thesis">Porcellana n'a qu'une couleur forte. Une Terraferme compte jusqu'à quarante marchands. Le bouton « Couleurs » en haut bascule toutes les scènes de l'une à l'autre.</p>
+    <div class="colours">
+      <div class="card">
+        <h3>Encres</h3>
+        <p>Fidèle à Porcellana : toi en rouge, les autres en valeurs d'encre, distingués par la densité et une trame ; les alliés au liseré lagune ; Milan en biscuit hachuré. Les noms et blasons viennent au toucher.</p>
+        <div class="swatches" id="sw-encres"></div>
+        <p class="foot">Pour : rien ne crie, ta terre saute aux yeux. Contre : au-delà de trois voisins, on les distingue par le blason plus que par la teinte.</p>
+      </div>
+      <div class="card">
+        <h3>Glaçures</h3>
+        <p>Six émaux sourds de céramique (bleu de Sèvres, céladon, lavande, terre cuite…), jamais deux voisins de la même. Toi, toujours le seul rouge.</p>
+        <div class="swatches" id="sw-glacures"></div>
+        <p class="foot">Pour : chaque voisin se reconnaît d'un coup d'œil. Contre : on sort de la règle d'une seule couleur ; la carte ressemble moins au commerce.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="verdict" aria-labelledby="v-t">
+    <h2 id="v-t">Ma recommandation</h2>
+    <ol>
+      <li><b>La scène de la IV</b> : c'est le plateau du jeu, avec sa caméra et ses cases. La Terraferme y devient un calque, pas un autre écran.</li>
+      <li><b>L'émail de la I sur le dessus des cases</b> : les territoires coulent, les frontières s'arrondissent, et la case prise reste nette.</li>
+      <li><b>Le ruban et les équerres de la II pour viser</b> : on sait où va le front et ce qu'il prendra ensuite.</li>
+      <li><b>L'épaisseur de la III dans ce ruban</b> : le ruban grossit avec les hommes engagés et maigrit à chaque case prise.</li>
+      <li><b>Encres</b> par défaut, avec la mise au point sur le joueur du plan Terraferme : tes voisins directs lisibles, les autres estompés.</li>
+    </ol>
+    <p class="foot">Dis-moi lesquelles te parlent. J'écrirai ensuite le plan du lot 9 de Porcellana (la Terraferme), à valider avant de toucher au jeu. Les règles ne changent pas ; le changement de grille prend effet au lundi suivant.</p>
+  </section>
+</div>
+
+<script>
+(() => {
+"use strict";
+// ---------- World: a 20 × 12 square board of the Terraferma ----------
+const W = 20, H = 12, N = W * H;
+const idx = (x, y) => y * W + x;
+const X = c => c % W, Y = c => (c / W) | 0;
+const D = 0.8; // seconds a captured cell takes to change hands (game: 400 ms)
+
+const COL = { ground:"#EEEBE5", wall:"#F6F4F0", wall2:"#ECE7DF", roof:"#E0D8CB", trim:"#FCFBF9", soil:"#E6E0D6", water:"#C9D3D6", ink:"#2A2725", bg:"#E9E6E0", paper:"#FBFAF7", accent:"#C23B2E", lagune:"#16897A", soft:"#6F685F" };
+
+function hash(x, y) { let h = (x * 374761393 + y * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+
+const water = new Array(N).fill(false), terr = new Array(N).fill("plain");
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+  const c = idx(x, y);
+  if ((x === 19 && y >= 5) || (x === 18 && y >= 8) || (x === 17 && y >= 10)) water[c] = true;
+  else if ((y === 0 && x < 18) || (y === 1 && x >= 4 && x <= 8)) terr[c] = "mount";
+  else if ((x >= 15 && y >= 9) || (y === 11 && x >= 3 && x <= 6)) terr[c] = "marsh";
+  else if (y >= 2 && y <= 6 && hash(x, y) < 0.26) terr[c] = "hill";
+}
+const nb = c => { const x = X(c), y = Y(c), r = []; if (x > 0) r.push(c - 1); if (x < W - 1) r.push(c + 1); if (y > 0) r.push(c - W); if (y < H - 1) r.push(c + W); return r.filter(o => !water[o]); };
+
+// Owners: 0 free land, 1 you, 2 Contarini, 3 Loredan, 4 Morosini (ally), 5 Milan
+const NAMES = { 1: "Toi", 2: "Contarini", 3: "Loredan", 4: "Morosini", 5: "Milan", 0: "Terre libre" };
+const CAMP = { 1: idx(12, 7), 2: idx(16, 2), 3: idx(6, 8), 4: idx(9, 3), 5: idx(1, 6) };
+const init = new Array(N).fill(0);
+for (let c = 0; c < N; c++) { if (water[c]) init[c] = -1; else if (X(c) <= 2 || (X(c) === 3 && Y(c) >= 3 && Y(c) <= 9)) init[c] = 5; }
+for (const [o, r] of [[1, 4], [2, 4], [3, 2], [4, 2]]) {
+  const cx = X(CAMP[o]), cy = Y(CAMP[o]);
+  for (let c = 0; c < N; c++) if (init[c] === 0 && Math.abs(X(c) - cx) + Math.abs(Y(c) - cy) <= r) init[c] = o;
+}
+const TOWNS = [["Verona", 5, 6], ["Vicenza", 9, 5], ["Padova", 13, 9], ["Treviso", 15, 4], ["Bassano", 11, 2]].map(([n, x, y]) => ({ n, c: idx(x, y) }));
+
+// ---------- The scenario: four fronts, resolved like the engine (nearest to target, then id) ----------
+const costOf = (c, def) => { const k = { plain: 1, hill: 1.3, marsh: 1.5, mount: 2 }[terr[c]]; return Math.round((def === 0 ? 4 : 7) * k); };
+const fronts = [
+  { att: 1, def: 2, target: idx(17, 4), start: 0.8, every: 1.0, ticks: 5, per: 2, troops: 96 },
+  { att: 1, def: 0, target: idx(8, 11), start: 1.6, every: 1.2, ticks: 4, per: 1, troops: 30 },
+  { att: 5, def: 0, target: idx(5, 3), start: 2.2, every: 1.4, ticks: 4, per: 1, troops: 40 },
+  { att: 2, def: 1, target: idx(13, 4), start: 5.6, every: 1.1, ticks: 2, per: 1, troops: 22 },
+];
+const sim = init.slice(), evBy = Array.from({ length: N }, () => []);
+const ticks = [];
+fronts.forEach(f => { f.events = []; f.left = f.troops; for (let k = 0; k < f.ticks; k++) ticks.push({ t: f.start + k * f.every, f }); });
+ticks.sort((a, b) => a.t - b.t);
+const dist = (a, b) => Math.hypot(X(a) - X(b), Y(a) - Y(b));
+for (const { t, f } of ticks) {
+  for (let n = 0; n < f.per; n++) {
+    let best = -1, bd = 1e9;
+    for (let c = 0; c < N; c++) {
+      if (sim[c] !== f.def || !nb(c).some(o => sim[o] === f.att)) continue;
+      const d = dist(c, f.target); if (d < bd - 1e-9) { bd = d; best = c; }
+    }
+    if (best < 0) break;
+    const cost = costOf(best, f.def); if (f.left < cost) break;
+    f.left -= cost;
+    let src = -1, sd = 1e9; for (const o of nb(best)) if (sim[o] === f.att) { const d = dist(o, CAMP[f.att]); if (d < sd) { sd = d; src = o; } }
+    sim[best] = f.att;
+    const ev = { c: best, from: f.def, to: f.att, src, t: t + n * 0.18, cost, f };
+    f.events.push(ev); evBy[best].push(ev);
+  }
+}
+const lastT = Math.max(...fronts.flatMap(f => f.events.map(e => e.t)));
+const LOOP = lastT + D + 3;
+
+const ease = p => p <= 0 ? 0 : p >= 1 ? 1 : 1 - Math.pow(1 - p, 3);
+const clamp01 = p => p < 0 ? 0 : p > 1 ? 1 : p;
+
+function states(t) {
+  const out = new Array(N);
+  for (let c = 0; c < N; c++) {
+    let owner = init[c], s = { owner, prev: owner, p: 1, src: -1 };
+    for (const e of evBy[c]) {
+      if (t >= e.t + D) { owner = e.to; s = { owner, prev: owner, p: 1, src: -1 }; }
+      else if (t >= e.t) { s = { owner: e.to, prev: owner, p: (t - e.t) / D, src: e.src }; break; }
+      else break;
+    }
+    out[c] = s;
+  }
+  return out;
+}
+function frontAt(f, t) {
+  if (!f.events.length || t < f.start - 0.7) return null;
+  const last = f.events[f.events.length - 1];
+  if (t > last.t + D + 0.9) return null;
+  let left = f.troops, done = 0;
+  for (const e of f.events) if (e.t <= t) { left -= e.cost; done++; }
+  const head = f.events.find(e => t < e.t + D) || last;
+  const next = f.events.filter(e => e.t > t).slice(0, 2);
+  return { f, left, done, head, next, fade: t > last.t + D ? 1 - (t - last.t - D) / 0.9 : Math.min(1, (t - f.start + 0.7) / 0.4) };
+}
+
+// ---------- Colour rules ----------
+const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const mix = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
+const shade = (a, k) => a.map(v => Math.min(255, v * k));
+const rgba = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+const PALS = {
+  encres:   { 1: { c: "#C23B2E", a: .52 }, 2: { c: "#2A2725", a: .26 }, 3: { c: "#2A2725", a: .13, hatch: 1 }, 4: { c: "#7A736A", a: .14, edge: "#16897A" }, 5: { c: "#B39470", a: .34, hatch: 1 } },
+  glacures: { 1: { c: "#C23B2E", a: .52 }, 2: { c: "#3E5E86", a: .34 }, 3: { c: "#5F9580", a: .36 }, 4: { c: "#8B78A8", a: .32, edge: "#16897A" }, 5: { c: "#A8693F", a: .32, hatch: 1 } },
+};
+let palName = "encres";
+const pal = o => PALS[palName][o];
+const edgeOf = o => pal(o).edge || pal(o).c;
+
+// ---------- Shared drawing ----------
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+const patCache = {};
+function hatch(ctx, col) {
+  const k = col + palName;
+  if (patCache[k]) return patCache[k];
+  const p = document.createElement("canvas"); p.width = p.height = 10;
+  const g = p.getContext("2d"); g.strokeStyle = rgba(shade(hex(col), .8), .55); g.lineWidth = 1.4;
+  g.beginPath(); g.moveTo(-2, 12); g.lineTo(12, -2); g.moveTo(8, 12); g.lineTo(12, 8); g.moveTo(-2, 2); g.lineTo(2, -2); g.stroke();
+  return (patCache[k] = ctx.createPattern(p, "repeat"));
+}
+function curve(p0, p1, bend) {
+  const mx = (p0[0] + p1[0]) / 2, my = (p0[1] + p1[1]) / 2, dx = p1[0] - p0[0], dy = p1[1] - p0[1];
+  const ctl = [mx - dy * bend, my + dx * bend], pts = [];
+  for (let i = 0; i <= 48; i++) { const s = i / 48, a = (1 - s) * (1 - s), b = 2 * s * (1 - s), c = s * s; pts.push([a * p0[0] + b * ctl[0] + c * p1[0], a * p0[1] + b * ctl[1] + c * p1[1]]); }
+  return pts;
+}
+function along(pts) { const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); return L; }
+function at(pts, L, d) {
+  let i = 1; while (i < pts.length - 1 && L[i] < d) i++;
+  const k = (d - L[i - 1]) / Math.max(1e-6, L[i] - L[i - 1]);
+  const x = pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * k, y = pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * k;
+  return [x, y, Math.atan2(pts[i][1] - pts[i - 1][1], pts[i][0] - pts[i - 1][0])];
+}
+// A Porcellana road: a ribbon of colour, white chevrons running toward the target, an arrow head.
+function ribbon(ctx, pts, w, col, t, alpha, endGap) {
+  const L = along(pts), total = L[L.length - 1] - endGap;
+  if (total < w * 2) return;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length && L[i] < total - w; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  const e = at(pts, L, total - w); ctx.lineTo(e[0], e[1]); ctx.stroke();
+  const tip = at(pts, L, total);
+  ctx.fillStyle = col; ctx.beginPath();
+  ctx.moveTo(tip[0] + Math.cos(tip[2]) * w * .6, tip[1] + Math.sin(tip[2]) * w * .6);
+  ctx.lineTo(tip[0] + Math.cos(tip[2] + 2.4) * w * 1.5, tip[1] + Math.sin(tip[2] + 2.4) * w * 1.5);
+  ctx.lineTo(tip[0] + Math.cos(tip[2] - 2.4) * w * 1.5, tip[1] + Math.sin(tip[2] - 2.4) * w * 1.5);
+  ctx.closePath(); ctx.fill();
+  const period = w * 2.3, off = (t * w * 3.2) % period;
+  ctx.strokeStyle = "rgba(255,255,255,.66)"; ctx.lineWidth = Math.max(1, w * .2); ctx.lineCap = "round";
+  for (let d = w * 1.2 + off; d < total - w * 1.6; d += period) {
+    const [x, y, a] = at(pts, L, d), s = w * .32, ca = Math.cos(a), sa = Math.sin(a);
+    ctx.beginPath(); ctx.moveTo(x - ca * s - sa * s, y - sa * s + ca * s); ctx.lineTo(x, y); ctx.lineTo(x - ca * s + sa * s, y - sa * s - ca * s); ctx.stroke();
+  }
+  ctx.restore();
+}
+function pastille(ctx, x, y, r, n, col, alpha) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.shadowColor = "rgba(50,40,30,.3)"; ctx.shadowBlur = r * .8; ctx.shadowOffsetY = r * .25;
+  ctx.fillStyle = COL.paper; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.strokeStyle = col; ctx.lineWidth = Math.max(1.5, r * .16); ctx.stroke();
+  ctx.fillStyle = COL.ink; ctx.font = `600 ${Math.round(r * .9)}px "Work Sans",system-ui,sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(String(n), x, y + r * .04);
+  ctx.restore();
+}
+function camp(ctx, x, y, r, o, t) {
+  const col = o === 1 ? COL.accent : (pal(o).edge && palName === "encres" ? COL.soft : pal(o).c);
+  ctx.save();
+  if (o === 1) { // the regeneration ring
+    const k = (t * .18) % 1;
+    ctx.strokeStyle = rgba(hex(COL.accent), .25); ctx.lineWidth = r * .18; ctx.beginPath(); ctx.arc(x, y, r * 1.45, 0, 7); ctx.stroke();
+    ctx.strokeStyle = COL.accent; ctx.beginPath(); ctx.arc(x, y, r * 1.45, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2); ctx.stroke();
+  }
+  ctx.shadowColor = "rgba(50,40,30,.35)"; ctx.shadowBlur = r * .9; ctx.shadowOffsetY = r * .3;
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.strokeStyle = COL.paper; ctx.lineWidth = Math.max(1.5, r * .14); ctx.stroke();
+  ctx.fillStyle = "#fff"; ctx.font = `600 ${Math.round(r * 1.0)}px "Cormorant Garamond",Georgia,serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(o === 1 ? "★" : NAMES[o][0], x, y + r * .06);
+  ctx.restore();
+}
+function town(ctx, x, y, r, holder, name, labelBelow) {
+  ctx.save();
+  ctx.shadowColor = "rgba(50,40,30,.3)"; ctx.shadowBlur = r; ctx.shadowOffsetY = r * .3;
+  ctx.fillStyle = COL.paper; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.strokeStyle = holder > 0 ? edgeOf(holder) : "#BDB5A8"; ctx.lineWidth = Math.max(1.5, r * .3); ctx.stroke();
+  ctx.fillStyle = holder > 0 ? edgeOf(holder) : "#BDB5A8"; ctx.beginPath(); ctx.arc(x, y, r * .32, 0, 7); ctx.fill();
+  if (labelBelow) {
+    ctx.font = `italic 600 ${Math.max(11, Math.round(r * 2.1))}px "Cormorant Garamond",Georgia,serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.lineWidth = 3; ctx.strokeStyle = "rgba(251,250,247,.85)"; ctx.strokeText(name, x, y + r * 1.6);
+    ctx.fillStyle = COL.ink; ctx.fillText(name, x, y + r * 1.6);
+  }
+  ctx.restore();
+}
+function wobbleBlob(ctx, x, y, r, t, ph) {
+  ctx.beginPath();
+  for (let i = 0; i <= 28; i++) {
+    const a = i / 28 * Math.PI * 2, k = 1 + .09 * Math.sin(3 * a + t * 3.1 + ph) + .05 * Math.sin(5 * a - t * 2.3 + ph);
+    const px = x + Math.cos(a) * r * k, py = y + Math.sin(a) * r * k;
+    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  }
+  ctx.closePath();
+}
+
+// ---------- Flat board (proposals I to III): the Porcellana tiles seen from above ----------
+function flatBase(w, h, dpr) {
+  const cv = document.createElement("canvas"); cv.width = w * dpr; cv.height = h * dpr;
+  const g = cv.getContext("2d"); g.scale(dpr, dpr);
+  const cs = w / W, gap = cs * .055, r = cs * .14;
+  g.fillStyle = COL.bg; g.fillRect(0, 0, w, h);
+  // the lagoon, in one piece, lower
+  g.fillStyle = COL.water;
+  for (let c = 0; c < N; c++) if (water[c]) g.fillRect(X(c) * cs - gap, Y(c) * cs - gap, cs + gap * 2, cs + gap * 2);
+  g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 1.2;
+  for (let k = 0; k < 7; k++) { const y = (5.6 + k * .9) * cs, x0 = (19 - (k > 3 ? 1.6 : .4)) * cs; g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo(x0 + cs * .3, y - cs * .12, x0 + cs * .6, y); g.stroke(); }
+  for (let c = 0; c < N; c++) {
+    if (water[c]) continue;
+    const x = X(c) * cs + gap, y = Y(c) * cs + gap, s = cs - gap * 2, t = terr[c];
+    g.fillStyle = "rgba(120,105,85,.16)"; rr(g, x, y + s * .07, s, s, r); g.fill();
+    const top = t === "mount" ? COL.wall2 : t === "marsh" ? "#EDEDE7" : COL.wall;
+    g.fillStyle = top; rr(g, x, y, s, s, r); g.fill();
+    const gr = g.createLinearGradient(x, y, x + s, y + s); gr.addColorStop(0, "rgba(255,255,255,.7)"); gr.addColorStop(.5, "rgba(255,255,255,0)"); gr.addColorStop(1, "rgba(150,135,115,.12)");
+    g.fillStyle = gr; rr(g, x, y, s, s, r); g.fill();
+    g.strokeStyle = "rgba(255,255,255,.9)"; g.lineWidth = 1; rr(g, x + .5, y + .5, s - 1, s - 1, r); g.stroke();
+    const cx = x + s / 2, cy = y + s / 2;
+    if (t === "mount") {
+      g.fillStyle = COL.trim; g.beginPath(); g.moveTo(cx - s * .3, cy + s * .2); g.lineTo(cx - s * .02, cy - s * .26); g.lineTo(cx, cy + s * .2); g.fill();
+      g.fillStyle = COL.roof; g.beginPath(); g.moveTo(cx - s * .02, cy - s * .26); g.lineTo(cx + s * .3, cy + s * .2); g.lineTo(cx, cy + s * .2); g.fill();
+    } else if (t === "hill") {
+      g.fillStyle = COL.roof; g.beginPath(); g.ellipse(cx + s * .04, cy + s * .1, s * .26, s * .16, 0, Math.PI, 0); g.fill();
+      g.fillStyle = COL.trim; g.beginPath(); g.ellipse(cx - s * .02, cy + s * .1, s * .2, s * .13, 0, Math.PI, 0); g.fill();
+    } else if (t === "marsh") {
+      g.strokeStyle = COL.water; g.lineWidth = Math.max(1.2, s * .05); g.lineCap = "round";
+      for (const [dx, dy, l] of [[-.22, -.12, .22], [.02, .04, .28], [-.16, .2, .18]]) { g.beginPath(); g.moveTo(cx + dx * s, cy + dy * s); g.lineTo(cx + (dx + l) * s, cy + dy * s); g.stroke(); }
+    }
+  }
+  // the Brenta, running in the joint between columns 9 and 10
+  g.strokeStyle = COL.water; g.lineWidth = cs * .16; g.lineCap = "round"; g.beginPath();
+  for (let i = 0; i <= 40; i++) { const y = 2.4 * cs + i / 40 * (H - 2.4) * cs, x = 10 * cs + Math.sin(i * .55) * cs * .05; i ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.stroke();
+  return cv;
+}
+
+// Marching squares over a scalar field: one fill path (union) and one contour path per owner.
+function contour(vals, nx, ny, step, thr) {
+  const fill = new Path2D(), line = new Path2D();
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const a = vals[j * nx + i], b = vals[j * nx + i + 1], c = vals[(j + 1) * nx + i + 1], d = vals[(j + 1) * nx + i];
+    const ia = a > thr, ib = b > thr, ic = c > thr, id = d > thr;
+    if (!ia && !ib && !ic && !id) continue;
+    const x0 = i * step, y0 = j * step, x1 = x0 + step, y1 = y0 + step;
+    if (ia && ib && ic && id) { fill.rect(x0, y0, step, step); continue; }
+    const C = [[x0, y0, a], [x1, y0, b], [x1, y1, c], [x0, y1, d]], pts = [], cross = [];
+    for (let k = 0; k < 4; k++) {
+      const p = C[k], q = C[(k + 1) & 3];
+      if (p[2] > thr) pts.push([p[0], p[1]]);
+      if ((p[2] > thr) !== (q[2] > thr)) { const tt = (thr - p[2]) / (q[2] - p[2]); const pt = [p[0] + (q[0] - p[0]) * tt, p[1] + (q[1] - p[1]) * tt]; pts.push(pt); cross.push({ pt, out: p[2] > thr }); }
+    }
+    fill.moveTo(pts[0][0], pts[0][1]); for (let k = 1; k < pts.length; k++) fill.lineTo(pts[k][0], pts[k][1]); fill.closePath();
+    for (let m = 0; m < cross.length; m++) if (cross[m].out) { const n2 = cross[(m + 1) % cross.length]; line.moveTo(cross[m].pt[0], cross[m].pt[1]); line.lineTo(n2.pt[0], n2.pt[1]); }
+  }
+  return { fill, line };
+}
+const S = 5, NX = W * S + 1, NY = H * S + 1, R = 1.05, THR = 0.66;
+function fieldOf(owner, st) {
+  const v = new Float32Array(NX * NY);
+  const add = (bx, by, w) => {
+    const i0 = Math.max(0, Math.floor((bx - R) * S)), i1 = Math.min(NX - 1, Math.ceil((bx + R) * S));
+    const j0 = Math.max(0, Math.floor((by - R) * S)), j1 = Math.min(NY - 1, Math.ceil((by + R) * S));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const dx = i / S - bx, dy = j / S - by, d2 = (dx * dx + dy * dy) / (R * R);
+      if (d2 < 1) { const k = 1 - d2; v[j * NX + i] += w * k * k; }
+    }
+  };
+  for (let c = 0; c < N; c++) {
+    const s = st[c], cx = X(c) + .5, cy = Y(c) + .5;
+    if (s.p >= 1) { if (s.owner === owner) add(cx, cy, 1); continue; }
+    const e = ease(s.p);
+    if (s.owner === owner) {
+      // the glaze runs from the neighbouring cell into the one being taken, swelling as it goes
+      const sx = X(s.src) + .5, sy = Y(s.src) + .5;
+      add(sx + (cx - sx) * e, sy + (cy - sy) * e, 1 + .3 * Math.sin(Math.PI * s.p));
+    }
+    if (s.prev === owner) add(cx, cy, 1 - e);
+  }
+  return v;
+}
+
+function headXY(fs, cs) {
+  const e = fs.head, c = e.c;
+  const p = clamp01((now - e.t) / D);
+  if (now >= e.t && p < 1 && e.src >= 0) { const k = ease(p); return [((X(e.src) + (X(c) - X(e.src)) * k) + .5) * cs, ((Y(e.src) + (Y(c) - Y(e.src)) * k) + .5) * cs]; }
+  return [(X(c) + .5) * cs, (Y(c) + .5) * cs];
+}
+let now = 0;
+
+function drawPinsFlat(ctx, cs, st, t) {
+  for (const tw of TOWNS) town(ctx, (X(tw.c) + .5) * cs, (Y(tw.c) + .5) * cs, cs * .13, st[tw.c].owner, tw.n, cs > 34);
+  for (const o of [5, 3, 4, 2, 1]) camp(ctx, (X(CAMP[o]) + .5) * cs, (Y(CAMP[o]) + .5) * cs, cs * .24, o, t);
+}
+function equerres(ctx, c, cs, col, t, alpha) {
+  const gap = cs * .055, x = X(c) * cs + gap, y = Y(c) * cs + gap, s = cs - gap * 2, l = s * .24, i = s * .08;
+  ctx.save(); ctx.globalAlpha = alpha * (.55 + .45 * Math.sin(t * 5) ** 2);
+  ctx.strokeStyle = col; ctx.lineWidth = Math.max(1.5, cs * .045); ctx.lineCap = "round";
+  for (const [cx, cy, dx, dy] of [[x + i, y + i, 1, 1], [x + s - i, y + i, -1, 1], [x + s - i, y + s - i, -1, -1], [x + i, y + s - i, 1, -1]]) {
+    ctx.beginPath(); ctx.moveTo(cx, cy + dy * l); ctx.lineTo(cx, cy); ctx.lineTo(cx + dx * l, cy); ctx.stroke();
+  }
+  ctx.restore();
+}
+const frontCol = f => f.att === 1 ? COL.accent : f.att === 5 ? rgba(shade(hex(pal(5).c), .7)) : COL.ink;
+
+// I — La coulée d'émail
+function drawEmail(ctx, w, h, cs, st, t) {
+  const step = cs / S;
+  for (const o of [5, 3, 4, 2, 1]) {
+    const P = pal(o), col = hex(P.c), { fill, line } = contour(fieldOf(o, st), NX, NY, step, THR);
+    ctx.save(); ctx.scale(1, 1);
+    ctx.fillStyle = rgba(col, P.a); ctx.fill(fill);
+    if (P.hatch) { ctx.save(); ctx.clip(fill); ctx.fillStyle = hatch(ctx, P.c); ctx.fillRect(0, 0, w, h); ctx.restore(); }
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    ctx.strokeStyle = P.edge ? P.edge : rgba(shade(col, .85), o === 1 ? .95 : .6); ctx.lineWidth = o === 1 ? 2 : 1.4; ctx.stroke(line);
+    ctx.translate(-.9, -1.1); ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 1; ctx.stroke(line);
+    ctx.restore();
+  }
+  for (const f of fronts) {
+    const fs = frontAt(f, t); if (!fs) continue;
+    const [hx, hy] = headXY(fs, cs);
+    // a faint trail of dots from the camp: where the men come from
+    const pts = curve([(X(CAMP[f.att]) + .5) * cs, (Y(CAMP[f.att]) + .5) * cs], [hx, hy], .12), L = along(pts), tot = L[L.length - 1];
+    ctx.save(); ctx.globalAlpha = fs.fade * .7; ctx.fillStyle = frontCol(f);
+    for (let d = (t * cs * .9) % (cs * .35) + cs * .4; d < tot - cs * .35; d += cs * .35) { const [x, y] = at(pts, L, d); ctx.beginPath(); ctx.arc(x, y, cs * .035, 0, 7); ctx.fill(); }
+    ctx.restore();
+    pastille(ctx, hx, hy - cs * .55, cs * .2, fs.left, frontCol(f), fs.fade);
+  }
+  drawPinsFlat(ctx, cs, st, t);
+}
+
+// II — Les tesselles
+function tileGlaze(ctx, c, cs, o, alpha) {
+  const P = pal(o), gap = cs * .055, ins = cs * .1, x = X(c) * cs + ins, y = Y(c) * cs + ins, s = cs - ins * 2;
+  ctx.fillStyle = rgba(hex(P.c), P.a * alpha); rr(ctx, x, y, s, s, cs * .09); ctx.fill();
+  if (P.hatch) { ctx.save(); ctx.globalAlpha = alpha; ctx.clip(); ctx.fillStyle = hatch(ctx, P.c); ctx.fillRect(x, y, s, s); ctx.restore(); }
+  if (P.edge) { ctx.strokeStyle = rgba(hex(P.edge), .7 * alpha); ctx.lineWidth = 1.5; rr(ctx, x + .75, y + .75, s - 1.5, s - 1.5, cs * .08); ctx.stroke(); }
+  return gap;
+}
+function drawTessere(ctx, w, h, cs, st, t) {
+  for (let c = 0; c < N; c++) {
+    const s = st[c]; if (s.owner < 0) continue;
+    if (s.p >= 1) { if (s.owner > 0) tileGlaze(ctx, c, cs, s.owner, 1); continue; }
+    if (s.prev > 0) tileGlaze(ctx, c, cs, s.prev, 1);
+    // pour the new glaze in from the side the attack comes from, with a meniscus that settles
+    const ins = cs * .1, x0 = X(c) * cs + ins, y0 = Y(c) * cs + ins, sz = cs - ins * 2;
+    const dx = X(c) - X(s.src), dy = Y(c) - Y(s.src), lvl = ease(s.p) * 1.2 - .1, amp = .09 * (1 - s.p);
+    ctx.save(); rr(ctx, x0, y0, sz, sz, cs * .09); ctx.clip();
+    if (s.prev > 0) { ctx.fillStyle = COL.wall; ctx.globalAlpha = ease(s.p) * .9; ctx.fillRect(x0, y0, sz, sz); ctx.globalAlpha = 1; }
+    const P = pal(s.owner); ctx.beginPath();
+    const map = (u, v) => dx === 1 ? [x0 + u * sz, y0 + v * sz] : dx === -1 ? [x0 + (1 - u) * sz, y0 + v * sz] : dy === 1 ? [x0 + v * sz, y0 + u * sz] : [x0 + v * sz, y0 + (1 - u) * sz];
+    let p = map(-.2, -.1); ctx.moveTo(p[0], p[1]);
+    for (let k = 0; k <= 12; k++) { const v = -.1 + k / 12 * 1.2; p = map(lvl + amp * Math.sin(v * 9 + t * 9), v); ctx.lineTo(p[0], p[1]); }
+    p = map(-.2, 1.1); ctx.lineTo(p[0], p[1]); ctx.closePath();
+    ctx.fillStyle = rgba(hex(P.c), Math.min(.9, P.a * 1.25)); ctx.fill();
+    ctx.restore();
+  }
+  for (const f of fronts) {
+    const fs = frontAt(f, t); if (!fs) continue;
+    for (const e of fs.next) equerres(ctx, e.c, cs, frontCol(f), t, fs.fade);
+    const [hx, hy] = headXY(fs, cs);
+    const pts = curve([(X(CAMP[f.att]) + .5) * cs, (Y(CAMP[f.att]) + .5) * cs], [hx, hy], .14);
+    ribbon(ctx, pts, cs * .13, frontCol(f), t, fs.fade * .92, cs * .32);
+    pastille(ctx, hx, hy, cs * .2, fs.left, frontCol(f), fs.fade);
+  }
+  drawPinsFlat(ctx, cs, st, t);
+}
+
+// III — Les courants
+function drawCorrenti(ctx, w, h, cs, st, t) {
+  for (let c = 0; c < N; c++) {
+    const s = st[c]; if (s.owner < 0) continue;
+    if (s.p >= 1) { if (s.owner > 0) tileGlaze(ctx, c, cs, s.owner, 1); continue; }
+    const k = clamp01((s.p - .35) / .65);
+    if (s.prev > 0) tileGlaze(ctx, c, cs, s.prev, 1 - k);
+    tileGlaze(ctx, c, cs, s.owner, k);
+  }
+  // your reserve: pearls turning round the camp, refilled one by one
+  const cx = (X(CAMP[1]) + .5) * cs, cy = (Y(CAMP[1]) + .5) * cs, n = 18, filled = 11 + Math.floor((t * 1.2) % 7);
+  for (let i = 0; i < n; i++) {
+    const a = i / n * Math.PI * 2 + t * .35;
+    ctx.fillStyle = i < filled ? COL.accent : rgba(hex(COL.accent), .2);
+    ctx.beginPath(); ctx.arc(cx + Math.cos(a) * cs * .62, cy + Math.sin(a) * cs * .62, cs * .045, 0, 7); ctx.fill();
+  }
+  for (const f of fronts) {
+    const fs = frontAt(f, t); if (!fs) continue;
+    const e = fs.head;
+    const colour = f.att === 1 ? hex(COL.accent) : f.att === 5 ? shade(hex(pal(5).c), .75) : hex(COL.ink);
+    const [hx, hy] = headXY(fs, cs), force = Math.sqrt(Math.max(0, fs.left) / f.troops);
+    const p0 = [(X(CAMP[f.att]) + .5) * cs, (Y(CAMP[f.att]) + .5) * cs];
+    const pts = curve(p0, [hx, hy], .14), L = along(pts), tot = L[L.length - 1];
+    // the tube: thick at the camp, tapering to the pool; its width is the men still engaged
+    const w0 = cs * (.05 + .2 * force), w1 = cs * (.03 + .1 * force);
+    const left = [], right = [];
+    for (let i = 0; i < pts.length; i++) {
+      const s = i / (pts.length - 1), wv = (w0 + (w1 - w0) * s) / 2, j = Math.min(pts.length - 1, i + 1), k = Math.max(0, i - 1);
+      const a = Math.atan2(pts[j][1] - pts[k][1], pts[j][0] - pts[k][0]);
+      left.push([pts[i][0] - Math.sin(a) * wv, pts[i][1] + Math.cos(a) * wv]); right.push([pts[i][0] + Math.sin(a) * wv, pts[i][1] - Math.cos(a) * wv]);
+    }
+    ctx.save(); ctx.globalAlpha = fs.fade;
+    ctx.fillStyle = rgba(colour, .82); ctx.beginPath(); ctx.moveTo(left[0][0], left[0][1]);
+    for (const p of left) ctx.lineTo(p[0], p[1]); for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i][0], right[i][1]); ctx.closePath(); ctx.fill();
+    // droplets running down the tube
+    const drops = 5 + Math.round(fs.left / 10);
+    ctx.fillStyle = "rgba(255,255,255,.72)";
+    for (let i = 0; i < drops; i++) {
+      const s = ((i / drops) + t * .32) % 1, [x, y, a] = at(pts, L, s * tot), wv = (w0 + (w1 - w0) * s);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.beginPath(); ctx.ellipse(0, 0, Math.max(1.5, wv * .55), Math.max(.8, wv * .16), 0, 0, 7); ctx.fill(); ctx.restore();
+    }
+    // the defender's pool, just beyond the front, and the attacker's pool pressing on it
+    if (e.src >= 0) {
+      const dx = X(e.c) - X(e.src), dy = Y(e.c) - Y(e.src);
+      const dcol = f.def === 0 ? shade(hex(COL.roof), .85) : f.def === 1 ? hex(COL.accent) : f.def === 5 ? shade(hex(pal(5).c), .75) : hex(COL.ink);
+      const dr = cs * (f.def === 0 ? .14 : .2);
+      ctx.fillStyle = rgba(dcol, f.def === 0 ? .7 : .55); wobbleBlob(ctx, hx + dx * cs * .55, hy + dy * cs * .55, dr, t, 2.1); ctx.fill();
+    }
+    ctx.fillStyle = rgba(colour, .88); wobbleBlob(ctx, hx, hy, cs * (.14 + .26 * force), t, 0); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.ellipse(hx - cs * .06, hy - cs * .07, cs * .07 * (.6 + force), cs * .035 * (.6 + force), -.5, 0, 7); ctx.fill();
+    ctx.restore();
+    ctx.save(); ctx.globalAlpha = fs.fade; ctx.fillStyle = COL.ink; ctx.font = `600 ${Math.round(cs * .26)}px "Work Sans",system-ui,sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.lineWidth = 3; ctx.strokeStyle = "rgba(251,250,247,.9)"; const ly = hy - cs * (.2 + .3 * force); ctx.strokeText(fs.left, hx, ly); ctx.fillText(fs.left, hx, ly); ctx.restore();
+  }
+  drawPinsFlat(ctx, cs, st, t);
+}
+
+// IV — La marée en relief: the same board in three-quarter view (azimuth 45°)
+const Q = .6, G = .05;
+function drawMarea(ctx, w, h, st, t) {
+  const u = w / (W + H + 1.4), X0 = (H + .7) * u, Y0 = u * 2.2;
+  const P = (x, y, z) => [X0 + (x - y) * u, Y0 + (x + y) * u * Q - z * u];
+  ctx.fillStyle = COL.bg; ctx.fillRect(0, 0, w, h);
+  // soft shadow under the board
+  ctx.save(); ctx.fillStyle = "rgba(110,95,75,.10)"; ctx.beginPath();
+  const sh = [P(0, 0, -.6), P(W, 0, -.6), P(W, H, -.6), P(0, H, -.6)]; ctx.moveTo(sh[0][0], sh[0][1] + 8); for (const p of sh) ctx.lineTo(p[0], p[1] + 8); ctx.closePath(); ctx.fill(); ctx.restore();
+  // ripples: neighbours of a cell being taken shiver a little
+  const rip = new Float32Array(N);
+  for (let c = 0; c < N; c++) { const s = st[c]; if (s.p < 1) for (const o of nb(c)) rip[o] += .1 * Math.sin(Math.PI * clamp01((s.p - .15) / .85)); }
+  const tops = new Array(N);
+  const base = hex(COL.wall);
+  const glazeOf = o => { if (o <= 0) return base; const p = pal(o); return mix(base, hex(p.c), Math.min(.75, p.a * 1.25)); };
+  const heightOf = o => o === 1 ? .62 : o > 0 ? .5 : .42;
+  for (let sum = 0; sum <= W + H - 2; sum++) for (let i = 0; i <= sum; i++) {
+    const j = sum - i; if (i >= W || j >= H) continue;
+    const c = idx(i, j), s = st[c];
+    if (water[c]) {
+      ctx.fillStyle = COL.water; const q = [P(i, j, .12), P(i + 1, j, .12), P(i + 1, j + 1, .12), P(i, j + 1, .12)];
+      ctx.beginPath(); ctx.moveTo(q[0][0], q[0][1]); for (const p of q) ctx.lineTo(p[0], p[1]); ctx.closePath(); ctx.fill(); ctx.strokeStyle = COL.water; ctx.lineWidth = 1; ctx.stroke();
+      continue;
+    }
+    const k = s.p < 1 ? ease(s.p) : 1;
+    let z = heightOf(s.prev) + (heightOf(s.owner) - heightOf(s.prev)) * k + rip[c];
+    if (s.p < 1) z += .55 * Math.sin(Math.PI * s.p) * (1 - s.p * .3);
+    if (terr[c] === "hill") z += .08; if (terr[c] === "mount") z += .14;
+    let top = s.p < 1 ? mix(glazeOf(s.prev), glazeOf(s.owner), k) : glazeOf(s.owner);
+    if (terr[c] === "mount") top = shade(top, .975); if (terr[c] === "marsh") top = mix(top, hex(COL.water), .15);
+    const a = P(i + G, j + G, z), b = P(i + 1 - G, j + G, z), cc = P(i + 1 - G, j + 1 - G, z), d = P(i + G, j + 1 - G, z);
+    const bb = P(i + 1 - G, j + G, 0), cb = P(i + 1 - G, j + 1 - G, 0), db = P(i + G, j + 1 - G, 0);
+    ctx.fillStyle = rgba(shade(top, .9)); ctx.beginPath(); ctx.moveTo(d[0], d[1]); ctx.lineTo(cc[0], cc[1]); ctx.lineTo(cb[0], cb[1]); ctx.lineTo(db[0], db[1]); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = rgba(shade(top, .8)); ctx.beginPath(); ctx.moveTo(b[0], b[1]); ctx.lineTo(cc[0], cc[1]); ctx.lineTo(cb[0], cb[1]); ctx.lineTo(bb[0], bb[1]); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = rgba(top); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(cc[0], cc[1]); ctx.lineTo(d[0], d[1]); ctx.closePath(); ctx.fill();
+    const own = s.owner > 0 && s.p >= 1 ? pal(s.owner) : null;
+    if (own && own.hatch) { ctx.save(); ctx.clip(); ctx.fillStyle = hatch(ctx, own.c); ctx.fillRect(Math.min(d[0], a[0]), a[1], u * 2, u * 2); ctx.restore(); }
+    ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(d[0], d[1]); ctx.lineTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+    if (own && own.edge) { ctx.strokeStyle = rgba(hex(own.edge), .75); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(cc[0], cc[1]); ctx.lineTo(d[0], d[1]); ctx.closePath(); ctx.stroke(); }
+    const m = P(i + .5, j + .5, z);
+    if (terr[c] === "mount") {
+      const ap = P(i + .5, j + .5, z + .7), l = P(i + .2, j + .8, z), rr2 = P(i + .8, j + .8, z), r2 = P(i + .8, j + .2, z);
+      ctx.fillStyle = rgba(shade(top, 1.03)); ctx.beginPath(); ctx.moveTo(l[0], l[1]); ctx.lineTo(ap[0], ap[1]); ctx.lineTo(rr2[0], rr2[1]); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = rgba(shade(top, .84)); ctx.beginPath(); ctx.moveTo(rr2[0], rr2[1]); ctx.lineTo(ap[0], ap[1]); ctx.lineTo(r2[0], r2[1]); ctx.closePath(); ctx.fill();
+    } else if (terr[c] === "hill") {
+      ctx.fillStyle = rgba(shade(top, .9)); ctx.beginPath(); ctx.ellipse(m[0], m[1], u * .32, u * .18, 0, Math.PI, 0); ctx.fill();
+    }
+    tops[c] = m;
+  }
+  for (const tw of TOWNS) { const m = tops[tw.c]; if (!m) continue; ctx.strokeStyle = "rgba(42,39,37,.35)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(m[0], m[1]); ctx.lineTo(m[0], m[1] - u * .55); ctx.stroke(); town(ctx, m[0], m[1] - u * .55, u * .16, st[tw.c].owner, tw.n, u > 30); }
+  for (const f of fronts) {
+    const fs = frontAt(f, t); if (!fs) continue;
+    const e = fs.head, src = tops[CAMP[f.att]], hd = tops[e.c]; if (!src || !hd) continue;
+    let hx = hd[0], hy = hd[1];
+    if (now >= e.t && now < e.t + D && e.src >= 0 && tops[e.src]) { const k = ease((now - e.t) / D); hx = tops[e.src][0] + (hd[0] - tops[e.src][0]) * k; hy = tops[e.src][1] + (hd[1] - tops[e.src][1]) * k; }
+    const pts = curve([src[0], src[1] - u * .2], [hx, hy - u * .15], .18);
+    ribbon(ctx, pts, u * .14, frontCol(f), t, fs.fade * .92, u * .3);
+    for (const n2 of fs.next) { const m = tops[n2.c]; if (!m) continue; ctx.save(); ctx.globalAlpha = fs.fade * (.4 + .4 * Math.sin(t * 5) ** 2); ctx.strokeStyle = frontCol(f); ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.ellipse(m[0], m[1], u * .42, u * .42 * Q, 0, 0, 7); ctx.stroke(); ctx.restore(); }
+    ctx.save(); ctx.globalAlpha = fs.fade; ctx.strokeStyle = frontCol(f); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(hx, hy - u * .95); ctx.stroke(); ctx.restore();
+    pastille(ctx, hx, hy - u * .95, u * .26, fs.left, frontCol(f), fs.fade);
+  }
+  for (const o of [5, 3, 4, 2, 1]) { const m = tops[CAMP[o]]; if (!m) continue; ctx.strokeStyle = "rgba(42,39,37,.4)"; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(m[0], m[1]); ctx.lineTo(m[0], m[1] - u * .7); ctx.stroke(); camp(ctx, m[0], m[1] - u * .7, u * .26, o, t); }
+}
+
+// ---------- Stages ----------
+class Stage {
+  constructor(el) { this.el = el; this.cv = el.querySelector("canvas"); this.ctx = this.cv.getContext("2d"); this.hud = el.querySelector(".hud-t"); this.kind = el.dataset.kind; this.visible = true; this.lastHud = ""; this.resize(); }
+  resize() {
+    const w = Math.max(280, this.cv.clientWidth || this.el.clientWidth), dpr = Math.min(2, window.devicePixelRatio || 1);
+    const h = this.kind === "marea" ? Math.round(w / (W + H + 1.4) * (2.2 + (W + H) * Q + 1.2)) : Math.round(w * H / W);
+    this.w = w; this.h = h; this.dpr = dpr; this.cv.width = Math.round(w * dpr); this.cv.height = Math.round(h * dpr); this.cv.style.height = h + "px";
+    this.base = this.kind === "marea" ? null : flatBase(w, h, dpr);
+  }
+  draw(t) {
+    const { ctx, w, h, dpr } = this, st = states(t);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (this.base) ctx.drawImage(this.base, 0, 0); else ctx.clearRect(0, 0, this.cv.width, this.cv.height);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cs = w / W;
+    if (this.kind === "email") drawEmail(ctx, w, h, cs, st, t);
+    else if (this.kind === "tessere") drawTessere(ctx, w, h, cs, st, t);
+    else if (this.kind === "correnti") drawCorrenti(ctx, w, h, cs, st, t);
+    else drawMarea(ctx, w, h, st, t);
+    // the loop closes with a porcelain veil, then the week starts again
+    const v = t > LOOP - .5 ? (t - LOOP + .5) / .5 : t < .4 ? 1 - t / .4 : 0;
+    if (v > 0) { ctx.fillStyle = `rgba(233,230,224,${(v * .9).toFixed(3)})`; ctx.fillRect(0, 0, w, h); }
+    const fs = frontAt(fronts[0], t) || { left: fronts[0].troops - fronts[0].events.reduce((s, e) => s + (e.t <= t ? e.cost : 0), 0), done: fronts[0].events.filter(e => e.t <= t).length };
+    const threat = frontAt(fronts[3], t);
+    const txt = `Front contre Contarini · ${fs.left} hommes · ${fs.done} case${fs.done > 1 ? "s" : ""} prise${fs.done > 1 ? "s" : ""}${threat ? " · Contarini riposte" : ""}`;
+    if (txt !== this.lastHud) { this.hud.textContent = txt; this.lastHud = txt; }
+  }
+}
+const stages = [...document.querySelectorAll(".stage")].map(el => new Stage(el));
+if ("IntersectionObserver" in window) {
+  const io = new IntersectionObserver(es => es.forEach(e => { const s = stages.find(s => s.el === e.target); if (s) s.visible = e.isIntersecting; }), { rootMargin: "120px" });
+  stages.forEach(s => io.observe(s.el));
+}
+let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { stages.forEach(s => s.resize()); paint(true); }, 120); });
+
+// ---------- Controls, legend ----------
+const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let speed = 1, paused = reduce, clock = reduce ? 4.6 : 0, last = performance.now();
+const $ = id => document.getElementById(id);
+function press(on, off) { on.setAttribute("aria-pressed", "true"); off.setAttribute("aria-pressed", "false"); }
+$("pal-encres").onclick = () => { palName = "encres"; press($("pal-encres"), $("pal-glacures")); legend(); paint(true); };
+$("pal-glacures").onclick = () => { palName = "glacures"; press($("pal-glacures"), $("pal-encres")); legend(); paint(true); };
+$("sp-1").onclick = () => { speed = 1; press($("sp-1"), $("sp-4")); };
+$("sp-4").onclick = () => { speed = 4; press($("sp-4"), $("sp-1")); };
+const playBtn = $("play");
+function syncPlay() { playBtn.textContent = paused ? "Lecture" : "Pause"; playBtn.setAttribute("aria-pressed", String(paused)); }
+playBtn.onclick = () => { paused = !paused; last = performance.now(); syncPlay(); };
+syncPlay();
+function legend() {
+  const swatch = (o, p) => { const P = PALS[p][o], c = mix(hex(COL.wall), hex(P.c), Math.min(.75, P.a * 1.35)); return `background:${rgba(c)}${P.edge ? `;box-shadow:inset 0 0 0 2px ${P.edge}` : ""}${P.hatch ? `;background-image:repeating-linear-gradient(135deg,${rgba(shade(hex(P.c), .8), .5)} 0 1.5px,transparent 1.5px 5px)` : ""}`; };
+  const label = { 1: "Toi", 2: "Contarini, voisin", 3: "Loredan, voisin", 4: "Morosini, allié", 5: "Milan", 0: "Terre libre" };
+  $("legend").innerHTML = [1, 2, 3, 4, 5].map(o => `<span><i style="${swatch(o, palName)}"></i>${label[o]}</span>`).join("") + `<span><i style="background:${COL.wall}"></i>Terre libre</span>`;
+  for (const p of ["encres", "glacures"]) $("sw-" + p).innerHTML = [1, 2, 3, 4, 5].map(o => `<span class="sw"><i style="${swatch(o, p)}"></i>${label[o].split(",")[0]}</span>`).join("");
+}
+legend();
+
+function paint(force) {
+  const t = ((clock % LOOP) + LOOP) % LOOP; now = t;
+  for (const s of stages) if (s.visible || force) s.draw(t);
+}
+function frame(ts) {
+  const dt = Math.min(.1, (ts - last) / 1000); last = ts;
+  if (!paused) clock += dt * speed;
+  if (!paused) paint(false);
+  requestAnimationFrame(frame);
+}
+paint(true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => paint(true));
+requestAnimationFrame(frame);
+})();
+</script>

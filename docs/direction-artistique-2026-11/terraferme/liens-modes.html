@@ -1,0 +1,278 @@
+<title>Trois modes, un empire</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap">
+<style>
+/* Layout: a long sheet; a flow diagram of the three modes at the top, then one card per link, then the path of a player's progression and the recommendation. Single light look on purpose: Porcellana is a white world. */
+:root{
+  --porcelain:#E9E6E0;  /* ground */
+  --paper:#FFFFFF;      /* surfaces on a solid foot */
+  --ink:#17150F;        /* text */
+  --ink-soft:#625D55;   /* secondary text */
+  --hair:#DDD7CD;       /* hairlines */
+  --accent:#C23B2E;     /* rosso veneziano: what is proposed */
+  --accent-deep:#A02C22;
+  --carte:#B07A1E;      /* the commerce map (the ducat's gold, darkened for text) */
+  --porta:#5B4A86;      /* the Porta (Rome, violet ink) */
+  --terra:#16897A;      /* the Terraferme (lagoon green) */
+  --font-ui:Nunito,"Avenir Next","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+html,body{background:var(--porcelain)}
+body{color:var(--ink);font:600 15px/1.55 var(--font-ui);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding-block:36px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:44px}
+header{display:grid;gap:10px;max-width:72ch}
+.kicker{font-size:13px;font-weight:800;color:var(--ink-soft)}
+h1{margin:0;font:900 clamp(32px,5vw,50px)/1.03 var(--font-ui);letter-spacing:-.01em;text-wrap:balance}
+h1 em{font-style:normal;color:var(--accent)}
+h2{margin:0;font:900 clamp(24px,3.4vw,32px)/1.1 var(--font-ui);text-wrap:balance}
+.lede{margin:0;font-size:16px;max-width:68ch}
+.sub{margin:0;color:var(--ink-soft);max-width:72ch}
+.surface{background:var(--paper);border-radius:22px;box-shadow:0 4px 0 rgba(23,21,15,.07),0 14px 40px rgba(23,21,15,.10)}
+.diagram{padding:18px;display:grid;gap:12px}
+.diagram svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink-soft);font-weight:800}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:26px;height:0;border-top:3px solid #BDB5A8;display:inline-block}
+.legend i.new{border-top-color:var(--accent)}
+.sec{display:grid;gap:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.card{padding:18px 20px 20px;display:grid;gap:10px;align-content:start;min-width:0}
+.card .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.num{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:900;box-shadow:0 3px 0 var(--accent-deep);flex:none}
+.card h3{margin:0;font:900 20px/1.15 var(--font-ui)}
+.flow{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:900;flex-wrap:wrap}
+.chip{border-radius:999px;padding:3px 10px;color:#fff}
+.chip.carte{background:var(--carte)}.chip.porta{background:var(--porta)}.chip.terra{background:var(--terra)}
+.flow b{color:var(--ink-soft)}
+.card p{margin:0;font-size:14.5px}
+.card dl{margin:0;display:grid;gap:8px}
+.card dt{font-size:12px;font-weight:900;color:var(--ink-soft)}
+.card dd{margin:0;font-size:14px;line-height:1.45}
+.card .see{background:#F6F3EE;border-radius:14px;padding:10px 12px}
+.card .see dt{color:var(--accent)}
+.meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.pill{border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;background:#F1EEE8;color:var(--ink)}
+.pill.ok{background:#E3F1EE;color:#0F5E54}
+.pill.sim{background:#FBEDEB;color:#8E2A20}
+.tablewrap{overflow-x:auto}
+table{border-collapse:separate;border-spacing:0;width:100%;min-width:720px;font-size:14px}
+th,td{padding:12px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--hair)}
+th{font-size:13px;font-weight:900}
+thead th{border-bottom:2px solid var(--ink)}
+th.carte{color:var(--carte)}th.porta{color:var(--porta)}th.terra{color:var(--terra)}
+tbody th{white-space:nowrap}
+td small{display:block;color:var(--ink-soft);font-weight:700}
+.rec{padding:24px 26px;display:grid;gap:14px;max-width:880px}
+.rec ol{margin:0;padding-left:22px;display:grid;gap:10px}
+.rec li{font-size:15px}
+.rec p{margin:0}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 26px;list-style:none;margin:0;padding:0}
+.out li{border-top:2px solid var(--ink);padding-top:8px;font-size:14px;min-width:0}
+.out b{display:block;font-size:15px;font-weight:900}
+.foot{font-size:13px;color:var(--ink-soft);max-width:80ch}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="kicker">Fondaco · propositions du 7 novembre 2026</div>
+    <h1>Trois modes, <em>un seul empire</em></h1>
+    <p class="lede">Aujourd'hui, la carte et son commerce, la Porta et la Terraferme se touchent par des menus : on paie l'entrée en pain, on revend des reliques, on reçoit de la Faveur. Voici neuf façons de les lier pour de bon, chacune visible sur la carte, chacune rendant un mode utile aux deux autres, sans casser les règles d'or.</p>
+  </header>
+
+  <section class="surface diagram" aria-labelledby="d-t">
+    <h2 id="d-t" style="font-size:22px">Ce qui circule entre les trois modes</h2>
+    <svg viewBox="0 0 960 470" role="img" aria-label="Schéma : la carte du commerce au centre, la Porta à gauche, la Terraferme à droite, et les flux entre eux, existants en gris, proposés en rouge">
+      <defs>
+        <marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#BDB5A8"/></marker>
+        <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#C23B2E"/></marker>
+      </defs>
+      <!-- nodes -->
+      <g font-family="Nunito,sans-serif" text-anchor="middle">
+        <rect x="350" y="300" width="260" height="120" rx="26" fill="#fff" stroke="#B07A1E" stroke-width="3"/>
+        <text x="480" y="345" font-size="22" font-weight="900" fill="#17150F">La carte et son commerce</text>
+        <text x="480" y="372" font-size="14" font-weight="700" fill="#625D55">ateliers, livraisons, Casa, régions</text>
+        <text x="480" y="396" font-size="14" font-weight="700" fill="#625D55">ducats et marchandises</text>
+        <rect x="40" y="40" width="240" height="120" rx="26" fill="#fff" stroke="#5B4A86" stroke-width="3"/>
+        <text x="160" y="86" font-size="22" font-weight="900" fill="#17150F">La Porta</text>
+        <text x="160" y="112" font-size="14" font-weight="700" fill="#625D55">PvE, dès la Casa 10</text>
+        <text x="160" y="136" font-size="14" font-weight="700" fill="#625D55">reliques et plans</text>
+        <rect x="680" y="40" width="240" height="120" rx="26" fill="#fff" stroke="#16897A" stroke-width="3"/>
+        <text x="800" y="86" font-size="22" font-weight="900" fill="#17150F">La Terraferme</text>
+        <text x="800" y="112" font-size="14" font-weight="700" fill="#625D55">la semaine, dès la Casa 4</text>
+        <text x="800" y="136" font-size="14" font-weight="700" fill="#625D55">Faveur, Sceaux, gloire</text>
+      </g>
+      <g fill="none" stroke-width="3" stroke-linecap="round">
+        <!-- existing (grey) -->
+        <path d="M360 330 C 240 300, 180 230, 170 166" stroke="#BDB5A8" marker-end="url(#ag)"/>
+        <path d="M120 166 C 120 260, 220 350, 344 372" stroke="#BDB5A8" marker-end="url(#ag)"/>
+        <path d="M600 330 C 720 300, 780 230, 790 166" stroke="#BDB5A8" marker-end="url(#ag)"/>
+        <path d="M840 166 C 840 260, 740 350, 616 372" stroke="#BDB5A8" marker-end="url(#ag)"/>
+        <!-- proposed (red) -->
+        <path d="M430 296 C 380 230, 300 190, 286 150" stroke="#C23B2E" stroke-dasharray="1 0" marker-end="url(#ar)"/>
+        <path d="M530 296 C 580 230, 660 190, 674 150" stroke="#C23B2E" marker-end="url(#ar)"/>
+        <path d="M60 166 C 30 300, 160 440, 344 410" stroke="#C23B2E" marker-end="url(#ar)"/>
+        <path d="M900 166 C 930 300, 800 440, 616 410" stroke="#C23B2E" marker-end="url(#ar)"/>
+      </g>
+      <g font-family="Nunito,sans-serif" font-size="13" font-weight="800">
+        <text x="480" y="232" fill="#C23B2E" text-anchor="middle">① intendance par la route</text>
+        <text x="480" y="252" fill="#C23B2E" text-anchor="middle">⑧ la Contesa à trois métiers</text>
+        <text x="40" y="452" fill="#C23B2E">③ cartes anciennes · ④ spolia</text>
+        <text x="920" y="452" fill="#C23B2E" text-anchor="end">② la guerre fait les prix · ⑤ villes tenues</text>
+        <text x="480" y="96" fill="#C23B2E" text-anchor="middle">⑥ le studiolo · ⑦ la journée en trois temps</text>
+        <text x="480" y="116" fill="#8C857B" text-anchor="middle" font-weight="700">relient les trois modes chez toi et dans ta journée</text>
+      </g>
+    </svg>
+    <div class="legend"><span><i></i>Ce qui existe déjà, souvent par un menu : ducats, pain et véhicules vers la Porta, reliques changées en ducats et en plans ; marchandises d'entrée vers la Terraferme, Faveur et Sceaux en retour</span><span><i class="new"></i>Ce qui est proposé, visible sur la carte</span></div>
+  </section>
+
+  <section class="sec" aria-labelledby="p-t">
+    <h2 id="p-t">Neuf propositions</h2>
+    <div class="cards">
+
+      <article class="card surface">
+        <div class="top"><span class="num">1</span><h3>L'intendance par la route</h3></div>
+        <div class="flow"><span class="chip carte">Carte</span><b>→</b><span class="chip terra">Terraferme</span><span class="chip porta">Porta</span></div>
+        <p>Le Campo et la Porta deviennent des lieux qu'on livre, comme une ville. Leurs besoins (pain, planches, briques, fer) s'affichent en caisses au quai ; on les remplit en tournée, avec ses véhicules, sur ses routes. Fini le paiement d'entrée dans un menu.</p>
+        <dl>
+          <div class="see"><dt>Ce qu'on voit</dt><dd>Les charrettes qui quittent le Fondaco vers le Campo ; les caisses du camp qui se remplissent ; sur le plateau de la Terraferme, l'anneau de pain autour de ton camp.</dd></div>
+          <div><dt>Pour la progression</dt><dd>Les ateliers de pain, de bois et de briques servent la guerre ; un véhicule envoyé au Campo ne livre pas ailleurs : un vrai choix de tournée.</dd></div>
+          <div><dt>Garde-fous</dt><dd>La ration reste plafonnée et égale pour tous (armes égales) : livrer remplit jusqu'au plafond, jamais au-delà. La République complète les petites Maisons.</dd></div>
+        </dl>
+        <div class="meta"><span class="pill ok">Réutilise les livraisons en tournée</span><span class="pill">Aucun système en plus</span></div>
+      </article>
+
+      <article class="card surface">
+        <div class="top"><span class="num">2</span><h3>La guerre fait les prix</h3></div>
+        <div class="flow"><span class="chip terra">Terraferme</span><b>→</b><span class="chip carte">Carte</span></div>
+        <p>Ce qui se passe dans les théâtres de la semaine bouge les marchés de Vénétie : une ville assiégée a faim, une région en guerre manque de planches et de fer. C'est la crise « guerre » du cadrage, nourrie par les fronts réels et non par le hasard.</p>
+        <dl>
+          <div class="see"><dt>Ce qu'on voit</dt><dd>Sur la carte du commerce, la fumée et les bannières sur la ville disputée, la flèche de son prix, ses commandes de guerre en caisses rouges.</dd></div>
+          <div><dt>Pour la progression</dt><dd>Le marchand qui ne se bat pas profite de la guerre : il vend aux villes qui en souffrent. La Terraferme compte même pour lui.</dd></div>
+          <div><dt>Garde-fous</dt><dd>Les prix restent dans leur fourchette (60 à 150 % de la référence) ; la demande se calcule sur tous les théâtres d'une région, pas sur un joueur.</dd></div>
+        </dl>
+        <div class="meta"><span class="pill ok">Réutilise les crises et les commandes</span><span class="pill sim">Simulateur : indice des prix</span></div>
+      </article>
+
+      <article class="card surface">
+        <div class="top"><span class="num">3</span><h3>Les cartes anciennes</h3></div>
+        <div class="flow"><span class="chip porta">Porta</span><b>→</b><span class="chip carte">Carte</span></div>
+        <p>Une part des reliques sont des portulans et des cartes romaines. Déchiffrés à la Porta, ils lèvent le brouillard d'une zone, montrent une ville cachée ou un gisement d'une région qu'on a déjà ouverte.</p>
+        <dl>
+          <div class="see"><dt>Ce qu'on voit</dt><dd>Le parchemin se déroule au-dessus de la carte, le brouillard s'écarte, les cases tombent en place comme à l'arrivée ; un repère « + » pointe la ville trouvée.</dd></div>
+          <div><dt>Pour la progression</dt><dd>La Porta devient la voie la plus rapide vers les villes cachées, donc vers le carnet entier d'une région. On peut toujours explorer sans elle, plus lentement.</dd></div>
+          <div><dt>Garde-fous</dt><dd>Rien ne s'ouvre au-delà de ce que la Casa permet ; la ville trouvée n'enlève rien aux autres.</dd></div>
+        </dl>
+        <div class="meta"><span class="pill ok">Réutilise le déchiffrage et le brouillard</span></div>
+      </article>
+
+      <article class="card surface">
+        <div class="top"><span class="num">4</span><h3>Les spolia de Rome</h3></div>
+        <div class="flow"><span class="chip porta">Porta</span><b>→</b><span class="chip carte">Casa</span><b>↔</b><span class="chip carte">Marché</span></div>
+        <p>Les villes de Rome livrent aussi du marbre antique et des colonnes. La Casa en demande à partir du niveau 10, à côté du chêne de Dalmatie et du marbre d'Istrie. Ils se vendent au marché : celui qui ne va pas à la Porta les achète à ceux qui y vont.</p>
+        <dl>
+          <div class="see"><dt>Ce qu'on voit</dt><dd>Les colonnes sur le transport qui rentre de la Porta ; puis sur ta façade, les colonnes antiques qui portent le nouvel étage.</dd></div>
+          <div><dt>Pour la progression</dt><dd>La Porta pèse sur la jauge maîtresse, et le joueur PvE devient fournisseur des marchands : une économie entre joueurs.</dd></div>
+          <div><dt>Garde-fous</dt><dd>Personne n'est obligé de combattre (règle 7) : le marché suffit. Les spolia ne s'achètent jamais avec de l'argent réel (règle 4).</dd></div>
+        </dl>
+        <div class="meta"><span class="pill">Une marchandise de plus</span><span class="pill sim">Simulateur : coût de la Casa</span></div>
+      </article>
+
+      <article class="card surface">
+        <div class="top"><span class="num">5</span><h3>Les villes tenues</h3></div>
+        <div class="flow"><span class="chip terra">Terraferme</span><b>→</b><span class="chip carte">Carte</span></div>
+        <p>Les villes du plateau de la Terraferme sont les villes de la carte du commerce. Celui qui en tient une à la clôture y plante sa bannière toute la semaine suivante, et reçoit une lettre de la Signoria pour la région de cette ville.</p>
+        <dl>
+          <div class="see"><dt>Ce qu'on voit</dt><dd>Ta bannière qui flotte sur Vérone ou Padoue sur la carte de tous les marchands de ton monde ; le Signore a sa couronne sur la ville qu'il tient.</dd></div>
+          <div><dt>Pour la progression</dt><dd>La lettre paie une part de la Faveur d'une charte de région, ou raccourcit le voyage d'ouverture. La Terraferme ouvre la carte.</dd></div>
+          <div><dt>Garde-fous</dt><dd>Dans le plafond de 10 à 15 % de la progression de la semaine ; jamais de rendement ; la bannière ne touche pas aux commandes des autres.</dd></div>
+        </dl>
+        <div class="meta"><span class="pill ok">Réutilise Faveur et bannières</span><span class="pill sim">Simulateur : plafond de 15 %</span></div>
+      </article>
+
+      <article class="card surface">
+        <div class="top"><span class="num">6</span><h3>Le Studiolo et la façade</h3></div>
+        <div class="flow"><span class="chip porta">Porta</span><span class="chip terra">Terraferme</span><b>→</b><span class="chip carte">Fondaco</span></div>
+        <p>Ce qu'on rapporte se voit chez soi. Dans le Fondaco, un studiolo expose les reliques gardées (on choisit de les vendre ou de les montrer) ; sur la façade, les bannières des semaines de Terraferme et le grade du meilleur rang.</p>
+        <dl>
+          <div class="see"><dt>Ce qu'on voit</dt><dd>L'intérieur du Fondaco avec ses vitrines qui se remplissent ; la façade qui porte ses bannières, visible des autres quand ils touchent ta Maison.</dd></div>
+          <div><dt>Pour la progression</dt><dd>Le prestige devient lisible : on voit d'un coup d'œil qu'une Maison fait les trois métiers.</dd></div>
+          <div><dt>Garde-fous</dt><dd>Purement visuel : aucun effet de jeu.</dd></div>
+        </dl>
+        <div class="meta"><span class="pill ok">Réutilise l'intérieur des ateliers</span></div>
+      </article>
+
+      <article class="card surface">
+        <div class="top"><span class="num">7</span><h3>La journée en trois temps</h3></div>
+        <div class="flow"><span class="chip carte">Carte</span><span class="chip porta">Porta</span><span class="chip terra">Terraferme</span></div>
+        <p>Le rythme du jeu passe par les trois modes : le matin les commandes, à midi une bataille de la Porta, à 20 h la bataille de la Terraferme. « Ça t'attend » (le panneau de Lorenzo) les montre ensemble ; le Carnet de la semaine range ses objectifs en trois colonnes, et une ligne complète à travers les trois rapporte le Sceau.</p>
+        <dl>
+          <div class="see"><dt>Ce qu'on voit</dt><dd>Sur la carte, le Campo et la Porta s'allument quand leur moment vient ; le Carnet en triptyque, une colonne par mode.</dd></div>
+          <div><dt>Pour la progression</dt><dd>Chaque session de quelques minutes touche au moins deux modes sans y penser.</dd></div>
+          <div><dt>Garde-fous</dt><dd>Fenêtres, pas obligations : chaque objectif a deux chemins, et le vent en poupe rattrape l'absence.</dd></div>
+        </dl>
+        <div class="meta"><span class="pill ok">Réutilise le Carnet et Lorenzo</span></div>
+      </article>
+
+      <article class="card surface">
+        <div class="top"><span class="num">8</span><h3>La Contesa à trois métiers</h3></div>
+        <div class="flow"><span class="chip carte">Carte</span><span class="chip porta">Porta</span><b>→</b><span class="chip terra">Contesa</span></div>
+        <p>Pendant la semaine de la Contesa, chaque associé sert sa compagnie avec son métier : le marchand livre l'intendance du camp de la compagnie, le joueur de la Porta apporte des reliques au trésor (qui se change en bannières de compagnie), le soldat tient le front.</p>
+        <dl>
+          <div class="see"><dt>Ce qu'on voit</dt><dd>Le camp de la compagnie sur le plateau, ses caisses que remplissent les convois des associés, son trésor qui brille.</dd></div>
+          <div><dt>Pour la progression</dt><dd>Le Lustre de la compagnie compte les trois métiers : personne n'est inutile la semaine de guerre.</dd></div>
+          <div><dt>Garde-fous</dt><dd>Armes égales sur le front : l'intendance plafonne, le trésor n'achète que du prestige.</dd></div>
+        </dl>
+        <div class="meta"><span class="pill ok">Réutilise l'entraide de compagnie</span></div>
+      </article>
+      <article class="card surface">
+        <div class="top"><span class="num">9</span><h3>Les troupes achetées</h3></div>
+        <div class="flow"><span class="chip carte">Carte</span><b>→</b><span class="chip terra">Terraferme</span></div>
+        <p>Décision du porteur du 7 novembre 2026 : les ducats du commerce achètent des troupes, 20 pour 100 d, trois fois par jour, jamais au-delà du maximum. Elle modifie la règle d'or 4 pour la Terraferme ; l'argent réel n'y achète toujours rien.</p>
+        <dl>
+          <div class="see"><dt>Ce qu'on voit</dt><dd>« + Troupes » à côté de « Max +20 » dans tes terres ; l'anneau des troupes qui se remplit d'un coup.</dd></div>
+          <div><dt>Pour la progression</dt><dd>Un commerce prospère pèse directement sur la guerre de la semaine.</dd></div>
+          <div><dt>Mesure</dt><dd>Au simulateur, un marchand riche gagnait déjà chaque semaine par ses forts et son maximum ; la vente lui ajoute environ 12 % de Gloire.</dd></div>
+        </dl>
+        <div class="meta"><span class="pill ok">Fait au moteur</span><span class="pill sim">Mesuré au simulateur</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="g-t">
+    <h2 id="g-t">Ce que chaque mode apporte au joueur, palier par palier</h2>
+    <p class="sub">Le principe : chaque mode est le chemin le plus court vers quelque chose, jamais le seul (sauf les plans des hauts niveaux, règle d'or 5, que le marché des reliques rend tout de même accessibles).</p>
+    <div class="tablewrap surface" style="padding:6px 8px">
+      <table>
+        <thead><tr><th>Palier</th><th class="carte">La carte et le commerce</th><th class="terra">La Terraferme</th><th class="porta">La Porta</th></tr></thead>
+        <tbody>
+          <tr><th>Casa 1 à 3</th><td>Tout : ateliers, livraisons, premiers ducats.<small>Le socle, toujours 70 % des ducats.</small></td><td>On la voit sur la carte, fermée : le Campo en « + ».<small>Elle donne envie avant de s'ouvrir.</small></td><td>La porte de Rome à l'horizon de la carte, close.</td></tr>
+          <tr><th>Casa 4 à 9</th><td>Les régions s'ouvrent (chartes en Faveur), les qualités, le Stato.</td><td>Le Campo s'ouvre : livré par la route (①) ; Faveur et lettres pour les chartes (⑤), Sceaux pour le personnel.<small>Le moteur de l'ouverture des régions.</small></td><td>La Remise prépare les véhicules de combat (Casa 9).</td></tr>
+          <tr><th>Casa 10 à 14</th><td>La Casa demande les matériaux lointains, les spolia (④) ; les crises de guerre à exploiter (②).</td><td>Les bannières sur la façade (⑥), le Signore et sa couronne.</td><td>Les reliques : cartes anciennes (③), spolia (④), plans des composants ; le studiolo (⑥).<small>Le moteur des hauts niveaux.</small></td></tr>
+          <tr><th>Casa 15 et plus</th><td>Les grandes œuvres, la Maestria, le marché des reliques et des spolia.</td><td>La Contesa à trois métiers (⑧), le grade.</td><td>Les paliers 5 et 6, la Porta noire, les plans de manufacture.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="rec surface" aria-labelledby="r-t">
+    <h2 id="r-t">Ma recommandation</h2>
+    <ol>
+      <li><b>Avec le lot 9 de la Terraferme</b>, faire ① l'intendance par la route et ⑤ les villes tenues : elles touchent le Campo et le plateau qu'on refait de toute façon, et ce sont les deux liens qu'on voit le mieux.</li>
+      <li><b>Juste après</b>, ⑥ le studiolo et la façade (du visuel pur), et ⑦ le Carnet en trois colonnes avec « Ça t'attend » : la colle du quotidien.</li>
+      <li><b>Avec la Porta</b>, ③ les cartes anciennes puis ④ les spolia : la Porta devient le moteur de la carte et de la Casa au-delà du niveau 10.</li>
+      <li><b>En dernier</b>, ② la guerre qui fait les prix et ⑧ la Contesa à trois métiers : ce sont les plus délicats à régler, à passer au simulateur de 24 mois.</li>
+    </ol>
+    <p class="foot">Les liens ②, ④ et ⑤ touchent à l'économie : ils se valident au simulateur (toutes les graines) et se documentent dans <code>docs/calibration.md</code> ; la Terraferme garde son plafond de 10 à 15 % de la progression de la semaine.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="x-t">
+    <h2 id="x-t">Pistes écartées</h2>
+    <ul class="out">
+      <li><b>Piller le Fondaco du vaincu</b>Prendre ce qu'un autre a bâti : contraire à la règle 1.</li>
+      <li><b>La Porta obligatoire pour la Casa</b>Sans marché des spolia, le marchand pur serait bloqué : contraire à la règle 7.</li>
+      <li><b>Un héros condottiere commun aux trois modes</b>Un système de plus, alors que chaque système doit absorber les anciens.</li>
+    </ul>
+  </section>
+</div>

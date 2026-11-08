@@ -1136,6 +1136,7 @@ export type TerraAction =
   | { type: "terraGift"; to: string; amount: string }
   | { type: "terraEmbargo"; target: string | null }
   | { type: "terraRaise" }
+  | { type: "terraBuyTroops" }
   | { type: "terraDecree"; code: string; target?: string }
   | { type: "terraPeasants"; shareBps: number };
 
@@ -1162,6 +1163,8 @@ export interface TerraView {
     height: number;
     origin: [number, number];
     size: number;
+    /** Square cells, four neighbours (Porcellana, lot 9); absent or hex: pointy hexagons. */
+    grid?: "hex" | "square";
     /** One letter a cell: p plain, h hill, m marsh, M mountain, w water. */
     terrain: string;
     cities: { cell: number; code: string }[];
@@ -1253,6 +1256,8 @@ export interface TerraView {
     requestsIn: number[];
     requestsOut: number[];
     raisesLeft: number;
+    /** Troops it may still buy today. */
+    buysLeft?: number;
     giftsLeft: number;
     programme: { code: string; target?: string } | null;
     /**
@@ -1290,6 +1295,8 @@ export interface TerraView {
       cap: string;
     };
     capRaise: number;
+    /** Troops bought with ducats: so many a time for so much (null or absent: closed). */
+    troopBuy?: { amount: number; price: string } | null;
     /** The capital of a merchant who attacked no merchant this week is never taken. */
     peacefulSafe: boolean;
     /** Soldiers and peasants: the slider is played. */

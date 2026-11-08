@@ -12,7 +12,6 @@ import {
   cellCost,
   cellsOf,
   forecastFronts,
-  hexNeighbors,
   hourIn,
   hourWithin,
   inBattle,
@@ -20,6 +19,7 @@ import {
   peasantsOf,
   recruitPerHour,
   seaTargets,
+  terraNeighbors,
   terraOn,
   yieldPerHour,
 } from "@comptoirs/engine";
@@ -155,7 +155,7 @@ export function terraView(
   const costs: Record<number, number> = {};
   if (me) {
     for (const i of cellsOf(s, playerId))
-      for (const n of hexNeighbors(s.map, i))
+      for (const n of terraNeighbors(s.map, i))
         if (s.map.land[n] && s.owner[n] !== playerId && !(n in costs))
           costs[n] = cellCost(s, cfg, n);
   }
@@ -189,6 +189,8 @@ export function terraView(
       height: s.map.height,
       origin: s.map.origin,
       size: s.map.size,
+      /** Square cells (Porcellana, lot 9), else hexagons. */
+      grid: s.map.grid ?? "hex",
       terrain: s.map.terrain.map((k) => TERRAIN_LETTER[k] ?? "p").join(""),
       cities: s.map.cityCode
         .map((code, cell) => (code ? { cell, code } : null))
@@ -288,6 +290,10 @@ export function terraView(
           requestsIn: (s.requests ?? []).filter((r) => r.to === playerId).map((r) => at(r.from)),
           requestsOut: (s.requests ?? []).filter((r) => r.from === playerId).map((r) => at(r.to)),
           raisesLeft: Math.max(0, cfg.capRaise.perDay - today.raises),
+          /** Troops it may still buy today (decision of the owner, 7 November 2026). */
+          buysLeft: cfg.troopBuy
+            ? Math.max(0, cfg.troopBuy.perDay - ("buys" in today ? (today.buys ?? 0) : 0))
+            : 0,
           giftsLeft: Math.max(
             0,
             Math.floor((capOf(s, cfg, playerId) * cfg.alliances.giftShareBps) / 10_000) -
@@ -339,6 +345,8 @@ export function terraView(
         cap: cfg.capRaise.price,
       },
       capRaise: cfg.capRaise.amount,
+      /** Troops bought with ducats, so many a time for so much (null: closed). */
+      troopBuy: cfg.troopBuy ? { amount: cfg.troopBuy.amount, price: cfg.troopBuy.price } : null,
       protectionHours: cfg.start.protectionHours,
       peacefulSafe: cfg.fronts.peacefulSafe && !cfg.fronts.capitalSafe,
       /** Soldiers and peasants: whether the slider is played. */

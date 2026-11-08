@@ -24,6 +24,7 @@ import {
   alliesOf,
   breakAlliance,
   buildOnTerra,
+  buyTroops,
   chooseDecree,
   closeTerra,
   countRankedSkirmish,
@@ -367,6 +368,7 @@ export type TerraCommand =
   | { type: "terraSend"; playerId: PlayerId; to: PlayerId; count: number }
   | { type: "terraBuild"; playerId: PlayerId; cell: number; kind: TerraBuilding }
   | { type: "terraRaise"; playerId: PlayerId }
+  | { type: "terraBuyTroops"; playerId: PlayerId }
   | { type: "terraDecree"; playerId: PlayerId; code: string; target?: string }
   | { type: "terraPeasants"; playerId: PlayerId; shareBps: number }
   | { type: "terraSail"; playerId: PlayerId; aim: number; shareBps: number }
@@ -548,6 +550,13 @@ export function applyTerraOn(
       const price = raiseCap(map, cfg, id, now);
       pay(tx, id, price, "terra:cap");
       takeGoods(tx, id, bread > 0 ? { bread } : {}, "terra:cap");
+      break;
+    }
+    case "terraBuyTroops": {
+      const price = cfg.troopBuy?.price;
+      if (price === undefined) fail("no_troop_buy");
+      if (balance(tx, cashAccount(id)) < price) fail("insufficient_funds");
+      pay(tx, id, buyTroops(map, cfg, id, now), "terra:troops");
       break;
     }
     case "terraSail": {

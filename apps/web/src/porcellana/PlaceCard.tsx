@@ -11,7 +11,7 @@ export interface PlaceCardInfo {
   name: string;
   sub: string;
   line: string;
-  /** What the button says (« Entrer », « Ouvrir la Dogana »…). */
+  /** What the button says (« Entrer », « Ouvrir la Dogana »…); empty: no button. */
   go: string;
   /** Something to take there now: a « Prêt ! » tag stuck on aslant. */
   ready?: boolean;
@@ -62,22 +62,24 @@ export const PlaceCard = forwardRef<
         <p className="pc-sub">{info.sub}</p>
         {info.line ? <p className="pc-line">{info.line}</p> : null}
       </div>
-      <button type="button" className="pc-go" onClick={onGo}>
-        <span>{info.go}</span>
-        <svg
-          viewBox="0 0 18 18"
-          width="18"
-          height="18"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M7 4l5 5-5 5" />
-        </svg>
-      </button>
+      {info.go ? (
+        <button type="button" className="pc-go" onClick={onGo}>
+          <span>{info.go}</span>
+          <svg
+            viewBox="0 0 18 18"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M7 4l5 5-5 5" />
+          </svg>
+        </button>
+      ) : null}
     </section>
   );
 });

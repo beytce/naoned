@@ -319,6 +319,8 @@ export const venice1450Settings: WorldSettingsInput = {
       mura: { price: 5_000, perCells: 10, radius: 1 },
     },
     capRaise: { amount: 20, price: 10_000, perDay: 3 },
+    // No troops bought with ducats: the owner closed it on 8 November 2026 for an equal war chest
+    // (docs/audit-terraferme-2026-11-08/00-synthese.md § 7); `troopBuy` stays absent.
     // The war eats the goods (R1, docs/plan-rupture.md): a tenth of a loaf a troop and a day,
     // bread for the cap, materials for the buildings. Calibrated in docs/calibration.md.
     supply: {

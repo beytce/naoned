@@ -94,6 +94,24 @@ describe("the Terraferma in the world", () => {
     expect(map && cellsOf(map, "a").length).toBeGreaterThan(1);
   });
 
+  it("sells troops for ducats, destroyed, once the settings open it", () => {
+    const shut = live();
+    joined(shut, "a");
+    expect(error(act(shut, { type: "terraBuyTroops", playerId: "a" }))).toBe("no_troop_buy");
+    const w = live({ troopBuy: { amount: 10, price: 15_000, perDay: 1 } });
+    joined(w, "a");
+    const p = w.state.terra?.map.players.a;
+    if (!p) throw new Error("not placed");
+    const troops = p.troops;
+    const before = w.cash("a");
+    const sink = w.state.accounts["system:sink"] ?? 0n;
+    expect(error(act(w, { type: "terraBuyTroops", playerId: "a" }))).toBe("ok");
+    expect(w.state.terra?.map.players.a?.troops).toBeGreaterThan(troops);
+    expect(w.cash("a")).toBe(before - 15_000n);
+    expect(w.state.accounts["system:sink"]).toBe(sink + 15_000n);
+    expect(error(act(w, { type: "terraBuyTroops", playerId: "a" }))).not.toBe("ok");
+  });
+
   it("takes the ducats of buildings and of the cap, destroyed, and refuses without them", () => {
     const w = live();
     joined(w, "a");

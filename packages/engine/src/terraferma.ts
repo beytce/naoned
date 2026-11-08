@@ -25,6 +25,8 @@ export function isNation(id: string | null | undefined): boolean {
 export interface TerraMap {
   width: number;
   height: number;
+  /** Square cells (four neighbours side by side); absent: pointy hexagons, odd rows shifted. */
+  grid?: "square";
   /** Centre of the first cell and the cells' radius, in the drawn map's coordinates. */
   origin: [number, number];
   size: number;
@@ -59,6 +61,8 @@ export interface TerraPlayer {
     day: number;
     raises: number;
     gifts: number;
+    /** Troops bought with ducats today (times). */
+    buys?: number;
     shots?: number;
     ducats?: bigint;
     skirmishes?: number;
@@ -310,10 +314,38 @@ export function hexNeighbors(map: Pick<TerraMap, "width" | "height">, i: number)
   return out.sort((a, b) => a - b);
 }
 
-/** Centre of a cell, in the drawn map's coordinates (pointy hexagons, odd rows shifted). */
+/** The cells that share a side with this one, on the map's grid (hexagons or squares). */
+export function terraNeighbors(
+  map: Pick<TerraMap, "width" | "height" | "grid">,
+  i: number,
+): number[] {
+  if (map.grid !== "square") return hexNeighbors(map, i);
+  const row = Math.floor(i / map.width);
+  const col = i % map.width;
+  const out: number[] = [];
+  if (row > 0) out.push(i - map.width);
+  if (col > 0) out.push(i - 1);
+  if (col < map.width - 1) out.push(i + 1);
+  if (row < map.height - 1) out.push(i + map.width);
+  return out;
+}
+
+/** Steps from one cell to another, side by side, on the map's grid. */
+export function terraDistance(map: Pick<TerraMap, "width" | "grid">, a: number, b: number): number {
+  if (map.grid !== "square") return hexDistance(map, a, b);
+  const w = map.width;
+  return Math.abs((a % w) - (b % w)) + Math.abs(Math.floor(a / w) - Math.floor(b / w));
+}
+
+/**
+ * Centre of a cell, in the drawn map's coordinates: squares edge to edge, or pointy hexagons with
+ * odd rows shifted.
+ */
 export function cellCenter(map: TerraMap, i: number): [number, number] {
   const row = Math.floor(i / map.width);
   const col = i % map.width;
+  if (map.grid === "square")
+    return [map.origin[0] + map.size * col, map.origin[1] + map.size * row];
   return [
     map.origin[0] + map.size * Math.sqrt(3) * (col + 0.5 * (row & 1)),
     map.origin[1] + map.size * 1.5 * row,
@@ -338,6 +370,7 @@ function inPolygon(x: number, y: number, poly: [number, number][]): boolean {
 export function terraMap(cfg: TerraConfig, seed: string, active: number): TerraMap {
   const target = cfg.cellsPerActive * Math.max(cfg.minActive, active);
   const geo = cfg.geography;
+  const square = cfg.grid === "square";
   let width: number;
   let height: number;
   let size: number;
@@ -356,10 +389,18 @@ export function terraMap(cfg: TerraConfig, seed: string, active: number): TerraM
       }
     }
     const area = ((x1 - x0) * (y1 - y0) * landSamples) / 6_400;
-    size = Math.sqrt(area / (target * ((3 * Math.sqrt(3)) / 2)));
-    width = Math.max(3, Math.ceil((x1 - x0) / (size * Math.sqrt(3))));
-    height = Math.max(3, Math.floor((y1 - y0) / (size * 1.5)) + 1);
-    origin = [x0, y0];
+    if (square) {
+      // a square of side `size` covers size²
+      size = Math.sqrt(area / target);
+      width = Math.max(3, Math.ceil((x1 - x0) / size));
+      height = Math.max(3, Math.floor((y1 - y0) / size) + 1);
+      origin = [x0 + size / 2, y0 + size / 2];
+    } else {
+      size = Math.sqrt(area / (target * ((3 * Math.sqrt(3)) / 2)));
+      width = Math.max(3, Math.ceil((x1 - x0) / (size * Math.sqrt(3))));
+      height = Math.max(3, Math.floor((y1 - y0) / (size * 1.5)) + 1);
+      origin = [x0, y0];
+    }
   } else {
     height = Math.max(3, Math.round(Math.sqrt((target * 10_000) / cfg.aspectBps)));
     width = Math.max(3, Math.ceil(target / height));
@@ -370,6 +411,7 @@ export function terraMap(cfg: TerraConfig, seed: string, active: number): TerraM
   const map: TerraMap = {
     width,
     height,
+    ...(square ? { grid: "square" as const } : {}),
     origin,
     size,
     land: [],
@@ -435,7 +477,7 @@ export function terraMap(cfg: TerraConfig, seed: string, active: number): TerraM
       placed.length === 0
         ? first
         : free.reduce((best, i) => {
-            const d = (j: number) => Math.min(...placed.map((p) => hexDistance({ width }, p, j)));
+            const d = (j: number) => Math.min(...placed.map((p) => terraDistance(map, p, j)));
             return d(i) > d(best) ? i : best;
           }, first);
     placed.push(next);
@@ -476,7 +518,7 @@ export function newTerra(
     if (seat < 0 || s.owner[seat] !== null) continue;
     const id = `nation:${n.id}`;
     for (let i = 0; i < s.owner.length; i++)
-      if (map.land[i] && s.owner[i] === null && hexDistance(map, i, seat) <= n.radius)
+      if (map.land[i] && s.owner[i] === null && terraDistance(map, i, seat) <= n.radius)
         s.owner[i] = id;
     const troops = n.troops + n.troopsPerActive * active;
     s.players[id] = {
@@ -506,7 +548,7 @@ function nationSeat(map: TerraMap, n: TerraConfig["nations"][number]): number {
   let best = -1;
   for (let i = 0; i < map.land.length; i++) {
     if (!map.land[i]) continue;
-    if (best < 0 || hexDistance(map, i, target) < hexDistance(map, best, target)) best = i;
+    if (best < 0 || terraDistance(map, i, target) < terraDistance(map, best, target)) best = i;
   }
   return best;
 }
@@ -696,7 +738,7 @@ export function cellCost(s: TerraState, cfg: TerraConfig, i: number): number {
   }
   const defenseBps = city ? cfg.city.defenseBps : 10_000;
   // A rocca guards its cell and the six around it.
-  const rocca = [i, ...hexNeighbors(s.map, i)].some((c) => {
+  const rocca = [i, ...terraNeighbors(s.map, i)].some((c) => {
     const b = s.buildings?.[c];
     return b?.kind === "rocca" && b.owner === holder;
   });
@@ -719,7 +761,7 @@ function densityOf(s: TerraState, id: string): number {
 }
 
 const borders = (s: TerraState, id: string, i: number) =>
-  hexNeighbors(s.map, i).some((n) => s.owner[n] === id);
+  terraNeighbors(s.map, i).some((n) => s.owner[n] === id);
 
 // ——— Acting ———
 
@@ -733,7 +775,7 @@ function neutralSpotLeft(s: TerraState, cfg: TerraConfig): boolean {
     (o, i) =>
       o === null &&
       s.map.land[i] &&
-      held.every((j) => hexDistance(s.map, i, j) >= cfg.start.minDistance),
+      held.every((j) => terraDistance(s.map, i, j) >= cfg.start.minDistance),
   );
 }
 
@@ -757,19 +799,19 @@ export function placeOnTerra(
   const holder = s.owner[cell];
   const onMilan = holder === MILAN;
   if (onMilan) {
-    const edge = hexNeighbors(s.map, cell).some((n) => s.map.land[n] && s.owner[n] !== MILAN);
+    const edge = terraNeighbors(s.map, cell).some((n) => s.map.land[n] && s.owner[n] !== MILAN);
     if (!edge) fail("not_neutral");
     if (neutralSpotLeft(s, cfg)) fail("neutral_left");
   } else {
     if (holder !== null) fail("not_neutral");
     for (let j = 0; j < s.owner.length; j++) {
-      if (s.owner[j] !== null && hexDistance(s.map, cell, j) < cfg.start.minDistance)
+      if (s.owner[j] !== null && terraDistance(s.map, cell, j) < cfg.start.minDistance)
         fail("too_close");
     }
   }
   const takes = (o: string | null | undefined) => o === null || (onMilan && o === MILAN);
   seize(s, cell, id, now);
-  for (const n of hexNeighbors(s.map, cell)) {
+  for (const n of terraNeighbors(s.map, cell)) {
     if (s.map.land[n] && takes(s.owner[n])) seize(s, n, id, now);
   }
   const day = Math.max(0, Math.floor((now - s.startAt) / DAY_MS));
@@ -836,21 +878,21 @@ export function launchFront(
 // ——— The water ———
 
 const coastal = (s: TerraState, i: number) =>
-  !!s.map.land[i] && hexNeighbors(s.map, i).some((n) => !s.map.land[n]);
+  !!s.map.land[i] && terraNeighbors(s.map, i).some((n) => !s.map.land[n]);
 
 /** Water cells reachable from the water beside `from`, with their distance in cells. */
 function waterFrom(s: TerraState, from: number[]): Map<number, number> {
   const dist = new Map<number, number>();
   const queue: number[] = [];
   for (const c of from)
-    for (const n of hexNeighbors(s.map, c))
+    for (const n of terraNeighbors(s.map, c))
       if (!s.map.land[n] && !dist.has(n)) {
         dist.set(n, 1);
         queue.push(n);
       }
   for (let k = 0; k < queue.length; k++) {
     const c = queue[k] as number;
-    for (const n of hexNeighbors(s.map, c))
+    for (const n of terraNeighbors(s.map, c))
       if (!s.map.land[n] && !dist.has(n)) {
         dist.set(n, (dist.get(c) ?? 0) + 1);
         queue.push(n);
@@ -887,7 +929,7 @@ export function launchNaval(
   const ports = portsOf(s, id);
   if (ports.length === 0) fail("no_port");
   const sea = waterFrom(s, ports);
-  const landing = hexNeighbors(s.map, aim)
+  const landing = terraNeighbors(s.map, aim)
     .map((n) => sea.get(n))
     .filter((d): d is number => d !== undefined);
   if (landing.length === 0) fail("no_sea_route");
@@ -931,7 +973,7 @@ export function seaTargets(s: TerraState, cfg: TerraConfig, id: string): Record<
   const out: Record<number, number> = {};
   for (let i = 0; i < s.owner.length; i++) {
     if (!s.map.land[i] || s.owner[i] === id || !coastal(s, i)) continue;
-    const d = hexNeighbors(s.map, i)
+    const d = terraNeighbors(s.map, i)
       .map((n) => sea.get(n))
       .filter((x): x is number => x !== undefined);
     if (d.length > 0) out[i] = Math.min(...d) * porto.minutesPerWater;
@@ -964,12 +1006,12 @@ export function fireBombard(
   )
     fail("protected");
   const guns = terraBuildingsOf(s, id, "bombarda").filter((c) => s.owner[c] === id);
-  if (!guns.some((g) => hexDistance(s.map, g, cell) <= def.range)) fail("out_of_range");
+  if (!guns.some((g) => terraDistance(s.map, g, cell) <= def.range)) fail("out_of_range");
   const walls = cfg.buildings.mura;
   if (
     walls &&
     terraBuildingsOf(s, target, "mura").some(
-      (w) => s.owner[w] === target && hexDistance(s.map, w, cell) <= walls.radius,
+      (w) => s.owner[w] === target && terraDistance(s.map, w, cell) <= walls.radius,
     )
   )
     fail("walled");
@@ -977,7 +1019,7 @@ export function fireBombard(
   if ((today.shots ?? 0) >= def.shotsPerDay * guns.length) fail("no_shot");
   today.shots = (today.shots ?? 0) + 1;
   const capitals = new Set(Object.values(s.players).map((p) => p.capital));
-  const hit = [cell, ...hexNeighbors(s.map, cell)].filter(
+  const hit = [cell, ...terraNeighbors(s.map, cell)].filter(
     (c) => s.owner[c] === target && !capitals.has(c),
   );
   const holder = s.players[target];
@@ -1010,14 +1052,14 @@ export function bombardTargets(
   for (let i = 0; i < s.owner.length; i++) {
     const t = s.owner[i];
     if (!t || t === id || allied(s, id, t)) continue;
-    if (!guns.some((g) => hexDistance(s.map, g, i) <= def.range)) continue;
+    if (!guns.some((g) => terraDistance(s.map, g, i) <= def.range)) continue;
     if (!isNation(t) && (player.protectedUntil > now || (s.players[t]?.protectedUntil ?? 0) > now))
       continue;
     const walls = cfg.buildings.mura;
     if (
       walls &&
       terraBuildingsOf(s, t, "mura").some(
-        (w) => s.owner[w] === t && hexDistance(s.map, w, i) <= walls.radius,
+        (w) => s.owner[w] === t && terraDistance(s.map, w, i) <= walls.radius,
       )
     )
       continue;
@@ -1033,7 +1075,7 @@ function land(s: TerraState, cfg: TerraConfig, front: TerraFront): void {
   const theirs = portsOf(s, front.against);
   if (theirs.length === 0) return;
   const sea = waterFrom(s, theirs);
-  if (hexNeighbors(s.map, front.aim).some((n) => sea.has(n)))
+  if (terraNeighbors(s.map, front.aim).some((n) => sea.has(n)))
     front.troops = Math.floor((front.troops * (10_000 - guard)) / 10_000);
 }
 
@@ -1310,6 +1352,24 @@ export function raiseCap(s: TerraState, cfg: TerraConfig, id: string, now: numbe
   return cfg.capRaise.price;
 }
 
+/**
+ * Troops bought with ducats, a few times a day, never past the cap (decision of the owner of 7
+ * November 2026). Returns their price in deniers; the caller takes it.
+ */
+export function buyTroops(s: TerraState, cfg: TerraConfig, id: string, now: number): bigint {
+  merchant(s, id);
+  const def = cfg.troopBuy;
+  if (!def) fail("no_troop_buy");
+  const player = s.players[id] as TerraPlayer;
+  const cap = capOf(s, cfg, id);
+  if (player.troops >= cap) fail("troops_full");
+  const today = todayOf(s, player, now);
+  if ((today.buys ?? 0) >= def.perDay) fail("buy_limit");
+  today.buys = (today.buys ?? 0) + 1;
+  player.troops = Math.min(cap, player.troops + def.amount);
+  return def.price;
+}
+
 /** The decree the merchant would impose as Signore: public, it may change until the close. */
 export function chooseDecree(
   s: TerraState,
@@ -1564,7 +1624,7 @@ function nextCell(s: TerraState, cfg: TerraConfig, front: TerraFront): number {
   for (let i = 0; i < s.owner.length; i++) {
     if (!s.map.land[i] || s.owner[i] !== front.against || !borders(s, front.owner, i)) continue;
     if (capitals.has(i)) continue;
-    const d = hexDistance(s.map, i, front.aim);
+    const d = terraDistance(s.map, i, front.aim);
     if (d < bestDistance) {
       best = i;
       bestDistance = d;
@@ -1640,7 +1700,7 @@ function component(s: TerraState, id: string, from: number): Set<number> {
   const queue = [from];
   while (queue.length > 0) {
     const c = queue.pop() as number;
-    for (const n of hexNeighbors(s.map, c)) {
+    for (const n of terraNeighbors(s.map, c)) {
       if (!seen.has(n) && s.owner[n] === id) {
         seen.add(n);
         queue.push(n);
@@ -1675,7 +1735,7 @@ function fallPockets(s: TerraState, cfg: TerraConfig, at: number): void {
       for (const c of pocket) done.add(c);
       const ring = new Set<string | null>();
       for (const c of pocket) {
-        for (const n of hexNeighbors(s.map, c)) {
+        for (const n of terraNeighbors(s.map, c)) {
           if (s.map.land[n] && s.owner[n] !== id) ring.add(s.owner[n] ?? null);
         }
       }
@@ -1719,7 +1779,7 @@ function milanRides(s: TerraState, cfg: TerraConfig, at: number): void {
   let best = -1;
   for (let i = 0; i < s.owner.length; i++) {
     if (!s.map.land[i] || s.owner[i] !== null || !borders(s, MILAN, i)) continue;
-    if (best < 0 || hexDistance(s.map, i, centre) < hexDistance(s.map, best, centre)) best = i;
+    if (best < 0 || terraDistance(s.map, i, centre) < terraDistance(s.map, best, centre)) best = i;
   }
   if (best >= 0) launchFront(s, cfg, MILAN, best, cfg.milan.shareBps, at);
 }
@@ -1736,7 +1796,7 @@ function nationsRide(s: TerraState, cfg: TerraConfig, at: number): void {
     if (s.fronts.some((f) => f.owner === id)) continue;
     const neighbours = new Set<string>();
     for (const c of cellsOf(s, id))
-      for (const x of hexNeighbors(s.map, c)) {
+      for (const x of terraNeighbors(s.map, c)) {
         const o = s.owner[x];
         if (o && o !== id && !isNation(o)) neighbours.add(o);
       }
@@ -1760,7 +1820,7 @@ function nationsRide(s: TerraState, cfg: TerraConfig, at: number): void {
               s.map.land[i] &&
               borders(s, id, i) &&
               p.capital !== undefined &&
-              hexDistance(s.map, i, p.capital) <= n.radius * 3,
+              terraDistance(s.map, i, p.capital) <= n.radius * 3,
           );
     if (aim >= 0) launchFront(s, cfg, id, aim, n.shareBps, at);
   }

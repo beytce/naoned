@@ -1848,6 +1848,8 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "terraBuild", playerId, cell: a.cell, kind: a.kind }];
     case "terraRaise":
       return [{ type: "terraRaise", playerId }];
+    case "terraBuyTroops":
+      return [{ type: "terraBuyTroops", playerId }];
     case "terraFire":
       return [{ type: "terraFire", playerId, cell: a.cell }];
     case "terraSignal":

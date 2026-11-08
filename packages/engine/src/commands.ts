@@ -1033,6 +1033,7 @@ function apply(tx: Tx, cmd: Command): void {
     case "terraSend":
     case "terraBuild":
     case "terraRaise":
+    case "terraBuyTroops":
     case "terraDecree":
     case "terraPeasants":
     case "terraSail":

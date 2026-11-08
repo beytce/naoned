@@ -405,3 +405,55 @@
   border: 2px solid var(--pc-hair);
   cursor: default;
 }
+
+/* The Terraferma's labels (lot T2): the towns in italic on the board, the camps in a pill. */
+.pc-terra-town,
+.pc-terra-camp {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% 0;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.pc-terra-town {
+  font: italic 600 15px / 1 "Cormorant Garamond", Georgia, serif;
+  color: var(--pc-ink);
+  text-shadow: 0 0 3px #fff, 0 0 6px #fff;
+}
+.pc-terra-camp {
+  font: 800 11.5px / 1 var(--pc-display);
+  color: var(--pc-ink);
+  background: #fff;
+  border-radius: 999px;
+  padding: 4px 9px;
+  box-shadow: 0 3px 0 rgba(23, 21, 15, 0.08);
+  translate: -50% -140%;
+}
+.pc-terra-town[data-out="false"],
+.pc-terra-camp[data-out="false"] {
+  opacity: 0;
+}
+/* A front's men (lot T3): a paper pastille at its head, ringed in the merchant's red or in ink. */
+.pc-terra-front {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #fff;
+  border: 3px solid var(--pc-ink);
+  font: 900 13px / 24px var(--pc-display);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--pc-ink);
+  box-shadow: 0 3px 0 rgba(23, 21, 15, 0.12), 0 8px 16px -6px rgba(23, 21, 15, 0.35);
+  pointer-events: none;
+}
+.pc-terra-front[data-tone="mine"] {
+  border-color: var(--pc-accent);
+}

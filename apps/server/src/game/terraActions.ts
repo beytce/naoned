@@ -26,6 +26,7 @@ export const terraActionSchemas = [
     kind: z.enum(["rocca", "borgo", "porto", "bombarda", "mura"]),
   }),
   z.object({ type: z.literal("terraRaise") }),
+  z.object({ type: z.literal("terraBuyTroops") }),
   z.object({ type: z.literal("terraFire"), cell: z.number().int().nonnegative() }),
   z.object({
     type: z.literal("terraSignal"),
