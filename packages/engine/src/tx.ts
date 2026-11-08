@@ -40,6 +40,7 @@ export type EngineErrorCode =
   | "not_owner"
   | "invalid_quantity"
   | "bad_key"
+  | "invalid_input"
   | "store_full"
   | "invalid_price"
   | "insufficient_funds"

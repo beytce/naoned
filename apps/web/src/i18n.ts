@@ -466,6 +466,10 @@ const frDict = {
     /** The cities' orders and the rounds (1 November, after Hades' Star). */
     /** The dock (docs/plan-dock.md): one scene, one dock, one decision. */
     dock: {
+      /** A workshop's priority on the inputs (lot 4 of the publication plan, P0-07). */
+      priority: "Se sert d'abord en matières",
+      priorityWhy: "Quand deux ateliers veulent la même matière, le plus prioritaire passe devant.",
+      priorities: { high: "Haute", normal: "Normale", low: "Basse" },
       upgrade: "Améliorer",
       modules: "Modules",
       master: "Maître",
@@ -1453,6 +1457,7 @@ const frDict = {
     errors: {
       insufficient_funds: "Pas assez de ducats.",
       bad_key: "Cette demande ne se comprend pas.",
+      invalid_input: "Ce choix n'existe pas.",
       store_full: "L'Entrepôt est plein pour cette marchandise : vends ou livre d'abord.",
       already_paid: "C'est déjà payé.",
       locked: "Pas encore ouvert : il faut monter ton Fondaco.",

@@ -541,6 +541,9 @@ export const en: Dictionary = {
     /** The cities' orders and the rounds (1 November, after Hades' Star). */
     /** The dock (docs/plan-dock.md): one scene, one dock, one decision. */
     dock: {
+      priority: "Served first with inputs",
+      priorityWhy: "When two workshops want the same input, the higher priority goes first.",
+      priorities: { high: "High", normal: "Normal", low: "Low" },
       upgrade: "Upgrade",
       modules: "Modules",
       master: "Master",
@@ -1509,6 +1512,7 @@ export const en: Dictionary = {
     errors: {
       insufficient_funds: "Not enough ducats.",
       bad_key: "This request makes no sense.",
+      invalid_input: "That choice does not exist.",
       store_full: "The Warehouse is full for this good: sell or deliver first.",
       already_paid: "It is already paid.",
       locked: "Not open yet: raise your Fondaco.",

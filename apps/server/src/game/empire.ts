@@ -140,6 +140,11 @@ const action = z.discriminatedUnion("type", [
     recipe: z.string().max(40).optional(),
   }),
   z.object({ type: z.literal("empireRelaunchAll") }),
+  z.object({
+    type: z.literal("empireSetPriority"),
+    workshopId: z.string().max(32),
+    priority: z.enum(["high", "normal", "low"]),
+  }),
   // The workshops' insides (docs/plan-ateliers.md § 5.5).
   ...interiorActions,
   z.object({

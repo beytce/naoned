@@ -117,7 +117,13 @@ import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js
 import { buyGoods, deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
 import { ensureFitted, fitVehicle } from "./empire/vehicleModules.js";
 import { buyEmpireVehicle } from "./empire/voyages.js";
-import { fitModule, relaunchAll, relaunchWorkshop, swapWorkshops } from "./empire/workshops.js";
+import {
+  fitModule,
+  relaunchAll,
+  relaunchWorkshop,
+  setPriority,
+  swapWorkshops,
+} from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
 import {
@@ -358,6 +364,12 @@ type EmpireCommandOf =
   | { type: "empireUpgrade"; playerId: PlayerId; workshopId: string }
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll"; playerId: PlayerId }
+  | {
+      type: "empireSetPriority";
+      playerId: PlayerId;
+      workshopId: string;
+      priority: "high" | "normal" | "low";
+    }
   // The workshops' insides (docs/plan-ateliers.md § 5.5).
   | {
       type: "empireInteriorPlace";
@@ -695,6 +707,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     case "empireRelaunch":
       relaunchWorkshop(tx, cmd.playerId, cmd.workshopId, cmd.recipe);
       advanceCarnet(h, "relaunch", 1);
+      break;
+    case "empireSetPriority":
+      setPriority(tx, cmd.playerId, cmd.workshopId, cmd.priority);
       break;
     case "empireRelaunchAll":
       relaunchAll(tx, cmd.playerId);

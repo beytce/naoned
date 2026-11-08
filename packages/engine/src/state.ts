@@ -323,6 +323,11 @@ export interface EmpireWorkshop {
   fitted?: string[];
   /** The night queue: lots queued from `startedAt`, their inputs already taken. */
   job: ProductionJob | null;
+  /**
+   * Who is served first from the Warehouse's inputs at « Tout relancer » (the publication plan,
+   * lot 4): high, then normal (absent), then low; a first lot for each before any fills up.
+   */
+  priority?: "high" | "low";
   /** Its inside (docs/plan-ateliers.md): its stations, conveyors and buffers. */
   interior?: WorkshopInterior;
 }
