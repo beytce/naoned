@@ -11,7 +11,16 @@ import { hempField, muranoFurnace, ropeWalk, saltPans, zattera } from "./models/
 import { market } from "./models/market.js";
 import type { Built, ModelOpts } from "./models/model.js";
 import { arsenal, campo, depot, porta, post } from "./models/places.js";
-import { bombarda, borgo, flagCloth, mura, porto, rocca, warCamp } from "./models/terra.js";
+import {
+  bombarda,
+  borgo,
+  flagCloth,
+  mura,
+  porto,
+  rocca,
+  warCamp,
+  warChest,
+} from "./models/terra.js";
 import { salute, town, veniceHouses } from "./models/towns.js";
 import { type Vehicle, cart, gondola, mule, rider, ship } from "./models/vehicles.js";
 import {
@@ -293,6 +302,19 @@ export const CATALOGUE: Entry[] = [
     sub: "La capitale d'un marchand à la Terraferme",
     sign: "Son drapeau flotte à sa couleur.",
     make: (P) => warCamp(P, P.accentCloth),
+  },
+  {
+    key: "war_chest",
+    family: "guerre",
+    name: "Trésor de guerre",
+    sub: "Les écus de la semaine, à côté du camp",
+    sign: "Son or monte le matin et baisse à chaque achat.",
+    make: (P) => {
+      const c = warChest(P);
+      c.fill(0.7);
+      c.group.scale.setScalar(2);
+      return c;
+    },
   },
   {
     key: "rocca",

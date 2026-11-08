@@ -4,7 +4,15 @@
  * colour (the merchant's red, another's ink, an ally's lagoon, a nation's biscuit). Each on a
  * tile 6 across, its middle at the origin, the ground at y = 0. The port faces the water on +z.
  */
-import { DoubleSide, Group, type Material, Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
+import {
+  DoubleSide,
+  Group,
+  type Material,
+  Mesh,
+  MeshStandardMaterial,
+  PlaneGeometry,
+  SphereGeometry,
+} from "three";
 import type { Palette } from "../materials.js";
 import { ball, box, cone, cyl, dyn, gable } from "../shapes.js";
 import { ROUGH } from "../tokens.js";
@@ -84,6 +92,39 @@ export function warCamp(P: Palette, cloth: Material): Built {
     box(g, 0.45, 0.45, 0.45, x, 0.08, z, P.m("wood"), 0.04);
   const wave = flag(P, g, cloth, -0.3, 3.0, 0.1, 1.6, 1.4);
   return { group: g, pin: [-0.3, 5.2, 0.1], tick: (t) => wave(t) };
+}
+
+const gold = new MeshStandardMaterial({ color: "#D9A21B", roughness: 0.35, metalness: 0.4 });
+
+/**
+ * The war chest (8 November 2026): an open coffer of wood bound in ink, its lid thrown back, a heap
+ * of gold whose height follows the écus in it (`fill`, 0 to 1). Small, beside its camp.
+ */
+export function warChest(P: Palette): Built & { fill: (share: number) => void } {
+  const g = new Group();
+  box(g, 1.3, 0.62, 0.86, 0, 0, 0, P.m("wood"), 0.06);
+  for (const x of [-0.42, 0.42]) box(g, 0.08, 0.64, 0.9, x, 0, 0, P.ink, 0.02);
+  const lid = new Group();
+  box(lid, 1.32, 0.12, 0.88, 0, 0, 0.44, P.m("wood"), 0.05);
+  lid.position.set(0, 0.62, -0.43);
+  lid.rotation.x = -1.9;
+  g.add(lid);
+  const heap = dyn(new Group());
+  const pile = new Mesh(new SphereGeometry(0.5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), gold);
+  pile.scale.set(1.15, 1, 0.75);
+  pile.castShadow = true;
+  heap.add(pile);
+  heap.position.y = 0.58;
+  g.add(heap);
+  return {
+    group: g,
+    pin: [0, 1.4, 0],
+    fill: (share) => {
+      const k = Math.max(0, Math.min(1, share));
+      heap.visible = k > 0.01;
+      heap.scale.y = Math.max(0.05, k * 0.9);
+    },
+  };
 }
 
 /** The fort (rocca): a crenellated keep on its plinth, a door, two slits, its flag. */

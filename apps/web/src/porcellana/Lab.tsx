@@ -186,7 +186,7 @@ const CATALOGUE_ROWS = [
   ["lumber_camp", "sawmill", "mill", "farm", "glassworks", "clay_pit", "sand_pit"],
   ["brickworks", "palazzo", "field", "fondaco", "market", "campo", "porta"],
   ["arsenal", "post", "depot", "grove", "forest", "rocks", "mountain"],
-  ["war_camp", "rocca", "borgo", "porto", "bombarda", "mura", "."],
+  ["war_camp", "war_chest", "rocca", "borgo", "porto", "bombarda", "mura"],
   ["~", "ship", "~", "~", "gondola", "~", "~"],
   ["hamlet1", "hamlet2", "town3", "city4", "city5", "venice", "salute"],
   ["plot", "locked", "cart", "mule", "rider", ".", "."],

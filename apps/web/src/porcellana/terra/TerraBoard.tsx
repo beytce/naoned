@@ -35,7 +35,7 @@ import { palette } from "../TileBoard.js";
 import { easeOutCubic } from "../arrival.js";
 import { FLIP_SLOW, flipNow, flipZoom } from "../flip.js";
 import type { Built } from "../models/model.js";
-import { TERRA_MODELS, flagCloth, warCamp } from "../models/terra.js";
+import { TERRA_MODELS, flagCloth, warCamp, warChest } from "../models/terra.js";
 import { town } from "../models/towns.js";
 import { BOARD, CAMERA, COL, FLIP, ROUGH, SELECT } from "../tokens.js";
 import { type BuildingPic, shotsBetween } from "./buildings.js";
@@ -72,6 +72,8 @@ export interface TerraSceneProps {
     cities: { cell: number; code: string }[];
     /** Each holder's camp (its capital), the holder, and the colour of its flag. */
     camps: { cell: number; holder: number; flag: string }[];
+    /** The merchant's war chest, the share of its ceiling it holds (8 November 2026; absent: none). */
+    chest?: number;
     /** The buildings on the land: the fort, the borough, the port, the bombard, the walls. */
     buildings: BuildingPic[];
     /** The fronts marching: whose, how many men, the merchant's or a threat, what they take next. */
@@ -216,8 +218,10 @@ export function TerraBoard({
       standing.set(c.cell, t.group);
       root.add(t.group);
     }
-    // The camps: the war camp of each holder, its flag at its colour (lot T4).
+    // The camps: the war camp of each holder, its flag at its colour (lot T4); beside the
+    // merchant's, its war chest.
     const waving: Built[] = [];
+    let chest: ReturnType<typeof warChest> | null = null;
     for (const camp of pic.camps) {
       if (standing.has(camp.cell)) continue;
       const built = warCamp(P, flagCloth(camp.flag));
@@ -227,6 +231,16 @@ export function TerraBoard({
       waving.push(built);
       standing.set(camp.cell, built.group);
       root.add(built.group);
+      if (camp.holder === pic.me && pic.chest !== undefined) {
+        chest = warChest(P);
+        chest.group.position.set(1.75, 0.08, 1.15);
+        chest.group.rotation.y = -0.5;
+        chest.group.scale.setScalar(1.5);
+        chest.group.traverse((o) => {
+          o.castShadow = true;
+        });
+        built.group.add(chest.group);
+      }
     }
     const fronts = new FrontLayer(BOARD.tile);
     root.add(fronts.group);
@@ -242,6 +256,9 @@ export function TerraBoard({
       standing,
       fronts,
       waving,
+      chest,
+      /** The chest's gold as drawn: it rises and sinks toward the écus held. */
+      chestShown: { k: -1 },
     };
   }, [W, H, sheet]);
 
@@ -654,6 +671,12 @@ export function TerraBoard({
     board.hillMesh.instanceMatrix.needsUpdate = true;
     for (const [c, g] of board.standing)
       g.position.set(wx(c % W), heights[c] ?? 0, wz(Math.floor(c / W)));
+    // The chest's gold rises in the morning, sinks at each purchase (eased, so that it is seen).
+    if (board.chest && pic.chest !== undefined) {
+      const sh = board.chestShown;
+      sh.k = sh.k < 0 || !live ? pic.chest : sh.k + (pic.chest - sh.k) * Math.min(1, dt * 3);
+      board.chest.fill(sh.k);
+    }
     // A camp stands while its holder keeps its cell; taken, it is gone.
     for (const camp of pic.camps) {
       const g = board.standing.get(camp.cell);

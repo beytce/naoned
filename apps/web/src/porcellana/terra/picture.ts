@@ -49,6 +49,7 @@ export function pictureOfView(v: TerraView, focus?: Set<number>): BoardPicture {
     camps: v.holders.flatMap((h, holder) =>
       h.capital === null ? [] : [{ cell: h.capital, holder, flag: flagOf(h) }],
     ),
+    ...(v.me?.chest ? { chest: v.me.chest.ecus / Math.max(1, v.me.chest.cap) } : {}),
   };
 }
 
