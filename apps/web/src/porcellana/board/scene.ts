@@ -376,7 +376,9 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     campo.place = {
       ...campo.place,
       line: t.porcellana.campoAsks(
-        asks.map((o) => `${o.qty} ${fr.themeNames.resource[o.good] ?? o.good}`).join(", "),
+        asks
+          .map((o) => `${o.qty} ${fr.themeNames.resource[o.good] ?? p.goods?.[o.good] ?? o.good}`)
+          .join(", "),
       ),
       pin: String(asks.length),
       ready: false,

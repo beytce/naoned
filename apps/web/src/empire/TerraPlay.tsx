@@ -50,7 +50,12 @@ export function TerraPlay({
   /** « ‹ Carte »: back to the map (the Terraferma's own scene). */
   onBack?: () => void;
   /** The supply by road: the Campo's store and its orders of the day; « Livrer » sends them. */
-  campo?: { store: Record<string, number>; orders: { good: string; qty: number }[] } | null;
+  campo?: {
+    store: Record<string, number>;
+    orders: { good: string; qty: number }[];
+    /** The goods' names, by code. */
+    names?: Record<string, string>;
+  } | null;
   onSupply?: () => void;
 }) {
   const [cell, setCell] = useState<number | null>(null);
@@ -443,11 +448,16 @@ export function TerraPlay({
                 {v.me.chest && <ChestLine chest={v.me.chest} />}
                 {campo && (
                   <div className="space-y-1.5 text-sm" data-terra-campo="">
-                    <p className="text-cream">{t.campoStore(goodsLine(campo.store))}</p>
+                    <p className="text-cream">
+                      {t.campoStore(goodsLine(campo.store, campo.names))}
+                    </p>
                     {campo.orders.length > 0 && (
                       <p className="text-cream-dim">
                         {t.campoAsks(
-                          goodsLine(Object.fromEntries(campo.orders.map((o) => [o.good, o.qty]))),
+                          goodsLine(
+                            Object.fromEntries(campo.orders.map((o) => [o.good, o.qty])),
+                            campo.names,
+                          ),
                         )}
                       </p>
                     )}
@@ -606,10 +616,10 @@ export function TerraPlay({
 }
 
 /** Goods in a line (« 12 pains, 10 briques »), or « vide ». */
-function goodsLine(goods: Record<string, number>): string {
+function goodsLine(goods: Record<string, number>, names: Record<string, string> = {}): string {
   const parts = Object.entries(goods)
     .filter(([, n]) => n > 0)
-    .map(([g, n]) => `${n} ${fr.themeNames.resource[g] ?? g}`);
+    .map(([g, n]) => `${n} ${fr.themeNames.resource[g] ?? names[g] ?? g}`);
   return parts.length > 0 ? parts.join(", ") : t.campoEmpty;
 }
 

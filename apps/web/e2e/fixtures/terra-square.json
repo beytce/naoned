@@ -504,7 +504,7 @@
       "aggressor": false,
       "sea": {},
       "embargo": -1,
-      "ducatsLeft": "0",
+      "chest": { "ecus": 85, "cap": 120, "perDay": 25 },
       "holdsCity": false,
       "bombard": { "cells": [], "shots": 0 },
       "peasantsBps": 5000,
@@ -517,7 +517,6 @@
       "requestsIn": [],
       "requestsOut": [],
       "raisesLeft": 3,
-      "buysLeft": 0,
       "giftsLeft": 30,
       "programme": null
     },
@@ -564,7 +563,14 @@
         "cap": "10000"
       },
       "capRaise": 20,
-      "troopBuy": null,
+      "chestPrices": {
+        "rocca": 40,
+        "borgo": 50,
+        "porto": 30,
+        "bombarda": 110,
+        "mura": 50,
+        "cap": 60
+      },
       "peacefulSafe": false,
       "peasants": false,
       "team": null,

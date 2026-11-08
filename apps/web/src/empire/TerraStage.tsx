@@ -93,7 +93,7 @@ export function TerraStage({
             className="absolute inset-0"
             intro={motion && phase === "in" ? intro : undefined}
             onBack={onBack}
-            campo={p.view?.campo ?? null}
+            campo={p.view?.campo ? { ...p.view.campo, names: p.goods } : null}
             onSupply={() => void act({ type: "empireDeliverCity", city: "campo" })}
           />
         </Suspense>

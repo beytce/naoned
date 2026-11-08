@@ -110,6 +110,16 @@ try {
       if (json?.kind === "empire" && json.view && campo) {
         json.view.map.camp = campo;
         json.view.terra.theatre = THEATRE;
+        // The supply by road: the Campo's orders of the day, and its store.
+        json.view.campo = {
+          orders: [
+            { id: "campo#e2e:bricks", good: "bricks", qty: 10 },
+            { id: "campo#e2e:bread", good: "bread", qty: 6 },
+          ],
+          posts: ["home"],
+          store: { bread: 12, planks: 8 },
+          point: null,
+        };
       }
       return json;
     };
@@ -168,6 +178,14 @@ try {
     await page.locator("[data-terra-play]").waitFor({ timeout: 60_000 });
     await page.waitForTimeout(6_000);
     await shot("3-terraferme");
+    // Its lands: the war chest, the Campo's store and « Livrer au Campo ».
+    await page
+      .locator("[data-terra-chest]")
+      .first()
+      .evaluate((el) => el.click());
+    await page.locator("[data-terra-campo]").waitFor({ timeout: 30_000 });
+    await shot("3-terres");
+    await page.keyboard.press("Escape");
     // « ‹ Carte »: the way back.
     await film("4-retour", async () => {
       await page
