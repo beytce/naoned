@@ -29,6 +29,19 @@ la Remise ne garde que tes véhicules ; le Marché de San Marco est le seul marc
 **La Faveur sert enfin.** Elle hâte un chantier : son temps restant réduit de moitié, pour 10 Faveur,
 puis 20, puis 40, trois fois par jour au plus. Elle ne s'achète jamais.
 
+**Les chaînes de Venise.** La saline de Chioggia fait du sel sans rien demander. Le champ de chanvre
+nourrit la corderie de la Tana, dont les cordages servent aux navires. La fornace de Murano fait plus
+de verre avec un peu de soude du Levant, achetée au Marché ; le bois reste possible. Sur l'eau, près
+de tes camps de bûcherons, les radeaux du Cadore descendent vers Venise.
+
+**La carte parle.** Une route ne s'anime que quand un de tes véhicules la prend. La Porta, tant
+qu'elle est fermée, t'attend en biscuit près du Fondaco, avec le niveau qui l'ouvre. Venise est sur
+sa lagune. Les nouveaux venus posent leur Fondaco près du Rialto, entre Padoue, Trévise et San
+Marco ; ton Fondaco reste où il est.
+
+**La ville s'entend.** Le campanile sonne tes heures, la lagune bat les quais, une scie ou un four se
+fait entendre quand tu touches un atelier qui travaille (le profil coupe le son).
+
 ## Ce qui change dans les règles
 
 - **Le Fondaco** : niveau 2 à 50 ducats, **niveau 3 à 250 ducats** (20 briques, 20 planches),
