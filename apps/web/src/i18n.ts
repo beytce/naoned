@@ -1177,7 +1177,11 @@ const frDict = {
         } as Record<string, string>,
         frontTitle: "Lancer un front",
         men: "Troupes engagées",
-        upTo: (n: number) => `jusqu'à ${n} case${n > 1 ? "s" : ""}`,
+        upTo: (n: number) => `environ ${n} case${n > 1 ? "s" : ""}`,
+        backLabel: "Reviendront",
+        back: (n: number) => `${n} troupe${n > 1 ? "s" : ""}`,
+        marchLabel: "Durée de la marche",
+        march: (hours: number) => `environ ${hours} h de jour`,
         home: (after: number, before: number) => `${after} au lieu de ${before}`,
         homeLabel: "Défenseurs par case chez toi",
         takes: "Il prendra",
@@ -2290,8 +2294,7 @@ const frDict = {
       },
       target: {
         cost: (cost: number) => `${cost} troupes pour prendre cette terre`,
-        losesSafety:
-          "Attaquer un marchand rend ta capitale prenable jusqu'à la fin de la semaine",
+        losesSafety: "Attaquer un marchand rend ta capitale prenable jusqu'à la fin de la semaine",
         tooWeak: (cost: number) => `Il faut au moins ${cost} troupes : monte le curseur`,
         plan: (troops: number, cells: number, spent: number, back: number) =>
           `${troops} troupes → ${cells} case${cells > 1 ? "s" : ""} (−${spent}) · ${back} revien${back > 1 ? "nent" : "t"}`,

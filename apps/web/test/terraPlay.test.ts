@@ -92,6 +92,33 @@ describe("a front's plan", () => {
     expect(p.defenseAfter).toBe(10);
     expect(p.ok).toBe(true);
   });
+  it("never promises more cells than the rival holds, and tells who comes back", () => {
+    const v = view({ costs: { [at(3, 2)]: 5 } });
+    const p = frontPlan(v, at(3, 2), 10_000);
+    expect(p.sent).toBe(80);
+    // 80 troops would pay 16 cells at the first one's price, but Contarini holds 2.
+    expect(p.cells).toBe(2);
+    expect(p.back).toBe(70);
+  });
+  it("tells how long the march lasts, slower on free land", () => {
+    const rules = { frontsMax: 3, minShareBps: 1_000, cellMinutes: 30, neutralMinutes: 90 };
+    const free = frontPlan(view({ rules } as Partial<TerraView>), at(2, 1), 5_000);
+    expect(free.hours).toBe(15);
+    const rival = frontPlan(
+      view({ rules, costs: { [at(3, 2)]: 5 } } as Partial<TerraView>),
+      at(3, 2),
+      10_000,
+    );
+    expect(rival.hours).toBe(1);
+  });
+  it("warns that a first attack on a merchant gives up the camp's safety, and of a bare home", () => {
+    const rules = { frontsMax: 3, minShareBps: 1_000, peacefulSafe: true };
+    const v = view({ rules, costs: { [at(3, 2)]: 5 } } as Partial<TerraView>);
+    expect(frontPlan(v, at(3, 2), 5_000).losesSafety).toBe(true);
+    expect(frontPlan(v, at(2, 1), 5_000).losesSafety).toBe(false);
+    expect(frontPlan(v, at(3, 2), 10_000).bare).toBe(true);
+    expect(frontPlan(v, at(3, 2), 5_000).bare).toBe(false);
+  });
   it("is refused when too weak or when the fronts are all out", () => {
     expect(frontPlan(view(), at(2, 1), 400).ok).toBe(false);
     const busy = view({

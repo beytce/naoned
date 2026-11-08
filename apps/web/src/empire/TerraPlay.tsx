@@ -252,11 +252,27 @@ export function TerraPlay({
                 <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-sm">
                   <dt className="text-cream-dim">{t.takes}</dt>
                   <dd className="text-right font-extrabold">{t.upTo(plan.cells)}</dd>
+                  <dt className="text-cream-dim">{t.backLabel}</dt>
+                  <dd className="text-right font-extrabold">{t.back(plan.back)}</dd>
+                  {plan.hours > 0 && (
+                    <>
+                      <dt className="text-cream-dim">{t.marchLabel}</dt>
+                      <dd className="text-right font-extrabold">{t.march(plan.hours)}</dd>
+                    </>
+                  )}
                   <dt className="text-cream-dim">{t.homeLabel}</dt>
-                  <dd className="text-right font-extrabold">
+                  <dd
+                    className={`text-right font-extrabold ${plan.bare ? "text-[rgb(var(--face))]" : ""}`}
+                    data-terra-bare={plan.bare ? "" : undefined}
+                  >
                     {t.home(plan.defenseAfter, plan.defenseBefore)}
                   </dd>
                 </dl>
+                {plan.losesSafety && (
+                  <p className="text-sm font-bold text-[rgb(var(--face))]">
+                    {g.target.losesSafety}
+                  </p>
+                )}
                 <Slab
                   className="w-full"
                   busy={busy}
