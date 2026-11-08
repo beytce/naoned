@@ -95,6 +95,8 @@ export interface EmpireView {
   queueHours?: number;
   /** The Favour a site's haste costs now (null: none left today). */
   hasteFavour?: number | null;
+  /** The deliveries each town received from the house (P3-07). */
+  served?: Record<string, number>;
   /** The embellishments bought with Seals, and the prices of all. */
   embellishments?: { owned: string[]; prices: Record<string, number> };
   asleep: boolean;

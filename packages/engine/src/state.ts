@@ -547,6 +547,8 @@ export interface EmpireHouse {
   vehicleLevels?: Record<string, number>;
   favour: number;
   seals: number;
+  /** The deliveries each town received from the house, for good (P3-07: the towns react). */
+  served?: Record<string, number>;
   /** The last deliveries brought (twelve at most), told to the player back from away. */
   delivered?: { city: string; pay: Deniers; at: number }[];
   /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */

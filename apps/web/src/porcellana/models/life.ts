@@ -191,3 +191,18 @@ export function barque(P: Palette, seed: number): { group: Group; tick: (t: numb
     },
   };
 }
+
+/**
+ * A town that knows the house (P3-07 of the players' audit: the towns did not react): one banner of
+ * accent at 3 deliveries, two at 10, three at 25, along its tile's north edge.
+ */
+export function loyaltyBanners(P: Palette, p: Object3D, tier: number): void {
+  const at = [-1.6, 0, 1.6].slice(0, Math.min(3, tier));
+  for (const x of at) {
+    cyl(p, 0.03, 0.03, 1.7, x, 0.18, -2.05, P.m("wood"), 8);
+    const cloth = dyn(new Mesh(cached("loyalty", () => new BoxGeometry(0.4, 0.55, 0.02))));
+    cloth.material = P.accentCloth;
+    cloth.position.set(x + 0.22, 1.6, -2.05);
+    p.add(cloth);
+  }
+}
