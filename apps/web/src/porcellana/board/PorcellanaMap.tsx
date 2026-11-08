@@ -593,12 +593,14 @@ function Board({
         y += PIN_GAP[1];
       }
       shown.push([x, y]);
-      el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
+      // Written only when it moved: a style written every frame costs a phone its fluidity.
+      const move = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
+      if (el.style.transform !== move) el.style.transform = move;
       // A pin with something to say stays in sight at every zoom (P0-12): a lot ready, a « + ».
       const out =
         (!tile.place.quiet || sh.chosen === tile.place.id || sh.placing || tile.place.ready) &&
         pinOut(c.t, l.from);
-      el.dataset.out = String(out);
+      if (el.dataset.out !== String(out)) el.dataset.out = String(out);
       if (tile.place.id === sh.chosen) sh.card?.place(x, y, w, h);
     }
   });
@@ -617,7 +619,7 @@ function Board({
   };
   return (
     <>
-      <Stage target={sh.target} phone={PHONE()} hours={live} />
+      <Stage target={sh.target} phone={PHONE()} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: the keyboard reaches each place by its pin, a button. */}
       <primitive
         object={root}
@@ -693,10 +695,11 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
   { p, now, onTarget, target, placing = null, onPick, onDomain },
   ref,
 ) {
-  // Read again each second at most: the workshops' states move with the clock.
-  const second = Math.floor(now / 1_000);
+  // Read again every five seconds at most (and at each new payload): the workshops' states move
+  // with the clock, but rebuilding the board every second made a phone stutter.
+  const second = Math.floor(now / 5_000);
   // biome-ignore lint/correctness/useExhaustiveDependencies: `second` stands for `now`.
-  const scene = useMemo(() => boardOf(p, second * 1_000), [p, second]);
+  const scene = useMemo(() => boardOf(p, second * 5_000), [p, second]);
   const [chosen, setChosen] = useState<string | null>(null);
   const [carded, setCarded] = useState(false);
   const sh = useRef<Shared | null>(null);
