@@ -180,6 +180,10 @@ export function StationPanel({
                 <span className="w-full text-sm">
                   {trade(h.trade)} · {h.shift === "day" ? t().day : t().night} ·{" "}
                   {t().level(h.level)}
+                  {/* Its fatigue, what slows it (the players' audit, B3: the night shift's use unseen). */}
+                  {(h.fatigue ?? 0) >= 500
+                    ? ` · ${t().tired(Math.round((h.fatigue ?? 0) / 100))}`
+                    : ""}
                 </span>
                 <Act
                   small
@@ -251,6 +255,12 @@ export function StationPanel({
             )
           ) : (
             <p className="mt-2 text-xs text-[#C9C3B9]">{t().noSeat}</p>
+          )}
+          {free === "night" && (
+            // What a night hand brings, said before hiring (B3 of the players' audit).
+            <p className="mt-2 text-xs text-[#C9C3B9]" data-night-why>
+              {t().nightWhy}
+            </p>
           )}
         </div>
       ) : (

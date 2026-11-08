@@ -738,7 +738,9 @@ export const en: Dictionary = {
       out: (n: string) => `Out · ${n}/h`,
       inDoor: "In",
       gain: (pct: number) =>
-        pct === 0 ? "Original plan" : `${pct > 0 ? "+" : ""}${pct} % on the original plan`,
+        pct === 0
+          ? "At the pace of a workshop never tended"
+          : `${pct > 0 ? "+" : ""}${pct} % on a workshop never tended`,
       goodsPerHour: (good: string) => `${good}/h`,
       quality: (n: number) => `Quality: ${n} of 3`,
       level: (n: number) => `Level ${n}`,
@@ -773,6 +775,9 @@ export const en: Dictionary = {
       addHand: (trade: string) => `Place a ${trade}`,
       hire: (trade: string, d: string) => `Hire a ${trade} · ${d} d`,
       noSeat: "All its seats are taken",
+      tired: (pct: number) => `tired ${pct}%`,
+      nightWhy:
+        "Alone, a hand tires and slows (up to a quarter). A night hand relieves it: each rests half the time, the station keeps its pace.",
       waiting: (n: number) =>
         n === 0
           ? "No one waits at the door"

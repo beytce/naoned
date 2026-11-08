@@ -666,7 +666,11 @@ const frDict = {
       out: (n: string) => `Sortie · ${n}/h`,
       inDoor: "Entrée",
       gain: (pct: number) =>
-        pct === 0 ? "Plan d'origine" : `${pct > 0 ? "+" : ""}${pct} % sur le plan d'origine`,
+        // Against the default plan worn and tired (the pace's reference): a new workshop starts
+        // above it, and falls back to it when never tended (the players' audit, UX 6.2).
+        pct === 0
+          ? "Au rythme d'un atelier jamais entretenu"
+          : `${pct > 0 ? "+" : ""}${pct} % sur un atelier jamais entretenu`,
       goodsPerHour: (good: string) => `${good}/h`,
       quality: (n: number) => `Qualité : ${n} sur 3`,
       level: (n: number) => `Niveau ${n}`,
@@ -701,6 +705,9 @@ const frDict = {
       addHand: (trade: string) => `Placer un ${trade}`,
       hire: (trade: string, d: string) => `Embaucher un ${trade} · ${d} d`,
       noSeat: "Toutes ses places sont prises",
+      tired: (pct: number) => `fatigué ${pct} %`,
+      nightWhy:
+        "Seul, un ouvrier se fatigue et ralentit (jusqu'à un quart). Un ouvrier de nuit le relaie : chacun se repose la moitié du temps, le poste garde son rythme.",
       waiting: (n: number) =>
         n === 0
           ? "Personne n'attend à la porte"
