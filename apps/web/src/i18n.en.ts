@@ -276,6 +276,8 @@ export const en: Dictionary = {
       depotSub: "The vehicles' quay",
       campo: "The Campo",
       campoSub: "The door to the Terraferma",
+      campoAsks: (goods: string) => `The supply asks: ${goods}`,
+      campoDeliver: "Deliver",
       arsenal: "The Arsenal",
       arsenalSub: "The ships",
       porta: "The Porta",
@@ -1269,6 +1271,10 @@ export const en: Dictionary = {
         chestLine: (n: number, perDay: number, cap: number) =>
           `War chest: ${n} écus · +${perDay} each morning, up to ${cap}`,
         chestShort: (n: number) => `The chest lacks ${n} écu${s(n)}`,
+        campoStore: (goods: string) => `The Campo's store: ${goods}`,
+        campoAsks: (goods: string) => `The supply asks: ${goods}`,
+        campoDeliver: "Deliver to the Campo",
+        campoEmpty: "empty",
         said: {
           recalled: "Front recalled · its troops come home ✓",
           built: (name: string) => `${name} built ✓`,

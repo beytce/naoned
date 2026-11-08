@@ -809,6 +809,8 @@ export interface PorcellanaMapProps {
   onTarget: (t: Target | null) => void;
   /** The game's target now: when it closes its dock, the place is let go. */
   target: Target | null;
+  /** A place card's second way touched (the Campo: « Livrer »). */
+  onAlt?: (place: BoardPlace) => void;
   /** A place being put down (the Remise, the Campo, the Porta, a fondaco): a free tile picked. */
   placing?: Placing | null;
   onPick?: (p: Picked | null) => void;
@@ -824,7 +826,7 @@ const SAWS = new Set<string>(["lumber_camp", "sawmill", "rope_walk"]);
 const KILNS = new Set<string>(["brickworks", "glassworks", "kiln"]);
 
 const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function PorcellanaMap(
-  { p, now, onTarget, target, placing = null, onPick, onDomain },
+  { p, now, onTarget, target, placing = null, onPick, onDomain, onAlt },
   ref,
 ) {
   // Read again each second at most: the workshops' states move with the clock.
@@ -1078,10 +1080,15 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
             go: current.go,
             ready: current.ready,
             tag: fr.empire.porcellana.readyTag,
+            ...(current.alt ? { alt: current.alt } : {}),
           }}
           onGo={() => {
             setCarded(false);
             onTarget(current.target);
+          }}
+          onAlt={() => {
+            setCarded(false);
+            onAlt?.(current);
           }}
           onClose={() => pick(null)}
         />

@@ -479,6 +479,8 @@ export function placesOf(p: EmpirePayload): MapPlace[] {
 
 /** A place's point on the chart (a counter's, or a city's). */
 export function placePoint(p: EmpirePayload, place: string): [number, number] | null {
+  // The Campo, a stop of the vehicles like a city (the supply by road).
+  if (place === "city:campo") return p.view?.campo?.point ?? null;
   if (place.startsWith("city:")) {
     const c = p.view?.map.cities.find((x) => x.code === place.slice(5));
     return c ? [c.x, c.y] : null;
@@ -488,6 +490,7 @@ export function placePoint(p: EmpirePayload, place: string): [number, number] | 
 
 /** A place's name: a city's, or a counter's. */
 export function placeName(p: EmpirePayload, place: string, regionName: (r: string) => string) {
+  if (place === "city:campo") return fr.empire.porcellana.campo;
   return place.startsWith("city:")
     ? (fr.empire.cityNames[place.slice(5)] ?? place.slice(5))
     : postLabel(p, place, regionName);

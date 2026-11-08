@@ -192,6 +192,9 @@ const frDict = {
       depotSub: "Le quai des véhicules",
       campo: "Le Campo",
       campoSub: "La porte de la Terraferme",
+      /** The supply by road (8 November 2026). */
+      campoAsks: (goods: string) => `L'intendance demande : ${goods}`,
+      campoDeliver: "Livrer",
       arsenal: "L'Arsenal",
       arsenalSub: "Les navires",
       porta: "La Porta",
@@ -1213,6 +1216,11 @@ const frDict = {
         chestLine: (n: number, perDay: number, cap: number) =>
           `Trésor : ${n} écus · +${perDay} chaque matin, jusqu'à ${cap}`,
         chestShort: (n: number) => `Il manque ${n} écu${n > 1 ? "s" : ""} au trésor`,
+        /** The supply by road (8 November 2026). */
+        campoStore: (goods: string) => `Magasin du Campo : ${goods}`,
+        campoAsks: (goods: string) => `L'intendance demande : ${goods}`,
+        campoDeliver: "Livrer au Campo",
+        campoEmpty: "vide",
         /** The pill of ink once an order is taken. */
         said: {
           recalled: "Front rappelé · ses troupes rentrent ✓",

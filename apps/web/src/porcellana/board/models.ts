@@ -109,8 +109,12 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
       return site(P);
     case "lane":
       return grove(P, o.seed, 4, ["round", "cypress"], o.keepOff);
-    case "campo":
-      return BY_KEY.get("campo")?.make?.(P, o) ?? null;
+    case "campo": {
+      // Its orders of the day in crates on its quay (the supply by road).
+      const b = BY_KEY.get("campo")?.make?.(P, o) ?? null;
+      if (b && tile.crates?.length) quayCrates(P, b.group, tile.crates);
+      return b;
+    }
     default: {
       const make = BY_KEY.get(key)?.make;
       const b = make ? make(P, o) : null;

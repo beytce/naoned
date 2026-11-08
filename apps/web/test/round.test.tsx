@@ -89,3 +89,22 @@ describe("a round waiting in its dock", () => {
     expect(html).toContain("La soute est pleine.");
   });
 });
+
+describe("the Campo, a stop of the round (the supply by road, 8 November 2026)", () => {
+  const withCampo = () => {
+    const p = payload(4, 30);
+    (p.view as unknown as { campo: unknown }).campo = {
+      orders: [{ id: "c1", good: "bricks", qty: 10 }],
+      posts: ["home"],
+      store: {},
+      point: [10, 10],
+    };
+    return p;
+  };
+  it("is open to the finger and loads its orders, paid nothing", () => {
+    expect(planRound(withCampo(), "c", []).open).toContain("campo");
+    const plan = planRound(withCampo(), "c", ["padova", "campo"]);
+    expect(plan.stops.map((s) => s.city)).toEqual(["padova", "campo"]);
+    expect(plan.stops[1]).toEqual({ city: "campo", orderIds: ["c1"], pay: 0n });
+  });
+});

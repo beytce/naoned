@@ -74,6 +74,8 @@ export interface TerraSceneProps {
     camps: { cell: number; holder: number; flag: string }[];
     /** The merchant's war chest, the share of its ceiling it holds (8 November 2026; absent: none). */
     chest?: number;
+    /** The Campo's store, in crates beside the camp (0 to 4; the supply by road). */
+    supply?: number;
     /** The buildings on the land: the fort, the borough, the port, the bombard, the walls. */
     buildings: BuildingPic[];
     /** The fronts marching: whose, how many men, the merchant's or a threat, what they take next. */
@@ -222,6 +224,8 @@ export function TerraBoard({
     // merchant's, its war chest.
     const waving: Built[] = [];
     let chest: ReturnType<typeof warChest> | null = null;
+    // The Campo's store beside the merchant's camp: up to four crates, shown as it fills.
+    const supply: Mesh[] = [];
     for (const camp of pic.camps) {
       if (standing.has(camp.cell)) continue;
       const built = warCamp(P, flagCloth(camp.flag));
@@ -241,6 +245,17 @@ export function TerraBoard({
         });
         built.group.add(chest.group);
       }
+      if (camp.holder === pic.me) {
+        const crate = new BoxGeometry(0.62, 0.5, 0.62);
+        for (let k = 0; k < 4; k++) {
+          const m = new Mesh(crate, P.m("wood"));
+          m.position.set(-1.9 + (k % 2) * 0.7, 0.33 + Math.floor(k / 2) * 0.5, 1.3);
+          m.castShadow = true;
+          m.visible = false;
+          built.group.add(m);
+          supply.push(m);
+        }
+      }
     }
     const fronts = new FrontLayer(BOARD.tile);
     root.add(fronts.group);
@@ -257,6 +272,7 @@ export function TerraBoard({
       fronts,
       waving,
       chest,
+      supply,
       /** The chest's gold as drawn: it rises and sinks toward the écus held. */
       chestShown: { k: -1 },
     };
@@ -677,6 +693,9 @@ export function TerraBoard({
       sh.k = sh.k < 0 || !live ? pic.chest : sh.k + (pic.chest - sh.k) * Math.min(1, dt * 3);
       board.chest.fill(sh.k);
     }
+    board.supply.forEach((m, k) => {
+      m.visible = k < (pic.supply ?? 0);
+    });
     // A camp stands while its holder keeps its cell; taken, it is gone.
     for (const camp of pic.camps) {
       const g = board.standing.get(camp.cell);

@@ -671,6 +671,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               placing={placing}
               onPick={setPicked}
               onDomain={setDomain}
+              onAlt={(place) => {
+                // The Campo's « Livrer »: its orders of the day, loaded and gone (the supply by road).
+                if (place.id.startsWith("campo:"))
+                  void act({ type: "empireDeliverCity", city: "campo" });
+              }}
               onTarget={(x) => {
                 if (placing) return;
                 // The Campo: into the Terraferma, its tiles turning over.

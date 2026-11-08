@@ -33,6 +33,8 @@ export function TerraPlay({
   touch,
   intro,
   onBack,
+  campo,
+  onSupply,
 }: {
   v: TerraView;
   now: number;
@@ -47,6 +49,9 @@ export function TerraPlay({
   intro?: TerraIntro;
   /** « ‹ Carte »: back to the map (the Terraferma's own scene). */
   onBack?: () => void;
+  /** The supply by road: the Campo's store and its orders of the day; « Livrer » sends them. */
+  campo?: { store: Record<string, number>; orders: { good: string; qty: number }[] } | null;
+  onSupply?: () => void;
 }) {
   const [cell, setCell] = useState<number | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
@@ -55,7 +60,15 @@ export function TerraPlay({
   const [count, setCount] = useState(10);
   const [holder, setHolder] = useState<number | null>(null);
   const focus = useMemo(() => focusOf(v), [v]);
-  const pic = useMemo(() => pictureOfView(v, focus), [v, focus]);
+  // The Campo's store in crates beside the camp: one a ten goods, four at most.
+  const stored = campo ? Object.values(campo.store).reduce((n, x) => n + x, 0) : 0;
+  const pic = useMemo(
+    () => ({
+      ...pictureOfView(v, focus),
+      ...(campo ? { supply: Math.min(4, Math.ceil(stored / 10)) } : {}),
+    }),
+    [v, focus, campo, stored],
+  );
   const card = useRef<PlaceCardHandle | null>(null);
   const placing = placementOpen(v, now);
   const info = cell !== null ? cellCard(v, cell, placing) : null;
@@ -428,6 +441,23 @@ export function TerraPlay({
                 </p>
                 <FrontList v={v} busy={busy} send={order} nameOf={nameOf} />
                 {v.me.chest && <ChestLine chest={v.me.chest} />}
+                {campo && (
+                  <div className="space-y-1.5 text-sm" data-terra-campo="">
+                    <p className="text-cream">{t.campoStore(goodsLine(campo.store))}</p>
+                    {campo.orders.length > 0 && (
+                      <p className="text-cream-dim">
+                        {t.campoAsks(
+                          goodsLine(Object.fromEntries(campo.orders.map((o) => [o.good, o.qty]))),
+                        )}
+                      </p>
+                    )}
+                    {campo.orders.length > 0 && onSupply && (
+                      <Slab className="w-full" tone="ghost" busy={busy} onClick={onSupply}>
+                        {t.campoDeliver}
+                      </Slab>
+                    )}
+                  </div>
+                )}
                 <div className="flex flex-col gap-2">
                   {v.me.raisesLeft > 0 && (
                     <Slab
@@ -573,6 +603,14 @@ export function TerraPlay({
       )}
     </div>
   );
+}
+
+/** Goods in a line (« 12 pains, 10 briques »), or « vide ». */
+function goodsLine(goods: Record<string, number>): string {
+  const parts = Object.entries(goods)
+    .filter(([, n]) => n > 0)
+    .map(([g, n]) => `${n} ${fr.themeNames.resource[g] ?? g}`);
+  return parts.length > 0 ? parts.join(", ") : t.campoEmpty;
 }
 
 /** The chest drawn small: a coffer whose gold fills to its share of the ceiling. */

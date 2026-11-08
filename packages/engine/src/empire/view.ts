@@ -45,6 +45,7 @@ import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import {
   CAMPO,
   buyableOf,
+  campoPoint,
   cellCentreOf,
   cellsWithin,
   citiesCovered,
@@ -168,6 +169,8 @@ export interface EmpireView {
     orders: { id: string; good: string; qty: number }[];
     posts: string[];
     store: Record<string, number>;
+    /** Where the vehicles bring them, on the chart. */
+    point: [number, number] | null;
   } | null;
   /** The last deliveries brought (the board plays them again on the player's return). */
   delivered: { city: string; pay: string; at: number }[];
@@ -579,6 +582,7 @@ export function empireView(
             })),
             posts: postsServing(house, s, CAMPO),
             store: house.campo?.stock ?? {},
+            point: campoPoint(house, s),
           }
         : null,
     delivered: (house.delivered ?? []).map((d) => ({ ...d, pay: d.pay.toString() })),
