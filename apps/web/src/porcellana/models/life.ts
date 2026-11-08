@@ -155,3 +155,39 @@ export function adornments(P: Palette, p: Object3D, codes: readonly string[]): v
     ball(p, 0.09, -1.75, 0.98, 1.75, P.m("trim"), 16);
   }
 }
+
+/**
+ * A boat on the lagoon (the players' audit, P3-04: the water was still): a low hull rowed slowly
+ * round its tile, rocking on the swell. Still in « moins d'animations ».
+ */
+export function barque(P: Palette, seed: number): { group: Group; tick: (t: number) => void } {
+  const group = new Group();
+  const boat = new Group();
+  const hull = dyn(new Mesh(cached("barque", () => new BoxGeometry(1.1, 0.14, 0.32))));
+  hull.material = P.m("wood");
+  hull.position.y = 0.08;
+  boat.add(hull);
+  const prow = dyn(new Mesh(cached("barque-prow", () => new BoxGeometry(0.14, 0.2, 0.2))));
+  prow.material = P.ink;
+  prow.position.set(0.55, 0.14, 0);
+  boat.add(prow);
+  ball(boat, 0.07, -0.25, 0.3, 0, P.m("trim"), 10);
+  if (seed % 2 === 0) {
+    const crate = dyn(new Mesh(cached("barque-crate", () => new BoxGeometry(0.22, 0.16, 0.2))));
+    crate.material = P.accent;
+    crate.position.set(0.15, 0.23, 0);
+    boat.add(crate);
+  }
+  dyn(boat);
+  group.add(boat);
+  const phase = (seed % 97) / 97;
+  return {
+    group,
+    tick: (t) => {
+      const a = phase * Math.PI * 2 + t * 0.08;
+      boat.position.set(Math.cos(a) * 1.2, Math.sin(t * 1.3 + phase * 9) * 0.03, Math.sin(a) * 1.2);
+      boat.rotation.y = -a - Math.PI / 2;
+      boat.rotation.z = Math.sin(t * 1.1 + phase * 5) * 0.04;
+    },
+  };
+}
