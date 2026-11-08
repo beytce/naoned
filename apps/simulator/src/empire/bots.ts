@@ -145,6 +145,12 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     expeditionsWon: 0,
     expeditionsTried: 0,
     terraValue: 0n,
+    campoUntil: 0,
+    campoDay: -1,
+    campoTrips: 0,
+    placesOffered: 0,
+    warGoods: 0,
+    warSurcharge: 0,
     expeditionDay: -1,
     ident: newIdentity(w.now),
     fine: new Map(),
@@ -415,6 +421,14 @@ function deliverOrders(w: World, h: House, _sinceHours: number) {
   const o = w.s.orders;
   if (!o) return;
   let places = landPlaces(w, h) * w.m.roundsPerSession;
+  h.placesOffered += places;
+  // The supply by road: a house that brings to the Campo sends a vehicle there once a day.
+  const day = Math.floor(w.now / DAY);
+  if (h.campoUntil > w.now && h.campoDay !== day && places > 0) {
+    h.campoDay = day;
+    h.campoTrips++;
+    places--;
+  }
   const covered = citiesCovered(seen(h), w.s);
   const convoy = tradeEffect(w, h, "orderBonus") + identityEffect(w, h, "orderBonus");
   for (const c of w.s.map.cities) {

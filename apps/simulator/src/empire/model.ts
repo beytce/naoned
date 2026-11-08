@@ -168,6 +168,15 @@ export interface House {
   expeditionsWon: number;
   expeditionsTried: number;
   terraValue: Deniers;
+  /** The supply by road: until when it brings to the Campo, the day of its last trip, the trips. */
+  campoUntil: number;
+  campoDay: number;
+  campoTrips: number;
+  /** The land vehicles' places offered to the towns (to read the Campo's share). */
+  placesOffered: number;
+  /** The war's goods taken, and of them the surcharge paid at Venice. */
+  warGoods: number;
+  warSurcharge: number;
   /** The day of its last expedition: one a day. */
   expeditionDay: number;
   /** Its identity as the engine reads it: Arte, knowledge, staff, lineage (step 5). */
@@ -315,6 +324,13 @@ export interface SimModel {
     playBps: Record<Activity, number>;
     favourValueDucats: number;
     sealValueDucats: number;
+    /**
+     * The supply by road (8 November 2026): the goods a week of war eats beyond the ration (the
+     * materials of a few buildings), and the share of the players that bring them to the Campo (a
+     * land vehicle a day taken from the towns); the others pay Venice half again.
+     */
+    warGoods: Record<string, number>;
+    deliverBps: Record<Activity, number>;
   };
   sessionsPerDay: Record<Activity, number[]>;
   /** The rounds a land vehicle makes in a session, to the cities' orders (1 November). */
