@@ -17,6 +17,8 @@ export interface PlaceCardInfo {
   ready?: boolean;
   /** The tag's word. */
   tag?: string;
+  /** The place's id (« workshop:w3 »): the tutorial finds its button by it. */
+  id?: string;
 }
 
 export interface PlaceCardHandle {
@@ -42,7 +44,13 @@ export const PlaceCard = forwardRef<
     },
   }));
   return (
-    <section ref={el} className="pc-card" aria-live="polite" aria-label={info.name}>
+    <section
+      ref={el}
+      className="pc-card"
+      aria-live="polite"
+      aria-label={info.name}
+      data-card-place={info.id}
+    >
       <button type="button" className="pc-x" aria-label="Fermer" onClick={onClose}>
         <svg
           viewBox="0 0 10 10"

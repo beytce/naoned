@@ -10,6 +10,7 @@ import {
 } from "../art/crest.js";
 import { Medal } from "../art/icons.js";
 import { P } from "../art/palette.js";
+import { replayTutors, skipAllTutors } from "../empire/tutor/flags.js";
 import { hapticsEnabled, setHapticsEnabled } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { LANG, LANGS, type Lang, keepLang, locale } from "../lang.js";
@@ -162,6 +163,38 @@ function SoundSetting() {
       label={fr.game.sound}
       hint={fr.game.soundHint}
     />
+  );
+}
+
+/** The tutorials (8 November 2026): passed for a player who knows the game, or played again. */
+function TutorSetting() {
+  const [said, setSaid] = useState<string | null>(null);
+  return (
+    <section className="space-y-2" data-tutor-setting>
+      <div className="flex flex-wrap gap-2">
+        <Slab
+          tone="ghost"
+          size="md"
+          onClick={() => {
+            skipAllTutors();
+            setSaid(fr.empire.tutor.skipped);
+          }}
+        >
+          {fr.empire.tutor.skipAll}
+        </Slab>
+        <Slab
+          tone="ghost"
+          size="md"
+          onClick={() => {
+            replayTutors();
+            setSaid(fr.empire.tutor.replayed);
+          }}
+        >
+          {fr.empire.tutor.replay}
+        </Slab>
+      </div>
+      {said && <p className="text-xs text-cream-dim">{said}</p>}
+    </section>
   );
 }
 
@@ -625,6 +658,7 @@ function ProfileBody(props: GameProps) {
                 <TextSizeSetting />
                 <SoundSetting />
                 <HapticsSetting />
+                <TutorSetting />
 
                 <PushSettings />
 

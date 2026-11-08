@@ -1126,6 +1126,111 @@ export const en: Dictionary = {
       deliver: (n: number, total: string) => `Deliver ${n} to the cities · ${total}`,
       sell: (n: number, total: string) => `Sell ${n} at the Market · ${total}`,
     },
+    tutorFeatures: {
+      porta: [
+        [
+          "The Porta is open: behind it, the lands of Rome.",
+          "You send your vehicles to fight Rome there. Nobody can attack you: the only risk comes from Rome.",
+        ],
+        [
+          "The quay: your vehicles leave from here.",
+          "Arm them at the Remise, then choose which ones go. A vehicle at the Porta no longer delivers to towns.",
+        ],
+        [
+          "The gates: stronger and stronger.",
+          "The first is played alone, in a few minutes. Each gate won opens the next.",
+        ],
+        [
+          "Launch the gate when your convoy is ready.",
+          "The battle plays by itself: you watch and touch the trumps at the right moment.",
+        ],
+        [
+          "What you win, what you risk.",
+          "You bring back relics, which give the plans of high-level modules. A vehicle destroyed comes back damaged; a vehicle still at the Porta when it closes is lost.",
+        ],
+      ] as [string, string][],
+      remise: [
+        ["The Remise: your vehicles.", "Here you buy, raise and arm the mules, carts and ships."],
+        ["Your fleet and its places.", "Each vehicle takes a place. Raise the Remise for more."],
+        [
+          "The models.",
+          "A larger model carries more and goes further. Some need materials, like the ships' ropes.",
+        ],
+        [
+          "Delivering with your vehicles.",
+          "Touch a town, choose its orders and « Deliver »: a free vehicle leaves by itself.",
+        ],
+      ] as [string, string][],
+      interior: [
+        [
+          "The inside of your workshop.",
+          "Here you see what it makes an hour and its quality. Each station does one step of the work.",
+        ],
+        [
+          "The bottleneck, ringed in red.",
+          "It is the slowest station: it sets the whole workshop's pace. Improve it first.",
+        ],
+        [
+          "Harvest and relaunch.",
+          "When lots are ready, this button harvests them and relaunches the workshop. Without you, it stops.",
+        ],
+        [
+          "Place a station.",
+          "Add or move stations to go faster. Machines wear out: look after them.",
+        ],
+        [
+          "My advice.",
+          "This button suggests the best setting of the moment. Touch a station to see its hands and its wear.",
+        ],
+      ] as [string, string][],
+      terra: [
+        [
+          "The Terraferma.",
+          "A one-week season against Houses of your level. Everyone goes in with equal arms.",
+        ],
+        [
+          "Your empire risks nothing.",
+          "What you built stays yours. The Terraferma is played beside it, a few minutes, several times a day.",
+        ],
+        [
+          "The week's ranking.",
+          "At the week's end, the best win rewards. A new season starts on Monday.",
+        ],
+      ] as [string, string][],
+    },
+    tutor: {
+      hint: "Touch what glows red.",
+      back: "Go back: touch what glows red.",
+      build: (name: string) => `Build your first workshop: a ${name.toLowerCase()}.`,
+      buildWhy: "Touch a free tile of your domain, then « Build a workshop », then « Build ».",
+      launch: (name: string) => `Your ${name.toLowerCase()} stands: launch its production.`,
+      launchWhy: "Enter the workshop and touch « Relaunch »: the first lot takes a few seconds.",
+      making: (good: string) => `Your first ${good.toLowerCase()} is being made…`,
+      makingWhy: "Watch the workshop work: it is ready in a moment.",
+      collect: (good: string) => `Your ${good.toLowerCase()} is ready: harvest it.`,
+      collectWhy: "A workshop with lots ready stops and waits for you: nothing runs without you.",
+      deliver: (city: string) => `${city} ordered wood from you: deliver it.`,
+      deliverWhy: "Open its orders and touch « Deliver »: your mule leaves at once.",
+      onWay: (city: string) => `Your mule is on its way to ${city}.`,
+      onWayWhy: "You are paid when it arrives. Watch it walk the road.",
+      sawmill: "Build a sawmill: it will make planks from your wood.",
+      sawmillWhy: "Your Fondaco rises with two workshops, planks and bricks.",
+      market: (good: string) => `You lack ${good.toLowerCase()}: buy them at the Market.`,
+      marketWhy: "San Marco's Market sells what you lack. Open it and touch « Buy 10 ».",
+      casa: "All is ready: raise your Fondaco to level 2.",
+      casaWhy: "Enter your Fondaco and touch « Fondaco lv. 2 ».",
+      rising: "Well done! Your Fondaco rises to level 2.",
+      risingWhy:
+        "You can build, produce, harvest, deliver and buy. I stay here: my red button always tells you the next step.",
+      done: "Continue",
+      next: "Next",
+      gotIt: "Got it",
+      skipAll: "Skip the tutorials",
+      replay: "Replay the tutorials",
+      skipped: "The tutorials are skipped.",
+      replayed: "The tutorials will play again the next time each place opens.",
+      stepOf: (n: number, of: number) => `${n}/${of}`,
+    },
     guide: {
       name: "Lorenzo, your factor",
       collect: (n: number) => (n === 1 ? "A lot is ready." : `${n} lots are ready.`),
@@ -1200,8 +1305,8 @@ export const en: Dictionary = {
           "It pays for the building sites. Sales and the cities' orders fill it.",
         ],
         [
-          "I will always tell you what to do.",
-          "Follow the gold button under my portrait: it is your House's next step.",
+          "I will guide you step by step.",
+          "At each gesture, touch what glows red: the rest waits. Then my red button will always tell you the next step.",
         ],
       ] as [string, string][],
       next: "Next",

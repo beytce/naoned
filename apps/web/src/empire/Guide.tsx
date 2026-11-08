@@ -225,7 +225,7 @@ function WelcomeArc({
 }
 
 const INTRO_KEY = "empireIntroSeen";
-const seen = () => {
+export const introSeen = () => {
   try {
     return localStorage.getItem(INTRO_KEY) === "1";
   } catch {
@@ -235,7 +235,7 @@ const seen = () => {
 
 /** Three cards at the founding: the loop, the purse, the Carnet. Kept as seen on the device. */
 export function Intro({ p }: { p: EmpirePayload }) {
-  const [page, setPage] = useState(seen() ? -1 : 0);
+  const [page, setPage] = useState(introSeen() ? -1 : 0);
   if (page < 0 || page >= t.intro.length) return null;
   const close = () => {
     try {
@@ -259,9 +259,6 @@ export function Intro({ p }: { p: EmpirePayload }) {
           aside={`${page + 1}/${t.intro.length}`}
           foot={
             <div className="mt-3 flex gap-2">
-              <Slab tone="ghost" size="sm" onClick={close}>
-                {t.skip}
-              </Slab>
               <Slab
                 size="sm"
                 className="flex-1"
