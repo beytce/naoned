@@ -264,6 +264,29 @@
   transform: rotate(-4deg);
   box-shadow: 0 3px 0 #8f2820;
 }
+/* The card's keys: the red one, and a quieter second way under it. */
+.pc-keys {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.pc-alt {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  background: transparent;
+  color: #fff;
+  font: 800 13px var(--pc-display);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pc-alt:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
 /* The way in: a red key, pressed down. */
 .pc-go {
   flex: none;
@@ -430,6 +453,20 @@
   padding: 4px 9px;
   box-shadow: 0 3px 0 rgba(23, 21, 15, 0.08);
   translate: -50% -140%;
+}
+/* A camp's name that opens its holder: touchable, with a hit area of 44 px. */
+.pc-terra-camp[data-touch] {
+  pointer-events: auto;
+  cursor: pointer;
+  border: 0;
+}
+.pc-terra-camp[data-touch]::after {
+  content: "";
+  position: absolute;
+  inset: -12px -6px;
+}
+.pc-terra-camp[data-touch][data-out="false"] {
+  pointer-events: none;
 }
 .pc-terra-town[data-out="false"],
 .pc-terra-camp[data-out="false"] {

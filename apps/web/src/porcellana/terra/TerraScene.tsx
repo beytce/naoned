@@ -15,6 +15,8 @@ export interface TerraSceneOuter extends Omit<TerraSceneProps, "labels"> {
   townName: (code: string) => string;
   /** A camp's label (the holder's name), from its cell; null: none. */
   campName?: (cell: number) => string | null;
+  /** A camp's label touched (its holder's dock). */
+  onCamp?: (cell: number) => void;
   /** Force the flat board (the tests, a weak device). */
   flat?: boolean;
 }
@@ -22,7 +24,7 @@ export interface TerraSceneOuter extends Omit<TerraSceneProps, "labels"> {
 export function TerraScene(props: TerraSceneOuter) {
   const { pic, townName, campName } = props;
   const labels = useMemo(() => new Map<string, HTMLElement>(), []);
-  const keyed: { key: string; text: string; camp: boolean; front?: string }[] = [
+  const keyed: { key: string; text: string; camp: boolean; front?: string; cell?: number }[] = [
     ...pic.cities.map((c) => ({ key: `town:${c.cell}`, text: townName(c.code), camp: false })),
     // The count of men at the head of the merchant's fronts and of those that threaten it.
     ...pic.fronts.flatMap((f) =>
@@ -40,7 +42,7 @@ export function TerraScene(props: TerraSceneOuter) {
     ...pic.camps.flatMap((c) => {
       const t = campName?.(c.cell);
       return t && pic.owner[c.cell] === c.holder && !pic.cities.some((x) => x.cell === c.cell)
-        ? [{ key: `camp:${c.cell}`, text: t, camp: true }]
+        ? [{ key: `camp:${c.cell}`, text: t, camp: true, cell: c.cell }]
         : [];
     }),
   ];
@@ -59,20 +61,40 @@ export function TerraScene(props: TerraSceneOuter) {
         <TerraBoard {...props} labels={labels} />
       </Canvas>
       <div className="pc-pins" aria-hidden="true">
-        {keyed.map((k) => (
-          <span
-            key={k.key}
-            ref={(el) => {
-              if (el) labels.set(k.key, el);
-              else labels.delete(k.key);
-            }}
-            className={k.front ? "pc-terra-front" : k.camp ? "pc-terra-camp" : "pc-terra-town"}
-            data-tone={k.front}
-            data-out="false"
-          >
-            {k.text}
-          </span>
-        ))}
+        {keyed.map((k) =>
+          // A camp's name is touched: its holder's dock (out of the tab order, the Allies list
+          // offers the same).
+          k.camp && props.onCamp && k.cell !== undefined ? (
+            <button
+              type="button"
+              tabIndex={-1}
+              key={k.key}
+              ref={(el) => {
+                if (el) labels.set(k.key, el);
+                else labels.delete(k.key);
+              }}
+              className="pc-terra-camp"
+              data-touch=""
+              data-out="false"
+              onClick={() => props.onCamp?.(k.cell as number)}
+            >
+              {k.text}
+            </button>
+          ) : (
+            <span
+              key={k.key}
+              ref={(el) => {
+                if (el) labels.set(k.key, el);
+                else labels.delete(k.key);
+              }}
+              className={k.front ? "pc-terra-front" : k.camp ? "pc-terra-camp" : "pc-terra-town"}
+              data-tone={k.front}
+              data-out="false"
+            >
+              {k.text}
+            </span>
+          ),
+        )}
       </div>
     </div>
   );

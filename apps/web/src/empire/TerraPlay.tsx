@@ -119,9 +119,19 @@ export function TerraPlay({
                 : info.defense !== null
                   ? t.defended(info.defense)
                   : "";
-    return { name, sub, line, go: info.dock ? (t.go[info.dock] ?? "") : "" };
+    // A rival's cell along the border: attack it, or see its holder (the alliance, the signals).
+    const alt =
+      info.kind === "border" && info.holder >= 0 && !v.holders[info.holder]?.nation
+        ? t.see(nameOf(info.holder))
+        : undefined;
+    return { name, sub, line, go: info.dock ? (t.go[info.dock] ?? "") : "", alt };
   })();
 
+  // The merchants touching the merchant's land, neither allies nor asking: whom to ally with.
+  const neighbours = [...focus].filter((i) => {
+    const h = v.holders[i];
+    return !!h && !h.me && !h.nation && !h.ally && !v.me?.requestsIn.includes(i) && h.cells > 0;
+  });
   const mine = v.fronts.filter((f) => f.mine);
   const threats = v.fronts.filter((f) => f.threat);
   const plan = cell !== null ? frontPlan(v, cell, share) : null;
@@ -144,6 +154,13 @@ export function TerraPlay({
         townName={(code) =>
           fr.themeNames.city[code] ?? code.charAt(0).toUpperCase() + code.slice(1)
         }
+        onCamp={(c) => {
+          const i = v.owner[c] ?? -1;
+          if (i < 0 || v.holders[i]?.me) return;
+          setCell(c);
+          setHolder(i);
+          setPanel("holder");
+        }}
         campName={(c) => {
           const i = v.owner[c] ?? -1;
           const h = v.holders[i];
@@ -190,6 +207,11 @@ export function TerraPlay({
           }}
           info={cardInfo}
           onGo={() => info?.dock && open(info.dock)}
+          onAlt={() => {
+            if (!info) return;
+            setHolder(info.holder);
+            setPanel("holder");
+          }}
           onClose={close}
         />
       )}
@@ -429,7 +451,7 @@ export function TerraPlay({
             {panel === "allies" && v.me && (
               <>
                 <PlaceHeader title={t.allies} onClose={close} />
-                {v.me.allies.length + v.me.requestsIn.length === 0 && (
+                {v.me.allies.length + v.me.requestsIn.length + neighbours.length === 0 && (
                   <p className="text-sm text-cream-dim">{t.noAlly}</p>
                 )}
                 {[...v.me.allies, ...v.me.requestsIn].map((i) => (
@@ -443,6 +465,28 @@ export function TerraPlay({
                     <span className="p-2.5 text-sm font-extrabold">
                       {nameOf(i)}
                       {v.me?.requestsIn.includes(i) ? ` · ${g.holder.accept}` : ""}
+                    </span>
+                  </ChoiceCard>
+                ))}
+                {neighbours.length > 0 && (
+                  <p className="text-xs font-bold uppercase tracking-[0.1em] text-cream-dim">
+                    {t.neighbours}
+                  </p>
+                )}
+                {neighbours.map((i) => (
+                  <ChoiceCard
+                    key={`n${i}`}
+                    onClick={() => {
+                      setHolder(i);
+                      setPanel("holder");
+                    }}
+                    attrs={{ "data-terra-neighbour": String(i) }}
+                  >
+                    <span className="flex items-center justify-between gap-2 p-2.5 text-sm">
+                      <span className="font-extrabold">{nameOf(i)}</span>
+                      <span className="text-cream-dim">
+                        {v.me?.requestsOut.includes(i) ? g.holder.asked : g.holder.ally}
+                      </span>
                     </span>
                   </ChoiceCard>
                 ))}

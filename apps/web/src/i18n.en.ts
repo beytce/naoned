@@ -1263,6 +1263,8 @@ export const en: Dictionary = {
         rankLine: (rank: number, of: number, glory: number) =>
           `${ordinal(rank)} of ${of} · ${glory} points`,
         someone: "A merchant",
+        see: (name: string) => `See ${name}`,
+        neighbours: "Your neighbours",
       },
       theatre: (band: number, n: number) => `Theatre of band ${band} · ${n} merchants`,
       contesaTheatre: (n: number) => `Contesa · ${n} companies`,

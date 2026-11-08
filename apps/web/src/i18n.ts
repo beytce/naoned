@@ -1206,6 +1206,8 @@ const frDict = {
         rankLine: (rank: number, of: number, glory: number) =>
           `${rank}${rank === 1 ? "er" : "e"} sur ${of} · ${glory} points`,
         someone: "Un marchand",
+        see: (name: string) => `Voir ${name}`,
+        neighbours: "Tes voisins",
       },
       theatre: (band: number, n: number) => `Théâtre de la bande ${band} · ${n} marchands`,
       contesaTheatre: (n: number) => `Contesa · ${n} compagnies`,
