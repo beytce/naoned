@@ -739,7 +739,11 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
         : null;
     // What the tutorial asks to touch, out of sight: looked at (8 November 2026).
     const asked = tutorFocus();
-    if (asked && (!chosen || chosen === asked)) sh.current.focus = asked;
+    if (asked && (!chosen || chosen === asked)) {
+      // The tutorial's ask goes before following a vehicle.
+      sh.current.follow = null;
+      sh.current.focus = asked;
+    }
   }
   // The tutorial asks for a place out of sight: what is chosen is let go, the camera goes there.
   const askedNow = tutorFocus();

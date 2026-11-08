@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { fr } from "../../i18n.js";
 import type { EmpirePayload } from "../types.js";
 import { firstTutorOn } from "./FirstTutor.js";
-import { Spotlight, firstInSight } from "./Spotlight.js";
+import { Spotlight, onScreen } from "./Spotlight.js";
 import { FEATURE_TUTORS, type FeatureTutor } from "./features.js";
 import { setTutorFlag, tutorFlag } from "./flags.js";
 
@@ -19,7 +19,7 @@ export function FeatureTutors({ p, now }: { p: EmpirePayload; now: number }) {
     if (playing) return;
     const id = window.setInterval(() => {
       if (first.current) return;
-      const due = FEATURE_TUTORS.find((x) => tutorFlag(x.id) === null && firstInSight([x.when]));
+      const due = FEATURE_TUTORS.find((x) => tutorFlag(x.id) === null && onScreen(x.when));
       if (due) setPlaying({ tutor: due, step: 0 });
     }, 600);
     return () => window.clearInterval(id);

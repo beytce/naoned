@@ -56,6 +56,28 @@ function offScreenPlace(chain: string[]): string | null {
   return null;
 }
 
+/** Whether something matching stands on the screen (a place opened), touchable or not. */
+export function onScreen(sel: string): boolean {
+  let list: Element[] = [];
+  try {
+    list = [...document.querySelectorAll(sel)];
+  } catch {
+    return false;
+  }
+  return list.some((el) => {
+    const r = el.getBoundingClientRect();
+    return (
+      r.width > 2 &&
+      r.height > 2 &&
+      r.bottom > 0 &&
+      r.right > 0 &&
+      r.top < innerHeight &&
+      r.left < innerWidth &&
+      getComputedStyle(el).visibility !== "hidden"
+    );
+  });
+}
+
 /** The first element of a chain in sight, and its box. */
 export function firstInSight(chain: string[]): { el: Element; box: DOMRect } | null {
   for (const sel of chain) {
