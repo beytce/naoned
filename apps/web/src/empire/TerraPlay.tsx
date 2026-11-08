@@ -154,7 +154,7 @@ export function TerraPlay({
 
   return (
     <div
-      className={`overflow-hidden ${className}`}
+      className={`porcellana overflow-hidden ${className}`}
       data-terra-play=""
       aria-label={fr.empire.terra.board}
     >
@@ -257,7 +257,7 @@ export function TerraPlay({
             <button
               key={k}
               type="button"
-              className="flex-1 rounded-2xl px-2 py-2 text-xs font-extrabold text-cream hover:bg-black/5"
+              className="min-h-11 flex-1 rounded-2xl px-2 text-xs font-extrabold text-cream hover:bg-black/5"
               onClick={() => {
                 if (k === "lands") setCell(v.me?.capital ?? null);
                 setPanel(k);
@@ -293,7 +293,7 @@ export function TerraPlay({
                   step={500}
                   value={share}
                   onChange={(e) => setShare(Number(e.target.value))}
-                  className="w-full accent-[rgb(var(--face))]"
+                  className="pc-range w-full"
                 />
                 <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-sm">
                   <dt className="text-cream-dim">{t.takes}</dt>
@@ -656,7 +656,7 @@ function HolderDock({
             max={Math.max(1, v.me.giftsLeft)}
             value={Math.min(count, Math.max(1, v.me.giftsLeft))}
             onChange={(e) => setCount(Number(e.target.value))}
-            className="w-full accent-[rgb(var(--face))]"
+            className="pc-range w-full"
           />
           <Slab
             className="w-full"

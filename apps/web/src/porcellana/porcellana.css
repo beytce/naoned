@@ -309,6 +309,12 @@
   transform: translateY(3px);
   box-shadow: 0 1px 0 #8f2820;
 }
+/* The cross: 30 px to see, 44 px to touch. */
+.pc-x::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+}
 .pc-x {
   position: absolute;
   top: -12px;
@@ -453,6 +459,52 @@
   padding: 4px 9px;
   box-shadow: 0 3px 0 rgba(23, 21, 15, 0.08);
   translate: -50% -140%;
+}
+/* A slider of the dock: a track of 8 px in a band of 44 px to touch, a thumb of 28 px. */
+.pc-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+}
+.pc-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(23, 21, 15, 0.14);
+}
+.pc-range::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(23, 21, 15, 0.14);
+}
+.pc-range::-moz-range-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--pc-accent);
+}
+.pc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -10px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: var(--pc-accent);
+  box-shadow: 0 3px 0 #8f2820;
+}
+.pc-range::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: var(--pc-accent);
+  box-shadow: 0 3px 0 #8f2820;
+}
+.pc-range:focus-visible {
+  outline: 2px solid var(--pc-ink);
+  outline-offset: 2px;
 }
 /* The pill of ink that says an order taken, over the board (the Terraferma, lot A4). */
 .pc-said {
