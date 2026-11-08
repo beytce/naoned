@@ -645,6 +645,12 @@ async function guide(page, check) {
       // first upgrade waiting, its « Passer »). Read again before calling it a skip.
       const now = (await bubble.innerText()).replace(/\s+/g, " ");
       if (INVEST_LATER.test(now)) continue;
+      // A window covers the step (the Market's sheet still open when the guide moved on): its
+      // « Passer » is the step's underneath, not a skip. Close the window, then read the step.
+      if (COVERED.test(now)) {
+        await page.keyboard.press("Escape");
+        continue;
+      }
       throw new Error(`the guide skips a step: « ${now} »`);
     }
     // The book's goals not yet met (a delivery still on the road): its reward comes, wait.
