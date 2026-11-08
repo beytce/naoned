@@ -297,6 +297,8 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       water: false,
       model,
       running: false,
+      // The Fondaco's level: so many people round it (P3-03).
+      ...(model === "fondaco" ? { size: house.casa } : {}),
       place: {
         id: `${model}:${k}`,
         target,
