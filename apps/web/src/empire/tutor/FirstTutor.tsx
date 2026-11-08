@@ -3,7 +3,7 @@
  * level 2, one gesture at a time under the spotlight. Its last card closes it; « Passer les
  * tutoriels » in the profile is the only other way out.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { fr } from "../../i18n.js";
 import { Ribbon, clock } from "../../ui.js";
 import { introSeen } from "../Guide.js";
@@ -51,17 +51,27 @@ export function firstTutorOn(p: EmpirePayload, now: number): boolean {
   return introSeen() && tutorFlag("first") === null && tutorStep(p, now) !== null;
 }
 
+/** How long a gesture may stay undone before « Je n'y arrive pas » is offered (ms). */
+const STUCK = 60_000;
+
 export function FirstTutor({ p, now }: { p: EmpirePayload; now: number }) {
   const [, redraw] = useState(0);
+  // The same gesture undone for a minute: the player may lift the veil for it (never locked in).
+  const since = useRef<{ key: string; at: number }>({ key: "", at: now });
+  const [freed, setFreed] = useState<string | null>(null);
   if (!firstTutorOn(p, now)) return null;
   const step = tutorStep(p, now);
   if (!step) return null;
+  const key = `${step.id}:${step.good ?? ""}`;
+  if (since.current.key !== key) since.current = { key, at: now };
+  const waiting = step.chain.length === 0;
+  const stuck = !waiting && now - since.current.at > STUCK;
   const w = tutorWords(p, step);
   const left = step.until ? Math.max(0, step.until - now) : null;
   const share =
     step.until && step.from ? (now - step.from) / Math.max(1, step.until - step.from) : null;
   return (
-    <Spotlight chain={step.chain} fallback={CLOSERS}>
+    <Spotlight chain={step.chain} fallback={CLOSERS} free={freed === key}>
       <p
         className="font-display text-[0.9375rem] font-extrabold leading-snug"
         data-tutor-step={step.id}
@@ -73,6 +83,16 @@ export function FirstTutor({ p, now }: { p: EmpirePayload; now: number }) {
         <div className="mt-2">
           <Ribbon value={share} label={clock(left)} />
         </div>
+      )}
+      {stuck && freed !== key && (
+        <button
+          type="button"
+          data-tutor-free
+          className="mt-2 min-h-11 text-sm font-bold text-[#625D55] underline"
+          onClick={() => setFreed(key)}
+        >
+          {t().stuck}
+        </button>
       )}
       {step.id === "rising" && (
         <button

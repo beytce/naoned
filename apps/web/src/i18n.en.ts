@@ -1223,6 +1223,7 @@ export const en: Dictionary = {
       risingWhy:
         "You can build, produce, harvest, deliver and buy. I stay here: my red button always tells you the next step.",
       done: "Continue",
+      stuck: "I can't: let me do it",
       next: "Next",
       gotIt: "Got it",
       skipAll: "Skip the tutorials",
