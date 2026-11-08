@@ -59,6 +59,17 @@
   transition: transform 0.18s ease, background 0.18s, color 0.18s, opacity 0.3s;
   padding: 0;
 }
+/* A finger's room round each pin (P1-10 of the players' audit): 44 px to touch, whatever its face. */
+.pc-pin::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(44px, 100%);
+  height: max(44px, 100%);
+  translate: -50% -50%;
+  border-radius: 999px;
+}
 .pc-pin:hover {
   transform: scale(1.12);
 }
