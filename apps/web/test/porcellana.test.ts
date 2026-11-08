@@ -176,6 +176,18 @@ describe("the bake", () => {
     });
     expect(flag).toBe(1);
   });
+
+  it("lets a plot's flat inset cast no shadow: it veiled the plot on some chips", () => {
+    const P = createPalette();
+    const g = new Group();
+    g.add(plot(P).group);
+    bake(g);
+    g.traverse((o) => {
+      if (!(o instanceof Mesh)) return;
+      const box = new Box3().setFromObject(o);
+      if (box.max.y - box.min.y < 0.12) expect(o.castShadow).toBe(false);
+    });
+  });
 });
 
 describe("the blush", () => {

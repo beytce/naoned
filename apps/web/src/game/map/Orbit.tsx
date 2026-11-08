@@ -818,7 +818,11 @@ export function CityOrbit({
         </div>
       </div>
 
-      <div className="relative z-10 mb-2 flex justify-center px-4">
+      {/* Its room kept from the start: the pill comes after its read, and pushed the orbit's
+        orders under it for a moment on a small phone (the e2e at 320 × 568). */}
+      <div
+        className={`relative z-10 mb-2 flex justify-center px-4 ${props.view.signoria ? "min-h-11" : ""}`}
+      >
         <SignoriaPill props={props} code={code} />
       </div>
 

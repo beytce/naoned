@@ -3,13 +3,23 @@
  * own space, so that a tile is a handful of draw calls and still lifts as one. What moves (marked
  * `dyn`, shapes.ts) stays apart.
  */
-import { BufferAttribute, type BufferGeometry, type Material, Mesh, type Object3D } from "three";
+import {
+  BufferAttribute,
+  type BufferGeometry,
+  type Material,
+  Mesh,
+  type Object3D,
+  Vector3,
+} from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 function underDyn(o: Object3D, root: Object3D): boolean {
   for (let q: Object3D | null = o; q && q !== root; q = q.parent) if (q.userData.dyn) return true;
   return false;
 }
+
+/** Below this height, a still mesh is flat on the ground: it casts no shadow. */
+const FLAT = 0.12;
 
 /** Merges a group's still meshes by material; returns how many meshes it left. */
 export function bake(group: Object3D): number {
@@ -18,7 +28,14 @@ export function bake(group: Object3D): number {
   const buckets = new Map<string, { mat: Material; cast: boolean; geos: BufferGeometry[] }>();
   const victims: Mesh[] = [];
   group.traverse((o) => {
-    if (!(o instanceof Mesh) || underDyn(o, group)) return;
+    if (!(o instanceof Mesh)) return;
+    if (underDyn(o, group)) {
+      // What moves stays apart; flat, it casts no shadow either.
+      o.geometry.computeBoundingBox();
+      const b = o.geometry.boundingBox;
+      if (b && (b.max.y - b.min.y) * o.getWorldScale(new Vector3()).y < FLAT) o.castShadow = false;
+      return;
+    }
     const mat = o.material as Material;
     let g = (o.geometry as BufferGeometry)
       .clone()
@@ -32,10 +49,16 @@ export function bake(group: Object3D): number {
         new BufferAttribute(new Float32Array((g.attributes.position?.count ?? 0) * 2), 2),
       );
     g.clearGroups();
-    const key = `${mat.uuid}${o.castShadow ? "c" : "n"}`;
+    // A flat thin thing on the ground (a plot's inset, a mark, a basin's water) casts no shadow:
+    // on some graphics chips its shadow fell on itself and veiled the plot in grey (the owner's
+    // report of 8 November 2026).
+    g.computeBoundingBox();
+    const flat = (g.boundingBox?.max.y ?? 1) - (g.boundingBox?.min.y ?? 0) < FLAT;
+    const cast = o.castShadow && !flat;
+    const key = `${mat.uuid}${cast ? "c" : "n"}`;
     let b = buckets.get(key);
     if (!b) {
-      b = { mat, cast: o.castShadow, geos: [] };
+      b = { mat, cast, geos: [] };
       buckets.set(key, b);
     }
     b.geos.push(g);
