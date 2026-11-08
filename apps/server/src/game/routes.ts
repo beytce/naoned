@@ -1848,8 +1848,6 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "terraBuild", playerId, cell: a.cell, kind: a.kind }];
     case "terraRaise":
       return [{ type: "terraRaise", playerId }];
-    case "terraBuyTroops":
-      return [{ type: "terraBuyTroops", playerId }];
     case "terraFire":
       return [{ type: "terraFire", playerId, cell: a.cell }];
     case "terraSignal":
@@ -1861,8 +1859,6 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
           ...(a.cell !== undefined ? { cell: a.cell } : {}),
         },
       ];
-    case "terraGift":
-      return [{ type: "terraGift", playerId, to: a.to, amount: a.amount }];
     case "terraEmbargo":
       return [{ type: "terraEmbargo", playerId, target: a.target }];
     case "terraSail":

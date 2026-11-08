@@ -11,10 +11,10 @@ import {
   bombardTargets,
   breakAlliance,
   buildOnTerra,
-  buyTroops,
   capOf,
   cellCost,
   cellsOf,
+  chestOf,
   fireBombard,
   forecastFronts,
   isNation,
@@ -131,7 +131,9 @@ export function labView(s: TerraState, cfg: Cfg, me: string, now: number): Terra
           aggressor: !!p.aggressor,
           sea: {},
           embargo: -1,
-          ducatsLeft: "0",
+          chest: cfg.chest
+            ? { ecus: chestOf(s, cfg, me, now), cap: cfg.chest.cap, perDay: cfg.chest.perDay }
+            : null,
           holdsCity: false,
           bombard: bombardTargets(s, cfg, me, now),
           peasantsBps: 5_000,
@@ -144,7 +146,6 @@ export function labView(s: TerraState, cfg: Cfg, me: string, now: number): Terra
           requestsIn: (s.requests ?? []).filter((r) => r.to === me).map((r) => at(r.from)),
           requestsOut: (s.requests ?? []).filter((r) => r.from === me).map((r) => at(r.to)),
           raisesLeft: Math.max(0, cfg.capRaise.perDay - (today?.raises ?? 0)),
-          buysLeft: cfg.troopBuy ? Math.max(0, cfg.troopBuy.perDay - (today?.buys ?? 0)) : 0,
           giftsLeft: 30,
           programme: null,
         }
@@ -167,9 +168,7 @@ export function labView(s: TerraState, cfg: Cfg, me: string, now: number): Terra
         cap: cfg.capRaise.price.toString(),
       },
       capRaise: cfg.capRaise.amount,
-      troopBuy: cfg.troopBuy
-        ? { amount: cfg.troopBuy.amount, price: cfg.troopBuy.price.toString() }
-        : null,
+      chestPrices: cfg.chest?.prices ?? null,
       peacefulSafe: false,
       peasants: false,
       team: null,
@@ -203,16 +202,13 @@ export function labAct(
         recallFront(s, me, a.frontId);
         break;
       case "terraBuild":
-        buildOnTerra(s, cfg, me, a.cell, a.kind);
+        buildOnTerra(s, cfg, me, a.cell, a.kind, now);
         break;
       case "terraFire":
         fireBombard(s, cfg, me, a.cell, now);
         break;
       case "terraRaise":
         raiseCap(s, cfg, me, now);
-        break;
-      case "terraBuyTroops":
-        buyTroops(s, cfg, me, now);
         break;
       case "terraAlly":
         proposeAlliance(s, cfg, me, a.other, now);

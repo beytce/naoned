@@ -228,7 +228,7 @@ export type EngineErrorCode =
   | "built"
   | "no_room"
   | "raise_limit"
-  | "no_troop_buy"
+  | "chest_short"
   | "buy_limit"
   | "troops_full"
   | "terra_off"

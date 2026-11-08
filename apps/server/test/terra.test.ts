@@ -113,7 +113,7 @@ describe("the Terraferma on the server", () => {
     expect(week.me.gain).toBe("0");
   });
 
-  it("shows the week's map, takes the merchant's commands and the ducats of the cap", async () => {
+  it("shows the week's map, takes the merchant's commands and the écus of the cap", async () => {
     await open({ terraferma: { live: true } });
     const ada = await player("ada@example.org");
     const bob = await player("bob@example.org", "lagoon");
@@ -147,9 +147,12 @@ describe("the Terraferma on the server", () => {
     expect(after.changes.filter((c: { from: number }) => c.from === -1).length).toBe(
       after.me.cells,
     );
+    // The cap is paid from the war chest in écus (8 November 2026), never the ducats.
     const cash = BigInt((await get(ada, "/api/game")).view.cash);
     expect((await act(ada, { type: "terraRaise" })).json().error).toBeUndefined();
-    expect(BigInt((await get(ada, "/api/game")).view.cash)).toBe(cash - 10_000n);
+    expect(BigInt((await get(ada, "/api/game")).view.cash)).toBe(cash);
+    const chest = (await get(ada, "/api/game/terra")).terra.me.chest;
+    expect(chest.ecus).toBe(after.me.chest.ecus - after.rules.chestPrices.cap);
     expect((await get(ada, "/api/game/terra")).terra.me.cap).toBe(
       after.me.cap + after.rules.capRaise,
     );

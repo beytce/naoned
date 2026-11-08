@@ -4,7 +4,6 @@ import {
   type TerraState,
   type WorldSettingsInput,
   advanceTerra,
-  buyTroops,
   capOf,
   cellCenter,
   cellsOf,
@@ -97,45 +96,5 @@ describe("the square grid of the Terraferma (Porcellana, lot 9)", () => {
         expect(terraNeighbors(s.map, i).some((n) => s.owner[n] === "a")).toBe(true);
     }
     expect(cellsOf(s, "a").length).toBeGreaterThan(5);
-  });
-});
-
-describe("troops bought with ducats (decision of the owner, 7 November 2026)", () => {
-  const buy = { amount: 10, price: 15_000, perDay: 2 };
-
-  it("is closed unless the settings open it", () => {
-    const cfg = config();
-    const s = newTerra(cfg, "seed", 6, START);
-    placeOnTerra(s, cfg, "a", freeCell(s), START + HOUR);
-    expect(code(() => buyTroops(s, cfg, "a", START + HOUR))).toBe("no_troop_buy");
-  });
-
-  it("adds troops up to the cap, a few times a day, and returns the price", () => {
-    const cfg = config({ troopBuy: buy });
-    const s = newTerra(cfg, "seed", 6, START);
-    const at = START + HOUR;
-    placeOnTerra(s, cfg, "a", freeCell(s), at);
-    const p = s.players.a as { troops: number };
-    p.troops = 10;
-    expect(buyTroops(s, cfg, "a", at)).toBe(15_000n);
-    expect(p.troops).toBe(20);
-    expect(buyTroops(s, cfg, "a", at)).toBe(15_000n);
-    expect(p.troops).toBe(30);
-    expect(code(() => buyTroops(s, cfg, "a", at))).toBe("buy_limit");
-    // the next day, the counter starts again
-    expect(code(() => buyTroops(s, cfg, "a", at + 24 * HOUR))).toBe("ok");
-  });
-
-  it("never goes past the cap: nothing piles up without end (golden rule 3)", () => {
-    const cfg = config({ troopBuy: buy });
-    const s = newTerra(cfg, "seed", 6, START);
-    const at = START + HOUR;
-    placeOnTerra(s, cfg, "a", freeCell(s), at);
-    const p = s.players.a as { troops: number };
-    const cap = capOf(s, cfg, "a");
-    p.troops = cap - 5;
-    buyTroops(s, cfg, "a", at);
-    expect(p.troops).toBe(cap);
-    expect(code(() => buyTroops(s, cfg, "a", at))).toBe("troops_full");
   });
 });

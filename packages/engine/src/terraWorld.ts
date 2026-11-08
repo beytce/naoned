@@ -24,12 +24,10 @@ import {
   alliesOf,
   breakAlliance,
   buildOnTerra,
-  buyTroops,
   chooseDecree,
   closeTerra,
   countRankedSkirmish,
   fireBombard,
-  giftDucats,
   isNation,
   joinTeam,
   launchFront,
@@ -368,13 +366,11 @@ export type TerraCommand =
   | { type: "terraSend"; playerId: PlayerId; to: PlayerId; count: number }
   | { type: "terraBuild"; playerId: PlayerId; cell: number; kind: TerraBuilding }
   | { type: "terraRaise"; playerId: PlayerId }
-  | { type: "terraBuyTroops"; playerId: PlayerId }
   | { type: "terraDecree"; playerId: PlayerId; code: string; target?: string }
   | { type: "terraPeasants"; playerId: PlayerId; shareBps: number }
   | { type: "terraSail"; playerId: PlayerId; aim: number; shareBps: number }
   | { type: "terraFire"; playerId: PlayerId; cell: number }
   | { type: "terraSignal"; playerId: PlayerId; kind: TerraSignalKind; cell?: number }
-  | { type: "terraGift"; playerId: PlayerId; to: PlayerId; amount: string }
   | { type: "terraEmbargo"; playerId: PlayerId; target: PlayerId | null }
   | TerraWithdraw
   | TerraSkirmishPay;
@@ -533,30 +529,25 @@ export function applyTerraOn(
     case "terraBuild": {
       const price = cfg.buildings[cmd.kind]?.price;
       if (price === undefined) fail("unknown_building_type");
-      if (balance(tx, cashAccount(id)) < price) fail("insufficient_funds");
+      // With the war chest, its écus pay (in the week's state); else the ducats.
+      if (!cfg.chest && balance(tx, cashAccount(id)) < price) fail("insufficient_funds");
       const goods = cfg.supply?.buildingMaterials[cmd.kind] ?? {};
       for (const [resource, qty] of Object.entries(goods))
         if ((tx.s.inventories[id]?.[resource]?.available ?? 0) < qty) fail("insufficient_stock");
-      buildOnTerra(map, cfg, id, cmd.cell, cmd.kind);
-      pay(tx, id, price, `terra:${cmd.kind}:${cmd.cell}`);
+      const ducats = buildOnTerra(map, cfg, id, cmd.cell, cmd.kind, now);
+      if (ducats > 0n) pay(tx, id, ducats, `terra:${cmd.kind}:${cmd.cell}`);
       takeGoods(tx, id, goods, `terra:${cmd.kind}:${cmd.cell}`);
       emit(tx, "terra_built", id, { kind: cmd.kind, cell: cmd.cell });
       break;
     }
     case "terraRaise": {
-      if (balance(tx, cashAccount(id)) < cfg.capRaise.price) fail("insufficient_funds");
+      if (!cfg.chest && balance(tx, cashAccount(id)) < cfg.capRaise.price)
+        fail("insufficient_funds");
       const bread = cfg.supply?.raiseBread ?? 0;
       if ((tx.s.inventories[id]?.bread?.available ?? 0) < bread) fail("insufficient_stock");
       const price = raiseCap(map, cfg, id, now);
-      pay(tx, id, price, "terra:cap");
+      if (price > 0n) pay(tx, id, price, "terra:cap");
       takeGoods(tx, id, bread > 0 ? { bread } : {}, "terra:cap");
-      break;
-    }
-    case "terraBuyTroops": {
-      const price = cfg.troopBuy?.price;
-      if (price === undefined) fail("no_troop_buy");
-      if (balance(tx, cashAccount(id)) < price) fail("insufficient_funds");
-      pay(tx, id, buyTroops(map, cfg, id, now), "terra:troops");
       break;
     }
     case "terraSail": {
@@ -574,15 +565,6 @@ export function applyTerraOn(
     case "terraSignal":
       signal(map, cfg, id, cmd.kind, cmd.cell, now);
       break;
-    case "terraGift": {
-      const amount = BigInt(cmd.amount);
-      if (!tx.s.players[cmd.to]) fail("unknown_player");
-      if (balance(tx, cashAccount(id)) < amount) fail("insufficient_funds");
-      giftDucats(map, cfg, id, cmd.to, amount, now);
-      transfer(tx, cashAccount(id), cashAccount(cmd.to), amount, "terra_gift", `terra:${id}`);
-      emit(tx, "terra_ducats_received", cmd.to, { from: id, amount: amount.toString() });
-      break;
-    }
     case "terraEmbargo":
       // Off once the Signoria's toll took its place (R2): no embargo without its cut.
       if (!cfg.diplomacy?.embargoBps) fail("terra_off");

@@ -51,8 +51,10 @@ export interface TerraPlayer {
   fixedCap?: number;
   /** The cell it set down on: never taken, so a merchant is never wiped off the map. */
   capital?: number;
-  /** Troops of cap bought with ducats this week. */
+  /** Troops of cap bought this week. */
   boughtCap?: number;
+  /** The war chest: the écus in it, as of the morning of `day` (counted from the week's start). */
+  chest?: { ecus: number; day: number };
   /**
    * Cap raises, troops and ducats sent to allies, bombard shots, ranked skirmishes paid, on the
    * day they were counted.
@@ -825,6 +827,7 @@ export function placeOnTerra(
     ),
     glory: 0,
     capital: cell,
+    ...(cfg.chest ? { chest: { ecus: Math.min(cfg.chest.cap, cfg.chest.start), day } } : {}),
   };
 }
 
@@ -1287,25 +1290,6 @@ export function signal(
   ];
 }
 
-/** Ducats given to an ally: counted for the day (the caller moves them through the books). */
-export function giftDucats(
-  s: TerraState,
-  cfg: TerraConfig,
-  from: string,
-  to: string,
-  amount: bigint,
-  now: number,
-): void {
-  merchant(s, from);
-  merchant(s, to);
-  const max = cfg.diplomacy?.ducatGiftPerDay ?? 0n;
-  if (!allied(s, from, to)) fail("not_allied");
-  if (amount <= 0n) fail("invalid_quantity");
-  const today = todayOf(s, s.players[from] as TerraPlayer, now);
-  if ((today.ducats ?? 0n) + amount > max) fail("gift_limit");
-  today.ducats = (today.ducats ?? 0n) + amount;
-}
-
 /** The rival whose deliveries the merchant's cities pay less (null: none). */
 export function setEmbargo(s: TerraState, id: string, target: string | null): void {
   merchant(s, id);
@@ -1319,15 +1303,38 @@ export function setEmbargo(s: TerraState, id: string, target: string | null): vo
   (s.players[id] as TerraPlayer).embargo = target;
 }
 
-// ——— Ducats: buildings and the cap (the caller takes the price) ———
+// ——— The war chest: the écus of the week (the owner's decisions of 8 November 2026) ———
 
-/** A rocca or a borgo on one of the merchant's cells. Returns its price in deniers. */
+/** The écus in a merchant's chest now: what it holds, and each morning's since, to its ceiling. */
+export function chestOf(s: TerraState, cfg: TerraConfig, id: string, now: number): number {
+  const c = cfg.chest;
+  const held = s.players[id]?.chest;
+  if (!c || !held) return 0;
+  const day = Math.max(held.day, Math.floor((now - s.startAt) / DAY_MS));
+  return Math.min(c.cap, held.ecus + c.perDay * (day - held.day));
+}
+
+/** Takes `price` écus from the chest, or refuses (`chest_short`) and takes nothing. */
+function spendChest(s: TerraState, cfg: TerraConfig, id: string, price: number, now: number) {
+  const have = chestOf(s, cfg, id, now);
+  if (have < price) fail("chest_short");
+  const player = s.players[id] as TerraPlayer;
+  player.chest = { ecus: have - price, day: Math.floor((now - s.startAt) / DAY_MS) };
+}
+
+// ——— Buildings and the cap: écus from the chest, or ducats (the caller takes the price) ———
+
+/**
+ * A building on one of the merchant's cells. With a war chest, its écus are taken and 0 returned;
+ * without, its price in deniers is returned, for the caller to take.
+ */
 export function buildOnTerra(
   s: TerraState,
   cfg: TerraConfig,
   id: string,
   cell: number,
   kind: TerraBuilding,
+  now = s.clock,
 ): bigint {
   merchant(s, id);
   if (s.owner[cell] !== id) fail("not_owner");
@@ -1337,37 +1344,24 @@ export function buildOnTerra(
   if (!def) fail("no_room");
   const room = Math.floor(cellsOf(s, id).length / def.perCells);
   if (terraBuildingsOf(s, id, kind).length >= room) fail("no_room");
+  if (cfg.chest) spendChest(s, cfg, id, cfg.chest.prices[kind], now);
   s.buildings = { ...(s.buildings ?? {}), [cell]: { owner: id, kind } };
-  return def.price;
+  return cfg.chest ? 0n : def.price;
 }
 
-/** The cap of troops raised for the week, a few times a day. Returns its price in deniers. */
+/**
+ * The cap of troops raised for the week, a few times a day. With a war chest, its écus are taken
+ * and 0 returned; without, its price in deniers is returned, for the caller to take.
+ */
 export function raiseCap(s: TerraState, cfg: TerraConfig, id: string, now: number): bigint {
   merchant(s, id);
   const player = s.players[id] as TerraPlayer;
   const today = todayOf(s, player, now);
   if (today.raises >= cfg.capRaise.perDay) fail("raise_limit");
+  if (cfg.chest) spendChest(s, cfg, id, cfg.chest.prices.cap, now);
   today.raises++;
   player.boughtCap = (player.boughtCap ?? 0) + cfg.capRaise.amount;
-  return cfg.capRaise.price;
-}
-
-/**
- * Troops bought with ducats, a few times a day, never past the cap (decision of the owner of 7
- * November 2026). Returns their price in deniers; the caller takes it.
- */
-export function buyTroops(s: TerraState, cfg: TerraConfig, id: string, now: number): bigint {
-  merchant(s, id);
-  const def = cfg.troopBuy;
-  if (!def) fail("no_troop_buy");
-  const player = s.players[id] as TerraPlayer;
-  const cap = capOf(s, cfg, id);
-  if (player.troops >= cap) fail("troops_full");
-  const today = todayOf(s, player, now);
-  if ((today.buys ?? 0) >= def.perDay) fail("buy_limit");
-  today.buys = (today.buys ?? 0) + 1;
-  player.troops = Math.min(cap, player.troops + def.amount);
-  return def.price;
+  return cfg.chest ? 0n : cfg.capRaise.price;
 }
 
 /** The decree the merchant would impose as Signore: public, it may change until the close. */

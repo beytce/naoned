@@ -156,6 +156,16 @@ export function TerraPlay({
   const mine = v.fronts.filter((f) => f.mine);
   const threats = v.fronts.filter((f) => f.threat);
   const plan = cell !== null ? frontPlan(v, cell, share) : null;
+  // The war chest (8 November 2026): the prices in écus, what the chest lacks; else the ducats.
+  const ecus = v.me?.chest?.ecus ?? 0;
+  const priceOf = (k: Kind | "cap") => {
+    const n = v.rules.chestPrices?.[k];
+    return n !== undefined ? t.ecus(n) : d(v.rules.prices[k]);
+  };
+  const short = (k: Kind | "cap") => {
+    const n = v.rules.chestPrices?.[k];
+    return n !== undefined && ecus < n ? t.chestShort(n - ecus) : undefined;
+  };
   const coastal = (c: number) =>
     [c - 1, c + 1, c - v.map.width, c + v.map.width].some((n) => v.map.terrain[n] === "w");
 
@@ -216,6 +226,22 @@ export function TerraPlay({
             <span className="h-3 w-3 rounded-full bg-[rgb(var(--face))]" aria-hidden="true" />
             {v.me.troops} / {v.me.cap}
             <span className="text-xs text-cream-dim">{g.perHour(v.me.recruit.perHour)}</span>
+          </button>
+        )}
+        {v.me?.chest && (
+          <button
+            type="button"
+            className="pc-pill pointer-events-auto flex min-h-11 items-center gap-2 px-3 text-sm font-extrabold tabular-nums text-cream"
+            onClick={() => {
+              setCell(v.me?.capital ?? null);
+              setPanel("lands");
+            }}
+            aria-label={t.chestLabel(v.me.chest.ecus, v.me.chest.cap)}
+            data-terra-chest=""
+          >
+            <ChestGauge share={v.me.chest.ecus / Math.max(1, v.me.chest.cap)} />
+            {v.me.chest.ecus}
+            <span className="text-xs text-cream-dim">{t.ecusUnit}</span>
           </button>
         )}
         <span className="pc-pill px-3 py-1.5 text-xs font-bold text-cream">
@@ -361,7 +387,7 @@ export function TerraPlay({
                       ? t.builtHere
                       : k === "porto" && !coastal(cell)
                         ? t.coastOnly
-                        : undefined;
+                        : short(k);
                     return (
                       <ChoiceCard
                         key={k}
@@ -373,7 +399,7 @@ export function TerraPlay({
                         <span className="flex flex-col gap-0.5 p-2.5">
                           <span className="text-sm font-extrabold">{g.buildings[k]}</span>
                           <span className="text-xs text-cream-dim">{g.mine.built[k]}</span>
-                          <span className="text-xs font-bold">{d(v.rules.prices[k])}</span>
+                          <span className="text-xs font-bold">{priceOf(k)}</span>
                         </span>
                       </ChoiceCard>
                     );
@@ -385,9 +411,7 @@ export function TerraPlay({
                   disabled={!kind}
                   onClick={() => kind && act({ type: "terraBuild", cell, kind })}
                 >
-                  {kind
-                    ? t.buildWith(g.buildings[kind] ?? kind, d(v.rules.prices[kind]))
-                    : t.buildTitle}
+                  {kind ? t.buildWith(g.buildings[kind] ?? kind, priceOf(kind)) : t.buildTitle}
                 </Slab>
               </>
             )}
@@ -403,30 +427,21 @@ export function TerraPlay({
                   {g.perHour(v.me.recruit.perHour)} · {t.rankLine(v.me.rank, v.players, v.me.glory)}
                 </p>
                 <FrontList v={v} busy={busy} send={order} nameOf={nameOf} />
+                {v.me.chest && <ChestLine chest={v.me.chest} />}
                 <div className="flex flex-col gap-2">
-                  {v.rules.troopBuy && (v.me.buysLeft ?? 0) > 0 && (
-                    <Slab
-                      className="w-full"
-                      busy={busy}
-                      onClick={() => order({ type: "terraBuyTroops" })}
-                    >
-                      {t.buyTroops(v.rules.troopBuy.amount, d(v.rules.troopBuy.price))}
-                    </Slab>
-                  )}
                   {v.me.raisesLeft > 0 && (
                     <Slab
                       className="w-full"
                       tone="ghost"
                       busy={busy}
+                      disabled={!!short("cap")}
                       onClick={() => order({ type: "terraRaise" })}
                     >
-                      {g.mine.raise(v.rules.capRaise)} · {d(v.rules.prices.cap)}
+                      {g.mine.raise(v.rules.capRaise)} · {priceOf("cap")}
                     </Slab>
                   )}
-                  {v.rules.troopBuy && (
-                    <p className="text-center text-xs text-cream-dim">
-                      {t.buysLeft(v.me.buysLeft ?? 0)}
-                    </p>
+                  {short("cap") && (
+                    <p className="text-center text-xs text-cream-dim">{short("cap")}</p>
                   )}
                 </div>
               </>
@@ -560,6 +575,29 @@ export function TerraPlay({
   );
 }
 
+/** The chest drawn small: a coffer whose gold fills to its share of the ceiling. */
+function ChestGauge({ share }: { share: number }) {
+  const k = Math.max(0, Math.min(1, share));
+  return (
+    <svg viewBox="0 0 20 16" width="20" height="16" aria-hidden="true">
+      <rect x="1.5" y="5.5" width="17" height="9" rx="2" fill="#fff" stroke="currentColor" />
+      <rect x="3" y={7 + 6 * (1 - k)} width="14" height={6 * k} rx="1" fill="#D9A21B" />
+      <path d="M1.5 6.5 Q10 0 18.5 6.5" fill="none" stroke="currentColor" />
+      <rect x="8.5" y="4.5" width="3" height="3" rx="0.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** The chest in the merchant's lands: its écus, each morning's, its ceiling. */
+function ChestLine({ chest }: { chest: { ecus: number; cap: number; perDay: number } }) {
+  return (
+    <p className="flex items-center gap-2 text-sm text-cream" data-terra-chest-line="">
+      <ChestGauge share={chest.ecus / Math.max(1, chest.cap)} />
+      {t.chestLine(chest.ecus, chest.perDay, chest.cap)}
+    </p>
+  );
+}
+
 /** What the pill says once an order is taken; empty: nothing. */
 function saidOf(a: TerraAction, v: TerraView, nameOf: (i: number) => string): string {
   const s = t.said;
@@ -588,8 +626,6 @@ function saidOf(a: TerraAction, v: TerraView, nameOf: (i: number) => string): st
       return s.placed;
     case "terraRaise":
       return s.raised;
-    case "terraBuyTroops":
-      return s.bought;
     default:
       return "";
   }

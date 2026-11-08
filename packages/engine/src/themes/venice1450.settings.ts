@@ -319,8 +319,16 @@ export const venice1450Settings: WorldSettingsInput = {
       mura: { price: 5_000, perCells: 10, radius: 1 },
     },
     capRaise: { amount: 20, price: 10_000, perDay: 3 },
-    // No troops bought with ducats: the owner closed it on 8 November 2026 for an equal war chest
-    // (docs/audit-terraferme-2026-11-08/00-synthese.md § 7); `troopBuy` stays absent.
+    // The equal war chest (the owner's decisions of 8 November 2026, docs/plan-terraferme-
+    // porcellana.md § 4 quinquies): the buildings and the cap paid in écus, the same for all, given
+    // at the start and each morning to a ceiling; « tight choices »: three or four buildings, or
+    // the cap raised twice, in a week. Measured in docs/calibration.md.
+    chest: {
+      start: 60,
+      perDay: 25,
+      cap: 120,
+      prices: { rocca: 40, borgo: 50, porto: 30, bombarda: 110, mura: 50, cap: 60 },
+    },
     // The war eats the goods (R1, docs/plan-rupture.md): a tenth of a loaf a troop and a day,
     // bread for the cap, materials for the buildings. Calibrated in docs/calibration.md.
     supply: {
@@ -397,7 +405,7 @@ export const venice1450Settings: WorldSettingsInput = {
     teams: { weeks: [2] },
     // Diplomacy: a signal each 5 minutes, up to 50 d a day to one's allies. The embargo from the
     // cities one holds is off since the Signoria's toll (R2, 27 October 2026).
-    diplomacy: { ducatGiftPerDay: 5_000, embargoBps: 0, signalMinutes: 5 },
+    diplomacy: { embargoBps: 0, signalMinutes: 5 },
     // The other powers of 1450 (recommendations of 20 October 2026): the Gonzaga hold Mantua and
     // strike back at whoever attacks them, the Este of Ferrara fall on the weak, the Patriarch of
     // Aquileia spreads slowly in the north-east, the Empire raids from the Alps.

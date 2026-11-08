@@ -577,13 +577,11 @@ export const worldSettingsSchema = z.object({
       /** Weeks of the season (from 0) played in teams: the merchants of a region together. */
       teams: z.object({ weeks: z.array(qty) }).optional(),
       /**
-       * Diplomacy: quick signals on the map (one each `signalMinutes`), ducats given to allies
-       * (`ducatGiftPerDay` at most), and an embargo from the cities one holds: they pay the
-       * rival `embargoBps` less for its deliveries.
+       * Diplomacy: quick signals on the map (one each `signalMinutes`), and an embargo from the
+       * cities one holds: they pay the rival `embargoBps` less for its deliveries. No ducats given
+       * to allies any more (8 November 2026: a way to pass ducats between accounts).
        */
-      diplomacy: z
-        .object({ ducatGiftPerDay: money, embargoBps: bps.max(10_000), signalMinutes: positive })
-        .optional(),
+      diplomacy: z.object({ embargoBps: bps.max(10_000), signalMinutes: positive }).optional(),
       /**
        * The other powers of 1450, beside Milan: each holds the land within `radius` of its seat
        * (a city of the map, or a point in bps of the map), a fixed cap of troops, and rides every
@@ -673,12 +671,27 @@ export const worldSettingsSchema = z.object({
           borgo: { price: 5_000, capBonus: 20, regenBonusBps: 1_000, perCells: 20 },
         }),
       /**
-       * Troops bought with ducats (destroyed by the caller), `amount` a time, `perDay` times a
-       * day, never past the cap. Opened by the owner on 7 November 2026, closed on 8 November for
-       * an equal war chest (docs/audit-terraferme-2026-11-08/00-synthese.md § 7). Absent: closed.
+       * The equal war chest (docs/plan-terraferme-porcellana.md § 4 quinquies, the owner's
+       * decisions of 8 November 2026): the buildings and the cap paid in écus, the Terraferma's own
+       * money, the same for every merchant of a theatre: `start` on setting down, `perDay` each
+       * morning of the week, never past `cap` (golden rule 3). Absent: they cost ducats.
        */
-      troopBuy: z.object({ amount: positive, price: money, perDay: positive }).optional(),
-      /** The cap raised for ducats (destroyed by the caller), a few times a day. */
+      chest: z
+        .object({
+          start: qty,
+          perDay: qty,
+          cap: positive,
+          prices: z.object({
+            rocca: positive,
+            borgo: positive,
+            porto: positive,
+            bombarda: positive,
+            mura: positive,
+            cap: positive,
+          }),
+        })
+        .optional(),
+      /** The cap raised (for ducats, destroyed by the caller, or for écus), a few times a day. */
       capRaise: z
         .object({ amount: qty, price: money, perDay: qty })
         .prefault({ amount: 10, price: 10_000, perDay: 2 }),

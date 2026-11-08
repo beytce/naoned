@@ -7,10 +7,10 @@ import {
   advanceTerra,
   alliesOf,
   buildOnTerra,
-  buyTroops,
   capOf,
   cellCost,
   cellsOf,
+  chestOf,
   chooseDecree,
   closeTerra,
   countRankedSkirmish,
@@ -83,9 +83,9 @@ export const TERRA_PROFILES: Record<string, TerraProfile> = {
     skirmishes: 0,
   },
   /**
-   * A rich merchant (its commerce pays 2 000 d a day into the war), the régulier's sessions:
-   * the measure of troops bought with ducats (decision of the owner, 7 November 2026). Not in
-   * the default mix; `--mix` brings it in.
+   * A rich merchant (its commerce would pay 2 000 d a day into the war), the régulier's sessions:
+   * with the war chest (8 November 2026) its ducats buy nothing more there (terra-chest.ts). Not
+   * in the default mix; `--mix` brings it in.
    */
   rich: {
     name: "riche",
@@ -406,18 +406,16 @@ function play(
       return o && o !== id && o !== MILAN && !alliesOf(s, id).includes(o);
     }),
   );
-  if (borderCell !== undefined && purse.left >= cfg.buildings.rocca.price)
-    spend(() => buildOnTerra(s, cfg, id, borderCell, "rocca"));
+  // With the war chest (8 November 2026), the écus pay, the same for all; else the purse.
+  const affords = (kind: "rocca" | "borgo" | "cap", ducats: bigint) =>
+    cfg.chest ? chestOf(s, cfg, id, now) >= cfg.chest.prices[kind] : purse.left >= ducats;
+  if (borderCell !== undefined && affords("rocca", cfg.buildings.rocca.price))
+    spend(() => buildOnTerra(s, cfg, id, borderCell, "rocca", now));
   const inner = cellsOf(s, id).find((c) => !s.buildings?.[c]);
   const borgo = cfg.buildings.borgo;
-  if (inner !== undefined && borgo && purse.left >= borgo.price)
-    spend(() => buildOnTerra(s, cfg, id, inner, "borgo"));
-  if (purse.left >= cfg.capRaise.price) spend(() => raiseCap(s, cfg, id, now));
-  // Troops bought with ducats (decision of the owner, 7 November 2026), while the purse allows.
-  const buy = cfg.troopBuy;
-  if (buy)
-    for (let k = 0; k < buy.perDay && purse.left >= buy.price; k++)
-      spend(() => buyTroops(s, cfg, id, now));
+  if (inner !== undefined && borgo && affords("borgo", borgo.price))
+    spend(() => buildOnTerra(s, cfg, id, inner, "borgo", now));
+  if (affords("cap", cfg.capRaise.price)) spend(() => raiseCap(s, cfg, id, now));
   const cap = capOf(s, cfg, id);
   if (player.troops * 10 < cap * 3) return;
   if (s.fronts.filter((f) => f.owner === id).length >= cfg.fronts.max) return;

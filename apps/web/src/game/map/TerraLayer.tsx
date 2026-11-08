@@ -2039,17 +2039,6 @@ export function TerraPanel({
                 disabled={gift <= 0 || !!v.closed}
                 onClick={() => act({ type: "terraSend", to: merchant.id as string, count: gift })}
               />
-              {v.rules.diplomacy && BigInt(me.ducatsLeft) >= 1_000n && (
-                <ActionButton
-                  icon={Icon.send()}
-                  label={t().diplomacy.give(d(1_000n))}
-                  tone="plain"
-                  disabled={!!v.closed}
-                  onClick={() =>
-                    act({ type: "terraGift", to: merchant.id as string, amount: "1000" })
-                  }
-                />
-              )}
               <ActionButton
                 icon={Icon.cross()}
                 label={t().holder.broken}

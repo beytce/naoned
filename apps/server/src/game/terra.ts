@@ -11,6 +11,7 @@ import {
   capOf,
   cellCost,
   cellsOf,
+  chestOf,
   forecastFronts,
   hourIn,
   hourWithin,
@@ -252,13 +253,16 @@ export function terraView(
           protectedUntil: me.protectedUntil,
           aggressor: me.aggressor ?? false,
           peasantsBps: peasantsOf(s, playerId),
-          /** The rival its cities pay less (null: none), and the ducats it may still give today. */
+          /** The rival its cities pay less (null: none). */
           embargo: me.embargo ? at(me.embargo) : -1,
-          ducatsLeft: (() => {
-            const max = cfg.diplomacy?.ducatGiftPerDay ?? 0n;
-            const used = me.today && me.today.day === day ? (me.today.ducats ?? 0n) : 0n;
-            return max > used ? max - used : 0n;
-          })(),
+          /** The war chest (8 November 2026): its écus now, its ceiling, each morning's (null: off). */
+          chest: cfg.chest
+            ? {
+                ecus: chestOf(s, cfg, playerId, now),
+                cap: cfg.chest.cap,
+                perDay: cfg.chest.perDay,
+              }
+            : null,
           /** Whether it holds a city (an embargo needs one). */
           holdsCity: cellsOf(s, playerId).some((i) => s.map.city[i]),
           /** The cells its bombards may hit now, and the shots left today. */
@@ -290,10 +294,6 @@ export function terraView(
           requestsIn: (s.requests ?? []).filter((r) => r.to === playerId).map((r) => at(r.from)),
           requestsOut: (s.requests ?? []).filter((r) => r.from === playerId).map((r) => at(r.to)),
           raisesLeft: Math.max(0, cfg.capRaise.perDay - today.raises),
-          /** Troops it may still buy today (decision of the owner, 7 November 2026). */
-          buysLeft: cfg.troopBuy
-            ? Math.max(0, cfg.troopBuy.perDay - ("buys" in today ? (today.buys ?? 0) : 0))
-            : 0,
           giftsLeft: Math.max(
             0,
             Math.floor((capOf(s, cfg, playerId) * cfg.alliances.giftShareBps) / 10_000) -
@@ -345,8 +345,8 @@ export function terraView(
         cap: cfg.capRaise.price,
       },
       capRaise: cfg.capRaise.amount,
-      /** Troops bought with ducats, so many a time for so much (null: closed). */
-      troopBuy: cfg.troopBuy ? { amount: cfg.troopBuy.amount, price: cfg.troopBuy.price } : null,
+      /** The buildings' and the cap's prices in écus, from the war chest (null: in ducats). */
+      chestPrices: cfg.chest?.prices ?? null,
       protectionHours: cfg.start.protectionHours,
       peacefulSafe: cfg.fronts.peacefulSafe && !cfg.fronts.capitalSafe,
       /** Soldiers and peasants: whether the slider is played. */
@@ -355,10 +355,8 @@ export function terraView(
       team: s.teamMode
         ? (s.players[playerId]?.team ?? state.players[playerId]?.region ?? null)
         : null,
-      /** Diplomacy: signals, ducats to allies, embargo (null: off). */
-      diplomacy: cfg.diplomacy
-        ? { ducatGiftPerDay: cfg.diplomacy.ducatGiftPerDay, embargoBps: cfg.diplomacy.embargoBps }
-        : null,
+      /** Diplomacy: signals, embargo (null: off). */
+      diplomacy: cfg.diplomacy ? { embargoBps: cfg.diplomacy.embargoBps } : null,
       /** The war's goods (R1): bread for the cap, materials by building (null: ducats only). */
       supply: cfg.supply
         ? { raiseBread: cfg.supply.raiseBread, materials: cfg.supply.buildingMaterials }

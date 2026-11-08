@@ -1190,8 +1190,6 @@ const frDict = {
         builtHere: "Case déjà bâtie",
         coastOnly: "Au bord de l'eau seulement",
         buildWith: (name: string, price: string) => `${name} · ${price}`,
-        buyTroops: (n: number, price: string) => `+${n} troupes · ${price}`,
-        buysLeft: (n: number) => `encore ${n} achat${n > 1 ? "s" : ""} aujourd'hui`,
         aimTitle: "Viser",
         aimHint:
           "Touche une terre ennemie éclairée : elle et ses voisines du même marchand redeviennent libres.",
@@ -1208,6 +1206,13 @@ const frDict = {
         someone: "Un marchand",
         see: (name: string) => `Voir ${name}`,
         neighbours: "Tes voisins",
+        /** The war chest, in écus (8 November 2026). */
+        ecus: (n: number) => `${n} écu${n > 1 ? "s" : ""}`,
+        ecusUnit: "écus",
+        chestLabel: (n: number, cap: number) => `Trésor : ${n} écus sur ${cap}`,
+        chestLine: (n: number, perDay: number, cap: number) =>
+          `Trésor : ${n} écus · +${perDay} chaque matin, jusqu'à ${cap}`,
+        chestShort: (n: number) => `Il manque ${n} écu${n > 1 ? "s" : ""} au trésor`,
         /** The pill of ink once an order is taken. */
         said: {
           recalled: "Front rappelé · ses troupes rentrent ✓",
@@ -1221,7 +1226,6 @@ const frDict = {
           fired: "La bombarde a tiré ✓",
           placed: "Camp posé ✓",
           raised: "Maximum relevé ✓",
-          bought: "Troupes levées ✓",
         },
       },
       theatre: (band: number, n: number) => `Théâtre de la bande ${band} · ${n} marchands`,
@@ -1562,6 +1566,7 @@ const frDict = {
     } as Record<string, [string, string]>,
     errors: {
       insufficient_funds: "Pas assez de ducats.",
+      chest_short: "Il manque des écus au trésor de guerre.",
       bad_key: "Cette demande ne se comprend pas.",
       invalid_input: "Ce choix n'existe pas.",
       insufficient_seals: "Pas assez de Sceaux.",
@@ -2265,7 +2270,6 @@ const frDict = {
           peace: "Paix",
         } as Record<string, string>,
         target: "Désigner",
-        give: (amount: string) => `Donner ${amount}`,
         embargo: "Embargo",
         lift: "Lever l'embargo",
       },
@@ -4790,6 +4794,7 @@ const frDict = {
         lot_closed: "Ce lot est clos.",
         one_lot: "Vous menez déjà un lot de ces enchères.",
         insufficient_funds: "Pas assez de ducats.",
+        chest_short: "Il manque des écus au trésor de guerre.",
       } as Record<string, string>,
     },
     /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
@@ -5015,6 +5020,7 @@ const frDict = {
       no_bale: "Aucun colis au quai pour l'instant : le prochain est en route.",
       bales_off: "Pas de colis de Faraj dans ce monde.",
       insufficient_funds: "Pas assez de ducats.",
+      chest_short: "Il manque des écus au trésor de guerre.",
       shares_off: "Pas d'actions dans ce monde.",
       too_early: "La cotation n'est pas encore ouverte.",
       not_for_npc: "Une Maison de l'ordinateur ne se cote pas.",
