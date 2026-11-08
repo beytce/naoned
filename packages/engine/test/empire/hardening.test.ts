@@ -120,4 +120,24 @@ describe("buying at the market (golden rule 3)", () => {
     w.do({ type: "empireSell", playerId: "b", good: "wheat", qty: 100 });
     expect(stock(w, "wheat", "b")).toBe(90);
   });
+
+  it("pays no newcomers' premium on what the house bought here today and sells again (P1-20)", () => {
+    const over = {
+      casa: empire.casa?.map((c) => ({ ...c, storeCap: 1_000 })),
+      newcomers: { rawBonusBps: 2_000, untilCasa: 20 },
+    };
+    const bought = world(over);
+    const before = cash(bought);
+    bought.do({ type: "empireBuy", playerId: "a", good: "wheat", qty: 5 });
+    const paid = before - cash(bought);
+    const mid = cash(bought);
+    bought.do({ type: "empireSell", playerId: "a", good: "wheat", qty: 5 });
+    // Sold back at the market's price, without the premium: never more than it cost.
+    expect(cash(bought) - mid).toBeLessThanOrEqual(paid);
+    const made = world(over);
+    made.give("a", "wheat", 5);
+    const m0 = cash(made);
+    made.do({ type: "empireSell", playerId: "a", good: "wheat", qty: 5 });
+    expect(cash(made) - m0).toBeGreaterThan(cash(bought) - mid);
+  });
 });

@@ -307,10 +307,17 @@ export function sellAt(
     heldAt(tx, h, playerId, posts, good),
   );
   if (n <= 0) return 0;
+  // What the house bought here today and sells again earns neither the newcomers' premium nor the
+  // Carnet (P1-20 of the players' audit: a risk-free round of 10 to 13 %).
+  const resold = Math.min(n, Math.max(0, (book.bought[key] ?? 0) - (book.sold[key] ?? 0)));
+  const own = n - resold;
   book.sold[key] = (book.sold[key] ?? 0) + n;
   takeFrom(tx, h, playerId, posts, good, n, "empire_sale");
   const bonus = isRaw(tx, good) ? rawBonusBps(h.casa, s) : 0;
-  const gross = applyBpsFloor(priceAt(ref, mk.pressureBps, s) * BigInt(n), 10_000 + bonus);
+  const unit = priceAt(ref, mk.pressureBps, s);
+  const gross =
+    applyBpsFloor(unit * BigInt(own), 10_000 + bonus) +
+    applyBpsFloor(unit * BigInt(resold), 10_000);
   receive(tx, playerId, gross, `dogana:${region}:${good}`);
   transfer(
     tx,
@@ -320,7 +327,7 @@ export function sellAt(
     "market_tax",
   );
   mk.soldToday += n;
-  advanceCarnet(h, "sell", n);
+  if (own > 0) advanceCarnet(h, "sell", own);
   mk.pressureBps = pressureAfterTrade(mk.pressureBps, n, Math.max(1, depth), "sell", s);
   remember(mk, tx.now);
   return n;
