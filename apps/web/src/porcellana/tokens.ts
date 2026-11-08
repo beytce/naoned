@@ -114,7 +114,12 @@ export const FLIP = {
   handoff: 1.45,
   fade: 0.6,
   total: 2.3,
-  /** The board of the Terraferma: from the whole map to the merchant's lands. */
+  /**
+   * The board of the Terraferma: it follows the map's draw-back on the camp (the tiles' backs are
+   * its cells there, the fade unseen), then out to the whole map for `reveal`, then down to the
+   * merchant's lands for `settle`.
+   */
+  reveal: 0.8,
   settle: 1.3,
   /** The way back runs this much faster. */
   back: 1.35,

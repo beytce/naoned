@@ -6,9 +6,29 @@
  * backwards, faster. Pure: times in seconds since the way started.
  */
 import { easeOutBack, easeOutCubic } from "./arrival.js";
+import { holderStyle } from "./terra/glaze.js";
 import { FLIP } from "./tokens.js";
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+
+/**
+ * The way slowed down to look at it, or to tune it by eye: « ?lenteur=10 » in the address plays
+ * it ten times slower (1 otherwise).
+ */
+export const FLIP_SLOW = (() => {
+  try {
+    const n = Number(new URLSearchParams(window.location.search).get("lenteur"));
+    return n > 1 ? n : 1;
+  } catch {
+    return 1;
+  }
+})();
+
+/**
+ * The way's clock, in seconds: the wall's, not a scene's (the map's tiles, the Terraferma's
+ * board and its fade keep together on a slow device), slowed by `FLIP_SLOW`.
+ */
+export const flipNow = () => performance.now() / 1_000 / FLIP_SLOW;
 
 export const easeInOutCubic = (x: number) => {
   const t = clamp01(x);
@@ -78,8 +98,9 @@ const mix = (a: [number, number, number], b: [number, number, number], k: number
 
 /**
  * The back of the map's tile at (dx, dz) tiles from the Campo: the Terraferma's cell as far from the
- * merchant's camp (the map's middle without one), glazed as on its board: the merchant in red, its
- * allies pale, the nations in biscuit, the others in ink; free land porcelain, water lagoon. A
+ * merchant's camp (the map's middle without one), glazed as on its board (the rule « Encres »,
+ * terra/glaze.ts): the merchant in red, its allies pale, the nations in biscuit, the others in ink;
+ * free land porcelain, water lagoon. As on the board, so that its fade over the map is not seen. A
  * colour as a number (0xRRGGBB).
  */
 export function terraBack(v: TerraBackView | null, dx: number, dz: number): number {
@@ -91,10 +112,9 @@ export function terraBack(v: TerraBackView | null, dx: number, dz: number): numb
   if (i < 0 || j < 0 || i >= W || j >= v.map.height) return mix(WATER, WATER, 0);
   const c = j * W + i;
   if (v.map.terrain[c] === "w") return mix(WATER, WATER, 0);
-  const h = v.holders[v.owner[c] ?? -1];
+  const k = v.owner[c] ?? -1;
+  const h = v.holders[k];
   if (!h) return mix(PORCELAIN, PORCELAIN, 0);
-  if (h.me) return mix(PORCELAIN, rgb("#C23B2E"), 0.85);
-  if (h.ally) return mix(PORCELAIN, rgb("#16897A"), 0.35);
-  if (h.nation) return mix(PORCELAIN, rgb("#B39470"), 0.55);
-  return mix(PORCELAIN, rgb("#2A2725"), 0.3);
+  const st = holderStyle(h, k);
+  return mix(PORCELAIN, rgb(st.colour), st.alpha);
 }

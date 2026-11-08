@@ -12,6 +12,7 @@ import { placementOpen } from "../game/map/TerraLayer.js";
 import type { TerraAction, TerraView } from "../game/types.js";
 import { fr } from "../i18n.js";
 import { PlaceCard, type PlaceCardHandle, type PlaceCardInfo } from "../porcellana/PlaceCard.js";
+import type { TerraIntro } from "../porcellana/terra/TerraBoard.js";
 import { TerraScene } from "../porcellana/terra/TerraScene.js";
 import { pictureOfView } from "../porcellana/terra/picture.js";
 import { type DockKind, cellCard, focusOf, frontPlan } from "../porcellana/terra/play.js";
@@ -42,8 +43,8 @@ export function TerraPlay({
   className?: string;
   /** Touches a cell from outside (the laboratory's buttons). */
   touch?: { current: ((cell: number | null) => void) | null };
-  /** The way in: the board opens on the whole map and settles on the camp after so long (s). */
-  intro?: number;
+  /** The way in: the board follows the map's draw-back, then settles on the camp. */
+  intro?: TerraIntro;
   /** « ‹ Carte »: back to the map (the Terraferma's own scene). */
   onBack?: () => void;
 }) {

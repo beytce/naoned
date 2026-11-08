@@ -8,7 +8,8 @@
 import { Suspense, useEffect, useRef } from "react";
 import type { TerraAction, TerraView } from "../game/types.js";
 import { fr } from "../i18n.js";
-import { stageOpacity } from "../porcellana/flip.js";
+import { flipNow, stageOpacity } from "../porcellana/flip.js";
+import type { TerraIntro } from "../porcellana/terra/TerraBoard.js";
 import { FLIP } from "../porcellana/tokens.js";
 import { TerraBody, TerraPlay, useTerraBoard } from "./Terra.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
@@ -26,6 +27,7 @@ export function TerraStage({
   phase,
   first,
   motion,
+  intro,
   onBack,
 }: {
   p: EmpirePayload;
@@ -37,6 +39,8 @@ export function TerraStage({
   first: TerraView | null;
   /** The tiles turn over (WebGL, motion allowed); else a plain fade. */
   motion: boolean;
+  /** When the way in started, and a map tile's width on the screen then. */
+  intro?: TerraIntro;
   onBack: () => void;
 }) {
   const theatre = !!p.view?.terra.theatre;
@@ -45,10 +49,10 @@ export function TerraStage({
   // The fade, on the frame's clock: in after the tiles have turned, out at once on the way back.
   // biome-ignore lint/correctness/useExhaustiveDependencies: once a phase.
   useEffect(() => {
-    const start = performance.now();
+    const start = flipNow();
     let id = 0;
     const tick = () => {
-      const s = (performance.now() - start) / 1_000;
+      const s = flipNow() - start;
       const o =
         phase === "open"
           ? 1
@@ -87,7 +91,7 @@ export function TerraStage({
             busy={busy}
             send={send}
             className="absolute inset-0"
-            intro={motion && phase === "in" ? FLIP.handoff : undefined}
+            intro={motion && phase === "in" ? intro : undefined}
             onBack={onBack}
           />
         </Suspense>

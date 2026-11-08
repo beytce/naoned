@@ -71,11 +71,11 @@ describe("the Terraferma on the tiles' backs", () => {
     ],
     me: { capital: 1 },
   };
-  it("puts the merchant's camp under the Campo, in red", () => {
-    expect(terraBack(v, 0, 0)).toBe(0xc9_55_49);
+  it("puts the merchant's camp under the Campo, in the red glaze of its board", () => {
+    expect(terraBack(v, 0, 0)).toBe(0xd6_8a_80);
   });
   it("glazes a rival in ink, free land in porcelain, water and the world's edge in lagoon", () => {
-    expect(terraBack(v, 1, 0)).toBe(0xb3_b0_ab);
+    expect(terraBack(v, 1, 0)).toBe(0xcb_c8_c2);
     expect(terraBack(v, -1, 0)).toBe(0xee_eb_e5);
     expect(terraBack(v, -1, 1)).toBe(0xc9_d3_d6);
     expect(terraBack(v, 5, 5)).toBe(0xc9_d3_d6);

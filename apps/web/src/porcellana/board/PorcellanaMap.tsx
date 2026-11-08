@@ -48,7 +48,15 @@ import { PlaceCard, type PlaceCardHandle } from "../PlaceCard.js";
 import { Stage } from "../Stage.js";
 import { easeOutCubic, pinOut, routesDrawn, tileDelay, tileDrop } from "../arrival.js";
 import { bake } from "../bake.js";
-import { flipAngle, flipDelay, flipLift, flipTotal, flipZoom, showsBack } from "../flip.js";
+import {
+  flipAngle,
+  flipDelay,
+  flipLift,
+  flipNow,
+  flipTotal,
+  flipZoom,
+  showsBack,
+} from "../flip.js";
 import { type Palette, createPalette } from "../materials.js";
 import { slab } from "../models/ground.js";
 import type { Built, ModelOpts } from "../models/model.js";
@@ -108,6 +116,8 @@ interface Shared {
   zoom: number;
   /** The way into the Terraferma, or out of it, under way (porcellana/flip.ts). */
   flip: FlipRun | null;
+  /** A tile's width on the screen now, in pixels (the Terraferma's board matches it). */
+  tilePx: number;
 }
 
 /** The tiles turning over from the Campo (the way into the Terraferma), or back face up. */
@@ -115,7 +125,8 @@ interface FlipRun {
   backwards: boolean;
   /** The colour of a tile's back, from its offset in tiles to the Campo. */
   back: (dx: number, dz: number) => number;
-  /** The scene's clock when it started (-1: at the next frame). */
+  /** When it started, in seconds of the page's clock (-1: at the next frame). On the wall's clock,
+   * not the scene's: the Terraferma's scene fades in on the same, a slow device keeps them as one. */
   start: number;
   /** The camera's zoom face up, and the place it looked at. */
   z0: number;
@@ -599,15 +610,16 @@ function Board({
     // The way into the Terraferma: the tiles turn over from the Campo, the camera draws back.
     const fl = sh.flip;
     if (fl) {
+      const wall = flipNow();
       if (fl.start < 0) {
-        fl.start = c.t;
+        fl.start = wall;
         if (!fl.backwards) {
           fl.z0 = cam.zoom;
           fl.at = controls.target.clone();
         }
         controls.enabled = false;
       }
-      const ft = c.t - fl.start;
+      const ft = wall - fl.start;
       const campo = sh.scene.tiles.find((x) => x.place?.id.startsWith("campo:"));
       const [oi = 0, oj = 0] = campo ? [campo.i, campo.j] : sh.scene.home.split(",").map(Number);
       for (const l of tiles.current.values()) {
@@ -677,6 +689,8 @@ function Board({
         sh.flip = null;
       }
     }
+
+    sh.tilePx = (S * size.height * cam.zoom) / (cam.top - cam.bottom);
 
     // The pins and the card follow the scene.
     const w = size.width;
@@ -781,6 +795,8 @@ export interface EmpireMapHandle {
    * way out, face up again.
    */
   flip(backwards: boolean, back?: (dx: number, dz: number) => number): void;
+  /** A tile's width on the screen now, in pixels. */
+  tilePx(): number;
 }
 
 /** A point picked to put a place down: its tile, its middle on the chart. */
@@ -837,6 +853,7 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       pan: [0, 0],
       zoom: 1,
       flip: null,
+      tilePx: 0,
     };
   if (sh.current && scene) {
     sh.current.scene = scene;
@@ -905,6 +922,7 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
     zoom: (k) => {
       if (sh.current) sh.current.zoom *= k;
     },
+    tilePx: () => sh.current?.tilePx ?? 0,
     flip: (backwards, back) => {
       const s = sh.current;
       if (!s) return;

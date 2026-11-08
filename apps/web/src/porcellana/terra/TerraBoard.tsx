@@ -33,6 +33,7 @@ import type { PlaceCardHandle } from "../PlaceCard.js";
 import { Stage } from "../Stage.js";
 import { palette } from "../TileBoard.js";
 import { easeOutCubic } from "../arrival.js";
+import { FLIP_SLOW, flipNow, flipZoom } from "../flip.js";
 import type { Built } from "../models/model.js";
 import { TERRA_MODELS, flagCloth, warCamp } from "../models/terra.js";
 import { town } from "../models/towns.js";
@@ -58,6 +59,11 @@ const backOut = (p: number) => {
   const q = p - 1;
   return 1 + (c + 1) * q ** 3 + c * q ** 2;
 };
+
+export interface TerraIntro {
+  start: number;
+  px0: number;
+}
 
 export interface TerraSceneProps {
   pic: TerraPicture & {
@@ -86,10 +92,11 @@ export interface TerraSceneProps {
   /** A cell to centre on at the start (the merchant's camp). */
   home?: number | null;
   /**
-   * The way in (porcellana/flip.ts): the board opens on the whole map and settles on the camp
-   * after so many seconds, rather than starting on the camp.
+   * The way in (porcellana/flip.ts): when it started (`flipNow`), and a map tile's width on the
+   * screen then (0: unknown). The board follows the map's draw-back on the camp, a cell as wide as
+   * the map's tile, then goes out to the whole map and down to the camp.
    */
-  intro?: number;
+  intro?: TerraIntro;
   phone?: boolean;
   /** Cells lit by the dock: a bombard's targets, a front's aim (lot T5). */
   marked?: number[];
@@ -398,8 +405,11 @@ export function TerraBoard({
     z1: 1,
     t: 1,
     last: "",
-    wait: 0,
     span: SELECT.fly as number,
+    /** The way in, while the board follows the map's draw-back. */
+    intro: null as TerraIntro | null,
+    /** A flight to take once this one lands (the way in: out to the whole map, then the camp). */
+    next: null as { to: Vector3; z1: number; span: number } | null,
   });
   const m = useMemo(() => new Matrix4(), []);
   const colour = useMemo(() => new Color(), []);
@@ -445,27 +455,45 @@ export function TerraBoard({
               : 1.6
             : 1;
       f.t = live && !first ? 0 : 1;
-      f.wait = 0;
       f.span = SELECT.fly as number;
-      // The way in: from the whole map down to the camp, once the map's tiles have turned.
-      if (first && live && intro !== undefined) {
-        f.from.set(0, 0, 0);
-        f.z0 = 1;
-        f.t = 0;
-        f.wait = intro;
-        f.span = FLIP.settle;
-        cam.zoom = 1;
-        cam.updateProjectionMatrix();
+      f.intro = null;
+      f.next = null;
+      // The way in: the board starts where the map's draw-back is, on the camp.
+      if (first && live && intro) {
+        f.intro = intro;
+        f.t = 1;
       }
-      if (f.t === 1) {
+      if (f.t === 1 && !f.intro) {
         camera.position.add(f.to.clone().sub(controls.target));
         controls.target.copy(f.to);
         cam.zoom = f.z1;
         cam.updateProjectionMatrix();
       }
     }
-    if (f.wait > 0) f.wait -= dt;
-    else if (f.t < 1) {
+    if (f.intro) {
+      const t = flipNow() - f.intro.start;
+      const unit = size.height / (cam.top - cam.bottom);
+      if (t < FLIP.zoomFrom + FLIP.zoomFor && f.intro.px0 > 0 && home != null) {
+        // As the map draws back over the Campo: the camp under it, a cell as wide as a tile.
+        tmp.set(wx(home % W), 0, wz(Math.floor(home / W)));
+        camera.position.add(tmp.clone().sub(controls.target));
+        controls.target.copy(tmp);
+        cam.zoom = Math.max(0.05, (f.intro.px0 * flipZoom(t)) / (PITCH * unit));
+        cam.updateProjectionMatrix();
+      } else {
+        // Then out to the whole map, and down to the merchant's lands.
+        const z1 = f.z1;
+        const to = f.to.clone();
+        f.intro = null;
+        f.from.copy(controls.target);
+        f.to.set(0, 0, 0);
+        f.z0 = cam.zoom;
+        f.z1 = 1;
+        f.t = 0;
+        f.span = FLIP.reveal * FLIP_SLOW;
+        f.next = { to, z1, span: FLIP.settle * FLIP_SLOW };
+      }
+    } else if (f.t < 1) {
       f.t = Math.min(1, f.t + dt / f.span);
       const k = easeOutCubic(f.t);
       const next = f.from.clone().lerp(f.to, k);
@@ -473,6 +501,15 @@ export function TerraBoard({
       controls.target.copy(next);
       cam.zoom = f.z0 + (f.z1 - f.z0) * k;
       cam.updateProjectionMatrix();
+      if (f.t >= 1 && f.next) {
+        f.from.copy(f.to);
+        f.to.copy(f.next.to);
+        f.z0 = f.z1;
+        f.z1 = f.next.z1;
+        f.span = f.next.span;
+        f.t = 0;
+        f.next = null;
+      }
     }
     controls.update();
     target.copy(controls.target);

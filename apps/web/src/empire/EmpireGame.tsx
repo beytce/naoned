@@ -12,7 +12,7 @@ import { useOnline } from "../game/online.js";
 import type { TerraView } from "../game/types.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
-import { flipTotal, terraBack } from "../porcellana/flip.js";
+import { FLIP_SLOW, flipNow, flipTotal, terraBack } from "../porcellana/flip.js";
 import { FLIP } from "../porcellana/tokens.js";
 import { sound } from "../sound.js";
 import { applyPalette } from "../theme.js";
@@ -221,7 +221,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const wide = useWide();
   // The Terraferma's own scene, and the way into it (its tiles turning over) or out.
   const [terra, setTerra] = useState<TerraPhase | null>(null);
+  const terraIntro = useRef<{ start: number; px0: number } | undefined>(undefined);
   const terraTimer = useRef(0);
+  useEffect(() => () => window.clearTimeout(terraTimer.current), []);
   const [highlight, setHighlight] = useState<string | null>(null);
   // The Casa reached since the last view: its moment.
   const [moment, setMoment] = useState<number | null>(null);
@@ -567,12 +569,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       })
       .catch(() => undefined);
     const turning = motion();
-    if (turning) map.current?.flip(false, (dx, dz) => terraBack(seen.v, dx, dz));
+    if (turning) {
+      terraIntro.current = { start: flipNow(), px0: map.current?.tilePx() ?? 0 };
+      map.current?.flip(false, (dx, dz) => terraBack(seen.v, dx, dz));
+    } else terraIntro.current = undefined;
     setTerra("in");
     window.clearTimeout(terraTimer.current);
     terraTimer.current = window.setTimeout(
       () => setTerra("open"),
-      (turning ? FLIP.total : FLIP.plainFade) * 1_000,
+      (turning ? FLIP.total : FLIP.plainFade) * 1_000 * FLIP_SLOW,
     );
   };
   const leaveTerra = () => {
@@ -583,10 +588,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     window.clearTimeout(terraTimer.current);
     terraTimer.current = window.setTimeout(
       () => setTerra(null),
-      (turning ? flipTotal(true) : FLIP.plainFade) * 1_000,
+      (turning ? flipTotal(true) : FLIP.plainFade) * 1_000 * FLIP_SLOW,
     );
   };
-  useEffect(() => () => window.clearTimeout(terraTimer.current), []);
   const placeDots = {
     fondaco: view.house.workshops.filter((w) => readyLots(w, now) > 0).length,
     company: claimable(p) || suppliable(p, account.id) > 0 || terraCalls(p, now),
@@ -699,6 +703,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             phase={terra}
             first={null}
             motion={motion()}
+            intro={terraIntro.current}
             onBack={leaveTerra}
           />
         )}
