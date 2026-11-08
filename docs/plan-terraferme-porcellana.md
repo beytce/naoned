@@ -102,6 +102,17 @@ Il remplace l'achat de troupes avec les ducats (§ 4 bis, refermé le 8 novembre
 - **Mise en ligne** : pour les théâtres ouverts le lundi suivant, annoncée dans les notes du chapitre.
 - **Ensuite** : T5c, l'intendance par la route ; T5d, le territoire qui fait l'armée.
 
+## 4 sexies. L'intendance par la route : le plan du lot T5c (décisions du porteur du 8 novembre 2026)
+
+Le défaut relevé : avec « le magasin du Campo d'abord, puis Venise » et « livrer ne rapporte rien » (§ 4 quater), livrer ne changeait rien : la guerre aurait pris les mêmes marchandises à Venise. Le porteur a tranché :
+
+- **Venise coûte plus** : ce que la guerre prend directement au stock de Venise (le pain au-delà de la ration, les matériaux des bâtiments, le pain du maximum) coûte la moitié en plus, le transport par la Signoria ; livré au Campo, le juste compte. Celui qui ne livre pas joue quand même ; celui qui livre économise ses marchandises. Réglage `empire.terra.supply.venetianBps` (15 000).
+- **Chaque matin** : le Campo publie le besoin du jour, le pain au-delà de la ration et les matériaux d'un bâtiment à venir, en quelques caisses ; plafonné au besoin de la semaine (règle 3). Seulement pour un marchand inscrit à la semaine.
+- **Comme une ville** : une commande du Campo prend sa place dans la cale ; le Campo est un arrêt de tournée parmi les villes (la tournée tracée au doigt, « Livrer »). Livrer ne rapporte aucun ducat ; ce qui arrive va au magasin du Campo.
+- **Ce qu'on voit** : les caisses au quai du Campo sur la carte, les véhicules sur la route ; sur le plateau de la Terraferme, une réserve près du camp qui se remplit à l'arrivée d'un convoi ; la jauge du magasin dans « Tes terres ».
+- **Moteur** (tests d'abord, fixture figée) : les commandes `campo` dans `empire/orders.ts`, leur livraison vers le magasin dans `empire/moves.ts`, la consommation (ration, magasin, Venise à 150 %) dans `terraWorld.ts` et `empire/terra.ts`.
+- **Mesure** : au simulateur de 24 mois, toutes les graines, le temps de véhicule pris au commerce, le revenu, la part de maisons qui livrent ; `docs/calibration.md`.
+
 ## 5. Les lots
 
 | Lot | Contenu | Vérification |
