@@ -2876,3 +2876,19 @@ Mesure : `pnpm --filter @comptoirs/simulator terra-chest` (grille carrée, 10 gr
 La richesse ne décide plus : un riche joue comme un régulier (92 % de sa Gloire, aux mêmes sessions) et n'est Signore qu'à une graine sur dix, ce que donne le hasard avec quatre riches sur quarante. La semaine ordinaire (`pnpm --filter @comptoirs/simulator terra`, 10 graines) garde sa forme : premier front entre marchands à 33 h, le premier tient 3 à 7 % de la carte, 70 % de la terre tenue par les marchands en fin de semaine.
 
 Le simulateur de 24 mois modèle la Terraferme sans ducats (une boîte noire qui rapporte Faveur et Sceaux) : le commerce n'en est pas touché par construction. Passé quand même (8 novembre 2026 : graines 1 et 2, 4 cibles sur 9 chacune ; la troisième, arrêtée par la limite de temps du conteneur au bout de 27 minutes par graine, n'a pas fini) : la Terraferme pèse 0,0 % de la progression (≤ 15 %) ; les cinq critères hors bornes (calendrier de la Casa, palier en jours de revenu, sortie de la première bande, puits ÷ sources des jeunes, bruts des jeunes à Venise) ne lisent aucun réglage de `terraferma` : ils viennent de l'état de la branche principale, pas de ce lot.
+
+## La Terraferme : l'intendance par la route (8 novembre 2026, décisions du porteur)
+
+Lot T5c (`docs/plan-terraferme-porcellana.md` § 4 sexies). Chaque matin de la semaine jouée, le Campo demande le besoin du jour au-delà de la ration (le pain, les matériaux d'un bâtiment à venir), payé rien ; ce qui est livré va à son magasin ; la guerre prend la ration, puis le magasin, puis le stock de Venise à 150 % (`empire.terra.supply.venetianBps` : 15 000).
+
+Modèle du simulateur de 24 mois (`apps/simulator/src/empire/terra.ts`) : une semaine jouée consomme 15 briques et 25 planches (trois bâtiments) ; livrent au Campo 70 % des assidus, 40 % des médians, 15 % des occasionnels, 10 % des absents, chacun prenant une place de véhicule par jour aux villes ; les autres paient Venise la moitié en plus.
+
+| Indicateur (`pnpm --filter @comptoirs/simulator empire`, graines 1 à 3) | Graine 1 | Graine 2 | Graine 3 |
+| --- | --- | --- | --- |
+| Places des véhicules prises par le Campo (≤ 10 %) | 0,7 % | 0,7 % | 0,7 % |
+| Maisons qui ont livré au moins une semaine, sur celles qui ont joué | 608 / 729 | 616 / 729 | 603 / 726 |
+| Surcoût payé à Venise, part des marchandises de guerre | 21,0 % | 20,7 % | 20,9 % |
+| Part des commandes dans les recettes (60 à 85 %) | 72,9 % | 71,9 % | 73,2 % |
+| Part de la Terraferme dans la progression (≤ 15 %) | 0,0 % | 0,0 % | 0,0 % |
+
+Le Campo ne prend presque rien au commerce (moins d'une place de véhicule sur cent), la part des commandes reste celle d'avant (72 à 73 %) ; livrer fait gagner environ un cinquième des marchandises de guerre à ceux qui le font. Les cinq cibles hors bornes de chaque graine sont les mêmes qu'avant ce lot (calendrier de la Casa, palier en jours de revenu, sortie de la première bande, puits ÷ sources des jeunes, bruts des jeunes à Venise) : elles ne dépendent pas de la Terraferme.
