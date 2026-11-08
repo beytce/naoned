@@ -164,9 +164,9 @@ de règles du commerce s'annoncent dans les notes du chapitre.
 |---|---|---|
 | 0 | fait : clés réservées refusées (fuzz du moteur, 4 graines), plafond et prix montant à l'achat, part du jour par maison, trajets échus réglés à la lecture, lot d'accueil jamais recadencé, refus toujours dits (test sur tous les codes de l'empire) | |
 | 1 | fait : règle 3 réécrite (CADRAGE-v3, CLAUDE.md), accueil de l'empire, glossaire et « tu » (test), `{cash}`, Porcellana seule et un seul rouge (la sélection à l'encre bleue, test daltonisme), « le savoir circule » éteint, Puissance et Sceaux masqués avant usage, ce qui manque au Fondaco dit, salaires dits, noms à espaces, sortie de l'intérieur, listes stables, panneau opaque, cristallo. Reportés : équipe de nuit (le moteur la fait relayer contre la fatigue, c'est l'écran qui ne le montre pas → lot 4) ; badges, cibles de 44 px, unités par durée (→ lot 3) ; le sel (→ lot 7) | |
-| 2 | à faire | |
-| 3 | à faire | |
-| 4 | à faire | |
-| 5 | à faire | |
-| 6 | à faire | |
+| 2 | fait : le tour des villes n'est plus brûlé, cadence d'apprentissage (12 min pendant 2 h), file de 4 h (règle 3), courbe 50/250/1 200/6 400, Porta de découverte au niveau 3, Terraferme au 5, chaînes emboîtées, Lorenzo jusqu'au niveau 4 sans impasse (matière d'abord, parcelle, achat au Marché), écran de retour avec les commandes. Simulateur : 4/9 sur les trois graines, comme la référence (calibration.md) ; à reprendre : la sortie de la première bande, l'épargne des jeunes | |
+| 3 | en partie : noms des villes et du Marché, « + » des cases libres et lots prêts toujours visibles, cibles de 44 px, carte centrée hors du panneau, fiche Entrepôt. Restent : routes fixes, grammaire des cases, lagune au centre, Porta fermée en biscuit | |
+| 4 | en partie : priorités d'intrants, flux par heure à l'Entrepôt, heure de la prochaine commande. Restent : intérieur recalibré (×3, goulot par étape affiché, équipe de nuit lisible) | |
+| 5 | en partie : la Faveur hâte un chantier (10, 20, 40 par jour), prime et Carnet seulement sur ce qui n'est pas racheté, notification de l'atelier arrêté. Restent : les Sceaux (avec les embellissements du lot 6) | |
+| 6 | en partie : la caméra suit le véhicule envoyé, les lots prêts en caisses devant l'atelier. Restent : habitants, eau, jour et nuit, fêtes, sons, Marché en scène | |
 | 7 | à faire | |

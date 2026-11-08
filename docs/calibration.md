@@ -2757,3 +2757,61 @@ région, partagée entre ses maisons ; la part équitable ne change pas ce total
 n'achetaient jamais au-delà du plafond (elles achètent pour livrer). L'achat plus cher d'un gros
 ordre ne touche que les ordres de plus de quelques unités, que le simulateur ne passe pas. Les
 lots 2 et 4, qui changent la production et les commandes, passent au simulateur complet.
+
+## Plan de publication, lots 1 et 2 : la file de quatre heures, la courbe du Fondaco, la Porta de découverte (7 et 8 novembre 2026)
+
+Décisions du porteur du 7 novembre 2026 (`docs/plan-publication.md`) passées au simulateur de 24 mois
+(trois graines, cohortes de 200) :
+
+- **D6** : « le savoir circule » éteint (`catchup.fromShareBps` 10 000), les ateliers à prix fixe ;
+- **D4** : la règle d'or 3 réécrite, une file de **4 heures** au lieu de 12 (`queueHours`, et le
+  modèle du simulateur) : un atelier travaille quatre heures puis attend sa récolte ;
+- **D7** : les niveaux 2 à 5 du Fondaco sur une pente (50, **250**, 1 200, 6 400 ducats ; 20 briques et
+  20 planches au niveau 3), la Porta au niveau 3 (bâtiment 300 ducats, cavalier 250, lances), la
+  Terraferme au niveau 5 ;
+- **P1-22** : les chaînes emboîtées (bois 12 par lot, briqueterie à 8 argiles) ;
+- **P0-05** : une ville ne brûle plus son tour quand la maison ne fait rien encore, et une maison
+  qui apprend reçoit une commande toutes les 12 minutes par ville pendant 2 heures.
+
+**D'abord la file seule** (avec D6), 12 h contre 4 h :
+
+| Cible | File de 12 h | File de 4 h |
+| --- | --- | --- |
+| Calendrier du Fondaco (cohorte 0) | ✗ 5 / 5 / 6 hors bornes (15 à 20) | ✗ 2 / 1 / 1 hors bornes (le 20) |
+| Objectif à moins de 24 h (≥ 90 %) | ✓ 99,9 % | ✓ 97,8 à 99,2 % |
+| Prochain palier en jours de revenu (2 à 7) | ✗ 2,9 à 22,8 | ✗ 3,7 à 14,3 |
+| Sortie de la première bande (4 à 6 mois) | ✗ 2,8 à 3,2 mois | ✓ 4,2 / ✓ 4,0 / ✗ 3,7 mois |
+| Indice des prix (80 à 130) | ✓ | ✓ |
+| Puits ÷ sources, jeunes puis anciennes | ✗ 0,82 puis 0,95 | ✗ 0,88 puis 0,96 |
+| Part de la Terraferme (≤ 15 %) | ✓ 0 % | ✓ 0 % |
+| Bruts des jeunes à Venise (≥ 10 %) | ✗ 3,2 à 3,3 % | ✗ 3,4 à 3,8 % |
+| Part des commandes (60 à 85 %) | ✓ 74 à 75 % | ✓ 73 % |
+| **Cibles** | **4 / 4 / 4** | **5 / 5 / 4** |
+
+La file courte resserre le rythme : la fin de partie ne file plus (les niveaux 15 à 20 rentrent dans
+leur calendrier), le palier le plus cher tombe de 22 à 14 jours de revenu, et la première bande se
+quitte au bon moment sur deux graines. Elle est retenue.
+
+**Puis tout le lot 2** (file de 4 h, courbe lissée, Porta au niveau 3, chaînes emboîtées) :
+
+| Cible | Graine 1 | Graine 2 | Graine 3 |
+| --- | --- | --- | --- |
+| Calendrier du Fondaco | ✗ 1 hors bornes (20) | ✗ 1 (20) | ✗ 1 (20) |
+| Objectif à moins de 24 h | ✓ 98,2 % | ✓ 98,5 % | ✓ 99,2 % |
+| Prochain palier en jours de revenu | ✗ 4,3 à 16,0 | ✗ 4,2 à 14,2 | ✗ 4,5 à 13,8 |
+| Sortie de la première bande | ✗ 3,8 mois | ✗ 3,7 mois | ✗ 3,9 mois |
+| Indice des prix | ✓ 92 à 102 | ✓ 92 à 102 | ✓ 92 à 102 |
+| Puits ÷ sources | ✗ 0,88 puis 0,95 | ✗ 0,87 puis 0,95 | ✗ 0,88 puis 0,97 |
+| Part de la Terraferme | ✓ 0 % | ✓ 0 % | ✓ 0 % |
+| Bruts des jeunes à Venise | ✗ 3,8 % | ✗ 4,3 % | ✗ 4,3 % |
+| Part des commandes | ✓ 73,4 % | ✓ 72,7 % | ✓ 73,1 % |
+| **Cibles** | **4/9** | **4/9** | **4/9** |
+
+- **Autant de cibles que la référence** des premiers pas (4 sur 9) ; la fin de partie, laissée à une
+  passe à part par le porteur le 7 novembre, va mieux qu'avant (un seul niveau hors bornes, le 20).
+- La sortie de la première bande repasse sous 4 mois (3,7 à 3,9) : la Porta ouverte au niveau 3 fait
+  bâtir plus tôt ; c'est l'écart à reprendre d'abord.
+- Les jeunes Maisons épargnent un peu trop (0,88 au lieu de 0,6 à 0,8) : le niveau 3 plus cher
+  (250 ducats) les fait garder leurs ducats plus longtemps. À reprendre avec la cadence d'apprentissage,
+  que le simulateur ne modélise pas encore (ses commandes suivent leur rythme de croisière).
+- Rien ne se dégrade ailleurs : les prix, l'objectif à moins de 24 h et la part des commandes tiennent.
