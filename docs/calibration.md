@@ -2855,3 +2855,24 @@ Lecture : avec quatre voisins, la terre libre part un peu plus lentement le prem
 Lecture : **les ducats décidaient déjà la semaine** avant la vente. Un riche y bâtit ses forts et relève son maximum chaque jour ; il est Signore à chaque graine. La vente ajoute environ 12 % de Gloire et de cases aux riches, et un puits de ducats d'environ 30 d par marchand et par jour. Le profil « riche » est volontairement extrême : il mesure le plafond de l'avantage, pas le joueur médian, dont le budget (50 à 150 d par jour) n'atteint pas un lot.
 
 Réglage de Venise : 20 troupes pour 100 d, trois fois par jour, jamais au-delà du maximum. La vente ne s'ouvre qu'au lundi qui suit sa mise en ligne (règle de la Terraferme) ; l'empire copie ses règles à l'ouverture d'un théâtre.
+
+## La Terraferme : le trésor de guerre égal (8 novembre 2026, décisions du porteur)
+
+Lot T5b (`docs/plan-terraferme-porcellana.md` § 4 quinquies). À la Terraferme, plus rien ne se paie en ducats du commerce : les bâtiments et la hausse du maximum se paient en écus, pris dans un trésor le même pour tous les marchands d'un théâtre. L'achat de troupes et le don de ducats entre alliés sont retirés.
+
+Réglages de Venise (`terraferma.chest`, choix serrés) : 60 écus à l'inscription, 25 chaque matin, plafond 120 ; fort 40, port 30, remparts 50, Bourg 50, bombarde 110, hausse du maximum 60. Une semaine donne au plus 60 + 6 × 25 = 210 écus : trois ou quatre forts, ou deux hausses et un fort.
+
+Mesure : `pnpm --filter @comptoirs/simulator terra-chest` (grille carrée, 10 graines, 40 marchands dont 4 riches qui mettraient 2 000 d par jour dans la guerre, avec les sessions d'un régulier) ; avant, les ducats paient ; maintenant, le trésor.
+
+| Indicateur | Ducats (avant) | Trésor (maintenant) |
+| --- | --- | --- |
+| Gloire médiane des riches (médiane des graines) | 8 166 | 3 245 |
+| Cases médianes des riches | 71 | 15 |
+| Riches devant les réguliers (Gloire médiane) | — | 92 % |
+| Un riche Signore | 10 / 10 | 1 / 10 |
+| Un riche dans les trois premiers | 10 / 10 | 2 / 10 |
+| Ducats détruits par marchand et par jour | 102,59 d | 0 d |
+
+La richesse ne décide plus : un riche joue comme un régulier (92 % de sa Gloire, aux mêmes sessions) et n'est Signore qu'à une graine sur dix, ce que donne le hasard avec quatre riches sur quarante. La semaine ordinaire (`pnpm --filter @comptoirs/simulator terra`, 10 graines) garde sa forme : premier front entre marchands à 33 h, le premier tient 3 à 7 % de la carte, 70 % de la terre tenue par les marchands en fin de semaine.
+
+Le simulateur de 24 mois modèle la Terraferme sans ducats (une boîte noire qui rapporte Faveur et Sceaux) : le commerce n'en est pas touché par construction.
