@@ -92,6 +92,36 @@ export const ARRIVAL = {
   pinsAfter: 1.4,
 } as const;
 
+/**
+ * The way into the Terraferma (the owner's decision of 8 November 2026): from the Campo, every tile
+ * of the map turns over, the Terraferma's land beneath, while the camera draws far back; then the
+ * Terraferma's own board takes over and settles on the merchant's lands. Seconds.
+ */
+export const FLIP = {
+  /** The wave: a tile turns this long after the Campo's, per tile of distance, at most `spread`. */
+  step: 0.05,
+  spread: 0.9,
+  /** One tile's turn, with a slight overshoot as it lands on its back. */
+  turn: 0.62,
+  overshoot: 0.7,
+  /** How high a tile rises at mid-turn, in world units. */
+  lift: 2.4,
+  /** The camera's draw back: from `zoomFrom`, for `zoomFor`, down to `zoomTo` of its zoom. */
+  zoomFrom: 0.35,
+  zoomFor: 1.6,
+  zoomTo: 0.3,
+  /** The Terraferma's board fades in from `handoff` for `fade`; the whole way in lasts `total`. */
+  handoff: 1.45,
+  fade: 0.6,
+  total: 2.3,
+  /** The board of the Terraferma: from the whole map to the merchant's lands. */
+  settle: 1.3,
+  /** The way back runs this much faster. */
+  back: 1.35,
+  /** Without motion (prefers-reduced-motion, no WebGL): a plain fade. */
+  plainFade: 0.3,
+} as const;
+
 /** The selection: the tile lifts, a ring of accent, a blush of accent on what stands there. */
 export const SELECT = {
   lift: 0.35,
