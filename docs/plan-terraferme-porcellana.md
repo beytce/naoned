@@ -88,6 +88,20 @@ Les questions posées :
 2. **L'entrée de la semaine** (20 planches) : livrée au Campo avant de s'inscrire, ou toujours prise à Venise d'un geste ?
 3. **Une récompense pour livrer ?** Aucune (c'est de la logistique), ou un peu de Faveur dans le plafond de la Terraferme ?
 
+## 4 quinquies. Le trésor de guerre égal (lot T5b, décisions du porteur du 8 novembre 2026)
+
+Il remplace l'achat de troupes avec les ducats (§ 4 bis, refermé le 8 novembre) : à la Terraferme, plus rien ne se paie en ducats du commerce.
+
+- **Le trésor, en écus** : une monnaie propre à la Terraferme, la même pour tous les joueurs d'un théâtre. Elle vit dans l'état de la semaine comme les troupes ; les ducats et leurs écritures ne sont plus touchés.
+- **Départ, puis chaque matin** : une réserve à l'inscription, un versement chaque matin, jusqu'à un plafond (règle 3 : plein, rien ne s'ajoute et rien ne se perd ; règle 7 : revenir dans la semaine compte).
+- **Des choix serrés** : de quoi bâtir 3 à 4 bâtiments ou relever deux fois le maximum dans la semaine, pas tout. Réglages dans `terraferma.chest` (départ, versement, plafond) et les prix en écus, affinés au simulateur.
+- **Ce qui s'y paie** : les bâtiments (fort, port, bombarde, remparts, Bourg s'il est ouvert) et la hausse du maximum.
+- **Ce qui disparaît** : l'achat de troupes (commande, réglage, bouton, simulateur `terra-buy`), le don de ducats entre alliés (`terraGift` ; envoyer des troupes reste), le paiement en ducats de la Terraferme dans `terraWorld.ts`.
+- **Ce qu'on voit** : un coffre de porcelaine au camp, qui se remplit le matin et se vide à chaque achat ; sa jauge dans la barre à côté des troupes ; les prix en écus sur les cartes « Bâtir » ; la pilule de retour.
+- **Mesure** : au simulateur de la Terraferme, toutes les graines, un joueur riche et un joueur pauvre du commerce : la part de semaines gagnées ne doit plus suivre la richesse ; au simulateur de 24 mois, le commerce ne bouge pas. Dans `docs/calibration.md`.
+- **Mise en ligne** : pour les théâtres ouverts le lundi suivant, annoncée dans les notes du chapitre.
+- **Ensuite** : T5c, l'intendance par la route ; T5d, le territoire qui fait l'armée.
+
 ## 5. Les lots
 
 | Lot | Contenu | Vérification |
