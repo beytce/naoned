@@ -364,6 +364,15 @@ function Board({
       nextZone.visible = mat.opacity > 0.01;
     }
     const cam = camera as OrthographicCamera;
+    // The board centred in what the screen leaves free (P1-03 of the players' audit): right of the
+    // side panel on a computer, under the top bar everywhere, so that nothing chosen hides under them.
+    const panel = size.width >= 1024 ? (22 * 16 + 20) / 2 : 0;
+    const bar = size.width >= 1024 ? 48 : 28;
+    const off = cam.view;
+    if (!off || off.offsetX !== -panel || off.offsetY !== -bar || off.width !== size.width) {
+      cam.setViewOffset(size.width, size.height, -panel, -bar, size.width, size.height);
+      cam.updateProjectionMatrix();
+    }
     const byKey = new Map(sh.scene.tiles.map((t) => [t.key, t]));
     const chosenKey = sh.scene.tiles.find((t) => t.place?.id === sh.chosen)?.key ?? null;
     const chosen = chosenKey ? (tiles.current.get(chosenKey) ?? null) : null;
