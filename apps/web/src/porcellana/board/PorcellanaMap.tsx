@@ -561,6 +561,9 @@ function Board({
     // The pins and the card follow the scene.
     const w = size.width;
     const h = size.height;
+    // Two pins on the same spot (a tall campanile before a town behind it): the later one slips
+    // just under, so that every town stays named (P1-24 of the players' audit).
+    const shown: [number, number][] = [];
     for (const tile of sh.scene.tiles) {
       if (!tile.place) continue;
       const el = sh.pins.get(tile.place.id);
@@ -572,7 +575,15 @@ function Board({
         .add(l.group.position)
         .project(camera);
       const x = (tmp.x * 0.5 + 0.5) * w;
-      const y = (-tmp.y * 0.5 + 0.5) * h;
+      let y = (-tmp.y * 0.5 + 0.5) * h;
+      for (let k = 0; k < 4; k++) {
+        const hit = shown.some(
+          ([sx, sy]) => Math.abs(sx - x) < PIN_GAP[0] && Math.abs(sy - y) < PIN_GAP[1],
+        );
+        if (!hit) break;
+        y += PIN_GAP[1];
+      }
+      shown.push([x, y]);
       el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
       // A pin with something to say stays in sight at every zoom (P0-12): a lot ready, a « + ».
       const out =
@@ -661,6 +672,9 @@ export interface PorcellanaMapProps {
   /** The Fondaco's tab: up close on it, its bar at the foot (the region), or back out (null). */
   onDomain?: (region: string | null) => void;
 }
+
+/** How close two pins may stand on screen before the later one slips under (px). */
+const PIN_GAP: [number, number] = [70, 26];
 
 /** The workshops heard by their saw, by their furnace. */
 const SAWS = new Set<string>(["lumber_camp", "sawmill", "rope_walk"]);
