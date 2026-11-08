@@ -33,6 +33,7 @@ Elles font foi pour toute mécanique, toute fonctionnalité et tout mode de jeu 
 
 ## Façon de travailler
 - **Le plan de publication** (7 novembre 2026, validé par le porteur, issu de l'audit des joueurs `docs/audit-joueurs-2026-11-07/`) : décisions D1 à D12 (glossaire et « tu », règle 3 réécrite, bêta sans perle, Porcellana seule…) et lots 0 à 7 dans docs/plan-publication.md ; il prime sur les plans antérieurs en cas de conflit.
+- **Les tutoriels guidés** (8 novembre 2026, décision du porteur) : jusqu'au Fondaco niveau 2, le jeu guide geste par geste sous un projecteur (le reste voilé, rien d'autre à toucher, aucun « Passer » sauf au profil) ; un tutoriel court à la première ouverture de chaque nouveau lieu (Porta, Remise, intérieur des ateliers, Terraferme). Tout nouveau lieu ou geste du début reçoit le sien. Plan et état : docs/plan-tutoriels.md ; code : `apps/web/src/empire/tutor/`.
 - Chaque système absorbe les anciens au lieu de s'y ajouter : une douzaine de systèmes visibles, pas trente.
 - Commencer chaque tâche en mode plan, attendre validation avant de coder.
 - Écrire les tests avant le code pour packages/engine. Les tests du moteur utilisent la fixture figée test/fixture.ts, jamais les paramètres de Venise.
