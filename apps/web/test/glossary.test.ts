@@ -19,7 +19,8 @@ function strings(value: unknown, out: string[] = []): string[] {
   return out;
 }
 
-const empire = strings(french.empire);
+// The Terraferma's board in the empire speaks with the monthly world's words (`fr.game.terra`).
+const empire = [...strings(french.empire), ...strings(french.game.terra)];
 const front = strings([french.tagline, french.promises, french.seasonOf(new Date())]);
 const all = [...empire, ...front];
 
@@ -27,6 +28,10 @@ describe("the empire's words", () => {
   it("says « tu », never « vous »", () => {
     const said = all.map((x) => x.replace(/rendez-vous/gi, ""));
     expect(said.filter((x) => /\b(vous|votre|vos)\b/i.test(x))).toEqual([]);
+  });
+
+  it("names the Terraferma's soldiers « troupes », never « hommes »", () => {
+    expect(all.filter((x) => /\bhommes?\b/i.test(x))).toEqual([]);
   });
 
   it("names the Fondaco by its level, never a « Casa N », and the Market of San Marco", () => {

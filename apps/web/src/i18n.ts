@@ -1176,12 +1176,12 @@ const frDict = {
           place: "M'installer",
         } as Record<string, string>,
         frontTitle: "Lancer un front",
-        men: "Hommes engagés",
+        men: "Troupes engagées",
         upTo: (n: number) => `jusqu'à ${n} case${n > 1 ? "s" : ""}`,
         home: (after: number, before: number) => `${after} au lieu de ${before}`,
         homeLabel: "Défenseurs par case chez toi",
         takes: "Il prendra",
-        attackWith: (n: number) => `Attaquer · ${n} hommes`,
+        attackWith: (n: number) => `Attaquer · ${n} troupes`,
         buildTitle: "Bâtir ici",
         builtHere: "Case déjà bâtie",
         coastOnly: "Au bord de l'eau seulement",
@@ -1195,7 +1195,7 @@ const frDict = {
         fronts: "Fronts",
         noFront: "Aucun front en marche. Touche une terre au bord des tiennes.",
         threats: "Menaces",
-        threatLine: (who: string, n: number) => `⚔ ${who} sur toi · ${n} hommes`,
+        threatLine: (who: string, n: number) => `⚔ ${who} sur toi · ${n} troupes`,
         ranking: "Classement",
         allies: "Alliés",
         noAlly: "Aucun allié. Touche la terre d'un voisin pour lui proposer l'alliance.",
@@ -2142,7 +2142,7 @@ const frDict = {
     },
     terra: {
       door: "Conquête",
-      away: "Pendant votre absence",
+      away: "Pendant ton absence",
       title: "La Conquête",
       closesIn: (time: string) => `fin dans ${time}`,
       closed: "Semaine close",
@@ -2150,8 +2150,8 @@ const frDict = {
       troops: "Troupes",
       /** The troops' card on the HUD: the glory and the rank live there. */
       troopsTip: {
-        title: "Vos troupes",
-        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum, tant que vos troupes ont du pain. Chaque case prise rapporte des points de conquête.",
+        title: "Tes troupes",
+        text: "Tes terres recrutent chaque heure de jour, jusqu'au maximum, tant que tes troupes ont du pain. Chaque case prise rapporte des points de conquête.",
         troops: "Troupes",
         recruit: "Recrues",
         glory: "Points de conquête",
@@ -2160,22 +2160,22 @@ const frDict = {
         bread: "Pain des troupes",
         breadLine: (stock: number, perDay: string) => `${stock} · −${perDay}/j`,
       },
-      hungryShort: "Vos troupes ont faim : sans pain, plus de recrues",
+      hungryShort: "Tes troupes ont faim : sans pain, plus de recrues",
       troopsLine: (troops: number, cap: number) => `${troops}/${cap}`,
       troopsCard: {
         troops: (n: number) => `${n} troupe${n > 1 ? "s" : ""}`,
         of: (cap: number) => `sur ${cap}`,
       },
-      youTroops: (n: number) => `vous · ${n} troupe${n > 1 ? "s" : ""}`,
+      youTroops: (n: number) => `toi · ${n} troupe${n > 1 ? "s" : ""}`,
       camp: {
-        title: (cells: number) => `Votre camp · ${cells} case${cells > 1 ? "s" : ""}`,
+        title: (cells: number) => `Ton camp · ${cells} case${cells > 1 ? "s" : ""}`,
         line: (troops: number, perHour: number) =>
           `${troops} troupe${troops > 1 ? "s" : ""} · +${perHour} troupe${perHour > 1 ? "s" : ""} par heure`,
         bread: (days: number) =>
           days > 0 ? `vivres pour ${days} jour${days > 1 ? "s" : ""}` : "plus de vivres",
-        aim: (name: string, n: number) => `Visez la case de ${name} : ${n} troupes suffisent.`,
-        aimFree: (n: number) => `Visez la terre libre à votre frontière : ${n} troupes suffisent.`,
-        none: "Aucune case à votre portée pour l'instant : attendez des recrues.",
+        aim: (name: string, n: number) => `Vise la case de ${name} : ${n} troupes suffisent.`,
+        aimFree: (n: number) => `Vise la terre libre à ta frontière : ${n} troupes suffisent.`,
+        none: "Aucune case à ta portée pour l'instant : attends des recrues.",
         open: "Lancer un front",
         launch: (n: number) => `Lancer un front · ${n} troupes`,
         launched: (n: number) => `Front lancé · ${n} troupes en marche ✓`,
@@ -2228,12 +2228,12 @@ const frDict = {
       placingShort: (time: string) => `Placement · ${time}`,
       truceShort: (time: string) => `Trêve · ${time}`,
       nightShort: "Nuit",
-      team: (region: string) => `Semaine en équipes · vous êtes de ${region}`,
+      team: (region: string) => `Semaine en équipes · tu es de ${region}`,
       teamWon: (region: string) => `${region} gagne la semaine`,
       /** On a phone's plaque: the team, its win, Milan riding against the player. */
       teamShort: (region: string) => `Équipe · ${region}`,
       teamWonShort: (region: string) => `${region} l'emporte`,
-      milanOnMeShort: (who: string) => `⚔ ${who} sur vous`,
+      milanOnMeShort: (who: string) => `⚔ ${who} sur toi`,
       diplomacy: {
         signals: {
           help: "À l'aide",
@@ -2259,7 +2259,7 @@ const frDict = {
         peasants: (pct: number) => `${pct} % paysans`,
         nothing: "rien",
         yield: (goods: string, route: string | null) =>
-          `Vos terres donnent par heure ouverte : ${goods}${route ? ` ; routes entre vos villes : ${route}` : ""}.`,
+          `Tes terres donnent par heure ouverte : ${goods}${route ? ` ; routes entre tes villes : ${route}` : ""}.`,
       },
       battle: {
         on: (to: number) => `⚔ Bataille : fronts ×10 jusqu'à ${to} h`,
@@ -2273,17 +2273,17 @@ const frDict = {
         against ? `${who} marche sur ${against}` : `${who} s'étend`,
       out: {
         late: "La partie de la semaine a commencé",
-        eliminated: "Vous avez perdu toutes vos terres",
+        eliminated: "Tu as perdu toutes tes terres",
         next: (time: string) => `Prochaine partie dans ${time}`,
       },
       place: {
-        invite: "Posez votre camp de départ",
-        hint: "Touchez une terre libre de la carte",
+        invite: "Pose ton camp de départ",
+        hint: "Touche une terre libre de la carte",
         until: (time: string) => `encore ${time}`,
         here: "M'installer ici",
         line: (terrain: string, hours: number | null) =>
           hours === null
-            ? `${terrain} · personne ne vous attaque avant la fin du placement`
+            ? `${terrain} · personne ne t'attaque avant la fin du placement`
             : hours > 0
               ? `${terrain} · à l'abri des attaques pendant ${hours} h`
               : terrain,
@@ -2291,22 +2291,22 @@ const frDict = {
       target: {
         cost: (cost: number) => `${cost} troupes pour prendre cette terre`,
         losesSafety:
-          "Attaquer un marchand rend votre capitale prenable jusqu'à la fin de la semaine",
-        tooWeak: (cost: number) => `Il faut au moins ${cost} troupes : montez le curseur`,
+          "Attaquer un marchand rend ta capitale prenable jusqu'à la fin de la semaine",
+        tooWeak: (cost: number) => `Il faut au moins ${cost} troupes : monte le curseur`,
         plan: (troops: number, cells: number, spent: number, back: number) =>
           `${troops} troupes → ${cells} case${cells > 1 ? "s" : ""} (−${spent}) · ${back} revien${back > 1 ? "nent" : "t"}`,
         pace: (hours: number, night: boolean) =>
           `${night ? "Part à l'aube, puis e" : "E"}nviron ${hours} h de marche (de jour seulement) ; chaque case prise coûte ses troupes`,
         notEnough: (cost: number, troops: number) =>
-          `Il faut ${cost} troupes, vous en avez ${troops} : attendez vos recrues`,
+          `Il faut ${cost} troupes, tu en as ${troops} : attends tes recrues`,
         attack: "Attaquer",
         sail: (minutes: number) => `Débarquer (${minutes} min de mer)`,
         fire: (shots: number) => `Bombarder (${shots})`,
-        allied: "Votre allié : pas de front entre vous",
-        far: "Trop loin : touchez une terre au bord des vôtres",
-        eta: (hour: string, wait: string) => `Vos troupes y seront vers ${hour} (dans ${wait})`,
+        allied: "Ton allié : pas de front entre lui et toi",
+        far: "Trop loin : touche une terre au bord des tiennes",
+        eta: (hour: string, wait: string) => `Tes troupes y seront vers ${hour} (dans ${wait})`,
         defense: (after: number, before: number) =>
-          `Chez vous, il restera ${after} défenseur${after > 1 ? "s" : ""} par case au lieu de ${before}`,
+          `Chez toi, il restera ${after} défenseur${after > 1 ? "s" : ""} par case au lieu de ${before}`,
       },
       holder: {
         line: (cells: number, troops: number) => `${cells} cases · ⚔ ${troops}`,
@@ -2318,17 +2318,17 @@ const frDict = {
         sendLine: (count: number, left: number) =>
           `Envoyer ${count} troupes (encore ${left} aujourd'hui)`,
         allyChip: "Allié",
-        friendChip: "✦ Votre guilde",
+        friendChip: "✦ Ta guilde",
       },
       mine: {
-        title: "Vos terres",
+        title: "Tes terres",
         line: (cells: number, troops: number, cap: number) =>
           `${cells} cases · ⚔ ${troops} / ${cap}`,
         rocca: "Fort",
         porto: "Port",
         raise: (amount: number) => `Max +${amount}`,
         recruit: (perHour: number, full: string | null, from: number, to: number) =>
-          `Vos terres recrutent ${perHour} troupes par heure (de ${from} h à ${to} h)${full ? ` : maximum dans ${full}` : ""}. Plus de terres, plus de recrues ; « Max » relève le maximum, pas vos troupes.`,
+          `Tes terres recrutent ${perHour} troupes par heure (de ${from} h à ${to} h)${full ? ` : maximum dans ${full}` : ""}. Plus de terres, plus de recrues ; « Max » relève le maximum, pas tes troupes.`,
         full: (amount: number) =>
           `Troupes au maximum. « Max +${amount} » relève ce maximum pour des ducats (il ne donne pas de troupes).`,
         decree: "Décret",
@@ -2341,20 +2341,20 @@ const frDict = {
         built: {
           rocca: "Un fort défend cette terre et ses voisines",
           porto:
-            "Un port : vos barques débarquent sur les rives de ces eaux, vos galères les gardent",
+            "Un port : tes barques débarquent sur les rives de ces eaux, tes galères les gardent",
           bombarda:
             "Une bombarde : un tir par jour rend libres une terre ennemie à portée et ses voisines",
           mura: "Des remparts : aucune bombarde n'atteint cette terre ni ses voisines",
         } as Record<string, string>,
-        traitor: (time: string) => `Traître encore ${time} : vos terres défendent moins bien`,
+        traitor: (time: string) => `Traître encore ${time} : tes terres défendent moins bien`,
       },
       decree: {
-        title: "Si vous gagnez la semaine",
+        title: "Si tu gagnes la semaine",
         hint: "Le Signore della Terraferma impose son décret à tous la semaine qui vient, pour lui et ses alliés.",
         inForce: "En vigueur cette semaine",
-        yours: "Vous en profitez",
+        yours: "Tu en profites",
         choose: "Choisir",
-        chosen: "Votre choix",
+        chosen: "Ton choix",
         target: "Sur",
         names: {
           monopole: "Le Monopole",
