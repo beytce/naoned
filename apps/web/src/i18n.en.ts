@@ -280,6 +280,10 @@ export const en: Dictionary = {
       arsenalSub: "The ships",
       porta: "The Porta",
       portaSub: "To the lands of Rome",
+      portaClosed: (casa: number) => `Closed · opens at Fondaco level ${casa}`,
+      portaClosedLine: (levels: number) =>
+        `${levels} more Fondaco level${levels > 1 ? "s" : ""}: behind it, the lands of Rome, their battles and their relics.`,
+      raiseFondaco: "See the Fondaco",
       post: (region: string) => `Fondaco of ${region}`,
       level: (n: number) => `Level ${n}`,
       fondaco: "The Fondaco",
