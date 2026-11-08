@@ -115,6 +115,8 @@ export const RIBBON = {
   corner: 1.6,
   lift: 0.03,
   seaDash: 0.75,
+  /** How much paler a road with nothing on it is: the accent toward white. */
+  still: 0.55,
 } as const;
 
 /** The paper of the interface (cards, pins, pills). */

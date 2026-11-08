@@ -1,6 +1,15 @@
 import { store } from "./game/store.js";
 
-export type SoundKind = "coin" | "harvest" | "cart" | "stamp" | "bell";
+export type SoundKind =
+  | "coin"
+  | "harvest"
+  | "cart"
+  | "stamp"
+  | "bell"
+  | "saw"
+  | "kiln"
+  | "surf"
+  | "campanile";
 
 /** On unless the player turned them off in the Profil. */
 export function soundEnabled(): boolean {
@@ -115,6 +124,30 @@ export function sound(kind: SoundKind): void {
       case "bell":
         voice(ctx, t, "sine", 1_318, 1_310, 280, 0.06);
         voice(ctx, t, "sine", 2_636, 2_630, 180, 0.025);
+        break;
+      // A saw's strokes: a workshop of wood at work (P3-10 of the players' audit).
+      case "saw":
+        for (let k = 0; k < 3; k++) {
+          thud(ctx, t + k * 0.22, 150, 2_400, 0.07);
+          voice(ctx, t + k * 0.22, "sawtooth", 210, 180, 150, 0.015);
+        }
+        break;
+      // A furnace's breath: a kiln, a glassworks, a brickworks at work.
+      case "kiln":
+        thud(ctx, t, 600, 260, 0.12);
+        voice(ctx, t, "sine", 70, 55, 600, 0.05);
+        break;
+      // The lagoon's wash on the quays: a long soft wave.
+      case "surf":
+        thud(ctx, t, 1_400, 420, 0.035);
+        break;
+      // San Marco's campanile on the hour: three deep strokes.
+      case "campanile":
+        for (let k = 0; k < 3; k++) {
+          voice(ctx, t + k * 0.9, "sine", 392, 390, 1_600, 0.05);
+          voice(ctx, t + k * 0.9, "sine", 784, 780, 900, 0.018);
+          voice(ctx, t + k * 0.9, "sine", 1_176, 1_170, 500, 0.008);
+        }
         break;
     }
   } catch {

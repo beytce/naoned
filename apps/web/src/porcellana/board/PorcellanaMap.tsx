@@ -19,6 +19,7 @@ import {
 } from "react";
 import {
   CanvasTexture,
+  Color,
   Group,
   MOUSE,
   Mesh,
@@ -41,6 +42,7 @@ import { MAP_3D } from "../../empire/map3d/flag.js";
 import { welcomeStep } from "../../empire/next.js";
 import type { EmpirePayload } from "../../empire/types.js";
 import { fr } from "../../i18n.js";
+import { sound } from "../../sound.js";
 import { PlaceCard, type PlaceCardHandle } from "../PlaceCard.js";
 import { Stage } from "../Stage.js";
 import { easeOutCubic, pinOut, routesDrawn, tileDelay, tileDrop } from "../arrival.js";
@@ -51,7 +53,7 @@ import type { Built, ModelOpts } from "../models/model.js";
 import type { Vehicle } from "../models/vehicles.js";
 import { drawChevron, drawnIndices, ribbonGeometry, roundedPath } from "../ribbon.js";
 import { Blush } from "../selection.js";
-import { BOARD, CAMERA, RIBBON, SELECT } from "../tokens.js";
+import { BISCUIT, BOARD, CAMERA, RIBBON, SELECT } from "../tokens.js";
 import { FlatBoard } from "./FlatBoard.js";
 import { PARK, modelOf, vehicleModel } from "./models.js";
 import {
@@ -119,6 +121,11 @@ function Board({
   const { camera, gl, size } = useThree();
   const live = useMemo(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, []);
   const P: Palette = useMemo(() => createPalette(), []);
+  // The Porta not open yet, all unglazed, its accent too (P1-06).
+  const closed: Palette = useMemo(
+    () => createPalette({ biscuit: true, accent: BISCUIT.wall2 }),
+    [],
+  );
   const blush = useMemo(() => new Blush(P), [P]);
   const root = useMemo(() => new Group(), []);
   const tiles = useRef(new Map<string, Live>());
@@ -149,10 +156,29 @@ function Board({
       }),
     [tex],
   );
-  const roads = useRef<{ sig: string; meshes: Mesh[]; samples: Vector3[] }>({
+  // A road with nothing on it is a still ribbon, paler, without chevrons: the chevrons run only
+  // while a vehicle goes along it (P1-02 of the players' audit: no flow promised that is not there).
+  const stillMat = useMemo(
+    () =>
+      new MeshStandardMaterial({
+        color: P.accentColour.clone().lerp(new Color("#ffffff"), RIBBON.still),
+        roughness: 0.8,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2,
+      }),
+    [P],
+  );
+  const roads = useRef<{
+    sig: string;
+    meshes: Mesh[];
+    samples: Vector3[];
+    each: Vector3[][];
+  }>({
     sig: "",
     meshes: [],
     samples: [],
+    each: [],
   });
   const ring = useMemo(() => {
     const m = new Mesh(
@@ -184,21 +210,23 @@ function Board({
       const curves = scene.roads
         .filter((r) => r.pts.length >= 2)
         .map((r) => roundedPath(r.pts.map(toWorld)));
+      const each = curves.map((c) => c.getSpacedPoints(Math.ceil(c.getLength() / 0.5)));
       roads.current = {
         sig: roadSig,
         meshes: curves.map((c) => {
-          const m = new Mesh(ribbonGeometry(c), ribbonMat);
+          const m = new Mesh(ribbonGeometry(c), stillMat);
           m.receiveShadow = true;
           root.add(m);
           return m;
         }),
-        samples: curves.flatMap((c) => c.getSpacedPoints(Math.ceil(c.getLength() / 0.5))),
+        samples: each.flat(),
+        each,
       };
     }
     const seen = new Set<string>();
     for (const tile of scene.tiles) {
       seen.add(tile.key);
-      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}|${(tile.crates ?? []).map(Number).join("")}|${(tile.decor ?? []).join(",")}|${tile.loyalty ?? 0}|${tile.raft ? 1 : 0}|${(tile.stalls ?? []).map((x) => `${x.n}${x.hot ? "h" : ""}`).join(",")}`;
+      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}|${(tile.crates ?? []).map(Number).join("")}|${(tile.decor ?? []).join(",")}|${tile.loyalty ?? 0}|${tile.raft ? 1 : 0}|${tile.biscuit ? 1 : 0}|${(tile.stalls ?? []).map((x) => `${x.n}${x.hot ? "h" : ""}`).join(",")}`;
       const was = tiles.current.get(tile.key);
       if (was && was.sig === sig) continue;
       if (was) root.remove(was.group);
@@ -223,7 +251,7 @@ function Board({
       keepOff: (lx, lz) =>
         samples.some((p) => (p.x - x - lx) ** 2 + (p.z - z - lz) ** 2 < 1.15 * 1.15),
     };
-    const built = modelOf(P, tile, opts);
+    const built = modelOf(tile.biscuit ? closed : P, tile, opts);
     if (built) g.add(built.group);
     root.add(g);
     bake(g);
@@ -456,6 +484,7 @@ function Board({
     for (const m of roads.current.meshes)
       m.geometry.setDrawRange(0, drawnIndices(m.geometry.index?.count ?? 0, drawn));
     if (live) tex.offset.x -= dt * RIBBON.speed;
+    const moving: [number, number][] = [];
 
     // The vehicles: on their road while a hop is under way (the server's time), else parked at
     // their place, along its tile's south edge.
@@ -490,6 +519,7 @@ function Board({
         z += oz;
         heading = Math.PI;
       }
+      if (pose.hop) moving.push([x, z]);
       actor.opts.running = !!pose.hop && live;
       actor.group.position.set(x, 0.02, z);
       // The camera walks beside the vehicle followed, softly (P3-01).
@@ -511,6 +541,12 @@ function Board({
         root.remove(a.group);
         vehicles.current.delete(id);
       }
+    // The chevrons run on the roads a vehicle goes along now; the others stay still.
+    roads.current.meshes.forEach((m, k) => {
+      const pts = roads.current.each[k] ?? [];
+      const busy = moving.some(([x, z]) => pts.some((p) => (p.x - x) ** 2 + (p.z - z) ** 2 < 0.6));
+      m.material = busy ? ribbonMat : stillMat;
+    });
 
     // The ring and the blush.
     const ringMat = ring.material as MeshBasicMaterial;
@@ -625,6 +661,10 @@ export interface PorcellanaMapProps {
   /** The Fondaco's tab: up close on it, its bar at the foot (the region), or back out (null). */
   onDomain?: (region: string | null) => void;
 }
+
+/** The workshops heard by their saw, by their furnace. */
+const SAWS = new Set<string>(["lumber_camp", "sawmill", "rope_walk"]);
+const KILNS = new Set<string>(["brickworks", "glassworks", "kiln"]);
 
 const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function PorcellanaMap(
   { p, now, onTarget, target, placing = null, onPick, onDomain },
@@ -741,6 +781,32 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
     setCarded(id !== null);
     if (id === null) onTarget(null);
   };
+  // A workshop at work chosen is heard: its saw, its furnace (P3-10 of the players' audit).
+  useEffect(() => {
+    const tile = chosen ? scene?.tiles.find((x) => x.place?.id === chosen) : undefined;
+    if (!tile?.running || !tile.model) return;
+    if (SAWS.has(tile.model)) sound("saw");
+    else if (KILNS.has(tile.model)) sound("kiln");
+  }, [chosen, scene]);
+  // The board shown, the campanile strikes the player's hour and the lagoon washes its quays, now
+  // and then: quiet, never while the page is hidden.
+  useEffect(() => {
+    let hour = new Date().getHours();
+    let wash = Date.now() + 8_000;
+    const id = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      const now = new Date();
+      if (now.getHours() !== hour) {
+        hour = now.getHours();
+        sound("campanile");
+      }
+      if (Date.now() >= wash) {
+        wash = Date.now() + 11_000 + Math.random() * 9_000;
+        sound("surf");
+      }
+    }, 1_000);
+    return () => window.clearInterval(id);
+  }, []);
   // The placing over (put down or given up): the tile picked let go.
   const wasPlacing = useRef(false);
   useEffect(() => {
