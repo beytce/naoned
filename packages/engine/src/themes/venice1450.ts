@@ -68,36 +68,6 @@ export const venice1450: Theme = {
     { type: "rope_walk", name: "Corderie de la Tana" },
   ],
   recipes: [
-    // The lot 7 of the publication plan: the salt of the lagoon, the hemp and the ropes, and the
-    // glass of Murano with the soda of the Levant (a better lot than with wood, never required).
-    {
-      code: "evaporate_salt",
-      building: "salt_pans",
-      inputs: {},
-      outputs: { salt: 10 },
-      durationMinutes: 30,
-    },
-    {
-      code: "grow_hemp",
-      building: "hemp_field",
-      inputs: {},
-      outputs: { hemp: 10 },
-      durationMinutes: 30,
-    },
-    {
-      code: "twist_rope",
-      building: "rope_walk",
-      inputs: { hemp: 8 },
-      outputs: { rope: 4 },
-      durationMinutes: 30,
-    },
-    {
-      code: "melt_glass_soda",
-      building: "glassworks",
-      inputs: { sand: 10, soda: 2 },
-      outputs: { glass: 6 },
-      durationMinutes: 30,
-    },
     {
       code: "grow_wheat",
       building: "farm",
@@ -197,6 +167,36 @@ export const venice1450: Theme = {
       inputs: { spices: 2 },
       outputs: { prepared_spices: 2 },
       durationMinutes: 60,
+    },
+    // The lot 7 of the publication plan: the salt of the lagoon, the hemp and the ropes, and the
+    // glass of Murano with the soda of the Levant (a better lot than with wood, never required).
+    {
+      code: "evaporate_salt",
+      building: "salt_pans",
+      inputs: {},
+      outputs: { salt: 10 },
+      durationMinutes: 30,
+    },
+    {
+      code: "grow_hemp",
+      building: "hemp_field",
+      inputs: {},
+      outputs: { hemp: 10 },
+      durationMinutes: 30,
+    },
+    {
+      code: "twist_rope",
+      building: "rope_walk",
+      inputs: { hemp: 8 },
+      outputs: { rope: 4 },
+      durationMinutes: 30,
+    },
+    {
+      code: "melt_glass_soda",
+      building: "glassworks",
+      inputs: { sand: 10, soda: 2 },
+      outputs: { glass: 6 },
+      durationMinutes: 30,
     },
   ],
 };
