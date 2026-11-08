@@ -58,6 +58,28 @@ function settleResearch(h: EmpireHouse, now: number): void {
 }
 
 /** Applies the building sites (and the researches) that ended by `now`, in the order they end. */
+/**
+ * A site hastened with Favour (docs/plan-publication.md D2): the one ending soonest, its time left
+ * cut, three times a day at most, each dearer (CADRAGE-v3 § 5.4: never bought with money).
+ */
+export function hasteBuild(tx: Tx, playerId: PlayerId): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const haste = s.haste;
+  if (!haste) fail("locked");
+  const site = [...h.builds].sort((a, b) => a.endsAt - b.endsAt).find((b) => b.endsAt > tx.now);
+  if (!site) fail("no_work");
+  const day = Math.floor(tx.now / DAY_MS);
+  const used = h.haste?.day === day ? h.haste.used : 0;
+  const price = haste.favour[used];
+  if (price === undefined) fail("rush_limit");
+  if (h.favour < price) fail("insufficient_favour");
+  h.favour -= price;
+  h.haste = { day, used: used + 1 };
+  const left = site.endsAt - tx.now;
+  site.endsAt = tx.now + Math.ceil((left * (10_000 - haste.cutBps)) / 10_000);
+}
+
 export function settleBuilds(h: EmpireHouse, now: number): void {
   settleResearch(h, now);
   settleLearning(h, now);

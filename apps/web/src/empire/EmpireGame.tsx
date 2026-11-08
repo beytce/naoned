@@ -1115,9 +1115,21 @@ function siteLabel(p: EmpirePayload, b: EmpireBuild): string {
 }
 
 /** The building sites under way, each with its time left, and the free ones. */
-function Sites({ p, now }: { p: EmpirePayload; now: number }) {
+function Sites({
+  p,
+  now,
+  busy = false,
+  act,
+}: {
+  p: EmpirePayload;
+  now: number;
+  busy?: boolean;
+  act?: (a: EmpireAction) => Promise<void>;
+}) {
   const view = p.view;
   if (!view) return null;
+  // The Favour's use (D2 of the publication plan): the soonest site's time halved.
+  const haste = view.hasteFavour ?? null;
   const sites = sitesByEnd(view.house.builds);
   const free = view.buildSlots - sites.length;
   return (
@@ -1142,6 +1154,17 @@ function Sites({ p, now }: { p: EmpirePayload; now: number }) {
                 </span>
               </div>
               <Ribbon value={(now - b.startedAt) / Math.max(1, b.endsAt - b.startedAt)} />
+              {act && b === sites[0] && haste !== null && (
+                <button
+                  type="button"
+                  disabled={busy || view.house.favour < haste}
+                  onClick={() => void act({ type: "empireHaste" })}
+                  className="mt-2 min-h-11 w-full rounded-full bg-night-4 text-sm font-bold text-cream disabled:opacity-40"
+                  data-haste
+                >
+                  {t.sites.haste(haste)}
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -1292,7 +1315,7 @@ function CasaSheet({
       title={t.casa.title(view.house.casa)}
       summary={next ? undefined : t.casa.top}
     >
-      <Sites p={p} now={now} />
+      <Sites p={p} now={now} busy={busy} act={act} />
       {next && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">

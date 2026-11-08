@@ -592,6 +592,12 @@ export const empireSettingsSchema = z.object({
    * default; sooner where the world says so (audit of 4 November 2026, UX M1).
    */
   away: z.object({ afterMinutes: positive }).prefault({ afterMinutes: 720 }),
+  /**
+   * The Favour's use (docs/plan-publication.md D2, CADRAGE-v3 § 5.4): a site hastened, its time left
+   * cut by `cutBps`, for `favour[n]` the n-th time of the day, as many times a day as there are
+   * prices. None: no haste.
+   */
+  haste: z.object({ favour: z.array(positive).min(1), cutBps: bps }).optional(),
   newcomers: z
     .object({ rawBonusBps: bps, untilCasa: qty })
     .prefault({ rawBonusBps: 0, untilCasa: 0 }),

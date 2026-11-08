@@ -93,6 +93,8 @@ export interface EmpireView {
   wagesBps?: number;
   /** How long a workshop's queue runs once launched (12 before the publication plan). */
   queueHours?: number;
+  /** The Favour a site's haste costs now (null: none left today). */
+  hasteFavour?: number | null;
   asleep: boolean;
   nextCasa:
     | (EmpireSite & {
@@ -468,6 +470,7 @@ export type EmpireAction =
   | { type: "empireUpgrade"; workshopId: string }
   | { type: "empireRelaunch"; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll" }
+  | { type: "empireHaste" }
   | { type: "empireSetPriority"; workshopId: string; priority: "high" | "normal" | "low" }
   | { type: "empireSell"; good: string; qty: number; region?: string }
   | { type: "empireBuy"; good: string; qty: number; post?: string }

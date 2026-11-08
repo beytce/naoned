@@ -650,6 +650,7 @@ const frDict = {
       title: "Chantiers",
       free: (n: number) => (n === 1 ? "1 chantier libre" : `${n} chantiers libres`),
       none: "Aucun chantier en cours",
+      haste: (favour: number) => `Hâter de moitié · ${favour} Faveur`,
       casa: (n: number) => `Fondaco niv. ${n}`,
       newWorkshop: (name: string) => `${name} neuf`,
       ship: (name: string) => `${name} à l'Arsenal`,

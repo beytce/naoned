@@ -369,6 +369,9 @@ export const venice1450Empire: EmpireSettingsInput = {
   // The merchant's return told after two and a half hours away (owner's decision, 4 November
   // 2026): what was made meanwhile, felt at each of the day's visits.
   away: { afterMinutes: 150 },
+  // The Favour's use (D2 of the publication plan, CADRAGE-v3 § 5.4): a site's time left halved, for
+  // 10, then 20, then 40 Favour a day (an objective of the Carnet gives 10).
+  haste: { favour: [10, 20, 40], cutBps: 5_000 },
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
   // The knowledge (CADRAGE-v3 § 3.5): four branches, four knowledges and two capstones each,
   // from 30 minutes to 10 days; one place from the Casa 4, two from the 12.

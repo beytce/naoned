@@ -722,6 +722,7 @@ export const en: Dictionary = {
       title: "Building sites",
       free: (n: number) => (n === 1 ? "1 site free" : `${n} sites free`),
       none: "No site under way",
+      haste: (favour: number) => `Halve the time left · ${favour} Favour`,
       casa: (n: number) => `Fondaco lv ${n}`,
       newWorkshop: (name: string) => `New ${name}`,
       ship: (name: string) => `${name} at the Arsenal`,

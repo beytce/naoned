@@ -625,6 +625,8 @@ export interface EmpireHouse {
   research?: { code: string; level: number; startedAt: number; endsAt: number }[];
   /** What is left today of the court's book for its fine and exquisite goods. */
   court?: { day: number; left: number };
+  /** The sites hastened today with Favour (CADRAGE-v3 § 5.4). */
+  haste?: { day: number; used: number };
   /**
    * What the house sold to and bought from the markets today, by `region:good`: each house has its
    * own day's depth (the players' audit of 7 November 2026), so no one empties it for the others.

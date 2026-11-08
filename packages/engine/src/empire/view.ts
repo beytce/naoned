@@ -107,6 +107,8 @@ export interface EmpireView {
   wagesBps: number;
   /** How long a workshop's queue runs once launched, then it waits for its harvest (rule 3). */
   queueHours: number;
+  /** The Favour a site's haste costs now; null when none is left today, or no haste. */
+  hasteFavour: number | null;
   /** Receipts a day (the last full days), in deniers. */
   incomePerDay: Deniers;
   asleep: boolean;
@@ -492,6 +494,10 @@ export function empireView(
     band: bandOf(power, s),
     wagesBps: salaryBps(power, s),
     queueHours: s.queueHours,
+    hasteFavour: s.haste
+      ? (s.haste.favour[house.haste?.day === Math.floor(now / DAY_MS) ? house.haste.used : 0] ??
+        null)
+      : null,
     incomePerDay: incomePerDay(house, now),
     asleep: isAsleep(house, now, s),
     nextCasa: nextLine

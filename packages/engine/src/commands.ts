@@ -44,6 +44,7 @@ import {
   chooseArte,
   empireJoin,
   empireSettings,
+  hasteBuild,
   ownHouse,
   settleBuilds,
   startCasa,
@@ -442,6 +443,7 @@ type EmpireCommandOf =
   | { type: "empireDepartNow"; playerId: PlayerId; vehicleId: string }
   /** Nothing but what every command settles first: the hops arrived, the sites ended. */
   | { type: "empireSettle"; playerId: PlayerId }
+  | { type: "empireHaste"; playerId: PlayerId }
   | { type: "empireCancelStop"; playerId: PlayerId; vehicleId: string }
   /** A researched trade module fitted on a vehicle's place (null: emptied). */
   | {
@@ -878,6 +880,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireMove":
       moveVehicle(tx, cmd.playerId, cmd.vehicleId, cmd.to);
+      break;
+    case "empireHaste":
+      hasteBuild(tx, cmd.playerId);
       break;
     case "empireSettle":
       break;
