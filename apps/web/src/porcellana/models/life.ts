@@ -2,9 +2,17 @@
  * What lives in the models: the smoke of a chimney, the glow of a kiln. Each shows only while the
  * game says the place works.
  */
-import { Mesh, MeshStandardMaterial, type Object3D, PointLight, SphereGeometry } from "three";
+import {
+  BoxGeometry,
+  Group,
+  Mesh,
+  MeshStandardMaterial,
+  type Object3D,
+  PointLight,
+  SphereGeometry,
+} from "three";
 import type { Palette } from "../materials.js";
-import { cached, dyn } from "../shapes.js";
+import { ball, cached, cyl, dyn } from "../shapes.js";
 import type { ModelOpts } from "./model.js";
 
 /** Puffs rising from a chimney's top, drifting east; none while the place is idle. */
@@ -66,5 +74,50 @@ export function kilnGlow(
     const k = 0.85 + Math.sin(t * 3.1) * 0.08 + Math.sin(t * 7.3) * 0.05;
     light.intensity = 4 * k;
     light.color.copy(P.accentColour);
+  };
+}
+
+/**
+ * Passers-by round a place (the players' audit, P3-03: no one lived in the city): small porcelain
+ * figures walking a loop along the tile's edge, more of them as the Fondaco grows (`n`), one in
+ * three with a crate of accent. They walk only while the scene is live; still, they stand.
+ */
+export function walkers(P: Palette, p: Object3D, n: number, seed = 0): (t: number) => void {
+  const people: { g: Group; phase: number; speed: number; lane: number }[] = [];
+  for (let i = 0; i < Math.min(n, 8); i++) {
+    const g = new Group();
+    cyl(g, 0.07, 0.11, 0.32, 0, 0, 0, P.m(i % 2 ? "trim" : "wood"), 12);
+    ball(g, 0.075, 0, 0.42, 0, P.m("trim"), 12);
+    if (i % 3 === 0) {
+      const crate = dyn(new Mesh(cached("walker-crate", () => new BoxGeometry(0.16, 0.12, 0.12))));
+      crate.material = P.accent;
+      crate.position.set(0, 0.42, 0.12);
+      g.add(crate);
+    }
+    dyn(g);
+    p.add(g);
+    people.push({
+      g,
+      phase: ((i * 0.37 + seed * 0.11) % 1) as number,
+      speed: 0.018 + ((i * 7 + seed) % 5) * 0.004,
+      lane: 2.05 + (i % 2) * 0.25,
+    });
+  }
+  // A square loop round the place, walked at an even pace.
+  const at = (u: number, r: number): [number, number] => {
+    const k = (((u % 1) + 1) % 1) * 4;
+    const side = Math.floor(k);
+    const f = k - side;
+    const a = -r + f * 2 * r;
+    return side === 0 ? [a, r] : side === 1 ? [r, -a] : side === 2 ? [-a, -r] : [-r, a];
+  };
+  return (t) => {
+    for (const w of people) {
+      const u = w.phase + t * w.speed;
+      const [x, z] = at(u, w.lane);
+      const [nx, nz] = at(u + 0.01, w.lane);
+      w.g.position.set(x, 0.02 + Math.abs(Math.sin(t * 9 + w.phase * 20)) * 0.03, z);
+      w.g.rotation.y = Math.atan2(nx - x, nz - z);
+    }
   };
 }
