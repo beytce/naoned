@@ -23,6 +23,7 @@ import { CasaMoment } from "./Moment.js";
 import { NewWorkshopSheet, freeTileOf } from "./NewWorkshop.js";
 import { GoodSheet } from "./Resources.js";
 import { Safe } from "./Safe.js";
+import { StoreSheet } from "./Store.js";
 import { Charroi, RegionPlace, Scuola, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import { foresee } from "./foresee.js";
@@ -60,6 +61,7 @@ import { BattleScreen } from "./porta/Battle.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
 type SheetId =
+  | "store"
   | "workshops"
   | "casa"
   | "market"
@@ -656,7 +658,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               onDeliver={deliver}
               onAll={() => setSheet("production")}
             />
-            {!target && !placing && !domain && <RemiseBar p={p} onGood={setGood} />}
+            {!target && !placing && !domain && (
+              <RemiseBar p={p} onGood={setGood} onStore={() => setSheet("store")} />
+            )}
             <MapControls
               onRecenter={() => map.current?.recenter()}
               onZoom={(k) => map.current?.zoom(k)}
@@ -804,6 +808,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
                 act={act}
                 onBack={() => map.current?.leave()}
                 onProduction={() => setSheet("production")}
+                onStore={() => setSheet("store")}
                 onCasa={() => setSheet("casa")}
                 guided={tutorial}
                 // The quay (the refonte claire, lot 3): the Remise once it stands, else the
@@ -966,6 +971,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           />
         )}
         <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
+        <StoreSheet
+          p={p}
+          open={sheet === "store"}
+          onClose={close}
+          onGood={(g) => {
+            setSheet(null);
+            setGood(g);
+          }}
+        />
         {/* The Remise's arms and the Porta: their scene and their dock; without WebGL, the same dock
           over a plain ground (docs/plan-dock.md, lot 6). */}
         <LazyArms p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />

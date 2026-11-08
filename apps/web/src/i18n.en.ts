@@ -294,6 +294,15 @@ export const en: Dictionary = {
       noFreeTile: "No free tile of yours in this region: buy a « + » plot next to your domain.",
     },
     region: "Venetia",
+    store: {
+      kicker: "The Fondaco",
+      title: "The Warehouse",
+      cap: (n: number) => `It keeps up to ${n} of each good: full, the workshop waits.`,
+      empty: "The Warehouse is empty: harvest your workshops.",
+      full: "Full: sell or deliver, the workshop making it waits.",
+      forLevel: (n: number, level: number) => `${n} asked for Fondaco level ${level}`,
+      door: "Warehouse",
+    },
     loading: "Opening the books…",
     join: {
       kicker: "The empire",

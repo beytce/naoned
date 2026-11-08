@@ -587,9 +587,12 @@ export function SidePanel({
 export function RemiseBar({
   p,
   onGood,
+  onStore,
 }: {
   p: EmpirePayload;
   onGood: (good: string) => void;
+  /** The whole Warehouse, from its name. */
+  onStore?: () => void;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -604,7 +607,15 @@ export function RemiseBar({
       className="hud-bar pointer-events-auto fixed bottom-5 left-[26.5rem] z-20 hidden h-[5.25rem] max-w-[calc(100vw-26.5rem-30rem)] items-center gap-2.5 overflow-hidden rounded-full px-3 lg:flex"
       data-remise-bar
     >
-      <span className="shrink-0 px-2 font-display text-[0.9375rem] font-black">{t.remise}</span>
+      <button
+        type="button"
+        onClick={onStore}
+        className="flex h-11 shrink-0 items-center gap-1 rounded-full px-2 font-display text-[0.9375rem] font-black active:translate-y-0.5"
+        data-store-open
+      >
+        {t.remise}
+        <span className="text-cream-dim [&_svg]:h-4 [&_svg]:w-4">{Icon.chevronRight()}</span>
+      </button>
       {goods.length === 0 && <span className="pr-3 text-sm text-cream-dim">{t.emptyRemise}</span>}
       {goods.map(([g, n]) => {
         const want = need[g] ?? 0;

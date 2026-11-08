@@ -211,6 +211,16 @@ const frDict = {
         "Aucune case libre à toi dans cette région : achète une parcelle « + » à côté de ton domaine.",
     },
     region: "Vénétie",
+    /** The Warehouse's sheet (the players' audit, P1: no screen showed the stock). */
+    store: {
+      kicker: "Le Fondaco",
+      title: "L'Entrepôt",
+      cap: (n: number) => `Il garde jusqu'à ${n} de chaque marchandise : plein, l'atelier attend.`,
+      empty: "L'Entrepôt est vide : récolte tes ateliers.",
+      full: "Plein : vends ou livre, l'atelier qui en fait attend.",
+      forLevel: (n: number, level: number) => `${n} demandés pour le Fondaco niveau ${level}`,
+      door: "Entrepôt",
+    },
     loading: "On ouvre les livres…",
     join: {
       kicker: "L'empire",
