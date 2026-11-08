@@ -144,7 +144,10 @@ try {
     // A first time: the inside of a workshop, entered after the guided start, plays its tutorial.
     if (ended && !process.env.EMPIRE_INTERIOR_OFF) {
       await page.locator(".pc-pin[data-place^='workshop:']").first().click({ force: true });
-      await page.locator(".pc-card .pc-go").click({ timeout: 20_000 });
+      // The card follows its pin while the camera glides: touched once it has settled.
+      await page.locator(".pc-card .pc-go").waitFor({ timeout: 20_000 });
+      await page.waitForTimeout(8_000);
+      await page.locator(".pc-card .pc-go").click({ force: true });
       const first = page.locator("[data-tutor-step^='interior:']");
       await first
         .waitFor({ timeout: 30_000 })
