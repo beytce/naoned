@@ -180,6 +180,7 @@ const KIT_LABELS = new Map(
 
 /** The catalogue (lot 2): every model, family by family. */
 const CATALOGUE_ROWS = [
+  ["salt_pans", "~", "murano", "~", "rope_walk", "~", "zattera"],
   ["lumber_camp", "sawmill", "mill", "farm", "glassworks", "clay_pit", "sand_pit"],
   ["brickworks", "palazzo", "field", "fondaco", "market", "campo", "porta"],
   ["arsenal", "post", "depot", "grove", "forest", "rocks", "mountain"],
@@ -208,7 +209,7 @@ const CAT: Spec = {
     const make = e.make;
     const vehicle = e.vehicle;
     return {
-      water: !!vehicle && !!e.water,
+      water: (!!vehicle && !!e.water) || !!e.floats,
       make: make ? (o) => make(palette(), o) : undefined,
       vehicle: vehicle ? (o) => vehicle(palette(), o) : undefined,
       place: {

@@ -1,9 +1,10 @@
-# Notes du chapitre : le jeu prêt à publier (brouillon, à annoncer avant d'appliquer)
+# Notes du chapitre : le jeu prêt à publier (novembre 2026)
 
-Brouillon du 8 novembre 2026, issu du plan de publication (`docs/plan-publication.md`, décisions du
-porteur du 7 novembre). Les changements du commerce s'annoncent dans les notes du chapitre avant de
-s'appliquer (CLAUDE.md) : la date d'effet est à fixer par le porteur. Les chiffres viennent du
-simulateur de 24 mois (`docs/calibration.md`, § « Plan de publication, lots 1 et 2 »).
+En vigueur dès sa mise en ligne : décision du porteur du 8 novembre 2026 (« les changements doivent
+être actifs tout de suite, je suis le seul joueur »), par exception à la règle de l'annonce
+préalable, comme pour les chapitres précédents. Le texte ci-dessous est à publier dans le jeu en
+même temps. Les chiffres viennent du simulateur de 24 mois (`docs/calibration.md`, § « Plan de
+publication, lots 1 et 2 »).
 
 ## Ce qui change pour toi
 
