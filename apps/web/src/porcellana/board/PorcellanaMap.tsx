@@ -422,6 +422,14 @@ function Board({
       if (chosen || homeAsked || focused) {
         f.from.copy(controls.target);
         f.to.copy(chosen ? chosen.group.position : focused ? focused.group.position : homeAt());
+        // A place looked at by itself: its pin in the middle, not its foot (a campanile's pin
+        // stood under the top bar): the point of the ground on the pin's line of sight.
+        if (focused && !chosen) {
+          const pin = focused.built?.pin ?? [0, 2, 0];
+          const at = focused.group.position.clone().add(new Vector3(pin[0], pin[1], pin[2]));
+          const dir = controls.target.clone().sub(camera.position).normalize();
+          if (dir.y < -0.05) f.to.copy(at.sub(dir.multiplyScalar(at.y / dir.y)));
+        }
         f.to.y = 0;
         f.z0 = cam.zoom;
         f.z1 = chosen
