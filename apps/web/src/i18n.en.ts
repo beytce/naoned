@@ -257,6 +257,7 @@ export const en: Dictionary = {
         n > 1 ? `${n} orders crated on the quay.` : "One order crated on the quay.",
       cityQuiet: "No order for now.",
       nextOrder: (at: string) => `Its next order comes at ${at}.`,
+      served: (n: number) => (n === 1 ? "1 delivery" : `${n} deliveries`),
       toLink: (n: number) =>
         n > 1
           ? `Not linked yet: buy ${n} tiles up to it, your mules only walk your own land.`

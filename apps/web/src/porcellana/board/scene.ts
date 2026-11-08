@@ -105,6 +105,8 @@ export interface BoardTile {
   crates?: boolean[];
   /** The Fondaco's embellishments bought with Seals (I5 of the publication plan). */
   decor?: string[];
+  /** How well a town knows the house: 1 to 3 banners at 3, 10 and 25 deliveries (P3-07). */
+  loyalty?: number;
   place: BoardPlace | null;
   seed: number;
 }
@@ -236,8 +238,10 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     // In the zone but not linked by the house's own tiles: its mules cannot go (7 November 2026).
     const toLink = inZone && !venice ? map.toLink?.[c.code] : undefined;
     const crates = waiting > 0 ? deliveryPlan(p, c.code).orders.map((x) => x.covered) : [];
+    const served = v.served?.[c.code] ?? 0;
     put(k, {
       crates,
+      loyalty: served >= 25 ? 3 : served >= 10 ? 2 : served >= 3 ? 1 : 0,
       water: false,
       model: venice ? "market" : "town",
       size: c.size ?? 1,
@@ -248,7 +252,7 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         name: venice ? t.porcellana.market : (t.cityNames[c.code] ?? c.code),
         sub: venice
           ? t.porcellana.marketSub
-          : `${t.regionNames[c.region] ?? c.region} · ${t.porcellana.townSize(c.size ?? 1)}`,
+          : `${t.regionNames[c.region] ?? c.region} · ${t.porcellana.townSize(c.size ?? 1)}${served > 0 ? ` · ${t.porcellana.served(served)}` : ""}`,
         line: !inZone
           ? t.porcellana.outOfZone(map.zoneCasa?.[c.code] ?? null)
           : toLink

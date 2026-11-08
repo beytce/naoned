@@ -161,6 +161,8 @@ export interface EmpireView {
   orders: CityOrders[];
   /** The last deliveries brought (the board plays them again on the player's return). */
   delivered: { city: string; pay: string; at: number }[];
+  /** The deliveries each town received from the house (P3-07). */
+  served: Record<string, number>;
   /** The vehicles' hops: seconds before leaving, speed in units a second, stops at most. */
   moves: {
     departSeconds: number;
@@ -556,6 +558,7 @@ export function empireView(
     full: fullWorkshops(ctx, house, s, stores, line.storeCap, now),
     orders: ordersOf(ctx, house, playerId, s, now),
     delivered: (house.delivered ?? []).map((d) => ({ ...d, pay: d.pay.toString() })),
+    served: house.served ?? {},
     moves: s.moves,
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),

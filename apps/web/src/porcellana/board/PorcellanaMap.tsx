@@ -198,7 +198,7 @@ function Board({
     const seen = new Set<string>();
     for (const tile of scene.tiles) {
       seen.add(tile.key);
-      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}|${(tile.crates ?? []).map(Number).join("")}|${(tile.decor ?? []).join(",")}`;
+      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}|${(tile.crates ?? []).map(Number).join("")}|${(tile.decor ?? []).join(",")}|${tile.loyalty ?? 0}`;
       const was = tiles.current.get(tile.key);
       if (was && was.sig === sig) continue;
       if (was) root.remove(was.group);

@@ -173,6 +173,7 @@ const frDict = {
         n > 1 ? `${n} commandes en caisses au quai.` : "Une commande en caisse au quai.",
       cityQuiet: "Aucune commande pour l'instant.",
       nextOrder: (at: string) => `Sa prochaine commande arrive à ${at}.`,
+      served: (n: number) => (n === 1 ? "1 livraison" : `${n} livraisons`),
       toLink: (n: number) =>
         n > 1
           ? `Pas encore reliée : achète ${n} cases jusqu'à elle, tes mules ne vont que sur tes terres.`

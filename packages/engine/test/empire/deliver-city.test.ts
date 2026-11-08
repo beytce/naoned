@@ -194,5 +194,7 @@ describe("the deliveries made while away", () => {
     expect(done[0]?.city).toBe("padova");
     expect(done[0]?.at).toBe(out?.arrivesAt);
     expect(BigInt(done[0]?.pay ?? "0")).toBeGreaterThan(0n);
+    // Each town counts the deliveries it received, for good (P3-07: the towns react).
+    expect(view(w)?.served).toEqual({ padova: 1 });
   });
 });

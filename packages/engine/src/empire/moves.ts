@@ -277,6 +277,8 @@ function arrive(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle, leg: Emp
   }
   // Kept for the player's return (the board plays them again, decision of the owner, 3 November).
   h.delivered = [...(h.delivered ?? []), { city: code, pay: paid, at: leg.arrivesAt }].slice(-12);
+  // The town knows the house the more it is served (P3-07 of the players' audit).
+  h.served = { ...(h.served ?? {}), [code]: (h.served?.[code] ?? 0) + 1 };
   const rest = (v.loads ?? []).filter((o) => o.city !== code);
   v.loads = rest.length > 0 ? rest : undefined;
 }
