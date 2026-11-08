@@ -117,6 +117,8 @@ export interface BoardTile {
   raft?: boolean;
   /** The Market's stalls: the house's goods it trades, their crates, hot above their rate (P3-08). */
   stalls?: { n: number; hot: boolean }[];
+  /** Unglazed, closed: the Porta before the Fondaco's level opens it (P1-06 of the players' audit). */
+  biscuit?: boolean;
   place: BoardPlace | null;
   seed: number;
 }
@@ -449,6 +451,67 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         },
       },
     });
+  }
+
+  // Venice on its lagoon (D8 and P1-24 of the players' audit): the land round San Marco that holds
+  // nothing of the house's is drawn as water, a boat on some; bought, a tile is land again.
+  const venice = map.cities.find((c) => c.code === "venezia");
+  if (venice) {
+    const [vi, vj] = parse(tileAt(venice.x, venice.y, size));
+    for (let di = -1; di <= 1; di++)
+      for (let dj = -1; dj <= 1; dj++) {
+        const k = `${vi + di},${vj + dj}`;
+        if (!out.has(k) && !owned.has(k))
+          put(k, { water: true, model: null, running: false, place: null });
+      }
+  }
+
+  // The Porta not open yet: closed, in biscuit, on the land seen nearest the Fondaco, with the level
+  // that opens it (P1-06 of the players' audit: the locked Porta said nothing, the game's best tease).
+  const portaCasa = v.porta?.site?.casa;
+  if (portaCasa && !v.porta?.cell && house.casa < portaCasa && map.home.placed) {
+    // The first empty place round the Fondaco, an island of its own as the towns are: north first,
+    // then clockwise, ring after ring.
+    const [hi, hj] = parse(homeTile);
+    let spot: string | undefined;
+    for (let r = 2; r <= 6 && !spot; r++)
+      for (const [di, dj] of [
+        [0, -r],
+        [r, 0],
+        [0, r],
+        [-r, 0],
+        [r, -r],
+        [r, r],
+        [-r, r],
+        [-r, -r],
+      ] as [number, number][]) {
+        const k = `${hi + di},${hj + dj}`;
+        const [ki, kj] = [hi + di, hj + dj];
+        // Never touching a tile drawn already: it stands alone.
+        const near = [`${ki},${kj - 1}`, `${ki + 1},${kj}`, `${ki},${kj + 1}`, `${ki - 1},${kj}`];
+        if (!out.has(k) && !near.some((n) => out.get(n)?.place)) {
+          spot = k;
+          break;
+        }
+      }
+    if (spot)
+      put(spot, {
+        water: false,
+        model: "porta",
+        biscuit: true,
+        running: false,
+        place: {
+          id: "porta:closed",
+          target: { kind: "casa" },
+          name: t.porcellana.porta,
+          sub: t.porcellana.portaClosed(portaCasa),
+          line: t.porcellana.portaClosedLine(portaCasa - house.casa),
+          go: t.porcellana.raiseFondaco,
+          pin: "",
+          ready: false,
+          badge: { kind: "lock", casa: portaCasa },
+        },
+      });
   }
 
   return {

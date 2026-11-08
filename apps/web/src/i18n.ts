@@ -196,6 +196,10 @@ const frDict = {
       arsenalSub: "Les navires",
       porta: "La Porta",
       portaSub: "Vers les terres de Rome",
+      portaClosed: (casa: number) => `Fermée · s'ouvre au Fondaco niveau ${casa}`,
+      portaClosedLine: (levels: number) =>
+        `Encore ${levels} niveau${levels > 1 ? "x" : ""} de Fondaco : derrière elle, les terres de Rome, leurs combats et leurs reliques.`,
+      raiseFondaco: "Voir le Fondaco",
       post: (region: string) => `Fondaco de ${region}`,
       level: (n: number) => `Niveau ${n}`,
       fondaco: "Le Fondaco",
