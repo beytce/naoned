@@ -174,7 +174,7 @@ function TutorSetting() {
       <div className="flex flex-wrap gap-2">
         <Slab
           tone="ghost"
-          size="sm"
+          size="md"
           onClick={() => {
             skipAllTutors();
             setSaid(fr.empire.tutor.skipped);
@@ -184,7 +184,7 @@ function TutorSetting() {
         </Slab>
         <Slab
           tone="ghost"
-          size="sm"
+          size="md"
           onClick={() => {
             replayTutors();
             setSaid(fr.empire.tutor.replayed);
