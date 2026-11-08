@@ -8,7 +8,7 @@ import type { Palette } from "../materials.js";
 import { lockedPlot } from "../models/decor.js";
 import { fondaco } from "../models/fondaco.js";
 import { grove, plot } from "../models/ground.js";
-import { adornments, walkers } from "../models/life.js";
+import { adornments, barque, walkers } from "../models/life.js";
 import { market } from "../models/market.js";
 import type { Built, ModelOpts } from "../models/model.js";
 import { town } from "../models/towns.js";
@@ -55,7 +55,14 @@ export function quayCrates(P: Palette, g: Group, covered: boolean[]): void {
 /** The model of a tile, or nothing for the sea. */
 export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null {
   const key: ModelKey | null = tile.model;
-  if (!key) return null;
+  if (!key) {
+    // A boat on one lagoon tile in three (P3-04 of the players' audit: the water was still).
+    if (tile.water && tile.seed % 3 === 0) {
+      const b = barque(P, tile.seed);
+      return { group: b.group, pin: [0, 1, 0], tick: (t) => b.tick(t) };
+    }
+    return null;
+  }
   switch (key) {
     case "fondaco": {
       const b = fondaco(P);
