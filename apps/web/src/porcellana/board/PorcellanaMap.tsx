@@ -97,6 +97,8 @@ interface Shared {
    * delivered (the first steps, lot 4), so that the mule is seen arriving.
    */
   focus: string | null;
+  /** A vehicle just sent: the camera walks beside it (P3-01 of the players' audit). */
+  follow: string | null;
   /** Keys asked of the map: a step to pan (in screens), a factor to zoom. */
   pan: [number, number];
   zoom: number;
@@ -490,6 +492,16 @@ function Board({
       }
       actor.opts.running = !!pose.hop && live;
       actor.group.position.set(x, 0.02, z);
+      // The camera walks beside the vehicle followed, softly (P3-01).
+      if (sh.follow === v.id && pose.hop && !sh.chosen) {
+        const k = Math.min(1, dt * 2.5);
+        const dx = (x - controls.target.x) * k;
+        const dz = (z - controls.target.z) * k;
+        controls.target.x += dx;
+        controls.target.z += dz;
+        camera.position.x += dx;
+        camera.position.z += dz;
+      }
       actor.group.rotation.y = heading;
       actor.group.visible = drawn > 0.99;
       actor.tick(c.life);
@@ -635,6 +647,7 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       target: new Vector3(),
       goHome: 0,
       focus: null,
+      follow: null,
       homeZoom: 1,
       placing: false,
       p,
@@ -653,8 +666,22 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
     }
     sh.current.chosen = chosen;
     const w = welcomeStep(p, now);
+    // A vehicle on the road it took a minute and a half ago at most, or the welcome's own: the
+    // camera follows it (P3-01 of the players' audit: the mule walked unseen, the camera at the town).
+    const sent = (p.view?.vehicles.mine ?? []).find((v) =>
+      v.legs.some(
+        (l) =>
+          l.departAt <= now &&
+          now < l.arrivesAt &&
+          (now - l.departAt < 90_000 ||
+            (w?.phase === "onWay" && v.loads.some((o) => o.city === w.city))),
+      ),
+    );
+    sh.current.follow = sent && !chosen ? sent.id : null;
     sh.current.focus =
-      w && (w.phase === "deliver" || w.phase === "onWay") && w.city ? `city:${w.city}` : null;
+      !sh.current.follow && w && (w.phase === "deliver" || w.phase === "onWay") && w.city
+        ? `city:${w.city}`
+        : null;
   }
   // A plot bought: its purchase panel has nothing left to say, the plot is let go.
   const bought = target?.kind === "sector" && (p.view?.map?.unlocked ?? []).includes(target.cell);
