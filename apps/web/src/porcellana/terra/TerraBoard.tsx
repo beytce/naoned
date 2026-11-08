@@ -36,7 +36,7 @@ import { easeOutCubic } from "../arrival.js";
 import type { Built } from "../models/model.js";
 import { TERRA_MODELS, flagCloth, warCamp } from "../models/terra.js";
 import { town } from "../models/towns.js";
-import { BOARD, CAMERA, COL, ROUGH, SELECT } from "../tokens.js";
+import { BOARD, CAMERA, COL, FLIP, ROUGH, SELECT } from "../tokens.js";
 import { type BuildingPic, shotsBetween } from "./buildings.js";
 import { type FrontDraw, FrontLayer } from "./frontLayer.js";
 import { frontHead, frontTone } from "./fronts.js";
@@ -85,6 +85,11 @@ export interface TerraSceneProps {
   labels: Map<string, HTMLElement>;
   /** A cell to centre on at the start (the merchant's camp). */
   home?: number | null;
+  /**
+   * The way in (porcellana/flip.ts): the board opens on the whole map and settles on the camp
+   * after so many seconds, rather than starting on the camp.
+   */
+  intro?: number;
   phone?: boolean;
   /** Cells lit by the dock: a bombard's targets, a front's aim (lot T5). */
   marked?: number[];
@@ -100,6 +105,7 @@ export function TerraBoard({
   onCell,
   labels,
   home,
+  intro,
   phone,
   marked,
   card,
@@ -385,7 +391,16 @@ export function TerraBoard({
   useEffect(() => () => controls.dispose(), [controls]);
 
   // The camera glides to the merchant's camp at the start, and to the cell chosen.
-  const fly = useRef({ from: new Vector3(), to: new Vector3(), z0: 1, z1: 1, t: 1, last: "" });
+  const fly = useRef({
+    from: new Vector3(),
+    to: new Vector3(),
+    z0: 1,
+    z1: 1,
+    t: 1,
+    last: "",
+    wait: 0,
+    span: SELECT.fly as number,
+  });
   const m = useMemo(() => new Matrix4(), []);
   const colour = useMemo(() => new Color(), []);
   const porcelain = useMemo(() => new Color(COL.wall), []);
@@ -430,6 +445,18 @@ export function TerraBoard({
               : 1.6
             : 1;
       f.t = live && !first ? 0 : 1;
+      f.wait = 0;
+      f.span = SELECT.fly as number;
+      // The way in: from the whole map down to the camp, once the map's tiles have turned.
+      if (first && live && intro !== undefined) {
+        f.from.set(0, 0, 0);
+        f.z0 = 1;
+        f.t = 0;
+        f.wait = intro;
+        f.span = FLIP.settle;
+        cam.zoom = 1;
+        cam.updateProjectionMatrix();
+      }
       if (f.t === 1) {
         camera.position.add(f.to.clone().sub(controls.target));
         controls.target.copy(f.to);
@@ -437,8 +464,9 @@ export function TerraBoard({
         cam.updateProjectionMatrix();
       }
     }
-    if (f.t < 1) {
-      f.t = Math.min(1, f.t + dt / SELECT.fly);
+    if (f.wait > 0) f.wait -= dt;
+    else if (f.t < 1) {
+      f.t = Math.min(1, f.t + dt / f.span);
       const k = easeOutCubic(f.t);
       const next = f.from.clone().lerp(f.to, k);
       camera.position.add(next.clone().sub(controls.target));

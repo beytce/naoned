@@ -357,14 +357,7 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     if (b.kind === "newWorkshop" && b.cell)
       put(b.cell, { water: false, model: "site", running: true, place: null });
   place(map.depot, "depot", { kind: "depot" }, t.porcellana.depot, t.porcellana.depotSub, "");
-  place(
-    map.camp,
-    "campo",
-    { kind: "region", code: "veneto" },
-    t.porcellana.campo,
-    t.porcellana.campoSub,
-    "",
-  );
+  place(map.camp, "campo", { kind: "terra" }, t.porcellana.campo, t.porcellana.campoSub, "");
   place(
     map.arsenal,
     "arsenal",

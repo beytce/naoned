@@ -187,7 +187,9 @@ export type Target =
   | { kind: "sector"; cell: string }
   /** A vehicle chosen for a round (after Hades' Star). */
   | { kind: "vehicle"; id: string }
-  | { kind: "porta" };
+  | { kind: "porta" }
+  /** The Campo: the way into the Terraferma's own scene (its tiles turning over). */
+  | { kind: "terra" };
 
 export type ActionIcon =
   | "harvest"
@@ -395,6 +397,8 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
         { id: "porta", icon: "banner", words: { key: "porta" }, open: "porta" },
         { id: "arms", icon: "build", words: { key: "arms" }, open: "arms" },
       ];
+    case "terra":
+      return [];
   }
 }
 

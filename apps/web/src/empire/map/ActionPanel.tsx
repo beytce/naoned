@@ -73,6 +73,8 @@ function headOf(p: EmpirePayload, target: Target): { title: string; sub: string 
     }
     case "porta":
       return { title: pt.porta, sub: pt.level(view?.porta?.level ?? 1) };
+    case "terra":
+      return { title: fr.empire.terra.title, sub: "" };
   }
 }
 

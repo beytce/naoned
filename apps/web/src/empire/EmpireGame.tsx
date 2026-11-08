@@ -9,8 +9,11 @@ import { GOLD } from "../game/gold.js";
 import { connectLive } from "../game/live.js";
 import { Icon } from "../game/map/icons.js";
 import { useOnline } from "../game/online.js";
+import type { TerraView } from "../game/types.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
+import { flipTotal, terraBack } from "../porcellana/flip.js";
+import { FLIP } from "../porcellana/tokens.js";
 import { sound } from "../sound.js";
 import { applyPalette } from "../theme.js";
 import { Badge, GoldLayer, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
@@ -24,6 +27,7 @@ import { NewWorkshopSheet, freeTileOf } from "./NewWorkshop.js";
 import { GoodSheet } from "./Resources.js";
 import { Safe } from "./Safe.js";
 import { StoreSheet } from "./Store.js";
+import { type TerraPhase, TerraStage } from "./TerraStage.js";
 import { Charroi, RegionPlace, Scuola, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import { foresee } from "./foresee.js";
@@ -215,6 +219,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // The good opened from the resource bar, and the recipe the next step points at.
   const [good, setGood] = useState<string | null>(null);
   const wide = useWide();
+  // The Terraferma's own scene, and the way into it (its tiles turning over) or out.
+  const [terra, setTerra] = useState<TerraPhase | null>(null);
+  const terraTimer = useRef(0);
   const [highlight, setHighlight] = useState<string | null>(null);
   // The Casa reached since the last view: its moment.
   const [moment, setMoment] = useState<number | null>(null);
@@ -521,6 +528,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           : "map";
   const goPlace = (id: PlaceId) => {
     // A tab leaves any full-screen scene, the inside of a workshop first (P1-05).
+    if (terra) leaveTerra();
     setInside(null);
     setTarget(null);
     setVehicle(null);
@@ -542,6 +550,43 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       else open("place:porta");
     } else setSheet("company");
   };
+  // The way into the Terraferma (the owner's decision of 8 November 2026): from the Campo, the map's
+  // tiles turn over, the Terraferma's land on their backs, the camera draws back, its board takes
+  // over. Without WebGL or with less motion asked, a plain fade.
+  const motion = () => MAP_3D && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const enterTerra = () => {
+    if (terra) return;
+    setSheet(null);
+    setTarget(null);
+    setVehicle(null);
+    const seen: { v: TerraView | null } = { v: null };
+    void empireApi
+      .terra()
+      .then((r) => {
+        seen.v = r.terra?.view ?? null;
+      })
+      .catch(() => undefined);
+    const turning = motion();
+    if (turning) map.current?.flip(false, (dx, dz) => terraBack(seen.v, dx, dz));
+    setTerra("in");
+    window.clearTimeout(terraTimer.current);
+    terraTimer.current = window.setTimeout(
+      () => setTerra("open"),
+      (turning ? FLIP.total : FLIP.plainFade) * 1_000,
+    );
+  };
+  const leaveTerra = () => {
+    // On a phone the map was let go under the scene: it comes back with its own arrival.
+    const turning = motion() && wide;
+    if (turning) map.current?.flip(true);
+    setTerra("out");
+    window.clearTimeout(terraTimer.current);
+    terraTimer.current = window.setTimeout(
+      () => setTerra(null),
+      (turning ? flipTotal(true) : FLIP.plainFade) * 1_000,
+    );
+  };
+  useEffect(() => () => window.clearTimeout(terraTimer.current), []);
   const placeDots = {
     fondaco: view.house.workshops.filter((w) => readyLots(w, now) > 0).length,
     company: claimable(p) || suppliable(p, account.id) > 0 || terraCalls(p, now),
@@ -607,7 +652,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           a battle): two WebGL scenes at once exhaust a phone's memory, its page then killed. */}
         {!(
           !wide &&
-          (sheet === "porta" || sheet === "arms" || fighting || !!p.view?.porta?.battle)
+          (sheet === "porta" ||
+            sheet === "arms" ||
+            fighting ||
+            !!p.view?.porta?.battle ||
+            terra === "open")
         ) && (
           <Suspense fallback={null}>
             <PorcellanaMap
@@ -620,6 +669,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               onDomain={setDomain}
               onTarget={(x) => {
                 if (placing) return;
+                // The Campo: into the Terraferma, its tiles turning over.
+                if (x?.kind === "terra") {
+                  enterTerra();
+                  return;
+                }
                 // A free tile of the house's: the workshops one may build there, at once.
                 if (x?.kind === "free" && x.tile) {
                   setBuildTile(x.tile);
@@ -635,6 +689,18 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               }}
             />
           </Suspense>
+        )}
+        {terra && (
+          <TerraStage
+            p={p}
+            now={now}
+            busy={busy}
+            act={act}
+            phase={terra}
+            first={null}
+            motion={motion()}
+            onBack={leaveTerra}
+          />
         )}
 
         {wide ? (
@@ -927,6 +993,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           onClose={close}
           act={act}
           onPlaceCamp={() => open("place:camp")}
+          onEnterTerra={enterTerra}
         />
         <FamilySheet p={p} open={sheet === "family"} busy={busy} onClose={close} act={act}>
           <ArteSection p={p} busy={busy} act={act} />

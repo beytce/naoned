@@ -25,6 +25,7 @@ export function CompanySheet({
   onClose,
   act,
   onPlaceCamp,
+  onEnterTerra,
   pane: first,
 }: {
   p: EmpirePayload;
@@ -39,6 +40,8 @@ export function CompanySheet({
   onPlaceCamp: () => void;
   /** The pane to open on (the Campo touched: the Terraferma). */
   pane?: CompanyPane;
+  /** The way into the Terraferma's own scene. */
+  onEnterTerra?: () => void;
 }) {
   const [pane, setPane] = useState<CompanyPane>("carnet");
   // biome-ignore lint/correctness/useExhaustiveDependencies: chosen once, as the sheet opens
@@ -90,7 +93,14 @@ export function CompanySheet({
             </Slab>
           </div>
         ) : (
-          <TerraBody p={p} now={now} open={open && pane === "terra"} busy={busy} act={act} />
+          <TerraBody
+            p={p}
+            now={now}
+            open={open && pane === "terra"}
+            busy={busy}
+            act={act}
+            onEnter={onEnterTerra}
+          />
         ))}
     </Sheet>
   );

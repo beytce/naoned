@@ -1286,6 +1286,8 @@ export const en: Dictionary = {
         "Contesa week: only the partners set down by their company play. The others supply through the entraide.",
       joinText: (entry: string, until: string) => `The entry costs ${entry}. Open until ${until}.`,
       join: "Enter the Terraferma",
+      enter: "Into the Terraferma",
+      back: "Map",
       closedWeek: "This week's entries are closed: see you on Monday.",
       rewards: (seals: number) => `Seals won this week: ${seals} of 2`,
       grade: (name: string) => `best rank: ${name}`,

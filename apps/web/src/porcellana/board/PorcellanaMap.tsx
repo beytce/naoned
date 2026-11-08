@@ -18,6 +18,7 @@ import {
   useState,
 } from "react";
 import {
+  BoxGeometry,
   CanvasTexture,
   Color,
   Group,
@@ -47,13 +48,14 @@ import { PlaceCard, type PlaceCardHandle } from "../PlaceCard.js";
 import { Stage } from "../Stage.js";
 import { easeOutCubic, pinOut, routesDrawn, tileDelay, tileDrop } from "../arrival.js";
 import { bake } from "../bake.js";
+import { flipAngle, flipDelay, flipLift, flipTotal, flipZoom, showsBack } from "../flip.js";
 import { type Palette, createPalette } from "../materials.js";
 import { slab } from "../models/ground.js";
 import type { Built, ModelOpts } from "../models/model.js";
 import type { Vehicle } from "../models/vehicles.js";
 import { drawChevron, drawnIndices, ribbonGeometry, roundedPath } from "../ribbon.js";
 import { Blush } from "../selection.js";
-import { BISCUIT, BOARD, CAMERA, RIBBON, SELECT } from "../tokens.js";
+import { BISCUIT, BOARD, CAMERA, FLIP, RIBBON, SELECT } from "../tokens.js";
 import { FlatBoard } from "./FlatBoard.js";
 import { PARK, modelOf, vehicleModel } from "./models.js";
 import {
@@ -104,6 +106,21 @@ interface Shared {
   /** Keys asked of the map: a step to pan (in screens), a factor to zoom. */
   pan: [number, number];
   zoom: number;
+  /** The way into the Terraferma, or out of it, under way (porcellana/flip.ts). */
+  flip: FlipRun | null;
+}
+
+/** The tiles turning over from the Campo (the way into the Terraferma), or back face up. */
+interface FlipRun {
+  backwards: boolean;
+  /** The colour of a tile's back, from its offset in tiles to the Campo. */
+  back: (dx: number, dz: number) => number;
+  /** The scene's clock when it started (-1: at the next frame). */
+  start: number;
+  /** The camera's zoom face up, and the place it looked at. */
+  z0: number;
+  at: Vector3 | null;
+  done: boolean;
 }
 
 /** A tile's middle in the scene (x, z), from its tile coordinates. */
@@ -373,6 +390,27 @@ function Board({
   };
 
   const tmp = useMemo(() => new Vector3(), []);
+  // The way into the Terraferma: each tile's back, a slab glazed underneath with the Terraferma's
+  // land at that place (one material a colour).
+  const flipAxis = useMemo(() => new Vector3(), []);
+  const flipPivot = useMemo(() => new Vector3(), []);
+  const backMats = useMemo(() => new Map<number, MeshStandardMaterial>(), []);
+  const backGeo = useMemo(() => new BoxGeometry(BOARD.tile, BOARD.thick, BOARD.tile), []);
+  const backOf = (colour: number): Mesh => {
+    let glaze = backMats.get(colour);
+    if (!glaze) {
+      glaze = new MeshStandardMaterial({ color: colour, roughness: 0.55 });
+      backMats.set(colour, glaze);
+    }
+    const side = P.m("ground");
+    // Box faces: +x, -x, +y, -y, +z, -z; the glaze underneath, up once turned.
+    const m = new Mesh(backGeo, [side, side, side, glaze, side, side]);
+    m.position.y = -BOARD.thick / 2;
+    m.castShadow = true;
+    m.receiveShadow = true;
+    m.visible = false;
+    return m;
+  };
   const lastScene = useRef(sh.scene);
 
   useFrame((_, rawDt) => {
@@ -558,6 +596,88 @@ function Board({
     ring.visible = ringMat.opacity > 0.01;
     blush.update(chosen?.group ?? null, live);
 
+    // The way into the Terraferma: the tiles turn over from the Campo, the camera draws back.
+    const fl = sh.flip;
+    if (fl) {
+      if (fl.start < 0) {
+        fl.start = c.t;
+        if (!fl.backwards) {
+          fl.z0 = cam.zoom;
+          fl.at = controls.target.clone();
+        }
+        controls.enabled = false;
+      }
+      const ft = c.t - fl.start;
+      const campo = sh.scene.tiles.find((x) => x.place?.id.startsWith("campo:"));
+      const [oi = 0, oj = 0] = campo ? [campo.i, campo.j] : sh.scene.home.split(",").map(Number);
+      for (const l of tiles.current.values()) {
+        const tile = byKey.get(l.key);
+        if (!tile) continue;
+        const di = tile.i - oi;
+        const dj = tile.j - oj;
+        const dist = Math.hypot(di, dj);
+        const a = flipAngle(ft, flipDelay(dist), fl.backwards);
+        // The top tips away from the Campo: about the axis up × (the way out).
+        const ux = dist > 0 ? di / dist : 1;
+        const uz = dist > 0 ? dj / dist : 0;
+        flipAxis.set(uz, 0, -ux);
+        l.group.quaternion.setFromAxisAngle(flipAxis, a);
+        // Turned about the slab's middle, lifted at mid-turn.
+        flipPivot.set(0, BOARD.thick / 2, 0).applyQuaternion(l.group.quaternion);
+        const [x, z] = world(tile.i, tile.j);
+        l.group.position.set(
+          x + flipPivot.x,
+          -BOARD.thick / 2 + flipPivot.y + flipLift(a),
+          z + flipPivot.z,
+        );
+        const backSide = showsBack(a);
+        let back = l.group.userData.back as Mesh | undefined;
+        if (!back && backSide) {
+          back = backOf(fl.back(di, dj));
+          l.group.add(back);
+          l.group.userData.back = back;
+        }
+        for (const o of l.group.children) o.visible = o === back ? backSide : !backSide;
+      }
+      for (const m of roads.current.meshes) m.visible = false;
+      for (const a of vehicles.current.values()) a.group.visible = false;
+      if (zone.current.now) zone.current.now.visible = false;
+      ring.visible = false;
+      // The camera: far back over the Campo, then home again on the way out.
+      const k = flipZoom(ft, fl.backwards);
+      cam.zoom = Math.max(0.05, fl.z0 * k);
+      cam.updateProjectionMatrix();
+      if (fl.at) {
+        // The camera drifts over the Campo as it draws back, and home as it comes in again.
+        const [cx, cz] = world(oi, oj);
+        tmp.set(cx, 0, cz);
+        const glide = Math.min(1, Math.max(0, (1 - k) / (1 - FLIP.zoomTo)));
+        const next = fl.at.clone().lerp(tmp, glide);
+        camera.position.add(next.clone().sub(controls.target));
+        controls.target.copy(next);
+      }
+      if (fl.backwards && ft > flipTotal(true)) {
+        // Face up again: everything as it was.
+        for (const l of tiles.current.values()) {
+          l.group.quaternion.identity();
+          const tile = byKey.get(l.key);
+          if (tile) {
+            const [x, z] = world(tile.i, tile.j);
+            l.group.position.set(x, 0, z);
+          }
+          const back = l.group.userData.back as Mesh | undefined;
+          for (const o of l.group.children) o.visible = o !== back;
+        }
+        for (const m of roads.current.meshes) m.visible = true;
+        for (const a of vehicles.current.values()) a.group.visible = true;
+        if (zone.current.now) zone.current.now.visible = true;
+        cam.zoom = fl.z0;
+        cam.updateProjectionMatrix();
+        controls.enabled = true;
+        sh.flip = null;
+      }
+    }
+
     // The pins and the card follow the scene.
     const w = size.width;
     const h = size.height;
@@ -587,6 +707,7 @@ function Board({
       el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
       // A pin with something to say stays in sight at every zoom (P0-12): a lot ready, a « + ».
       const out =
+        !sh.flip &&
         (!tile.place.quiet || sh.chosen === tile.place.id || sh.placing || tile.place.ready) &&
         pinOut(c.t, l.from);
       el.dataset.out = String(out);
@@ -654,6 +775,12 @@ export interface EmpireMapHandle {
   /** The map moved a step (a key: -1, 0 or 1 on each axis), or zoomed by a factor. */
   pan(dx: number, dy: number): void;
   zoom(k: number): void;
+  /**
+   * The way into the Terraferma: every tile turns over from the Campo, the Terraferma's land on its
+   * back (`back`, a colour from the offset to the Campo), the camera drawing back; `backwards`, the
+   * way out, face up again.
+   */
+  flip(backwards: boolean, back?: (dx: number, dz: number) => number): void;
 }
 
 /** A point picked to put a place down: its tile, its middle on the chart. */
@@ -709,6 +836,7 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       nowAt: performance.now(),
       pan: [0, 0],
       zoom: 1,
+      flip: null,
     };
   if (sh.current && scene) {
     sh.current.scene = scene;
@@ -776,6 +904,21 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
     },
     zoom: (k) => {
       if (sh.current) sh.current.zoom *= k;
+    },
+    flip: (backwards, back) => {
+      const s = sh.current;
+      if (!s) return;
+      setChosen(null);
+      setCarded(false);
+      const was = s.flip;
+      s.flip = {
+        backwards,
+        back: back ?? was?.back ?? (() => 0xeeebe5),
+        start: -1,
+        z0: was?.z0 ?? 0,
+        at: was?.at ?? null,
+        done: false,
+      };
     },
   }));
   const pick = (id: string | null) => {

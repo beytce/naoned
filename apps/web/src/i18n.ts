@@ -1232,6 +1232,8 @@ const frDict = {
       joinText: (entry: string, until: string) =>
         `L'entrée coûte ${entry}. Inscriptions jusqu'à ${until}.`,
       join: "Entrer dans la Terraferme",
+      enter: "Entrer à la Terraferme",
+      back: "Carte",
       closedWeek: "Les inscriptions de la semaine sont closes : rendez-vous lundi.",
       rewards: (seals: number) => `Sceaux gagnés cette semaine : ${seals} sur 2`,
       grade: (name: string) => `meilleur rang : ${name}`,

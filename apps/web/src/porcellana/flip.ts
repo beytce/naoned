@@ -61,7 +61,7 @@ export interface TerraBackView {
   map: { width: number; height: number; terrain: string };
   owner: number[];
   holders: { me: boolean; ally: boolean; nation: string | null }[];
-  me: { capital: number } | null;
+  me: { capital: number | null } | null;
 }
 
 const PORCELAIN: [number, number, number] = [0xee, 0xeb, 0xe5];

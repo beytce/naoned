@@ -30,6 +30,8 @@ export function TerraPlay({
   send,
   className = "relative mt-2 h-[72vh] min-h-[26rem] rounded-2xl",
   touch,
+  intro,
+  onBack,
 }: {
   v: TerraView;
   now: number;
@@ -40,6 +42,10 @@ export function TerraPlay({
   className?: string;
   /** Touches a cell from outside (the laboratory's buttons). */
   touch?: { current: ((cell: number | null) => void) | null };
+  /** The way in: the board opens on the whole map and settles on the camp after so long (s). */
+  intro?: number;
+  /** « ‹ Carte »: back to the map (the Terraferma's own scene). */
+  onBack?: () => void;
 }) {
   const [cell, setCell] = useState<number | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
@@ -163,6 +169,7 @@ export function TerraPlay({
         chosen={cell}
         onCell={pick}
         home={v.me?.capital ?? null}
+        intro={intro}
         marked={marked}
         card={card}
         townName={(code) =>
@@ -185,6 +192,16 @@ export function TerraPlay({
 
       {/* The bar: troops, rank, the phase. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-wrap items-start justify-between gap-2 p-3">
+        {onBack && (
+          <button
+            type="button"
+            className="pc-pill pointer-events-auto flex min-h-11 items-center gap-1 px-4 text-sm font-extrabold"
+            onClick={onBack}
+            data-terra-back=""
+          >
+            <span aria-hidden="true">‹</span> {fr.empire.terra.back}
+          </button>
+        )}
         {v.me && (
           <button
             type="button"

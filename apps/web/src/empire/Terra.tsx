@@ -193,6 +193,31 @@ function CellActions({
 }
 
 /**
+ * The week's board of the merchant's theatre, fetched while `open` (every 5 s), from a first view
+ * already in hand (the way in fetched it); with its reload.
+ */
+export function useTerraBoard(
+  open: boolean,
+  theatre: boolean,
+  first: TerraView | null = null,
+): [TerraView | null, () => void] {
+  const [board, setBoard] = useState<TerraView | null>(first);
+  const load = () =>
+    void empireApi
+      .terra()
+      .then((r) => setBoard(r.terra?.view ?? null))
+      .catch(() => undefined);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `load` is the same each time.
+  useEffect(() => {
+    if (!open || !theatre) return;
+    load();
+    const id = setInterval(load, 5_000);
+    return () => clearInterval(id);
+  }, [open, theatre]);
+  return [board, load];
+}
+
+/**
  * The Terraferma's tab of the empire (CADRAGE-v3 § 8): the week (open or Contesa), the house's
  * theatre and its map, the entry, the Contesa's roster for the Capo and the Consiglieri, the
  * honours; and the Condotta, played on its own map.
@@ -204,6 +229,7 @@ export function TerraBody({
   open,
   busy,
   act,
+  onEnter,
 }: {
   p: EmpirePayload;
   now: number;
@@ -211,33 +237,21 @@ export function TerraBody({
   open: boolean;
   busy: boolean;
   act: Act;
+  /** The way into the Terraferma's own scene (its tiles turning over), where there is one. */
+  onEnter?: () => void;
 }) {
   const view = p.view;
-  const [board, setBoard] = useState<TerraView | null>(null);
   const [cell, setCell] = useState<number | null>(null);
   const [condottaOn, setCondottaOn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const condotta = useCondotta(open && condottaOn);
   const theatre = view?.terra.theatre ?? null;
-  useEffect(() => {
-    if (!open || !theatre) return;
-    const load = () =>
-      empireApi
-        .terra()
-        .then((r) => setBoard(r.terra?.view ?? null))
-        .catch(() => undefined);
-    load();
-    const id = setInterval(load, 5_000);
-    return () => clearInterval(id);
-  }, [open, theatre]);
+  const [board, reload] = useTerraBoard(open, !!theatre);
   if (!view) return null;
   const tv = view.terra;
   const send = (a: TerraAction) =>
     act({ type: "empireTerra", action: a }).then((ok) => {
-      void empireApi
-        .terra()
-        .then((r) => setBoard(r.terra?.view ?? null))
-        .catch(() => undefined);
+      reload();
       return ok !== false;
     });
   const entry = Object.entries(tv.entry)
@@ -263,7 +277,13 @@ export function TerraBody({
             </p>
             {board ? (
               board.map.grid === "square" ? (
-                <TerraPlay v={board} now={now} busy={busy} send={send} />
+                onEnter ? (
+                  <Slab className="mt-2 w-full" onClick={onEnter}>
+                    {t.enter}
+                  </Slab>
+                ) : (
+                  <TerraPlay v={board} now={now} busy={busy} send={send} />
+                )
               ) : (
                 <>
                   <Board v={board} cell={cell} onCell={setCell} />
