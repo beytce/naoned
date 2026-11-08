@@ -45,3 +45,16 @@ export const arrivalEnd = (rank: number) =>
     rank * ARRIVAL.step + ARRIVAL.waterLag + ARRIVAL.duration,
     ARRIVAL.routesFrom + ARRIVAL.routesFor,
   );
+
+/**
+ * The light of the hour (the players' audit, P3-05: no day nor night): 1 by day, a soft blue night
+ * at 0.35, dawn and dusk in between (6 to 8 h, 19 to 21 h, the player's own clock). Pure.
+ */
+export function daylight(hour: number): number {
+  const h = ((hour % 24) + 24) % 24;
+  const NIGHT = 0.35;
+  if (h >= 8 && h < 19) return 1;
+  if (h >= 21 || h < 6) return NIGHT;
+  const k = h < 12 ? (h - 6) / 2 : (21 - h) / 2;
+  return NIGHT + (1 - NIGHT) * easeOutCubic(k);
+}

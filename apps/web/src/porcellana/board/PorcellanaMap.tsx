@@ -561,7 +561,7 @@ function Board({
   };
   return (
     <>
-      <Stage target={sh.target} phone={PHONE()} />
+      <Stage target={sh.target} phone={PHONE()} hours={live} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: the keyboard reaches each place by its pin, a button. */}
       <primitive
         object={root}
