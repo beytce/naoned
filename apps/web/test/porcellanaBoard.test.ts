@@ -141,11 +141,13 @@ describe("the free tile to build on", () => {
     expect(freeTileOf(payload({ grid: "hex" }), "veneto")).toBeNull();
   });
 
-  it("is a quiet place of the board: its card offers to build", () => {
+  it("shows its « + » always, its card offering to build (P0-12 of the players' audit)", () => {
     const b = boardOf(payload(), NOW);
     const free = b?.tiles.find((x) => x.key === "2,2")?.place;
     expect(free?.target).toEqual({ kind: "free", tile: "2,2" });
-    expect(free?.quiet).toBe(true);
+    expect(free?.quiet).toBeFalsy();
+    expect(free?.pin).toBe("+");
+    expect(free?.plus).toBe(true);
   });
 });
 
