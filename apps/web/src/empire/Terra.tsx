@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../api.js";
 import { gameApi } from "../game/api.js";
 import { hourOf } from "../game/format.js";
@@ -13,12 +13,18 @@ import {
 import { cellAt } from "../game/terraShapes.js";
 import type { CompanyView, TerraAction, TerraView } from "../game/types.js";
 import { fr } from "../i18n.js";
-import { TerraScene } from "../porcellana/terra/TerraScene.js";
 import { pictureOfView } from "../porcellana/terra/picture.js";
 import { Label, Slab } from "../ui.js";
-import { TerraPlay } from "./TerraPlay.js";
 import { empireApi } from "./api.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
+
+// The 3D of the Terraferma loads apart: the game's start carries no three.js (check-bundle.mjs).
+const TerraScene = lazy(() =>
+  import("../porcellana/terra/TerraScene.js").then((m) => ({ default: m.TerraScene })),
+);
+export const TerraPlay = lazy(() =>
+  import("./TerraPlay.js").then((m) => ({ default: m.TerraPlay })),
+);
 
 /** Resolves to whether the server took it, where the caller knows (the empire's screen). */
 type Act = (a: EmpireAction) => Promise<unknown>;
@@ -55,22 +61,24 @@ function SquareBoard({
       className="relative mt-2 h-[62vh] min-h-[22rem] overflow-hidden rounded-2xl"
       aria-label={t.board}
     >
-      <TerraScene
-        pic={pic}
-        chosen={cell}
-        onCell={onCell}
-        home={me?.capital ?? null}
-        townName={(code) =>
-          fr.themeNames.city[code] ?? code.charAt(0).toUpperCase() + code.slice(1)
-        }
-        campName={(c) => {
-          const h = v.holders[v.owner[c] ?? -1];
-          if (!h) return null;
-          return h.me
-            ? "Toi"
-            : (h.pseudo ?? (h.nation ? (fr.game.terra.nations[h.nation] ?? h.nation) : null));
-        }}
-      />
+      <Suspense fallback={null}>
+        <TerraScene
+          pic={pic}
+          chosen={cell}
+          onCell={onCell}
+          home={me?.capital ?? null}
+          townName={(code) =>
+            fr.themeNames.city[code] ?? code.charAt(0).toUpperCase() + code.slice(1)
+          }
+          campName={(c) => {
+            const h = v.holders[v.owner[c] ?? -1];
+            if (!h) return null;
+            return h.me
+              ? "Toi"
+              : (h.pseudo ?? (h.nation ? (fr.game.terra.nations[h.nation] ?? h.nation) : null));
+          }}
+        />
+      </Suspense>
     </div>
   );
 }
@@ -282,7 +290,9 @@ export function TerraBody({
                     {t.enter}
                   </Slab>
                 ) : (
-                  <TerraPlay v={board} now={now} busy={busy} send={send} />
+                  <Suspense fallback={<p className="mt-2 text-sm text-cream-dim">{t.loading}</p>}>
+                    <TerraPlay v={board} now={now} busy={busy} send={send} />
+                  </Suspense>
                 )
               ) : (
                 <>

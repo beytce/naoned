@@ -5,13 +5,12 @@
  * and settles on the merchant's lands. « ‹ Carte » plays the way out. A week not joined yet, the
  * Condotta, the Contesa's roster: the pane of before, on a sheet of paper over the porcelain.
  */
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import type { TerraAction, TerraView } from "../game/types.js";
 import { fr } from "../i18n.js";
 import { stageOpacity } from "../porcellana/flip.js";
 import { FLIP } from "../porcellana/tokens.js";
-import { TerraBody, useTerraBoard } from "./Terra.js";
-import { TerraPlay } from "./TerraPlay.js";
+import { TerraBody, TerraPlay, useTerraBoard } from "./Terra.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
 type Act = (a: EmpireAction) => Promise<unknown>;
@@ -81,15 +80,17 @@ export function TerraStage({
       data-terra-stage={phase}
     >
       {playing && board ? (
-        <TerraPlay
-          v={board}
-          now={now}
-          busy={busy}
-          send={send}
-          className="absolute inset-0"
-          intro={motion && phase === "in" ? FLIP.handoff : undefined}
-          onBack={onBack}
-        />
+        <Suspense fallback={null}>
+          <TerraPlay
+            v={board}
+            now={now}
+            busy={busy}
+            send={send}
+            className="absolute inset-0"
+            intro={motion && phase === "in" ? FLIP.handoff : undefined}
+            onBack={onBack}
+          />
+        </Suspense>
       ) : (
         <div className="absolute inset-0 overflow-y-auto px-4 pb-10 pt-20">
           <section className="mx-auto max-w-md rounded-3xl bg-night-2 p-5 shadow-lg">
