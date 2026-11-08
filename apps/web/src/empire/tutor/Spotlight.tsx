@@ -78,6 +78,41 @@ export function onScreen(sel: string): boolean {
   });
 }
 
+/**
+ * The first element of the chain that exists, can be touched, but stands out of its scrolling
+ * box's sight: scrolled to the middle of it. Whether one was scrolled.
+ */
+let scrolledAt = 0;
+function scrollToFirst(chain: string[]): boolean {
+  if (performance.now() - scrolledAt < 600) return true;
+  for (const sel of chain) {
+    if (sel.startsWith(".pc-pin")) continue;
+    let el: HTMLElement | null = null;
+    try {
+      el = document.querySelector<HTMLElement>(sel);
+    } catch {
+      continue;
+    }
+    if (!el || (el as HTMLButtonElement).disabled) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) continue;
+    // Inside a box that scrolls: brought to its middle.
+    for (let q = el.parentElement; q; q = q.parentElement) {
+      const o = getComputedStyle(q).overflowY;
+      if ((o === "auto" || o === "scroll") && q.scrollHeight > q.clientHeight + 2) {
+        const box = q.getBoundingClientRect();
+        const centred = r.top - box.top - (box.height - r.height) / 2;
+        if (Math.abs(centred) < 4) return false;
+        q.scrollBy({ top: centred });
+        scrolledAt = performance.now();
+        return true;
+      }
+    }
+    return false;
+  }
+  return false;
+}
+
 /** The first element of a chain in sight, and its box. */
 export function firstInSight(chain: string[]): { el: Element; box: DOMRect } | null {
   for (const sel of chain) {
@@ -101,6 +136,7 @@ export function Spotlight({
   children,
   foot,
   still = false,
+  free = false,
 }: {
   /** What to light, the deepest gesture first. */
   chain: string[];
@@ -112,6 +148,8 @@ export function Spotlight({
   foot?: ReactNode;
   /** Shown, not touched: the lit thing is veiled too, only the bubble's button goes on. */
   still?: boolean;
+  /** No veil (a step the player could not make under it): the ring and the words only. */
+  free?: boolean;
 }) {
   const [hole, setHole] = useState<Hole | null>(null);
   const lost = useRef<number | null>(null);
@@ -130,6 +168,9 @@ export function Spotlight({
         // A place of the map out of sight: the camera is asked to look at it.
         const away = offScreenPlace(chain);
         if (away) askFocus(away);
+        // A button down a list (the Market's bricks on a small phone): scrolled into sight, the
+        // veil forbidding the player to scroll it; the way back waits meanwhile.
+        if (scrollToFirst(chain)) lost.current = performance.now();
         if (performance.now() - lost.current > GRACE) hit = firstInSight(fallback);
       }
       setHole((was) => {
@@ -149,6 +190,7 @@ export function Spotlight({
   }, [key]);
   // No key closes or opens anything while led (the map's Escape, the shortcuts).
   useEffect(() => {
+    if (free) return;
     const stop = (e: KeyboardEvent) => {
       if (e.key === "Tab") return;
       e.stopPropagation();
@@ -156,18 +198,20 @@ export function Spotlight({
     };
     window.addEventListener("keydown", stop, true);
     return () => window.removeEventListener("keydown", stop, true);
-  }, []);
+  }, [free]);
 
   const W = typeof window === "undefined" ? 1280 : window.innerWidth;
   const H = typeof window === "undefined" ? 800 : window.innerHeight;
-  const panes: Hole[] = hole
-    ? [
-        { x: 0, y: 0, w: W, h: Math.max(0, hole.y) },
-        { x: 0, y: hole.y + hole.h, w: W, h: Math.max(0, H - hole.y - hole.h) },
-        { x: 0, y: hole.y, w: Math.max(0, hole.x), h: hole.h },
-        { x: hole.x + hole.w, y: hole.y, w: Math.max(0, W - hole.x - hole.w), h: hole.h },
-      ]
-    : [{ x: 0, y: 0, w: W, h: H }];
+  const panes: Hole[] = free
+    ? []
+    : hole
+      ? [
+          { x: 0, y: 0, w: W, h: Math.max(0, hole.y) },
+          { x: 0, y: hole.y + hole.h, w: W, h: Math.max(0, H - hole.y - hole.h) },
+          { x: 0, y: hole.y, w: Math.max(0, hole.x), h: hole.h },
+          { x: hole.x + hole.w, y: hole.y, w: Math.max(0, W - hole.x - hole.w), h: hole.h },
+        ]
+      : [{ x: 0, y: 0, w: W, h: H }];
   // The bubble on the other half of the screen from the hole, never over it: at the foot when the
   // gesture is high, under the top bar when it is low; at the foot without one.
   const low = hole ? hole.y + hole.h / 2 > H * 0.5 : false;

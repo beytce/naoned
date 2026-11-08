@@ -1170,6 +1170,7 @@ const frDict = {
       risingWhy:
         "Tu sais bâtir, produire, récolter, livrer et acheter. Je reste là : mon bouton rouge te dit toujours le prochain pas.",
       done: "Continuer",
+      stuck: "Je n'y arrive pas : laisse-moi faire",
       next: "Suivant",
       gotIt: "Compris",
       skipAll: "Passer les tutoriels",
