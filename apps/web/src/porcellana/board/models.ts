@@ -86,7 +86,10 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
       return BY_KEY.get("campo")?.make?.(P, o) ?? null;
     default: {
       const make = BY_KEY.get(key)?.make;
-      return make ? make(P, o) : null;
+      const b = make ? make(P, o) : null;
+      // A workshop's lots ready, stacked before it in crates (P3-02 of the players' audit).
+      if (b && tile.crates?.length) quayCrates(P, b.group, tile.crates);
+      return b;
     }
   }
 }

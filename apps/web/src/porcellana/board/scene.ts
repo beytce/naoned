@@ -372,6 +372,13 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       water: false,
       model,
       running: st.state === "running",
+      // Its lots ready in crates before it, of accent; full, a stack of wood that waits for the
+      // harvest (golden rule 3, seen: P3-02 of the players' audit).
+      ...(lots > 0
+        ? { crates: Array.from({ length: Math.min(lots, 6) }, () => true) }
+        : st.state === "full"
+          ? { crates: Array.from({ length: 6 }, () => false) }
+          : {}),
       place: {
         id: `workshop:${w.id}`,
         target: { kind: "workshop", id: w.id },
