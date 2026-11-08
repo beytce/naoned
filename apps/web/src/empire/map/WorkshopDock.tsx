@@ -303,15 +303,14 @@ function Front({
         // Who is served first with the inputs (P0-07: the sawmill starved the brickworks).
         <div className="flex flex-col gap-1.5" data-priority>
           <p className="text-xs font-semibold text-cream-dim">{t().priority}</p>
-          <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label={t().priority}>
+          <div className="grid grid-cols-3 gap-1.5" aria-label={t().priority}>
             {(["low", "normal", "high"] as const).map((k) => {
               const on = (ws.priority ?? "normal") === k;
               return (
                 <button
                   key={k}
                   type="button"
-                  role="radio"
-                  aria-checked={on}
+                  aria-pressed={on}
                   disabled={busy}
                   onClick={() =>
                     on

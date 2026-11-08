@@ -259,8 +259,7 @@ export function setPriority(
   if (priority !== "high" && priority !== "normal" && priority !== "low") fail("invalid_input");
   const ws = ownHouse(tx, playerId).workshops.find((w) => w.id === workshopId);
   if (!ws) fail("unknown_building");
-  if (priority === "normal") delete ws.priority;
-  else ws.priority = priority;
+  ws.priority = priority === "normal" ? undefined : priority;
 }
 
 const RANK = { high: 0, normal: 1, low: 2 } as const;
