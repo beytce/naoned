@@ -8,7 +8,7 @@ import type { Palette } from "../materials.js";
 import { lockedPlot } from "../models/decor.js";
 import { fondaco } from "../models/fondaco.js";
 import { grove, plot } from "../models/ground.js";
-import { adornments, barque, loyaltyBanners, walkers } from "../models/life.js";
+import { adornments, barque, loyaltyBanners, marketStalls, walkers } from "../models/life.js";
 import { zattera } from "../models/lot7.js";
 import { market } from "../models/market.js";
 import type { Built, ModelOpts } from "../models/model.js";
@@ -92,6 +92,7 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
     case "market": {
       const b = market(P);
       quayCrates(P, b.group, tile.crates ?? []);
+      if (tile.stalls?.length) marketStalls(P, b.group, tile.stalls);
       return b;
     }
     case "town": {

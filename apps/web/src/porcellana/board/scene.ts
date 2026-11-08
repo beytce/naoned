@@ -115,6 +115,8 @@ export interface BoardTile {
   loyalty?: number;
   /** A tile of water near a lumber camp: its boat is a raft of logs (the Cadore's, lot 7). */
   raft?: boolean;
+  /** The Market's stalls: the house's goods it trades, their crates, hot above their rate (P3-08). */
+  stalls?: { n: number; hot: boolean }[];
   place: BoardPlace | null;
   seed: number;
 }
@@ -256,8 +258,20 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     const toLink = inZone && !venice ? map.toLink?.[c.code] : undefined;
     const crates = waiting > 0 ? deliveryPlan(p, c.code).orders.map((x) => x.covered) : [];
     const served = v.served?.[c.code] ?? 0;
+    // On San Marco's square, a stall for each good the house holds and the Market trades.
+    const stalls = venice
+      ? (p.market ?? [])
+          .filter((q) => q.region === "veneto" && (p.stock?.[q.good] ?? 0) > 0)
+          .sort((a, b) => (p.stock?.[b.good] ?? 0) - (p.stock?.[a.good] ?? 0))
+          .slice(0, 4)
+          .map((q) => ({
+            n: Math.ceil(Math.min(3, (p.stock?.[q.good] ?? 0) / 20)),
+            hot: BigInt(q.price) * 100n > BigInt(q.ref) * 105n,
+          }))
+      : [];
     put(k, {
       crates,
+      ...(stalls.length ? { stalls } : {}),
       loyalty: served >= 25 ? 3 : served >= 10 ? 2 : served >= 3 ? 1 : 0,
       water: false,
       model: venice ? "market" : "town",
