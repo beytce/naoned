@@ -42,6 +42,7 @@ import { chooseLineage, passGenerations } from "./empire/family.js";
 import { upgradeDepot, upgradeModel } from "./empire/fleet.js";
 import {
   chooseArte,
+  embellish,
   empireJoin,
   empireSettings,
   hasteBuild,
@@ -444,6 +445,7 @@ type EmpireCommandOf =
   /** Nothing but what every command settles first: the hops arrived, the sites ended. */
   | { type: "empireSettle"; playerId: PlayerId }
   | { type: "empireHaste"; playerId: PlayerId }
+  | { type: "empireEmbellish"; playerId: PlayerId; code: string }
   | { type: "empireCancelStop"; playerId: PlayerId; vehicleId: string }
   /** A researched trade module fitted on a vehicle's place (null: emptied). */
   | {
@@ -883,6 +885,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireHaste":
       hasteBuild(tx, cmd.playerId);
+      break;
+    case "empireEmbellish":
+      embellish(tx, cmd.playerId, cmd.code);
       break;
     case "empireSettle":
       break;

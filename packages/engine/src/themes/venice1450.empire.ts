@@ -372,6 +372,9 @@ export const venice1450Empire: EmpireSettingsInput = {
   // The Favour's use (D2 of the publication plan, CADRAGE-v3 § 5.4): a site's time left halved, for
   // 10, then 20, then 40 Favour a day (an objective of the Carnet gives 10).
   haste: { favour: [10, 20, 40], cutBps: 5_000 },
+  // The Seals' use (D2, I5): round the Fondaco, a well, banners, a gondola at its quay, a statue;
+  // seen on the map, worth nothing else (golden rule 4).
+  embellishments: { well: 1, banners: 1, gondola: 2, statue: 3 },
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
   // The knowledge (CADRAGE-v3 § 3.5): four branches, four knowledges and two capstones each,
   // from 30 minutes to 10 days; one place from the Casa 4, two from the 12.

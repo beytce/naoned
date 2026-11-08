@@ -109,6 +109,8 @@ export interface EmpireView {
   queueHours: number;
   /** The Favour a site's haste costs now; null when none is left today, or no haste. */
   hasteFavour: number | null;
+  /** The embellishments: those owned round the Fondaco, and the prices in Seals of all. */
+  embellishments: { owned: string[]; prices: Record<string, number> };
   /** Receipts a day (the last full days), in deniers. */
   incomePerDay: Deniers;
   asleep: boolean;
@@ -494,6 +496,7 @@ export function empireView(
     band: bandOf(power, s),
     wagesBps: salaryBps(power, s),
     queueHours: s.queueHours,
+    embellishments: { owned: house.embellishments ?? [], prices: s.embellishments },
     hasteFavour: s.haste
       ? (s.haste.favour[house.haste?.day === Math.floor(now / DAY_MS) ? house.haste.used : 0] ??
         null)

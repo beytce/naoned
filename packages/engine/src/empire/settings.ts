@@ -598,6 +598,11 @@ export const empireSettingsSchema = z.object({
    * prices. None: no haste.
    */
   haste: z.object({ favour: z.array(positive).min(1), cutBps: bps }).optional(),
+  /**
+   * The Seals' use (docs/plan-publication.md D2, I5): embellishments round the Fondaco, by code,
+   * their price in Seals; seen on the map, worth nothing else (golden rule 4). None: none.
+   */
+  embellishments: z.record(z.string(), positive).prefault({}),
   newcomers: z
     .object({ rawBonusBps: bps, untilCasa: qty })
     .prefault({ rawBonusBps: 0, untilCasa: 0 }),

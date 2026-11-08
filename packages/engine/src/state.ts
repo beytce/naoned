@@ -625,6 +625,8 @@ export interface EmpireHouse {
   research?: { code: string; level: number; startedAt: number; endsAt: number }[];
   /** What is left today of the court's book for its fine and exquisite goods. */
   court?: { day: number; left: number };
+  /** The embellishments bought with Seals round its Fondaco (I5 of the publication plan). */
+  embellishments?: string[];
   /** The sites hastened today with Favour (CADRAGE-v3 § 5.4). */
   haste?: { day: number; used: number };
   /**

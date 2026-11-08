@@ -67,6 +67,8 @@ export type EngineErrorCode =
   | "forge_limit"
   | "own_offer"
   | "already_bought"
+  | "insufficient_seals"
+  | "unknown_use"
   | "not_for_you"
   | "offers_limit"
   | "unknown_offer"

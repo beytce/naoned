@@ -103,6 +103,8 @@ export interface BoardTile {
   venetian?: boolean;
   /** A town's orders in crates on its quay: each one covered by the house's stock or not. */
   crates?: boolean[];
+  /** The Fondaco's embellishments bought with Seals (I5 of the publication plan). */
+  decor?: string[];
   place: BoardPlace | null;
   seed: number;
 }
@@ -298,7 +300,7 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       model,
       running: false,
       // The Fondaco's level: so many people round it (P3-03).
-      ...(model === "fondaco" ? { size: house.casa } : {}),
+      ...(model === "fondaco" ? { size: house.casa, decor: v.embellishments?.owned ?? [] } : {}),
       place: {
         id: `${model}:${k}`,
         target,

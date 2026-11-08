@@ -1041,6 +1041,17 @@ export const en: Dictionary = {
       withdraw: (v: string) => `Take back ${v}`,
     },
     house: {
+      embellishTitle: "Adorn the Fondaco",
+      embellishWhy: (seals: number) =>
+        `With your Seals (${seals}): what adorns your Fondaco shows on the map, and gives nothing else.`,
+      embellishNames: {
+        well: "A well",
+        banners: "Banners",
+        gondola: "A gondola",
+        statue: "A statue",
+      } as Record<string, string>,
+      embellishPrice: (n: number) => (n === 1 ? "1 Seal" : `${n} Seals`),
+      embellishOwned: "In place",
       kicker: "Your House",
       title: "Where you stand",
       summary: "Touch a « ? » to learn what each measure means.",
@@ -1522,6 +1533,9 @@ export const en: Dictionary = {
       insufficient_funds: "Not enough ducats.",
       bad_key: "This request makes no sense.",
       invalid_input: "That choice does not exist.",
+      insufficient_seals: "Not enough Seals.",
+      already_bought: "It is already yours.",
+      unknown_use: "That does not exist here.",
       store_full: "The Warehouse is full for this good: sell or deliver first.",
       already_paid: "It is already paid.",
       locked: "Not open yet: raise your Fondaco.",

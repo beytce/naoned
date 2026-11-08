@@ -296,10 +296,15 @@ export function HouseSheet({
   onHelp,
   onMarket,
   familyCalls = false,
+  busy = false,
+  act,
 }: {
   p: EmpirePayload;
   open: boolean;
   onClose: () => void;
+  busy?: boolean;
+  /** The embellishments bought with Seals (I5 of the publication plan). */
+  act?: (a: EmpireAction) => Promise<void>;
   /** The profile's doors (the refonte claire, 5 November 2026): what had a tab of its own. */
   onFamily?: () => void;
   onHelp?: () => void;
@@ -356,6 +361,36 @@ export function HouseSheet({
         {view.house.seals > 0 && <Stat label={h.seals} value={view.house.seals} />}
         <Stat label={<Term code="income">{h.income}</Term>} value={d(view.incomePerDay)} />
       </div>
+      {act && Object.keys(view.embellishments?.prices ?? {}).length > 0 && (
+        // The Seals' use (D2, I5): embellishments round the Fondaco, seen on the map, nothing else.
+        <div className="mt-6" data-embellish>
+          <p className="font-display text-sm font-extrabold text-cream">{h.embellishTitle}</p>
+          <p className="mt-0.5 text-xs text-cream-dim">{h.embellishWhy(view.house.seals)}</p>
+          <ul className="mt-2 grid grid-cols-2 gap-2">
+            {Object.entries(view.embellishments?.prices ?? {}).map(([code, price]) => {
+              const owned = view.embellishments?.owned.includes(code) ?? false;
+              return (
+                <li key={code}>
+                  <button
+                    type="button"
+                    disabled={busy || owned || view.house.seals < price}
+                    onClick={() => void act({ type: "empireEmbellish", code })}
+                    className={`flex min-h-14 w-full flex-col items-start justify-center rounded-2xl px-3 py-2 text-left disabled:opacity-60 ${owned ? "bg-face/10" : "bg-night-4"}`}
+                    data-embellish-item={code}
+                  >
+                    <span className="font-display text-sm font-bold text-cream">
+                      {h.embellishNames[code] ?? code}
+                    </span>
+                    <span className="text-xs text-cream-dim">
+                      {owned ? h.embellishOwned : h.embellishPrice(price)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
       {/* The empire's notices, asked for, three kinds (decision of the owner, 4 November). */}
       <div className="mt-6" data-house-push>
         <PushSettings only={(k) => k.startsWith("empire_")} />

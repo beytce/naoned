@@ -8,7 +8,7 @@ import type { Palette } from "../materials.js";
 import { lockedPlot } from "../models/decor.js";
 import { fondaco } from "../models/fondaco.js";
 import { grove, plot } from "../models/ground.js";
-import { walkers } from "../models/life.js";
+import { adornments, walkers } from "../models/life.js";
 import { market } from "../models/market.js";
 import type { Built, ModelOpts } from "../models/model.js";
 import { town } from "../models/towns.js";
@@ -59,6 +59,7 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
   switch (key) {
     case "fondaco": {
       const b = fondaco(P);
+      if (tile.decor?.length) adornments(P, b.group, tile.decor);
       // Its people: one more for each level of the Fondaco (P3-03 of the players' audit).
       if (tile.size) {
         const walk = walkers(P, b.group, 1 + tile.size, o.seed);
