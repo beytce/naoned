@@ -20,7 +20,8 @@ import { TerraPlay } from "./TerraPlay.js";
 import { empireApi } from "./api.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
-type Act = (a: EmpireAction) => Promise<void>;
+/** Resolves to whether the server took it, where the caller knows (the empire's screen). */
+type Act = (a: EmpireAction) => Promise<unknown>;
 const t = fr.empire.terra;
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
@@ -232,12 +233,13 @@ export function TerraBody({
   if (!view) return null;
   const tv = view.terra;
   const send = (a: TerraAction) =>
-    void act({ type: "empireTerra", action: a }).then(() =>
-      empireApi
+    act({ type: "empireTerra", action: a }).then((ok) => {
+      void empireApi
         .terra()
         .then((r) => setBoard(r.terra?.view ?? null))
-        .catch(() => undefined),
-    );
+        .catch(() => undefined);
+      return ok !== false;
+    });
   const entry = Object.entries(tv.entry)
     .map(([g, n]) => `${n} ${goodName(p, g)}`)
     .join(", ");

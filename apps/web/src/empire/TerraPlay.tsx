@@ -5,7 +5,7 @@
  * aim a bombard, settle); at the foot, the merchant's lands, its fronts, its allies, the ranking.
  * The far merchants fade (the focus on the player). One action in the dock, the scene stays above.
  */
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChoiceCard, Dock, PlaceHeader } from "../dock.js";
 import { d, duration } from "../game/format.js";
 import { placementOpen } from "../game/map/TerraLayer.js";
@@ -34,7 +34,8 @@ export function TerraPlay({
   v: TerraView;
   now: number;
   busy: boolean;
-  send: (a: TerraAction) => void;
+  /** Sends an order; resolves to whether it was taken (then a pill says it). */
+  send: (a: TerraAction) => unknown;
   /** The box it fills (the laboratory: the whole screen). */
   className?: string;
   /** Touches a cell from outside (the laboratory's buttons). */
@@ -64,8 +65,21 @@ export function TerraPlay({
     setCell(null);
     setKind(null);
   };
+  // A pill of ink says each order taken (« Front lancé · 52 troupes en marche ✓ »).
+  const [said, setSaid] = useState<{ text: string; at: number } | null>(null);
+  useEffect(() => {
+    if (!said) return;
+    const id = window.setTimeout(() => setSaid(null), 3_200);
+    return () => window.clearTimeout(id);
+  }, [said]);
+  const order = (a: TerraAction) => {
+    const text = saidOf(a, v, nameOf);
+    void Promise.resolve(send(a)).then((ok) => {
+      if (ok !== false && text) setSaid({ text, at: Date.now() });
+    });
+  };
   const act = (a: TerraAction) => {
-    send(a);
+    order(a);
     close();
   };
   const pick = (c: number | null) => {
@@ -199,6 +213,16 @@ export function TerraPlay({
           </span>
         )}
       </div>
+
+      {said && (
+        <output
+          key={said.at}
+          className="pc-said pointer-events-none absolute inset-x-0 top-14 z-50 mx-auto w-fit"
+          data-terra-said=""
+        >
+          {said.text}
+        </output>
+      )}
 
       {cardInfo && (
         <PlaceCard
@@ -360,13 +384,13 @@ export function TerraPlay({
                 <p className="text-sm text-cream-dim">
                   {g.perHour(v.me.recruit.perHour)} · {t.rankLine(v.me.rank, v.players, v.me.glory)}
                 </p>
-                <FrontList v={v} busy={busy} send={send} nameOf={nameOf} />
+                <FrontList v={v} busy={busy} send={order} nameOf={nameOf} />
                 <div className="flex flex-col gap-2">
                   {v.rules.troopBuy && (v.me.buysLeft ?? 0) > 0 && (
                     <Slab
                       className="w-full"
                       busy={busy}
-                      onClick={() => send({ type: "terraBuyTroops" })}
+                      onClick={() => order({ type: "terraBuyTroops" })}
                     >
                       {t.buyTroops(v.rules.troopBuy.amount, d(v.rules.troopBuy.price))}
                     </Slab>
@@ -376,7 +400,7 @@ export function TerraPlay({
                       className="w-full"
                       tone="ghost"
                       busy={busy}
-                      onClick={() => send({ type: "terraRaise" })}
+                      onClick={() => order({ type: "terraRaise" })}
                     >
                       {g.mine.raise(v.rules.capRaise)} · {d(v.rules.prices.cap)}
                     </Slab>
@@ -435,7 +459,7 @@ export function TerraPlay({
             {panel === "fronts" && (
               <>
                 <PlaceHeader title={t.fronts} onClose={close} />
-                <FrontList v={v} busy={busy} send={send} nameOf={nameOf} />
+                <FrontList v={v} busy={busy} send={order} nameOf={nameOf} />
                 {threats.length > 0 && (
                   <ul className="space-y-1 text-sm">
                     {threats.map((f) => (
@@ -516,6 +540,41 @@ export function TerraPlay({
       )}
     </div>
   );
+}
+
+/** What the pill says once an order is taken; empty: nothing. */
+function saidOf(a: TerraAction, v: TerraView, nameOf: (i: number) => string): string {
+  const s = t.said;
+  const who = (id: string) => nameOf(v.holders.findIndex((h) => h.id === id));
+  switch (a.type) {
+    case "terraFront":
+    case "terraSail":
+      return g.camp.launched(Math.floor(((v.me?.troops ?? 0) * a.shareBps) / 10_000));
+    case "terraRecall":
+      return s.recalled;
+    case "terraBuild":
+      return s.built(g.buildings[a.kind] ?? a.kind);
+    case "terraAlly":
+      return s.asked(who(a.other));
+    case "terraAccept":
+      return s.allied(who(a.from));
+    case "terraBreak":
+      return s.broken(who(a.other));
+    case "terraSend":
+      return s.sent(a.count, who(a.to));
+    case "terraSignal":
+      return s.signal(g.diplomacy.signals[a.kind] ?? a.kind);
+    case "terraFire":
+      return s.fired;
+    case "terraPlace":
+      return s.placed;
+    case "terraRaise":
+      return s.raised;
+    case "terraBuyTroops":
+      return s.bought;
+    default:
+      return "";
+  }
 }
 
 /** The merchant's fronts marching, each with « Rappeler ». */

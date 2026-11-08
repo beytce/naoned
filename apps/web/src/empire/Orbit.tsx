@@ -74,7 +74,7 @@ export function EmpireOrbit({
   p: EmpirePayload;
   now: number;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onWorkshop: (id: string) => void;
   onCasa: () => void;
   onFree: () => void;

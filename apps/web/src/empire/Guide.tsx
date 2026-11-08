@@ -120,7 +120,7 @@ export function NextStepCard({
   now: number;
   step: NextStep;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onBuild: (recipe: string) => void;
   /** On the map (the map at the centre, step 1): one line and its button, over the map. */
   compact?: boolean;
@@ -304,7 +304,7 @@ export function HouseSheet({
   onClose: () => void;
   busy?: boolean;
   /** The embellishments bought with Seals (I5 of the publication plan). */
-  act?: (a: EmpireAction) => Promise<void>;
+  act?: (a: EmpireAction) => Promise<unknown>;
   /** The profile's doors (the refonte claire, 5 November 2026): what had a tab of its own. */
   onFamily?: () => void;
   onHelp?: () => void;

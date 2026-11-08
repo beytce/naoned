@@ -274,7 +274,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // The gestures sent one after the other, in the order touched (a gesture foreseen does not wait
   // for the one before to be answered to show).
   const queue = useRef<Promise<void>>(Promise.resolve());
-  const act = (a: EmpireAction): Promise<void> => {
+  const act = (a: EmpireAction): Promise<boolean> => {
     // A gesture the screen can foresee shows at once (the gameplay audit, P5): the goods fly, the
     // lots, the crates or the medal change now, and nothing waits; the server's answer replaces it.
     const before = shown.current as EmpireAnswer;
@@ -286,9 +286,12 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       shown.current = next;
       setP(next);
     } else setBusy(true);
+    // Whether the server took it (a screen that says « done ✓ » says it only then).
+    let ok = false;
     const run = async () => {
       try {
         const answer = await empireApi.act(a);
+        ok = !answer.error;
         // The gold slab pressed is struck, or shakes (game/fx.tsx), the moment the answer comes.
         pressResult(!answer.error);
         if (!answer.error && !guess) feel(shown.current, answer, a);
@@ -307,7 +310,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       }
     };
     queue.current = queue.current.then(run, run);
-    return queue.current;
+    return queue.current.then(() => ok);
   };
   // A hop arrived by the clock: the house's state settled, quietly (no wait, no error told);
   // but a delivery paid is felt: coins to the purse, their sound (audit of 4 November, motion M1).
@@ -1126,7 +1129,7 @@ function Sites({
   p: EmpirePayload;
   now: number;
   busy?: boolean;
-  act?: (a: EmpireAction) => Promise<void>;
+  act?: (a: EmpireAction) => Promise<unknown>;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -1179,7 +1182,7 @@ interface SheetProps {
   p: EmpirePayload;
   busy: boolean;
   onClose: () => void;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
 }
 
 /** The Ateliers tab: each workshop, then the store and Venetia's market. */
@@ -1497,7 +1500,7 @@ type PortaProps = {
   open: boolean;
   busy: boolean;
   onClose: () => void;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onBattle: () => void;
 };
 function PortaPlace(props: PortaProps) {

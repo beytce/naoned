@@ -33,7 +33,7 @@ export function VehiclePanel({
   p: EmpirePayload;
   now: number;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   vehicleId: string;
   /** Picking where to send it: a touch on a place sends it there. */
   aiming: boolean;
@@ -255,7 +255,7 @@ function LoadPane({
 }: {
   p: EmpirePayload;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   v: Mine;
   sort: OrderSort;
   onSort: (s: OrderSort) => void;
@@ -339,7 +339,7 @@ function ModulesPane({
 }: {
   p: EmpirePayload;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   vehicleId: string;
 }) {
   const view = p.view;

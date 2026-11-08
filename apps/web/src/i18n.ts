@@ -1208,6 +1208,21 @@ const frDict = {
         someone: "Un marchand",
         see: (name: string) => `Voir ${name}`,
         neighbours: "Tes voisins",
+        /** The pill of ink once an order is taken. */
+        said: {
+          recalled: "Front rappelé · ses troupes rentrent ✓",
+          built: (name: string) => `${name} bâti ✓`,
+          asked: (name: string) => `Alliance proposée à ${name} ✓`,
+          allied: (name: string) => `Alliance conclue avec ${name} ✓`,
+          broken: (name: string) => `Alliance rompue avec ${name}`,
+          sent: (n: number, name: string) =>
+            `${n} troupe${n > 1 ? "s" : ""} envoyée${n > 1 ? "s" : ""} à ${name} ✓`,
+          signal: (name: string) => `Signal envoyé : ${name} ✓`,
+          fired: "La bombarde a tiré ✓",
+          placed: "Camp posé ✓",
+          raised: "Maximum relevé ✓",
+          bought: "Troupes levées ✓",
+        },
       },
       theatre: (band: number, n: number) => `Théâtre de la bande ${band} · ${n} marchands`,
       contesaTheatre: (n: number) => `Contesa · ${n} compagnies`,

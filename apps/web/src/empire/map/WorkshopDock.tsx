@@ -64,7 +64,7 @@ export function WorkshopDock({
   p: EmpirePayload;
   now: number;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   workshopId: string;
   /** Another workshop chosen (‹ ›): the dock follows it. */
   onWorkshop: (id: string) => void;
@@ -131,7 +131,7 @@ function Front({
   ws: EmpireWorkshop;
   now: number;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onView: (v: View) => void;
   onOpen: (sheet: string) => void;
 }) {
@@ -369,7 +369,7 @@ function Upgrade({
   ws: EmpireWorkshop;
   now: number;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
 }) {
   const v = p.view;
   if (!v) return null;
@@ -472,7 +472,7 @@ function Modules({
   p: EmpirePayload;
   ws: EmpireWorkshop;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
 }) {
   const v = p.view;
   const slots = v?.workshopPlaces[ws.id]?.slots ?? 0;

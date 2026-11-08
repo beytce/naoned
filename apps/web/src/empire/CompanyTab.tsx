@@ -7,7 +7,7 @@ import { TerraBody } from "./Terra.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
 const t = fr.empire;
-type Act = (a: EmpireAction) => Promise<void>;
+type Act = (a: EmpireAction) => Promise<unknown>;
 export type CompanyPane = "carnet" | "company" | "terra";
 const PANES: CompanyPane[] = ["carnet", "company", "terra"];
 

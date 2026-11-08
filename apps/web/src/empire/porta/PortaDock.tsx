@@ -121,7 +121,7 @@ export function PortaDock({
   state: PortaState | null;
   now: number;
   off: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   go: (f: () => Promise<PortaState>) => Promise<void>;
   step: number;
   onStep: (n: number) => void;
@@ -211,7 +211,7 @@ function Steps({
   goods: Record<string, string>;
   now: number;
   off: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   go: (f: () => Promise<PortaState>) => Promise<void>;
   step: number;
   onStep: (n: number) => void;
@@ -574,7 +574,7 @@ function Stall({
 }: {
   v: PortaView;
   off: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   rank: number | null;
   onBack: () => void;
 }) {
@@ -705,7 +705,7 @@ function Raise({
   p: EmpirePayload;
   v: PortaView;
   off: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onBack: () => void;
 }) {
   const up = v.upgrade;

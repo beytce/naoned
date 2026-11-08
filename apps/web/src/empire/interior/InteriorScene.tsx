@@ -53,7 +53,7 @@ export function InteriorScene({
   workshopId: string;
   now: number;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onClose: () => void;
 }) {
   const v = p.view;

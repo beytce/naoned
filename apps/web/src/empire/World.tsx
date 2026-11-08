@@ -14,7 +14,7 @@ export const regionName = (code: string) => t.regionNames[code] ?? code;
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
 
-type Act = (a: EmpireAction) => Promise<void>;
+type Act = (a: EmpireAction) => Promise<unknown>;
 
 /**
  * A region up close (the second depth): its counter and its workshops, its prices as the news

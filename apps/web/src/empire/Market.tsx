@@ -37,7 +37,7 @@ export function MarketSheet({
   busy: boolean;
   onClose: () => void;
   onGood: (good: string) => void;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
 }) {
   const [post, setPost] = useState("home");
   // A purchase of more than a quarter of the purse asks a second touch (audit of 4 November,

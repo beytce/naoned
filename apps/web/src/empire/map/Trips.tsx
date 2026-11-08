@@ -25,7 +25,7 @@ export function Trips({
   p: EmpirePayload;
   now: number;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onFocus: (vehicleId: string) => void;
 }) {
   const view = p.view;

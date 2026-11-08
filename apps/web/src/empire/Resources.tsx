@@ -27,7 +27,7 @@ export function GoodSheet({
   good: string | null;
   busy: boolean;
   onClose: () => void;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
 }) {
   const [qty, setQty] = useState<number | null>(null);
   const view = p.view;

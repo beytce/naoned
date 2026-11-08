@@ -12,7 +12,7 @@ import type {
   KnowledgeNode,
 } from "./types.js";
 
-type Act = (a: EmpireAction) => Promise<void>;
+type Act = (a: EmpireAction) => Promise<unknown>;
 const t = fr.empire.identity;
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;

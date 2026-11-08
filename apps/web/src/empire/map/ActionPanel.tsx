@@ -94,7 +94,7 @@ export function ActionPanel({
   target: Target;
   now: number;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onOpen: (sheet: string) => void;
   onClose: () => void;
 }) {
