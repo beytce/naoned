@@ -113,6 +113,6 @@ describe("the empire's notifications (audit of 4 November)", () => {
     const full = pusher.sent.filter((p) => p.payload.kind === "empire_full");
     expect(full).toHaveLength(1);
     expect(full[0]?.target.endpoint).toBe("https://fcm.googleapis.com/fcm/send/1");
-    expect(String(full[0]?.payload.title)).toContain("files");
+    expect(String(full[0]?.payload.title)).toContain("ateliers");
   });
 });

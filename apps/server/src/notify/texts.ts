@@ -191,16 +191,18 @@ export function pushText(
         body: `La Douane vend au Marché ${goods.length > 0 ? goods.join(", ") : "les marchandises d'outre-mer"} : premiers arrivés, meilleurs prix.`,
       };
     }
+    // Golden rule 3 rewritten (docs/plan-publication.md D4): a workshop that finished its queue
+    // stops and waits for its harvest; « tu », as the empire's screens (D1).
     case "empire_full":
       return {
-        title: "Vos files sont pleines",
+        title: "Tes ateliers t'attendent",
         body:
           Number(data.workshops) > 1
-            ? `${data.workshops} ateliers ont fini leur file : leurs lots vous attendent.`
-            : "Un atelier a fini sa file : ses lots vous attendent.",
+            ? `${data.workshops} ateliers se sont arrêtés, leurs lots prêts : récolte pour qu'ils repartent.`
+            : "Un atelier s'est arrêté, ses lots prêts : récolte pour qu'il reparte.",
       };
     case "empire_site":
-      return { title: "Chantier terminé", body: "Un chantier de votre Maison est achevé." };
+      return { title: "Chantier terminé", body: "Un chantier de ta Maison est achevé." };
     case "empire_orders": {
       const city = cities[String(data.city)] ?? String(data.city ?? "Une ville");
       return {
