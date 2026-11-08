@@ -12,6 +12,7 @@ import { BOARD } from "../tokens.js";
 import { crewAt, debarker, dryer, neckRing, planer, sawBench } from "./interior.js";
 import { kilnGlow, smoke } from "./life.js";
 import type { Built, ModelOpts } from "./model.js";
+import { tradeDress } from "./trades.js";
 
 const S = BOARD.tile + BOARD.gap;
 
@@ -108,7 +109,12 @@ function generic(P: Palette, o: ModelOpts, look: StationLook, crew: number): Bui
   const fam = familyOf(look.kind);
   let tick: Built["tick"];
   let top = 2.4;
-  if (fam === "oven") {
+  // A station of a known trade looks like its work (lot 6, « les intérieurs selon le métier »).
+  const dressed = tradeDress(P, g, look.kind, L, D, o);
+  if (dressed) {
+    top = dressed.top;
+    tick = dressed.tick;
+  } else if (fam === "oven") {
     box(g, L, 0.5, Math.min(D, 3.2), 0, 0, -0.3, P.m("wall2"), 0.05);
     const vault = dome(g, Math.min(L, 3.2) / 2, 0, 0.5, -0.3, P.m("wall"), 1.1);
     void vault;

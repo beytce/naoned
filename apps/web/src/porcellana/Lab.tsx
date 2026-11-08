@@ -6,6 +6,7 @@
  * every model of the game, by family, working or idle). Its texts are examples.
  */
 import "./porcellana.css";
+import { venice1450Interior } from "@comptoirs/engine";
 import { Canvas } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -35,6 +36,7 @@ import { fondaco } from "./models/fondaco.js";
 import { grove, plot, slab } from "./models/ground.js";
 import { market } from "./models/market.js";
 import type { Built, ModelOpts } from "./models/model.js";
+import { stationModel } from "./models/stations.js";
 import { type Vehicle, cart, ship } from "./models/vehicles.js";
 import { drawChevron, drawnIndices, ribbonGeometry, roundedPath, seaDashes } from "./ribbon.js";
 import { Blush } from "./selection.js";
@@ -222,6 +224,35 @@ const CAT: Spec = {
   },
 };
 
+/** Every station of the workshops' insides, each on a tile of its own (lot 6, by their trade). */
+const STATION_KINDS = Object.keys(venice1450Interior.stations ?? {}).sort();
+const STATIONS_SPEC: Spec = {
+  rows: Array.from({ length: Math.ceil(STATION_KINDS.length / 8) }, (_, j) =>
+    STATION_KINDS.slice(j * 8, j * 8 + 8),
+  ),
+  viewH: (a) => (a >= 1 ? Math.max(52, 90 / a) : 44),
+  cell(key, i, j) {
+    if (!key) return null;
+    return {
+      make: (o) =>
+        stationModel(palette(), o, {
+          kind: key,
+          w: 1,
+          h: 1,
+          rot: 0,
+          crew: 1,
+          neck: false,
+          building: false,
+        }),
+      place: {
+        id: `${key}${i}${j}`,
+        label: key,
+        info: { name: key, sub: "", line: "", go: key },
+      },
+    };
+  },
+};
+
 export default function PorcellanaLab() {
   const view = new URLSearchParams(window.location.search).get("vue");
   const spec =
@@ -231,11 +262,13 @@ export default function PorcellanaLab() {
         ? PORTA
         : view === "bataille"
           ? BATTLE
-          : view === "pions"
-            ? PAWNS
-            : view === "atelier"
-              ? ATELIER
-              : KIT;
+          : view === "postes"
+            ? STATIONS_SPEC
+            : view === "pions"
+              ? PAWNS
+              : view === "atelier"
+                ? ATELIER
+                : KIT;
   const [chosen, setChosen] = useState<string | null>(null);
   const [running, setRunning] = useState(true);
   const [family, setFamily] = useState<Family | null>(null);

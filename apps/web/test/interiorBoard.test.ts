@@ -10,6 +10,7 @@ import { interiorBoard } from "../src/empire/interior/board.js";
 import type { InteriorRules } from "../src/empire/types.js";
 import { createPalette } from "../src/porcellana/materials.js";
 import { familyOf, stationModel } from "../src/porcellana/models/stations.js";
+import { tradeOf } from "../src/porcellana/models/trades.js";
 
 // A workshop's inside as a board (docs/plan-ateliers.md lot A5), from the engine's own view of
 // Venice's sawmill: what stands on each flagstone, the ribbons, the pins in the workshop's goods.
@@ -90,6 +91,19 @@ describe("the board of an inside", () => {
         },
       );
       expect(b.group.children.length, kind).toBeGreaterThan(0);
+      b.tick?.(1, 0.016);
     }
+  });
+
+  it("draws every station by its trade: none is left the bench of before", () => {
+    // The sawmill's own four have their models; the others an oven, a wheel, a shed, an inspection
+    // or a trade's dress (lot 6, « les intérieurs selon le métier »).
+    const own = new Set(["barking", "saw_bench", "drying_shed", "planing"]);
+    const plain = Object.keys(rules.stations).filter(
+      (kind) => !own.has(kind) && familyOf(kind) === "bench" && tradeOf(kind) === null,
+    );
+    expect(plain).toEqual([]);
+    expect(tradeOf("loom_frame")).toBe("loom");
+    expect(tradeOf("kneading")).toBe("dough");
   });
 });
