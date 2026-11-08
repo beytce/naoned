@@ -28,8 +28,8 @@ const workshop = (type: string, level: number): EmpireWorkshop => ({
 });
 
 describe("Venice's insides", () => {
-  it("cover the fourteen workshops, not the Palazzo", () => {
-    expect(types).toHaveLength(14);
+  it("cover the seventeen workshops, not the Palazzo (the lot 7 adds three)", () => {
+    expect(types).toHaveLength(17);
     expect(Object.keys(I.buildings).sort()).toEqual([...types].sort());
   });
 

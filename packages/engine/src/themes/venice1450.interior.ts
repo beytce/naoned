@@ -51,6 +51,16 @@ const STATIONS = {
   furrow: station(["farmer"], 40, 1, 1),
   sickle: station(["farmer"], 45, 1, 1),
   threshing_floor: station(["farmer"], 140, 2, 1, { size: [2, 2] }),
+  // The salt pans of Chioggia (lot 7): to flood the pans, to rake the salt dry.
+  salt_pan: station(["salter"], 60, 2, 1, { size: [2, 2] }),
+  salt_rake: station(["salter"], 35, 1, 1),
+  // The hemp field (lot 7): to sow, to cut, to ret the stalks in the pond.
+  hemp_cutting: station(["farmer"], 45, 1, 1),
+  retting_pond: station(["farmer"], 120, 2, 1, { size: [2, 2] }),
+  // The Tana's rope walk (lot 7): to comb the hemp, to spin at the wheel, to lay the rope.
+  hackling: station(["labourer"], 35, 1, 1),
+  rope_wheel: station(["roper"], 110, 2, 1, { size: [2, 1], cost: 90 }),
+  rope_laying: station(["roper"], 40, 1, 1),
   // The clay pit: to dig, to wash in the tub.
   clay_pick: station(["digger"], 35, 1, 1),
   wash_tub: station(["digger"], 50, 1, 1, { size: [2, 1] }),
@@ -124,6 +134,24 @@ const BUILDINGS: Interior["buildings"] = {
     stages: chain(["sow", ["furrow"]], ["reap", ["sickle"]], ["thresh", ["threshing_floor"]]),
     unitsPerLot: 8,
     preset: [at("furrow", 0, 0), at("sickle", 1, 0), at("threshing_floor", 2, 1)],
+  },
+  salt_pans: {
+    doors: { in: t(-1, 0), out: t(4, 1) },
+    stages: chain(["flood", ["salt_pan"]], ["rake", ["salt_rake"]]),
+    unitsPerLot: 10,
+    preset: [at("salt_pan", 0, 0), at("salt_rake", 2, 1)],
+  },
+  hemp_field: {
+    doors: { in: t(-1, 0), out: t(4, 1) },
+    stages: chain(["sow", ["furrow"]], ["cut", ["hemp_cutting"]], ["ret", ["retting_pond"]]),
+    unitsPerLot: 10,
+    preset: [at("furrow", 0, 0), at("hemp_cutting", 1, 0), at("retting_pond", 2, 1)],
+  },
+  rope_walk: {
+    doors: { in: t(-1, 0), out: t(4, 1) },
+    stages: chain(["comb", ["hackling"]], ["spin", ["rope_wheel"]], ["lay", ["rope_laying"]]),
+    unitsPerLot: 4,
+    preset: [at("hackling", 0, 0), at("rope_wheel", 1, 1), at("rope_laying", 3, 2)],
   },
   clay_pit: {
     doors: { in: t(-1, 1), out: t(4, 1) },

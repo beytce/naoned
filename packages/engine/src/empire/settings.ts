@@ -101,6 +101,8 @@ export const empireSettingsSchema = z.object({
         costDucats: qty,
         regions: z.array(z.string()).min(1),
         speedBps: bps,
+        /** What it asks from the stock of Venice besides its ducats (a ship's ropes, lot 7). */
+        materials: z.record(z.string(), positive).prefault({}),
       }),
     )
     .prefault({}),

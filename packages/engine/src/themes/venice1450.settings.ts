@@ -1109,6 +1109,10 @@ export const venice1450Settings: WorldSettingsInput = {
     loom: { costDucats: 49_000, costMaterials: { bricks: 25, planks: 40 } },
     tailor: { costDucats: 63_000, costMaterials: { bricks: 30, planks: 40 } },
     spicery: { costDucats: 70_000, costMaterials: { bricks: 40, planks: 40 } },
+    // The chains of Venice (the empire's lot 7): closed in the monthly world (see `unlocks`).
+    salt_pans: { costDucats: 21_000, costMaterials: { bricks: 15, planks: 15 } },
+    hemp_field: { costDucats: 21_000, costMaterials: { bricks: 10, planks: 15 } },
+    rope_walk: { costDucats: 35_000, costMaterials: { bricks: 20, planks: 30 } },
   },
   // Deals between merchants (recommendations of 20 October 2026): commissions open three days at
   // most; the colleganza a week at most, the investor taking at most three quarters of the gains
@@ -1132,6 +1136,10 @@ export const venice1450Settings: WorldSettingsInput = {
     loom: 300_000,
     tailor: 300_000,
     spicery: 500_000,
+    // The empire's buildings of lot 7: in a monthly season, only at the Doge's title.
+    salt_pans: 2_000_000,
+    hemp_field: 2_000_000,
+    rope_walk: 2_000_000,
   },
   referencePrices: {
     wheat: 100,
@@ -1154,6 +1162,9 @@ export const venice1450Settings: WorldSettingsInput = {
     drape: 400,
     garments: 1_300,
     prepared_spices: 2_600,
+    soda: 150,
+    hemp: 100,
+    rope: 450,
   },
   marketMaker: {
     spreadStartBps: 400,

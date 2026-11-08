@@ -731,6 +731,8 @@ const frDict = {
       delta: (n: string, up: boolean) => `${up ? "+" : "−"}${n}/h`,
       trades: {
         farmer: "paysan",
+        salter: "saunier",
+        roper: "cordier",
         digger: "terrassier",
         woodcutter: "bûcheron",
         labourer: "manœuvre",
@@ -748,6 +750,13 @@ const frDict = {
       } as Record<string, string>,
       stations: {
         furrow: "Le sillon",
+        salt_pan: "Le bassin",
+        salt_rake: "Le râteau à sel",
+        hemp_cutting: "La coupe du chanvre",
+        retting_pond: "Le rouissoir",
+        hackling: "Le peignage",
+        rope_wheel: "La roue du cordier",
+        rope_laying: "Le commettage",
         sickle: "La faucille",
         threshing_floor: "L'aire de battage",
         clay_pick: "La pioche",
@@ -2802,11 +2811,15 @@ const frDict = {
         cloth: "p",
         sand: "m",
         glass: "m",
-        mirrors: "p",
+        // Le cristallo, since the mirrors were renamed (D11).
+        mirrors: "m",
         wool: "f",
         drape: "m",
         garments: "p",
         prepared_spices: "p",
+        soda: "f",
+        hemp: "m",
+        rope: "p",
       } as Record<string, "m" | "f" | "v" | "p">,
       /** « le blé », « la farine », « l'argile », « les briques » (null: a good not listed). */
       the: (code: string, name: string): string | null => {

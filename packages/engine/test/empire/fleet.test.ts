@@ -108,3 +108,44 @@ describe("the fleet capped by the Remise's level", () => {
     expect(empireView(w.ctx, w.state, "a", w.now)?.fleet).toBeNull();
   });
 });
+
+// The ropes of the Tana (docs/plan-publication.md lot 7): a ship asks its ropes from the stock of
+// Venice besides its ducats; a cart asks none.
+describe("a vehicle with its materials", () => {
+  const withRope: EmpireSettingsInput = {
+    ...empire,
+    vehicles: {
+      ...empire.vehicles,
+      barge: {
+        casa: 1,
+        capacity: 60,
+        costDucats: 100,
+        regions: ["veneto"],
+        speedBps: 0,
+        materials: { planks: 2, wheat: 4 },
+      },
+    },
+    fleet: { levels: [{ vehicles: 5, costDucats: 0, casa: 1, minutes: 0 }] },
+  };
+  const ropeWorld = () => {
+    const w = new World(makeContext({ empire: withRope }));
+    w.do({ type: "empireJoin", playerId: "a" });
+    w.do({ type: "empireBuildCasa", playerId: "a" });
+    w.do({ type: "empireBuildDepot", playerId: "a", cell: "1,0" });
+    w.advance(HOUR);
+    return w;
+  };
+
+  it("takes them from the stock with its price, and is refused without them", () => {
+    const w = ropeWorld();
+    expect(error(w.try({ type: "empireBuyVehicle", playerId: "a", vehicleType: "barge" }))).toBe(
+      "insufficient_stock",
+    );
+    w.give("a", "planks", 2);
+    w.give("a", "wheat", 5);
+    w.do({ type: "empireBuyVehicle", playerId: "a", vehicleType: "barge" });
+    expect(w.state.inventories.a?.planks?.available ?? 0).toBe(0);
+    expect(w.state.inventories.a?.wheat?.available ?? 0).toBe(1);
+    expect(house(w).vehicles?.some((v) => v.type === "barge")).toBe(true);
+  });
+});

@@ -9,6 +9,7 @@ import { lockedPlot } from "../models/decor.js";
 import { fondaco } from "../models/fondaco.js";
 import { grove, plot } from "../models/ground.js";
 import { adornments, barque, loyaltyBanners, walkers } from "../models/life.js";
+import { zattera } from "../models/lot7.js";
 import { market } from "../models/market.js";
 import type { Built, ModelOpts } from "../models/model.js";
 import { town } from "../models/towns.js";
@@ -57,6 +58,10 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
   const key: ModelKey | null = tile.model;
   if (!key) {
     // A boat on one lagoon tile in three (P3-04 of the players' audit: the water was still).
+    if (tile.water && tile.raft && tile.seed % 2 === 0) {
+      const r = zattera(P);
+      return { group: r.group, pin: r.pin, tick: (t, dt) => r.tick?.(t, dt) };
+    }
     if (tile.water && tile.seed % 3 === 0) {
       const b = barque(P, tile.seed);
       return { group: b.group, pin: [0, 1, 0], tick: (t) => b.tick(t) };

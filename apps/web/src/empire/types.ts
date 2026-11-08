@@ -171,6 +171,7 @@ export interface EmpireView {
       capacity: number;
       regions: string[];
       speedBps: number;
+      materials?: Record<string, number>;
       /** The house's level of the model, and its next level's price (null at the last). */
       level: number;
       upgrade: string | null;

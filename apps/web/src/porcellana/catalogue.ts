@@ -7,7 +7,7 @@ import type { Palette } from "./materials.js";
 import { lockedPlot, mountain, rocks } from "./models/decor.js";
 import { fondaco } from "./models/fondaco.js";
 import { grove, plot } from "./models/ground.js";
-import { muranoFurnace, ropeWalk, saltPans, zattera } from "./models/lot7.js";
+import { hempField, muranoFurnace, ropeWalk, saltPans, zattera } from "./models/lot7.js";
 import { market } from "./models/market.js";
 import type { Built, ModelOpts } from "./models/model.js";
 import { arsenal, campo, depot, porta, post } from "./models/places.js";
@@ -34,7 +34,7 @@ export const FAMILIES: { key: Family; name: string }[] = [
   { key: "villes", name: "Villes" },
   { key: "decor", name: "Décor" },
   { key: "vehicules", name: "Véhicules" },
-  { key: "lot7", name: "Lot 7 (propositions)" },
+  { key: "lot7", name: "Chaînes de Venise" },
 ];
 
 export interface Entry {
@@ -64,12 +64,12 @@ export const CATALOGUE: Entry[] = [
     make: saltPans,
   },
   {
-    key: "murano",
+    key: "hemp_field",
     family: "lot7",
-    name: "Fornace de Murano",
-    sub: "Sable + soude du Levant → cristallo",
-    sign: "La bouche du four rougeoie, la cheminée fume.",
-    make: muranoFurnace,
+    name: "Champ de chanvre",
+    sub: "Chanvre, pour les cordages",
+    sign: "Les tiges ondulent, les bottes rouissent dans la mare.",
+    make: hempField,
   },
   {
     key: "rope_walk",
@@ -124,9 +124,10 @@ export const CATALOGUE: Entry[] = [
     key: "glassworks",
     family: "ateliers",
     name: "Verrerie",
-    sub: "Sable → verre de Murano",
-    sign: "Le four rougeoie, la fumée monte.",
-    make: glassworks,
+    sub: "Sable (+ soude du Levant) → verre",
+    sign: "La bouche du four rougeoie, la cheminée fume.",
+    // Murano's furnace on its quay (lot 7, validated by the owner on 8 November 2026).
+    make: muranoFurnace,
   },
   {
     key: "clay_pit",

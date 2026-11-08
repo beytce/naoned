@@ -180,7 +180,7 @@ const KIT_LABELS = new Map(
 
 /** The catalogue (lot 2): every model, family by family. */
 const CATALOGUE_ROWS = [
-  ["salt_pans", "~", "murano", "~", "rope_walk", "~", "zattera"],
+  ["salt_pans", "~", "hemp_field", "~", "rope_walk", "~", "zattera"],
   ["lumber_camp", "sawmill", "mill", "farm", "glassworks", "clay_pit", "sand_pit"],
   ["brickworks", "palazzo", "field", "fondaco", "market", "campo", "porta"],
   ["arsenal", "post", "depot", "grove", "forest", "rocks", "mountain"],

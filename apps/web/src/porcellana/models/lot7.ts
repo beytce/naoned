@@ -33,7 +33,7 @@ export function saltPans(P: Palette, o: ModelOpts): Built {
     [1.6, -1.6],
     [-1.6, 0.9],
   ] as [number, number][]) {
-    const h = ball(heaps, 0.42, x, 0.3, z, P.m("trim"));
+    const h = ball(heaps, 0.42, x, 0.44, z, P.m("trim"));
     h.scale.set(1, 1.1, 1);
   }
   g.add(heaps);
@@ -163,6 +163,43 @@ export function zattera(P: Palette): Built {
     tick: (t) => {
       raft.rotation.z = Math.sin(t * 1.2) * 0.03;
       raft.position.y = Math.sin(t * 1.5) * 0.03;
+    },
+  };
+}
+
+/**
+ * The hemp field (lot 7, the owner's choice of a field to sow): rows of tall stalks, the retting
+ * pond where they soak, bundles drying on a rack. The stalks sway while it works.
+ */
+export function hempField(P: Palette, o: ModelOpts): Built {
+  const g = new Group();
+  box(g, 5.2, 0.1, 5.2, 0, 0, 0, P.m("soil"), 0.05);
+  const stalks = new Group();
+  for (let row = 0; row < 5; row++)
+    for (let k = 0; k < 7; k++) {
+      const x = -2.1 + k * 0.42;
+      const z = -2.1 + row * 0.5;
+      cyl(stalks, 0.035, 0.045, 1.1 + ((row + k) % 3) * 0.12, x, 0.1, z, P.m("leaf"), 8);
+    }
+  g.add(stalks);
+  // The retting pond and its bundles.
+  box(g, 1.8, 0.14, 1.6, 1.4, 0.1, 1.4, P.m("trim"), 0.04);
+  box(g, 1.5, 0.02, 1.3, 1.4, 0.24, 1.4, P.m("water"), 0.02).castShadow = false;
+  for (const z of [0.95, 1.4, 1.85]) {
+    const bundle = cyl(g, 0.12, 0.12, 0.9, 1.4, 0.3, z, P.m("wood"), 12);
+    bundle.rotation.z = Math.PI / 2;
+    bundle.position.y = 0.3;
+  }
+  // The drying rack, a bundle of accent on it.
+  box(g, 0.06, 0.9, 0.06, -1.9, 0.1, 1.9, P.m("wood"), 0.01);
+  box(g, 0.06, 0.9, 0.06, -0.7, 0.1, 1.9, P.m("wood"), 0.01);
+  box(g, 1.3, 0.05, 0.05, -1.3, 0.95, 1.9, P.m("wood"), 0.01);
+  box(g, 0.2, 0.5, 0.12, -1.3, 0.45, 1.9, P.accent, 0.02);
+  return {
+    group: g,
+    pin: [0, 1.6, 0],
+    tick: (t) => {
+      stalks.rotation.z = o.running ? Math.sin(t * 0.9) * 0.015 : 0;
     },
   };
 }

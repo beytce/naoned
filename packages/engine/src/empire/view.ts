@@ -183,6 +183,8 @@ export interface EmpireView {
       capacity: number;
       regions: string[];
       speedBps: number;
+      /** What it asks from the stock besides its ducats (a boat's ropes, lot 7). */
+      materials: Record<string, number>;
       /** The house's level of the model, and the price of its next (null at the last). */
       level: number;
       upgrade: Deniers | null;
@@ -958,6 +960,7 @@ function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s
       capacity: capacity(holdPlacesOf(house, type, s)),
       regions: v.regions,
       speedBps: v.speedBps,
+      materials: v.materials,
       level: vehicleLevelOf(house, type),
       upgrade: upgradeCost(house, type, s),
     })),
