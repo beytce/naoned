@@ -39,7 +39,11 @@ const cities = VENICE_SQUARE_TOWNS.map((t) => {
   };
 });
 const townTiles = cities.map((c) => c.cell);
-const at = hexMap.home ?? { x: 0, y: 0 };
+// The first fondaco near the Rialto (D8 and P1-24 of the players' audit, 8 November 2026): on the
+// free tile of Venetia nearest Venice, so that the towns open Venice → Padua and Treviso → Verona →
+// Bologna and Ancona. A house already founded keeps its fondaco.
+const venice = cities.find((c) => c.code === "venezia");
+const at = venice ? { x: venice.x, y: venice.y } : (hexMap.home ?? { x: 0, y: 0 });
 const homeTile = Object.keys(VENICE_SQUARE_TILES)
   .filter(
     (t) =>
