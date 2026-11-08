@@ -1150,10 +1150,7 @@ export const en: Dictionary = {
         ],
       ] as [string, string][],
       remise: [
-        [
-          "The Remise: your vehicles.",
-          "Here you buy, raise and arm the mules, carts and ships.",
-        ],
+        ["The Remise: your vehicles.", "Here you buy, raise and arm the mules, carts and ships."],
         ["Your fleet and its places.", "Each vehicle takes a place. Raise the Remise for more."],
         [
           "The models.",

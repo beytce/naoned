@@ -1150,7 +1150,8 @@ const frDict = {
       build: (name: string) => `Bâtis ton premier atelier : un ${name.toLowerCase()}.`,
       buildWhy: "Touche une case libre de ton domaine, puis « Bâtir un atelier », puis « Bâtir ».",
       launch: (name: string) => `Ton ${name.toLowerCase()} est debout : lance sa production.`,
-      launchWhy: "Entre dans l'atelier et touche « Relancer » : le premier lot se fait en quelques secondes.",
+      launchWhy:
+        "Entre dans l'atelier et touche « Relancer » : le premier lot se fait en quelques secondes.",
       making: (good: string) => `Ton premier ${good.toLowerCase()} se fait…`,
       makingWhy: "Regarde l'atelier travailler : c'est prêt dans un instant.",
       collect: (good: string) => `Ton ${good.toLowerCase()} est prêt : récolte-le.`,
