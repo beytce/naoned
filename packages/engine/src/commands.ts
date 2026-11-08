@@ -44,6 +44,7 @@ import {
   chooseArte,
   empireJoin,
   empireSettings,
+  hasteBuild,
   ownHouse,
   settleBuilds,
   startCasa,
@@ -117,7 +118,13 @@ import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js
 import { buyGoods, deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
 import { ensureFitted, fitVehicle } from "./empire/vehicleModules.js";
 import { buyEmpireVehicle } from "./empire/voyages.js";
-import { fitModule, relaunchAll, relaunchWorkshop, swapWorkshops } from "./empire/workshops.js";
+import {
+  fitModule,
+  relaunchAll,
+  relaunchWorkshop,
+  setPriority,
+  swapWorkshops,
+} from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
 import {
@@ -175,6 +182,7 @@ import {
   type EngineErrorCode,
   type Tx,
   addStock,
+  checkKeys,
   emit,
   fail,
   removeStock,
@@ -357,6 +365,12 @@ type EmpireCommandOf =
   | { type: "empireUpgrade"; playerId: PlayerId; workshopId: string }
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll"; playerId: PlayerId }
+  | {
+      type: "empireSetPriority";
+      playerId: PlayerId;
+      workshopId: string;
+      priority: "high" | "normal" | "low";
+    }
   // The workshops' insides (docs/plan-ateliers.md § 5.5).
   | {
       type: "empireInteriorPlace";
@@ -429,6 +443,7 @@ type EmpireCommandOf =
   | { type: "empireDepartNow"; playerId: PlayerId; vehicleId: string }
   /** Nothing but what every command settles first: the hops arrived, the sites ended. */
   | { type: "empireSettle"; playerId: PlayerId }
+  | { type: "empireHaste"; playerId: PlayerId }
   | { type: "empireCancelStop"; playerId: PlayerId; vehicleId: string }
   /** A researched trade module fitted on a vehicle's place (null: emptied). */
   | {
@@ -695,6 +710,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       relaunchWorkshop(tx, cmd.playerId, cmd.workshopId, cmd.recipe);
       advanceCarnet(h, "relaunch", 1);
       break;
+    case "empireSetPriority":
+      setPriority(tx, cmd.playerId, cmd.workshopId, cmd.priority);
+      break;
     case "empireRelaunchAll":
       relaunchAll(tx, cmd.playerId);
       advanceCarnet(h, "relaunch", 1);
@@ -862,6 +880,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireMove":
       moveVehicle(tx, cmd.playerId, cmd.vehicleId, cmd.to);
+      break;
+    case "empireHaste":
+      hasteBuild(tx, cmd.playerId);
       break;
     case "empireSettle":
       break;
@@ -1186,6 +1207,7 @@ export function decide(
   try {
     const next = produce(state, (draft) => {
       const tx = { ctx, s: draft, now, fx };
+      checkKeys(cmd);
       apply(tx, cmd);
       // The monthly season's trackers: the empire has its Carnet instead.
       if (!isEmpire(cmd)) {

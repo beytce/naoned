@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Lorenzo } from "../art/scenes.js";
 import { DockDoor } from "../dock.js";
-import { PalettePicker } from "../game/Profil.js";
 import { PushSettings } from "../game/PushSettings.js";
 import { d, hourOf } from "../game/format.js";
 import { GOLD } from "../game/gold.js";
@@ -60,6 +59,14 @@ function wordsOf(p: EmpirePayload, s: NextStep): { what: string; why: string; bu
       };
     case "claim":
       return { what: t.claim, why: t.claimWhy, button: t.claimAction };
+    case "plot":
+      return { what: t.plot, why: t.plotWhy, button: t.plotAction };
+    case "buy":
+      return {
+        what: t.buy(buildingName(p, s.type), s.qty, goodName(p, s.good)),
+        why: t.buyWhy,
+        button: t.buyAction,
+      };
     case "wait":
       return { what: s.at ? t.wait(hourOf(s.at)) : t.waitNone, why: t.waitWhy };
     case "welcome":
@@ -130,8 +137,10 @@ export function NextStepCard({
     }
     was.current = step.kind;
   }, [step.kind]);
-  // The welcome's button stays: it is the guide of the first order (the first steps, lot 2).
-  const button = step.kind === "welcome" || !known.has(step.kind) ? w.button : undefined;
+  // Every step keeps its button that does the gesture (the players' audit, P0-06: a step without
+  // one was a dead end); the hand still shows where the gesture is made by hand.
+  void known;
+  const button = w.button;
   const go = () => {
     if (step.kind === "build") onBuild(step.recipe);
     else if (step.kind === "welcome") {
@@ -263,7 +272,9 @@ export function Intro({ p }: { p: EmpirePayload }) {
             </div>
           }
         >
-          <p className="font-display font-bold text-cream">{t.intro[page]?.[0]}</p>
+          <p className="font-display font-bold text-cream">
+            {(t.intro[page]?.[0] ?? "").replace("{cash}", d(p.cash))}
+          </p>
           <p className="mt-1 text-sm text-cream-dim">
             {(t.intro[page]?.[1] ?? "").replace("{cash}", d(p.cash))}
           </p>
@@ -272,6 +283,9 @@ export function Intro({ p }: { p: EmpirePayload }) {
     </div>
   );
 }
+
+/** The Fondaco level from which the Power and its band are shown (the Porta's). */
+const MEASURES_FROM = 3;
 
 /** The house's measures, out of the header: the Casa, the Power and its band, the Favour, the Seals. */
 export function HouseSheet({
@@ -330,15 +344,17 @@ export function HouseSheet({
       )}
       <div className="grid grid-cols-2 gap-2" data-house-sheet>
         <Stat label={<Term code="casa">{h.casa}</Term>} value={view.house.casa} tone="gold" />
-        <Stat label={<Term code="power">{h.power}</Term>} value={view.power} />
-        <Stat label={<Term code="band">{h.band}</Term>} value={view.band + 1} />
+        {/* Shown once they serve (docs/plan-publication.md D1): the Power and its band from the
+            Porta's level, where they pair the houses; the Seals once there are some. */}
+        {view.house.casa >= MEASURES_FROM && (
+          <>
+            <Stat label={<Term code="power">{h.power}</Term>} value={view.power} />
+            <Stat label={<Term code="band">{h.band}</Term>} value={view.band + 1} />
+          </>
+        )}
         <Stat label={<Term code="favour">{h.favour}</Term>} value={view.house.favour} />
-        <Stat label={h.seals} value={view.house.seals} />
+        {view.house.seals > 0 && <Stat label={h.seals} value={view.house.seals} />}
         <Stat label={<Term code="income">{h.income}</Term>} value={d(view.incomePerDay)} />
-      </div>
-      <div className="mt-6">
-        {/* The palettes of the monthly profile; the Pass's own stays out of the empire. */}
-        <PalettePicker pass={false} offered={false} />
       </div>
       {/* The empire's notices, asked for, three kinds (decision of the owner, 4 November). */}
       <div className="mt-6" data-house-push>

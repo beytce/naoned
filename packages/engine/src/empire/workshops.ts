@@ -130,6 +130,8 @@ export function relaunchWorkshop(
   playerId: PlayerId,
   workshopId: string,
   recipe?: string,
+  /** At most so many lots more in its queue (a first share for each, before any fills up). */
+  maxLots = Number.POSITIVE_INFINITY,
 ): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
@@ -152,7 +154,7 @@ export function relaunchWorkshop(
   if (ws.job?.once) return;
   const batchMs = ws.job?.batchMs ?? (fresh as number);
   const queueEnd = ws.job ? ws.job.startedAt + ws.job.batches * batchMs : tx.now;
-  let add = Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs);
+  let add = Math.min(maxLots, Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs));
   // The furnace saves inputs: a share of a lot's, in whole units over the queue.
   // And a well-tended inside wastes less (docs/plan-ateliers.md lot A8).
   const saved = Math.min(
@@ -238,7 +240,8 @@ function freshBatchMs(
  */
 export function repaceWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop): void {
   const job = ws.job;
-  if (!job) return;
+  // The welcome's quick lot keeps its pace, whatever is done inside (QA-10).
+  if (!job || job.once) return;
   const fresh = freshBatchMs(tx, ownHouse(tx, playerId), ws, empireSettings(tx.ctx));
   if (fresh === null || fresh === job.batchMs) return;
   const firstEnds = job.startedAt + job.batchMs;
@@ -246,13 +249,35 @@ export function repaceWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop): 
   job.startedAt = firstEnds - fresh;
 }
 
+/** A workshop's priority on the inputs (lot 4 of the publication plan). */
+export function setPriority(
+  tx: Tx,
+  playerId: PlayerId,
+  workshopId: string,
+  priority: "high" | "normal" | "low",
+): void {
+  if (priority !== "high" && priority !== "normal" && priority !== "low") fail("invalid_input");
+  const ws = ownHouse(tx, playerId).workshops.find((w) => w.id === workshopId);
+  if (!ws) fail("unknown_building");
+  ws.priority = priority === "normal" ? undefined : priority;
+}
+
+const RANK = { high: 0, normal: 1, low: 2 } as const;
+
 export function relaunchAll(tx: Tx, playerId: PlayerId): void {
-  // Raw goods first: what they make feeds the workshops that follow.
+  // Raw goods first: what they make feeds the workshops that follow; among the others, the
+  // priority the house gave them (lot 4 of the publication plan).
   const h = ownHouse(tx, playerId);
+  const inputs = (w: EmpireWorkshop) => Object.keys(recipeOf(tx, w).inputs).length;
   const order = [...h.workshops].sort(
     (a, b) =>
-      Object.keys(recipeOf(tx, a).inputs).length - Object.keys(recipeOf(tx, b).inputs).length,
+      Number(inputs(a) > 0) - Number(inputs(b) > 0) ||
+      RANK[a.priority ?? "normal"] - RANK[b.priority ?? "normal"] ||
+      inputs(a) - inputs(b),
   );
+  // A first lot for each before any fills its queue (the players' audit of 7 November 2026, B4:
+  // the sawmill took all the wood, the brickworks starved), then the rest in the same order.
+  for (const ws of order) relaunchWorkshop(tx, playerId, ws.id, undefined, 1);
   for (const ws of order) relaunchWorkshop(tx, playerId, ws.id);
 }
 

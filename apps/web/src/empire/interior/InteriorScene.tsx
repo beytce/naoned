@@ -365,7 +365,7 @@ export function InteriorScene({
               type="button"
               disabled={busy}
               onClick={() => void act({ type: "empireRelaunch", workshopId })}
-              className="min-h-11 w-full rounded-full bg-[#D49A16] px-5 font-display text-sm font-extrabold text-[#17150F] shadow-[0_3px_0_#9a6f0e] disabled:opacity-40 sm:w-auto"
+              className="min-h-11 w-full rounded-full bg-[#C23B2E] px-5 font-display text-sm font-extrabold text-white shadow-[0_3px_0_#8f2820] disabled:opacity-40 sm:w-auto"
               data-interior-relaunch={status.state}
             >
               {status.state === "ready"

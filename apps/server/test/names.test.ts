@@ -6,7 +6,7 @@ import { FAMILY_NAMES, HOUSES } from "../src/game/bots.js";
 describe("the names proposed to newcomers", () => {
   it("never carry a house of the computer nor a patrician family", () => {
     const houses = [...HOUSES, ...FAMILY_NAMES].map((h) => h.toLowerCase());
-    for (const word of [...FIRST_NAMES, ...TRADES.flatMap((t) => t.split("_"))])
+    for (const word of [...FIRST_NAMES, ...TRADES.flatMap((t) => t.split(" "))])
       expect(houses, word).not.toContain(word.toLowerCase());
   });
 

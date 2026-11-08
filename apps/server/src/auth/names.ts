@@ -30,21 +30,21 @@ export const FIRST_NAMES = [
   "Anzoleta",
 ];
 export const TRADES = [
-  "dal_Sale",
-  "dei_Panni",
-  "da_Murano",
-  "del_Vetro",
-  "da_Rialto",
-  "della_Seta",
-  "dal_Legno",
-  "da_Chioggia",
-  "dal_Pan",
-  "dei_Remi",
+  "dal Sale",
+  "dei Panni",
+  "da Murano",
+  "del Vetro",
+  "da Rialto",
+  "della Seta",
+  "dal Legno",
+  "da Chioggia",
+  "dal Pan",
+  "dei Remi",
 ];
 
 /** Every proposed name that fits the pseudo's rule (20 characters at most). */
 export function proposedNames(): string[] {
-  return FIRST_NAMES.flatMap((f) => TRADES.map((t) => `${f}_${t}`)).filter((n) => n.length <= 20);
+  return FIRST_NAMES.flatMap((f) => TRADES.map((t) => `${f} ${t}`)).filter((n) => n.length <= 20);
 }
 
 /** A free proposed name, drawn by `seed`; a number after it when all are taken. */

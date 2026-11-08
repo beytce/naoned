@@ -299,6 +299,35 @@ function Front({
           </span>
         </div>
       )}
+      {Object.keys(recipeOf(p, ws)?.inputs ?? {}).length > 0 && (
+        // Who is served first with the inputs (P0-07: the sawmill starved the brickworks).
+        <div className="flex flex-col gap-1.5" data-priority>
+          <p className="text-xs font-semibold text-cream-dim">{t().priority}</p>
+          <div className="grid grid-cols-3 gap-1.5" aria-label={t().priority}>
+            {(["low", "normal", "high"] as const).map((k) => {
+              const on = (ws.priority ?? "normal") === k;
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  aria-pressed={on}
+                  disabled={busy}
+                  onClick={() =>
+                    on
+                      ? undefined
+                      : void act({ type: "empireSetPriority", workshopId: ws.id, priority: k })
+                  }
+                  className={`min-h-11 rounded-full text-sm font-bold transition active:scale-95 ${on ? "bg-cream text-night-3" : "bg-night-4 text-cream-dim"}`}
+                  data-priority-level={k}
+                >
+                  {t().priorities[k]}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-cream-dim">{t().priorityWhy}</p>
+        </div>
+      )}
       {s.state === "ready" ? (
         <Slab
           size="lg"

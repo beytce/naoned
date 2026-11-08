@@ -9,6 +9,7 @@ import { buildingName, workshopStatus } from "../../empire/logic.js";
 import { type Target, deliveryPlan } from "../../empire/map/logic.js";
 import { welcomeStep } from "../../empire/next.js";
 import type { EmpirePayload } from "../../empire/types.js";
+import { hourOf } from "../../game/format.js";
 import { fr } from "../../i18n.js";
 
 const t = fr.empire;
@@ -211,9 +212,11 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         sub: t.porcellana.freeSub,
         line: t.porcellana.freeLine,
         go: t.porcellana.build,
-        pin: calling ? "+" : "",
+        // A « + » on each free tile of the house's, always (the players' audit, P0-12: free tiles
+        // were invisible out of the guide); in accent when the guide calls for one.
+        pin: "+",
+        plus: true,
         ready: calling,
-        quiet: !calling,
       },
     });
 
@@ -250,7 +253,10 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
             ? t.porcellana.toLink(toLink.length)
             : waiting > 0
               ? t.porcellana.cityOrders(waiting)
-              : t.porcellana.cityQuiet,
+              : o?.nextAt
+                ? // When its next order comes (P2-04 of the players' audit).
+                  t.porcellana.nextOrder(hourOf(o.nextAt))
+                : t.porcellana.cityQuiet,
         go: venice ? t.porcellana.openMarket : t.porcellana.openCity,
         pin: waiting > 0 ? String(waiting) : "",
         ready: waiting > 0 && !toLink,
@@ -366,6 +372,13 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       water: false,
       model,
       running: st.state === "running",
+      // Its lots ready in crates before it, of accent; full, a stack of wood that waits for the
+      // harvest (golden rule 3, seen: P3-02 of the players' audit).
+      ...(lots > 0
+        ? { crates: Array.from({ length: Math.min(lots, 6) }, () => true) }
+        : st.state === "full"
+          ? { crates: Array.from({ length: 6 }, () => false) }
+          : {}),
       place: {
         id: `workshop:${w.id}`,
         target: { kind: "workshop", id: w.id },

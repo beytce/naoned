@@ -775,7 +775,8 @@ function RenameOnce({ props }: { props: GameProps }) {
       onSubmit={async (e) => {
         e.preventDefault();
         setError(null);
-        if (!/^[\p{L}\p{N}_-]{3,20}$/u.test(name)) return setError(fr.pseudoInvalid);
+        if (!/^(?=.{3,20}$)[\p{L}\p{N}_-]+(?: [\p{L}\p{N}_-]+)*$/u.test(name))
+          return setError(fr.pseudoInvalid);
         try {
           props.onAccount(await api.setPseudo(name));
         } catch (err) {

@@ -69,10 +69,11 @@ import { type CityOrders, ordersOf } from "./orders.js";
 import { type PortaView, portaViewOf } from "./porta/view.js";
 import { bandOf } from "./power.js";
 import { regionOf } from "./prices.js";
+import { salaryBps } from "./salaries.js";
 import type { EmpireSettings } from "./settings.js";
 import { roadBetween } from "./slots.js";
 import { staffHireCost, staffSlots } from "./staff.js";
-import { storesOf, workshopPost } from "./stores.js";
+import { postsServing, storesOf, workshopPost } from "./stores.js";
 import { isContesaWeek, terraWeekStart } from "./terra.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
 import { vehicleSlotsOf } from "./vehicleModules.js";
@@ -102,6 +103,12 @@ export interface EmpireView {
   } | null;
   power: number;
   band: number;
+  /** The share of each receipt the hands take as wages, in bps (said on the screen, P1-15). */
+  wagesBps: number;
+  /** How long a workshop's queue runs once launched, then it waits for its harvest (rule 3). */
+  queueHours: number;
+  /** The Favour a site's haste costs now; null when none is left today, or no haste. */
+  hasteFavour: number | null;
   /** Receipts a day (the last full days), in deniers. */
   incomePerDay: Deniers;
   asleep: boolean;
@@ -485,6 +492,12 @@ export function empireView(
     ...(house.welcome && s.welcome ? { welcome: { workshop: s.welcome.workshop } } : {}),
     power,
     band: bandOf(power, s),
+    wagesBps: salaryBps(power, s),
+    queueHours: s.queueHours,
+    hasteFavour: s.haste
+      ? (s.haste.favour[house.haste?.day === Math.floor(now / DAY_MS) ? house.haste.used : 0] ??
+        null)
+      : null,
     incomePerDay: incomePerDay(house, now),
     asleep: isAsleep(house, now, s),
     nextCasa: nextLine
@@ -774,6 +787,18 @@ function roadsOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView["roads"] 
     out.push({ from: w.id, to: post.id, pts: round(roadBetween(at, [post.x, post.y], s, owned)) });
   }
   const home = posts[0];
+  // The roads to the towns the Fondaco serves by the house's own tiles (P1-02 of the players'
+  // audit: no road was drawn but on a trip; the mule's way, seen before it walks).
+  for (const c of s.map.cities) {
+    const serving = postsServing(house, s, c.code);
+    const post = posts.find((p) => serving.includes(p.id));
+    if (!post) continue;
+    out.push({
+      from: post.id,
+      to: `city:${c.code}`,
+      pts: round(roadBetween([post.x, post.y], citySpot(c, s), s, owned)),
+    });
+  }
   if (house.depot && home) {
     const at = cellCentreOf(house.depot, s);
     out.push({

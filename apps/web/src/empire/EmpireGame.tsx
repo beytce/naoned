@@ -12,6 +12,7 @@ import { useOnline } from "../game/online.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { sound } from "../sound.js";
+import { applyPalette } from "../theme.js";
 import { Badge, GoldLayer, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { suppliable } from "./Company.js";
 import { CompanySheet } from "./CompanyTab.js";
@@ -22,6 +23,7 @@ import { CasaMoment } from "./Moment.js";
 import { NewWorkshopSheet, freeTileOf } from "./NewWorkshop.js";
 import { GoodSheet } from "./Resources.js";
 import { Safe } from "./Safe.js";
+import { StoreSheet } from "./Store.js";
 import { Charroi, RegionPlace, Scuola, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import { foresee } from "./foresee.js";
@@ -59,6 +61,7 @@ import { BattleScreen } from "./porta/Battle.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
 type SheetId =
+  | "store"
   | "workshops"
   | "casa"
   | "market"
@@ -105,6 +108,9 @@ function useOnce(on: boolean) {
 
 const t = fr.empire;
 const unknownError = fr.errors.unknown ?? "";
+/** A refusal's words: the empire's, else the world's of before, never a silent one (P0-11). */
+const refusal = (code: string) =>
+  t.errors[code] ?? (fr.game.errors as Record<string, string>)[code] ?? unknownError;
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
 
@@ -134,6 +140,8 @@ const ZOOM_KEY = 1.4;
 
 export function EmpireGame({ account, first }: { account: Account; first: EmpireAnswer }) {
   const [p, setP] = useState<EmpireAnswer>(first);
+  // Porcellana alone in the empire (docs/plan-publication.md D9): one palette, one red accent.
+  useEffect(() => applyPalette("porcellana"), []);
   const skew = useRef(first.now - Date.now());
   const [now, setNow] = useState(first.now);
   const [sheet, setSheet] = useState<SheetId | null>(first.view?.away ? "away" : null);
@@ -189,6 +197,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [domain, setDomain] = useState<string | null>(null);
   // The workshop one has stepped into (its inside over the map), if any.
   const [inside, setInside] = useState<string | null>(null);
+  // Échap (and the back of Android, through the same key) leaves the inside of a workshop (P1-05).
+  useEffect(() => {
+    if (!inside) return;
+    const away = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setInside(null);
+    };
+    window.addEventListener("keydown", away);
+    return () => window.removeEventListener("keydown", away);
+  }, [inside]);
   const domainNow = useRef(domain);
   domainNow.current = domain;
   const [busy, setBusy] = useState(false);
@@ -224,7 +241,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     last.current = next;
     skew.current = next.now - Date.now();
     setP(next);
-    if (next.error) setToast(t.errors[next.error] ?? unknownError);
+    if (next.error) setToast(refusal(next.error));
   }, []);
   const refresh = useCallback(async () => {
     const next = await empireApi.view().catch(() => null);
@@ -282,7 +299,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         if (guess && last.current) setP(last.current);
         setToast(
           err instanceof ApiError
-            ? (t.errors[err.code] ?? unknownError)
+            ? refusal(err.code)
             : ((!navigator.onLine ? fr.errors.offline : fr.errors.network) ?? unknownError),
         );
       } finally {
@@ -320,6 +337,16 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     .flatMap((v) => v.legs.map((l) => l.arrivesAt))
     .filter((t) => t > p.now)
     .reduce((a, b) => Math.min(a, b), Number.POSITIVE_INFINITY);
+  // A hop already due (the page was closed, or offline, when it came): settled at once.
+  const due = (p.view?.vehicles?.mine ?? []).some((v) => v.legs.some((l) => l.arrivesAt <= p.now));
+  useEffect(() => {
+    if (due) settle();
+  }, [due, settle]);
+  useEffect(() => {
+    const back = () => settle();
+    window.addEventListener("online", back);
+    return () => window.removeEventListener("online", back);
+  }, [settle]);
   useEffect(() => {
     if (!Number.isFinite(arrival)) return;
     const wait = Math.max(0, arrival - (Date.now() + skew.current)) + 300;
@@ -490,6 +517,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           ? "fondaco"
           : "map";
   const goPlace = (id: PlaceId) => {
+    // A tab leaves any full-screen scene, the inside of a workshop first (P1-05).
+    setInside(null);
     setTarget(null);
     setVehicle(null);
     setAiming(false);
@@ -537,7 +566,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       onBuild={(recipe) => {
         setHighlight(recipe);
         // The welcome's first workshop: straight to the list of a free tile (lot 2).
-        setSheet(step.kind === "welcome" ? "new" : "production");
+        // Straight to the list of a free tile, the workshop to build lit (P0-06).
+        setSheet("new");
       }}
     />
   );
@@ -552,7 +582,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         act={act}
         onBuild={(recipe) => {
           setHighlight(recipe);
-          setSheet(step.kind === "welcome" ? "new" : "production");
+          // Straight to the list of a free tile, the workshop to build lit (P0-06).
+          setSheet("new");
         }}
       />
     </div>
@@ -627,7 +658,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               onDeliver={deliver}
               onAll={() => setSheet("production")}
             />
-            {!target && !placing && !domain && <RemiseBar p={p} onGood={setGood} />}
+            {!target && !placing && !domain && (
+              <RemiseBar p={p} onGood={setGood} onStore={() => setSheet("store")} />
+            )}
             <MapControls
               onRecenter={() => map.current?.recenter()}
               onZoom={(k) => map.current?.zoom(k)}
@@ -775,6 +808,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
                 act={act}
                 onBack={() => map.current?.leave()}
                 onProduction={() => setSheet("production")}
+                onStore={() => setSheet("store")}
                 onCasa={() => setSheet("casa")}
                 guided={tutorial}
                 // The quay (the refonte claire, lot 3): the Remise once it stands, else the
@@ -937,6 +971,15 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           />
         )}
         <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
+        <StoreSheet
+          p={p}
+          open={sheet === "store"}
+          onClose={close}
+          onGood={(g) => {
+            setSheet(null);
+            setGood(g);
+          }}
+        />
         {/* The Remise's arms and the Porta: their scene and their dock; without WebGL, the same dock
           over a plain ground (docs/plan-dock.md, lot 6). */}
         <LazyArms p={p} open={sheet === "arms"} busy={busy} onClose={close} act={act} />
@@ -1072,9 +1115,21 @@ function siteLabel(p: EmpirePayload, b: EmpireBuild): string {
 }
 
 /** The building sites under way, each with its time left, and the free ones. */
-function Sites({ p, now }: { p: EmpirePayload; now: number }) {
+function Sites({
+  p,
+  now,
+  busy = false,
+  act,
+}: {
+  p: EmpirePayload;
+  now: number;
+  busy?: boolean;
+  act?: (a: EmpireAction) => Promise<void>;
+}) {
   const view = p.view;
   if (!view) return null;
+  // The Favour's use (D2 of the publication plan): the soonest site's time halved.
+  const haste = view.hasteFavour ?? null;
   const sites = sitesByEnd(view.house.builds);
   const free = view.buildSlots - sites.length;
   return (
@@ -1099,6 +1154,17 @@ function Sites({ p, now }: { p: EmpirePayload; now: number }) {
                 </span>
               </div>
               <Ribbon value={(now - b.startedAt) / Math.max(1, b.endsAt - b.startedAt)} />
+              {act && b === sites[0] && haste !== null && (
+                <button
+                  type="button"
+                  disabled={busy || view.house.favour < haste}
+                  onClick={() => void act({ type: "empireHaste" })}
+                  className="mt-2 min-h-11 w-full rounded-full bg-night-4 text-sm font-bold text-cream disabled:opacity-40"
+                  data-haste
+                >
+                  {t.sites.haste(haste)}
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -1173,8 +1239,12 @@ function WorkshopsSheet({
                   {t.workshop.open}
                 </button>
               </div>
-              {/* The night queue as a ribbon: its share of the 12 hours still to run. */}
-              {end && end > now && <Ribbon value={Math.min(1, (end - now) / (12 * 3_600_000))} />}
+              {/* The queue as a ribbon: its share of the hours still to run. */}
+              {end && end > now && (
+                <Ribbon
+                  value={Math.min(1, (end - now) / ((p.view?.queueHours ?? 12) * 3_600_000))}
+                />
+              )}
               {r && (
                 <p className="mt-2 text-xs text-cream-dim">
                   {t.workshop.makes}{" "}
@@ -1245,7 +1315,7 @@ function CasaSheet({
       title={t.casa.title(view.house.casa)}
       summary={next ? undefined : t.casa.top}
     >
-      <Sites p={p} now={now} />
+      <Sites p={p} now={now} busy={busy} act={act} />
       {next && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
@@ -1293,6 +1363,24 @@ function CasaSheet({
               <FondacoGains p={p} />
             </p>
           </div>
+          {!canCasa && !view.house.builds.some((b) => b.kind === "casa") && (
+            // Why the button is grey, in words (the players' audit, P1-12).
+            <p className="text-sm font-semibold text-vermilion" data-casa-missing>
+              {t.casa.missing(
+                [
+                  BigInt(p.cash) < BigInt(next.cost)
+                    ? d(String(BigInt(next.cost) - BigInt(p.cash)))
+                    : null,
+                  ...Object.entries(next.materials)
+                    .filter(([g, n]) => (p.stock[g] ?? 0) < n)
+                    .map(([g, n]) => `${n - (p.stock[g] ?? 0)} ${goodName(p, g).toLowerCase()}`),
+                  next.requirementMet ? null : t.casa.requiresMissing,
+                ]
+                  .filter(Boolean)
+                  .join(", "),
+              )}
+            </p>
+          )}
           {view.house.builds.some((b) => b.kind === "casa") ? (
             <p className="text-sm text-cream-dim">{t.casa.busy}</p>
           ) : (
@@ -1318,6 +1406,7 @@ function AwaySheet({ p, open, busy, onClose, act }: SheetProps & { open: boolean
   const away = p.view?.away;
   if (!away) return null;
   const ready = Object.entries(away.ready).filter(([, n]) => n > 0);
+  const waiting = (p.view?.orders ?? []).reduce((n, c) => n + c.orders.length, 0);
   return (
     <Sheet open={open} onClose={onClose} kicker={t.away.kicker} title={t.away.title}>
       {ready.length > 0 && (
@@ -1334,6 +1423,11 @@ function AwaySheet({ p, open, busy, onClose, act }: SheetProps & { open: boolean
       )}
       {away.sitesDone > 0 && (
         <p className="mt-3 text-sm text-cream">{t.away.sites(away.sitesDone)}</p>
+      )}
+      {waiting > 0 && (
+        <p className="mt-3 text-sm font-semibold text-cream" data-away-orders>
+          {t.away.orders(waiting)}
+        </p>
       )}
       <Slab
         tone="gold"

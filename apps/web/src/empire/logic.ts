@@ -72,7 +72,9 @@ export function wantsRelaunch(p: EmpirePayload, now: number): boolean {
     if (p.view?.full?.includes(ws.id)) return false;
     if (readyLots(ws, now) > 0) return true;
     const end = queueEnd(ws);
-    if (end !== null && end - now > 11 * 3_600_000) return false;
+    // Its queue nearly full (an hour short at most): nothing worth a relaunch yet.
+    const hours = p.view?.queueHours ?? 12;
+    if (end !== null && end - now > (hours - 1) * 3_600_000) return false;
     const r = recipeOf(p, ws);
     // Stopped, or short of a full queue: only worth it if its inputs are there.
     return Object.entries(r?.inputs ?? {}).every(([g, n]) => (p.stock[g] ?? 0) >= n);

@@ -220,10 +220,14 @@ describe("the square map's view", () => {
     const v = map(w);
     expect(v?.cities.map((c) => c.code)).toEqual(expect.arrayContaining(["venezia", "padova"]));
     expect(v?.cities.map((c) => c.code)).not.toContain("milano"); // Lombardy asks the Casa 4
-    expect(v?.roads).toHaveLength(2);
-    for (const r of v?.roads ?? []) {
-      expect(r.to).toBe("home");
-      expect(r.pts.length).toBeGreaterThanOrEqual(2);
+    // Each workshop to the fondaco, and the fondaco to each town its own tiles reach (P1-02).
+    const toHome = (v?.roads ?? []).filter((r) => r.to === "home");
+    expect(toHome).toHaveLength(2);
+    for (const r of v?.roads ?? []) expect(r.pts.length).toBeGreaterThanOrEqual(2);
+    const toTowns = (v?.roads ?? []).filter((r) => r.to.startsWith("city:"));
+    for (const r of toTowns) {
+      expect(r.from).toBe("home");
+      expect(v?.cities.map((c) => `city:${c.code}`)).toContain(r.to);
     }
   });
 });

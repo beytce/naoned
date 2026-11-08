@@ -56,13 +56,12 @@ export function MarketSheet({
   const held = (good: string) => at?.goods[good] ?? 0;
   const nth = (i: number) =>
     view.stores.slice(1, i + 1).filter((x) => x.region === view.stores[i]?.region).length;
+  // A stable order, the goods' own (the players' audit, P1-07): a line never moves under the
+  // finger after a purchase changes its price or its stock.
+  const order = Object.keys(p.goods);
   const quotes = p.market
     .filter((q) => q.region === region)
-    .sort(
-      (a, b) =>
-        Number(held(b.good) > 0) - Number(held(a.good) > 0) ||
-        Number(BigInt(b.price) - BigInt(a.price)),
-    );
+    .sort((a, b) => order.indexOf(a.good) - order.indexOf(b.good));
   return (
     <Sheet open={open} onClose={onClose} kicker={t.kicker} title={t.title} summary={t.summary}>
       {view.stores.length > 1 && (

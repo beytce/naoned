@@ -59,6 +59,17 @@
   transition: transform 0.18s ease, background 0.18s, color 0.18s, opacity 0.3s;
   padding: 0;
 }
+/* A finger's room round each pin (P1-10 of the players' audit): 44 px to touch, whatever its face. */
+.pc-pin::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(44px, 100%);
+  height: max(44px, 100%);
+  translate: -50% -50%;
+  border-radius: 999px;
+}
 .pc-pin:hover {
   transform: scale(1.12);
 }
@@ -175,6 +186,25 @@
   color: var(--pc-ink-soft);
   font-size: 11px;
   box-shadow: none;
+}
+/* A town's name under its pin, always (the players' audit, P0-12). */
+.pc-pin-name {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  translate: -50% 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--pc-ink);
+  font: 800 11px / 16px var(--pc-display);
+  white-space: nowrap;
+  box-shadow: 0 1px 0 rgba(23, 21, 15, 0.12);
+  pointer-events: none;
+}
+.pc-pin[data-badge="none"] .pc-pin-name {
+  top: 50%;
+  translate: -50% -50%;
 }
 .pc-pin[data-out="false"] {
   opacity: 0;

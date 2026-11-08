@@ -93,6 +93,12 @@ export function interiorBoard(
 
   const neck = v.rate.bottleneck.station;
   const rateOf = new Map(v.rate.stages.flatMap((s) => s.stations.map((x) => [x.id, x.rateMilli])));
+  // The bottleneck is a stage (its stations together, its buffer's loss counted): its pin says the
+  // stage's rate, the one the engine compares (B21 of the players' audit: « Goulot · 40/h » beside
+  // a station at 39/h read as the wrong one).
+  const stageRateOf = new Map(
+    v.rate.stages.flatMap((s) => s.stations.map((x) => [x.id, s.rateMilli])),
+  );
   const units = v.rate.unitsMilliPerHour;
   // A unit of the inside in the workshop's goods: the pins speak the goods the player knows.
   const k = units > 0 ? goodsPerHour / (units / 1000) : 0;
@@ -141,8 +147,8 @@ export function interiorBoard(
             : { kind: "covered", ...edge, ...(door ? { door } : {}) };
       }
     centre.set(st.id, [st.x + (fw - 1) / 2, st.y + (fh - 1) / 2]);
-    const rate = ((rateOf.get(st.id) ?? 0) / 1000) * k;
     const hot = st.id === neck;
+    const rate = (((hot ? stageRateOf.get(st.id) : rateOf.get(st.id)) ?? 0) / 1000) * k;
     const name = t().stations[st.kind] ?? st.kind;
     const hands = v.hands.filter((x) => x.stationId === st.id).length;
     places.push({

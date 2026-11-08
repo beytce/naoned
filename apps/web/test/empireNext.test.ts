@@ -132,6 +132,74 @@ describe("the next step", () => {
     });
   });
 
+  it("asks the raw matter's workshop first: the clay pit before the brickworks (P0-06)", () => {
+    const p = house({
+      workshops: [
+        running("wood", "lumber_camp", "fell_wood", NOW),
+        running("saw", "sawmill", "saw_planks", NOW),
+      ],
+    });
+    expect(nextStep(p, NOW)).toMatchObject({ kind: "build", type: "clay_pit", good: "clay" });
+  });
+
+  it("buys a plot first when no free tile is left, never a dead end (P0-06)", () => {
+    const p = house({
+      workshops: [
+        running("clay", "clay_pit", "dig_clay", NOW),
+        running("wood", "lumber_camp", "fell_wood", NOW),
+        running("saw", "sawmill", "saw_planks", NOW),
+      ],
+    });
+    const view = p.view as unknown as Record<string, unknown>;
+    view.map = {
+      grid: "square",
+      tileSize: 15,
+      home: { x: 7, y: 7 },
+      cities: [],
+      posts: [],
+      sites: [],
+      cells: { "0,0": { region: "veneto" } },
+      unlocked: ["0,0"],
+      buyable: [{ cell: "1,0", region: "veneto", coast: false, casa: 1 }],
+      sectorCost: "1000",
+    };
+    expect(nextStep(p, NOW)).toMatchObject({
+      kind: "plot",
+      cell: "1,0",
+      action: { type: "empireUnlockCell", cell: "1,0" },
+    });
+  });
+
+  it("buys at the Market the input a stopped workshop waits for, when nobody makes it", () => {
+    const p = house({
+      workshops: [
+        running("clay", "clay_pit", "dig_clay", NOW),
+        { id: "brick", type: "brickworks", recipe: "fire_bricks", level: 1, job: null },
+      ],
+      stock: { clay: 20, planks: 5 },
+      cash: "1000",
+      next: { cost: "100000" },
+      market: [
+        {
+          region: "veneto",
+          good: "wood",
+          ref: "300",
+          price: "300",
+          asked: false,
+          depthLeft: 20,
+          boardLeft: 0,
+          asOf: NOW,
+        },
+      ],
+    });
+    expect(nextStep(p, NOW)).toMatchObject({
+      kind: "buy",
+      good: "wood",
+      qty: 2,
+      action: { type: "empireBuy", good: "wood", qty: 2 },
+    });
+  });
+
   it("raises the lowest workshop when the Casa asks levels", () => {
     const p = house({
       workshops: [running("clay", "clay_pit", "dig_clay", NOW)],
@@ -186,10 +254,11 @@ describe("the next step", () => {
 });
 
 describe("Lorenzo's tutorial (31 October 2026)", () => {
-  it("guides until the Casa 2, then withdraws behind the « ? »", () => {
+  it("guides until the Porta's level, then withdraws behind the « ? » (P0-06)", () => {
     const at = (casa: number) => ({ view: { house: { casa } } }) as unknown as EmpirePayload;
     expect(inTutorial(at(1))).toBe(true);
-    expect(inTutorial(at(2))).toBe(false);
+    expect(inTutorial(at(3))).toBe(true);
+    expect(inTutorial(at(4))).toBe(false);
     expect(inTutorial(at(9))).toBe(false);
   });
 });

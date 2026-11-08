@@ -97,6 +97,8 @@ interface Shared {
    * delivered (the first steps, lot 4), so that the mule is seen arriving.
    */
   focus: string | null;
+  /** A vehicle just sent: the camera walks beside it (P3-01 of the players' audit). */
+  follow: string | null;
   /** Keys asked of the map: a step to pan (in screens), a factor to zoom. */
   pan: [number, number];
   zoom: number;
@@ -364,6 +366,15 @@ function Board({
       nextZone.visible = mat.opacity > 0.01;
     }
     const cam = camera as OrthographicCamera;
+    // The board centred in what the screen leaves free (P1-03 of the players' audit): right of the
+    // side panel on a computer, under the top bar everywhere, so that nothing chosen hides under them.
+    const panel = size.width >= 1024 ? (22 * 16 + 20) / 2 : 0;
+    const bar = size.width >= 1024 ? 48 : 28;
+    const off = cam.view;
+    if (!off || off.offsetX !== -panel || off.offsetY !== -bar || off.width !== size.width) {
+      cam.setViewOffset(size.width, size.height, -panel, -bar, size.width, size.height);
+      cam.updateProjectionMatrix();
+    }
     const byKey = new Map(sh.scene.tiles.map((t) => [t.key, t]));
     const chosenKey = sh.scene.tiles.find((t) => t.place?.id === sh.chosen)?.key ?? null;
     const chosen = chosenKey ? (tiles.current.get(chosenKey) ?? null) : null;
@@ -481,6 +492,16 @@ function Board({
       }
       actor.opts.running = !!pose.hop && live;
       actor.group.position.set(x, 0.02, z);
+      // The camera walks beside the vehicle followed, softly (P3-01).
+      if (sh.follow === v.id && pose.hop && !sh.chosen) {
+        const k = Math.min(1, dt * 2.5);
+        const dx = (x - controls.target.x) * k;
+        const dz = (z - controls.target.z) * k;
+        controls.target.x += dx;
+        controls.target.z += dz;
+        camera.position.x += dx;
+        camera.position.z += dz;
+      }
       actor.group.rotation.y = heading;
       actor.group.visible = drawn > 0.99;
       actor.tick(c.life);
@@ -517,10 +538,10 @@ function Board({
       const x = (tmp.x * 0.5 + 0.5) * w;
       const y = (-tmp.y * 0.5 + 0.5) * h;
       el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
+      // A pin with something to say stays in sight at every zoom (P0-12): a lot ready, a « + ».
       const out =
-        (!tile.place.quiet || sh.chosen === tile.place.id || sh.placing) &&
-        pinOut(c.t, l.from) &&
-        !(tile.place.plus && cam.zoom < 1.25 && sh.chosen !== tile.place.id);
+        (!tile.place.quiet || sh.chosen === tile.place.id || sh.placing || tile.place.ready) &&
+        pinOut(c.t, l.from);
       el.dataset.out = String(out);
       if (tile.place.id === sh.chosen) sh.card?.place(x, y, w, h);
     }
@@ -626,6 +647,7 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       target: new Vector3(),
       goHome: 0,
       focus: null,
+      follow: null,
       homeZoom: 1,
       placing: false,
       p,
@@ -644,8 +666,22 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
     }
     sh.current.chosen = chosen;
     const w = welcomeStep(p, now);
+    // A vehicle on the road it took a minute and a half ago at most, or the welcome's own: the
+    // camera follows it (P3-01 of the players' audit: the mule walked unseen, the camera at the town).
+    const sent = (p.view?.vehicles.mine ?? []).find((v) =>
+      v.legs.some(
+        (l) =>
+          l.departAt <= now &&
+          now < l.arrivesAt &&
+          (now - l.departAt < 90_000 ||
+            (w?.phase === "onWay" && v.loads.some((o) => o.city === w.city))),
+      ),
+    );
+    sh.current.follow = sent && !chosen ? sent.id : null;
     sh.current.focus =
-      w && (w.phase === "deliver" || w.phase === "onWay") && w.city ? `city:${w.city}` : null;
+      !sh.current.follow && w && (w.phase === "deliver" || w.phase === "onWay") && w.city
+        ? `city:${w.city}`
+        : null;
   }
   // A plot bought: its purchase panel has nothing left to say, the plot is let go.
   const bought = target?.kind === "sector" && (p.view?.map?.unlocked ?? []).includes(target.cell);
@@ -780,6 +816,12 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
             onClick={() => pick(x.id)}
           >
             {x.badge ? <PinFace badge={x.badge} /> : x.pin}
+            {/* Each town and the Market named on the map, always (P0-12: no name on screen). */}
+            {x.id.startsWith("city:") && (
+              <span className="pc-pin-name" data-map-label>
+                {x.name}
+              </span>
+            )}
           </button>
         ))}
       </div>

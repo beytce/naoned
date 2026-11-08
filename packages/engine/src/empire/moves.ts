@@ -339,6 +339,7 @@ export function deliverCity(tx: Tx, playerId: PlayerId, city: string, orderIds?:
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   if (!s.orders) fail("unknown_target");
+  if (!s.map.cities.some((c) => c.code === city)) fail("unknown_city");
   const asked = cityOrdersAt(tx.ctx, h, playerId, s, city, tx.now)
     .list.filter((o) => !orderIds || orderIds.includes(o.id))
     .sort((a, b) => (b.pay > a.pay ? 1 : b.pay < a.pay ? -1 : 0));
@@ -346,6 +347,7 @@ export function deliverCity(tx: Tx, playerId: PlayerId, city: string, orderIds?:
   const serving = postsServing(h, s, city);
   // In reach but not linked by the house's own tiles (7 November 2026): say so.
   if (serving.length === 0 && walkableOf(h, s) && citiesCovered(h, s).has(city)) fail("not_linked");
+  if (serving.length === 0) fail("out_of_reach");
   let best: { v: Vehicle; picks: string[]; hold: number } | null = null;
   let anyFree = false;
   for (const v of h.vehicles ?? []) {

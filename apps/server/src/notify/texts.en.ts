@@ -186,11 +186,11 @@ export function pushTextEn(
     }
     case "empire_full":
       return {
-        title: "Your queues are full",
+        title: "Your workshops are waiting",
         body:
           Number(data.workshops) > 1
-            ? `${data.workshops} workshops finished their queue: their lots are waiting for you.`
-            : "A workshop finished its queue: its lots are waiting for you.",
+            ? `${data.workshops} workshops stopped, their lots ready: harvest to start them again.`
+            : "A workshop stopped, its lots ready: harvest to start it again.",
       };
     case "empire_site":
       return { title: "Site finished", body: "A site of your House is complete." };

@@ -1,3 +1,4 @@
+import { freeTileOf } from "./NewWorkshop.js";
 import { affordable, readyLots, recipeOf, wantsRelaunch } from "./logic.js";
 import { deliveryPlan } from "./map/logic.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
@@ -22,6 +23,10 @@ export type NextStep =
     }
   | { kind: "casa"; level: number; action: EmpireAction }
   | { kind: "build"; good: string; type: string; recipe: string; casa: number }
+  /** No free tile for the workshop to build: a plot of one's own first (P0-06, no dead end). */
+  | { kind: "plot"; cell: string; action: EmpireAction }
+  /** A workshop stopped for want of an input nobody makes yet: bought at the Market. */
+  | { kind: "buy"; good: string; qty: number; type: string; action: EmpireAction }
   | { kind: "upgrade"; workshopId: string; type: string; level: number; action: EmpireAction }
   | { kind: "sell"; good: string; qty: number; deliver: boolean; action: EmpireAction }
   | { kind: "claim"; index: number; action: EmpireAction }
@@ -124,8 +129,41 @@ export function keptOf(p: EmpirePayload, good: string): number {
 /** The workshop that makes a good, from the catalog: its building and its recipe. */
 function makerOf(p: EmpirePayload, good: string) {
   for (const b of p.catalog)
-    for (const r of b.recipes) if (good in r.outputs) return { type: b.type, recipe: r.code };
+    for (const r of b.recipes)
+      if (good in r.outputs) return { type: b.type, recipe: r.code, inputs: r.inputs };
   return null;
+}
+
+/**
+ * The workshop to build for a good, its raw matter first (P0-06: the brickworks was asked before
+ * any clay): up the chain to the first good the house neither makes nor builds.
+ */
+function firstMakerOf(
+  p: EmpirePayload,
+  good: string,
+  made: (g: string) => boolean,
+  depth = 0,
+): { type: string; recipe: string; good: string } | null {
+  const maker = makerOf(p, good);
+  if (!maker) return null;
+  if (depth < 3)
+    for (const input of Object.keys(maker.inputs)) {
+      if (made(input)) continue;
+      const before = firstMakerOf(p, input, made, depth + 1);
+      if (before) return before;
+    }
+  return { type: maker.type, recipe: maker.recipe, good };
+}
+
+/** The cheapest plot of Venetia the house may buy now, when it has no free tile left. */
+function plotToBuy(p: EmpirePayload): NextStep | null {
+  const view = p.view;
+  if (!view || view.map?.grid !== "square") return null;
+  const b = (view.map.buyable ?? []).find(
+    (x) => x.region === "veneto" && x.casa <= view.house.casa,
+  );
+  if (!b || !affordable(p.cash, view.map.sectorCost)) return null;
+  return { kind: "plot", cell: b.cell, action: { type: "empireUnlockCell", cell: b.cell } };
 }
 
 export function nextStep(p: EmpirePayload, now: number): NextStep {
@@ -177,22 +215,31 @@ export function nextStep(p: EmpirePayload, now: number): NextStep {
     return { kind: "casa", level: next.level, action: { type: "empireBuildCasa" } };
 
   let short = false;
-  // 4. A material the house makes nowhere, nor builds: its workshop.
-  for (const [good] of lacking) {
-    const made = ws.some((w) => good in (recipeOf(p, w)?.outputs ?? {}));
-    const coming = builds.some(
+  // 4. A material the house makes nowhere, nor builds: its workshop, its raw matter first.
+  const madeOrComing = (good: string) =>
+    ws.some((w) => good in (recipeOf(p, w)?.outputs ?? {})) ||
+    builds.some(
       (b) =>
         b.kind === "newWorkshop" &&
         good in
           (recipeOf(p, { type: b.workshopType ?? "", recipe: b.recipe ?? "" })?.outputs ?? {}),
     );
-    const maker = makerOf(p, good);
-    if (made || coming || !maker || !view.newWorkshop || !freeSite) continue;
+  for (const [good] of lacking) {
+    if (madeOrComing(good)) continue;
+    const maker = firstMakerOf(p, good, madeOrComing);
+    if (!maker || !view.newWorkshop || !freeSite) continue;
+    // No free tile of its own: a plot first, never a dead end (P0-06).
+    if (view.map?.grid === "square" && !freeTileOf(p, "veneto")) {
+      const plot = plotToBuy(p);
+      if (plot) return plot;
+      short = true;
+      continue;
+    }
     if (!affordable(p.cash, view.newWorkshop.cost)) {
       short = true;
       continue;
     }
-    return { kind: "build", good, ...maker, casa: next?.level ?? 0 };
+    return { kind: "build", ...maker, casa: next?.level ?? 0 };
   }
   // 5. The levels the Casa asks: the lowest workshop up.
   if (next && !next.requirementMet && freeSite) {
@@ -239,6 +286,26 @@ export function nextStep(p: EmpirePayload, now: number): NextStep {
           : { type: "empireSell", good: best.good, qty: best.n },
       };
   }
+  // 6b. A workshop stopped for want of an input nobody makes: a lot of it bought (P0-06).
+  for (const w of ws) {
+    if (w.job) continue;
+    const r = recipeOf(p, w);
+    for (const [good, n] of Object.entries(r?.inputs ?? {})) {
+      const have = p.stock[good] ?? 0;
+      if (have >= n || madeOrComing(good)) continue;
+      const q = p.market.find((m) => m.region === "veneto" && m.good === good);
+      if (!q || q.depthLeft <= 0) continue;
+      const qty = Math.min(n - have, q.depthLeft);
+      if (!affordable(p.cash, (BigInt(q.price) * BigInt(qty)).toString())) continue;
+      return {
+        kind: "buy",
+        good,
+        qty,
+        type: w.type,
+        action: { type: "empireBuy", good, qty },
+      };
+    }
+  }
   // 7. An objective met.
   const all = [...view.carnet.objectives, ...view.carnet.carried];
   const index = all.findIndex((o) => !o.claimed && o.progress >= o.target);
@@ -262,5 +329,6 @@ export function nextStep(p: EmpirePayload, now: number): NextStep {
  * step and its gold button lead the first gestures; past it he withdraws, and the player plays.
  */
 export function inTutorial(p: EmpirePayload): boolean {
-  return (p.view?.house.casa ?? 1) < 2;
+  // Lorenzo leads the house to the Porta's level (the players' audit, P0-06: he went at the Casa 2).
+  return (p.view?.house.casa ?? 1) < 4;
 }

@@ -248,6 +248,19 @@ export function OrdersPanel({
                 <p className="text-center text-xs text-cream-dim">
                   {seconds !== null ? t().route(vehicleName, duration(seconds * 1_000)) : null}
                 </p>
+                {(p.view?.wagesBps ?? 0) > 0 && (
+                  // The wages said before the pay lands (the players' audit, P1-15).
+                  <p className="text-center text-xs text-cream-dim" data-wages>
+                    {(() => {
+                      const wages = (plan.pay * BigInt(p.view?.wagesBps ?? 0)) / 10_000n;
+                      return t().wages(
+                        d(plan.pay.toString()),
+                        d(wages.toString()),
+                        d((plan.pay - wages).toString()),
+                      );
+                    })()}
+                  </p>
+                )}
               </div>
             ) : why ? (
               <p

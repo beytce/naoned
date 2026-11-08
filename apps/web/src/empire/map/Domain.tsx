@@ -27,6 +27,7 @@ export function DomainBar({
   act,
   onBack,
   onProduction,
+  onStore,
   onCasa,
   onQuay,
   onArms,
@@ -42,6 +43,8 @@ export function DomainBar({
   onBack: () => void;
   /** The Production (the buildings, a fondaco to put down). */
   onProduction: () => void;
+  /** The Warehouse's sheet. */
+  onStore?: () => void;
   /** The Casa's sheet. */
   onCasa?: () => void;
   /** The quay: the vehicles (the Remise once it stands). */
@@ -84,10 +87,15 @@ export function DomainBar({
         <CasaRoadCard p={p} now={now} road={road} onCasa={onCasa} />
       )}
 
-      <div className="grid grid-cols-3 gap-2" data-fondaco-doors>
+      <div className="grid grid-cols-4 gap-2" data-fondaco-doors>
         <Door label={f.build} onClick={onProduction} id="build">
           {Icon.build()}
         </Door>
+        {onStore && (
+          <Door label={fr.empire.store.door} onClick={onStore} id="store">
+            {Icon.crates()}
+          </Door>
+        )}
         {onQuay && (
           <Door label={f.quay} onClick={onQuay} id="quay">
             {Icon.cart()}
