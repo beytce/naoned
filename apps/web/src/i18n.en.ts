@@ -301,6 +301,8 @@ export const en: Dictionary = {
       empty: "The Warehouse is empty: harvest your workshops.",
       full: "Full: sell or deliver, the workshop making it waits.",
       forLevel: (n: number, level: number) => `${n} asked for Fondaco level ${level}`,
+      flow: (made: number, used: number) =>
+        `+${made}/h made · −${used}/h used · ${made - used >= 0 ? "+" : "−"}${Math.abs(made - used)}/h`,
       door: "Warehouse",
     },
     loading: "Opening the books…",

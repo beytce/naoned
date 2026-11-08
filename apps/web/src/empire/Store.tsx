@@ -1,7 +1,30 @@
 import { GoodsMark } from "../art/goods.js";
 import { fr } from "../i18n.js";
 import { Sheet } from "../ui.js";
+import { recipeOf } from "./logic.js";
 import type { EmpirePayload } from "./types.js";
+
+/**
+ * What the workshops make and use of each good an hour, from their queues as they run (P2-03 of the
+ * players' audit: no table of production): a lot's outputs and inputs over its length.
+ */
+export function flowsOf(p: EmpirePayload): Map<string, { made: number; used: number }> {
+  const out = new Map<string, { made: number; used: number }>();
+  const at = (g: string) => {
+    const x = out.get(g) ?? { made: 0, used: 0 };
+    out.set(g, x);
+    return x;
+  };
+  for (const ws of p.view?.house.workshops ?? []) {
+    const job = ws.job;
+    const r = recipeOf(p, ws);
+    if (!job || !r || job.batchMs <= 0) continue;
+    const perHour = 3_600_000 / job.batchMs;
+    for (const [g, n = 0] of Object.entries(r.outputs)) at(g).made += n * perHour;
+    for (const [g, n = 0] of Object.entries(r.inputs)) at(g).used += n * perHour;
+  }
+  return out;
+}
 
 const t = () => fr.empire.store;
 const goodName = (p: EmpirePayload, code: string) =>
@@ -29,12 +52,14 @@ export function StoreSheet({
   const need = view.nextCasa?.materials ?? {};
   const held = (g: string) =>
     (p.stock[g] ?? 0) + (p.stock[`${g}:fine`] ?? 0) + (p.stock[`${g}:exquisite`] ?? 0);
+  const flows = flowsOf(p);
   const goods = [
     ...new Set([
       ...Object.keys(p.stock)
         .filter((g) => !g.includes(":"))
         .filter((g) => held(g) > 0),
       ...Object.keys(need),
+      ...flows.keys(),
     ]),
   ].sort((a, b) => Number(b in need) - Number(a in need) || held(b) - held(a));
   return (
@@ -80,6 +105,15 @@ export function StoreSheet({
                           className={`block h-full rounded-full ${full ? "bg-vermilion" : "bg-cream"}`}
                           style={{ width: `${(share * 100).toFixed(1)}%` }}
                         />
+                      </span>
+                    )}
+                    {flows.has(g) && (
+                      // Made and used an hour, and what is left (the players' audit, P2-03).
+                      <span className="mt-1 block text-xs tabular-nums text-cream" data-store-flow>
+                        {t().flow(
+                          Math.round(flows.get(g)?.made ?? 0),
+                          Math.round(flows.get(g)?.used ?? 0),
+                        )}
                       </span>
                     )}
                     <span className="mt-1 block text-xs text-cream-dim">

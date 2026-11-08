@@ -219,6 +219,8 @@ const frDict = {
       empty: "L'Entrepôt est vide : récolte tes ateliers.",
       full: "Plein : vends ou livre, l'atelier qui en fait attend.",
       forLevel: (n: number, level: number) => `${n} demandés pour le Fondaco niveau ${level}`,
+      flow: (made: number, used: number) =>
+        `+${made}/h produits · −${used}/h consommés · ${made - used >= 0 ? "+" : "−"}${Math.abs(made - used)}/h`,
       door: "Entrepôt",
     },
     loading: "On ouvre les livres…",
