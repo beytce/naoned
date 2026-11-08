@@ -55,6 +55,9 @@ const GLYPH: Record<string, string> = {
   furs: "M-8 6c2-8 4-12 8-12s6 4 8 12c-3-2-5-2-8 0-3-2-5-2-8 0z",
   cloth: "M-8-6h16 M-7-6c0 6 2 10 7 13 5-3 7-7 7-13",
   prepared_spices: "M-5-8h10M-6-6h12v13h-12z M-3 0h6",
+  soda: "M-6-2h12v9h-12z M-4-2v-3h8v3 M-6 2h12",
+  hemp: "M0 8V-8 M0-2l-5-4 M0-2l5-4 M0 3l-5-4 M0 3l5-4",
+  rope: "M-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0 M-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0",
 };
 
 /** The hue of a good: its chain's. */

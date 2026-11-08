@@ -12,7 +12,7 @@ import {
   SphereGeometry,
 } from "three";
 import type { Palette } from "../materials.js";
-import { ball, cached, cyl, dyn } from "../shapes.js";
+import { ball, box, cached, cyl, dyn } from "../shapes.js";
 import type { ModelOpts } from "./model.js";
 
 /** Puffs rising from a chimney's top, drifting east; none while the place is idle. */
@@ -205,4 +205,32 @@ export function loyaltyBanners(P: Palette, p: Object3D, tier: number): void {
     cloth.position.set(x + 0.22, 1.6, -2.05);
     p.add(cloth);
   }
+}
+
+/**
+ * The Market in scene (P3-08 of the players' audit: the Market was a table of prices): on San
+ * Marco's square, a stall for each good the house holds and the Market trades, one to three crates
+ * by its stock, its awning in accent when the price stands above its rate (a good hour to sell).
+ */
+export function marketStalls(
+  P: Palette,
+  p: Object3D,
+  list: readonly { n: number; hot: boolean }[],
+): void {
+  const spots: [number, number][] = [
+    [-2.2, 0.55],
+    [-1.15, 0.55],
+    [-2.2, 1.65],
+    [-1.15, 1.65],
+  ];
+  list.slice(0, 4).forEach((s, k) => {
+    const [x, z] = spots[k] as [number, number];
+    box(p, 0.8, 0.42, 0.5, x, 0.08, z, P.m("wood"), 0.02);
+    for (const dx of [-0.36, 0.36])
+      box(p, 0.04, 0.95, 0.04, x + dx, 0.08, z - 0.2, P.m("wood"), 0.01);
+    const awning = box(p, 0.92, 0.04, 0.5, x, 1.0, z, s.hot ? P.accent : P.m("wall2"), 0.01);
+    awning.rotation.x = 0.25;
+    for (let c = 0; c < Math.max(1, Math.min(3, s.n)); c++)
+      box(p, 0.2, 0.18, 0.2, x - 0.24 + c * 0.24, 0.5, z + 0.04, P.m("trim"), 0.02);
+  });
 }

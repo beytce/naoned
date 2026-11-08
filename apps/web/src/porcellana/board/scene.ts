@@ -26,6 +26,9 @@ export type ModelKey =
   | "clay_pit"
   | "sand_pit"
   | "brickworks"
+  | "salt_pans"
+  | "hemp_field"
+  | "rope_walk"
   | "palazzo"
   | "fondaco"
   | "post"
@@ -49,6 +52,9 @@ export const WORKSHOP_MODELS = new Set<string>([
   "clay_pit",
   "sand_pit",
   "brickworks",
+  "salt_pans",
+  "hemp_field",
+  "rope_walk",
   "palazzo",
 ]);
 
@@ -107,6 +113,10 @@ export interface BoardTile {
   decor?: string[];
   /** How well a town knows the house: 1 to 3 banners at 3, 10 and 25 deliveries (P3-07). */
   loyalty?: number;
+  /** A tile of water near a lumber camp: its boat is a raft of logs (the Cadore's, lot 7). */
+  raft?: boolean;
+  /** The Market's stalls: the house's goods it trades, their crates, hot above their rate (P3-08). */
+  stalls?: { n: number; hot: boolean }[];
   place: BoardPlace | null;
   seed: number;
 }
@@ -155,9 +165,18 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
   const owned = new Set(map.unlocked);
   const homeTile = tileAt(map.home.x, map.home.y, size);
 
-  // The sea seen along the coasts first: anything on land covers it.
+  // The sea seen along the coasts first: anything on land covers it. Near a lumber camp, rafts of
+  // logs float down to Venice (the Cadore's zattere, lot 7).
+  const camps = house.workshops
+    .filter((w) => w.type === "lumber_camp" && w.tile)
+    .map((w) => parse(w.tile as string));
+  const nearCamp = (k: string) => {
+    const [i, j] = parse(k);
+    return camps.some(([ci, cj]) => Math.abs(ci - i) + Math.abs(cj - j) <= 2);
+  };
   for (const k of map.revealed)
-    if (!(k in map.cells)) put(k, { water: true, model: null, running: false, place: null });
+    if (!(k in map.cells))
+      put(k, { water: true, model: null, running: false, place: null, raft: nearCamp(k) });
 
   // The plots one may buy round the house's tiles.
   const price = BigInt(map.sectorCost);
@@ -239,8 +258,20 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     const toLink = inZone && !venice ? map.toLink?.[c.code] : undefined;
     const crates = waiting > 0 ? deliveryPlan(p, c.code).orders.map((x) => x.covered) : [];
     const served = v.served?.[c.code] ?? 0;
+    // On San Marco's square, a stall for each good the house holds and the Market trades.
+    const stalls = venice
+      ? (p.market ?? [])
+          .filter((q) => q.region === "veneto" && (p.stock?.[q.good] ?? 0) > 0)
+          .sort((a, b) => (p.stock?.[b.good] ?? 0) - (p.stock?.[a.good] ?? 0))
+          .slice(0, 4)
+          .map((q) => ({
+            n: Math.ceil(Math.min(3, (p.stock?.[q.good] ?? 0) / 20)),
+            hot: BigInt(q.price) * 100n > BigInt(q.ref) * 105n,
+          }))
+      : [];
     put(k, {
       crates,
+      ...(stalls.length ? { stalls } : {}),
       loyalty: served >= 25 ? 3 : served >= 10 ? 2 : served >= 3 ? 1 : 0,
       water: false,
       model: venice ? "market" : "town",

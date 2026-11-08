@@ -58,8 +58,17 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     charterFavour: 0,
     hoursFromVenice: 0,
     workshopSlots: 0,
-    produces: { wheat: 4 * D, clay: 3 * D, wood: 3 * D, salt: 5 * D },
-    demands: { bread: 12 * D, bricks: 10 * D, planks: 10 * D, spices: 70 * D, cloth: 45 * D },
+    // The soda of the Levant sold at San Marco, the ropes the Arsenal buys (lot 7).
+    // Hemp at San Marco too, as every raw good of Venetia; the field makes it cheaper.
+    produces: { wheat: 4 * D, clay: 3 * D, wood: 3 * D, salt: 5 * D, soda: 6 * D, hemp: 3 * D },
+    demands: {
+      bread: 12 * D,
+      bricks: 10 * D,
+      planks: 10 * D,
+      spices: 70 * D,
+      cloth: 45 * D,
+      rope: 14 * D,
+    },
     // Shared by its seven cities, Venice weighing twenty (the map that grows): the founding serves
     // twenty-one parts in twenty-six, every city found and reached adds to it (calibration.md).
     localOrdersPerCounter: 22,
@@ -303,6 +312,8 @@ export const venice1450Empire: EmpireSettingsInput = {
       costDucats: 400,
       regions: ["veneto", "lombardia", "romagna"],
       speedBps: 0,
+      // A boat asks its ropes of the Tana (lot 7 of the publication plan).
+      materials: { rope: 10 },
     },
     chariot: {
       casa: 6,

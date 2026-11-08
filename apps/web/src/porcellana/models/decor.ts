@@ -93,16 +93,6 @@ export function lockedPlot(P: Palette): Built {
     box(g, 0.6, 0.05, 0.1, sx * 1.75, 0.05, sz * 2.0, P.m("wall2"), 0.03);
     box(g, 0.1, 0.05, 0.6, sx * 2.0, 0.05, sz * 1.75, P.m("wall2"), 0.03);
   }
-  // The padlock.
-  box(g, 0.5, 0.42, 0.22, 1.1, 0.05, 1.1, P.ink, 0.06);
-  const shackle = put(
-    g,
-    cached("shackle", () => new TorusGeometry(0.16, 0.045, 10, 24, Math.PI)),
-    P.m("metal"),
-    1.1,
-    0.47,
-    1.1,
-  );
-  shackle.rotation.y = 0;
+  // No padlock in 3D (P1-01 of the players' audit): its pin « 🔒 niv. N » says it, one sign alone.
   return { group: g, pin: [0, 0.9, 0], plus };
 }

@@ -7,6 +7,7 @@ import type { Palette } from "./materials.js";
 import { lockedPlot, mountain, rocks } from "./models/decor.js";
 import { fondaco } from "./models/fondaco.js";
 import { grove, plot } from "./models/ground.js";
+import { hempField, muranoFurnace, ropeWalk, saltPans, zattera } from "./models/lot7.js";
 import { market } from "./models/market.js";
 import type { Built, ModelOpts } from "./models/model.js";
 import { arsenal, campo, depot, porta, post } from "./models/places.js";
@@ -25,7 +26,7 @@ import {
   sawmill,
 } from "./models/workshops.js";
 
-export type Family = "ateliers" | "lieux" | "villes" | "decor" | "vehicules";
+export type Family = "ateliers" | "lieux" | "villes" | "decor" | "vehicules" | "lot7";
 
 export const FAMILIES: { key: Family; name: string }[] = [
   { key: "ateliers", name: "Ateliers" },
@@ -33,6 +34,7 @@ export const FAMILIES: { key: Family; name: string }[] = [
   { key: "villes", name: "Villes" },
   { key: "decor", name: "Décor" },
   { key: "vehicules", name: "Véhicules" },
+  { key: "lot7", name: "Chaînes de Venise" },
 ];
 
 export interface Entry {
@@ -47,9 +49,45 @@ export interface Entry {
   vehicle?: (P: Palette, o: ModelOpts) => Vehicle;
   /** It stands by the water (a quay, a ship): the laboratory gives it the lagoon to the south. */
   water?: boolean;
+  /** It floats: a model (not a vehicle) laid on a tile of water. */
+  floats?: boolean;
 }
 
 export const CATALOGUE: Entry[] = [
+  // The chains of Venice, proposed for the owner's eye (docs/plan-publication.md lot 7).
+  {
+    key: "salt_pans",
+    family: "lot7",
+    name: "Saline de Chioggia",
+    sub: "Eau de la lagune → sel",
+    sign: "Les tas de sel blanchissent sur les bassins secs.",
+    make: saltPans,
+  },
+  {
+    key: "hemp_field",
+    family: "lot7",
+    name: "Champ de chanvre",
+    sub: "Chanvre, pour les cordages",
+    sign: "Les tiges ondulent, les bottes rouissent dans la mare.",
+    make: hempField,
+  },
+  {
+    key: "rope_walk",
+    family: "lot7",
+    name: "Corderie de la Tana",
+    sub: "Chanvre → cordages, pour l'Arsenal",
+    sign: "La roue file, la corde rouge s'allonge.",
+    make: ropeWalk,
+  },
+  {
+    key: "zattera",
+    family: "lot7",
+    name: "Zattera du Cadore",
+    sub: "Le bois des Dolomites descend la Piave",
+    sign: "Le radeau tangue, le zatterieri rame.",
+    make: zattera,
+    floats: true,
+  },
   {
     key: "lumber_camp",
     family: "ateliers",
@@ -86,9 +124,10 @@ export const CATALOGUE: Entry[] = [
     key: "glassworks",
     family: "ateliers",
     name: "Verrerie",
-    sub: "Sable → verre de Murano",
-    sign: "Le four rougeoie, la fumée monte.",
-    make: glassworks,
+    sub: "Sable (+ soude du Levant) → verre",
+    sign: "La bouche du four rougeoie, la cheminée fume.",
+    // Murano's furnace on its quay (lot 7, validated by the owner on 8 November 2026).
+    make: muranoFurnace,
   },
   {
     key: "clay_pit",

@@ -23,6 +23,8 @@ function venetiaChains(): {
   for (const r of venice1450.recipes) {
     const [good, out] = Object.entries(r.outputs)[0] ?? [];
     if (!good || !out || !goods.has(good)) continue;
+    // A good's first recipe of the theme (the glass of wood before the glass of soda, lot 7).
+    if (good in rates) continue;
     rates[good] = (out * 60) / r.durationMinutes;
     if (Object.keys(r.inputs).length > 0)
       recipes[good] = Object.fromEntries(

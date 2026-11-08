@@ -273,6 +273,14 @@ export function Charroi({
                     {t.vehicleNames[s.type] ?? s.type}
                     <span className="block text-xs text-cream-dim">
                       {c.model(built, s.capacity, s.level)} · {s.regions.map(regionName).join(", ")}
+                      {/* A boat's ropes, said before buying (lot 7). */}
+                      {Object.entries(s.materials ?? {}).map(([g, n]) => (
+                        <span key={g} className="mt-0.5 flex items-center gap-1">
+                          <GoodsMark code={g} size={16} /> {n}{" "}
+                          {fr.themeNames.resource[g] ?? p.goods[g] ?? g}
+                          {` (${p.stock[g] ?? 0})`}
+                        </span>
+                      ))}
                     </span>
                   </span>
                   {view.house.casa < s.casa ? (

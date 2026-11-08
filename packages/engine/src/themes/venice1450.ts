@@ -26,6 +26,12 @@ export const venice1450: Theme = {
     { code: "drape", name: "Drap de laine", chain: "drapery", tier: "intermediate" },
     { code: "garments", name: "Vêtements", chain: "drapery", tier: "finished" },
     { code: "prepared_spices", name: "Épices préparées", chain: "spicery", tier: "finished" },
+    // The chains of Venice (docs/plan-publication.md lot 7, the owner's choices of 8 November
+    // 2026): the soda of the Levant for Murano's glass, the hemp of the mainland for the Tana's
+    // ropes, which the Arsenal buys.
+    { code: "soda", name: "Soude du Levant", chain: "glass", tier: "raw" },
+    { code: "hemp", name: "Chanvre", chain: "carpentry", tier: "raw" },
+    { code: "rope", name: "Cordages", chain: "carpentry", tier: "intermediate" },
   ],
   regions: [
     { code: "terraferma", name: "Vénétie", bonusResource: "wheat" },
@@ -57,6 +63,9 @@ export const venice1450: Theme = {
     { type: "loom", name: "Métier à tisser" },
     { type: "tailor", name: "Atelier de tailleur" },
     { type: "spicery", name: "Épicerie fine" },
+    { type: "salt_pans", name: "Saline de Chioggia" },
+    { type: "hemp_field", name: "Champ de chanvre" },
+    { type: "rope_walk", name: "Corderie de la Tana" },
   ],
   recipes: [
     {
@@ -158,6 +167,36 @@ export const venice1450: Theme = {
       inputs: { spices: 2 },
       outputs: { prepared_spices: 2 },
       durationMinutes: 60,
+    },
+    // The lot 7 of the publication plan: the salt of the lagoon, the hemp and the ropes, and the
+    // glass of Murano with the soda of the Levant (a better lot than with wood, never required).
+    {
+      code: "evaporate_salt",
+      building: "salt_pans",
+      inputs: {},
+      outputs: { salt: 10 },
+      durationMinutes: 30,
+    },
+    {
+      code: "grow_hemp",
+      building: "hemp_field",
+      inputs: {},
+      outputs: { hemp: 10 },
+      durationMinutes: 30,
+    },
+    {
+      code: "twist_rope",
+      building: "rope_walk",
+      inputs: { hemp: 8 },
+      outputs: { rope: 4 },
+      durationMinutes: 30,
+    },
+    {
+      code: "melt_glass_soda",
+      building: "glassworks",
+      inputs: { sand: 10, soda: 2 },
+      outputs: { glass: 6 },
+      durationMinutes: 30,
     },
   ],
 };
