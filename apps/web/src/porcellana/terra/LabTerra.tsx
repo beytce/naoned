@@ -175,8 +175,10 @@ export default function LabTerra() {
           className="absolute inset-0"
           touch={touch}
           send={(a) => {
-            setRefused(labAct(world.s, world.cfg, "house0", () => "", a, clock));
+            const no = labAct(world.s, world.cfg, "house0", () => "", a, clock);
+            setRefused(no);
             setRev((r) => r + 1);
+            return !no;
           }}
         />
         <nav className="pc-tools pc-pill" aria-label="Laboratoire" style={{ top: 112 }}>
