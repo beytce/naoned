@@ -121,6 +121,9 @@ export function Spotlight({
     lost.current = null;
     const tick = () => {
       let hit = chain.length > 0 ? firstInSight(chain) : null;
+      // A pin of the map lit: the camera keeps looking at it (no vehicle followed away from it).
+      const pinned = hit?.el.matches(".pc-pin") ? hit.el.getAttribute("data-place") : null;
+      if (pinned) askFocus(pinned);
       if (hit || chain.length === 0) lost.current = null;
       else {
         lost.current ??= performance.now();
