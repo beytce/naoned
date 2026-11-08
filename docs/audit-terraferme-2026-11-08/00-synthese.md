@@ -97,3 +97,13 @@ L'Italie de 1450 est la différence assumée : on reprend les mécaniques d'Open
 5. **Les villes tenues** : une bannière par théâtre ou par bande ? Que se passe-t-il quand deux Maisons tiennent la même ville ?
 6. **Le Bourg** : gardé, mais fermé pour la bêta ?
 7. **Fusionner maintenant** les lots T1 à T5, avec la grille hexagonale et l'achat de troupes fermés ?
+
+## 7. Décisions du porteur (8 novembre 2026)
+
+1. **Trésor égal.** On supprime l'achat de troupes et la hausse du maximum en ducats, ainsi que le don de ducats entre alliés. Chaque joueur d'un théâtre reçoit le même trésor de guerre pour la semaine, et l'intendance par la route complète. L'exception à la règle d'or 4 (troupes achetées avec les ducats) est retirée.
+2. **La Bataille se fait**, ouverte à tous dès le premier jour, même sans compte, avec des liens de partie à partager. C'est une dérogation à D1 pour ce seul mode.
+3. **Durée de la Bataille : 12 à 15 minutes** (règle 7 inchangée).
+4. **Le territoire fait l'armée**, avec un plafond. La vitesse d'un front dépend de la masse engagée, et le seuil de victoire baisse au fil de la semaine. Le tout se valide au simulateur, toutes les graines, et se documente dans `docs/calibration.md`.
+5. **La refonte devient le lot 8 de la bêta** dans `docs/plan-publication.md`.
+6. **Fusionner maintenant** les lots T1 à T5 : hexagones par défaut, achat de troupes fermé, textes au « tu ».
+7. **La transition vers la Terraferme doit être vraiment fluide.** Toutes les tuiles de la carte du joueur se retournent, puis un grand dézoom laisse apparaître la carte de la Terraferme. Elle aura son plan avant d'être codée.
