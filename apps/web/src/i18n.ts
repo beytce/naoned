@@ -1064,6 +1064,119 @@ const frDict = {
       deliver: (n: number, total: string) => `Livrer ${n} aux villes · ${total}`,
       sell: (n: number, total: string) => `Vendre ${n} au Marché · ${total}`,
     },
+    // The guided start and the first times (the owner's decision of 8 November 2026).
+    // The first times (8 November 2026): what each new place is, step by step.
+    tutorFeatures: {
+      porta: [
+        [
+          "La Porta est ouverte : derrière elle, les terres de Rome.",
+          "Tu y envoies tes véhicules combattre Rome. Personne ne peut t'attaquer : le seul risque vient de Rome.",
+        ],
+        [
+          "Le quai : tes véhicules partent d'ici.",
+          "Arme-les à la Remise, puis choisis lesquels partent. Un véhicule à la Porta ne livre plus les villes.",
+        ],
+        [
+          "Les portes : de plus en plus fortes.",
+          "La première se fait seul, en quelques minutes. Chaque porte gagnée ouvre la suivante.",
+        ],
+        [
+          "Lance la porte quand ton convoi est prêt.",
+          "Le combat se joue seul : tu regardes et tu touches les atouts au bon moment.",
+        ],
+        [
+          "Ce que tu y gagnes, ce que tu y risques.",
+          "Tu rapportes des reliques, qui donnent les plans des modules de haut niveau. Un véhicule détruit rentre abîmé ; un véhicule encore à la Porta quand elle ferme est perdu.",
+        ],
+      ] as [string, string][],
+      remise: [
+        [
+          "La Remise : tes véhicules.",
+          "C'est ici qu'on achète, qu'on améliore et qu'on arme les mules, les charrettes et les navires.",
+        ],
+        [
+          "Ta flotte et ses places.",
+          "Chaque véhicule prend une place. Monte la Remise pour en avoir plus.",
+        ],
+        [
+          "Les modèles.",
+          "Un modèle plus grand porte plus et va plus loin. Il demande parfois des matériaux, comme les cordages des navires.",
+        ],
+        [
+          "Livrer avec tes véhicules.",
+          "Touche une ville, choisis ses commandes et « Livrer » : un véhicule libre part tout seul.",
+        ],
+      ] as [string, string][],
+      interior: [
+        [
+          "L'intérieur de ton atelier.",
+          "Ici, tu vois ce qu'il produit à l'heure et sa qualité. Chaque poste fait une étape du travail.",
+        ],
+        [
+          "Le goulot, cerclé de rouge.",
+          "C'est le poste le plus lent : il fixe le débit de tout l'atelier. Améliore-le d'abord.",
+        ],
+        [
+          "Récolter et relancer.",
+          "Quand des lots sont prêts, ce bouton les récolte et relance l'atelier. Sans toi, il s'arrête.",
+        ],
+        [
+          "Poser un poste.",
+          "Ajoute ou déplace des postes pour aller plus vite. Les machines s'usent : entretiens-les.",
+        ],
+        [
+          "Mon conseil.",
+          "Ce bouton propose le meilleur réglage du moment. Touche un poste pour voir ses ouvriers et son usure.",
+        ],
+      ] as [string, string][],
+      terra: [
+        [
+          "La Terraferme.",
+          "Une saison d'une semaine contre des Maisons de ton niveau. Tout le monde y part à armes égales.",
+        ],
+        [
+          "Ton empire ne risque rien.",
+          "Ce que tu as bâti reste à toi. La Terraferme se joue à côté, en quelques minutes, plusieurs fois par jour.",
+        ],
+        [
+          "Le classement de la semaine.",
+          "À la fin de la semaine, les meilleurs gagnent des récompenses. Une nouvelle saison commence le lundi.",
+        ],
+      ] as [string, string][],
+    },
+    tutor: {
+      hint: "Touche ce qui brille en rouge.",
+      back: "Reviens en arrière : touche ce qui brille en rouge.",
+      build: (name: string) => `Bâtis ton premier atelier : un ${name.toLowerCase()}.`,
+      buildWhy: "Touche une case libre de ton domaine, puis « Bâtir un atelier », puis « Bâtir ».",
+      launch: (name: string) => `Ton ${name.toLowerCase()} est debout : lance sa production.`,
+      launchWhy: "Entre dans l'atelier et touche « Relancer » : le premier lot se fait en quelques secondes.",
+      making: (good: string) => `Ton premier ${good.toLowerCase()} se fait…`,
+      makingWhy: "Regarde l'atelier travailler : c'est prêt dans un instant.",
+      collect: (good: string) => `Ton ${good.toLowerCase()} est prêt : récolte-le.`,
+      collectWhy: "Un atelier aux lots prêts s'arrête et t'attend : rien ne tourne sans toi.",
+      deliver: (city: string) => `${city} t'a commandé du bois : livre-le.`,
+      deliverWhy: "Ouvre ses commandes et touche « Livrer » : ta mule part tout de suite.",
+      onWay: (city: string) => `Ta mule est en route pour ${city}.`,
+      onWayWhy: "Tu es payé à son arrivée. Regarde-la marcher sur la route.",
+      sawmill: "Bâtis une scierie : elle fera des planches avec ton bois.",
+      sawmillWhy: "Ton Fondaco monte avec deux ateliers, des planches et des briques.",
+      market: (good: string) => `Il te manque des ${good.toLowerCase()} : achète-les au Marché.`,
+      marketWhy: "Le Marché de San Marco vend ce qui te manque. Ouvre-le et touche « Acheter 10 ».",
+      casa: "Tout est prêt : monte ton Fondaco au niveau 2.",
+      casaWhy: "Entre dans ton Fondaco et touche « Fondaco niv. 2 ».",
+      rising: "Bravo ! Ton Fondaco monte au niveau 2.",
+      risingWhy:
+        "Tu sais bâtir, produire, récolter, livrer et acheter. Je reste là : mon bouton rouge te dit toujours le prochain pas.",
+      done: "Continuer",
+      next: "Suivant",
+      gotIt: "Compris",
+      skipAll: "Passer les tutoriels",
+      replay: "Revoir les tutoriels",
+      skipped: "Les tutoriels sont passés.",
+      replayed: "Les tutoriels se rejoueront à la prochaine ouverture de chaque lieu.",
+      stepOf: (n: number, of: number) => `${n}/${of}`,
+    },
     guide: {
       name: "Lorenzo, ton facteur",
       collect: (n: number) => (n === 1 ? "Un lot est prêt." : `${n} lots sont prêts.`),
@@ -1140,8 +1253,8 @@ const frDict = {
           "Elle paie les chantiers. Les ventes et les commandes des villes la remplissent.",
         ],
         [
-          "Je te dirai toujours quoi faire.",
-          "Suis le bouton rouge sous mon portrait : c'est le prochain pas de ta Maison.",
+          "Je vais te guider pas à pas.",
+          "À chaque geste, touche ce qui brille en rouge : le reste attend. Après, mon bouton rouge te dira toujours le prochain pas.",
         ],
       ] as [string, string][],
       next: "Suivant",

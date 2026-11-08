@@ -40,6 +40,7 @@ import { vehiclePose } from "../../empire/map/logic.js";
 import { Guard3D } from "../../empire/map3d/Guard.js";
 import { MAP_3D } from "../../empire/map3d/flag.js";
 import { welcomeStep } from "../../empire/next.js";
+import { tutorFocus } from "../../empire/tutor/focus.js";
 import type { EmpirePayload } from "../../empire/types.js";
 import { fr } from "../../i18n.js";
 import { sound } from "../../sound.js";
@@ -736,7 +737,18 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       !sh.current.follow && w && (w.phase === "deliver" || w.phase === "onWay") && w.city
         ? `city:${w.city}`
         : null;
+    // What the tutorial asks to touch, out of sight: looked at (8 November 2026).
+    const asked = tutorFocus();
+    if (asked && (!chosen || chosen === asked)) sh.current.focus = asked;
   }
+  // The tutorial asks for a place out of sight: what is chosen is let go, the camera goes there.
+  const askedNow = tutorFocus();
+  useEffect(() => {
+    if (askedNow && chosen && chosen !== askedNow) {
+      setChosen(null);
+      setCarded(false);
+    }
+  }, [askedNow, chosen]);
   // A plot bought: its purchase panel has nothing left to say, the plot is let go.
   const bought = target?.kind === "sector" && (p.view?.map?.unlocked ?? []).includes(target.cell);
   useEffect(() => {
@@ -911,6 +923,7 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
             shared.card = h;
           }}
           info={{
+            id: current.id,
             name: current.name,
             sub: current.sub,
             line: current.line,

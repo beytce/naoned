@@ -99,6 +99,11 @@ try {
         .locator("[data-intro]")
         .getByRole("button", { name: /suivant|commencer/i })
         .click();
+    // This journey walks the board freely: the tutorials passed, as « Passer les tutoriels » does
+    // (the guided start has its own journey, e2e/tutorial.mjs).
+    await page.evaluate(() =>
+      localStorage.setItem("fondaco:tutor", JSON.stringify({ all: "skip" })),
+    );
     await page.waitForSelector("[data-porcellana-map]", { timeout: 30_000 });
     await shot("1-carte", 20_000);
     // The Fondaco touched by its pin: its card beside it.
