@@ -939,6 +939,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           onMarket={() => setSheet("market")}
           onHelp={tutorial ? undefined : () => setSheet("help")}
           familyCalls={familyCalls(p)}
+          busy={busy}
+          act={act}
         />
         {/* Over everything, the sheets included (on the body, as they are): the welcome, the toast,
           the moment of a Casa, the goods and coins in flight. */}

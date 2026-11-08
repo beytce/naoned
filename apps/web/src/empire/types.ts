@@ -95,6 +95,8 @@ export interface EmpireView {
   queueHours?: number;
   /** The Favour a site's haste costs now (null: none left today). */
   hasteFavour?: number | null;
+  /** The embellishments bought with Seals, and the prices of all. */
+  embellishments?: { owned: string[]; prices: Record<string, number> };
   asleep: boolean;
   nextCasa:
     | (EmpireSite & {
@@ -471,6 +473,7 @@ export type EmpireAction =
   | { type: "empireRelaunch"; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll" }
   | { type: "empireHaste" }
+  | { type: "empireEmbellish"; code: string }
   | { type: "empireSetPriority"; workshopId: string; priority: "high" | "normal" | "low" }
   | { type: "empireSell"; good: string; qty: number; region?: string }
   | { type: "empireBuy"; good: string; qty: number; post?: string }

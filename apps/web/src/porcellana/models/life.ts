@@ -121,3 +121,37 @@ export function walkers(P: Palette, p: Object3D, n: number, seed = 0): (t: numbe
     }
   };
 }
+
+/**
+ * The embellishments bought with Seals round the Fondaco (I5 of the publication plan): a well, two
+ * banners of accent, a gondola at the quay, a statue on its plinth. Seen, nothing else.
+ */
+export function adornments(P: Palette, p: Object3D, codes: readonly string[]): void {
+  const has = (c: string) => codes.includes(c);
+  if (has("well")) {
+    cyl(p, 0.28, 0.3, 0.32, 1.75, 0.18, 1.75, P.m("trim"), 24);
+    cyl(p, 0.2, 0.2, 0.02, 1.75, 0.5, 1.75, P.ink, 24);
+    cyl(p, 0.02, 0.02, 0.5, 1.55, 0.5, 1.75, P.m("wood"), 8);
+    cyl(p, 0.02, 0.02, 0.5, 1.95, 0.5, 1.75, P.m("wood"), 8);
+  }
+  if (has("banners"))
+    for (const x of [-1.9, 1.9]) {
+      cyl(p, 0.025, 0.025, 1.4, x, 0.18, 2.05, P.m("wood"), 8);
+      const cloth = dyn(new Mesh(cached("banner", () => new BoxGeometry(0.02, 0.5, 0.32))));
+      cloth.material = P.accentCloth;
+      cloth.position.set(x, 1.3, 1.88);
+      p.add(cloth);
+    }
+  if (has("gondola")) {
+    const hull = dyn(new Mesh(cached("gondola", () => new BoxGeometry(1.5, 0.12, 0.26))));
+    hull.material = P.ink;
+    hull.position.set(-0.3, 0.06, 2.55);
+    p.add(hull);
+    ball(p, 0.06, 0.45, 0.2, 2.55, P.m("trim"), 10);
+  }
+  if (has("statue")) {
+    cyl(p, 0.26, 0.3, 0.28, -1.75, 0.18, 1.75, P.m("trim"), 4);
+    cyl(p, 0.09, 0.12, 0.42, -1.75, 0.46, 1.75, P.m("trim"), 16);
+    ball(p, 0.09, -1.75, 0.98, 1.75, P.m("trim"), 16);
+  }
+}

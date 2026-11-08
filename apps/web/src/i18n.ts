@@ -976,6 +976,17 @@ const frDict = {
       withdraw: (v: string) => `Reprendre ${v}`,
     },
     house: {
+      embellishTitle: "Embellir le Fondaco",
+      embellishWhy: (seals: number) =>
+        `Avec tes Sceaux (${seals}) : ce qui orne ton Fondaco se voit sur la carte, et ne rapporte rien d'autre.`,
+      embellishNames: {
+        well: "Un puits",
+        banners: "Des bannières",
+        gondola: "Une gondole",
+        statue: "Une statue",
+      } as Record<string, string>,
+      embellishPrice: (n: number) => (n === 1 ? "1 Sceau" : `${n} Sceaux`),
+      embellishOwned: "Posé",
       kicker: "Ta Maison",
       title: "Où tu en es",
       summary: "Touche un « ? » pour savoir ce que veut dire chaque mesure.",
@@ -1469,6 +1480,9 @@ const frDict = {
       insufficient_funds: "Pas assez de ducats.",
       bad_key: "Cette demande ne se comprend pas.",
       invalid_input: "Ce choix n'existe pas.",
+      insufficient_seals: "Pas assez de Sceaux.",
+      already_bought: "C'est déjà à toi.",
+      unknown_use: "Ceci n'existe pas ici.",
       store_full: "L'Entrepôt est plein pour cette marchandise : vends ou livre d'abord.",
       already_paid: "C'est déjà payé.",
       locked: "Pas encore ouvert : il faut monter ton Fondaco.",

@@ -80,6 +80,21 @@ export function hasteBuild(tx: Tx, playerId: PlayerId): void {
   site.endsAt = tx.now + Math.ceil((left * (10_000 - haste.cutBps)) / 10_000);
 }
 
+/**
+ * An embellishment bought with Seals (I5 of the publication plan): it stands by the Fondaco, seen
+ * on the map, and gives nothing else (golden rule 4: never yield).
+ */
+export function embellish(tx: Tx, playerId: PlayerId, code: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const price = Object.hasOwn(s.embellishments, code) ? s.embellishments[code] : undefined;
+  if (price === undefined) fail("unknown_use");
+  if ((h.embellishments ?? []).includes(code)) fail("already_bought");
+  if (h.seals < price) fail("insufficient_seals");
+  h.seals -= price;
+  h.embellishments = [...(h.embellishments ?? []), code];
+}
+
 export function settleBuilds(h: EmpireHouse, now: number): void {
   settleResearch(h, now);
   settleLearning(h, now);
