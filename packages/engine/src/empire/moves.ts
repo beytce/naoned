@@ -6,7 +6,16 @@ import { houseEffect } from "./effects.js";
 import { holdPlacesOf } from "./fleet.js";
 import { roadLength } from "./grid.js";
 import { empireSettings, ownHouse } from "./house.js";
-import { citiesCovered, citySpot, linkedBy, standingPosts, unlockedOf, walkableOf } from "./map.js";
+import {
+  CAMPO,
+  campoPoint,
+  citiesCovered,
+  citySpot,
+  linkedBy,
+  standingPosts,
+  unlockedOf,
+  walkableOf,
+} from "./map.js";
 import { cityOrdersAt, isWelcomeOrder, returnOrder, takeOrder } from "./orders.js";
 import type { EmpireSettings } from "./settings.js";
 import { roadBetween } from "./slots.js";
@@ -37,6 +46,7 @@ export function placePoint(
   place: string,
 ): [number, number] | null {
   const code = placeCity(place);
+  if (code === CAMPO) return campoPoint(h, s);
   if (code !== null) {
     const c = s.map.cities.find((x) => x.code === code);
     // A city of its sectors, or one a counter of the house serves.
@@ -254,6 +264,10 @@ function arrive(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle, leg: Emp
   v.at = leg.to;
   const code = placeCity(leg.to);
   if (code === null) return;
+  if (code === CAMPO) {
+    bringToCampo(h, v);
+    return;
+  }
   const c = s.map.cities.find((x) => x.code === code);
   const here = (v.loads ?? []).filter((o) => o.city === code);
   if (!c || here.length === 0) return;
@@ -280,6 +294,17 @@ function arrive(tx: Tx, h: EmpireHouse, playerId: PlayerId, v: Vehicle, leg: Emp
   // The town knows the house the more it is served (P3-07 of the players' audit).
   h.served = { ...(h.served ?? {}), [code]: (h.served?.[code] ?? 0) + 1 };
   const rest = (v.loads ?? []).filter((o) => o.city !== code);
+  v.loads = rest.length > 0 ? rest : undefined;
+}
+
+/** At the Campo: the orders of the Campo aboard go into its store, paid nothing (8 November 2026). */
+function bringToCampo(h: EmpireHouse, v: Vehicle): void {
+  const here = (v.loads ?? []).filter((o) => o.city === CAMPO);
+  if (here.length === 0) return;
+  const store = { ...(h.campo?.stock ?? {}) };
+  for (const o of here) store[o.good] = (store[o.good] ?? 0) + o.qty;
+  h.campo = { day: h.campo?.day ?? -1, week: h.campo?.week ?? -1, stock: store };
+  const rest = (v.loads ?? []).filter((o) => o.city !== CAMPO);
   v.loads = rest.length > 0 ? rest : undefined;
 }
 
@@ -341,7 +366,7 @@ export function deliverCity(tx: Tx, playerId: PlayerId, city: string, orderIds?:
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   if (!s.orders) fail("unknown_target");
-  if (!s.map.cities.some((c) => c.code === city)) fail("unknown_city");
+  if (city !== CAMPO && !s.map.cities.some((c) => c.code === city)) fail("unknown_city");
   const asked = cityOrdersAt(tx.ctx, h, playerId, s, city, tx.now)
     .list.filter((o) => !orderIds || orderIds.includes(o.id))
     .sort((a, b) => (b.pay > a.pay ? 1 : b.pay < a.pay ? -1 : 0));

@@ -541,6 +541,11 @@ export interface EmpireHouse {
   arsenal?: string;
   /** The Campo's cell: the door of the Terraferma. */
   camp?: string;
+  /**
+   * The Campo's store (the supply by road, 8 November 2026): what was brought there for the war,
+   * by good; and the day (from the week's Monday) and the week its orders were last asked.
+   */
+  campo?: { stock: Record<string, number>; day: number; week: number };
   /** The Remise's cell: where the land vehicles are bought and raised. */
   depot?: string;
   /** Each model's level, by vehicle type (1 when unset). */

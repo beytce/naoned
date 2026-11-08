@@ -208,6 +208,8 @@ export function serveTerraRations(
   tx: Tx,
   map: TerraState,
   republic?: (id: PlayerId, loaves: number) => number,
+  /** Where the loaves beyond the ration come from (the empire: the Campo, then Venice); how many. */
+  stock?: (id: PlayerId, loaves: number) => number | null,
 ): void {
   for (const [id, p] of Object.entries(map.players).sort(([a], [b]) => (a < b ? -1 : 1))) {
     if (isNation(id) || !tx.s.players[id]) continue;
@@ -228,8 +230,10 @@ export function serveTerraRations(
       if (p.unfed && have > 0) p.unfed = undefined;
       continue;
     }
-    const served = Math.min(have, whole);
-    removeStock(tx, id, "bread", served, "terraferma_rations", `terra:${map.startAt}`);
+    const given2 = stock?.(id, whole) ?? null;
+    const served = given2 ?? Math.min(have, whole);
+    if (given2 === null)
+      removeStock(tx, id, "bread", served, "terraferma_rations", `terra:${map.startAt}`);
     p.breadOwed = (p.breadOwed ?? 0) - whole * 10_000;
     if (served < whole) {
       if (!p.unfed) emit(tx, "terra_hungry", id, { missing: whole - served });
@@ -488,7 +492,13 @@ export function applyTerraOn(
   cfg: TerraConfig,
   map: TerraState,
   cmd: TerraPlayerCommand,
-  side: { team: string; decree?: TerraDecree; week: number },
+  side: {
+    team: string;
+    decree?: TerraDecree;
+    week: number;
+    /** Takes the war's goods (the empire: the Campo's store, then Venice); else the stock. */
+    take?: (goods: Record<string, number>, ref: string) => void;
+  },
 ): void {
   const id = cmd.playerId;
   const now = tx.now;
@@ -532,11 +542,12 @@ export function applyTerraOn(
       // With the war chest, its écus pay (in the week's state); else the ducats.
       if (!cfg.chest && balance(tx, cashAccount(id)) < price) fail("insufficient_funds");
       const goods = cfg.supply?.buildingMaterials[cmd.kind] ?? {};
-      for (const [resource, qty] of Object.entries(goods))
-        if ((tx.s.inventories[id]?.[resource]?.available ?? 0) < qty) fail("insufficient_stock");
+      const ref = `terra:${cmd.kind}:${cmd.cell}`;
+      // The goods first (the command is one transaction: a refusal after takes nothing).
+      if (side.take) side.take(goods, ref);
+      else takeGoods(tx, id, goods, ref);
       const ducats = buildOnTerra(map, cfg, id, cmd.cell, cmd.kind, now);
-      if (ducats > 0n) pay(tx, id, ducats, `terra:${cmd.kind}:${cmd.cell}`);
-      takeGoods(tx, id, goods, `terra:${cmd.kind}:${cmd.cell}`);
+      if (ducats > 0n) pay(tx, id, ducats, ref);
       emit(tx, "terra_built", id, { kind: cmd.kind, cell: cmd.cell });
       break;
     }
@@ -544,10 +555,11 @@ export function applyTerraOn(
       if (!cfg.chest && balance(tx, cashAccount(id)) < cfg.capRaise.price)
         fail("insufficient_funds");
       const bread = cfg.supply?.raiseBread ?? 0;
-      if ((tx.s.inventories[id]?.bread?.available ?? 0) < bread) fail("insufficient_stock");
+      const goods: Record<string, number> = bread > 0 ? { bread } : {};
+      if (side.take) side.take(goods, "terra:cap");
+      else takeGoods(tx, id, goods, "terra:cap");
       const price = raiseCap(map, cfg, id, now);
       if (price > 0n) pay(tx, id, price, "terra:cap");
-      takeGoods(tx, id, bread > 0 ? { bread } : {}, "terra:cap");
       break;
     }
     case "terraSail": {

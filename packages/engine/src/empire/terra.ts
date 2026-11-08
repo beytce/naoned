@@ -9,6 +9,7 @@ import {
 } from "../terraWorld.js";
 import { type TerraConfig, advanceTerra, closeTerra, isNation, newTerra } from "../terraferma.js";
 import { type Tx, emit, fail, inventoryLine, removeStock } from "../tx.js";
+import { askCampo, breadForWar, takeForWar } from "./campo.js";
 import { carnetWeek } from "./carnet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
 import { checkCamp } from "./map.js";
@@ -83,14 +84,36 @@ export function advanceTheatre(tx: Tx, th: EmpireTheatre, week: number): void {
   const seen = th.map.history?.cell.length ?? 0;
   advanceTerra(th.map, th.cfg, Math.min(tx.now, end));
   tellCellsTaken(tx, th.map, seen);
-  serveTerraRations(tx, th.map, republic(tx, th));
+  serveTerraRations(tx, th.map, republic(tx, th), warBread(tx));
   if (th.map.closed && !th.map.closedSeen) payTheatre(tx, th, week);
+}
+
+/** The loaves beyond the ration, from each house's Campo, then Venice (the supply by road). */
+function warBread(tx: Tx) {
+  const s = empireSettings(tx.ctx);
+  return (id: PlayerId, loaves: number): number | null => {
+    const h = tx.s.empire?.houses[id];
+    if (!h) return null;
+    return breadForWar(tx, h, id, s, loaves, "terra:rations");
+  };
+}
+
+/** Each morning, the Campo of every house of the week's theatres asks the day's need. */
+export function settleCampo(tx: Tx): void {
+  const t = tx.s.empire?.terra;
+  if (!t) return;
+  const s = empireSettings(tx.ctx);
+  for (const th of t.theatres)
+    for (const id of th.members) {
+      const h = tx.s.empire?.houses[id];
+      if (h) askCampo(h, th.map, th.cfg, s, id, t.week, terraWeekStart(t.week), tx.now);
+    }
 }
 
 function closeTheatre(tx: Tx, th: EmpireTheatre, week: number): void {
   const end = terraWeekStart(week + 1);
   advanceTerra(th.map, th.cfg, end);
-  serveTerraRations(tx, th.map, republic(tx, th));
+  serveTerraRations(tx, th.map, republic(tx, th), warBread(tx));
   closeTerra(th.map, th.cfg, end);
   if (!th.map.closedSeen) payTheatre(tx, th, week);
 }
@@ -240,12 +263,17 @@ export function actOnTerra(tx: Tx, playerId: PlayerId, action: TerraPlayerComman
   // The decrees and the embargo act on the monthly world's economy: not in the empire's.
   if (action.type === "terraDecree" || action.type === "terraEmbargo") fail("terra_off");
   const h = ownHouse(tx, playerId);
+  const s = empireSettings(tx.ctx);
   applyTerraOn(
     tx,
     th.cfg,
     th.map,
     { ...action, playerId },
-    { team: th.kind === "contesa" ? (h.company ?? "") : "", week: t.week },
+    {
+      team: th.kind === "contesa" ? (h.company ?? "") : "",
+      week: t.week,
+      take: (goods, ref) => takeForWar(tx, h, playerId, s, goods, ref),
+    },
   );
 }
 

@@ -19,6 +19,7 @@ export * from "./family.js";
 export * from "./aid.js";
 export * from "./condotta.js";
 export * from "./terra.js";
+export * from "./campo.js";
 export * from "./map.js";
 export * from "./grid.js";
 export * from "./slots.js";

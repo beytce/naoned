@@ -841,6 +841,17 @@ export function checkDepot(h: EmpireHouse, s: EmpireSettings): void {
 }
 
 /** The Campo asked by the Terraferma, in a world that sets one. */
+/**
+ * The Campo as a stop of the vehicles (the supply by road, 8 November 2026): a city of its own
+ * code, its orders kept with the cities', brought to the house's Campo.
+ */
+export const CAMPO = "campo";
+
+/** The Campo's point on the chart, where the vehicles bring its orders (null: no Campo). */
+export function campoPoint(h: EmpireHouse, s: EmpireSettings): [number, number] | null {
+  return h.camp ? pointOf(h.camp, s) : null;
+}
+
 export function checkCamp(h: EmpireHouse, s: EmpireSettings): void {
   if (hasMap(s) && s.map.camp && !h.camp) fail("no_camp");
 }

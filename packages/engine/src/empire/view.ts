@@ -43,6 +43,7 @@ import type { InteriorSettings } from "./interior/settings.js";
 import { type InteriorView, interiorRulesOf, interiorsOf } from "./interior/view.js";
 import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import {
+  CAMPO,
   buyableOf,
   cellCentreOf,
   cellsWithin,
@@ -159,6 +160,15 @@ export interface EmpireView {
   stores: { post: string; region: string; goods: Record<string, number> }[];
   /** The orders of the cities its counters serve (after Hades' Star's shipments). */
   orders: CityOrders[];
+  /**
+   * The supply by road (8 November 2026): the Campo's orders of the day (paid nothing), the counters
+   * that serve it, and its store for the war; null without a Campo or the supply.
+   */
+  campo: {
+    orders: { id: string; good: string; qty: number }[];
+    posts: string[];
+    store: Record<string, number>;
+  } | null;
   /** The last deliveries brought (the board plays them again on the player's return). */
   delivered: { city: string; pay: string; at: number }[];
   /** The deliveries each town received from the house (P3-07). */
@@ -559,6 +569,18 @@ export function empireView(
     stores,
     full: fullWorkshops(ctx, house, s, stores, line.storeCap, now),
     orders: ordersOf(ctx, house, playerId, s, now),
+    campo:
+      house.camp && s.terra.supply
+        ? {
+            orders: (house.orders?.[CAMPO]?.list ?? []).map(({ id, good, qty }) => ({
+              id,
+              good,
+              qty,
+            })),
+            posts: postsServing(house, s, CAMPO),
+            store: house.campo?.stock ?? {},
+          }
+        : null,
     delivered: (house.delivered ?? []).map((d) => ({ ...d, pay: d.pay.toString() })),
     served: house.served ?? {},
     moves: s.moves,
