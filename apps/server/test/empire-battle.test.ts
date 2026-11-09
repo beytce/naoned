@@ -118,6 +118,14 @@ describe("the Battle on the server", () => {
     expect(done.phase).toBe("done");
     expect(done.result).toHaveLength(8);
     expect(done.result.filter((r: { me: boolean }) => r.me)).toHaveLength(1);
+    // The cote (B3): 1 000 at the start, moved by the ranks at the end, and on the public ranking.
+    expect(done.rating).toBe(1_000);
+    expect(done.ratingAfter).not.toBeNull();
+    expect(done.ratingAfter).not.toBe(1_000);
+    const ranking = (await app.inject({ method: "GET", url: "/api/empire/battle/ranking" })).json()
+      .ranking;
+    expect(ranking).toHaveLength(2);
+    expect(ranking.map((r: { pseudo: string }) => r.pseudo).sort()).toEqual(["ada", "bob"]);
     // Once it is over, the next lobby may be joined.
     expect((await post(a, "/api/empire/battle/join")).statusCode).toBe(200);
     expect((await battle(a)).phase).toBe("lobby");

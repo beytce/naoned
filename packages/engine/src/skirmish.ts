@@ -301,3 +301,44 @@ export function skirmishAct(sk: Skirmish, id: string, a: SkirmishAction, now: nu
     throw e;
   }
 }
+
+/** The Battle's cote settings (lot T6b, B3). */
+export interface BattleRating {
+  start: number;
+  k: number;
+  band: number;
+  botRating: number;
+}
+
+/**
+ * The Battle's cote after a match (lot T6b, B3): an Elo of many, each player against each other by
+ * their ranks at the end (`ranked`, the first first), a step of `k` shared over the others; the
+ * computer's houses (« bot: ») count at their cote but are never moved. Whole numbers.
+ */
+export function battleRatings(
+  ranked: { id: string; rating: number }[],
+  rating: BattleRating,
+): Record<string, number> {
+  const n = ranked.length;
+  if (n < 2) return {};
+  const step = rating.k / (n - 1);
+  const delta = new Map<string, number>();
+  for (let i = 0; i < n; i++)
+    for (let j = i + 1; j < n; j++) {
+      const a = ranked[i] as { id: string; rating: number };
+      const b = ranked[j] as { id: string; rating: number };
+      const expected = 1 / (1 + 10 ** ((b.rating - a.rating) / 400));
+      const d = step * (1 - expected);
+      delta.set(a.id, (delta.get(a.id) ?? 0) + d);
+      delta.set(b.id, (delta.get(b.id) ?? 0) - d);
+    }
+  const out: Record<string, number> = {};
+  for (const r of ranked)
+    if (!r.id.startsWith("bot:")) out[r.id] = Math.round(r.rating + (delta.get(r.id) ?? 0));
+  return out;
+}
+
+/** The band of cote a player's lobby is drawn from (lot T6b, B3). */
+export function battleBand(rating: BattleRating, cote: number): number {
+  return Math.max(0, Math.floor(cote / rating.band));
+}

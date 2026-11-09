@@ -328,7 +328,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return account;
   }
 
-  registerEmpireRoutes(app, { db, world, requireAccount, perMerchant });
+  /** The account of the session, when there is one (a public page may read it). */
+  const accountIfAny = (req: FastifyRequest) =>
+    auth.accountForSession(req.cookies[deps.sessionCookie]);
+  registerEmpireRoutes(app, { db, world, requireAccount, accountIfAny, perMerchant });
   if (deps.porta)
     registerPortaRoutes(app, {
       db,

@@ -305,6 +305,8 @@ export interface EmpireRouteDeps {
   db: Db;
   world: GameWorld;
   requireAccount: (req: FastifyRequest, reply: FastifyReply) => Promise<{ id: string } | null>;
+  /** The session's account, or null without one (a public page). */
+  accountIfAny?: (req: FastifyRequest) => Promise<{ id: string } | null>;
   perMerchant: (max: number) => object;
 }
 
@@ -405,15 +407,24 @@ export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps
     const account = await deps.requireAccount(req, reply);
     if (!account) return;
     if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
-    return toJson({ battle: await battle.state(account.id, world.now()) });
+    const state = await battle.state(account.id, world.now());
+    // A cote just moved is read once written.
+    await battle.flush();
+    return toJson({ battle: state });
   });
   app.post("/api/empire/battle/join", deps.perMerchant(30), async (req, reply) => {
     const account = await deps.requireAccount(req, reply);
     if (!account) return;
     if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
-    const res = battle.join(account.id, world.now());
+    const res = await battle.join(account.id, world.now());
     if (res !== "ok") return reply.code(409).send({ error: res });
     return toJson({ battle: await battle.state(account.id, world.now()) });
+  });
+  // The public ranking of the Battle's cotes (B3): no account needed to read it.
+  app.get("/api/empire/battle/ranking", async (req) => {
+    const me = (await deps.accountIfAny?.(req)) ?? null;
+    await battle.flush();
+    return toJson({ ranking: await battle.ranking(me?.id ?? null) });
   });
   app.post("/api/empire/battle/leave", deps.perMerchant(30), async (req, reply) => {
     const account = await deps.requireAccount(req, reply);

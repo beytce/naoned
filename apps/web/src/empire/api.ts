@@ -41,6 +41,8 @@ export const empireApi = {
   /** The Battle (lot T6b): the player's lobby or match, and its orders. */
   battle: () => call("GET", "/api/empire/battle") as Promise<{ battle: BattleState }>,
   battleJoin: () => call("POST", "/api/empire/battle/join", {}) as Promise<{ battle: BattleState }>,
+  battleRanking: () =>
+    call("GET", "/api/empire/battle/ranking") as Promise<{ ranking: BattleRank[] }>,
   battleLeave: () =>
     call("POST", "/api/empire/battle/leave", {}) as Promise<{ battle: BattleState }>,
   battleAct: (action: TerraAction) =>
@@ -59,6 +61,8 @@ export type BattleState =
       players: number;
       waiting: number;
       startsAt: number | null;
+      /** The player's cote (B3). */
+      rating: number;
     }
   | {
       phase: "playing" | "done";
@@ -67,4 +71,16 @@ export type BattleState =
       endsAt: number;
       view: TerraView | null;
       result: { pseudo: string | null; bot: boolean; me: boolean; cells: number }[] | null;
+      /** The cote at its start, and after its end once moved (B3). */
+      rating: number | null;
+      ratingAfter: number | null;
     };
+
+/** A line of the Battle's public ranking (B3). */
+export interface BattleRank {
+  rank: number;
+  pseudo: string | null;
+  rating: number;
+  matches: number;
+  me: boolean;
+}

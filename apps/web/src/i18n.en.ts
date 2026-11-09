@@ -1335,6 +1335,11 @@ export const en: Dictionary = {
       loading: "The Battle is coming…",
       failed: "The Battle did not answer.",
       open: "The Battle · 12 min",
+      rating: (n: number) => `Your rating: ${n}`,
+      ratingMoved: (before: number, after: number) =>
+        `Your rating: ${before} → ${after} (${after >= before ? "+" : "−"}${Math.abs(after - before)})`,
+      ranking: "Ratings ranking",
+      noRanking: "Nobody has a rating yet.",
     },
     terra: {
       tab: "Terraferma",
