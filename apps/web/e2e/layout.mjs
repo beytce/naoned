@@ -109,7 +109,7 @@ const WORDS = {
     produce: /^produire$/i,
     quantity: "Quantité",
     team: /équipe · vénétie/i,
-    onYou: /sur vous/i,
+    onYou: /sur toi/i,
     battleAt: /bataille à 20 h/i,
     teamWon: /vénétie l'emporte/i,
     npc: "(ordinateur)",
