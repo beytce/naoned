@@ -176,7 +176,7 @@ describe("a skirmish's row", () => {
     await get(ada, "/api/game/skirmish");
     expect((await rows())[0]?.status).toBe("playing");
     expect((await rows())[0]?.ranked).toBe(true);
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     const done = await get(ada, "/api/game/skirmish");
     expect(done.phase).toBe("done");
     const [row] = await rows();
@@ -195,7 +195,7 @@ describe("a skirmish's row", () => {
     await join(bob);
     now += 61_000;
     await get(ada, "/api/game/skirmish");
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     await get(ada, "/api/game/skirmish");
     const [row] = await rows();
     const id = row?.id ?? "";
@@ -292,7 +292,7 @@ describe("a skirmish's row", () => {
     await join(bob);
     now += 61_000;
     await get(ada, "/api/game/skirmish");
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     const played = await get(ada, "/api/game/skirmish");
     expect(played.phase).toBe("done");
     expect(played.rankedLeft).toBe(0);
@@ -331,7 +331,7 @@ describe("a skirmish's row", () => {
     expect((await get(ada, "/api/game/skirmish")).interrupted).toBe(false);
     now += 61_000;
     await get(ada, "/api/game/skirmish");
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     expect((await get(ada, "/api/game/skirmish")).phase).toBe("done");
     // 14 h: another deployment, no match under way.
     now = Date.parse("2026-10-05T12:00:00Z");
@@ -391,7 +391,7 @@ describe("a skirmish's row", () => {
     await join(ada);
     now += 61_000;
     await get(ada, "/api/game/skirmish");
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     expect((await get(ada, "/api/game/skirmish")).phase).toBe("done");
     expect((await rows())[0]?.status).toBe("done");
     expect((await rows())[0]?.ranked).toBe(false);
@@ -401,7 +401,7 @@ describe("a skirmish's row", () => {
     await join(bob);
     now += 61_000;
     await get(ada, "/api/game/skirmish");
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     await get(ada, "/api/game/skirmish");
     const before = { ada: await glory(ada), bob: await glory(bob) };
     // Again together: ranked by the hour, but both have played their ranked match: no one paid.
@@ -410,7 +410,7 @@ describe("a skirmish's row", () => {
     await join(bob);
     now += 61_000;
     await get(ada, "/api/game/skirmish");
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     const last = await get(ada, "/api/game/skirmish");
     expect(last.phase).toBe("done");
     expect(last.ranked).toBe(false);

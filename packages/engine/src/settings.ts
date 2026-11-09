@@ -46,6 +46,26 @@ const eventDef = z.object({
   yieldBps: z.record(z.string(), signedBps).prefault({}),
 });
 
+/**
+ * A war chest of the Terraferma (docs/plan-terraferme-porcellana.md § 4 quinquies): the buildings
+ * and the cap paid in écus, the same for all, `start` on setting down, `perDay` each period of
+ * `everyMinutes` (a day by default; the Battle's, a couple of its own hours) to `cap`.
+ */
+const chestSettings = z.object({
+  start: qty,
+  perDay: qty,
+  cap: positive,
+  everyMinutes: positive.optional(),
+  prices: z.object({
+    rocca: positive,
+    borgo: positive,
+    porto: positive,
+    bombarda: positive,
+    mura: positive,
+    cap: positive,
+  }),
+});
+
 export const worldSettingsSchema = z.object({
   seasonDays: positive,
   /**
@@ -558,6 +578,8 @@ export const worldSettingsSchema = z.object({
            */
           calls: z.array(z.number().int().min(0).max(1_439)).prefault([]),
           callLobbyMinutes: positive.prefault(10),
+          /** The Battle's war chest of the match (lot T6b): the week's otherwise. */
+          chest: chestSettings.optional(),
         })
         .optional(),
       /**
@@ -688,21 +710,7 @@ export const worldSettingsSchema = z.object({
        * money, the same for every merchant of a theatre: `start` on setting down, `perDay` each
        * morning of the week, never past `cap` (golden rule 3). Absent: they cost ducats.
        */
-      chest: z
-        .object({
-          start: qty,
-          perDay: qty,
-          cap: positive,
-          prices: z.object({
-            rocca: positive,
-            borgo: positive,
-            porto: positive,
-            bombarda: positive,
-            mura: positive,
-            cap: positive,
-          }),
-        })
-        .optional(),
+      chest: chestSettings.optional(),
       /** The cap raised (for ducats, destroyed by the caller, or for écus), a few times a day. */
       capRaise: z
         .object({ amount: qty, price: money, perDay: qty })

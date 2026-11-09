@@ -2,18 +2,27 @@ import { dayStartIn, hourIn, hourWithin } from "./clock.js";
 import { MINUTE_MS } from "./state.js";
 import {
   MILAN,
+  type TerraBuilding,
   type TerraConfig,
   type TerraState,
+  acceptAlliance,
   advanceTerra,
+  breakAlliance,
+  buildOnTerra,
   capOf,
   cellCost,
   cellsOf,
   closeTerra,
+  fireBombard,
   isNation,
   launchFront,
   newTerra,
   placeOnTerra,
+  proposeAlliance,
+  raiseCap,
   recallFront,
+  sendTroops,
+  signal,
   terraDistance,
   terraNeighbors,
 } from "./terraferma.js";
@@ -98,6 +107,8 @@ export function skirmishConfig(cfg: TerraConfig): TerraConfig {
       truceHours: 0,
     },
     troops: { ...cfg.troops, recruit: sk.recruit },
+    // The Battle's war chest of the match (lot T6b), else the week's.
+    ...(sk.chest ? { chest: sk.chest } : {}),
     fronts: { ...cfg.fronts, neutralEverySteps: 1, maxHours: 0 },
     milan: { ...cfg.milan, everyHours: 1 },
   };
@@ -234,16 +245,56 @@ function finish(sk: Skirmish): void {
 
 export type SkirmishAction =
   | { type: "terraFront"; aim: number; shareBps: number }
-  | { type: "terraRecall"; frontId: string };
+  | { type: "terraRecall"; frontId: string }
+  // The Battle's (lot T6b): the week's orders, on the match's map.
+  | { type: "terraBuild"; cell: number; kind: TerraBuilding }
+  | { type: "terraRaise" }
+  | { type: "terraFire"; cell: number }
+  | { type: "terraAlly"; other: string }
+  | { type: "terraAccept"; from: string }
+  | { type: "terraBreak"; other: string }
+  | { type: "terraSend"; to: string; count: number }
+  | { type: "terraSignal"; kind: "help" | "attack" | "thanks" | "peace"; cell?: number };
 
 /** A merchant's order in a skirmish; whether it went through. */
 export function skirmishAct(sk: Skirmish, id: string, a: SkirmishAction, now: number): boolean {
   advanceSkirmish(sk, now);
   if (sk.result || !sk.humans.includes(id)) return false;
+  const s = sk.state;
+  const at = s.clock;
   try {
-    if (a.type === "terraFront")
-      launchFront(sk.state, sk.cfg, id, a.aim, a.shareBps, sk.state.clock);
-    else recallFront(sk.state, id, a.frontId);
+    switch (a.type) {
+      case "terraFront":
+        launchFront(s, sk.cfg, id, a.aim, a.shareBps, at);
+        break;
+      case "terraRecall":
+        recallFront(s, id, a.frontId);
+        break;
+      case "terraBuild":
+        buildOnTerra(s, sk.cfg, id, a.cell, a.kind, at);
+        break;
+      case "terraRaise":
+        raiseCap(s, sk.cfg, id, at);
+        break;
+      case "terraFire":
+        fireBombard(s, sk.cfg, id, a.cell, at);
+        break;
+      case "terraAlly":
+        proposeAlliance(s, sk.cfg, id, a.other, at);
+        break;
+      case "terraAccept":
+        acceptAlliance(s, sk.cfg, id, a.from, at);
+        break;
+      case "terraBreak":
+        breakAlliance(s, sk.cfg, id, a.other, at);
+        break;
+      case "terraSend":
+        sendTroops(s, sk.cfg, id, a.to, a.count, at);
+        break;
+      case "terraSignal":
+        signal(s, sk.cfg, id, a.kind, a.cell, at);
+        break;
+    }
     return true;
   } catch (e) {
     if (e instanceof EngineError) return false;

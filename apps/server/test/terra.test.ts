@@ -241,7 +241,7 @@ describe("the Terraferma on the server", () => {
     expect(condottieri.length).toBe(lobby.bots);
     expect(condottieri.every((h: { bot: boolean }) => h.bot)).toBe(true);
     // A quarter of an hour later, the match is over and its rank paid on the week's map.
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     const done = await get(ada, "/api/game/skirmish");
     expect(done.phase).toBe("done");
     expect(done.rankedLeft).toBe(0);
@@ -264,7 +264,7 @@ describe("the Terraferma on the server", () => {
     expect(second.phase).toBe("playing");
     expect(second.ranked).toBe(false);
     expect(second.why).toBe("quota");
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     const friendly = await get(ada, "/api/game/skirmish");
     expect(friendly.phase).toBe("done");
     expect(friendly.result.every((r: { glory: number }) => r.glory === 0)).toBe(true);
@@ -290,7 +290,7 @@ describe("the Terraferma on the server", () => {
     expect(alone.why).toBe("few");
     now += 61_000;
     await get(ada, "/api/game/skirmish");
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     const done = await get(ada, "/api/game/skirmish");
     expect(done.ranked).toBe(false);
     expect(done.why).toBe("few");
@@ -319,12 +319,13 @@ describe("the Terraferma on the server", () => {
     expect(morning.rankedLater).toBe(true);
     now += 61_000;
     await get(ada, "/api/game/skirmish");
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     await get(ada, "/api/game/skirmish");
     now += 4 * 60_000;
     await get(ada, "/api/game/skirmish");
-    // 21 h 30 in Paris, alone: the match ends at 21 h 46, and the next could not end before 22 h.
-    now = Date.parse("2026-10-05T19:30:00Z");
+    // 21 h 35 in Paris, alone: the match (12 minutes) ends at 21 h 48, and the next could not end
+    // before 22 h.
+    now = Date.parse("2026-10-05T19:35:00Z");
     const before = await get(ada, "/api/game/skirmish");
     expect(before.phase).toBe("none");
     expect(before.ranked).toBe(true);
@@ -339,7 +340,7 @@ describe("the Terraferma on the server", () => {
     expect(live.why).toBe("few");
     expect(live.rankedLeft).toBe(1);
     expect(live.rankedLater).toBe(false);
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     const done = await get(ada, "/api/game/skirmish");
     expect(done.phase).toBe("done");
     expect(done.why).toBe("few");
@@ -369,7 +370,7 @@ describe("the Terraferma on the server", () => {
     expect(lobby.why).toBe("late");
     now += 61_000;
     expect((await get(ada, "/api/game/skirmish")).why).toBe("late");
-    now += 16 * 60_000;
+    now += 13 * 60_000; // past the match (12 minutes, 9 November 2026), within its showing
     const done = await get(ada, "/api/game/skirmish");
     expect(done.phase).toBe("done");
     expect(done.ranked).toBe(false);
