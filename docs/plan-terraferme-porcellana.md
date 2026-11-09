@@ -122,6 +122,13 @@ Le défaut relevé : avec « le magasin du Campo d'abord, puis Venise » et « l
 - **Mesure** (simulateur de la Terraferme, toutes les graines, `docs/calibration.md`) : part de la carte du premier, semaines gagnées avant le dimanche, écart assidus / occasionnels, éliminations, premier front entre marchands.
 - **Mise en ligne** : pour les théâtres ouverts le lundi suivant, comme le trésor.
 
+## 4 octies. Le retour et les villes tenues : le plan du lot T6 (9 novembre 2026)
+
+Le porteur a dit « enchaîne » après T5d ; les choix ci-dessous sont les recommandations de Claude, à revoir s'il le souhaite.
+
+- **« Pendant ton absence »** : en entrant dans la Terraferme après plus de dix minutes, le plateau rejoue en accéléré (quatre secondes) les cases qui ont changé de main depuis ta dernière visite, au plus la dernière journée (les `changes` de la vue) ; les vagues et l'émail qui coule du plateau font le spectacle. Puis une pilule résume : « Pendant ton absence : +4 cases, −2 cases, 3 fronts rentrés ». Une touche « Passer » ; sans animation demandée, le résumé seul. La dernière visite est gardée dans le navigateur (`localStorage`, une commodité, pas un état de jeu).
+- **Les villes tenues** (lien ⑤) : qui tient une ville du plateau à la clôture plante sa bannière sur cette ville de la carte du commerce pendant la semaine suivante, et reçoit une lettre de la Signoria (de la Faveur de la région), dans le plafond de 10 à 15 % de la progression ; mesuré au simulateur de 24 mois. Second temps du lot, après le rejeu.
+
 ## 5. Les lots
 
 | Lot | Contenu | Vérification |
