@@ -100,6 +100,8 @@ export class BattleHub {
       /** The cotes at its start, and after its end once written (B3). */
       before: Map<string, number>;
       after: Record<string, number> | null;
+      /** The Glory it brought to each one's week (B5), once paid. */
+      glory: Record<string, number> | null;
     }
   >();
   /** The match each player is in (until its showing ends). */
@@ -160,7 +162,10 @@ export class BattleHub {
       advanceSkirmish(m.sk, now);
       if (m.sk.result && m.shownUntil === 0) {
         m.shownUntil = now + SHOWN_AFTER_MS;
-        if (m.ranked) this.rate(cfg, m);
+        if (m.ranked) {
+          this.rate(cfg, m);
+          this.payGlory(id, m);
+        }
       }
       if (m.shownUntil > 0 && now >= m.shownUntil) {
         this.matches.delete(id);
@@ -176,9 +181,36 @@ export class BattleHub {
     const id = `${now}:${++this.seq}`;
     const sk = createSkirmish(cfg, `${this.world.id}:battle:${id}`, lobby.players, now);
     const before = new Map<string, number>();
-    this.matches.set(id, { sk, shownUntil: 0, ranked: !lobby.room, before, after: null });
+    this.matches.set(id, {
+      sk,
+      shownUntil: 0,
+      ranked: !lobby.room,
+      before,
+      after: null,
+      glory: null,
+    });
     for (const p of lobby.players) this.playing.set(p, id);
     for (const p of lobby.players) before.set(p, await this.ratingOf(p));
+  }
+
+  /**
+   * Its end, a ranked match (B5): the ranks among the merchants bring their Glory to the week's
+   * theatre of each, the first ranked Battle of its day; the engine decides who is paid.
+   */
+  private payGlory(id: string, m: { sk: Skirmish; glory: Record<string, number> | null }): void {
+    const table = m.sk.cfg.skirmish?.glory ?? [];
+    const merchants = (m.sk.result?.ranking ?? []).filter((r) => isAccount(r.id));
+    const matchId = `battle:${id}`;
+    this.writes = this.writes
+      .then(async () => {
+        const res = await this.world.execute({
+          type: "battleGlory",
+          matchId,
+          ranks: merchants.map((r, k) => ({ playerId: r.id, glory: table[k] ?? 0 })),
+        });
+        m.glory = res.ok ? (this.world.current.empire?.terra?.battlePaid?.[matchId] ?? {}) : {};
+      })
+      .catch(console.error);
   }
 
   /** Its end: the cotes moved by the ranks, written (the computer's houses fixed). */
@@ -401,6 +433,8 @@ export class BattleHub {
       view: view ? realTimes(m.sk, view, m.sk.endsAt) : null,
       // The cote at its start, and after its end once moved (B3).
       rating: m.before.get(playerId) ?? null,
+      // The Glory brought to the player's week (B5): null before it is paid, 0 if none.
+      glory: m.glory ? (m.glory[playerId] ?? 0) : null,
       ratingAfter: m.after?.[playerId] ?? null,
       result: m.sk.result
         ? m.sk.result.ranking.map((r) => ({

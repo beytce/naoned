@@ -1,4 +1,4 @@
-import { GAME_TIME_ZONE, offsetAt } from "../clock.js";
+import { GAME_TIME_ZONE, hourIn, hourWithin, offsetAt } from "../clock.js";
 import { DAY_MS, type EmpireTerra, type EmpireTheatre, HOUR_MS, type PlayerId } from "../state.js";
 import {
   type TerraPlayerCommand,
@@ -7,7 +7,15 @@ import {
   tellCellsTaken,
   terraOn,
 } from "../terraWorld.js";
-import { type TerraConfig, advanceTerra, closeTerra, isNation, newTerra } from "../terraferma.js";
+import {
+  type TerraConfig,
+  advanceTerra,
+  closeTerra,
+  countRankedSkirmish,
+  isNation,
+  newTerra,
+  skirmishesLeft,
+} from "../terraferma.js";
 import { type Tx, emit, fail, inventoryLine, removeStock } from "../tx.js";
 import { askCampo, breadForWar, takeForWar } from "./campo.js";
 import { carnetWeek } from "./carnet.js";
@@ -395,4 +403,46 @@ function formContesa(tx: Tx, t: EmpireTerra, week: number): void {
       });
     }
   }
+}
+
+/**
+ * The Battle's Glory (docs/plan-terraferme-porcellana.md § 4 nonies, B5), told by the server at a
+ * ranked Battle's end, once per match: each house set down on a theatre of the week, its ranked
+ * Battle of the day not yet paid, gets its rank's Glory (among the merchants) on its theatre and
+ * spends its quota; the others nothing. The skirmishes' table and rules: within the open hours,
+ * two merchants at least, a little (near 10 % of a regular's week at most).
+ */
+export function payBattle(
+  tx: Tx,
+  matchId: string,
+  ranks: { playerId: PlayerId; glory: number }[],
+): void {
+  const cfg = cfgOf(tx);
+  const sk = cfg.skirmish;
+  if (!sk) fail("terra_off");
+  const t = settleTerra(tx);
+  if (!t) fail("terra_off");
+  if (typeof matchId !== "string" || matchId.length === 0 || matchId.length > 64)
+    fail("invalid_quantity");
+  if (t.battlePaid?.[matchId]) fail("already_paid");
+  if (!hourWithin(hourIn(tx.now), cfg.openHours)) fail("night");
+  if (ranks.length < sk.minHumans) fail("too_few_humans");
+  const top = Math.max(0, ...sk.glory);
+  if (new Set(ranks.map((r) => r.playerId)).size !== ranks.length) fail("invalid_quantity");
+  for (const r of ranks)
+    if (!Number.isInteger(r.glory) || r.glory < 0 || r.glory > top) fail("invalid_quantity");
+  const paid: Record<PlayerId, number> = {};
+  for (const r of ranks) {
+    const th = theatreOf(t, r.playerId);
+    if (!th) continue;
+    advanceTheatre(tx, th, t.week);
+    const p = th.map.players[r.playerId];
+    if (th.map.closed || !p || p.eliminatedAt !== undefined) continue;
+    if (skirmishesLeft(th.map, th.cfg, r.playerId, tx.now) <= 0) continue;
+    countRankedSkirmish(th.map, th.cfg, r.playerId, tx.now);
+    p.glory += r.glory;
+    paid[r.playerId] = r.glory;
+    emit(tx, "terra_skirmish", r.playerId, { glory: r.glory, matchId });
+  }
+  t.battlePaid = { ...t.battlePaid, [matchId]: paid };
 }

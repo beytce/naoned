@@ -115,7 +115,14 @@ import {
 import type { Rarity } from "./empire/porta/settings.js";
 import { retireSea } from "./empire/retire.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
-import { actOnTerra, joinTerra, setRoster, settleCampo, settleTerra } from "./empire/terra.js";
+import {
+  actOnTerra,
+  joinTerra,
+  payBattle,
+  setRoster,
+  settleCampo,
+  settleTerra,
+} from "./empire/terra.js";
 import { buyGoods, deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
 import { ensureFitted, fitVehicle } from "./empire/vehicleModules.js";
 import { buyEmpireVehicle } from "./empire/voyages.js";
@@ -335,6 +342,8 @@ export type Command =
       vehicleId: string;
     }
   | TerraCommand
+  /** A ranked Battle's end, told by the server (B5): its ranks' Glory to the week's theatres. */
+  | { type: "battleGlory"; matchId: string; ranks: { playerId: PlayerId; glory: number }[] }
   | { type: "tick" }
   | AdminCommand
   | EmpireCommand;
@@ -940,6 +949,12 @@ function apply(tx: Tx, cmd: Command): void {
   }
   if (isEmpire(cmd)) {
     applyEmpire(tx, cmd);
+    return;
+  }
+  // The Battle's Glory (B5): the server's, for many houses at once, in the empire only.
+  if (cmd.type === "battleGlory") {
+    if (!ctx.settings.empire) fail("not_empire_world");
+    payBattle(tx, cmd.matchId, cmd.ranks);
     return;
   }
   // The monthly season's commands have no place in the empire (its bots, an old client).

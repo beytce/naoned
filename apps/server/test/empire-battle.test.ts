@@ -122,6 +122,9 @@ describe("the Battle on the server", () => {
     expect(done.rating).toBe(1_000);
     expect(done.ratingAfter).not.toBeNull();
     expect(done.ratingAfter).not.toBe(1_000);
+    // The Glory to the week (B5): told once paid; none here, neither is in a theatre (and it is
+    // night), the engine's tests pay it.
+    expect(done.glory).toBe(0);
     const ranking = (await app.inject({ method: "GET", url: "/api/empire/battle/ranking" })).json()
       .ranking;
     expect(ranking).toHaveLength(2);

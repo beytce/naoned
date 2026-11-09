@@ -571,10 +571,11 @@ export class GameWorld {
         }
       } else if (
         command.type === "terraSkirmishPay" ||
+        command.type === "battleGlory" ||
         command.type === "condottaWon" ||
         command.type === "adminEdit"
       ) {
-        // A skirmish paid, a Condotta won, the admin's hand: no one's step of the tutorial.
+        // A skirmish or a Battle paid, a Condotta won, the admin's hand: no one's step of the tutorial.
       } else if (command.type !== "tick") {
         await this.recordTutorial(tx, command.playerId, fx.events, at);
       } else {

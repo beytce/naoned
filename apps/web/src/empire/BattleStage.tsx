@@ -147,6 +147,7 @@ export function BattleStage({
                 <p className="text-sm font-bold" data-battle-rating="">
                   {t.rating(battle.rating)}
                 </p>
+                {!battle.guest && <p className="text-xs text-black/60">{t.gloryHint}</p>}
                 {battle.guest && battle.name && (
                   <p className="text-sm" data-battle-guest="">
                     {t.guest(battle.name)}{" "}
@@ -232,6 +233,11 @@ export function BattleStage({
                       {t.ratingMoved(battle.rating, battle.ratingAfter)}
                     </p>
                   )
+                )}
+                {(battle.glory ?? 0) > 0 && (
+                  <p className="text-sm font-bold text-[#C23B2E]" data-battle-glory="">
+                    {t.glory(battle.glory ?? 0)}
+                  </p>
                 )}
                 {battle.guest && (
                   <a href="/" className="block text-sm font-bold text-[#C23B2E] underline">

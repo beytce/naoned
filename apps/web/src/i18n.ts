@@ -1306,6 +1306,10 @@ const frDict = {
       roomCopied: "Lien copié",
       roomStart: "Lancer la partie",
       roomUnranked: "Partie privée : les cotes ne bougent pas.",
+      /** The Glory to the week (B5). */
+      gloryHint:
+        "Ta première Bataille classée du jour, contre au moins un autre marchand, rapporte de la Gloire à ta semaine de Terraferme.",
+      glory: (n: number) => `+${n} Gloire à ta semaine de Terraferme`,
     },
     terra: {
       tab: "Terraferme",
@@ -1754,6 +1758,8 @@ const frDict = {
       already_playing: "Ta Bataille est en cours.",
       battle_off: "La Bataille est fermée pour l'instant.",
       no_battle_room: "Cette salle n'existe plus : demande un nouveau lien.",
+      night: "La Terraferme dort la nuit : la Gloire attend le matin.",
+      too_few_humans: "Il faut au moins deux marchands pour une Bataille classée.",
       not_host: "Seul l'hôte de la salle la lance.",
       bad_key: "Cette demande ne se comprend pas.",
       invalid_input: "Ce choix n'existe pas.",

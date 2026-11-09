@@ -442,10 +442,10 @@ export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps
       await battle.adopt(guest, id);
       reply.clearCookie(GUEST, { path: "/" });
     }
-    const state = await battle.state(id, world.now());
-    // A cote just moved is read once written.
+    // A match just ended is read once its cotes and Glory are written.
+    battle.step(world.now());
     await battle.flush();
-    return toJson({ battle: state });
+    return toJson({ battle: await battle.state(id, world.now()) });
   });
   const answer = async (reply: FastifyReply, id: string, res: string) => {
     if (res === "no_battle_room") return reply.code(404).send({ error: res });
