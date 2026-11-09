@@ -114,7 +114,11 @@ export function labView(s: TerraState, cfg: Cfg, me: string, now: number): Terra
     })),
     signals: [],
     costs,
-    changes: [],
+    // The last day's cells that changed hands (« pendant ton absence », lot T6), as the server's.
+    changes: Object.entries(s.taken ?? {})
+      .filter(([, c]) => c.at > now - 86_400_000)
+      .map(([cell, c]) => ({ cell: Number(cell), at: c.at, from: at(c.from) }))
+      .sort((a, b) => a.at - b.at || a.cell - b.cell),
     buildings: Object.entries(s.buildings ?? {}).map(([cell, b]) => ({
       cell: Number(cell),
       kind: b.kind,

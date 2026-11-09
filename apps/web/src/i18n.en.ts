@@ -1275,6 +1275,19 @@ export const en: Dictionary = {
         campoAsks: (goods: string) => `The supply asks: ${goods}`,
         campoDeliver: "Deliver to the Campo",
         campoEmpty: "empty",
+        awayReplay: "While you were away…",
+        awaySkip: "Skip",
+        awaySummary: (gained: number, lost: number, back: number) =>
+          [
+            "While you were away:",
+            [
+              gained ? `+${gained} cell${s(gained)}` : "",
+              lost ? `−${lost} cell${s(lost)}` : "",
+              back ? `${back} front${s(back)} home` : "",
+            ]
+              .filter(Boolean)
+              .join(", "),
+          ].join(" "),
         threshold: (today: string, mine: string) =>
           `Today's share to win: ${today} of the map · you hold ${mine}`,
         said: {

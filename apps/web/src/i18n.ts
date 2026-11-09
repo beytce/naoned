@@ -1221,6 +1221,20 @@ const frDict = {
         campoAsks: (goods: string) => `L'intendance demande : ${goods}`,
         campoDeliver: "Livrer au Campo",
         campoEmpty: "vide",
+        /** « Pendant ton absence » (lot T6). */
+        awayReplay: "Pendant ton absence…",
+        awaySkip: "Passer",
+        awaySummary: (gained: number, lost: number, back: number) =>
+          [
+            "Pendant ton absence :",
+            [
+              gained ? `+${gained} case${gained > 1 ? "s" : ""}` : "",
+              lost ? `−${lost} case${lost > 1 ? "s" : ""}` : "",
+              back ? `${back} front${back > 1 ? "s" : ""} rentré${back > 1 ? "s" : ""}` : "",
+            ]
+              .filter(Boolean)
+              .join(", "),
+          ].join(" "),
         /** The land makes the army (8 November 2026). */
         threshold: (today: string, mine: string) =>
           `Seuil du jour pour gagner : ${today} de la carte · tu en tiens ${mine}`,

@@ -12,10 +12,13 @@ import { placementOpen } from "../game/map/TerraLayer.js";
 import type { TerraAction, TerraView } from "../game/types.js";
 import { fr } from "../i18n.js";
 import { PlaceCard, type PlaceCardHandle, type PlaceCardInfo } from "../porcellana/PlaceCard.js";
+import { FLIP_SLOW } from "../porcellana/flip.js";
 import type { TerraIntro } from "../porcellana/terra/TerraBoard.js";
 import { TerraScene } from "../porcellana/terra/TerraScene.js";
+import { awayFrames, awaySummary } from "../porcellana/terra/away.js";
 import { pictureOfView } from "../porcellana/terra/picture.js";
 import { type DockKind, cellCard, focusOf, frontPlan } from "../porcellana/terra/play.js";
+import { FLIP } from "../porcellana/tokens.js";
 import { Slab } from "../ui.js";
 
 const t = fr.empire.terra.play;
@@ -67,12 +70,18 @@ export function TerraPlay({
   const focus = useMemo(() => focusOf(v), [v]);
   // The Campo's store in crates beside the camp: one a ten goods, four at most.
   const stored = campo ? Object.values(campo.store).reduce((n, x) => n + x, 0) : 0;
+  // « Pendant ton absence » (lot T6): back after ten minutes and more, the board replays the cells
+  // that changed hands since the last visit (the last day at most), then says what it brought.
+  const [away] = useState(() => awayOf(v, now));
+  const [frame, setFrame] = useState(0);
+  const replaying = !!away && frame < away.frames.length - 1;
+  const owner = replaying ? (away?.frames[frame] ?? v.owner) : v.owner;
   const pic = useMemo(
     () => ({
-      ...pictureOfView(v, focus),
+      ...pictureOfView({ ...v, owner }, focus),
       ...(campo ? { supply: Math.min(4, Math.ceil(stored / 10)) } : {}),
     }),
-    [v, focus, campo, stored],
+    [v, owner, focus, campo, stored],
   );
   const card = useRef<PlaceCardHandle | null>(null);
   const placing = placementOpen(v, now);
@@ -92,6 +101,20 @@ export function TerraPlay({
   };
   // A pill of ink says each order taken (« Front lancé · 52 troupes en marche ✓ »).
   const [said, setSaid] = useState<{ text: string; at: number } | null>(null);
+  // The replay plays a frame each 450 ms, then its summary; the visit is kept for the next time.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: frame by frame, the rest read as it is.
+  useEffect(() => {
+    seen(v, now);
+    if (!away) return;
+    if (!replaying) {
+      if (away.text) setSaid({ text: away.text, at: Date.now() });
+      return;
+    }
+    // The first frame waits for the way in to end (the scene seen), then one each 450 ms.
+    const wait = frame === 0 ? (intro ? (FLIP.total * FLIP_SLOW + 0.6) * 1_000 : 900) : 450;
+    const id = window.setTimeout(() => setFrame((k) => k + 1), wait);
+    return () => window.clearTimeout(id);
+  }, [frame]);
   useEffect(() => {
     if (!said) return;
     const id = window.setTimeout(() => setSaid(null), 3_200);
@@ -286,6 +309,21 @@ export function TerraPlay({
           </span>
         )}
       </div>
+
+      {replaying && (
+        <div className="pointer-events-none absolute inset-x-0 top-14 z-50 flex justify-center">
+          <div className="pc-said pointer-events-auto flex items-center gap-3" data-terra-away="">
+            {t.awayReplay}
+            <button
+              type="button"
+              className="min-h-11 rounded-full px-3 text-sm font-extrabold underline"
+              onClick={() => setFrame(away?.frames.length ?? 0)}
+            >
+              {t.awaySkip}
+            </button>
+          </div>
+        </div>
+      )}
 
       {said && (
         <output
@@ -646,6 +684,39 @@ function ThresholdLine({ today, mine }: { today: number; mine: number }) {
       </div>
     </div>
   );
+}
+
+const AWAY_MS = 10 * 60_000;
+const seenKey = (v: TerraView) => `terra:seen:${v.closesAt}`;
+
+/** The last visit to this week's theatre (a convenience of the browser: none, no replay). */
+function lastSeen(v: TerraView): number | null {
+  try {
+    const n = Number(localStorage.getItem(seenKey(v)));
+    return n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+function seen(v: TerraView, now: number) {
+  try {
+    localStorage.setItem(seenKey(v), String(now));
+  } catch {
+    // Private window: no replay the next time, nothing else.
+  }
+}
+
+/** The replay of an absence: its frames (none with less motion asked) and what it brought. */
+function awayOf(v: TerraView, now: number): { frames: number[][]; text: string } | null {
+  const since = lastSeen(v);
+  if (since === null || now - since < AWAY_MS || !v.me) return null;
+  const me = v.holders.findIndex((h) => h.me);
+  const sum = awaySummary(v, me, since);
+  const text =
+    sum.gained + sum.lost + sum.back > 0 ? t.awaySummary(sum.gained, sum.lost, sum.back) : "";
+  const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const frames = still ? [] : awayFrames(v, Math.max(since, now - 86_400_000), now);
+  return frames.length > 0 || text ? { frames: frames.length ? frames : [v.owner], text } : null;
 }
 
 /** Goods in a line (« 12 pains, 10 briques »), or « vide ». */
