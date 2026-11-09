@@ -2892,3 +2892,20 @@ Modèle du simulateur de 24 mois (`apps/simulator/src/empire/terra.ts`) : une se
 | Part de la Terraferme dans la progression (≤ 15 %) | 0,0 % | 0,0 % | 0,0 % |
 
 Le Campo ne prend presque rien au commerce (moins d'une place de véhicule sur cent), la part des commandes reste celle d'avant (72 à 73 %) ; livrer fait gagner environ un cinquième des marchandises de guerre à ceux qui le font. Les cinq cibles hors bornes de chaque graine sont les mêmes qu'avant ce lot (calendrier de la Casa, palier en jours de revenu, sortie de la première bande, puits ÷ sources des jeunes, bruts des jeunes à Venise) : elles ne dépendent pas de la Terraferme.
+
+## La Terraferme : le territoire fait l'armée (9 novembre 2026, décisions du porteur du 8)
+
+Lot T5d (`docs/plan-terraferme-porcellana.md` § 4 septies). Réglages de Venise : 2 troupes de maximum par case et 6 par ville, plafond 180 (trois fois les 60 de départ, `troops.max`) ; un front prend une case de plus par pas pour chaque tranche de 40 troupes, 3 au plus (`fronts.massPerCell`, `fronts.cellsMaxPerStep`) ; le seuil qui gagne la semaine, du lundi au dimanche : 80 %, 50 %, 30 %, 20 %, 12 %, 8 %, 7 % (`close.winBpsByDay`).
+
+Mesure : `pnpm --filter @comptoirs/simulator terra`, 10 graines (40 marchands du simulateur, grille hexagonale de 1 029 cases).
+
+| Indicateur | Avant (T5b) | Maintenant |
+| --- | --- | --- |
+| Le premier marchand à 22 h, du lundi au dimanche (médiane des graines) | — | 4 % · 6 % · 6 % · 6 % · 6 % · 6 % · 7 % |
+| Le premier tient en fin de semaine | 3 à 7 % | 6 à 8 % |
+| Semaines gagnées avant la fin (par conquête) | 0 / 10 | 4 / 10 |
+| Éliminés (sans terre en fin de semaine) | 4 | 6 à 14 (médiane 10) |
+| Assidus devant occasionnels (Gloire médiane) | 138 à 140 % | 112 à 208 % |
+| Premier front entre marchands | 33 h | 33 h |
+
+Ce que la mesure montre : à 40 marchands par théâtre, avec les alliances et Milan, le premier plafonne à 5–8 % de la carte dès le mardi ; la boule de neige modérée ne fait pas émerger de dominant. Pour qu'environ une semaine sur trois se gagne avant la fin, le seuil doit descendre à 7–8 % le week-end, si bien que ces victoires tombent le samedi ou le dimanche. Elle coûte des éliminations (de 4 à 10 environ par semaine). Deux leviers restent au porteur : des théâtres plus petits (16 marchands, comme le recommandait l'audit), ou une boule de neige plus forte.
