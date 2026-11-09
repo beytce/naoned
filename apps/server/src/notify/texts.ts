@@ -463,6 +463,11 @@ const TERRA_DECREES: Record<string, string> = {
 /** The Terraferma's news (docs/plan-terraferme.md), or null for another event. */
 function terraText(data: Record<string, unknown>): { title: string; body: string } | null {
   switch (data.event) {
+    case "terra_reformed":
+      return {
+        title: "La Terraferme a changé de carte",
+        body: "Ta semaine se rejoue sur la nouvelle carte de la Vénétie : replace ton camp.",
+      };
     case "terra_hungry":
       return {
         title: "Vos troupes ont faim",

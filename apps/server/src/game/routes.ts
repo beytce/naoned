@@ -1859,8 +1859,6 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
           ...(a.cell !== undefined ? { cell: a.cell } : {}),
         },
       ];
-    case "terraGift":
-      return [{ type: "terraGift", playerId, to: a.to, amount: a.amount }];
     case "terraEmbargo":
       return [{ type: "terraEmbargo", playerId, target: a.target }];
     case "terraSail":

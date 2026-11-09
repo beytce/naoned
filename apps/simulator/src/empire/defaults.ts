@@ -103,6 +103,9 @@ export const DEFAULT_MODEL: SimModel = {
     playBps: { assidu: 8_000, median: 5_000, occasional: 2_000, absent: 3_000 },
     favourValueDucats: 10,
     sealValueDucats: 40,
+    // Three buildings' materials a week (a fort, a port, walls), Venice's settings.
+    warGoods: { bricks: 15, planks: 25 },
+    deliverBps: { assidu: 7_000, median: 4_000, occasional: 1_500, absent: 1_000 },
   },
   // A hop is five minutes and more (3 November, the long voyages; it was a few seconds): a session
   // loads its carts once, they make their round of the towns and are back by the next.

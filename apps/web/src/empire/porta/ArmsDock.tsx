@@ -52,7 +52,7 @@ export function ArmsDock({
   p: EmpirePayload;
   v: PortaView;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   /** The vehicle in the middle (its index). */
   focus: number;
   onFocus: (i: number) => void;
@@ -109,7 +109,7 @@ function Vehicle({
   p: EmpirePayload;
   v: PortaView;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   focus: number;
   onFocus: (i: number) => void;
   onView: (v: ArmsView) => void;
@@ -242,7 +242,7 @@ function Fit({
 }: {
   v: PortaView;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   vehicleId: string;
   slot: number;
   onBack: () => void;
@@ -373,7 +373,7 @@ function Shop({
   p: EmpirePayload;
   v: PortaView;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onBack?: () => void;
 }) {
   const casa = p.view?.house.casa ?? 1;

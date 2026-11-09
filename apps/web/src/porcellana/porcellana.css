@@ -264,6 +264,29 @@
   transform: rotate(-4deg);
   box-shadow: 0 3px 0 #8f2820;
 }
+/* The card's keys: the red one, and a quieter second way under it. */
+.pc-keys {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.pc-alt {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  background: transparent;
+  color: #fff;
+  font: 800 13px var(--pc-display);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pc-alt:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
 /* The way in: a red key, pressed down. */
 .pc-go {
   flex: none;
@@ -285,6 +308,12 @@
 .pc-go:active {
   transform: translateY(3px);
   box-shadow: 0 1px 0 #8f2820;
+}
+/* The cross: 30 px to see, 44 px to touch. */
+.pc-x::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
 }
 .pc-x {
   position: absolute;
@@ -404,4 +433,146 @@
   color: var(--pc-ink-soft);
   border: 2px solid var(--pc-hair);
   cursor: default;
+}
+
+/* The Terraferma's labels (lot T2): the towns in italic on the board, the camps in a pill. */
+.pc-terra-town,
+.pc-terra-camp {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% 0;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.pc-terra-town {
+  font: italic 600 15px / 1 "Cormorant Garamond", Georgia, serif;
+  color: var(--pc-ink);
+  text-shadow: 0 0 3px #fff, 0 0 6px #fff;
+}
+.pc-terra-camp {
+  font: 800 11.5px / 1 var(--pc-display);
+  color: var(--pc-ink);
+  background: #fff;
+  border-radius: 999px;
+  padding: 4px 9px;
+  box-shadow: 0 3px 0 rgba(23, 21, 15, 0.08);
+  translate: -50% -140%;
+}
+/* A slider of the dock: a track of 8 px in a band of 44 px to touch, a thumb of 28 px. */
+.pc-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+}
+.pc-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(23, 21, 15, 0.14);
+}
+.pc-range::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(23, 21, 15, 0.14);
+}
+.pc-range::-moz-range-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--pc-accent);
+}
+.pc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -10px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: var(--pc-accent);
+  box-shadow: 0 3px 0 #8f2820;
+}
+.pc-range::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: var(--pc-accent);
+  box-shadow: 0 3px 0 #8f2820;
+}
+.pc-range:focus-visible {
+  outline: 2px solid var(--pc-ink);
+  outline-offset: 2px;
+}
+/* The pill of ink that says an order taken, over the board (the Terraferma, lot A4). */
+.pc-said {
+  display: block;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--pc-ink);
+  color: #fff;
+  font: 800 14px var(--pc-display);
+  box-shadow: 0 4px 0 #000;
+  animation: pc-said 3.2s ease both;
+}
+@keyframes pc-said {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  8%,
+  85% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc-said {
+    animation: none;
+  }
+}
+/* A camp's name that opens its holder: touchable, with a hit area of 44 px. */
+.pc-terra-camp[data-touch] {
+  pointer-events: auto;
+  cursor: pointer;
+  border: 0;
+}
+.pc-terra-camp[data-touch]::after {
+  content: "";
+  position: absolute;
+  inset: -12px -6px;
+}
+.pc-terra-camp[data-touch][data-out="false"] {
+  pointer-events: none;
+}
+.pc-terra-town[data-out="false"],
+.pc-terra-camp[data-out="false"] {
+  opacity: 0;
+}
+/* A front's men (lot T3): a paper pastille at its head, ringed in the merchant's red or in ink. */
+.pc-terra-front {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #fff;
+  border: 3px solid var(--pc-ink);
+  font: 900 13px / 24px var(--pc-display);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--pc-ink);
+  box-shadow: 0 3px 0 rgba(23, 21, 15, 0.12), 0 8px 16px -6px rgba(23, 21, 15, 0.35);
+  pointer-events: none;
+}
+.pc-terra-front[data-tone="mine"] {
+  border-color: var(--pc-accent);
 }

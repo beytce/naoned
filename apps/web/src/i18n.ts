@@ -192,6 +192,9 @@ const frDict = {
       depotSub: "Le quai des véhicules",
       campo: "Le Campo",
       campoSub: "La porte de la Terraferme",
+      /** The supply by road (8 November 2026). */
+      campoAsks: (goods: string) => `L'intendance demande : ${goods}`,
+      campoDeliver: "Livrer",
       arsenal: "L'Arsenal",
       arsenalSub: "Les navires",
       porta: "La Porta",
@@ -1271,6 +1274,101 @@ const frDict = {
       summary:
         "Une semaine, à armes égales, du lundi au dimanche. Elle rapporte de la Faveur et des Sceaux, jamais de ducats.",
       board: "Carte du théâtre",
+      /** The play on Porcellana's board (docs/plan-terraferme-porcellana.md § 3, lot T5). */
+      play: {
+        free: "Terre libre",
+        militia: "Tenue par la milice",
+        yours: "Tes terres",
+        camp: "Ton camp",
+        ally: "Ton allié",
+        of: (name: string) => `Terre de ${name}`,
+        defended: (n: number) => `${n} défenseur${n > 1 ? "s" : ""} par case.`,
+        far: "Trop loin : touche une terre au bord des tiennes.",
+        water: "L'eau : rien ne s'y prend.",
+        go: {
+          front: "Attaquer",
+          build: "Bâtir",
+          lands: "Tes terres",
+          holder: "Voir",
+          aim: "Viser",
+          place: "M'installer",
+        } as Record<string, string>,
+        frontTitle: "Lancer un front",
+        men: "Troupes engagées",
+        upTo: (n: number) => `environ ${n} case${n > 1 ? "s" : ""}`,
+        backLabel: "Reviendront",
+        back: (n: number) => `${n} troupe${n > 1 ? "s" : ""}`,
+        marchLabel: "Durée de la marche",
+        march: (hours: number) => `environ ${hours} h de jour`,
+        home: (after: number, before: number) => `${after} au lieu de ${before}`,
+        homeLabel: "Défenseurs par case chez toi",
+        takes: "Il prendra",
+        attackWith: (n: number) => `Attaquer · ${n} troupes`,
+        buildTitle: "Bâtir ici",
+        builtHere: "Case déjà bâtie",
+        coastOnly: "Au bord de l'eau seulement",
+        buildWith: (name: string, price: string) => `${name} · ${price}`,
+        aimTitle: "Viser",
+        aimHint:
+          "Touche une terre ennemie éclairée : elle et ses voisines du même marchand redeviennent libres.",
+        fire: "Tirer",
+        fronts: "Fronts",
+        noFront: "Aucun front en marche. Touche une terre au bord des tiennes.",
+        threats: "Menaces",
+        threatLine: (who: string, n: number) => `⚔ ${who} sur toi · ${n} troupes`,
+        ranking: "Classement",
+        allies: "Alliés",
+        noAlly: "Aucun allié. Touche la terre d'un voisin pour lui proposer l'alliance.",
+        rankLine: (rank: number, of: number, glory: number) =>
+          `${rank}${rank === 1 ? "er" : "e"} sur ${of} · ${glory} points`,
+        someone: "Un marchand",
+        see: (name: string) => `Voir ${name}`,
+        neighbours: "Tes voisins",
+        /** The war chest, in écus (8 November 2026). */
+        ecus: (n: number) => `${n} écu${n > 1 ? "s" : ""}`,
+        ecusUnit: "écus",
+        chestLabel: (n: number, cap: number) => `Trésor : ${n} écus sur ${cap}`,
+        chestLine: (n: number, perDay: number, cap: number) =>
+          `Trésor : ${n} écus · +${perDay} chaque matin, jusqu'à ${cap}`,
+        chestShort: (n: number) => `Il manque ${n} écu${n > 1 ? "s" : ""} au trésor`,
+        /** The supply by road (8 November 2026). */
+        campoStore: (goods: string) => `Magasin du Campo : ${goods}`,
+        campoAsks: (goods: string) => `L'intendance demande : ${goods}`,
+        campoDeliver: "Livrer au Campo",
+        campoEmpty: "vide",
+        /** « Pendant ton absence » (lot T6). */
+        awayReplay: "Pendant ton absence…",
+        awaySkip: "Passer",
+        awaySummary: (gained: number, lost: number, back: number) =>
+          [
+            "Pendant ton absence :",
+            [
+              gained ? `+${gained} case${gained > 1 ? "s" : ""}` : "",
+              lost ? `−${lost} case${lost > 1 ? "s" : ""}` : "",
+              back ? `${back} front${back > 1 ? "s" : ""} rentré${back > 1 ? "s" : ""}` : "",
+            ]
+              .filter(Boolean)
+              .join(", "),
+          ].join(" "),
+        /** The land makes the army (8 November 2026). */
+        threshold: (today: string, mine: string) =>
+          `Seuil du jour pour gagner : ${today} de la carte · tu en tiens ${mine}`,
+        /** The pill of ink once an order is taken. */
+        said: {
+          recalled: "Front rappelé · ses troupes rentrent ✓",
+          built: (name: string) => `${name} bâti ✓`,
+          asked: (name: string) => `Alliance proposée à ${name} ✓`,
+          allied: (name: string) => `Alliance conclue avec ${name} ✓`,
+          broken: (name: string) => `Alliance rompue avec ${name}`,
+          sent: (n: number, name: string) =>
+            `${n} troupe${n > 1 ? "s" : ""} envoyée${n > 1 ? "s" : ""} à ${name} ✓`,
+          signal: (name: string) => `Signal envoyé : ${name} ✓`,
+          fired: "La bombarde a tiré ✓",
+          placed: "Camp posé ✓",
+          raised: "Maximum relevé ✓",
+          capUp: (n: number) => `Tes terres grandissent : maximum +${n} troupes`,
+        },
+      },
       theatre: (band: number, n: number) => `Théâtre de la bande ${band} · ${n} marchands`,
       contesaTheatre: (n: number) => `Contesa · ${n} compagnies`,
       loading: "La carte arrive…",
@@ -1279,6 +1377,8 @@ const frDict = {
       joinText: (entry: string, until: string) =>
         `L'entrée coûte ${entry}. Inscriptions jusqu'à ${until}.`,
       join: "Entrer dans la Terraferme",
+      enter: "Entrer à la Terraferme",
+      back: "Carte",
       closedWeek: "Les inscriptions de la semaine sont closes : rendez-vous lundi.",
       rewards: (seals: number) => `Sceaux gagnés cette semaine : ${seals} sur 2`,
       grade: (name: string) => `meilleur rang : ${name}`,
@@ -1607,6 +1707,7 @@ const frDict = {
     } as Record<string, [string, string]>,
     errors: {
       insufficient_funds: "Pas assez de ducats.",
+      chest_short: "Il manque des écus au trésor de guerre.",
       bad_key: "Cette demande ne se comprend pas.",
       invalid_input: "Ce choix n'existe pas.",
       insufficient_seals: "Pas assez de Sceaux.",
@@ -2210,7 +2311,7 @@ const frDict = {
     },
     terra: {
       door: "Conquête",
-      away: "Pendant votre absence",
+      away: "Pendant ton absence",
       title: "La Conquête",
       closesIn: (time: string) => `fin dans ${time}`,
       closed: "Semaine close",
@@ -2218,8 +2319,8 @@ const frDict = {
       troops: "Troupes",
       /** The troops' card on the HUD: the glory and the rank live there. */
       troopsTip: {
-        title: "Vos troupes",
-        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum, tant que vos troupes ont du pain. Chaque case prise rapporte des points de conquête.",
+        title: "Tes troupes",
+        text: "Tes terres recrutent chaque heure de jour, jusqu'au maximum, tant que tes troupes ont du pain. Chaque case prise rapporte des points de conquête.",
         troops: "Troupes",
         recruit: "Recrues",
         glory: "Points de conquête",
@@ -2228,22 +2329,22 @@ const frDict = {
         bread: "Pain des troupes",
         breadLine: (stock: number, perDay: string) => `${stock} · −${perDay}/j`,
       },
-      hungryShort: "Vos troupes ont faim : sans pain, plus de recrues",
+      hungryShort: "Tes troupes ont faim : sans pain, plus de recrues",
       troopsLine: (troops: number, cap: number) => `${troops}/${cap}`,
       troopsCard: {
         troops: (n: number) => `${n} troupe${n > 1 ? "s" : ""}`,
         of: (cap: number) => `sur ${cap}`,
       },
-      youTroops: (n: number) => `vous · ${n} troupe${n > 1 ? "s" : ""}`,
+      youTroops: (n: number) => `toi · ${n} troupe${n > 1 ? "s" : ""}`,
       camp: {
-        title: (cells: number) => `Votre camp · ${cells} case${cells > 1 ? "s" : ""}`,
+        title: (cells: number) => `Ton camp · ${cells} case${cells > 1 ? "s" : ""}`,
         line: (troops: number, perHour: number) =>
           `${troops} troupe${troops > 1 ? "s" : ""} · +${perHour} troupe${perHour > 1 ? "s" : ""} par heure`,
         bread: (days: number) =>
           days > 0 ? `vivres pour ${days} jour${days > 1 ? "s" : ""}` : "plus de vivres",
-        aim: (name: string, n: number) => `Visez la case de ${name} : ${n} troupes suffisent.`,
-        aimFree: (n: number) => `Visez la terre libre à votre frontière : ${n} troupes suffisent.`,
-        none: "Aucune case à votre portée pour l'instant : attendez des recrues.",
+        aim: (name: string, n: number) => `Vise la case de ${name} : ${n} troupes suffisent.`,
+        aimFree: (n: number) => `Vise la terre libre à ta frontière : ${n} troupes suffisent.`,
+        none: "Aucune case à ta portée pour l'instant : attends des recrues.",
         open: "Lancer un front",
         launch: (n: number) => `Lancer un front · ${n} troupes`,
         launched: (n: number) => `Front lancé · ${n} troupes en marche ✓`,
@@ -2296,12 +2397,12 @@ const frDict = {
       placingShort: (time: string) => `Placement · ${time}`,
       truceShort: (time: string) => `Trêve · ${time}`,
       nightShort: "Nuit",
-      team: (region: string) => `Semaine en équipes · vous êtes de ${region}`,
+      team: (region: string) => `Semaine en équipes · tu es de ${region}`,
       teamWon: (region: string) => `${region} gagne la semaine`,
       /** On a phone's plaque: the team, its win, Milan riding against the player. */
       teamShort: (region: string) => `Équipe · ${region}`,
       teamWonShort: (region: string) => `${region} l'emporte`,
-      milanOnMeShort: (who: string) => `⚔ ${who} sur vous`,
+      milanOnMeShort: (who: string) => `⚔ ${who} sur toi`,
       diplomacy: {
         signals: {
           help: "À l'aide",
@@ -2310,7 +2411,6 @@ const frDict = {
           peace: "Paix",
         } as Record<string, string>,
         target: "Désigner",
-        give: (amount: string) => `Donner ${amount}`,
         embargo: "Embargo",
         lift: "Lever l'embargo",
       },
@@ -2327,7 +2427,7 @@ const frDict = {
         peasants: (pct: number) => `${pct} % paysans`,
         nothing: "rien",
         yield: (goods: string, route: string | null) =>
-          `Vos terres donnent par heure ouverte : ${goods}${route ? ` ; routes entre vos villes : ${route}` : ""}.`,
+          `Tes terres donnent par heure ouverte : ${goods}${route ? ` ; routes entre tes villes : ${route}` : ""}.`,
       },
       battle: {
         on: (to: number) => `⚔ Bataille : fronts ×10 jusqu'à ${to} h`,
@@ -2341,40 +2441,39 @@ const frDict = {
         against ? `${who} marche sur ${against}` : `${who} s'étend`,
       out: {
         late: "La partie de la semaine a commencé",
-        eliminated: "Vous avez perdu toutes vos terres",
+        eliminated: "Tu as perdu toutes tes terres",
         next: (time: string) => `Prochaine partie dans ${time}`,
       },
       place: {
-        invite: "Posez votre camp de départ",
-        hint: "Touchez une terre libre de la carte",
+        invite: "Pose ton camp de départ",
+        hint: "Touche une terre libre de la carte",
         until: (time: string) => `encore ${time}`,
         here: "M'installer ici",
         line: (terrain: string, hours: number | null) =>
           hours === null
-            ? `${terrain} · personne ne vous attaque avant la fin du placement`
+            ? `${terrain} · personne ne t'attaque avant la fin du placement`
             : hours > 0
               ? `${terrain} · à l'abri des attaques pendant ${hours} h`
               : terrain,
       },
       target: {
         cost: (cost: number) => `${cost} troupes pour prendre cette terre`,
-        losesSafety:
-          "Attaquer un marchand rend votre capitale prenable jusqu'à la fin de la semaine",
-        tooWeak: (cost: number) => `Il faut au moins ${cost} troupes : montez le curseur`,
+        losesSafety: "Attaquer un marchand rend ta capitale prenable jusqu'à la fin de la semaine",
+        tooWeak: (cost: number) => `Il faut au moins ${cost} troupes : monte le curseur`,
         plan: (troops: number, cells: number, spent: number, back: number) =>
           `${troops} troupes → ${cells} case${cells > 1 ? "s" : ""} (−${spent}) · ${back} revien${back > 1 ? "nent" : "t"}`,
         pace: (hours: number, night: boolean) =>
           `${night ? "Part à l'aube, puis e" : "E"}nviron ${hours} h de marche (de jour seulement) ; chaque case prise coûte ses troupes`,
         notEnough: (cost: number, troops: number) =>
-          `Il faut ${cost} troupes, vous en avez ${troops} : attendez vos recrues`,
+          `Il faut ${cost} troupes, tu en as ${troops} : attends tes recrues`,
         attack: "Attaquer",
         sail: (minutes: number) => `Débarquer (${minutes} min de mer)`,
         fire: (shots: number) => `Bombarder (${shots})`,
-        allied: "Votre allié : pas de front entre vous",
-        far: "Trop loin : touchez une terre au bord des vôtres",
-        eta: (hour: string, wait: string) => `Vos troupes y seront vers ${hour} (dans ${wait})`,
+        allied: "Ton allié : pas de front entre lui et toi",
+        far: "Trop loin : touche une terre au bord des tiennes",
+        eta: (hour: string, wait: string) => `Tes troupes y seront vers ${hour} (dans ${wait})`,
         defense: (after: number, before: number) =>
-          `Chez vous, il restera ${after} défenseur${after > 1 ? "s" : ""} par case au lieu de ${before}`,
+          `Chez toi, il restera ${after} défenseur${after > 1 ? "s" : ""} par case au lieu de ${before}`,
       },
       holder: {
         line: (cells: number, troops: number) => `${cells} cases · ⚔ ${troops}`,
@@ -2386,17 +2485,17 @@ const frDict = {
         sendLine: (count: number, left: number) =>
           `Envoyer ${count} troupes (encore ${left} aujourd'hui)`,
         allyChip: "Allié",
-        friendChip: "✦ Votre guilde",
+        friendChip: "✦ Ta guilde",
       },
       mine: {
-        title: "Vos terres",
+        title: "Tes terres",
         line: (cells: number, troops: number, cap: number) =>
           `${cells} cases · ⚔ ${troops} / ${cap}`,
         rocca: "Fort",
         porto: "Port",
         raise: (amount: number) => `Max +${amount}`,
         recruit: (perHour: number, full: string | null, from: number, to: number) =>
-          `Vos terres recrutent ${perHour} troupes par heure (de ${from} h à ${to} h)${full ? ` : maximum dans ${full}` : ""}. Plus de terres, plus de recrues ; « Max » relève le maximum, pas vos troupes.`,
+          `Tes terres recrutent ${perHour} troupes par heure (de ${from} h à ${to} h)${full ? ` : maximum dans ${full}` : ""}. Plus de terres, plus de recrues ; « Max » relève le maximum, pas tes troupes.`,
         full: (amount: number) =>
           `Troupes au maximum. « Max +${amount} » relève ce maximum pour des ducats (il ne donne pas de troupes).`,
         decree: "Décret",
@@ -2409,20 +2508,20 @@ const frDict = {
         built: {
           rocca: "Un fort défend cette terre et ses voisines",
           porto:
-            "Un port : vos barques débarquent sur les rives de ces eaux, vos galères les gardent",
+            "Un port : tes barques débarquent sur les rives de ces eaux, tes galères les gardent",
           bombarda:
             "Une bombarde : un tir par jour rend libres une terre ennemie à portée et ses voisines",
           mura: "Des remparts : aucune bombarde n'atteint cette terre ni ses voisines",
         } as Record<string, string>,
-        traitor: (time: string) => `Traître encore ${time} : vos terres défendent moins bien`,
+        traitor: (time: string) => `Traître encore ${time} : tes terres défendent moins bien`,
       },
       decree: {
-        title: "Si vous gagnez la semaine",
+        title: "Si tu gagnes la semaine",
         hint: "Le Signore della Terraferma impose son décret à tous la semaine qui vient, pour lui et ses alliés.",
         inForce: "En vigueur cette semaine",
-        yours: "Vous en profitez",
+        yours: "Tu en profites",
         choose: "Choisir",
-        chosen: "Votre choix",
+        chosen: "Ton choix",
         target: "Sur",
         names: {
           monopole: "Le Monopole",
@@ -4836,6 +4935,7 @@ const frDict = {
         lot_closed: "Ce lot est clos.",
         one_lot: "Vous menez déjà un lot de ces enchères.",
         insufficient_funds: "Pas assez de ducats.",
+        chest_short: "Il manque des écus au trésor de guerre.",
       } as Record<string, string>,
     },
     /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
@@ -5061,6 +5161,7 @@ const frDict = {
       no_bale: "Aucun colis au quai pour l'instant : le prochain est en route.",
       bales_off: "Pas de colis de Faraj dans ce monde.",
       insufficient_funds: "Pas assez de ducats.",
+      chest_short: "Il manque des écus au trésor de guerre.",
       shares_off: "Pas d'actions dans ce monde.",
       too_early: "La cotation n'est pas encore ouverte.",
       not_for_npc: "Une Maison de l'ordinateur ne se cote pas.",
@@ -5149,6 +5250,9 @@ const frDict = {
       built: "Un bâtiment s'y dresse déjà.",
       no_room: "Il vous faut plus de terres pour bâtir encore.",
       raise_limit: "Plus de hausse des troupes max aujourd'hui.",
+      no_troop_buy: "On n'achète pas de troupes cette semaine.",
+      buy_limit: "Plus d'achat de troupes aujourd'hui.",
+      troops_full: "Tes troupes sont déjà au maximum.",
       decree_repeat:
         "Ce décret est déjà en vigueur : il ne peut pas l'être deux semaines de suite.",
     } as Record<string, string>,

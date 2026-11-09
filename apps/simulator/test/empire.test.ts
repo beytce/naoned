@@ -33,9 +33,9 @@ describe("the 24-month model simulator (CADRAGE-v3 § 13)", () => {
     expect(hs.reduce((n, h) => n + h.expeditionsWon, 0)).toBeGreaterThan(0);
   });
 
-  it("judges the nine targets", () => {
+  it("judges the ten targets (the supply by road the tenth)", () => {
     const checks = evaluate(small(1));
-    expect(checks).toHaveLength(9);
+    expect(checks).toHaveLength(10);
     for (const c of checks) expect(c.value).not.toBe("");
   });
 });

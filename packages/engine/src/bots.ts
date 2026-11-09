@@ -69,8 +69,8 @@ import {
   capOf,
   cellCost,
   cellsOf,
-  hexNeighbors,
   isNation,
+  terraNeighbors,
 } from "./terraferma.js";
 import { findRegion, recipesFor } from "./theme.js";
 import { turnoverOf } from "./turnover.js";
@@ -324,7 +324,8 @@ export class Bot {
     const end = map.startAt + cfg.start.placementHours * 3_600_000;
     if (cfg.start.placementHours > 0 && s.now >= end) return false;
     const inner = (i: number) =>
-      hexNeighbors(map.map, i).filter((n) => map.map.land[n]).length === 6;
+      terraNeighbors(map.map, i).filter((n) => map.map.land[n]).length ===
+      (map.map.grid === "square" ? 4 : 6);
     const free = map.owner
       .map((o, i) => (o === null && map.map.land[i] && inner(i) ? i : -1))
       .filter((i) => i >= 0);
@@ -336,7 +337,7 @@ export class Bot {
     const edge = map.owner.findIndex(
       (o, i) =>
         o === MILAN &&
-        hexNeighbors(map.map, i).some((n) => map.map.land[n] && map.owner[n] !== MILAN),
+        terraNeighbors(map.map, i).some((n) => map.map.land[n] && map.owner[n] !== MILAN),
     );
     return edge >= 0 && act({ type: "terraPlace", cell: edge });
   }
@@ -365,7 +366,7 @@ export class Bot {
     if (allies.length === 0 && !(map.requests ?? []).some((r) => r.from === id)) {
       const next = new Set<string>();
       for (const c of mine) {
-        for (const n of hexNeighbors(map.map, c)) {
+        for (const n of terraNeighbors(map.map, c)) {
           const o = map.owner[n];
           if (o && o !== id && !isNation(o)) next.add(o);
         }
@@ -379,7 +380,7 @@ export class Bot {
     // Spare ducats only: four times the price in hand.
     const spare = (price: bigint) => this.cash(s) >= price * 4n;
     const border = mine.find((c) =>
-      hexNeighbors(map.map, c).some((n) => {
+      terraNeighbors(map.map, c).some((n) => {
         const o = map.owner[n];
         return !!o && o !== id && !isNation(o) && !allies.includes(o);
       }),
@@ -434,7 +435,7 @@ export class Bot {
       const mine = new Set(cellsOf(map, id));
       for (const f of against) {
         const cell = cellsOf(map, f.owner).find((c) =>
-          hexNeighbors(map.map, c).some((n) => mine.has(n)),
+          terraNeighbors(map.map, c).some((n) => mine.has(n)),
         );
         if (cell === undefined) continue;
         if (act({ type: "terraFront", aim: cell, shareBps: 3_000 }))
@@ -466,7 +467,7 @@ export class Bot {
     for (let i = 0; i < after.owner.length; i++) {
       const o = after.owner[i] ?? null;
       if (o === id || !after.map.land[i] || aimed.has(i)) continue;
-      if (!hexNeighbors(after.map, i).some((n) => after.owner[n] === id)) continue;
+      if (!terraNeighbors(after.map, i).some((n) => after.owner[n] === id)) continue;
       targets.set(o, [...(targets.get(o) ?? []), i]);
     }
     // Free land takes several fronts; a merchant or Milan one at a time. Once a front holds the

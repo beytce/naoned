@@ -7,13 +7,13 @@ import {
   advanceTerra,
   cellsOf,
   closeTerra,
-  hexDistance,
-  hexNeighbors,
   joinTeam,
   launchFront,
   newTerra,
   placeOnTerra,
   recallFront,
+  terraDistance,
+  terraNeighbors,
 } from "./terraferma.js";
 import { EngineError } from "./tx.js";
 
@@ -144,7 +144,7 @@ function holdCellOf(s: TerraState, name: string | undefined): number {
   let best = -1;
   for (let i = 0; i < s.map.city.length; i++) {
     if (!s.map.city[i] || !s.map.land[i]) continue;
-    if (best < 0 || hexDistance(s.map, i, centre) < hexDistance(s.map, best, centre)) best = i;
+    if (best < 0 || terraDistance(s.map, i, centre) < terraDistance(s.map, best, centre)) best = i;
   }
   return best;
 }
@@ -159,9 +159,9 @@ function middleSpot(s: TerraState): number {
   let best = -1;
   for (let i = 0; i < s.owner.length; i++) {
     if (s.owner[i] !== null || !s.map.land[i]) continue;
-    if (hexNeighbors(s.map, i).some((n) => s.owner[n] !== null)) continue;
-    if (held.some((j) => hexDistance(s.map, i, j) < 2)) continue;
-    if (best < 0 || hexDistance(s.map, i, centre) < hexDistance(s.map, best, centre)) best = i;
+    if (terraNeighbors(s.map, i).some((n) => s.owner[n] !== null)) continue;
+    if (held.some((j) => terraDistance(s.map, i, j) < 2)) continue;
+    if (best < 0 || terraDistance(s.map, i, centre) < terraDistance(s.map, best, centre)) best = i;
   }
   return best;
 }
@@ -234,7 +234,7 @@ function aimAtStake(c: Condotta, id: string): void {
   const holder = cell >= 0 ? s.owner[cell] : undefined;
   if (cell < 0 || (holder && c.humans.includes(holder))) return;
   if (s.fronts.some((f) => f.aim === cell && c.humans.includes(f.owner))) return;
-  if (!hexNeighbors(s.map, cell).some((n) => s.owner[n] === id)) return;
+  if (!terraNeighbors(s.map, cell).some((n) => s.owner[n] === id)) return;
   try {
     launchFront(s, c.cfg, id, cell, 6_000, s.clock);
   } catch (e) {

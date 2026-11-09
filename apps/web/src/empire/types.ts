@@ -135,6 +135,18 @@ export interface EmpireView {
   porta?: PortaView;
   /** Each counter's stock, Venice's first (the map that grows). */
   stores: { post: string; region: string; goods: Record<string, number> }[];
+  /** The cities its banner flies on, held at the last close of the Terraferma (link ⑤). */
+  terraCities?: string[];
+  /**
+   * The supply by road (8 November 2026): the Campo's orders of the day, paid nothing, the
+   * counters that serve it, its store for the war, its point on the chart; null without it.
+   */
+  campo?: {
+    orders: { id: string; good: string; qty: number }[];
+    posts: string[];
+    store: Record<string, number>;
+    point: [number, number] | null;
+  } | null;
   /** The orders of the cities its counters serve (after Hades' Star's shipments). */
   orders: {
     city: string;

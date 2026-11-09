@@ -44,7 +44,7 @@ export function ArmsScene({
   p: EmpirePayload;
   open: boolean;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onClose: () => void;
 }) {
   const v = p.view?.porta;

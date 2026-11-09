@@ -62,7 +62,7 @@ export function NewWorkshopList({
   highlight: string | null;
   busy: boolean;
   onDone: () => void;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   /** On square tiles, the tile chosen on the map; else the free one nearest the fondaco. */
   tile?: string;
 }) {
@@ -264,7 +264,7 @@ function PlacesList({
   p: EmpirePayload;
   tile: string;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onDone: () => void;
 }) {
   const w = t.workshop;
@@ -330,7 +330,7 @@ export function NewWorkshopSheet({
   highlight: string | null;
   busy: boolean;
   onClose: () => void;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   tile?: string;
 }) {
   return (

@@ -1,7 +1,15 @@
 import type { StockReason } from "../effects.js";
 import type { EmpireHouse, EmpireWorkshop, PlayerId } from "../state.js";
 import { type Tx, addStock, fail, inventoryLine, removeStock } from "../tx.js";
-import { citySpot, linkedBy, reachOf, standingPosts, walkableOf } from "./map.js";
+import {
+  CAMPO,
+  campoPoint,
+  citySpot,
+  linkedBy,
+  reachOf,
+  standingPosts,
+  walkableOf,
+} from "./map.js";
 import type { EmpireSettings } from "./settings.js";
 
 /**
@@ -31,6 +39,15 @@ export function postsIn(h: EmpireHouse, s: EmpireSettings, region: string): stri
  * those the house's own tiles link to it (decision of the owner, 7 November 2026).
  */
 export function postsServing(h: EmpireHouse, s: EmpireSettings, city: string): string[] {
+  // The Campo: every counter its own tiles link to it, however far (the supply by road).
+  if (city === CAMPO) {
+    const at = campoPoint(h, s);
+    if (!at) return [];
+    const owned = walkableOf(h, s);
+    return standingPosts(h, s)
+      .filter((p) => linkedBy(owned, [p.x, p.y], at, s))
+      .map((p) => p.id);
+  }
   const c = s.map.cities.find((x) => x.code === city);
   if (!c) return [];
   const [cx, cy] = citySpot(c, s);

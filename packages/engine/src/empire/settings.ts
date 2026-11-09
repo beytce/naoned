@@ -454,11 +454,28 @@ export const empireSettingsSchema = z.object({
         aloneBps: bps.max(10_000),
         lustre: qty,
       }),
+      /**
+       * The supply by road (docs/plan-terraferme-porcellana.md § 4 sexies): the Campo asks each
+       * morning what the war will eat beyond the ration, brought there by the vehicles for nothing;
+       * what the war takes straight from Venice's stock costs `venetianBps` of it (half again).
+       * Absent: the war takes from Venice at par, the Campo asks nothing.
+       */
+      supply: z.object({ venetianBps: bps.min(10_000) }).optional(),
+      /**
+       * The cities held (link ⑤, 9 November 2026): a merchant holding cities of the board at the
+       * close flies its banner on them on the map of commerce the next week, and takes a letter of
+       * the Signoria: `favour` for each, `max` cities at most. Absent: none.
+       */
+      cities: z.object({ favour: qty, max: qty }).optional(),
     })
     .prefault({
       entry: { planks: 20 },
       theatreMax: 40,
       rationBread: 20,
+      // The supply by road (8 November 2026): Venice's stock pays half again.
+      supply: { venetianBps: 15_000 },
+      // The cities held (9 November 2026): a letter of the Signoria, 5 Favour a city, 3 at most.
+      cities: { favour: 5, max: 3 },
       favour: { signore: 60, podium: 30, top10: 15, quarter: 8, participant: 4 },
       seals: { signore: 2, podium: 1 },
       sealsPerWeek: 2,

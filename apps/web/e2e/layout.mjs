@@ -109,7 +109,7 @@ const WORDS = {
     produce: /^produire$/i,
     quantity: "Quantité",
     team: /équipe · vénétie/i,
-    onYou: /sur vous/i,
+    onYou: /sur toi/i,
     battleAt: /bataille à 20 h/i,
     teamWon: /vénétie l'emporte/i,
     npc: "(ordinateur)",
@@ -1631,7 +1631,9 @@ async function midWeek(page, door, check, pseudo) {
   await open();
   await check("terraferme-jeudi");
   await lightHud(page, "terraferme-jeudi");
-  await uncluttered(page, "terraferme-jeudi", 30);
+  // 32: the words in « tu » (D1, « Ton camp », « toi · ») are shorter, one more label fits clear
+  // of the others on the narrowest phone (9 November 2026); none over another, as before.
+  await uncluttered(page, "terraferme-jeudi", 32);
   // The camp's sheet: its advice and the one gold that launches a front (lot 8).
   await page.locator('[data-coach="terra-launch"]').first().click();
   // Settled once its gold stands still (a slow machine still slides it in at 700 ms).

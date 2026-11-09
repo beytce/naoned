@@ -76,6 +76,8 @@ export interface BoardPlace {
   quiet?: boolean;
   /** What the pin shows, when it says more than a figure (the first steps, lot 4). */
   badge?: PinBadge;
+  /** A second way, quieter, on its card (the Campo: « Livrer »). */
+  alt?: string;
 }
 
 /**
@@ -113,6 +115,8 @@ export interface BoardTile {
   decor?: string[];
   /** How well a town knows the house: 1 to 3 banners at 3, 10 and 25 deliveries (P3-07). */
   loyalty?: number;
+  /** The house's banner: a town it held at the last close of the Terraferma (link ⑤). */
+  held?: boolean;
   /** A tile of water near a lumber camp: its boat is a raft of logs (the Cadore's, lot 7). */
   raft?: boolean;
   /** The Market's stalls: the house's goods it trades, their crates, hot above their rate (P3-08). */
@@ -275,6 +279,7 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       crates,
       ...(stalls.length ? { stalls } : {}),
       loyalty: served >= 25 ? 3 : served >= 10 ? 2 : served >= 3 ? 1 : 0,
+      held: (v.terraCities ?? []).includes(c.code),
       water: false,
       model: venice ? "market" : "town",
       size: c.size ?? 1,
@@ -357,14 +362,32 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     if (b.kind === "newWorkshop" && b.cell)
       put(b.cell, { water: false, model: "site", running: true, place: null });
   place(map.depot, "depot", { kind: "depot" }, t.porcellana.depot, t.porcellana.depotSub, "");
-  place(
-    map.camp,
-    "campo",
-    { kind: "region", code: "veneto" },
-    t.porcellana.campo,
-    t.porcellana.campoSub,
-    "",
-  );
+  place(map.camp, "campo", { kind: "terra" }, t.porcellana.campo, t.porcellana.campoSub, "");
+  // The supply by road: the Campo's orders of the day in crates on its quay, what it asks, and
+  // « Livrer » on its card (a crate full: a counter that serves it holds its goods).
+  const campo = map.camp ? out.get(map.camp) : undefined;
+  const asks = v.campo?.orders ?? [];
+  if (campo?.place && asks.length > 0) {
+    const held = (good: string) =>
+      Math.max(
+        0,
+        ...(v.stores ?? [])
+          .filter((s) => v.campo?.posts.includes(s.post))
+          .map((s) => s.goods[good] ?? 0),
+      );
+    campo.crates = asks.map((o) => held(o.good) >= o.qty);
+    campo.place = {
+      ...campo.place,
+      line: t.porcellana.campoAsks(
+        asks
+          .map((o) => `${o.qty} ${fr.themeNames.resource[o.good] ?? p.goods?.[o.good] ?? o.good}`)
+          .join(", "),
+      ),
+      pin: String(asks.length),
+      ready: false,
+      alt: t.porcellana.campoDeliver,
+    };
+  }
   place(
     map.arsenal,
     "arsenal",

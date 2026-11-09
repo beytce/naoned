@@ -86,6 +86,8 @@ Avec `WORLD_KIND=empire`, ou après l'instant de `EMPIRE_FROM`, le serveur ouvre
 
 La Terraferme de l'empire n'a pas de tick : ses théâtres de la semaine (lundi 0 h, heure de Paris) se forment à la première inscription, et la semaine passée se clôt, et se paie, à la première action qui suit son dimanche. `GET /api/empire/terra` montre la carte du théâtre de la Maison ; le roster de la Contesa se pose par `POST /api/empire/contesa/roster`. La Condotta garde ses routes (`/api/game/condotta`).
 
+**La bascule de la Terraferme en Porcellana** (lot T7, décision du porteur du 9 novembre 2026, cette semaine) : elle vient avec le code, aucune variable à régler, `WORLD_SETTINGS_FROM_THEME` restant à `true` (le monde suit les réglages du thème à chaque démarrage). Au premier démarrage, la première action qui touche la Terraferme refait sur la carte carrée les théâtres de la semaine ouverts en hexagones (leurs membres, compagnies et rosters gardés, leurs camps effacés, l'entrée non reprise) et prévient leurs membres (`terra_reformed`). Les notes du chapitre à publier dans le jeu en même temps : `docs/notes-chapitre-2026-11-terraferme.md`.
+
 **La bascule**, décidée par le porteur le 30 octobre 2026 : régler `EMPIRE_FROM=2026-10-31T23:00:00Z` (le 1er novembre à 0 h, heure de Paris). Jusque-là rien ne change ; à la clôture d'octobre, après son classement, le monde de l'empire ouvre à la place de novembre. Un instant déjà passé ferait rouvrir le serveur sur l'empire sans clore le mois en cours.
 
 ## En local

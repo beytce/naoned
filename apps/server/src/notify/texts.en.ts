@@ -440,6 +440,11 @@ export function pushTextEn(
 
 function terraText(data: Record<string, unknown>): { title: string; body: string } | null {
   switch (data.event) {
+    case "terra_reformed":
+      return {
+        title: "The Terraferma has a new map",
+        body: "Your week plays again on the new map of Venetia: set your camp down again.",
+      };
     case "terra_hungry":
       return {
         title: "Your troops are hungry",

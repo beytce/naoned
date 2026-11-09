@@ -165,6 +165,24 @@ export function evaluate(r: EmpireResult): Check[] {
     pass: terraBps <= 1_500,
   });
 
+  // 7 bis. The supply by road (8 November 2026): the land vehicles' places the Campo takes from the
+  // towns, the houses that bring, the goods paid half again at Venice by the others.
+  const trips = hs.reduce((a, h) => a + h.campoTrips, 0);
+  const offered = hs.reduce((a, h) => a + h.placesOffered, 0);
+  const goods = hs.reduce((a, h) => a + h.warGoods, 0);
+  const surcharge = hs.reduce((a, h) => a + h.warSurcharge, 0);
+  const tripsBps = offered > 0 ? Math.round((trips * 10_000) / offered) : 0;
+  const bringers = hs.filter((h) => h.campoTrips > 0).length;
+  const players = hs.filter((h) => h.warGoods > 0).length;
+  checks.push({
+    code: "campo",
+    label:
+      "Intendance : places des véhicules prises par le Campo ; Maisons qui livrent ; surcoût à Venise",
+    target: "≤ 10 % des places",
+    value: `${pct(tripsBps)} ; ${bringers} sur ${players} ; ${goods > 0 ? pct(Math.round((surcharge * 10_000) / goods)) : "—"} des marchandises de guerre`,
+    pass: tripsBps <= 1_000,
+  });
+
   // 8. The young houses' raw goods find a buyer in the veterans' high recipes (§ 12 bis): measured
   // on the young side, the share of their receipts while young from raw goods sold in Venice. The
   // veterans' side (the share of their raw goods made by the young) follows, for information: the

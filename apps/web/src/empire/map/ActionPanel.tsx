@@ -73,6 +73,8 @@ function headOf(p: EmpirePayload, target: Target): { title: string; sub: string 
     }
     case "porta":
       return { title: pt.porta, sub: pt.level(view?.porta?.level ?? 1) };
+    case "terra":
+      return { title: fr.empire.terra.title, sub: "" };
   }
 }
 
@@ -94,7 +96,7 @@ export function ActionPanel({
   target: Target;
   now: number;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onOpen: (sheet: string) => void;
   onClose: () => void;
 }) {

@@ -11,8 +11,8 @@ import {
   capOf,
   cellCost,
   cellsOf,
+  chestOf,
   forecastFronts,
-  hexNeighbors,
   hourIn,
   hourWithin,
   inBattle,
@@ -20,7 +20,9 @@ import {
   peasantsOf,
   recruitPerHour,
   seaTargets,
+  terraNeighbors,
   terraOn,
+  winBpsAt,
   yieldPerHour,
 } from "@comptoirs/engine";
 
@@ -155,7 +157,7 @@ export function terraView(
   const costs: Record<number, number> = {};
   if (me) {
     for (const i of cellsOf(s, playerId))
-      for (const n of hexNeighbors(s.map, i))
+      for (const n of terraNeighbors(s.map, i))
         if (s.map.land[n] && s.owner[n] !== playerId && !(n in costs))
           costs[n] = cellCost(s, cfg, n);
   }
@@ -189,6 +191,8 @@ export function terraView(
       height: s.map.height,
       origin: s.map.origin,
       size: s.map.size,
+      /** Square cells (Porcellana, lot 9), else hexagons. */
+      grid: s.map.grid ?? "hex",
       terrain: s.map.terrain.map((k) => TERRAIN_LETTER[k] ?? "p").join(""),
       cities: s.map.cityCode
         .map((code, cell) => (code ? { cell, code } : null))
@@ -250,13 +254,16 @@ export function terraView(
           protectedUntil: me.protectedUntil,
           aggressor: me.aggressor ?? false,
           peasantsBps: peasantsOf(s, playerId),
-          /** The rival its cities pay less (null: none), and the ducats it may still give today. */
+          /** The rival its cities pay less (null: none). */
           embargo: me.embargo ? at(me.embargo) : -1,
-          ducatsLeft: (() => {
-            const max = cfg.diplomacy?.ducatGiftPerDay ?? 0n;
-            const used = me.today && me.today.day === day ? (me.today.ducats ?? 0n) : 0n;
-            return max > used ? max - used : 0n;
-          })(),
+          /** The war chest (8 November 2026): its écus now, its ceiling, each morning's (null: off). */
+          chest: cfg.chest
+            ? {
+                ecus: chestOf(s, cfg, playerId, now),
+                cap: cfg.chest.cap,
+                perDay: cfg.chest.perDay,
+              }
+            : null,
           /** Whether it holds a city (an embargo needs one). */
           holdsCity: cellsOf(s, playerId).some((i) => s.map.city[i]),
           /** The cells its bombards may hit now, and the shots left today. */
@@ -339,6 +346,8 @@ export function terraView(
         cap: cfg.capRaise.price,
       },
       capRaise: cfg.capRaise.amount,
+      /** The buildings' and the cap's prices in écus, from the war chest (null: in ducats). */
+      chestPrices: cfg.chest?.prices ?? null,
       protectionHours: cfg.start.protectionHours,
       peacefulSafe: cfg.fronts.peacefulSafe && !cfg.fronts.capitalSafe,
       /** Soldiers and peasants: whether the slider is played. */
@@ -347,14 +356,22 @@ export function terraView(
       team: s.teamMode
         ? (s.players[playerId]?.team ?? state.players[playerId]?.region ?? null)
         : null,
-      /** Diplomacy: signals, ducats to allies, embargo (null: off). */
-      diplomacy: cfg.diplomacy
-        ? { ducatGiftPerDay: cfg.diplomacy.ducatGiftPerDay, embargoBps: cfg.diplomacy.embargoBps }
-        : null,
+      /** Diplomacy: signals, embargo (null: off). */
+      diplomacy: cfg.diplomacy ? { embargoBps: cfg.diplomacy.embargoBps } : null,
       /** The war's goods (R1): bread for the cap, materials by building (null: ducats only). */
       supply: cfg.supply
         ? { raiseBread: cfg.supply.raiseBread, materials: cfg.supply.buildingMaterials }
         : null,
+      /** The land makes the army (8 November 2026): the share that wins today, the land's cells. */
+      winBpsToday: winBpsAt(s, cfg, now),
+      landCells: s.map.land.filter(Boolean).length,
+      /** A front's mass makes its speed: a cell more a step for each `massPerCell`, to a ceiling. */
+      pace: {
+        stepMinutes: cfg.stepMinutes,
+        cellsPerStep: cfg.fronts.cellsPerStep,
+        massPerCell: cfg.fronts.massPerCell ?? null,
+        cellsMaxPerStep: cfg.fronts.cellsMaxPerStep ?? null,
+      },
       /** Minutes a front takes for a cell of free land, and of a rival's. */
       neutralMinutes: cfg.stepMinutes * cfg.fronts.neutralEverySteps,
       cellMinutes: Math.max(1, Math.floor(cfg.stepMinutes / cfg.fronts.cellsPerStep)),

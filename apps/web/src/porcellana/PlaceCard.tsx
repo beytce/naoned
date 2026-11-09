@@ -11,12 +11,14 @@ export interface PlaceCardInfo {
   name: string;
   sub: string;
   line: string;
-  /** What the button says (« Entrer », « Ouvrir la Dogana »…). */
+  /** What the button says (« Entrer », « Ouvrir la Dogana »…); empty: no button. */
   go: string;
   /** Something to take there now: a « Prêt ! » tag stuck on aslant. */
   ready?: boolean;
   /** The tag's word. */
   tag?: string;
+  /** A second way, quieter, under the red key (« Voir Contarini »); empty: none. */
+  alt?: string;
   /** The place's id (« workshop:w3 »): the tutorial finds its button by it. */
   id?: string;
 }
@@ -28,8 +30,8 @@ export interface PlaceCardHandle {
 
 export const PlaceCard = forwardRef<
   PlaceCardHandle,
-  { info: PlaceCardInfo; onGo: () => void; onClose: () => void }
->(function PlaceCard({ info, onGo, onClose }, ref) {
+  { info: PlaceCardInfo; onGo: () => void; onClose: () => void; onAlt?: () => void }
+>(function PlaceCard({ info, onGo, onClose, onAlt }, ref) {
   const el = useRef<HTMLElement>(null);
   useImperativeHandle(ref, () => ({
     place(px, py, w, h) {
@@ -70,22 +72,33 @@ export const PlaceCard = forwardRef<
         <p className="pc-sub">{info.sub}</p>
         {info.line ? <p className="pc-line">{info.line}</p> : null}
       </div>
-      <button type="button" className="pc-go" onClick={onGo}>
-        <span>{info.go}</span>
-        <svg
-          viewBox="0 0 18 18"
-          width="18"
-          height="18"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M7 4l5 5-5 5" />
-        </svg>
-      </button>
+      {info.go || (info.alt && onAlt) ? (
+        <div className="pc-keys">
+          {info.go ? (
+            <button type="button" className="pc-go" onClick={onGo}>
+              <span>{info.go}</span>
+              <svg
+                viewBox="0 0 18 18"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M7 4l5 5-5 5" />
+              </svg>
+            </button>
+          ) : null}
+          {info.alt && onAlt ? (
+            <button type="button" className="pc-alt" onClick={onAlt}>
+              {info.alt}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 });

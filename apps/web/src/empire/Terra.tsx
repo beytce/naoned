@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../api.js";
 import { gameApi } from "../game/api.js";
 import { hourOf } from "../game/format.js";
@@ -13,11 +13,21 @@ import {
 import { cellAt } from "../game/terraShapes.js";
 import type { CompanyView, TerraAction, TerraView } from "../game/types.js";
 import { fr } from "../i18n.js";
+import { pictureOfView } from "../porcellana/terra/picture.js";
 import { Label, Slab } from "../ui.js";
 import { empireApi } from "./api.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
-type Act = (a: EmpireAction) => Promise<void>;
+// The 3D of the Terraferma loads apart: the game's start carries no three.js (check-bundle.mjs).
+const TerraScene = lazy(() =>
+  import("../porcellana/terra/TerraScene.js").then((m) => ({ default: m.TerraScene })),
+);
+export const TerraPlay = lazy(() =>
+  import("./TerraPlay.js").then((m) => ({ default: m.TerraPlay })),
+);
+
+/** Resolves to whether the server took it, where the caller knows (the empire's screen). */
+type Act = (a: EmpireAction) => Promise<unknown>;
 const t = fr.empire.terra;
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;
@@ -26,7 +36,55 @@ const goodName = (p: EmpirePayload, code: string) =>
  * A map of the Terraferma on its own (Lagune): the land and its holders, the fronts marching; a
  * touch picks a cell. The theatre's and the Condotta's both.
  */
-function Board({
+function Board(props: {
+  v: TerraView;
+  cell: number | null;
+  onCell: (cell: number | null) => void;
+}) {
+  return props.v.map.grid === "square" ? <SquareBoard {...props} /> : <HexBoard {...props} />;
+}
+
+/** The week's map on square cells: Porcellana's board (docs/plan-terraferme-porcellana.md, T2). */
+function SquareBoard({
+  v,
+  cell,
+  onCell,
+}: {
+  v: TerraView;
+  cell: number | null;
+  onCell: (cell: number | null) => void;
+}) {
+  const pic = useMemo(() => pictureOfView(v), [v]);
+  const me = v.holders.find((h) => h.me);
+  return (
+    <div
+      className="relative mt-2 h-[62vh] min-h-[22rem] overflow-hidden rounded-2xl"
+      aria-label={t.board}
+    >
+      <Suspense fallback={null}>
+        <TerraScene
+          pic={pic}
+          chosen={cell}
+          onCell={onCell}
+          home={me?.capital ?? null}
+          townName={(code) =>
+            fr.themeNames.city[code] ?? code.charAt(0).toUpperCase() + code.slice(1)
+          }
+          campName={(c) => {
+            const h = v.holders[v.owner[c] ?? -1];
+            if (!h) return null;
+            return h.me
+              ? "Toi"
+              : (h.pseudo ?? (h.nation ? (fr.game.terra.nations[h.nation] ?? h.nation) : null));
+          }}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+/** The week's map on hexagons (the board of before). */
+function HexBoard({
   v,
   cell,
   onCell,
@@ -143,6 +201,31 @@ function CellActions({
 }
 
 /**
+ * The week's board of the merchant's theatre, fetched while `open` (every 5 s), from a first view
+ * already in hand (the way in fetched it); with its reload.
+ */
+export function useTerraBoard(
+  open: boolean,
+  theatre: boolean,
+  first: TerraView | null = null,
+): [TerraView | null, () => void] {
+  const [board, setBoard] = useState<TerraView | null>(first);
+  const load = () =>
+    void empireApi
+      .terra()
+      .then((r) => setBoard(r.terra?.view ?? null))
+      .catch(() => undefined);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `load` is the same each time.
+  useEffect(() => {
+    if (!open || !theatre) return;
+    load();
+    const id = setInterval(load, 5_000);
+    return () => clearInterval(id);
+  }, [open, theatre]);
+  return [board, load];
+}
+
+/**
  * The Terraferma's tab of the empire (CADRAGE-v3 § 8): the week (open or Contesa), the house's
  * theatre and its map, the entry, the Contesa's roster for the Capo and the Consiglieri, the
  * honours; and the Condotta, played on its own map.
@@ -154,6 +237,7 @@ export function TerraBody({
   open,
   busy,
   act,
+  onEnter,
 }: {
   p: EmpirePayload;
   now: number;
@@ -161,34 +245,23 @@ export function TerraBody({
   open: boolean;
   busy: boolean;
   act: Act;
+  /** The way into the Terraferma's own scene (its tiles turning over), where there is one. */
+  onEnter?: () => void;
 }) {
   const view = p.view;
-  const [board, setBoard] = useState<TerraView | null>(null);
   const [cell, setCell] = useState<number | null>(null);
   const [condottaOn, setCondottaOn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const condotta = useCondotta(open && condottaOn);
   const theatre = view?.terra.theatre ?? null;
-  useEffect(() => {
-    if (!open || !theatre) return;
-    const load = () =>
-      empireApi
-        .terra()
-        .then((r) => setBoard(r.terra?.view ?? null))
-        .catch(() => undefined);
-    load();
-    const id = setInterval(load, 5_000);
-    return () => clearInterval(id);
-  }, [open, theatre]);
+  const [board, reload] = useTerraBoard(open, !!theatre);
   if (!view) return null;
   const tv = view.terra;
   const send = (a: TerraAction) =>
-    void act({ type: "empireTerra", action: a }).then(() =>
-      empireApi
-        .terra()
-        .then((r) => setBoard(r.terra?.view ?? null))
-        .catch(() => undefined),
-    );
+    act({ type: "empireTerra", action: a }).then((ok) => {
+      reload();
+      return ok !== false;
+    });
   const entry = Object.entries(tv.entry)
     .map(([g, n]) => `${n} ${goodName(p, g)}`)
     .join(", ");
@@ -211,10 +284,22 @@ export function TerraBody({
                 : t.theatre(theatre.band + 1, theatre.members)}
             </p>
             {board ? (
-              <>
-                <Board v={board} cell={cell} onCell={setCell} />
-                <CellActions v={board} cell={cell} now={now} busy={busy} send={send} />
-              </>
+              board.map.grid === "square" ? (
+                onEnter ? (
+                  <Slab className="mt-2 w-full" onClick={onEnter}>
+                    {t.enter}
+                  </Slab>
+                ) : (
+                  <Suspense fallback={<p className="mt-2 text-sm text-cream-dim">{t.loading}</p>}>
+                    <TerraPlay v={board} now={now} busy={busy} send={send} />
+                  </Suspense>
+                )
+              ) : (
+                <>
+                  <Board v={board} cell={cell} onCell={setCell} />
+                  <CellActions v={board} cell={cell} now={now} busy={busy} send={send} />
+                </>
+              )
             ) : (
               <p className="mt-2 text-sm text-cream-dim">{t.loading}</p>
             )}

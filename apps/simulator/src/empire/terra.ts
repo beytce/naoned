@@ -1,5 +1,5 @@
 import type { Rng } from "@comptoirs/engine";
-import type { House, World } from "./model.js";
+import { DAY, type House, type World } from "./model.js";
 import { d, takeStock } from "./world.js";
 
 /**
@@ -58,8 +58,22 @@ export function terraWeek(w: World, rng: Rng, week: number) {
     if (!plays(h)) continue;
     if (entry.some(([g, n]) => (h.stock.get(g) ?? 0) < n)) continue;
     for (const [g, n] of entry) takeStock(h, g, n);
+    // The war's goods (the supply by road): brought to the Campo at par, a vehicle a day for the
+    // week; else from Venice at half again (the Signoria's carriage).
+    const brings = rng.next() * 10_000 < w.m.terra.deliverBps[h.activity];
+    const bps = brings ? 10_000 : (s.supply?.venetianBps ?? 10_000);
+    if (brings) h.campoUntil = w.now + 7 * DAY;
+    for (const [g, n] of Object.entries(w.m.terra.warGoods)) {
+      const want = Math.ceil((n * bps) / 10_000);
+      const took = takeStock(h, g, want);
+      h.warGoods += took;
+      h.warSurcharge += Math.max(0, took - n);
+    }
     const tier = tierOf(rng, s.theatreMax);
     const seals = tier === "signore" ? s.seals.signore : tier === "podium" ? s.seals.podium : 0;
-    gain(w, h, s.favour[tier], seals);
+    // The cities held at the close (link ⑤): the leaders hold a few, a letter of the Signoria each.
+    const held = tier === "signore" ? 3 : tier === "podium" ? 2 : tier === "top10" ? 1 : 0;
+    const letters = s.cities ? s.cities.favour * Math.min(held, s.cities.max) : 0;
+    gain(w, h, s.favour[tier] + letters, seals);
   }
 }

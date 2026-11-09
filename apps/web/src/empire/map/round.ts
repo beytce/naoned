@@ -31,8 +31,21 @@ export function planRound(
   let room = v.capacity - v.loads.length;
   const byPay = (a: { pay: string }, b: { pay: string }) =>
     BigInt(b.pay) > BigInt(a.pay) ? 1 : BigInt(b.pay) < BigInt(a.pay) ? -1 : 0;
+  // The Campo is a stop like a town (the supply by road): its orders, paid nothing.
+  const towns = [
+    ...view.orders,
+    ...(view.campo && view.campo.orders.length > 0
+      ? [
+          {
+            city: "campo",
+            posts: view.campo.posts,
+            orders: view.campo.orders.map((o) => ({ ...o, city: "campo", pay: "0" })),
+          },
+        ]
+      : []),
+  ];
   const serves = (city: string) =>
-    view.orders.find((o) => o.city === city && (o.posts ?? []).includes(post));
+    towns.find((o) => o.city === city && (o.posts ?? []).includes(post));
   const stops: RoundStop[] = [];
   for (const city of cities) {
     const at = serves(city);
@@ -53,7 +66,7 @@ export function planRound(
   const open =
     room <= 0
       ? []
-      : view.orders
+      : towns
           .filter(
             (at) =>
               (at.posts ?? []).includes(post) &&

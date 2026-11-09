@@ -29,7 +29,7 @@ export function StationPanel({
   v: InteriorView;
   rules: InteriorRules | null | undefined;
   busy: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onMove: () => void;
   onClose: () => void;
 }) {

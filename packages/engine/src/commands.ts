@@ -115,7 +115,7 @@ import {
 import type { Rarity } from "./empire/porta/settings.js";
 import { retireSea } from "./empire/retire.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
-import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
+import { actOnTerra, joinTerra, setRoster, settleCampo, settleTerra } from "./empire/terra.js";
 import { buyGoods, deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
 import { ensureFitted, fitVehicle } from "./empire/vehicleModules.js";
 import { buyEmpireVehicle } from "./empire/voyages.js";
@@ -667,8 +667,10 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     retireCargo(tx);
     settleMoves(tx);
     settleAid(tx);
-    // The week's Terraferma: last week's theatres closed and paid when the week turns.
+    // The week's Terraferma: last week's theatres closed and paid when the week turns; each
+    // morning, the Campo asks the day's need (the supply by road).
     settleTerra(tx);
+    settleCampo(tx);
   }
   if (cmd.type === "empireJoin") {
     empireJoin(tx, cmd.playerId);
@@ -1038,7 +1040,6 @@ function apply(tx: Tx, cmd: Command): void {
     case "terraSail":
     case "terraFire":
     case "terraSignal":
-    case "terraGift":
     case "terraEmbargo":
       applyTerra(tx, cmd);
       break;

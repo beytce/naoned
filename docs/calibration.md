@@ -2815,3 +2815,105 @@ quitte au bon moment sur deux graines. Elle est retenue.
   (250 ducats) les fait garder leurs ducats plus longtemps. À reprendre avec la cadence d'apprentissage,
   que le simulateur ne modélise pas encore (ses commandes suivent leur rythme de croisière).
 - Rien ne se dégrade ailleurs : les prix, l'objectif à moins de 24 h et la part des commandes tiennent.
+
+## La Terraferme en cases carrées et des troupes achetées avec les ducats (7 novembre 2026, décisions du porteur)
+
+*8 novembre 2026 : l'achat de troupes est refermé (`troopBuy` retiré des réglages de Venise), au profit d'un trésor de guerre égal pour tous dans un théâtre, à mesurer dans un lot suivant (`docs/audit-terraferme-2026-11-08/00-synthese.md` § 7). Les mesures ci-dessous restent comme référence.*
+
+Deux décisions du porteur, mesurées avant la bascule (`docs/plan-terraferme-porcellana.md`, lot T1) :
+
+- **la grille carrée** de Porcellana (`terraferma.grid` : « square », quatre voisins côte à côte au lieu de six), prise par la carte de la semaine suivante ;
+- **des troupes achetées avec les ducats du commerce** (`terraferma.troopBuy`), qui modifie la règle d'or 4 pour la Terraferme.
+
+**Hexagones contre carrés** (`pnpm --filter @comptoirs/simulator terra`, graines 1 à 5, 40 marchands, Venise ; carrés : `--terra '{"grid":"square"}'`) :
+
+| Indicateur (graines 1 à 5) | Hexagones | Carrés |
+| --- | --- | --- |
+| Cases de terre | 1 029 | 993 |
+| Terre libre à 22 h le lundi, le mardi | 25 à 27 %, 7 à 9 % | 32 à 34 %, 6 à 13 % |
+| Terre libre le mercredi soir | 0 à 3 % | 0 à 5 % |
+| Premier front entre marchands | 33 h | 33 h |
+| Fronts lancés | 1 040 à 1 083 | 1 032 à 1 086 |
+| Éliminés en fin de semaine | 6 à 12 | 5 à 12 |
+| Le premier tient | 5 à 7 % de la carte | 6 à 7 % |
+| Les trois premiers | 14 à 17 % | 17 à 20 % |
+| Assidus devant occasionnels (Gloire médiane) | 266 à 495 % | 250 à 388 % |
+| Ducats dépensés par marchand et par jour | 75 à 77 d | 73 à 76 d |
+
+Lecture : avec quatre voisins, la terre libre part un peu plus lentement le premier jour (un camp s'étend sur moins de côtés), puis la semaine se joue comme en hexagones. Les trois premiers prennent un peu plus (17 à 20 % contre 14 à 17 %) : les poches se ferment plus vite. Aucun réglage ne bouge pour l'instant ; la bascule de Venise attend le plateau du lot T2.
+
+**Des troupes achetées** (`pnpm --filter @comptoirs/simulator terra-buy`, grille carrée, graines 1 à 10, 40 marchands dont 4 riches qui mettent 2 000 d par jour dans la guerre ; vente de 20 troupes pour 100 d, trois fois par jour) :
+
+| Indicateur (médianes des graines) | Sans vente | Avec vente |
+| --- | --- | --- |
+| Gloire des riches | 8 166 | 9 170 (+12 %) |
+| Cases des riches | 71 | 80 (+13 %) |
+| Un riche Signore | 10 / 10 | 10 / 10 |
+| Un riche dans les trois premiers | 10 / 10 | 10 / 10 |
+| Ducats détruits par marchand et par jour | 103 d | 132 d |
+
+Lecture : **les ducats décidaient déjà la semaine** avant la vente. Un riche y bâtit ses forts et relève son maximum chaque jour ; il est Signore à chaque graine. La vente ajoute environ 12 % de Gloire et de cases aux riches, et un puits de ducats d'environ 30 d par marchand et par jour. Le profil « riche » est volontairement extrême : il mesure le plafond de l'avantage, pas le joueur médian, dont le budget (50 à 150 d par jour) n'atteint pas un lot.
+
+Réglage de Venise : 20 troupes pour 100 d, trois fois par jour, jamais au-delà du maximum. La vente ne s'ouvre qu'au lundi qui suit sa mise en ligne (règle de la Terraferme) ; l'empire copie ses règles à l'ouverture d'un théâtre.
+
+## La Terraferme : le trésor de guerre égal (8 novembre 2026, décisions du porteur)
+
+Lot T5b (`docs/plan-terraferme-porcellana.md` § 4 quinquies). À la Terraferme, plus rien ne se paie en ducats du commerce : les bâtiments et la hausse du maximum se paient en écus, pris dans un trésor le même pour tous les marchands d'un théâtre. L'achat de troupes et le don de ducats entre alliés sont retirés.
+
+Réglages de Venise (`terraferma.chest`, choix serrés) : 60 écus à l'inscription, 25 chaque matin, plafond 120 ; fort 40, port 30, remparts 50, Bourg 50, bombarde 110, hausse du maximum 60. Une semaine donne au plus 60 + 6 × 25 = 210 écus : trois ou quatre forts, ou deux hausses et un fort.
+
+Mesure : `pnpm --filter @comptoirs/simulator terra-chest` (grille carrée, 10 graines, 40 marchands dont 4 riches qui mettraient 2 000 d par jour dans la guerre, avec les sessions d'un régulier) ; avant, les ducats paient ; maintenant, le trésor.
+
+| Indicateur | Ducats (avant) | Trésor (maintenant) |
+| --- | --- | --- |
+| Gloire médiane des riches (médiane des graines) | 8 166 | 3 245 |
+| Cases médianes des riches | 71 | 15 |
+| Riches devant les réguliers (Gloire médiane) | — | 92 % |
+| Un riche Signore | 10 / 10 | 1 / 10 |
+| Un riche dans les trois premiers | 10 / 10 | 2 / 10 |
+| Ducats détruits par marchand et par jour | 102,59 d | 0 d |
+
+La richesse ne décide plus : un riche joue comme un régulier (92 % de sa Gloire, aux mêmes sessions) et n'est Signore qu'à une graine sur dix, ce que donne le hasard avec quatre riches sur quarante. La semaine ordinaire (`pnpm --filter @comptoirs/simulator terra`, 10 graines) garde sa forme : premier front entre marchands à 33 h, le premier tient 3 à 7 % de la carte, 70 % de la terre tenue par les marchands en fin de semaine.
+
+Le simulateur de 24 mois modèle la Terraferme sans ducats (une boîte noire qui rapporte Faveur et Sceaux) : le commerce n'en est pas touché par construction. Passé quand même (8 novembre 2026 : graines 1 et 2, 4 cibles sur 9 chacune ; la troisième, arrêtée par la limite de temps du conteneur au bout de 27 minutes par graine, n'a pas fini) : la Terraferme pèse 0,0 % de la progression (≤ 15 %) ; les cinq critères hors bornes (calendrier de la Casa, palier en jours de revenu, sortie de la première bande, puits ÷ sources des jeunes, bruts des jeunes à Venise) ne lisent aucun réglage de `terraferma` : ils viennent de l'état de la branche principale, pas de ce lot.
+
+## La Terraferme : l'intendance par la route (8 novembre 2026, décisions du porteur)
+
+Lot T5c (`docs/plan-terraferme-porcellana.md` § 4 sexies). Chaque matin de la semaine jouée, le Campo demande le besoin du jour au-delà de la ration (le pain, les matériaux d'un bâtiment à venir), payé rien ; ce qui est livré va à son magasin ; la guerre prend la ration, puis le magasin, puis le stock de Venise à 150 % (`empire.terra.supply.venetianBps` : 15 000).
+
+Modèle du simulateur de 24 mois (`apps/simulator/src/empire/terra.ts`) : une semaine jouée consomme 15 briques et 25 planches (trois bâtiments) ; livrent au Campo 70 % des assidus, 40 % des médians, 15 % des occasionnels, 10 % des absents, chacun prenant une place de véhicule par jour aux villes ; les autres paient Venise la moitié en plus.
+
+| Indicateur (`pnpm --filter @comptoirs/simulator empire`, graines 1 à 3) | Graine 1 | Graine 2 | Graine 3 |
+| --- | --- | --- | --- |
+| Places des véhicules prises par le Campo (≤ 10 %) | 0,7 % | 0,7 % | 0,7 % |
+| Maisons qui ont livré au moins une semaine, sur celles qui ont joué | 608 / 729 | 616 / 729 | 603 / 726 |
+| Surcoût payé à Venise, part des marchandises de guerre | 21,0 % | 20,7 % | 20,9 % |
+| Part des commandes dans les recettes (60 à 85 %) | 72,9 % | 71,9 % | 73,2 % |
+| Part de la Terraferme dans la progression (≤ 15 %) | 0,0 % | 0,0 % | 0,0 % |
+
+Le Campo ne prend presque rien au commerce (moins d'une place de véhicule sur cent), la part des commandes reste celle d'avant (72 à 73 %) ; livrer fait gagner environ un cinquième des marchandises de guerre à ceux qui le font. Les cinq cibles hors bornes de chaque graine sont les mêmes qu'avant ce lot (calendrier de la Casa, palier en jours de revenu, sortie de la première bande, puits ÷ sources des jeunes, bruts des jeunes à Venise) : elles ne dépendent pas de la Terraferme.
+
+## La Terraferme : le territoire fait l'armée (9 novembre 2026, décisions du porteur du 8)
+
+Lot T5d (`docs/plan-terraferme-porcellana.md` § 4 septies). Réglages de Venise : 2 troupes de maximum par case et 6 par ville, plafond 180 (trois fois les 60 de départ, `troops.max`) ; un front prend une case de plus par pas pour chaque tranche de 40 troupes, 3 au plus (`fronts.massPerCell`, `fronts.cellsMaxPerStep`) ; le seuil qui gagne la semaine, du lundi au dimanche : 80 %, 50 %, 30 %, 20 %, 12 %, 8 %, 7 % (`close.winBpsByDay`).
+
+Mesure : `pnpm --filter @comptoirs/simulator terra`, 10 graines (40 marchands du simulateur, grille hexagonale de 1 029 cases).
+
+| Indicateur | Avant (T5b) | Maintenant |
+| --- | --- | --- |
+| Le premier marchand à 22 h, du lundi au dimanche (médiane des graines) | — | 4 % · 6 % · 6 % · 6 % · 6 % · 6 % · 7 % |
+| Le premier tient en fin de semaine | 3 à 7 % | 6 à 8 % |
+| Semaines gagnées avant la fin (par conquête) | 0 / 10 | 4 / 10 |
+| Éliminés (sans terre en fin de semaine) | 4 | 6 à 14 (médiane 10) |
+| Assidus devant occasionnels (Gloire médiane) | 138 à 140 % | 112 à 208 % |
+| Premier front entre marchands | 33 h | 33 h |
+
+Ce que la mesure montre : à 40 marchands par théâtre, avec les alliances et Milan, le premier plafonne à 5–8 % de la carte dès le mardi ; la boule de neige modérée ne fait pas émerger de dominant. Pour qu'environ une semaine sur trois se gagne avant la fin, le seuil doit descendre à 7–8 % le week-end, si bien que ces victoires tombent le samedi ou le dimanche. Elle coûte des éliminations (de 4 à 10 environ par semaine). Deux leviers restent au porteur : des théâtres plus petits (16 marchands, comme le recommandait l'audit), ou une boule de neige plus forte.
+
+## La Terraferme : les villes tenues (9 novembre 2026)
+
+Lot T6, lien ⑤ (`docs/plan-terraferme-porcellana.md` § 4 octies). Les villes tenues à la clôture valent une lettre de la Signoria : 5 Faveur par ville, 3 au plus (`empire.terra.cities`). Le simulateur de 24 mois suppose que le Signore en tient 3, le podium 2, les dix premiers 1.
+
+`pnpm --filter @comptoirs/simulator empire`, graines 1 à 3 : la part de la Terraferme dans la progression reste à 0,0 % (≤ 15 %) ; la part des commandes dans les recettes (72 à 73 %) et l'intendance (0,7 % des places) ne bougent pas ; les cinq cibles hors bornes sont les mêmes qu'avant, sans lien avec la Terraferme. La lettre ne déplace rien : à ce poids, la Terraferme reste loin du plafond de 15 % que le porteur lui donne ; il y a de la marge pour la récompenser davantage si on le souhaite.
+
+Sur la carte carrée de la bascule (lot T7, 9 novembre 2026 ; 993 cases, mêmes réglages, 10 graines) : 3 semaines sur 10 gagnées avant la fin (la cible d'une sur trois), le premier marchand à 22 h entre 4 et 9 % de la carte en fin de semaine, 5 à 12 éliminés (médiane 9), premier front entre marchands à 33 h.

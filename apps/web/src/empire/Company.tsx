@@ -14,7 +14,7 @@ import { Choice } from "./World.js";
 import { affordable } from "./logic.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
-type Act = (a: EmpireAction) => Promise<void>;
+type Act = (a: EmpireAction) => Promise<unknown>;
 const t = fr.empire.company;
 const goodName = (p: EmpirePayload, code: string) =>
   fr.themeNames.resource[code] ?? p.goods[code] ?? code;

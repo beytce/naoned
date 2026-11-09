@@ -1133,7 +1133,6 @@ export type TerraAction =
   | { type: "terraSail"; aim: number; shareBps: number }
   | { type: "terraFire"; cell: number }
   | { type: "terraSignal"; kind: "help" | "attack" | "thanks" | "peace"; cell?: number }
-  | { type: "terraGift"; to: string; amount: string }
   | { type: "terraEmbargo"; target: string | null }
   | { type: "terraRaise" }
   | { type: "terraDecree"; code: string; target?: string }
@@ -1162,6 +1161,8 @@ export interface TerraView {
     height: number;
     origin: [number, number];
     size: number;
+    /** Square cells, four neighbours (Porcellana, lot 9); absent or hex: pointy hexagons. */
+    grid?: "hex" | "square";
     /** One letter a cell: p plain, h hill, m marsh, M mountain, w water. */
     terrain: string;
     cities: { cell: number; code: string }[];
@@ -1227,7 +1228,8 @@ export interface TerraView {
     sea: Record<string, { minutes: number; cost: number }>;
     /** The holder its cities embargo (-1: none), the ducats it may still give today. */
     embargo: number;
-    ducatsLeft: Money;
+    /** The war chest in écus (8 November 2026; null: the war is paid in ducats). */
+    chest?: { ecus: number; cap: number; perDay: number } | null;
     holdsCity: boolean;
     /** The cells its bombards may hit now, and the shots left today. */
     bombard: { cells: number[]; shots: number };
@@ -1253,6 +1255,7 @@ export interface TerraView {
     requestsIn: number[];
     requestsOut: number[];
     raisesLeft: number;
+    /** Troops it may still buy today. */
     giftsLeft: number;
     programme: { code: string; target?: string } | null;
     /**
@@ -1290,6 +1293,19 @@ export interface TerraView {
       cap: string;
     };
     capRaise: number;
+    /** Troops bought with ducats: so many a time for so much (null or absent: closed). */
+    /** The share of the land that wins the week today, and the land's cells (8 November 2026). */
+    winBpsToday?: number;
+    landCells?: number;
+    /** A front's pace: a cell more a step for each `massPerCell` troops, to a ceiling. */
+    pace?: {
+      stepMinutes: number;
+      cellsPerStep: number;
+      massPerCell: number | null;
+      cellsMaxPerStep: number | null;
+    };
+    /** The buildings' and the cap's prices in écus (null: in ducats, `prices`). */
+    chestPrices?: Record<"rocca" | "borgo" | "porto" | "bombarda" | "mura" | "cap", number> | null;
     /** The capital of a merchant who attacked no merchant this week is never taken. */
     peacefulSafe: boolean;
     /** Soldiers and peasants: the slider is played. */
@@ -1297,7 +1313,7 @@ export interface TerraView {
     /** A week in teams: the merchant's team (its region), null otherwise. */
     team: string | null;
     /** Diplomacy: ducats to allies a day, the embargo's cut (null: off). */
-    diplomacy: { ducatGiftPerDay: Money; embargoBps: number } | null;
+    diplomacy: { embargoBps: number } | null;
     /** Hours a merchant who sets down is safe from the others (0: none). */
     protectionHours: number;
     /** The war's goods (R1): bread for the cap, materials by building (null: ducats only). */

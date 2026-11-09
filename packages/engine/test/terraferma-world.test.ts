@@ -94,6 +94,24 @@ describe("the Terraferma in the world", () => {
     expect(map && cellsOf(map, "a").length).toBeGreaterThan(1);
   });
 
+  it("pays the buildings and the cap from the war chest in écus, never the ducats", () => {
+    const chest = {
+      start: 70,
+      perDay: 25,
+      cap: 120,
+      prices: { rocca: 40, borgo: 50, porto: 30, bombarda: 110, mura: 50, cap: 60 },
+    };
+    const w = live({ chest, capRaise: { amount: 10, price: 10_000, perDay: 2 } });
+    joined(w, "a");
+    const before = w.cash("a");
+    const sink = w.state.accounts["system:sink"] ?? 0n;
+    expect(error(act(w, { type: "terraRaise", playerId: "a" }))).toBe("ok");
+    expect(w.cash("a")).toBe(before);
+    expect(w.state.accounts["system:sink"] ?? 0n).toBe(sink);
+    expect(w.state.terra?.map.players.a?.chest?.ecus).toBe(10);
+    expect(error(act(w, { type: "terraRaise", playerId: "a" }))).toBe("chest_short");
+  });
+
   it("takes the ducats of buildings and of the cap, destroyed, and refuses without them", () => {
     const w = live();
     joined(w, "a");
@@ -348,7 +366,7 @@ describe("the land's yield in the world", () => {
 });
 
 describe("diplomacy on the Terraferma", () => {
-  const diplomacy = { ducatGiftPerDay: 5_000, embargoBps: 2_000, signalMinutes: 5 };
+  const diplomacy = { embargoBps: 2_000, signalMinutes: 5 };
 
   it("shows a signal to all, a target to the allies only, at most one each few minutes", () => {
     const w = live({ diplomacy });
@@ -372,19 +390,6 @@ describe("diplomacy on the Terraferma", () => {
     const sent = res.effects.events.find((e) => e.type === "terra_troops_sent");
     expect(sent?.playerId).toBe("a");
     expect(sent?.data).toEqual({ to: "b", count: 10 });
-  });
-
-  it("lets allies give each other ducats, through the books, within a day's limit", () => {
-    const w = live({ diplomacy });
-    joined(w, "a", "b");
-    act(w, { type: "terraAlly", playerId: "a", other: "b" });
-    act(w, { type: "terraAccept", playerId: "b", from: "a" });
-    const a = w.cash("a");
-    const b = w.cash("b");
-    expect(act(w, { type: "terraGift", playerId: "a", to: "b", amount: "4000" }).ok).toBe(true);
-    expect(w.cash("a")).toBe(a - 4_000n);
-    expect(w.cash("b")).toBe(b + 4_000n);
-    expect(act(w, { type: "terraGift", playerId: "a", to: "b", amount: "2000" }).ok).toBe(false);
   });
 
   it("an embargo from a held city cuts what it pays the rival", () => {

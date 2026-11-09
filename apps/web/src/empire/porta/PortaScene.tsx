@@ -50,7 +50,7 @@ export function PortaScene({
   open: boolean;
   busy: boolean;
   now: number;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onClose: () => void;
   onBattle: () => void;
 }) {

@@ -32,11 +32,6 @@ export const terraActionSchemas = [
     kind: z.enum(["help", "attack", "thanks", "peace"]),
     cell: z.number().int().nonnegative().optional(),
   }),
-  z.object({
-    type: z.literal("terraGift"),
-    to: z.string().uuid(),
-    amount: z.string().regex(/^\d{1,9}$/),
-  }),
   z.object({ type: z.literal("terraEmbargo"), target: z.string().uuid().nullable() }),
   z.object({
     type: z.literal("terraSail"),

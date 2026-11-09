@@ -9,6 +9,7 @@ import {
 } from "../terraWorld.js";
 import { type TerraConfig, advanceTerra, closeTerra, isNation, newTerra } from "../terraferma.js";
 import { type Tx, emit, fail, inventoryLine, removeStock } from "../tx.js";
+import { askCampo, breadForWar, takeForWar } from "./campo.js";
 import { carnetWeek } from "./carnet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
 import { checkCamp } from "./map.js";
@@ -50,7 +51,10 @@ export function settleTerra(tx: Tx): EmpireTerra | null {
   if (!terraOn(tx.ctx) || !tx.s.empire) return null;
   const week = carnetWeek(tx.now);
   const t = tx.s.empire.terra;
-  if (t && t.week === week) return t;
+  if (t && t.week === week) {
+    reformTheatres(tx, t);
+    return t;
+  }
   if (t) for (const th of t.theatres) closeTheatre(tx, th, t.week);
   const next: EmpireTerra = {
     week,
@@ -61,6 +65,37 @@ export function settleTerra(tx: Tx): EmpireTerra | null {
   tx.s.empire.terra = next;
   if (isContesaWeek(week)) formContesa(tx, next, week);
   return next;
+}
+
+/**
+ * The switch of 9 November 2026 (lot T7, the owner's decision: this week, not the next Monday): a
+ * theatre of the week opened on another grid than the settings' is made again on theirs, with
+ * the settings of now; its members, its companies and its cotes stay, its places and its bread go
+ * (each places its camp again, the entry is not taken twice); each member is told. Once: after it,
+ * the grids agree.
+ */
+function reformTheatres(tx: Tx, t: EmpireTerra): void {
+  const cfg = terraOn(tx.ctx);
+  if (!cfg) return;
+  for (const th of t.theatres) {
+    if ((th.cfg.grid ?? "hex") === (cfg.grid ?? "hex") || th.map.closed) continue;
+    const active = Math.max(
+      1,
+      th.members.length,
+      Object.keys(th.map.players).filter((id) => !isNation(id)).length,
+    );
+    const map = newTerra(
+      cfg,
+      `${tx.ctx.seed ?? tx.ctx.startAt}:empire-terra:${th.id}:${cfg.grid ?? "hex"}`,
+      active,
+      terraWeekStart(t.week),
+    );
+    if (th.kind === "contesa") map.teamMode = true;
+    th.cfg = cfg;
+    th.map = map;
+    th.rations = undefined;
+    for (const id of th.members) emit(tx, "terra_reformed", id, { theatre: th.id });
+  }
 }
 
 /** The Republic's ration: the same bread a day for every merchant of the theatre. */
@@ -83,14 +118,36 @@ export function advanceTheatre(tx: Tx, th: EmpireTheatre, week: number): void {
   const seen = th.map.history?.cell.length ?? 0;
   advanceTerra(th.map, th.cfg, Math.min(tx.now, end));
   tellCellsTaken(tx, th.map, seen);
-  serveTerraRations(tx, th.map, republic(tx, th));
+  serveTerraRations(tx, th.map, republic(tx, th), warBread(tx));
   if (th.map.closed && !th.map.closedSeen) payTheatre(tx, th, week);
+}
+
+/** The loaves beyond the ration, from each house's Campo, then Venice (the supply by road). */
+function warBread(tx: Tx) {
+  const s = empireSettings(tx.ctx);
+  return (id: PlayerId, loaves: number): number | null => {
+    const h = tx.s.empire?.houses[id];
+    if (!h) return null;
+    return breadForWar(tx, h, id, s, loaves, "terra:rations");
+  };
+}
+
+/** Each morning, the Campo of every house of the week's theatres asks the day's need. */
+export function settleCampo(tx: Tx): void {
+  const t = tx.s.empire?.terra;
+  if (!t) return;
+  const s = empireSettings(tx.ctx);
+  for (const th of t.theatres)
+    for (const id of th.members) {
+      const h = tx.s.empire?.houses[id];
+      if (h) askCampo(h, th.map, th.cfg, s, id, t.week, terraWeekStart(t.week), tx.now);
+    }
 }
 
 function closeTheatre(tx: Tx, th: EmpireTheatre, week: number): void {
   const end = terraWeekStart(week + 1);
   advanceTerra(th.map, th.cfg, end);
-  serveTerraRations(tx, th.map, republic(tx, th));
+  serveTerraRations(tx, th.map, republic(tx, th), warBread(tx));
   closeTerra(th.map, th.cfg, end);
   if (!th.map.closedSeen) payTheatre(tx, th, week);
 }
@@ -133,6 +190,13 @@ function payTheatre(tx: Tx, th: EmpireTheatre, week: number): void {
       if (winner && h.company === winner) seals += s.contesa.winnerSeals;
     }
     const given = giveSeals(tx, r.id, seals, week);
+    // The cities held at the close (link ⑤): its banner on them the next week, a letter of the
+    // Signoria in Favour for a few.
+    const held = th.map.map.cityCode.flatMap((code, i) =>
+      code && th.map.owner[i] === r.id ? [code] : [],
+    );
+    h.terraCities = { codes: held, until: terraWeekStart(week + 2) };
+    if (s.cities) h.favour += s.cities.favour * Math.min(held.length, s.cities.max);
     if (
       tier !== "none" &&
       (!h.terraBest || TIERS.indexOf(tier) < TIERS.indexOf(h.terraBest as Tier))
@@ -240,12 +304,17 @@ export function actOnTerra(tx: Tx, playerId: PlayerId, action: TerraPlayerComman
   // The decrees and the embargo act on the monthly world's economy: not in the empire's.
   if (action.type === "terraDecree" || action.type === "terraEmbargo") fail("terra_off");
   const h = ownHouse(tx, playerId);
+  const s = empireSettings(tx.ctx);
   applyTerraOn(
     tx,
     th.cfg,
     th.map,
     { ...action, playerId },
-    { team: th.kind === "contesa" ? (h.company ?? "") : "", week: t.week },
+    {
+      team: th.kind === "contesa" ? (h.company ?? "") : "",
+      week: t.week,
+      take: (goods, ref) => takeForWar(tx, h, playerId, s, goods, ref),
+    },
   );
 }
 

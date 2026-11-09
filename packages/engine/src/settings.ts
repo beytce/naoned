@@ -398,6 +398,12 @@ export const worldSettingsSchema = z.object({
        * Switched on at a season's opening, never during one.
        */
       live: z.boolean().prefault(false),
+      /**
+       * The cells' shape (docs/plan-terraferme-porcellana.md § 4): hexagons, six neighbours, or
+       * the squares of Porcellana, four neighbours side by side. A new week's map takes it, so a
+       * change made during a week plays from the next Monday.
+       */
+      grid: z.enum(["hex", "square"]).prefault("hex"),
       /** Land cells per active merchant (at least `minActive` merchants counted). */
       cellsPerActive: positive,
       minActive: positive,
@@ -485,10 +491,22 @@ export const worldSettingsSchema = z.object({
          * plus so many per cell and per city held, up to the cap.
          */
         recruit: z.object({ base: qty, perCell: qty, perCity: qty.prefault(0) }).optional(),
+        /**
+         * The land makes the army (8 November 2026): the cap from the land (base, cells, cities)
+         * never past this ceiling (golden rule 3); the borough and the raises add on top. Absent:
+         * no ceiling.
+         */
+        max: positive.optional(),
       }),
       fronts: z.object({
         max: positive,
         cellsPerStep: positive,
+        /**
+         * A front's mass makes its speed (8 November 2026): one cell more a step for each
+         * `massPerCell` troops it carries, `cellsMaxPerStep` at most. Absent: `cellsPerStep`.
+         */
+        massPerCell: positive.optional(),
+        cellsMaxPerStep: positive.optional(),
         minShareBps: bps.max(10_000),
         /** A front comes home after so many open hours (0: never): presence relaunches it. */
         maxHours: qty.prefault(0),
@@ -571,13 +589,11 @@ export const worldSettingsSchema = z.object({
       /** Weeks of the season (from 0) played in teams: the merchants of a region together. */
       teams: z.object({ weeks: z.array(qty) }).optional(),
       /**
-       * Diplomacy: quick signals on the map (one each `signalMinutes`), ducats given to allies
-       * (`ducatGiftPerDay` at most), and an embargo from the cities one holds: they pay the
-       * rival `embargoBps` less for its deliveries.
+       * Diplomacy: quick signals on the map (one each `signalMinutes`), and an embargo from the
+       * cities one holds: they pay the rival `embargoBps` less for its deliveries. No ducats given
+       * to allies any more (8 November 2026: a way to pass ducats between accounts).
        */
-      diplomacy: z
-        .object({ ducatGiftPerDay: money, embargoBps: bps.max(10_000), signalMinutes: positive })
-        .optional(),
+      diplomacy: z.object({ embargoBps: bps.max(10_000), signalMinutes: positive }).optional(),
       /**
        * The other powers of 1450, beside Milan: each holds the land within `radius` of its seat
        * (a city of the map, or a point in bps of the map), a fixed cap of troops, and rides every
@@ -666,7 +682,28 @@ export const worldSettingsSchema = z.object({
           rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 },
           borgo: { price: 5_000, capBonus: 20, regenBonusBps: 1_000, perCells: 20 },
         }),
-      /** The cap raised for ducats (destroyed by the caller), a few times a day. */
+      /**
+       * The equal war chest (docs/plan-terraferme-porcellana.md § 4 quinquies, the owner's
+       * decisions of 8 November 2026): the buildings and the cap paid in écus, the Terraferma's own
+       * money, the same for every merchant of a theatre: `start` on setting down, `perDay` each
+       * morning of the week, never past `cap` (golden rule 3). Absent: they cost ducats.
+       */
+      chest: z
+        .object({
+          start: qty,
+          perDay: qty,
+          cap: positive,
+          prices: z.object({
+            rocca: positive,
+            borgo: positive,
+            porto: positive,
+            bombarda: positive,
+            mura: positive,
+            cap: positive,
+          }),
+        })
+        .optional(),
+      /** The cap raised (for ducats, destroyed by the caller, or for écus), a few times a day. */
       capRaise: z
         .object({ amount: qty, price: money, perDay: qty })
         .prefault({ amount: 10, price: 10_000, perDay: 2 }),
@@ -687,6 +724,11 @@ export const worldSettingsSchema = z.object({
       close: z
         .object({
           winBps: bps.max(10_000),
+          /**
+           * The threshold that wins the week at once, day by day from Monday (8 November 2026: it
+           * lowers, a week may end before Sunday). Absent: `winBps` all week.
+           */
+          winBpsByDay: z.array(bps.max(10_000)).length(7).optional(),
           influence: z.object({
             signore: qty,
             podium: qty,

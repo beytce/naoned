@@ -37,7 +37,7 @@ export function ProductionSheet({
   highlight: string | null;
   busy: boolean;
   onClose: () => void;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   /** Puts a counter or a building down: the map in its mode of placing. */
   onPlace: (kind: "post" | "camp" | "depot" | "porta") => void;
   /** The Remise, where the vehicles are bought, raised and sent. */

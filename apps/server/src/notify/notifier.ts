@@ -105,6 +105,8 @@ const TERRA_NEWS: ReadonlySet<string> = new Set([
   "terra_ducats_received",
   // The war eats the goods (R1): the troops' bread ran out.
   "terra_hungry",
+  // The switch of 9 November 2026: the week's theatre made again on the new map.
+  "terra_reformed",
 ]);
 /**
  * Kinds sent only to whoever asked for them (off by default): their name in `push_off` turns

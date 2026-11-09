@@ -39,7 +39,7 @@ export function DomainBar({
   region: string;
   /** Lorenzo's card over it (the tutorial): the road to the Casa is his to say. */
   guided?: boolean;
-  act: (a: EmpireAction) => Promise<void>;
+  act: (a: EmpireAction) => Promise<unknown>;
   onBack: () => void;
   /** The Production (the buildings, a fondaco to put down). */
   onProduction: () => void;
