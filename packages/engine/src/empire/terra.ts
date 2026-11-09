@@ -51,7 +51,10 @@ export function settleTerra(tx: Tx): EmpireTerra | null {
   if (!terraOn(tx.ctx) || !tx.s.empire) return null;
   const week = carnetWeek(tx.now);
   const t = tx.s.empire.terra;
-  if (t && t.week === week) return t;
+  if (t && t.week === week) {
+    reformTheatres(tx, t);
+    return t;
+  }
   if (t) for (const th of t.theatres) closeTheatre(tx, th, t.week);
   const next: EmpireTerra = {
     week,
@@ -62,6 +65,37 @@ export function settleTerra(tx: Tx): EmpireTerra | null {
   tx.s.empire.terra = next;
   if (isContesaWeek(week)) formContesa(tx, next, week);
   return next;
+}
+
+/**
+ * The switch of 9 November 2026 (lot T7, the owner's decision: this week, not the next Monday): a
+ * theatre of the week opened on another grid than the settings' is made again on theirs, with
+ * the settings of now; its members, its companies and its cotes stay, its places and its bread go
+ * (each places its camp again, the entry is not taken twice); each member is told. Once: after it,
+ * the grids agree.
+ */
+function reformTheatres(tx: Tx, t: EmpireTerra): void {
+  const cfg = terraOn(tx.ctx);
+  if (!cfg) return;
+  for (const th of t.theatres) {
+    if ((th.cfg.grid ?? "hex") === (cfg.grid ?? "hex") || th.map.closed) continue;
+    const active = Math.max(
+      1,
+      th.members.length,
+      Object.keys(th.map.players).filter((id) => !isNation(id)).length,
+    );
+    const map = newTerra(
+      cfg,
+      `${tx.ctx.seed ?? tx.ctx.startAt}:empire-terra:${th.id}:${cfg.grid ?? "hex"}`,
+      active,
+      terraWeekStart(t.week),
+    );
+    if (th.kind === "contesa") map.teamMode = true;
+    th.cfg = cfg;
+    th.map = map;
+    th.rations = undefined;
+    for (const id of th.members) emit(tx, "terra_reformed", id, { theatre: th.id });
+  }
 }
 
 /** The Republic's ration: the same bread a day for every merchant of the theatre. */

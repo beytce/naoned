@@ -187,6 +187,9 @@ export const venice1450Settings: WorldSettingsInput = {
   // day's end and a latecomer for 12 h; Milan rides every 2 open hours (docs/calibration.md).
   terraferma: {
     live: true,
+    // The switch (lot T7, the owner's decision of 9 November 2026): Porcellana's square grid, this
+    // week; the week's theatres opened on the hexagons are made again (empire/terra.ts).
+    grid: "square",
     // The week's close (the theme's defaults), without the Signore's decree: the Doge's decree
     // of the Republic replaces it (R7, R12); the Signore keeps his title and his Glory.
     close: {
