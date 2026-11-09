@@ -1266,6 +1266,27 @@ const frDict = {
       skip: "Passer",
       start: "Commencer",
     },
+    /** The Battle (lot T6b, 9 November 2026). */
+    battle: {
+      title: "La Bataille",
+      pitch: (minutes: number, players: number) =>
+        `Une partie en direct de ${minutes} minutes sur la carte de la Terraferme, ${players} joueurs à armes égales : chacun le même trésor, rien de ton empire n'y entre. Les places vides sont tenues par l'ordinateur.`,
+      play: "Jouer une Bataille",
+      lobby: "Salle d'attente",
+      waiting: (n: number, of: number, seconds: number) =>
+        `${n} joueur${n > 1 ? "s" : ""} sur ${of} · départ dans ${seconds} s`,
+      leave: "Quitter la salle",
+      left: (min: number, sec: number) => `${min}:${String(sec).padStart(2, "0")}`,
+      over: "Fin de la Bataille",
+      you: "Toi",
+      someone: "Un joueur",
+      cells: (n: number) => `${n} case${n > 1 ? "s" : ""}`,
+      again: "Rejouer",
+      off: "La Bataille est fermée pour l'instant.",
+      loading: "La Bataille arrive…",
+      failed: "La Bataille n'a pas répondu.",
+      open: "La Bataille · 12 min",
+    },
     terra: {
       tab: "Terraferme",
       title: "La Terraferme",
@@ -1330,6 +1351,8 @@ const frDict = {
         chestLabel: (n: number, cap: number) => `Trésor : ${n} écus sur ${cap}`,
         chestLine: (n: number, perDay: number, cap: number) =>
           `Trésor : ${n} écus · +${perDay} chaque matin, jusqu'à ${cap}`,
+        chestLineEvery: (n: number, per: number, minutes: number, cap: number) =>
+          `Trésor : ${n} écus · +${per} toutes les ${minutes} min, jusqu'à ${cap}`,
         chestShort: (n: number) => `Il manque ${n} écu${n > 1 ? "s" : ""} au trésor`,
         /** The supply by road (8 November 2026). */
         campoStore: (goods: string) => `Magasin du Campo : ${goods}`,
@@ -1708,6 +1731,8 @@ const frDict = {
     errors: {
       insufficient_funds: "Pas assez de ducats.",
       chest_short: "Il manque des écus au trésor de guerre.",
+      already_playing: "Ta Bataille est en cours.",
+      battle_off: "La Bataille est fermée pour l'instant.",
       bad_key: "Cette demande ne se comprend pas.",
       invalid_input: "Ce choix n'existe pas.",
       insufficient_seals: "Pas assez de Sceaux.",
@@ -4936,6 +4961,8 @@ const frDict = {
         one_lot: "Vous menez déjà un lot de ces enchères.",
         insufficient_funds: "Pas assez de ducats.",
         chest_short: "Il manque des écus au trésor de guerre.",
+        already_playing: "Ta Bataille est en cours.",
+        battle_off: "La Bataille est fermée pour l'instant.",
       } as Record<string, string>,
     },
     /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
@@ -5162,6 +5189,8 @@ const frDict = {
       bales_off: "Pas de colis de Faraj dans ce monde.",
       insufficient_funds: "Pas assez de ducats.",
       chest_short: "Il manque des écus au trésor de guerre.",
+      already_playing: "Ta Bataille est en cours.",
+      battle_off: "La Bataille est fermée pour l'instant.",
       shares_off: "Pas d'actions dans ce monde.",
       too_early: "La cotation n'est pas encore ouverte.",
       not_for_npc: "Une Maison de l'ordinateur ne se cote pas.",

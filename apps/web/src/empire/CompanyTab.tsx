@@ -26,6 +26,7 @@ export function CompanySheet({
   act,
   onPlaceCamp,
   onEnterTerra,
+  onBattle,
   pane: first,
 }: {
   p: EmpirePayload;
@@ -42,6 +43,8 @@ export function CompanySheet({
   pane?: CompanyPane;
   /** The way into the Terraferma's own scene. */
   onEnterTerra?: () => void;
+  /** The Battle's scene (lot T6b). */
+  onBattle?: () => void;
 }) {
   const [pane, setPane] = useState<CompanyPane>("carnet");
   // biome-ignore lint/correctness/useExhaustiveDependencies: chosen once, as the sheet opens
@@ -100,6 +103,7 @@ export function CompanySheet({
             busy={busy}
             act={act}
             onEnter={onEnterTerra}
+            onBattle={onBattle}
           />
         ))}
     </Sheet>

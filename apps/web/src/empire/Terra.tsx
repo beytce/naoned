@@ -238,6 +238,7 @@ export function TerraBody({
   busy,
   act,
   onEnter,
+  onBattle,
 }: {
   p: EmpirePayload;
   now: number;
@@ -247,6 +248,8 @@ export function TerraBody({
   act: Act;
   /** The way into the Terraferma's own scene (its tiles turning over), where there is one. */
   onEnter?: () => void;
+  /** The Battle's scene (lot T6b). */
+  onBattle?: () => void;
 }) {
   const view = p.view;
   const [cell, setCell] = useState<number | null>(null);
@@ -331,6 +334,16 @@ export function TerraBody({
         <p className="mt-3 text-xs text-gold">
           {t.honours(tv.honours.trophies, tv.honours.lustre, tv.honours.blazon.length)}
         </p>
+      )}
+
+      {onBattle && (
+        <section className="mt-5" data-battle-entry>
+          <Label>{fr.empire.battle.title}</Label>
+          <p className="mt-1 text-sm text-cream-dim">{fr.empire.battle.pitch(12, 8)}</p>
+          <Slab className="mt-2 w-full" onClick={onBattle}>
+            {fr.empire.battle.open}
+          </Slab>
+        </section>
       )}
 
       <section className="mt-5" data-condotta-play>

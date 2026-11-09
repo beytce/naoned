@@ -741,11 +741,17 @@ function ChestGauge({ share }: { share: number }) {
 }
 
 /** The chest in the merchant's lands: its écus, each morning's, its ceiling. */
-function ChestLine({ chest }: { chest: { ecus: number; cap: number; perDay: number } }) {
+function ChestLine({
+  chest,
+}: {
+  chest: { ecus: number; cap: number; perDay: number; everyMinutes?: number | null };
+}) {
   return (
     <p className="flex items-center gap-2 text-sm text-cream" data-terra-chest-line="">
       <ChestGauge share={chest.ecus / Math.max(1, chest.cap)} />
-      {t.chestLine(chest.ecus, chest.perDay, chest.cap)}
+      {chest.everyMinutes
+        ? t.chestLineEvery(chest.ecus, chest.perDay, chest.everyMinutes, chest.cap)
+        : t.chestLine(chest.ecus, chest.perDay, chest.cap)}
     </p>
   );
 }

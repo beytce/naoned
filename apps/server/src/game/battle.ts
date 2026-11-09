@@ -143,6 +143,13 @@ export class BattleHub {
     };
     const state = { terra: { week: 0, map: m.sk.state } } as unknown as WorldState;
     const view = terraView(ctx, state, playerId, m.sk.state.clock, names);
+    // The chest fills every few minutes of real time, not each morning (the match's own time).
+    const every = m.sk.cfg.chest?.everyMinutes;
+    if (view?.me?.chest && every)
+      view.me.chest = {
+        ...view.me.chest,
+        everyMinutes: Math.max(1, Math.round(every / m.sk.speed)),
+      };
     return {
       phase: m.sk.result ? ("done" as const) : ("playing" as const),
       minutes: sk.minutes,

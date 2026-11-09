@@ -1229,7 +1229,7 @@ export interface TerraView {
     /** The holder its cities embargo (-1: none), the ducats it may still give today. */
     embargo: number;
     /** The war chest in écus (8 November 2026; null: the war is paid in ducats). */
-    chest?: { ecus: number; cap: number; perDay: number } | null;
+    chest?: { ecus: number; cap: number; perDay: number; everyMinutes?: number | null } | null;
     holdsCity: boolean;
     /** The cells its bombards may hit now, and the shots left today. */
     bombard: { cells: number[]; shots: number };

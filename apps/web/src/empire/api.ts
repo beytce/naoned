@@ -1,5 +1,5 @@
 import { ApiError } from "../api.js";
-import type { TerraView } from "../game/types.js";
+import type { TerraAction, TerraView } from "../game/types.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
 async function call(method: string, path: string, body?: unknown): Promise<unknown> {
@@ -38,4 +38,33 @@ export const empireApi = {
     }>,
   roster: (members: string[]) =>
     call("POST", "/api/empire/contesa/roster", { members }) as Promise<EmpireAnswer>,
+  /** The Battle (lot T6b): the player's lobby or match, and its orders. */
+  battle: () => call("GET", "/api/empire/battle") as Promise<{ battle: BattleState }>,
+  battleJoin: () => call("POST", "/api/empire/battle/join", {}) as Promise<{ battle: BattleState }>,
+  battleLeave: () =>
+    call("POST", "/api/empire/battle/leave", {}) as Promise<{ battle: BattleState }>,
+  battleAct: (action: TerraAction) =>
+    call("POST", "/api/empire/battle/act", { action }) as Promise<{
+      ok: boolean;
+      battle: BattleState;
+    }>,
 };
+
+/** The Battle as the player sees it: off, nothing, its lobby, its match live or ended. */
+export type BattleState =
+  | { phase: "off" }
+  | {
+      phase: "none" | "lobby";
+      minutes: number;
+      players: number;
+      waiting: number;
+      startsAt: number | null;
+    }
+  | {
+      phase: "playing" | "done";
+      minutes: number;
+      players: number;
+      endsAt: number;
+      view: TerraView | null;
+      result: { pseudo: string | null; bot: boolean; me: boolean; cells: number }[] | null;
+    };

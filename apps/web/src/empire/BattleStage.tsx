@@ -1,0 +1,147 @@
+/**
+ * The Battle (docs/plan-terraferme-porcellana.md § 4 nonies, lot T6b): the live match of the
+ * Terraferma as a scene of its own, full screen. Before: what it is and « Jouer » (a lobby always
+ * open, the empty places taken by the computer); the lobby, its players and its countdown; the
+ * match, on the Terraferma's board and interface, live; its end, the ranking and « Rejouer ».
+ */
+import { Suspense, useEffect, useState } from "react";
+import { ApiError } from "../api.js";
+import type { TerraAction } from "../game/types.js";
+import { fr } from "../i18n.js";
+import { Slab } from "../ui.js";
+import { TerraPlay } from "./Terra.js";
+import { type BattleState, empireApi } from "./api.js";
+
+const t = fr.empire.battle;
+
+export function BattleStage({ now, onBack }: { now: number; onBack: () => void }) {
+  const [battle, setBattle] = useState<BattleState | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const live = battle?.phase === "lobby" || battle?.phase === "playing";
+  // The match is read each second while it runs, each five otherwise.
+  useEffect(() => {
+    let gone = false;
+    const load = () =>
+      empireApi
+        .battle()
+        .then((r) => !gone && setBattle(r.battle))
+        .catch(() => undefined);
+    load();
+    const id = window.setInterval(load, live ? 1_000 : 5_000);
+    return () => {
+      gone = true;
+      window.clearInterval(id);
+    };
+  }, [live]);
+  const call = (p: Promise<{ battle: BattleState }>) =>
+    p
+      .then((r) => {
+        setBattle(r.battle);
+        setError(null);
+      })
+      .catch((e) => setError(fr.empire.errors[e instanceof ApiError ? e.code : ""] ?? t.failed));
+  const send = (a: TerraAction) =>
+    empireApi
+      .battleAct(a)
+      .then((r) => {
+        setBattle(r.battle);
+        return r.ok;
+      })
+      .catch(() => false);
+  const match = battle && (battle.phase === "playing" || battle.phase === "done") ? battle : null;
+  const left = match ? Math.max(0, Math.ceil((match.endsAt - now) / 1_000)) : 0;
+
+  return (
+    <div
+      className="porcellana fixed inset-0 z-40 overflow-hidden lg:top-[var(--topbar,0px)]"
+      data-battle-stage={battle?.phase ?? "loading"}
+    >
+      {match?.view ? (
+        <Suspense fallback={null}>
+          <TerraPlay
+            v={match.view}
+            now={now}
+            busy={false}
+            send={send}
+            className="absolute inset-0"
+            onBack={onBack}
+          />
+        </Suspense>
+      ) : null}
+
+      {match && match.phase === "playing" && (
+        <div className="pointer-events-none absolute inset-x-0 top-28 z-40 flex justify-center">
+          <span
+            className="pc-pill px-4 py-1.5 text-sm font-extrabold tabular-nums"
+            data-battle-clock=""
+          >
+            {t.left(Math.floor(left / 60), left % 60)}
+          </span>
+        </div>
+      )}
+
+      {(!match || match.phase === "done") && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/10 px-4">
+          <section
+            className="w-full max-w-sm space-y-3 rounded-3xl bg-white p-5 shadow-lg"
+            data-battle-card=""
+          >
+            {!battle || battle.phase === "off" ? (
+              <p className="text-sm">{battle ? t.off : t.loading}</p>
+            ) : battle.phase === "none" ? (
+              <>
+                <h2 className="font-display text-2xl font-black">{t.title}</h2>
+                <p className="text-sm">{t.pitch(battle.minutes, battle.players)}</p>
+                <Slab className="w-full" onClick={() => void call(empireApi.battleJoin())}>
+                  {t.play}
+                </Slab>
+              </>
+            ) : battle.phase === "lobby" ? (
+              <>
+                <h2 className="font-display text-2xl font-black">{t.lobby}</h2>
+                <p className="text-sm tabular-nums">
+                  {t.waiting(
+                    battle.waiting,
+                    battle.players,
+                    Math.max(0, Math.ceil(((battle.startsAt ?? now) - now) / 1_000)),
+                  )}
+                </p>
+                <Slab
+                  tone="ghost"
+                  className="w-full"
+                  onClick={() => void call(empireApi.battleLeave())}
+                >
+                  {t.leave}
+                </Slab>
+              </>
+            ) : battle.phase === "done" ? (
+              <>
+                <h2 className="font-display text-2xl font-black">{t.over}</h2>
+                <ol className="space-y-1 text-sm">
+                  {(battle.result ?? []).map((r, k) => (
+                    <li
+                      key={`${k}:${r.pseudo ?? ""}`}
+                      className={`flex justify-between ${r.me ? "font-extrabold text-[#C23B2E]" : ""}`}
+                    >
+                      <span>
+                        {k + 1}. {r.me ? t.you : (r.pseudo ?? t.someone)}
+                      </span>
+                      <span className="tabular-nums">{t.cells(r.cells)}</span>
+                    </li>
+                  ))}
+                </ol>
+                <Slab className="w-full" onClick={() => void call(empireApi.battleJoin())}>
+                  {t.again}
+                </Slab>
+              </>
+            ) : null}
+            {error && <p className="text-sm text-[#C23B2E]">{error}</p>}
+            <Slab tone="ghost" className="w-full" onClick={onBack}>
+              ‹ {fr.empire.terra.back}
+            </Slab>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
