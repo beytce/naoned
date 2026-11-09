@@ -113,6 +113,15 @@ Le défaut relevé : avec « le magasin du Campo d'abord, puis Venise » et « l
 - **Moteur** (tests d'abord, fixture figée) : les commandes `campo` dans `empire/orders.ts`, leur livraison vers le magasin dans `empire/moves.ts`, la consommation (ration, magasin, Venise à 150 %) dans `terraWorld.ts` et `empire/terra.ts`.
 - **Mesure** : au simulateur de 24 mois, toutes les graines, le temps de véhicule pris au commerce, le revenu, la part de maisons qui livrent ; `docs/calibration.md`.
 
+## 4 septies. Le territoire fait l'armée : le plan du lot T5d (décisions du porteur du 8 novembre 2026)
+
+- **Boule de neige modérée, plafonnée** : chaque case et chaque ville tenues ajoutent au maximum de troupes (`troops.perCell`, `troops.perCity`, déjà dans le moteur, à 0 à Venise), jusqu'à un plafond vers trois fois le maximum de départ (`troops.max`, nouveau ; règle 3). Le recrutement suit déjà les terres ; la hausse du maximum en écus reste un coup de pouce.
+- **La masse fait la vitesse, jusqu'à 3 cases par pas** : un front prend 1 case par pas, plus une par tranche de `fronts.massPerCell` troupes engagées, au plus `fronts.cellsMaxPerStep` (3).
+- **Un seuil de victoire qui baisse** : `close.winBpsByDay`, un seuil par jour de la semaine, haut le lundi, bas le dimanche ; réglé pour qu'environ une semaine sur trois se termine avant le dimanche (au simulateur, toutes les graines). Le seuil vaut pour un marchand seul, comme aujourd'hui (compter une alliance serait une autre décision).
+- **Ce qu'on voit** : l'anneau des troupes qui s'élargit à chaque case prise et la pilule « maximum +N » ; le ruban d'un gros front qui avance plus vite, la durée de marche juste dans « Lancer un front » ; dans le classement, « Seuil du jour : 40 % · tu tiens 12 % », et une alerte à tous la veille du jour où un marchand peut l'atteindre.
+- **Mesure** (simulateur de la Terraferme, toutes les graines, `docs/calibration.md`) : part de la carte du premier, semaines gagnées avant le dimanche, écart assidus / occasionnels, éliminations, premier front entre marchands.
+- **Mise en ligne** : pour les théâtres ouverts le lundi suivant, comme le trésor.
+
 ## 5. Les lots
 
 | Lot | Contenu | Vérification |
