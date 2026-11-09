@@ -191,6 +191,9 @@ export const venice1450Settings: WorldSettingsInput = {
     // of the Republic replaces it (R7, R12); the Signore keeps his title and his Glory.
     close: {
       winBps: 8_000,
+      // The threshold lowers through the week (8 November 2026): about one week in three is won
+      // before Sunday (docs/calibration.md).
+      winBpsByDay: [8_000, 5_000, 3_000, 2_000, 1_200, 800, 700],
       influence: { signore: 20, podium: 12, top10: 8, quarter: 5, participant: 2 },
       decrees: [],
       effects: {
@@ -300,11 +303,13 @@ export const venice1450Settings: WorldSettingsInput = {
       placementHours: 0,
       truceHours: 24,
     },
-    // The maximum of troops is raised by ducats only; the land recruits by the hour up to it.
+    // The land makes the army (the owner's decisions of 8 November 2026): each cell and city held
+    // raise the maximum, to three times the start's; the land recruits by the hour up to it.
     troops: {
       base: 60,
-      perCell: 0,
-      perCity: 0,
+      perCell: 2,
+      perCity: 6,
+      max: 180,
       regenBps: 400,
       regenMin: 1,
       recruit: { base: 6, perCell: 1, perCity: 3 },
@@ -346,6 +351,9 @@ export const venice1450Settings: WorldSettingsInput = {
     fronts: {
       max: 3,
       cellsPerStep: 1,
+      // The mass makes the speed: a cell more a step for each 40 troops, 3 at most.
+      massPerCell: 40,
+      cellsMaxPerStep: 3,
       minShareBps: 1_000,
       maxHours: 0,
       neutralEverySteps: 2,

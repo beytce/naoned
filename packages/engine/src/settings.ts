@@ -491,10 +491,22 @@ export const worldSettingsSchema = z.object({
          * plus so many per cell and per city held, up to the cap.
          */
         recruit: z.object({ base: qty, perCell: qty, perCity: qty.prefault(0) }).optional(),
+        /**
+         * The land makes the army (8 November 2026): the cap from the land (base, cells, cities)
+         * never past this ceiling (golden rule 3); the borough and the raises add on top. Absent:
+         * no ceiling.
+         */
+        max: positive.optional(),
       }),
       fronts: z.object({
         max: positive,
         cellsPerStep: positive,
+        /**
+         * A front's mass makes its speed (8 November 2026): one cell more a step for each
+         * `massPerCell` troops it carries, `cellsMaxPerStep` at most. Absent: `cellsPerStep`.
+         */
+        massPerCell: positive.optional(),
+        cellsMaxPerStep: positive.optional(),
         minShareBps: bps.max(10_000),
         /** A front comes home after so many open hours (0: never): presence relaunches it. */
         maxHours: qty.prefault(0),
@@ -712,6 +724,11 @@ export const worldSettingsSchema = z.object({
       close: z
         .object({
           winBps: bps.max(10_000),
+          /**
+           * The threshold that wins the week at once, day by day from Monday (8 November 2026: it
+           * lowers, a week may end before Sunday). Absent: `winBps` all week.
+           */
+          winBpsByDay: z.array(bps.max(10_000)).length(7).optional(),
           influence: z.object({
             signore: qty,
             podium: qty,

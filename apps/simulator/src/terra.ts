@@ -14,6 +14,7 @@ import {
   chooseDecree,
   closeTerra,
   countRankedSkirmish,
+  isNation,
   launchFront,
   newTerra,
   placeOnTerra,
@@ -119,7 +120,8 @@ export interface TerraResult {
   /** Ducats spent on the Terraferma (destroyed), in deniers. */
   spent: bigint;
   /** Share of the land still neutral, and held by Milan, at 22 h each day. */
-  daily: { neutralBps: number; milanBps: number; contested: number }[];
+  /** At 22 h each day: the land neutral, Milan's, the fronts between holders, the first merchant's. */
+  daily: { neutralBps: number; milanBps: number; contested: number; leaderBps: number }[];
   /** Hours from the week's start to the first front between merchants. */
   firstContactHours: number | null;
   fronts: { launched: number; againstMerchants: number; byMilan: number };
@@ -257,6 +259,16 @@ export function runTerra(
         neutralBps: Math.round((neutral * 10_000) / result.cells),
         milanBps: Math.round((milan * 10_000) / result.cells),
         contested: s.fronts.filter((f) => f.against !== null).length,
+        leaderBps: Math.round(
+          (Math.max(
+            0,
+            ...Object.keys(s.players)
+              .filter((id) => !isNation(id))
+              .map((id) => s.owner.filter((o) => o === id).length),
+          ) *
+            10_000) /
+            result.cells,
+        ),
       });
       onDay?.(day, s);
       day++;

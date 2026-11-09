@@ -99,6 +99,7 @@ function section({ r, first, off, draws, shifted, blind }: Runs): string {
     "| Indicateur | Valeur |",
     "| --- | --- |",
     `| Terre neutre à 22 h, jour par jour | ${r.daily.map((d) => pct(d.neutralBps)).join(" · ")} |`,
+    `| Le premier marchand à 22 h, jour par jour | ${r.daily.map((d) => pct(d.leaderBps)).join(" · ")} |`,
     `| Milan à 22 h, jour par jour | ${r.daily.map((d) => pct(d.milanBps)).join(" · ")} |`,
     `| Premier front entre marchands | ${r.firstContactHours === null ? "jamais" : `${r.firstContactHours} h après l'ouverture`} |`,
     `| Fronts lancés | ${r.fronts.launched} (contre des marchands ${r.fronts.againstMerchants}, de Milan ${r.fronts.byMilan}) |`,

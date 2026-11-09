@@ -570,13 +570,29 @@ export function capOf(s: TerraState, cfg: TerraConfig, id: string): number {
   if (fixed !== undefined) return fixed;
   const cells = cellsOf(s, id);
   const cities = cells.filter((i) => s.map.city[i]).length;
+  // The land makes the army, to its ceiling (8 November 2026).
+  const land = cfg.troops.base + cfg.troops.perCell * cells.length + cfg.troops.perCity * cities;
   return (
-    cfg.troops.base +
-    cfg.troops.perCell * cells.length +
-    cfg.troops.perCity * cities +
+    Math.min(land, cfg.troops.max ?? Number.POSITIVE_INFINITY) +
     (cfg.buildings.borgo?.capBonus ?? 0) * terraBuildingsOf(s, id, "borgo").length +
     (s.players[id]?.boughtCap ?? 0)
   );
+}
+
+/** The cells a front of `troops` may take a step: its mass makes its speed (8 November 2026). */
+export function cellsThisStep(cfg: TerraConfig, troops: number): number {
+  const f = cfg.fronts;
+  if (!f.massPerCell) return f.cellsPerStep;
+  const k = f.cellsPerStep + Math.floor(Math.max(0, troops) / f.massPerCell);
+  return Math.min(f.cellsMaxPerStep ?? k, k);
+}
+
+/** The share of the land that wins the week at once, that day (it lowers through the week). */
+export function winBpsAt(s: TerraState, cfg: TerraConfig, at: number): number {
+  const byDay = cfg.close.winBpsByDay;
+  if (!byDay) return cfg.close.winBps;
+  const day = Math.min(6, Math.max(0, Math.floor((at - s.startAt) / DAY_MS)));
+  return byDay[day] ?? cfg.close.winBps;
 }
 
 /** Troops a merchant recruits each open hour (with `troops.recruit`): more with more land. */
@@ -1548,7 +1564,7 @@ function step(s: TerraState, cfg: TerraConfig, at: number, fronts = true): void 
   const land = s.map.land.filter(Boolean).length;
   for (const id of Object.keys(s.players)) {
     if (isNation(id)) continue;
-    if (cellsOf(s, id).length * 10_000 >= cfg.close.winBps * land) {
+    if (cellsOf(s, id).length * 10_000 >= winBpsAt(s, cfg, at) * land) {
       closeTerra(s, cfg, at + cfg.stepMinutes * MINUTE_MS, id);
       return;
     }
@@ -1652,7 +1668,8 @@ function advanceFront(
   }
   // Free land is taken slowly: the race for it lasts.
   const waits = front.against === null && front.steps % cfg.fronts.neutralEverySteps !== 0;
-  for (let k = 0; !waits && k < cfg.fronts.cellsPerStep; k++) {
+  const pace = cellsThisStep(cfg, front.troops);
+  for (let k = 0; !waits && k < pace; k++) {
     const best = nextCell(s, cfg, front);
     const cost = best < 0 ? 0 : cellCost(s, cfg, best);
     if (best < 0 || front.troops < cost) break;
