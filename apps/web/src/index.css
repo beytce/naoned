@@ -1831,3 +1831,24 @@ button.map-place {
     --places: 0px;
   }
 }
+
+/* The tutorials' spotlight (8 November 2026): the lit thing breathes in red. */
+@keyframes tutor-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(194 59 46 / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgb(194 59 46 / 0);
+  }
+}
+.tutor-ring {
+  animation: tutor-breathe 1.6s ease-in-out infinite;
+  transition: left 0.15s, top 0.15s, width 0.15s, height 0.15s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tutor-ring {
+    animation: none;
+    transition: none;
+  }
+}

@@ -19,12 +19,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { daylight } from "./arrival.js";
 import { COL, LIGHT } from "./tokens.js";
-
-/** The night's porcelain: a cool grey-blue ground and sky, never black (P3-05). */
-const NIGHT_BG = "#9AA3B3";
-const NIGHT_SKY = "#E4E9F2";
 
 export interface StageProps {
   /** Where the camera looks: the sun's shadow box follows it. */
@@ -37,8 +32,6 @@ export interface StageProps {
   background?: string;
   /** The world's scale against the kit's (a battle's chart is larger): the shadows reach it all. */
   scale?: number;
-  /** The light follows the player's own hour, day and night (P3-05 of the players' audit). */
-  hours?: boolean;
 }
 
 export function Stage({
@@ -47,14 +40,10 @@ export function Stage({
   plain = false,
   background = COL.bg,
   scale = 1,
-  hours = false,
 }: StageProps) {
   const { gl, scene, camera, size } = useThree();
   const sun = useRef<DirectionalLight>(null);
   const sky = useRef<HemisphereLight>(null);
-  const day = useMemo(() => new Color(background), [background]);
-  const night = useMemo(() => new Color(NIGHT_BG), []);
-  const nightSky = useMemo(() => new Color(NIGHT_SKY), []);
 
   useLayoutEffect(() => {
     gl.toneMapping = NeutralToneMapping;
@@ -100,19 +89,6 @@ export function Stage({
   useEffect(() => () => composer?.dispose(), [composer]);
 
   useFrame(() => {
-    // Day and night at the player's hour: the sun falls, the sky cools, the ground darkens a
-    // little; the kilns' glow and the lanterns of accent then read the more.
-    if (hours) {
-      const d = new Date();
-      const k = daylight(d.getHours() + d.getMinutes() / 60);
-      const n = (1 - k) / (1 - 0.35);
-      if (sun.current) sun.current.intensity = LIGHT.sun.intensity * (0.25 + 0.75 * k);
-      if (sky.current) {
-        sky.current.intensity = LIGHT.hemi.intensity * (0.6 + 0.4 * k);
-        sky.current.color.set(LIGHT.hemi.sky).lerp(nightSky, n);
-      }
-      if (scene.background instanceof Color) scene.background.copy(day).lerp(night, 0.45 * n);
-    }
     const s = sun.current;
     if (s) {
       const [ox, oy, oz] = LIGHT.sun.offset;

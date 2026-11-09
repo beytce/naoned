@@ -51,6 +51,11 @@ export function smoke(
   };
 }
 
+/** A phone or a tablet: the scene spares what weighs on every pixel. */
+const LOW_POWER =
+  typeof window !== "undefined" &&
+  (window.innerWidth < 900 || window.matchMedia?.("(pointer: coarse)").matches === true);
+
 /** A kiln's glow: the mouth in accent and a small light that breathes; dark while idle. */
 export function kilnGlow(
   P: Palette,
@@ -61,16 +66,25 @@ export function kilnGlow(
   z: number,
   o: ModelOpts,
 ): (t: number) => void {
-  const light = dyn(new PointLight(P.accentColour, 4, 4.5, 1.6));
-  light.position.set(x, y, z);
-  p.add(light);
+  // On a phone, the mouth glows alone: each light weighs on every pixel of the scene. Elsewhere
+  // the light stays in the scene, dimmed at rest, never hidden: a light that comes and goes
+  // makes the device rebuild all its shaders, a hitch each time a kiln starts or stops (the
+  // owner's report of 8 November 2026, an iPhone).
+  const light = LOW_POWER ? null : dyn(new PointLight(P.accentColour, 0, 4.5, 1.6));
+  if (light) {
+    light.position.set(x, y, z);
+    p.add(light);
+  }
   dyn(mouth);
   mouth.castShadow = false;
   const idle = P.m("open");
   return (t) => {
-    light.visible = o.running;
     mouth.material = o.running ? P.glow : idle;
-    if (!o.running) return;
+    if (!light) return;
+    if (!o.running) {
+      light.intensity = 0;
+      return;
+    }
     const k = 0.85 + Math.sin(t * 3.1) * 0.08 + Math.sin(t * 7.3) * 0.05;
     light.intensity = 4 * k;
     light.color.copy(P.accentColour);

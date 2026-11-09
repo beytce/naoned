@@ -103,6 +103,7 @@ export function NewWorkshopList({
               .map((r) => (
                 <li
                   key={r.code}
+                  data-build-recipe={r.code}
                   ref={
                     r.code === highlight
                       ? (el) => el?.scrollIntoView({ block: "nearest" })

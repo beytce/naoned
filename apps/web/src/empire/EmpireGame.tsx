@@ -62,6 +62,8 @@ import { planRound } from "./map/round.js";
 import { MAP_3D } from "./map3d/flag.js";
 import { inTutorial, nextStep } from "./next.js";
 import { BattleScreen } from "./porta/Battle.js";
+import { FeatureTutors } from "./tutor/FeatureTutors.js";
+import { FirstTutor, firstTutorOn } from "./tutor/FirstTutor.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
 type SheetId =
@@ -513,7 +515,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     setPicked(null);
   };
   const step = nextStep(p, now);
-  const tutorial = inTutorial(p);
+  // The guided start leads (8 November 2026): its spotlight speaks, Lorenzo's card steps aside.
+  const tutorial = inTutorial(p) && !firstTutorOn(p, now);
   // The four places at the foot (docs/plan-refonte-claire.md): where one is, and going there.
   const porta = view.porta;
   const portaCasa =
@@ -1027,6 +1030,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         {createPortal(
           <>
             <Intro p={p} />
+            <FirstTutor p={p} now={now} />
+            <FeatureTutors p={p} now={now} />
             {!online && (
               <output
                 className="fixed inset-x-0 top-[max(0.5rem,env(safe-area-inset-top))] z-[65] mx-auto flex w-fit items-center gap-2 rounded-full bg-night-4/95 px-4 py-2 text-sm font-semibold text-cream shadow-lg ring-1 ring-edge"
