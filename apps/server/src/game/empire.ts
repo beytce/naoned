@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import {
   type EmpireCommand,
   type WorldContext,
@@ -14,7 +15,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
 import { accounts, companyMembers } from "../db/schema.js";
-import { BattleHub } from "./battle.js";
+import { BattleHub, guestId, isGuest } from "./battle.js";
 import { balanceOf } from "./house.js";
 import { toJson } from "./serialize.js";
 import { type TerraName, terraView } from "./terra.js";
@@ -308,6 +309,8 @@ export interface EmpireRouteDeps {
   /** The session's account, or null without one (a public page). */
   accountIfAny?: (req: FastifyRequest) => Promise<{ id: string } | null>;
   perMerchant: (max: number) => object;
+  /** The cookies kept to HTTPS (production): the Battle's guest's (B4). */
+  secureCookies?: boolean;
 }
 
 /** The persistent empire's routes (CADRAGE-v3, the socle); a monthly world answers its kind only. */
@@ -403,22 +406,79 @@ export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps
   const battle = new BattleHub(deps.db, world);
   if (isEmpire()) battle.start();
   app.addHook("onClose", async () => battle.stop());
+  // Who plays the Battle (B4): the account of the session, else a guest by its cookie, given on
+  // the first read; nobody else may write to a match.
+  const GUEST = "fondaco_guest";
+  const guestOf = (req: FastifyRequest) => {
+    const token = req.cookies[GUEST];
+    return token && /^[A-Za-z0-9_-]{20,64}$/.test(token) ? guestId(token) : null;
+  };
+  const player = async (req: FastifyRequest, reply: FastifyReply, give = false) => {
+    const account = (await deps.accountIfAny?.(req)) ?? null;
+    if (account) return account.id;
+    const guest = guestOf(req);
+    if (guest) return guest;
+    if (give) {
+      const token = randomBytes(24).toString("base64url");
+      reply.setCookie(GUEST, token, {
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: deps.secureCookies ?? false,
+        maxAge: 30 * 86_400,
+      });
+      return guestId(token);
+    }
+    reply.code(401).send({ error: "unauthenticated" });
+    return null;
+  };
   app.get("/api/empire/battle", async (req, reply) => {
-    const account = await deps.requireAccount(req, reply);
-    if (!account) return;
     if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
-    const state = await battle.state(account.id, world.now());
+    const id = await player(req, reply, true);
+    if (!id) return;
+    // Signed in from a guest's browser: the account takes its cote, the guest is let go.
+    const guest = guestOf(req);
+    if (guest && !isGuest(id)) {
+      await battle.adopt(guest, id);
+      reply.clearCookie(GUEST, { path: "/" });
+    }
+    const state = await battle.state(id, world.now());
     // A cote just moved is read once written.
     await battle.flush();
     return toJson({ battle: state });
   });
-  app.post("/api/empire/battle/join", deps.perMerchant(30), async (req, reply) => {
-    const account = await deps.requireAccount(req, reply);
-    if (!account) return;
-    if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
-    const res = await battle.join(account.id, world.now());
+  const answer = async (reply: FastifyReply, id: string, res: string) => {
+    if (res === "no_battle_room") return reply.code(404).send({ error: res });
+    if (res === "not_host") return reply.code(403).send({ error: res });
     if (res !== "ok") return reply.code(409).send({ error: res });
-    return toJson({ battle: await battle.state(account.id, world.now()) });
+    return toJson({ battle: await battle.state(id, world.now()) });
+  };
+  app.post("/api/empire/battle/join", deps.perMerchant(30), async (req, reply) => {
+    if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
+    const id = await player(req, reply);
+    if (!id) return;
+    const body = z
+      .object({
+        room: z
+          .string()
+          .regex(/^[A-Za-z2-9]{6}$/)
+          .optional(),
+      })
+      .safeParse(req.body ?? {});
+    if (!body.success) return reply.code(400).send({ error: "invalid_input" });
+    return answer(reply, id, await battle.join(id, world.now(), body.data.room));
+  });
+  // A private room (B4): opened, its code shared, launched by its host.
+  app.post("/api/empire/battle/room", deps.perMerchant(30), async (req, reply) => {
+    if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
+    const id = await player(req, reply);
+    if (!id) return;
+    return answer(reply, id, battle.openRoom(id, world.now()));
+  });
+  app.post("/api/empire/battle/room/start", deps.perMerchant(30), async (req, reply) => {
+    const id = await player(req, reply);
+    if (!id) return;
+    return answer(reply, id, await battle.startRoom(id, world.now()));
   });
   // The public ranking of the Battle's cotes (B3): no account needed to read it.
   app.get("/api/empire/battle/ranking", async (req) => {
@@ -427,21 +487,21 @@ export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps
     return toJson({ ranking: await battle.ranking(me?.id ?? null) });
   });
   app.post("/api/empire/battle/leave", deps.perMerchant(30), async (req, reply) => {
-    const account = await deps.requireAccount(req, reply);
-    if (!account) return;
-    battle.leave(account.id);
-    return toJson({ battle: await battle.state(account.id, world.now()) });
+    const id = await player(req, reply);
+    if (!id) return;
+    battle.leave(id);
+    return toJson({ battle: await battle.state(id, world.now()) });
   });
   app.post("/api/empire/battle/act", deps.perMerchant(120), async (req, reply) => {
-    const account = await deps.requireAccount(req, reply);
-    if (!account) return;
+    const id = await player(req, reply);
+    if (!id) return;
     const parsed = z
       .object({ action: z.discriminatedUnion("type", [...terraActionSchemas]) })
       .safeParse(req.body);
     if (!parsed.success || !BATTLE_ORDERS.has(parsed.data.action.type))
       return reply.code(400).send({ error: "invalid_action" });
-    const ok = battle.act(account.id, parsed.data.action as never, world.now());
-    return toJson({ ok, battle: await battle.state(account.id, world.now()) });
+    const ok = battle.act(id, parsed.data.action as never, world.now());
+    return toJson({ ok, battle: await battle.state(id, world.now()) });
   });
   const payload = (id: string) => empirePayload(world.ctx, world.current, id, world.now());
 

@@ -278,6 +278,8 @@ export interface GameRouteDeps {
   world: GameWorld;
   auth: AuthService;
   sessionCookie: string;
+  /** The cookies kept to HTTPS (production). */
+  secureCookies?: boolean;
   notifier: Notifier;
   /** The skirmishes, their lost matches already recovered. */
   skirmishes: SkirmishHub;
@@ -298,7 +300,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       rateLimit: {
         max,
         timeWindow: "1 minute",
-        keyGenerator: (req: FastifyRequest) => req.cookies[deps.sessionCookie] ?? req.ip,
+        keyGenerator: (req: FastifyRequest) =>
+          req.cookies[deps.sessionCookie] ?? req.cookies.fondaco_guest ?? req.ip,
       },
     },
   });
@@ -331,7 +334,14 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   /** The account of the session, when there is one (a public page may read it). */
   const accountIfAny = (req: FastifyRequest) =>
     auth.accountForSession(req.cookies[deps.sessionCookie]);
-  registerEmpireRoutes(app, { db, world, requireAccount, accountIfAny, perMerchant });
+  registerEmpireRoutes(app, {
+    db,
+    world,
+    requireAccount,
+    accountIfAny,
+    perMerchant,
+    secureCookies: deps.secureCookies,
+  });
   if (deps.porta)
     registerPortaRoutes(app, {
       db,

@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Admin } from "./Admin.js";
 import { type Account, ApiError, api, tokenFromLocation } from "./api.js";
 import { Emblem } from "./art/logo.js";
@@ -11,6 +11,18 @@ import { LANG } from "./lang.js";
 import { LegalLinks, LegalPage, legalPageAt } from "./legal/Legal.js";
 import { firstLanding } from "./origin.js";
 import { Label, Slab } from "./ui.js";
+
+// The Battle on its own page (B4), with or without an account: loaded only there.
+const BattlePage = lazy(() =>
+  import("./empire/BattleStage.js").then((m) => ({ default: m.BattlePage })),
+);
+
+/** The room's code in a path `/bataille/CODE`; null at `/bataille`; undefined elsewhere. */
+export function battlePath(path: string): string | null | undefined {
+  const m = /^\/bataille(?:\/([A-Za-z2-9]{6}))?\/?$/.exec(path);
+  if (!m) return undefined;
+  return m[1] ? m[1].toUpperCase() : null;
+}
 
 type Screen =
   | { name: "loading" }
@@ -61,7 +73,8 @@ export function App() {
   }, [signedIn]);
 
   // The landing seen, once per visit, for the counters of the way in (`/admin`).
-  const landing = screen.name === "login" && !screen.sentTo;
+  const battleRoom = battlePath(window.location.pathname);
+  const landing = screen.name === "login" && !screen.sentTo && battleRoom === undefined;
   useEffect(() => {
     if (!landing) return;
     let first = false;
@@ -78,6 +91,13 @@ export function App() {
     setScreen({ name: "login" });
   };
 
+  // The Battle is played with or without an account (B4).
+  if (battleRoom !== undefined)
+    return (
+      <Suspense fallback={null}>
+        <BattlePage room={battleRoom} />
+      </Suspense>
+    );
   // The legal pages are read with or without an account.
   const legal = legalPageAt(window.location.pathname);
   if (legal) return <LegalPage page={legal} />;
@@ -236,6 +256,14 @@ function Login(props: {
         {busy ? fr.sending : fr.sendLink}
       </Slab>
       <p className="text-center text-xs text-muted">{fr.noPassword}</p>
+      {/* The Battle without an account (B4): a match at once, the account later. */}
+      <a
+        href="/bataille"
+        className="text-center text-sm font-bold text-gold underline"
+        data-play-battle=""
+      >
+        {fr.playBattleNow}
+      </a>
       <p className="text-center text-xs text-muted">
         {fr.accept[0]}
         <a href="/conditions" className="underline">

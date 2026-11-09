@@ -69,6 +69,7 @@ const frDict = {
   emailPlaceholder: "toi@exemple.fr",
   sendLink: "Recevoir mon code",
   sending: "Envoi…",
+  playBattleNow: "Ou joue une Bataille tout de suite, sans compte ›",
   noPassword: "Pas de mot de passe : tu reçois un code et un lien de connexion par e-mail.",
   accept: [
     "En recevant ton code, tu acceptes les ",
@@ -1292,6 +1293,19 @@ const frDict = {
         `Ta cote : ${before} → ${after} (${after >= before ? "+" : "−"}${Math.abs(after - before)})`,
       ranking: "Classement des cotes",
       noRanking: "Personne n'a encore de cote.",
+      /** Without an account, private rooms (B4). */
+      guest: (name: string) =>
+        `Tu joues en invité, sous le nom de ${name}. Ta cote d'essai ne compte qu'avec un compte : crée-le, il la reprend.`,
+      signUp: "Créer mon compte",
+      roomOpen: "Salle privée",
+      roomJoin: (code: string) => `Rejoindre la salle ${code}`,
+      roomTitle: (code: string) => `Salle ${code}`,
+      roomWaiting: (n: number, of: number) =>
+        `${n} joueur${n > 1 ? "s" : ""} sur ${of} · l'hôte lance quand il veut, l'ordinateur prend les places vides`,
+      roomShare: "Partager le lien",
+      roomCopied: "Lien copié",
+      roomStart: "Lancer la partie",
+      roomUnranked: "Partie privée : les cotes ne bougent pas.",
     },
     terra: {
       tab: "Terraferme",
@@ -1739,6 +1753,8 @@ const frDict = {
       chest_short: "Il manque des écus au trésor de guerre.",
       already_playing: "Ta Bataille est en cours.",
       battle_off: "La Bataille est fermée pour l'instant.",
+      no_battle_room: "Cette salle n'existe plus : demande un nouveau lien.",
+      not_host: "Seul l'hôte de la salle la lance.",
       bad_key: "Cette demande ne se comprend pas.",
       invalid_input: "Ce choix n'existe pas.",
       insufficient_seals: "Pas assez de Sceaux.",

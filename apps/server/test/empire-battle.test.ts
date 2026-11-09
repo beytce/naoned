@@ -140,4 +140,72 @@ describe("the Battle on the server", () => {
     expect(again.statusCode).toBe(409);
     expect(again.json().error).toBe("already_playing");
   });
+
+  it("lets a guest play at once, and the account made after keeps its cote", async () => {
+    // No account: a guest's cookie given on the first read, a name drawn by lot.
+    const first = await app.inject({ method: "GET", url: "/api/empire/battle" });
+    expect(first.statusCode).toBe(200);
+    const token = first.cookies.find((c) => c.name === "fondaco_guest")?.value;
+    expect(token).toBeTruthy();
+    const g = `fondaco_guest=${token}`;
+    const none = first.json().battle;
+    expect(none.phase).toBe("none");
+    expect(none.guest).toBe(true);
+    expect(none.rating).toBe(1_000);
+    expect((await post(g, "/api/empire/battle/join")).statusCode).toBe(200);
+    now += 61_000;
+    const live = await battle(g);
+    expect(live.phase).toBe("playing");
+    const me = live.view.holders.find((h: { me: boolean; pseudo: string }) => h.me);
+    expect(me.pseudo).toMatch(/\S+ \S+/);
+    now += 13 * 60_000;
+    const done = await battle(g);
+    expect(done.phase).toBe("done");
+    expect(done.ratingAfter).not.toBeNull();
+    // A guest's cote is no line of the public ranking.
+    const ranking = async () =>
+      (await app.inject({ method: "GET", url: "/api/empire/battle/ranking" })).json().ranking;
+    expect(await ranking()).toHaveLength(0);
+    // Signed in from the same browser: the account takes the guest's cote, the guest is let go.
+    const a = await login("ada@example.org");
+    const both = await app.inject({
+      method: "GET",
+      url: "/api/empire/battle",
+      headers: { cookie: `${a}; ${g}` },
+    });
+    expect(both.json().battle.guest).toBe(false);
+    expect(both.cookies.find((c) => c.name === "fondaco_guest")?.value).toBe("");
+    const rows = await ranking();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].rating).toBe(done.ratingAfter);
+    expect(rows[0].matches).toBe(1);
+  });
+
+  it("opens a private room by its code, launched by its host, its match unranked", async () => {
+    const a = await login("ada@example.org");
+    const b = await login("bob@example.org");
+    const opened = (await post(a, "/api/empire/battle/room")).json().battle;
+    expect(opened.phase).toBe("lobby");
+    expect(opened.room).toMatch(/^[A-Z2-9]{6}$/);
+    expect(opened.host).toBe(true);
+    expect((await post(b, "/api/empire/battle/join", { room: "ZZZZZZ" })).statusCode).toBe(404);
+    expect((await post(b, "/api/empire/battle/join", { room: opened.room })).statusCode).toBe(200);
+    const joined = await battle(b);
+    expect(joined.room).toBe(opened.room);
+    expect(joined.host).toBe(false);
+    expect(joined.waiting).toBe(2);
+    // A room waits for its host, past the public lobby's minute.
+    now += 2 * 60_000;
+    expect((await battle(a)).phase).toBe("lobby");
+    expect((await post(b, "/api/empire/battle/room/start")).statusCode).toBe(403);
+    expect((await post(a, "/api/empire/battle/room/start")).statusCode).toBe(200);
+    expect((await battle(b)).phase).toBe("playing");
+    now += 13 * 60_000;
+    const done = await battle(a);
+    expect(done.phase).toBe("done");
+    expect(done.ratingAfter).toBeNull();
+    expect(
+      (await app.inject({ method: "GET", url: "/api/empire/battle/ranking" })).json().ranking,
+    ).toHaveLength(0);
+  });
 });

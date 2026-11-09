@@ -40,7 +40,14 @@ export const empireApi = {
     call("POST", "/api/empire/contesa/roster", { members }) as Promise<EmpireAnswer>,
   /** The Battle (lot T6b): the player's lobby or match, and its orders. */
   battle: () => call("GET", "/api/empire/battle") as Promise<{ battle: BattleState }>,
-  battleJoin: () => call("POST", "/api/empire/battle/join", {}) as Promise<{ battle: BattleState }>,
+  battleJoin: (room?: string) =>
+    call("POST", "/api/empire/battle/join", room ? { room } : {}) as Promise<{
+      battle: BattleState;
+    }>,
+  /** A private room (B4): opened by its host, launched by its host. */
+  battleRoom: () => call("POST", "/api/empire/battle/room", {}) as Promise<{ battle: BattleState }>,
+  battleRoomStart: () =>
+    call("POST", "/api/empire/battle/room/start", {}) as Promise<{ battle: BattleState }>,
   battleRanking: () =>
     call("GET", "/api/empire/battle/ranking") as Promise<{ ranking: BattleRank[] }>,
   battleLeave: () =>
@@ -63,12 +70,21 @@ export type BattleState =
       startsAt: number | null;
       /** The player's cote (B3). */
       rating: number;
+      /** A guest without an account (B4), and its name drawn by lot. */
+      guest: boolean;
+      name: string | null;
+      /** Its private room's code, and whether the player hosts it (B4). */
+      room: string | null;
+      host: boolean;
     }
   | {
       phase: "playing" | "done";
       minutes: number;
       players: number;
       endsAt: number;
+      guest: boolean;
+      /** A private room's match moves no cote (B4). */
+      ranked: boolean;
       view: TerraView | null;
       result: { pseudo: string | null; bot: boolean; me: boolean; cells: number }[] | null;
       /** The cote at its start, and after its end once moved (B3). */
