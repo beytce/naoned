@@ -115,6 +115,8 @@ export interface BoardTile {
   decor?: string[];
   /** How well a town knows the house: 1 to 3 banners at 3, 10 and 25 deliveries (P3-07). */
   loyalty?: number;
+  /** The house's banner: a town it held at the last close of the Terraferma (link ⑤). */
+  held?: boolean;
   /** A tile of water near a lumber camp: its boat is a raft of logs (the Cadore's, lot 7). */
   raft?: boolean;
   /** The Market's stalls: the house's goods it trades, their crates, hot above their rate (P3-08). */
@@ -277,6 +279,7 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       crates,
       ...(stalls.length ? { stalls } : {}),
       loyalty: served >= 25 ? 3 : served >= 10 ? 2 : served >= 3 ? 1 : 0,
+      held: (v.terraCities ?? []).includes(c.code),
       water: false,
       model: venice ? "market" : "town",
       size: c.size ?? 1,

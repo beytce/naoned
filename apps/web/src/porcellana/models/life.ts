@@ -208,6 +208,20 @@ export function loyaltyBanners(P: Palette, p: Object3D, tier: number): void {
 }
 
 /**
+ * The house's banner on a town it held at the last close of the Terraferma (link ⑤, 9 November
+ * 2026): a tall pole at the tile's north-east corner, a great cloth of accent, seen from afar.
+ */
+export function heldBanner(P: Palette, p: Object3D): void {
+  cyl(p, 0.06, 0.07, 3.4, 2.1, 0.18, -2.1, P.ink, 10);
+  ball(p, 0.13, 2.1, 3.62, -2.1, P.m("trim"));
+  const cloth = dyn(new Mesh(cached("held", () => new BoxGeometry(1.1, 1.5, 0.03))));
+  cloth.material = P.accentCloth;
+  cloth.position.set(2.1 + 0.58, 2.75, -2.1);
+  cloth.castShadow = true;
+  p.add(cloth);
+}
+
+/**
  * The Market in scene (P3-08 of the players' audit: the Market was a table of prices): on San
  * Marco's square, a stall for each good the house holds and the Market trades, one to three crates
  * by its stock, its awning in accent when the price stands above its rate (a good hour to sell).
