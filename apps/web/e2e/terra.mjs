@@ -70,6 +70,20 @@ async function magicLink(email) {
 const WEEK = JSON.parse(readFileSync(join(here, "fixtures", "terra-square.json"), "utf8"));
 const THEATRE = { id: "e2e", band: 0, kind: "open", companies: [], members: 24 };
 
+/** Plays a first-time tutorial through, « Suivant » to « Compris »: how many steps it had. */
+async function playTutor(page, id, shot) {
+  const step = page.locator(`[data-tutor-step^='${id}:']`);
+  await step.first().waitFor({ timeout: 30_000 });
+  let n = 0;
+  while ((await step.count()) > 0 && n < 10) {
+    if (n === 0 && shot) await shot();
+    n++;
+    await page.locator("[data-tutor-next]").first().click();
+    await page.waitForTimeout(400);
+  }
+  return n;
+}
+
 const server = await startServer();
 const browser = await chromium.launch({
   ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
@@ -146,9 +160,18 @@ try {
         .locator("[data-intro]")
         .getByRole("button", { name: /suivant|commencer/i })
         .click();
-    // The tutorials passed, as « Passer les tutoriels » does (the guided start has its journey).
+    // The guided start and the other places' first times passed: the Terraferma's play here.
     await page.evaluate(() =>
-      localStorage.setItem("fondaco:tutor", JSON.stringify({ all: "skip" })),
+      localStorage.setItem(
+        "fondaco:tutor",
+        JSON.stringify({
+          first: "skip",
+          porta: "done",
+          remise: "done",
+          interior: "done",
+          battle: "done",
+        }),
+      ),
     );
     await page.waitForSelector("[data-porcellana-map]", { timeout: 30_000 });
     // A free tile of the house's takes the Campo.
@@ -180,6 +203,13 @@ try {
     console.log(`${label}: the way in, ${Date.now() - started} ms, ${frames} frames kept`);
     await page.locator("[data-terra-stage='open']").waitFor({ timeout: 60_000 });
     await page.locator("[data-terra-play]").waitFor({ timeout: 60_000 });
+    // Its first times: the overview, then the board's pieces, under the spotlight.
+    const overview = await playTutor(page, "terra", () => shot("3-tuto-terraferme"));
+    const pieces = await playTutor(page, "terraBoard", () => shot("3-tuto-plateau"));
+    if (overview !== 3 || pieces !== 5)
+      throw new Error(
+        `${label}: the Terraferma's tutorials played ${overview} and ${pieces} steps`,
+      );
     await page.waitForTimeout(6_000);
     await shot("3-terraferme");
     // Its lands: the war chest, the Campo's store and « Livrer au Campo ».

@@ -63,12 +63,14 @@ l'explication.
 | Porta | `[data-porta-dock]` | 5 : les terres de Rome, le quai, les portes, lancer, reliques et risques (règle 2) |
 | Remise | `[data-remise]` | 4 : la Remise, la flotte, les modèles, livrer |
 | Intérieur | `[data-interior-scene]` | 5 : l'en-tête, le goulot, récolter et relancer, poser un poste, le conseil |
-| Terraferme | onglet Terraferme de la Compagnie | 3 : une semaine à armes égales, l'empire ne risque rien, le classement |
+| Terraferme | la scène de la Terraferme ouverte (`[data-terra-stage=open]`) | 3 : une semaine de conquête, à armes égales sans rien risquer, le seuil et ce que rapporte la semaine (Faveur, villes tenues) |
+| Plateau de la Terraferme | le plateau de la semaine (`[data-terra-stage=open] [data-terra-play]`, pas celui de la Bataille) | 5 : les troupes (le territoire fait l'armée), le trésor de guerre, lancer un front, la place, l'intendance par le Campo |
+| Bataille | sa carte, avant de jouer (`[data-battle-stage=none]`) | 3 : 12 minutes à huit, la cote, la Gloire de la semaine et la salle privée |
 
-**La Terraferme** : une autre session déploie la nouvelle Terraferme. Son tutoriel ne s'appuie
-que sur l'onglet de la Compagnie et dit les règles qui restent. Une fois son écran posé, il suffit
-d'ajouter ses ancres (par exemple `data-terra-*`) dans la chaîne de chaque étape de
-`features.ts`, et, s'il le faut, des étapes dans `fr.empire.tutorFeatures.terra`.
+**La Terraferme** (9 novembre 2026) : ses tutoriels suivent la nouvelle Terraferme et la
+Bataille, sur leurs écrans (`data-terra-*`, `data-battle-*`). Un joueur qui avait vu l'ancien
+tutoriel de l'onglet garde sa marque « terra » ; le plateau et la Bataille lui sont montrés à leur
+première ouverture. Les parcours `e2e:terra` et `e2e:battle` les jouent jusqu'au bout.
 
 ## Mémoire
 

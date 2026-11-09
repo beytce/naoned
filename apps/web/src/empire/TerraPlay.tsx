@@ -304,7 +304,7 @@ export function TerraPlay({
               : g.closesIn(duration(Math.max(0, v.closesAt - now)))}
         </span>
         {v.me && (
-          <span className="pc-pill px-3 py-1.5 text-xs font-bold text-cream">
+          <span className="pc-pill px-3 py-1.5 text-xs font-bold text-cream" data-terra-rank="">
             {t.rankLine(v.me.rank, v.players, v.me.glory)}
           </span>
         )}
@@ -356,6 +356,7 @@ export function TerraPlay({
         <nav
           className="pc-pill absolute inset-x-3 bottom-3 mx-auto flex max-w-md justify-between gap-1 p-1.5"
           aria-label={fr.empire.terra.title}
+          data-terra-nav=""
         >
           {(
             [

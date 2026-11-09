@@ -1188,16 +1188,52 @@ export const en: Dictionary = {
       ] as [string, string][],
       terra: [
         [
-          "The Terraferma.",
-          "A one-week season against Houses of your level. Everyone goes in with equal arms.",
+          "The Terraferma: a week of conquest.",
+          "Monday to Sunday, on the map of the Veneto, against Houses of your level. You set down your camp, then your fronts take the cells one by one.",
         ],
         [
-          "Your empire risks nothing.",
-          "What you built stays yours. The Terraferma is played beside it, a few minutes, several times a day.",
+          "Equal arms, nothing at risk.",
+          "Everyone gets the same war chest, in écus. Nothing of your empire comes in, and nobody can take what you built.",
         ],
         [
-          "The week's ranking.",
-          "At the week's end, the best win rewards. A new season starts on Monday.",
+          "The week and what it brings.",
+          "The victory threshold falls each day. At the close, your place brings Favour, and the cities you hold fly your banner the next week.",
+        ],
+      ] as [string, string][],
+      terraBoard: [
+        [
+          "Your troops.",
+          "Each cell and each city you hold raises your maximum: the territory makes the army.",
+        ],
+        [
+          "Your war chest.",
+          "Écus on entering, then each morning. They pay for forts, ports, ramparts and bombards.",
+        ],
+        [
+          "Launch a front.",
+          "Touch a cell at the edge of your lands: a front leaves there with a share of your troops and moves on its own, cell after cell.",
+        ],
+        [
+          "Your place.",
+          "Your place and your points of the week. « Ranking » shows today's victory threshold and your share of the map.",
+        ],
+        [
+          "The supply.",
+          "Each morning, your Campo asks for your war's bread: deliver it like a city. What the war takes straight from Venice costs half again.",
+        ],
+      ] as [string, string][],
+      battle: [
+        [
+          "The Battle: 12 minutes live.",
+          "Eight players on a Terraferma map, the same chest for each. The computer holds the empty places.",
+        ],
+        [
+          "Your rating.",
+          "It goes up or down with your rank at the end. Rooms gather players of your rating.",
+        ],
+        [
+          "Your week's Glory.",
+          "Your first ranked Battle of the day brings Glory to your Terraferma week. A private room is played among friends, unrated.",
         ],
       ] as [string, string][],
     },

@@ -5,9 +5,9 @@
  * selector), plays once on the device, and is passed with the others from the profile. A step
  * lights the first of its `chain` in sight, or none (Lorenzo speaks over the veil).
  *
- * The Terraferma's (the new Terraferma is deployed by another session): its trigger is the
- * Company's pane; its steps say the rules that stay (a week, equal arms, one's band). Its screen's
- * own anchors are to be added to the chain once it lands (docs/plan-tutoriels.md).
+ * The Terraferma's three (9 November 2026, the new Terraferma): its overview when its stage first
+ * opens; its board's pieces (troops, chest, a front, the place, the supply) at the first sight of
+ * the board of the week (not the Battle's); the Battle's when its card first shows.
  */
 import { fr } from "../../i18n.js";
 
@@ -18,7 +18,7 @@ export interface FeatureStep {
 }
 
 export interface FeatureTutor {
-  id: "porta" | "remise" | "interior" | "terra";
+  id: "porta" | "remise" | "interior" | "terra" | "terraBoard" | "battle";
   /** Its place on the screen: the tutorial starts when this is in sight. */
   when: string;
   steps: () => FeatureStep[];
@@ -62,7 +62,25 @@ export const FEATURE_TUTORS: FeatureTutor[] = [
   },
   {
     id: "terra",
-    when: "[data-pane=terra][aria-selected=true]",
-    steps: () => zip(T().terra, [["[data-pane=terra]"], [], []]),
+    when: "[data-terra-stage=open]",
+    steps: () => zip(T().terra, [["[data-terra-board]"], [], ["[data-battle-entry]"]]),
+  },
+  {
+    id: "terraBoard",
+    // The week's board, inside its stage: the Battle's board has its own.
+    when: "[data-terra-stage=open] [data-terra-play]",
+    steps: () =>
+      zip(T().terraBoard, [
+        ["[data-terra-troops]"],
+        ["[data-terra-chest]"],
+        ["[data-terra-board]"],
+        ["[data-terra-rank]"],
+        ["[data-terra-nav]"],
+      ]),
+  },
+  {
+    id: "battle",
+    when: "[data-battle-stage=none] [data-battle-card]",
+    steps: () => zip(T().battle, [["[data-battle-card]"], ["[data-battle-rating]"], []]),
   },
 ];
