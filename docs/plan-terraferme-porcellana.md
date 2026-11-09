@@ -129,6 +129,18 @@ Le porteur a dit « enchaîne » après T5d ; les choix ci-dessous sont les reco
 - **« Pendant ton absence »** : en entrant dans la Terraferme après plus de dix minutes, le plateau rejoue en accéléré (quatre secondes) les cases qui ont changé de main depuis ta dernière visite, au plus la dernière journée (les `changes` de la vue) ; les vagues et l'émail qui coule du plateau font le spectacle. Puis une pilule résume : « Pendant ton absence : +4 cases, −2 cases, 3 fronts rentrés ». Une touche « Passer » ; sans animation demandée, le résumé seul. La dernière visite est gardée dans le navigateur (`localStorage`, une commodité, pas un état de jeu).
 - **Les villes tenues** (lien ⑤) : qui tient une ville du plateau à la clôture plante sa bannière sur cette ville de la carte du commerce pendant la semaine suivante, et reçoit une lettre de la Signoria (de la Faveur de la région), dans le plafond de 10 à 15 % de la progression ; mesuré au simulateur de 24 mois. Second temps du lot, après le rejeu.
 
+## 4 nonies. La Bataille, en direct, ouverte à tous : le plan du lot T6b (décisions du porteur du 9 novembre 2026)
+
+L'escarmouche du monde mensuel (`packages/engine/src/skirmish.ts`, `apps/server/src/game/skirmish.ts` : 15 minutes, le temps à 60 fois, 8 places complétées par l'ordinateur, une partie classée par jour) devient la Bataille de l'empire.
+
+- **B1, le moteur et les salles** : les règles de la nouvelle Terraferme (carte carrée, territoire qui fait l'armée, vitesse selon la masse) ; **un trésor d'écus de partie**, le même pour tous, qui se remplit au fil de la partie ; rien de l'empire n'y entre (règles 4 et 6) ; **8 joueurs**, les places vides prises par l'ordinateur ; plusieurs parties à la fois, des salles toujours ouvertes (une partie part pleine ou au bout de 60 s) ; **12 minutes** (règle 7).
+- **B2, l'écran** : le plateau et l'interface de la Terraferme en direct, la barre du temps, l'écran de fin (classement, cote, « Rejouer ») ; l'entrée par le Campo, le volet Compagnie et l'adresse `/bataille`.
+- **B3, la cote** : une cote de type Elo en base, les parties formées par cote (pas de bande de Puissance : les armes sont égales), un classement public.
+- **B4, sans compte** : **l'invité joue tout de suite** sous un nom tiré au sort ; sa cote et son classement ne s'enregistrent qu'avec un compte (l'e-mail du jeu), qui reprend ses parties du navigateur ; un lien de salle privée à partager.
+- **B5, la Semaine** : **la première Bataille classée du jour rapporte un peu de Gloire** à ton théâtre de la semaine, plafonnée (vers 10 % de la Gloire d'un régulier).
+- **Mesure** : des parties entre machines : durée, parties décidées avant la fin, écart entre les bons et les mauvais joueurs.
+- **Ordre** : B1 et B2 ensemble (une Bataille jouable), puis B3, B4, B5, chacun testé et commité à part.
+
 ## 5. Les lots
 
 | Lot | Contenu | Vérification |
