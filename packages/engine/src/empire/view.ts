@@ -165,6 +165,8 @@ export interface EmpireView {
    * The supply by road (8 November 2026): the Campo's orders of the day (paid nothing), the counters
    * that serve it, and its store for the war; null without a Campo or the supply.
    */
+  /** The cities its banner flies on, held at the last week's close of the Terraferma (link ⑤). */
+  terraCities: string[];
   campo: {
     orders: { id: string; good: string; qty: number }[];
     posts: string[];
@@ -572,6 +574,7 @@ export function empireView(
     stores,
     full: fullWorkshops(ctx, house, s, stores, line.storeCap, now),
     orders: ordersOf(ctx, house, playerId, s, now),
+    terraCities: house.terraCities && house.terraCities.until > now ? house.terraCities.codes : [],
     campo:
       house.camp && s.terra.supply
         ? {

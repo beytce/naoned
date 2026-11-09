@@ -71,6 +71,9 @@ export function terraWeek(w: World, rng: Rng, week: number) {
     }
     const tier = tierOf(rng, s.theatreMax);
     const seals = tier === "signore" ? s.seals.signore : tier === "podium" ? s.seals.podium : 0;
-    gain(w, h, s.favour[tier], seals);
+    // The cities held at the close (link ⑤): the leaders hold a few, a letter of the Signoria each.
+    const held = tier === "signore" ? 3 : tier === "podium" ? 2 : tier === "top10" ? 1 : 0;
+    const letters = s.cities ? s.cities.favour * Math.min(held, s.cities.max) : 0;
+    gain(w, h, s.favour[tier] + letters, seals);
   }
 }

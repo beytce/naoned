@@ -156,6 +156,13 @@ function payTheatre(tx: Tx, th: EmpireTheatre, week: number): void {
       if (winner && h.company === winner) seals += s.contesa.winnerSeals;
     }
     const given = giveSeals(tx, r.id, seals, week);
+    // The cities held at the close (link ⑤): its banner on them the next week, a letter of the
+    // Signoria in Favour for a few.
+    const held = th.map.map.cityCode.flatMap((code, i) =>
+      code && th.map.owner[i] === r.id ? [code] : [],
+    );
+    h.terraCities = { codes: held, until: terraWeekStart(week + 2) };
+    if (s.cities) h.favour += s.cities.favour * Math.min(held.length, s.cities.max);
     if (
       tier !== "none" &&
       (!h.terraBest || TIERS.indexOf(tier) < TIERS.indexOf(h.terraBest as Tier))
