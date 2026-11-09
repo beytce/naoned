@@ -107,6 +107,12 @@ export interface BoardTile {
   running: boolean;
   /** A town's size (1 to 5). */
   size?: number;
+  /** A workshop's level: its people, its dressing (docs/plan-carte-vivante.md, lots 1 and 2). */
+  level?: number;
+  /** A workshop whose lots wait for the harvest: how many (its porters sit, then carry them). */
+  lots?: number;
+  /** The deliveries a town received from the house: its people, the travellers on its road. */
+  served?: number;
   /** Venice's own houses. */
   venetian?: boolean;
   /** A town's orders in crates on its quay: each one covered by the house's stock or not. */
@@ -279,6 +285,7 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       crates,
       ...(stalls.length ? { stalls } : {}),
       loyalty: served >= 25 ? 3 : served >= 10 ? 2 : served >= 3 ? 1 : 0,
+      served,
       held: (v.terraCities ?? []).includes(c.code),
       water: false,
       model: venice ? "market" : "town",
@@ -436,6 +443,8 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       water: false,
       model,
       running: st.state === "running",
+      level: w.level,
+      ...(lots > 0 || st.state === "full" ? { lots: Math.max(1, lots) } : {}),
       // Its lots ready in crates before it, of accent; full, a stack of wood that waits for the
       // harvest (golden rule 3, seen: P3-02 of the players' audit).
       ...(lots > 0

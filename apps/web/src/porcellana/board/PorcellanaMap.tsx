@@ -49,6 +49,7 @@ import { PlaceCard, type PlaceCardHandle } from "../PlaceCard.js";
 import { Stage } from "../Stage.js";
 import { easeOutCubic, pinOut, routesDrawn, tileDelay, tileDrop } from "../arrival.js";
 import { bake } from "../bake.js";
+import { Crowd } from "../crowd.js";
 import {
   flipAngle,
   flipDelay,
@@ -67,6 +68,7 @@ import { Blush } from "../selection.js";
 import { BISCUIT, BOARD, CAMERA, FLIP, RIBBON, SELECT } from "../tokens.js";
 import { FlatBoard } from "./FlatBoard.js";
 import { PARK, modelOf, vehicleModel } from "./models.js";
+import { peopleOf, portersWay } from "./people.js";
 import {
   type BoardPlace,
   type BoardScene,
@@ -137,6 +139,10 @@ interface FlipRun {
 
 /** A tile's middle in the scene (x, z), from its tile coordinates. */
 const world = (i: number, j: number): [number, number] => [i * S, j * S];
+/** A tile's number, for those who ask at every frame which tile they stand on (the crowd). */
+const tileNo = (i: number, j: number) => (i + 2048) * 4096 + (j + 2048);
+/** The most people on the board: fewer on a phone, fewer still when the frames slow down. */
+const CROWD = { phone: 70, desk: 200, least: 24, slowMs: 38, cut: 0.7 } as const;
 
 function Board({
   sh,
@@ -158,7 +164,22 @@ function Board({
   const blush = useMemo(() => new Blush(P), [P]);
   const root = useMemo(() => new Group(), []);
   const tiles = useRef(new Map<string, Live>());
+  const byNo = useRef(new Map<number, Live>());
   const clock = useRef({ t: live ? 0 : 10, life: 0 });
+  // The people of the board (docs/plan-carte-vivante.md, lot 1): two draw calls for them all.
+  const crowd = useMemo(() => {
+    const c = new Crowd(P, CROWD.desk, !PHONE());
+    root.add(c.group);
+    return c;
+  }, [P, root]);
+  useEffect(() => () => crowd.dispose(), [crowd]);
+  const people = useRef<{ budget: number; slow: number; ms: number }>({
+    budget: PHONE() ? CROWD.phone : CROWD.desk,
+    slow: 0,
+    ms: 16,
+  });
+  /** The lots that waited at each workshop at the last look: gone, they are carried home. */
+  const waiting = useRef(new Map<string, number>());
   const vehicles = useRef(new Map<string, Vehicle & { opts: ModelOpts }>());
 
   // The roads: a ribbon each, one texture whose chevrons run.
@@ -259,13 +280,32 @@ function Board({
       const was = tiles.current.get(tile.key);
       if (was && was.sig === sig) continue;
       if (was) root.remove(was.group);
-      tiles.current.set(tile.key, build(tile, sig, was));
+      const made = build(tile, sig, was);
+      tiles.current.set(tile.key, made);
+      byNo.current.set(tileNo(tile.i, tile.j), made);
     }
     for (const [k, l] of tiles.current)
       if (!seen.has(k)) {
         root.remove(l.group);
         tiles.current.delete(k);
+        const [i = 0, j = 0] = k.split(",").map(Number);
+        byNo.current.delete(tileNo(i, j));
       }
+    crowd.set(peopleOf(scene, people.current.budget), S);
+    // The harvest is seen (golden rule 3, D4 of the publication plan): the lots that waited at a
+    // workshop and wait no more are carried to the Fondaco, a porter a lot, in file on its road.
+    const now = new Map<string, number>();
+    for (const tile of scene.tiles) {
+      const id = tile.place?.id.startsWith("workshop:") ? tile.place.id.slice(9) : null;
+      if (!id) continue;
+      now.set(id, tile.lots ?? 0);
+      const had = waiting.current.get(id) ?? 0;
+      if (live && had > 0 && !tile.lots && clock.current.t > 3) {
+        const way = portersWay(scene, id);
+        if (way) crowd.send(way, Math.min(had, 5), S, clock.current.life);
+      }
+    }
+    waiting.current = now;
   };
 
   const build = (tile: BoardTile, sig: string, was: Live | undefined): Live => {
@@ -430,6 +470,15 @@ function Board({
     const c = clock.current;
     c.t += dt;
     if (live) c.life += dt;
+    // Frames that slow down for a while: fewer people, for good (a phone stays fluid).
+    const pe = people.current;
+    pe.ms += (rawDt * 1000 - pe.ms) * 0.05;
+    pe.slow = pe.ms > CROWD.slowMs && c.t > 6 ? pe.slow + dt : 0;
+    if (pe.slow > 3 && pe.budget > CROWD.least) {
+      pe.budget = Math.max(CROWD.least, Math.floor(pe.budget * CROWD.cut));
+      pe.slow = 0;
+      crowd.set(peopleOf(sh.scene, pe.budget), S);
+    }
     if (lastScene.current !== sh.scene) {
       lastScene.current = sh.scene;
       sync(sh.scene);
@@ -599,6 +648,13 @@ function Board({
         root.remove(a.group);
         vehicles.current.delete(id);
       }
+    // The people: out once the roads are drawn, each on its tile wherever the tile is.
+    crowd.group.visible = drawn > 0.99 && !sh.flip;
+    if (crowd.group.visible)
+      crowd.tick(c.life, S, (i, j) => {
+        const l = byNo.current.get(tileNo(i, j));
+        return l?.group.visible ? l.group.position.y : null;
+      });
     // The chevrons run on the roads a vehicle goes along now; the others stay still.
     roads.current.meshes.forEach((m, k) => {
       const pts = roads.current.each[k] ?? [];

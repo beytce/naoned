@@ -255,6 +255,7 @@ const STATIONS_SPEC: Spec = {
 };
 
 const LabTerra = lazy(() => import("./terra/LabTerra.js"));
+const LabLiving = lazy(() => import("./board/LabLiving.js"));
 
 export default function PorcellanaLab() {
   const view = new URLSearchParams(window.location.search).get("vue");
@@ -262,6 +263,12 @@ export default function PorcellanaLab() {
     return (
       <Suspense fallback={null}>
         <LabTerra />
+      </Suspense>
+    );
+  if (view === "vivante")
+    return (
+      <Suspense fallback={null}>
+        <LabLiving />
       </Suspense>
     );
   return <KitLab view={view} />;
@@ -384,6 +391,9 @@ function KitLab({ view }: { view: string | null }) {
         ))}
         <a className="pc-tool" href="?lab=porcellana&vue=terraferme">
           Terraferme
+        </a>
+        <a className="pc-tool" href="?lab=porcellana&vue=vivante">
+          Vivante
         </a>
         <button
           type="button"

@@ -8,14 +8,7 @@ import type { Palette } from "../materials.js";
 import { lockedPlot } from "../models/decor.js";
 import { fondaco } from "../models/fondaco.js";
 import { grove, plot } from "../models/ground.js";
-import {
-  adornments,
-  barque,
-  heldBanner,
-  loyaltyBanners,
-  marketStalls,
-  walkers,
-} from "../models/life.js";
+import { adornments, barque, heldBanner, loyaltyBanners, marketStalls } from "../models/life.js";
 import { zattera } from "../models/lot7.js";
 import { market } from "../models/market.js";
 import type { Built, ModelOpts } from "../models/model.js";
@@ -79,15 +72,7 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
     case "fondaco": {
       const b = fondaco(P);
       if (tile.decor?.length) adornments(P, b.group, tile.decor);
-      // Its people: one more for each level of the Fondaco (P3-03 of the players' audit).
-      if (tile.size) {
-        const walk = walkers(P, b.group, 1 + tile.size, o.seed);
-        const own = b.tick;
-        b.tick = (t, dt) => {
-          own?.(t, dt);
-          walk(t);
-        };
-      }
+      // Its people walk with the board's crowd (board/people.ts), one more a level.
       return b;
     }
     case "post": {
