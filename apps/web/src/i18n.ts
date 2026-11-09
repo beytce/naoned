@@ -1221,6 +1221,9 @@ const frDict = {
         campoAsks: (goods: string) => `L'intendance demande : ${goods}`,
         campoDeliver: "Livrer au Campo",
         campoEmpty: "vide",
+        /** The land makes the army (8 November 2026). */
+        threshold: (today: string, mine: string) =>
+          `Seuil du jour pour gagner : ${today} de la carte · tu en tiens ${mine}`,
         /** The pill of ink once an order is taken. */
         said: {
           recalled: "Front rappelé · ses troupes rentrent ✓",
@@ -1234,6 +1237,7 @@ const frDict = {
           fired: "La bombarde a tiré ✓",
           placed: "Camp posé ✓",
           raised: "Maximum relevé ✓",
+          capUp: (n: number) => `Tes terres grandissent : maximum +${n} troupes`,
         },
       },
       theatre: (band: number, n: number) => `Théâtre de la bande ${band} · ${n} marchands`,

@@ -22,6 +22,7 @@ import {
   seaTargets,
   terraNeighbors,
   terraOn,
+  winBpsAt,
   yieldPerHour,
 } from "@comptoirs/engine";
 
@@ -361,6 +362,16 @@ export function terraView(
       supply: cfg.supply
         ? { raiseBread: cfg.supply.raiseBread, materials: cfg.supply.buildingMaterials }
         : null,
+      /** The land makes the army (8 November 2026): the share that wins today, the land's cells. */
+      winBpsToday: winBpsAt(s, cfg, now),
+      landCells: s.map.land.filter(Boolean).length,
+      /** A front's mass makes its speed: a cell more a step for each `massPerCell`, to a ceiling. */
+      pace: {
+        stepMinutes: cfg.stepMinutes,
+        cellsPerStep: cfg.fronts.cellsPerStep,
+        massPerCell: cfg.fronts.massPerCell ?? null,
+        cellsMaxPerStep: cfg.fronts.cellsMaxPerStep ?? null,
+      },
       /** Minutes a front takes for a cell of free land, and of a rival's. */
       neutralMinutes: cfg.stepMinutes * cfg.fronts.neutralEverySteps,
       cellMinutes: Math.max(1, Math.floor(cfg.stepMinutes / cfg.fronts.cellsPerStep)),

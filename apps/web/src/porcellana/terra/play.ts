@@ -97,7 +97,15 @@ export function frontPlan(v: TerraView, cell: number, shareBps: number): FrontPl
   const rival = v.holders[holder];
   const paid = Number.isFinite(cost) && cost > 0 ? Math.floor(sent / cost) : 0;
   const cells = rival ? Math.min(paid, rival.cells) : paid;
-  const minutes = holder < 0 ? (v.rules.neutralMinutes ?? 0) : (v.rules.cellMinutes ?? 0);
+  // A front's mass makes its speed (8 November 2026): more cells a step, the march shorter.
+  const p = v.rules.pace;
+  const pace = p?.massPerCell
+    ? Math.min(
+        p.cellsMaxPerStep ?? Number.POSITIVE_INFINITY,
+        p.cellsPerStep + Math.floor(sent / p.massPerCell),
+      )
+    : 1;
+  const minutes = (holder < 0 ? (v.rules.neutralMinutes ?? 0) : (v.rules.cellMinutes ?? 0)) / pace;
   const defenseBefore = Math.floor(troops / mine);
   const defenseAfter = Math.floor((troops - sent) / mine);
   return {

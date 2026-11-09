@@ -111,6 +111,13 @@ describe("a front's plan", () => {
     );
     expect(rival.hours).toBe(1);
   });
+  it("marches faster with more troops: its mass makes its speed", () => {
+    const pace = { stepMinutes: 30, cellsPerStep: 1, massPerCell: 20, cellsMaxPerStep: 3 };
+    const rules = { frontsMax: 3, minShareBps: 1_000, cellMinutes: 30, neutralMinutes: 90, pace };
+    // 40 troops on free land: 3 cells a step (1 + 40/20), 10 cells at 90 min each: 5 h.
+    const free = frontPlan(view({ rules } as Partial<TerraView>), at(2, 1), 5_000);
+    expect(free.hours).toBe(5);
+  });
   it("warns that a first attack on a merchant gives up the camp's safety, and of a bare home", () => {
     const rules = { frontsMax: 3, minShareBps: 1_000, peacefulSafe: true };
     const v = view({ rules, costs: { [at(3, 2)]: 5 } } as Partial<TerraView>);

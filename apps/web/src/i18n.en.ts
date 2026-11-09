@@ -1275,6 +1275,8 @@ export const en: Dictionary = {
         campoAsks: (goods: string) => `The supply asks: ${goods}`,
         campoDeliver: "Deliver to the Campo",
         campoEmpty: "empty",
+        threshold: (today: string, mine: string) =>
+          `Today's share to win: ${today} of the map · you hold ${mine}`,
         said: {
           recalled: "Front recalled · its troops come home ✓",
           built: (name: string) => `${name} built ✓`,
@@ -1286,6 +1288,7 @@ export const en: Dictionary = {
           fired: "The bombard fired ✓",
           placed: "Camp set ✓",
           raised: "Cap raised ✓",
+          capUp: (n: number) => `Your lands grow: cap +${n} troops`,
         },
       },
       theatre: (band: number, n: number) => `Theatre of band ${band} · ${n} merchants`,

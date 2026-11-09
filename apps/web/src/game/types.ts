@@ -1294,6 +1294,16 @@ export interface TerraView {
     };
     capRaise: number;
     /** Troops bought with ducats: so many a time for so much (null or absent: closed). */
+    /** The share of the land that wins the week today, and the land's cells (8 November 2026). */
+    winBpsToday?: number;
+    landCells?: number;
+    /** A front's pace: a cell more a step for each `massPerCell` troops, to a ceiling. */
+    pace?: {
+      stepMinutes: number;
+      cellsPerStep: number;
+      massPerCell: number | null;
+      cellsMaxPerStep: number | null;
+    };
     /** The buildings' and the cap's prices in écus (null: in ducats, `prices`). */
     chestPrices?: Record<"rocca" | "borgo" | "porto" | "bombarda" | "mura" | "cap", number> | null;
     /** The capital of a merchant who attacked no merchant this week is never taken. */

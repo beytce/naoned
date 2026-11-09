@@ -97,7 +97,18 @@ export function TerraPlay({
     const id = window.setTimeout(() => setSaid(null), 3_200);
     return () => window.clearTimeout(id);
   }, [said]);
+  // The land makes the army: the cap grown by a conquest is told (not a raise bought).
+  const capWas = useRef(v.me?.cap ?? 0);
+  const raised = useRef(false);
+  useEffect(() => {
+    const cap = v.me?.cap ?? 0;
+    if (cap > capWas.current && capWas.current > 0 && !raised.current)
+      setSaid({ text: t.said.capUp(cap - capWas.current), at: Date.now() });
+    raised.current = false;
+    capWas.current = cap;
+  }, [v.me?.cap]);
   const order = (a: TerraAction) => {
+    if (a.type === "terraRaise") raised.current = true;
     const text = saidOf(a, v, nameOf);
     void Promise.resolve(send(a)).then((ok) => {
       if (ok !== false && text) setSaid({ text, at: Date.now() });
@@ -593,6 +604,12 @@ export function TerraPlay({
             {panel === "ranking" && (
               <>
                 <PlaceHeader title={t.ranking} onClose={close} />
+                {v.rules.winBpsToday !== undefined && v.rules.landCells && v.me && (
+                  <ThresholdLine
+                    today={v.rules.winBpsToday}
+                    mine={Math.round((v.me.cells * 10_000) / v.rules.landCells)}
+                  />
+                )}
                 <ol className="space-y-1 text-sm">
                   {v.ranking.slice(0, 10).map((r, k) => (
                     <li
@@ -611,6 +628,22 @@ export function TerraPlay({
           </Dock>
         </div>
       )}
+    </div>
+  );
+}
+
+/** The share of the land that wins the week today, and the merchant's, as two bars. */
+function ThresholdLine({ today, mine }: { today: number; mine: number }) {
+  const pct = (bps: number) => `${Math.round(bps / 100)} %`;
+  return (
+    <div className="space-y-1" data-terra-threshold="">
+      <p className="text-sm text-cream">{t.threshold(pct(today), pct(mine))}</p>
+      <div className="relative h-2 rounded-full bg-black/10" aria-hidden="true">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-[rgb(var(--face))]"
+          style={{ width: `${Math.min(100, (mine * 100) / Math.max(1, today))}%` }}
+        />
+      </div>
     </div>
   );
 }

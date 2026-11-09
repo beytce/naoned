@@ -27,6 +27,7 @@ import {
   sendTroops,
   signal,
   terraNeighbors,
+  winBpsAt,
 } from "@comptoirs/engine";
 import type { TerraAction, TerraView } from "../../game/types.js";
 
@@ -169,6 +170,14 @@ export function labView(s: TerraState, cfg: Cfg, me: string, now: number): Terra
       },
       capRaise: cfg.capRaise.amount,
       chestPrices: cfg.chest?.prices ?? null,
+      winBpsToday: winBpsAt(s, cfg, now),
+      landCells: s.map.land.filter(Boolean).length,
+      pace: {
+        stepMinutes: cfg.stepMinutes,
+        cellsPerStep: cfg.fronts.cellsPerStep,
+        massPerCell: cfg.fronts.massPerCell ?? null,
+        cellsMaxPerStep: cfg.fronts.cellsMaxPerStep ?? null,
+      },
       peacefulSafe: false,
       peasants: false,
       team: null,
