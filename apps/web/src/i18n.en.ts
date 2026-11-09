@@ -1353,6 +1353,9 @@ export const en: Dictionary = {
       roomCopied: "Link copied",
       roomStart: "Launch the match",
       roomUnranked: "Private match: ratings do not move.",
+      gloryHint:
+        "Your first ranked Battle of the day, against at least one other merchant, brings Glory to your week of Terraferma.",
+      glory: (n: number) => `+${n} Glory to your week of Terraferma`,
     },
     terra: {
       tab: "Terraferma",
@@ -1786,6 +1789,8 @@ export const en: Dictionary = {
       already_playing: "Your Battle is under way.",
       battle_off: "The Battle is closed for now.",
       no_battle_room: "This room is gone: ask for a new link.",
+      night: "The Terraferma sleeps at night: Glory waits for the morning.",
+      too_few_humans: "A ranked Battle needs two merchants at least.",
       not_host: "Only the room's host launches it.",
       bad_key: "This request makes no sense.",
       invalid_input: "That choice does not exist.",

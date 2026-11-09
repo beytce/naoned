@@ -2917,3 +2917,24 @@ Lot T6, lien ⑤ (`docs/plan-terraferme-porcellana.md` § 4 octies). Les villes 
 `pnpm --filter @comptoirs/simulator empire`, graines 1 à 3 : la part de la Terraferme dans la progression reste à 0,0 % (≤ 15 %) ; la part des commandes dans les recettes (72 à 73 %) et l'intendance (0,7 % des places) ne bougent pas ; les cinq cibles hors bornes sont les mêmes qu'avant, sans lien avec la Terraferme. La lettre ne déplace rien : à ce poids, la Terraferme reste loin du plafond de 15 % que le porteur lui donne ; il y a de la marge pour la récompenser davantage si on le souhaite.
 
 Sur la carte carrée de la bascule (lot T7, 9 novembre 2026 ; 993 cases, mêmes réglages, 10 graines) : 3 semaines sur 10 gagnées avant la fin (la cible d'une sur trois), le premier marchand à 22 h entre 4 et 9 % de la carte en fin de semaine, 5 à 12 éliminés (médiane 9), premier front entre marchands à 33 h.
+
+## La Bataille : sa Gloire à la semaine (9 novembre 2026, lot T6b, B5)
+
+Décision du porteur du 9 novembre 2026 : la première Bataille classée du jour rapporte un peu de Gloire au théâtre de la semaine de chacun, vers 10 % de la Gloire d'un régulier au plus. La Bataille reprend le barème et les règles des escarmouches (`terraferma.skirmish`) : 45, 30, 20 puis 10 de Gloire selon le rang **parmi les marchands** (les condottieri de l'ordinateur et les invités ne comptent pas) ; une Bataille classée par jour, le quota ne se consommant qu'au paiement (commande `battleGlory`) ; deux marchands au moins ; les heures ouvertes de la Terraferme (8 h à 22 h) ; rien pour un marchand qui n'est dans aucun théâtre, ni pour une salle privée (non classée). Plafond : 7 × 45 = 315 de Gloire par semaine.
+
+`pnpm --filter @comptoirs/simulator battle-glory`, 10 graines, la nouvelle Terraferme (carte carrée, trésor de guerre, territoire qui fait l'armée) :
+
+| Graine | Gloire médiane d'un régulier, semaine sans Bataille | Gloire des Batailles, rang parmi les marchands (régulier · assidu) | Part, rang parmi les marchands (régulier) | Part, premier chaque jour (régulier) | Plafond contre la semaine d'un régulier | Signore (sans → avec) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 3158 | 240 · 240 | 6.5 % | 9.1 % | 10 % | active → regular |
+| 2 | 3596 | 225 · 215 | 5.9 % | 8.1 % | 9 % | late → late |
+| 3 | 3656 | 220 · 240 | 5.6 % | 7.9 % | 9 % | late → late |
+| 4 | 2672 | 235 · 215 | 8.0 % | 10.5 % | 12 % | late → late |
+| 5 | 2776 | 220 · 210 | 6.2 % | 10.2 % | 11 % | active → active |
+| 6 | 3326 | 215 · 245 | 5.1 % | 7.4 % | 9 % | active → active |
+| 7 | 4432 | 215 · 220 | 4.6 % | 6.6 % | 7 % | regular → regular |
+| 8 | 3659 | 240 · 215 | 6.1 % | 7.9 % | 9 % | active → regular |
+| 9 | 3708 | 235 · 235 | 6.2 % | 7.6 % | 8 % | regular → active |
+| 10 | 4006 | 255 · 255 | 6.0 % | 7.3 % | 8 % | active → active |
+
+**Lecture.** La Bataille pèse 6,0 % de la Gloire d'un régulier en médiane (rang parmi les marchands), 7,9 % s'il est premier chaque jour ; le plafond (315) fait 8,6 % de la semaine médiane d'un régulier sans Bataille, au-dessus de 10 % sur deux graines seulement (11 et 12 %, les semaines les plus maigres). La cible tient sans changer le barème. Un assidu n'en tire pas plus qu'un régulier (une seule classée par jour). Le Signore change sur 4 graines sur 10, par le canal déjà mesuré pour les escarmouches (les alliances demandées au voisin le plus glorieux), plus petit que le hasard ordinaire de la semaine. À suivre en bêta.

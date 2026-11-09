@@ -784,6 +784,8 @@ export interface EmpireTerra {
     string,
     { trophies: number; lustre: number; blazon?: { week: number; cities: string[] } }
   >;
+  /** The Battles paid this week (B5), by match: the Glory credited to each house. */
+  battlePaid?: Record<string, Record<PlayerId, number>>;
 }
 
 /** The Muda's incanto (CADRAGE-v3 § 12 bis): the bids for its next departures, held in escrow. */

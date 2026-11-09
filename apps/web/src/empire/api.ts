@@ -90,6 +90,8 @@ export type BattleState =
       /** The cote at its start, and after its end once moved (B3). */
       rating: number | null;
       ratingAfter: number | null;
+      /** The Glory brought to the week's theatre (B5): null until paid. */
+      glory: number | null;
     };
 
 /** A line of the Battle's public ranking (B3). */
