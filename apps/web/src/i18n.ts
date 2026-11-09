@@ -1286,6 +1286,12 @@ const frDict = {
       loading: "La Bataille arrive…",
       failed: "La Bataille n'a pas répondu.",
       open: "La Bataille · 12 min",
+      /** The cote (B3). */
+      rating: (n: number) => `Ta cote : ${n}`,
+      ratingMoved: (before: number, after: number) =>
+        `Ta cote : ${before} → ${after} (${after >= before ? "+" : "−"}${Math.abs(after - before)})`,
+      ranking: "Classement des cotes",
+      noRanking: "Personne n'a encore de cote.",
     },
     terra: {
       tab: "Terraferme",

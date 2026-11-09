@@ -401,6 +401,8 @@ export const venice1450Settings: WorldSettingsInput = {
         everyMinutes: 120,
         prices: { rocca: 40, borgo: 50, porto: 30, bombarda: 110, mura: 50, cap: 60 },
       },
+      // The Battle's cote (lot T6b, B3): an Elo of many from 1 000, lobbies by bands of 300.
+      rating: { start: 1_000, k: 32, band: 300, botRating: 1_000 },
     },
     // The Condotta (E2-5 of the experts): 1 to 4 allied merchants against three nations and Milan,
     // 8 minutes at 60 times the speed; won holding Padua and 35 % of the land. Twelve levels on the

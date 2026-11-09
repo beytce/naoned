@@ -580,6 +580,13 @@ export const worldSettingsSchema = z.object({
           callLobbyMinutes: positive.prefault(10),
           /** The Battle's war chest of the match (lot T6b): the week's otherwise. */
           chest: chestSettings.optional(),
+          /**
+           * The Battle's cote (lot T6b, B3): an Elo of many, `start` for a newcomer, `k` its step;
+           * the lobbies by bands of `band` points; the computer's houses at `botRating`, fixed.
+           */
+          rating: z
+            .object({ start: positive, k: positive, band: positive, botRating: positive })
+            .optional(),
         })
         .optional(),
       /**

@@ -426,6 +426,29 @@ export const weekCurves = pgTable(
  * where no merchant is credited, or one the world refuses to pay; aborted: lost to a restart,
  * nothing paid nor spent).
  */
+/**
+ * The Battle's cote (lot T6b, B3): an Elo of many by account and world, its matches counted; the
+ * public ranking reads it. A guest without an account has none (B4).
+ */
+export const battleRatings = pgTable(
+  "battle_ratings",
+  {
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    rating: integer("rating").notNull(),
+    matches: integer("matches").notNull().default(0),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.worldId, t.accountId] }),
+    index("battle_ratings_world_rating").on(t.worldId, t.rating),
+  ],
+);
+
 export const skirmishMatches = pgTable(
   "skirmish_matches",
   {

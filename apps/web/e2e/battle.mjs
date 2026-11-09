@@ -127,6 +127,9 @@ try {
       .evaluate((el) => el.click());
     await page.locator("[data-battle-stage=none]").waitFor({ timeout: 30_000 });
     await shot("1-bataille");
+    // The cote (B3): the newcomer's start, and the public ranking a touch away.
+    if (!/1\s?000/.test((await page.locator("[data-battle-rating]").textContent()) ?? ""))
+      faults.push(`${label}: no cote`);
     await page
       .locator("[data-battle-card] button")
       .first()

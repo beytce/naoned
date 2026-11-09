@@ -10,13 +10,20 @@ import type { TerraAction } from "../game/types.js";
 import { fr } from "../i18n.js";
 import { Slab } from "../ui.js";
 import { TerraPlay } from "./Terra.js";
-import { type BattleState, empireApi } from "./api.js";
+import { type BattleRank, type BattleState, empireApi } from "./api.js";
 
 const t = fr.empire.battle;
 
 export function BattleStage({ now, onBack }: { now: number; onBack: () => void }) {
   const [battle, setBattle] = useState<BattleState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The public ranking of the cotes (B3), opened from the card.
+  const [ranking, setRanking] = useState<BattleRank[] | null>(null);
+  const showRanking = () =>
+    void empireApi
+      .battleRanking()
+      .then((r) => setRanking(r.ranking))
+      .catch(() => setRanking([]));
   const live = battle?.phase === "lobby" || battle?.phase === "playing";
   // The match is read each second while it runs, each five otherwise.
   useEffect(() => {
@@ -92,6 +99,9 @@ export function BattleStage({ now, onBack }: { now: number; onBack: () => void }
               <>
                 <h2 className="font-display text-2xl font-black">{t.title}</h2>
                 <p className="text-sm">{t.pitch(battle.minutes, battle.players)}</p>
+                <p className="text-sm font-bold" data-battle-rating="">
+                  {t.rating(battle.rating)}
+                </p>
                 <Slab className="w-full" onClick={() => void call(empireApi.battleJoin())}>
                   {t.play}
                 </Slab>
@@ -117,6 +127,11 @@ export function BattleStage({ now, onBack }: { now: number; onBack: () => void }
             ) : battle.phase === "done" ? (
               <>
                 <h2 className="font-display text-2xl font-black">{t.over}</h2>
+                {battle.rating !== null && battle.ratingAfter !== null && (
+                  <p className="text-sm font-bold" data-battle-rating="">
+                    {t.ratingMoved(battle.rating, battle.ratingAfter)}
+                  </p>
+                )}
                 <ol className="space-y-1 text-sm">
                   {(battle.result ?? []).map((r, k) => (
                     <li
@@ -136,6 +151,29 @@ export function BattleStage({ now, onBack }: { now: number; onBack: () => void }
               </>
             ) : null}
             {error && <p className="text-sm text-[#C23B2E]">{error}</p>}
+            {ranking ? (
+              <ol className="max-h-52 space-y-1 overflow-y-auto text-sm" data-battle-ranking="">
+                {ranking.length === 0 && <li>{t.noRanking}</li>}
+                {ranking.map((r) => (
+                  <li
+                    key={r.rank}
+                    className={`flex justify-between ${r.me ? "font-extrabold text-[#C23B2E]" : ""}`}
+                  >
+                    <span>
+                      {r.rank}. {r.pseudo ?? t.someone}
+                    </span>
+                    <span className="tabular-nums">{r.rating}</span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              battle &&
+              battle.phase !== "off" && (
+                <Slab tone="ghost" className="w-full" onClick={showRanking}>
+                  {t.ranking}
+                </Slab>
+              )
+            )}
             <Slab tone="ghost" className="w-full" onClick={onBack}>
               ‹ {fr.empire.terra.back}
             </Slab>
