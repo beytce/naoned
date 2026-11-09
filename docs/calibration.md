@@ -2915,3 +2915,5 @@ Ce que la mesure montre : à 40 marchands par théâtre, avec les alliances et M
 Lot T6, lien ⑤ (`docs/plan-terraferme-porcellana.md` § 4 octies). Les villes tenues à la clôture valent une lettre de la Signoria : 5 Faveur par ville, 3 au plus (`empire.terra.cities`). Le simulateur de 24 mois suppose que le Signore en tient 3, le podium 2, les dix premiers 1.
 
 `pnpm --filter @comptoirs/simulator empire`, graines 1 à 3 : la part de la Terraferme dans la progression reste à 0,0 % (≤ 15 %) ; la part des commandes dans les recettes (72 à 73 %) et l'intendance (0,7 % des places) ne bougent pas ; les cinq cibles hors bornes sont les mêmes qu'avant, sans lien avec la Terraferme. La lettre ne déplace rien : à ce poids, la Terraferme reste loin du plafond de 15 % que le porteur lui donne ; il y a de la marge pour la récompenser davantage si on le souhaite.
+
+Sur la carte carrée de la bascule (lot T7, 9 novembre 2026 ; 993 cases, mêmes réglages, 10 graines) : 3 semaines sur 10 gagnées avant la fin (la cible d'une sur trois), le premier marchand à 22 h entre 4 et 9 % de la carte en fin de semaine, 5 à 12 éliminés (médiane 9), premier front entre marchands à 33 h.
