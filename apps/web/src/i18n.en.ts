@@ -1316,6 +1316,26 @@ export const en: Dictionary = {
       skip: "Skip",
       start: "Start",
     },
+    battle: {
+      title: "The Battle",
+      pitch: (minutes: number, players: number) =>
+        `A live match of ${minutes} minutes on the Terraferma's map, ${players} players on equal arms: the same war chest for each, nothing of your empire comes in. The empty places are held by the computer.`,
+      play: "Play a Battle",
+      lobby: "Lobby",
+      waiting: (n: number, of: number, seconds: number) =>
+        `${n} player${n === 1 ? "" : "s"} of ${of} · starts in ${seconds} s`,
+      leave: "Leave the lobby",
+      left: (min: number, sec: number) => `${min}:${String(sec).padStart(2, "0")}`,
+      over: "The Battle is over",
+      you: "You",
+      someone: "A player",
+      cells: (n: number) => `${n} cell${n === 1 ? "" : "s"}`,
+      again: "Play again",
+      off: "The Battle is closed for now.",
+      loading: "The Battle is coming…",
+      failed: "The Battle did not answer.",
+      open: "The Battle · 12 min",
+    },
     terra: {
       tab: "Terraferma",
       title: "The Terraferma",
@@ -1376,6 +1396,8 @@ export const en: Dictionary = {
         chestLabel: (n: number, cap: number) => `War chest: ${n} écus of ${cap}`,
         chestLine: (n: number, perDay: number, cap: number) =>
           `War chest: ${n} écus · +${perDay} each morning, up to ${cap}`,
+        chestLineEvery: (n: number, per: number, minutes: number, cap: number) =>
+          `War chest: ${n} écus · +${per} every ${minutes} min, up to ${cap}`,
         chestShort: (n: number) => `The chest lacks ${n} écu${s(n)}`,
         campoStore: (goods: string) => `The Campo's store: ${goods}`,
         campoAsks: (goods: string) => `The supply asks: ${goods}`,
@@ -1743,6 +1765,8 @@ export const en: Dictionary = {
     errors: {
       insufficient_funds: "Not enough ducats.",
       chest_short: "The war chest lacks écus.",
+      already_playing: "Your Battle is under way.",
+      battle_off: "The Battle is closed for now.",
       bad_key: "This request makes no sense.",
       invalid_input: "That choice does not exist.",
       insufficient_seals: "Not enough Seals.",
@@ -4770,6 +4794,8 @@ export const en: Dictionary = {
         one_lot: "You already lead a lot of these auctions.",
         insufficient_funds: "Not enough ducats.",
         chest_short: "The war chest lacks écus.",
+        already_playing: "Your Battle is under way.",
+        battle_off: "The Battle is closed for now.",
       } as Record<string, string>,
     },
     /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
@@ -4989,6 +5015,8 @@ export const en: Dictionary = {
       bales_off: "No Faraj's surprise parcels in this world.",
       insufficient_funds: "Not enough ducats.",
       chest_short: "The war chest lacks écus.",
+      already_playing: "Your Battle is under way.",
+      battle_off: "The Battle is closed for now.",
       shares_off: "No shares in this world.",
       too_early: "Listing is not open yet.",
       not_for_npc: "A house of the computer is not listed.",

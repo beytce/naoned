@@ -262,6 +262,8 @@ export function terraView(
                 ecus: chestOf(s, cfg, playerId, now),
                 cap: cfg.chest.cap,
                 perDay: cfg.chest.perDay,
+                /** Real minutes between payments, where not each morning (the Battle). */
+                everyMinutes: null as number | null,
               }
             : null,
           /** Whether it holds a city (an embargo needs one). */

@@ -14,6 +14,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
 import { accounts, companyMembers } from "../db/schema.js";
+import { BattleHub } from "./battle.js";
 import { balanceOf } from "./house.js";
 import { toJson } from "./serialize.js";
 import { type TerraName, terraView } from "./terra.js";
@@ -379,9 +380,58 @@ async function theatreView(db: Db, world: GameWorld, accountId: string) {
     : null;
 }
 
+/** The Battle's orders (lot T6b): the week's, on the match's map (no placing, no decree). */
+const BATTLE_ORDERS = new Set([
+  "terraFront",
+  "terraRecall",
+  "terraBuild",
+  "terraRaise",
+  "terraFire",
+  "terraAlly",
+  "terraAccept",
+  "terraBreak",
+  "terraSend",
+  "terraSignal",
+]);
+
 export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps): void {
   const { world } = deps;
   const isEmpire = () => world.ctx.settings.empire !== undefined;
+  // The Battle (lot T6b): its lobby always open, its matches in memory.
+  const battle = new BattleHub(deps.db, world);
+  if (isEmpire()) battle.start();
+  app.addHook("onClose", async () => battle.stop());
+  app.get("/api/empire/battle", async (req, reply) => {
+    const account = await deps.requireAccount(req, reply);
+    if (!account) return;
+    if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
+    return toJson({ battle: await battle.state(account.id, world.now()) });
+  });
+  app.post("/api/empire/battle/join", deps.perMerchant(30), async (req, reply) => {
+    const account = await deps.requireAccount(req, reply);
+    if (!account) return;
+    if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
+    const res = battle.join(account.id, world.now());
+    if (res !== "ok") return reply.code(409).send({ error: res });
+    return toJson({ battle: await battle.state(account.id, world.now()) });
+  });
+  app.post("/api/empire/battle/leave", deps.perMerchant(30), async (req, reply) => {
+    const account = await deps.requireAccount(req, reply);
+    if (!account) return;
+    battle.leave(account.id);
+    return toJson({ battle: await battle.state(account.id, world.now()) });
+  });
+  app.post("/api/empire/battle/act", deps.perMerchant(120), async (req, reply) => {
+    const account = await deps.requireAccount(req, reply);
+    if (!account) return;
+    const parsed = z
+      .object({ action: z.discriminatedUnion("type", [...terraActionSchemas]) })
+      .safeParse(req.body);
+    if (!parsed.success || !BATTLE_ORDERS.has(parsed.data.action.type))
+      return reply.code(400).send({ error: "invalid_action" });
+    const ok = battle.act(account.id, parsed.data.action as never, world.now());
+    return toJson({ ok, battle: await battle.state(account.id, world.now()) });
+  });
   const payload = (id: string) => empirePayload(world.ctx, world.current, id, world.now());
 
   app.get("/api/empire", async (req, reply) => {

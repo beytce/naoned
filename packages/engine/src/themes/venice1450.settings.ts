@@ -376,7 +376,8 @@ export const venice1450Settings: WorldSettingsInput = {
     // two merchants at least: its ranks worth 45, 30, 20 then 10 glory (a merchant first every
     // day, 315 a week, stays under a tenth of a regular player's week); the others are friendly.
     skirmish: {
-      minutes: 15,
+      // The Battle of the empire (lot T6b, 9 November 2026): 12 minutes (golden rule 7).
+      minutes: 12,
       speed: 60,
       stepMinutes: 5,
       players: 8,
@@ -391,6 +392,15 @@ export const venice1450Settings: WorldSettingsInput = {
       // open ten minutes before, so that merchants meet; the last ends at 21:30.
       calls: [750, 1110, 1275],
       callLobbyMinutes: 10,
+      // The Battle's war chest of the match (lot T6b): the same for all, 80 écus at the start and
+      // 20 each two hours of the match (two minutes of real time), the week's prices.
+      chest: {
+        start: 80,
+        perDay: 20,
+        cap: 160,
+        everyMinutes: 120,
+        prices: { rocca: 40, borgo: 50, porto: 30, bombarda: 110, mura: 50, cap: 60 },
+      },
     },
     // The Condotta (E2-5 of the experts): 1 to 4 allied merchants against three nations and Milan,
     // 8 minutes at 60 times the speed; won holding Padua and 35 % of the land. Twelve levels on the

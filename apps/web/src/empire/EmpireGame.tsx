@@ -17,6 +17,7 @@ import { FLIP } from "../porcellana/tokens.js";
 import { sound } from "../sound.js";
 import { applyPalette } from "../theme.js";
 import { Badge, GoldLayer, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
+import { BattleStage } from "./BattleStage.js";
 import { suppliable } from "./Company.js";
 import { CompanySheet } from "./CompanyTab.js";
 import { HelpSheet, HouseSheet, Intro, NextStepCard } from "./Guide.js";
@@ -223,6 +224,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const wide = useWide();
   // The Terraferma's own scene, and the way into it (its tiles turning over) or out.
   const [terra, setTerra] = useState<TerraPhase | null>(null);
+  // The Battle's scene (lot T6b).
+  const [battle, setBattle] = useState(false);
   const terraIntro = useRef<{ start: number; px0: number } | undefined>(undefined);
   const terraTimer = useRef(0);
   useEffect(() => () => window.clearTimeout(terraTimer.current), []);
@@ -534,6 +537,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const goPlace = (id: PlaceId) => {
     // A tab leaves any full-screen scene, the inside of a workshop first (P1-05).
     if (terra) leaveTerra();
+    setBattle(false);
     setInside(null);
     setTarget(null);
     setVehicle(null);
@@ -663,7 +667,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             sheet === "arms" ||
             fighting ||
             !!p.view?.porta?.battle ||
-            terra === "open")
+            terra === "open" ||
+            battle)
         ) && (
           <Suspense fallback={null}>
             <PorcellanaMap
@@ -702,6 +707,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             />
           </Suspense>
         )}
+        {battle && <BattleStage now={now} onBack={() => setBattle(false)} />}
         {terra && (
           <TerraStage
             p={p}
@@ -1007,6 +1013,10 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           act={act}
           onPlaceCamp={() => open("place:camp")}
           onEnterTerra={enterTerra}
+          onBattle={() => {
+            setSheet(null);
+            setBattle(true);
+          }}
         />
         <FamilySheet p={p} open={sheet === "family"} busy={busy} onClose={close} act={act}>
           <ArteSection p={p} busy={busy} act={act} />

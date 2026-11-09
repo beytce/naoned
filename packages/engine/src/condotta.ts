@@ -259,8 +259,10 @@ export function condottaAct(c: Condotta, id: string, a: SkirmishAction, now: num
   advanceCondotta(c, now);
   if (c.result || !c.humans.includes(id)) return false;
   try {
+    // The Condotta's orders: a front, a recall (the Battle's others are not played here).
     if (a.type === "terraFront") launchFront(c.state, c.cfg, id, a.aim, a.shareBps, c.state.clock);
-    else recallFront(c.state, id, a.frontId);
+    else if (a.type === "terraRecall") recallFront(c.state, id, a.frontId);
+    else return false;
     return true;
   } catch (e) {
     if (e instanceof EngineError) return false;

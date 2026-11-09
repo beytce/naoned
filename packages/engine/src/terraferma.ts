@@ -843,7 +843,9 @@ export function placeOnTerra(
     ),
     glory: 0,
     capital: cell,
-    ...(cfg.chest ? { chest: { ecus: Math.min(cfg.chest.cap, cfg.chest.start), day } } : {}),
+    ...(cfg.chest
+      ? { chest: { ecus: Math.min(cfg.chest.cap, cfg.chest.start), day: chestPeriod(s, cfg, now) } }
+      : {}),
   };
 }
 
@@ -1322,11 +1324,17 @@ export function setEmbargo(s: TerraState, id: string, target: string | null): vo
 // ——— The war chest: the écus of the week (the owner's decisions of 8 November 2026) ———
 
 /** The écus in a merchant's chest now: what it holds, and each morning's since, to its ceiling. */
+/** The chest's period at a time, from the week's (or the match's) start: a day by default. */
+function chestPeriod(s: TerraState, cfg: TerraConfig, now: number): number {
+  const every = (cfg.chest?.everyMinutes ?? 24 * 60) * MINUTE_MS;
+  return Math.max(0, Math.floor((now - s.startAt) / every));
+}
+
 export function chestOf(s: TerraState, cfg: TerraConfig, id: string, now: number): number {
   const c = cfg.chest;
   const held = s.players[id]?.chest;
   if (!c || !held) return 0;
-  const day = Math.max(held.day, Math.floor((now - s.startAt) / DAY_MS));
+  const day = Math.max(held.day, chestPeriod(s, cfg, now));
   return Math.min(c.cap, held.ecus + c.perDay * (day - held.day));
 }
 
@@ -1335,7 +1343,10 @@ function spendChest(s: TerraState, cfg: TerraConfig, id: string, price: number, 
   const have = chestOf(s, cfg, id, now);
   if (have < price) fail("chest_short");
   const player = s.players[id] as TerraPlayer;
-  player.chest = { ecus: have - price, day: Math.floor((now - s.startAt) / DAY_MS) };
+  player.chest = {
+    ecus: have - price,
+    day: Math.max(chestPeriod(s, cfg, now), player.chest?.day ?? 0),
+  };
 }
 
 // ——— Buildings and the cap: écus from the chest, or ducats (the caller takes the price) ———
