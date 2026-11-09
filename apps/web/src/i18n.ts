@@ -1135,16 +1135,54 @@ const frDict = {
       ] as [string, string][],
       terra: [
         [
-          "La Terraferme.",
-          "Une saison d'une semaine contre des Maisons de ton niveau. Tout le monde y part à armes égales.",
+          "La Terraferme : une semaine de conquête.",
+          "Du lundi au dimanche, sur la carte de la Vénétie, contre des Maisons de ton niveau. Tu poses ton camp, puis tes fronts prennent les cases une à une.",
         ],
         [
-          "Ton empire ne risque rien.",
-          "Ce que tu as bâti reste à toi. La Terraferme se joue à côté, en quelques minutes, plusieurs fois par jour.",
+          "À armes égales, sans rien risquer.",
+          "Chacun reçoit le même trésor de guerre, en écus. Rien de ton empire n'y entre, et personne ne peut te prendre ce que tu as bâti.",
         ],
         [
-          "Le classement de la semaine.",
-          "À la fin de la semaine, les meilleurs gagnent des récompenses. Une nouvelle saison commence le lundi.",
+          "La semaine et ce qu'elle rapporte.",
+          "Le seuil de victoire baisse chaque jour. À la clôture, ta place te rapporte de la Faveur, et tes villes tenues portent ta bannière la semaine suivante.",
+        ],
+      ] as [string, string][],
+      /** The board, at its first sight (the new Terraferma). */
+      terraBoard: [
+        [
+          "Tes troupes.",
+          "Chaque case et chaque ville que tu tiens relèvent ton maximum : le territoire fait l'armée.",
+        ],
+        [
+          "Ton trésor de guerre.",
+          "Des écus en entrant, puis chaque matin. Ils paient les forts, les ports, les remparts et les bombardes.",
+        ],
+        [
+          "Lancer un front.",
+          "Touche une case au bord de tes terres : un front y part avec une part de tes troupes et avance seul, case après case.",
+        ],
+        [
+          "Ta place.",
+          "Ta place et tes points de la semaine. « Classement » montre le seuil de victoire du jour et ta part de la carte.",
+        ],
+        [
+          "L'intendance.",
+          "Chaque matin, ton Campo demande le pain de ta guerre : livre-le comme une ville. Ce que la guerre prend directement à Venise coûte la moitié en plus.",
+        ],
+      ] as [string, string][],
+      /** The Battle, at its first opening. */
+      battle: [
+        [
+          "La Bataille : 12 minutes en direct.",
+          "Huit joueurs sur une carte de la Terraferme, le même trésor pour chacun. L'ordinateur tient les places vides.",
+        ],
+        [
+          "Ta cote.",
+          "Elle monte ou descend selon ton rang à la fin. Les salles réunissent des joueurs de ta cote.",
+        ],
+        [
+          "La Gloire de ta semaine.",
+          "Ta première Bataille classée du jour rapporte de la Gloire à ta semaine de Terraferme. Une salle privée se joue entre amis, sans cote.",
         ],
       ] as [string, string][],
     },

@@ -66,6 +66,20 @@ async function magicLink(email) {
   throw new Error("no magic link in the server's log");
 }
 
+/** Plays a first-time tutorial through, « Suivant » to « Compris »: how many steps it had. */
+async function playTutor(page, id, shot) {
+  const step = page.locator(`[data-tutor-step^='${id}:']`);
+  await step.first().waitFor({ timeout: 30_000 });
+  let n = 0;
+  while ((await step.count()) > 0 && n < 10) {
+    if (n === 0 && shot) await shot();
+    n++;
+    await page.locator("[data-tutor-next]").first().click();
+    await page.waitForTimeout(400);
+  }
+  return n;
+}
+
 const server = await startServer();
 const browser = await chromium.launch({
   ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
@@ -104,7 +118,17 @@ try {
         .getByRole("button", { name: /suivant|commencer/i })
         .click();
     await page.evaluate(() =>
-      localStorage.setItem("fondaco:tutor", JSON.stringify({ all: "skip" })),
+      localStorage.setItem(
+        "fondaco:tutor",
+        JSON.stringify({
+          first: "skip",
+          porta: "done",
+          remise: "done",
+          interior: "done",
+          terra: "done",
+          terraBoard: "done",
+        }),
+      ),
     );
     await page.waitForSelector("[data-porcellana-map]", { timeout: 30_000 });
     const free = page.locator("[data-place^='free:']").first();
@@ -126,6 +150,9 @@ try {
       .first()
       .evaluate((el) => el.click());
     await page.locator("[data-battle-stage=none]").waitFor({ timeout: 30_000 });
+    // Its first time: three steps under the spotlight (the others passed).
+    const steps = await playTutor(page, "battle", () => shot("1-tuto"));
+    if (steps !== 3) faults.push(`${label}: the Battle's tutorial played ${steps} steps`);
     await shot("1-bataille");
     // The cote (B3): the newcomer's start, and the public ranking a touch away.
     if (!/1\s?000/.test((await page.locator("[data-battle-rating]").textContent()) ?? ""))
