@@ -146,6 +146,10 @@ try {
         .locator("[data-intro]")
         .getByRole("button", { name: /suivant|commencer/i })
         .click();
+    // The tutorials passed, as « Passer les tutoriels » does (the guided start has its journey).
+    await page.evaluate(() =>
+      localStorage.setItem("fondaco:tutor", JSON.stringify({ all: "skip" })),
+    );
     await page.waitForSelector("[data-porcellana-map]", { timeout: 30_000 });
     // A free tile of the house's takes the Campo.
     const free = page.locator("[data-place^='free:']").first();
