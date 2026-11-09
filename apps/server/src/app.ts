@@ -322,6 +322,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       world: options.world,
       auth,
       sessionCookie: SESSION_COOKIE,
+      secureCookies: options.production,
       notifier,
       skirmishes,
       condottas,

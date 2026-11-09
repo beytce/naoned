@@ -151,6 +151,47 @@ try {
     if (!(await page.locator("[data-battle-clock]").count())) faults.push(`${label}: no clock`);
     await context.close();
   }
+  // Without an account (B4): the landing's link, the guest's name, a private room launched.
+  {
+    const label = "invite";
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      locale: "fr-FR",
+    });
+    const page = await context.newPage();
+    page.on("pageerror", (e) => faults.push(`${label}: ${e.message}`));
+    const shot = (name) =>
+      page.screenshot({ path: join(SHOTS, `${label}-${name}.png`), timeout: 120_000 });
+    await page.goto(server.url);
+    await page.locator("[data-play-battle]").click();
+    await page.locator("[data-battle-stage=none]").waitFor({ timeout: 30_000 });
+    if (!(await page.locator("[data-battle-guest]").count())) faults.push(`${label}: no guest`);
+    await shot("1-invite");
+    await page.getByRole("button", { name: /salle privée/i }).click();
+    const room = page.locator("[data-battle-room]");
+    await room.waitFor({ timeout: 30_000 });
+    const code = await room.getAttribute("data-battle-room");
+    await shot("2-salle-privee");
+    // A friend comes by the link, then the host launches.
+    const friend = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      locale: "fr-FR",
+    });
+    const other = await friend.newPage();
+    await other.goto(`${server.url}/bataille/${code}`);
+    await other
+      .getByRole("button", { name: new RegExp(`rejoindre la salle ${code}`, "i") })
+      .click();
+    await other.locator("[data-battle-room]").waitFor({ timeout: 30_000 });
+    await page.getByRole("button", { name: /lancer la partie/i }).click();
+    await page.locator("[data-battle-stage=playing]").waitFor({ timeout: 30_000 });
+    await other.locator("[data-battle-stage=playing]").waitFor({ timeout: 30_000 });
+    await page.locator("[data-terra-play]").waitFor({ timeout: 60_000 });
+    await page.waitForTimeout(6_000);
+    await shot("3-partie");
+    await friend.close();
+    await context.close();
+  }
 } catch (e) {
   faults.push(String(e?.stack ?? e));
 } finally {

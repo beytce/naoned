@@ -161,6 +161,7 @@ export const en: Dictionary = {
   emailPlaceholder: "you@example.com",
   sendLink: "Get my code",
   sending: "Sending…",
+  playBattleNow: "Or play a Battle right now, no account needed ›",
   noPassword: "No password: a code and a sign-in link are sent to you by e-mail.",
   accept: [
     "By getting your code, you accept the ",
@@ -1340,6 +1341,18 @@ export const en: Dictionary = {
         `Your rating: ${before} → ${after} (${after >= before ? "+" : "−"}${Math.abs(after - before)})`,
       ranking: "Ratings ranking",
       noRanking: "Nobody has a rating yet.",
+      guest: (name: string) =>
+        `You play as a guest, as ${name}. Your trial rating only counts with an account: make one, it keeps it.`,
+      signUp: "Make my account",
+      roomOpen: "Private room",
+      roomJoin: (code: string) => `Join room ${code}`,
+      roomTitle: (code: string) => `Room ${code}`,
+      roomWaiting: (n: number, of: number) =>
+        `${n} player${n > 1 ? "s" : ""} of ${of} · the host launches when ready, the computer takes the empty places`,
+      roomShare: "Share the link",
+      roomCopied: "Link copied",
+      roomStart: "Launch the match",
+      roomUnranked: "Private match: ratings do not move.",
     },
     terra: {
       tab: "Terraferma",
@@ -1772,6 +1785,8 @@ export const en: Dictionary = {
       chest_short: "The war chest lacks écus.",
       already_playing: "Your Battle is under way.",
       battle_off: "The Battle is closed for now.",
+      no_battle_room: "This room is gone: ask for a new link.",
+      not_host: "Only the room's host launches it.",
       bad_key: "This request makes no sense.",
       invalid_input: "That choice does not exist.",
       insufficient_seals: "Not enough Seals.",

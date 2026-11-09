@@ -459,8 +459,19 @@ function bubbleRoom(page) {
   });
 }
 
-/** Lorenzo's ring on what is touched under it; nothing left over his bubble. */
+/**
+ * Lorenzo's ring on what is touched under it; nothing left over his bubble. An effect may take
+ * off between the wait for the last to land and the reading (the first pay's coins, at its
+ * moment): what is wrong is read again once that one has landed, and only what stays is a fault.
+ */
 async function guide(page) {
+  const first = await guideOnce(page);
+  if (first.length === 0) return first;
+  await page.waitForTimeout(1_500);
+  return guideOnce(page);
+}
+
+async function guideOnce(page) {
   // An effect still in flight is not stuck: give it time to land, a stuck one still fails.
   await page
     .waitForFunction(

@@ -1,3 +1,4 @@
+import { createHash, randomInt } from "node:crypto";
 import {
   type Skirmish,
   type SkirmishAction,
@@ -20,6 +21,61 @@ import type { GameWorld } from "./world.js";
 
 /** How long a finished Battle stays on show for its players. */
 const SHOWN_AFTER_MS = 3 * 60_000;
+/** How long a private room waits for its host before it closes. */
+const ROOM_OPEN_MS = 20 * 60_000;
+/** A room's code: six letters a friend reads aloud without a doubt (no 0/O, 1/I). */
+const CODE_LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+/** A guest's id, from the token of its cookie (never shown: the id alone is). */
+export const guestId = (token: string) =>
+  `guest:${createHash("sha256").update(token).digest("hex").slice(0, 20)}`;
+export const isGuest = (id: string) => id.startsWith("guest:");
+/** An account's id (a uuid): its cote is written. */
+const isAccount = (id: string) => /^[0-9a-f-]{36}$/.test(id);
+
+const GUEST_FIRST = [
+  "Pietro",
+  "Marco",
+  "Zuane",
+  "Alvise",
+  "Nicolò",
+  "Bortolo",
+  "Lucia",
+  "Elena",
+  "Caterina",
+  "Isabetta",
+  "Polo",
+  "Bianca",
+];
+const GUEST_PLACE = [
+  "da Chioggia",
+  "da Murano",
+  "da Burano",
+  "da Mestre",
+  "da Padova",
+  "da Treviso",
+  "da Rovigo",
+  "da Bassano",
+  "da Vicenza",
+  "da Feltre",
+  "da Torcello",
+  "da Caorle",
+];
+/** A guest's name, drawn by lot from its id (the same each match). */
+export function guestName(id: string): string {
+  const h = Number.parseInt(id.slice(6, 14), 16) || 0;
+  const first = GUEST_FIRST[h % GUEST_FIRST.length];
+  const place = GUEST_PLACE[Math.floor(h / GUEST_FIRST.length) % GUEST_PLACE.length];
+  return `${first} ${place}`;
+}
+
+/** A lobby: a band of cote (public, launched full or after its minute) or a private room. */
+interface Lobby {
+  players: string[];
+  opensAt: number;
+  /** A private room (B4): its code and host; launched by the host, unranked. */
+  room?: { code: string; host: string };
+}
 
 /**
  * The Battle of the empire (docs/plan-terraferme-porcellana.md § 4 nonies, lot T6b): the live match
@@ -30,13 +86,17 @@ const SHOWN_AFTER_MS = 3 * 60_000;
  * server falls; nothing in them is money or goods.
  */
 export class BattleHub {
-  /** The lobbies, one a band of cote (B3): players meet those of their level. */
-  private readonly lobbies = new Map<number, { players: string[]; opensAt: number }>();
+  /** The lobbies: `band:N`, one a band of cote (B3), and `room:CODE`, the private rooms (B4). */
+  private readonly lobbies = new Map<string, Lobby>();
+  /** The guests' cotes, in memory (B4): taken by the account they make, else lost. */
+  private readonly guestRatings = new Map<string, { rating: number; matches: number }>();
   private readonly matches = new Map<
     string,
     {
       sk: Skirmish;
       shownUntil: number;
+      /** A public match moves the cotes; a private room's does not (B4). */
+      ranked: boolean;
       /** The cotes at its start, and after its end once written (B3). */
       before: Map<string, number>;
       after: Record<string, number> | null;
@@ -77,6 +137,7 @@ export class BattleHub {
   /** A player's cote (the newcomer's start without one). */
   async ratingOf(playerId: string): Promise<number> {
     const start = this.cfg()?.skirmish?.rating?.start ?? 1_000;
+    if (!isAccount(playerId)) return this.guestRatings.get(playerId)?.rating ?? start;
     const [row] = await this.db
       .select({ rating: battleRatings.rating })
       .from(battleRatings)
@@ -88,17 +149,18 @@ export class BattleHub {
   step(now: number): void {
     const cfg = this.cfg();
     if (!cfg?.skirmish) return;
-    for (const [band, lobby] of this.lobbies)
-      if (
-        lobby.players.length >= cfg.skirmish.players ||
-        now >= lobby.opensAt + cfg.skirmish.lobbySeconds * 1_000
-      )
-        void this.launch(cfg, band, now);
+    for (const [key, lobby] of this.lobbies) {
+      if (lobby.players.length >= cfg.skirmish.players) void this.launch(cfg, key, now);
+      else if (lobby.room) {
+        if (now >= lobby.opensAt + ROOM_OPEN_MS) this.lobbies.delete(key);
+      } else if (now >= lobby.opensAt + cfg.skirmish.lobbySeconds * 1_000)
+        void this.launch(cfg, key, now);
+    }
     for (const [id, m] of this.matches) {
       advanceSkirmish(m.sk, now);
       if (m.sk.result && m.shownUntil === 0) {
         m.shownUntil = now + SHOWN_AFTER_MS;
-        this.rate(cfg, m);
+        if (m.ranked) this.rate(cfg, m);
       }
       if (m.shownUntil > 0 && now >= m.shownUntil) {
         this.matches.delete(id);
@@ -107,14 +169,14 @@ export class BattleHub {
     }
   }
 
-  private async launch(cfg: TerraConfig, band: number, now: number): Promise<void> {
-    const lobby = this.lobbies.get(band);
-    this.lobbies.delete(band);
+  private async launch(cfg: TerraConfig, key: string, now: number): Promise<void> {
+    const lobby = this.lobbies.get(key);
+    this.lobbies.delete(key);
     if (!lobby || lobby.players.length === 0) return;
     const id = `${now}:${++this.seq}`;
     const sk = createSkirmish(cfg, `${this.world.id}:battle:${id}`, lobby.players, now);
     const before = new Map<string, number>();
-    this.matches.set(id, { sk, shownUntil: 0, before, after: null });
+    this.matches.set(id, { sk, shownUntil: 0, ranked: !lobby.room, before, after: null });
     for (const p of lobby.players) this.playing.set(p, id);
     for (const p of lobby.players) before.set(p, await this.ratingOf(p));
   }
@@ -133,9 +195,17 @@ export class BattleHub {
     const after = moveRatings(ranked, rating);
     m.after = after;
     const at = new Date(this.world.now());
+    // A guest's cote is kept in memory, for the account it may make (B4).
+    for (const [id, value] of Object.entries(after))
+      if (!isAccount(id))
+        this.guestRatings.set(id, {
+          rating: value,
+          matches: (this.guestRatings.get(id)?.matches ?? 0) + 1,
+        });
     this.writes = this.writes
       .then(async () => {
-        for (const [accountId, value] of Object.entries(after))
+        for (const [accountId, value] of Object.entries(after)) {
+          if (!isAccount(accountId)) continue;
           await this.db
             .insert(battleRatings)
             .values({ worldId: this.world.id, accountId, rating: value, matches: 1, updatedAt: at })
@@ -143,33 +213,109 @@ export class BattleHub {
               target: [battleRatings.worldId, battleRatings.accountId],
               set: { rating: value, matches: sql`${battleRatings.matches} + 1`, updatedAt: at },
             });
+        }
       })
       .catch(console.error);
   }
 
-  /** Joins the lobby of its band (opened by the first one); a player in a match may not. */
-  async join(playerId: string, now: number): Promise<"ok" | "battle_off" | "already_playing"> {
+  /**
+   * Joins the lobby of its band (opened by the first one), or the private room of a code (B4); a
+   * player in a match may not.
+   */
+  async join(
+    playerId: string,
+    now: number,
+    room?: string,
+  ): Promise<"ok" | "battle_off" | "already_playing" | "no_battle_room"> {
     const cfg = this.cfg();
     if (!cfg?.skirmish) return "battle_off";
     this.step(now);
     const m = this.matchOf(playerId);
     if (m && !m.sk.result) return "already_playing";
+    let key: string;
+    if (room !== undefined) {
+      key = `room:${room.toUpperCase()}`;
+      if (!this.lobbies.has(key)) return "no_battle_room";
+    } else {
+      const rating = cfg.skirmish.rating;
+      key = `band:${rating ? battleBand(rating, await this.ratingOf(playerId)) : 0}`;
+    }
     if (m) this.playing.delete(playerId);
-    const rating = cfg.skirmish.rating;
-    const band = rating ? battleBand(rating, await this.ratingOf(playerId)) : 0;
-    for (const l of this.lobbies.values()) l.players = l.players.filter((p) => p !== playerId);
-    const lobby = this.lobbies.get(band) ?? { players: [], opensAt: now };
-    this.lobbies.set(band, lobby);
-    lobby.players.push(playerId);
-    if (lobby.players.length >= cfg.skirmish.players) await this.launch(cfg, band, now);
+    this.leaveLobbies(playerId);
+    const lobby = this.lobbies.get(key) ?? { players: [], opensAt: now };
+    this.lobbies.set(key, lobby);
+    if (!lobby.players.includes(playerId)) lobby.players.push(playerId);
+    if (lobby.players.length >= cfg.skirmish.players) await this.launch(cfg, key, now);
     return "ok";
+  }
+
+  /** Opens a private room (B4), the player its host; its code to share. */
+  openRoom(playerId: string, now: number): "ok" | "battle_off" | "already_playing" {
+    if (!this.cfg()?.skirmish) return "battle_off";
+    this.step(now);
+    const m = this.matchOf(playerId);
+    if (m && !m.sk.result) return "already_playing";
+    if (m) this.playing.delete(playerId);
+    this.leaveLobbies(playerId);
+    let code = "";
+    do
+      code = Array.from({ length: 6 }, () => CODE_LETTERS[randomInt(CODE_LETTERS.length)]).join("");
+    while (this.lobbies.has(`room:${code}`));
+    this.lobbies.set(`room:${code}`, {
+      players: [playerId],
+      opensAt: now,
+      room: { code, host: playerId },
+    });
+    return "ok";
+  }
+
+  /** Its host launches a private room, the empty places taken by the computer. */
+  async startRoom(playerId: string, now: number): Promise<"ok" | "battle_off" | "not_host"> {
+    const cfg = this.cfg();
+    if (!cfg?.skirmish) return "battle_off";
+    const entry = [...this.lobbies].find(([, l]) => l.room?.host === playerId);
+    if (!entry) return "not_host";
+    await this.launch(cfg, entry[0], now);
+    return "ok";
+  }
+
+  private leaveLobbies(playerId: string): void {
+    for (const [key, l] of this.lobbies) {
+      l.players = l.players.filter((p) => p !== playerId);
+      // A room its host leaves closes; an empty one too.
+      if (l.room && (l.room.host === playerId || l.players.length === 0)) this.lobbies.delete(key);
+    }
   }
 
   /** Leaves its lobby, or lets go of a finished match. */
   leave(playerId: string): void {
-    for (const l of this.lobbies.values()) l.players = l.players.filter((p) => p !== playerId);
+    this.leaveLobbies(playerId);
     const m = this.matchOf(playerId);
     if (m?.sk.result) this.playing.delete(playerId);
+  }
+
+  /**
+   * The account made from a guest's browser takes its cote (B4), when it has none of its own;
+   * whether there was one to take.
+   */
+  async adopt(guest: string, accountId: string): Promise<boolean> {
+    const kept = this.guestRatings.get(guest);
+    this.guestRatings.delete(guest);
+    if (!kept) return false;
+    await this.flush();
+    const at = new Date(this.world.now());
+    const done = await this.db
+      .insert(battleRatings)
+      .values({
+        worldId: this.world.id,
+        accountId,
+        rating: kept.rating,
+        matches: kept.matches,
+        updatedAt: at,
+      })
+      .onConflictDoNothing()
+      .returning({ id: battleRatings.accountId });
+    return done.length > 0;
   }
 
   /** An order on the player's match; whether it went through. */
@@ -214,6 +360,7 @@ export class BattleHub {
     this.step(now);
     const sk = cfg.skirmish;
     const m = this.matchOf(playerId);
+    const guest = !isAccount(playerId);
     if (!m) {
       const lobby = [...this.lobbies.values()].find((l) => l.players.includes(playerId));
       return {
@@ -221,8 +368,13 @@ export class BattleHub {
         minutes: sk.minutes,
         players: sk.players,
         waiting: lobby?.players.length ?? 0,
-        startsAt: lobby ? lobby.opensAt + sk.lobbySeconds * 1_000 : null,
+        // A private room waits for its host: no countdown.
+        startsAt: lobby && !lobby.room ? lobby.opensAt + sk.lobbySeconds * 1_000 : null,
         rating: await this.ratingOf(playerId),
+        guest,
+        name: guest ? guestName(playerId) : null,
+        room: lobby?.room?.code ?? null,
+        host: lobby?.room ? lobby.room.host === playerId : false,
       };
     }
     const names = await this.names(m.sk);
@@ -244,6 +396,8 @@ export class BattleHub {
       minutes: sk.minutes,
       players: sk.players,
       endsAt: m.sk.endsAt,
+      guest,
+      ranked: m.ranked,
       view: view ? realTimes(m.sk, view, m.sk.endsAt) : null,
       // The cote at its start, and after its end once moved (B3).
       rating: m.before.get(playerId) ?? null,
@@ -273,6 +427,7 @@ export class BattleHub {
     for (const id of Object.keys(sk.state.players))
       if (id.startsWith("bot:"))
         out.set(id, { pseudo: `Condottiere ${id.slice(4)}`, crest: null, bot: true });
+      else if (isGuest(id)) out.set(id, { pseudo: guestName(id), crest: null, bot: false });
     return out;
   }
 }
