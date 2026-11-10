@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { AuthService } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts } from "../db/schema.js";
-import type { PortaHub } from "./porta.js";
+import { type PortaHub, orderAnswer } from "./porta.js";
 import type { GameWorld } from "./world.js";
 
 export interface PortaRouteDeps {
@@ -24,17 +24,39 @@ const entry = z.object({
   transportId: id,
   dark: z.boolean().optional(),
 });
+const coord = z.number().finite().min(-100).max(100);
 const order = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("move"),
     unitId: id,
-    x: z.number().finite().min(-100).max(100),
-    y: z.number().finite().min(-100).max(100),
+    x: coord,
+    y: coord,
+    via: z
+      .array(z.object({ x: coord, y: coord }))
+      .max(8)
+      .optional(),
   }),
+  z.object({ type: z.literal("follow"), unitId: id, leaderId: id }),
+  z.object({ type: z.literal("attack"), unitId: id, targetId: id }),
+  z.object({ type: z.literal("exit"), unitId: id }),
   z.object({ type: z.literal("stop"), unitId: id }),
   z.object({ type: z.literal("activate"), unitId: id, componentId: id }),
   z.object({ type: z.literal("leave"), unitId: id }),
 ]);
+
+const socketOrder = z.object({
+  type: z.literal("order"),
+  n: z.number().int().min(0).max(1_000_000_000),
+  order,
+});
+const socketPing = z.object({
+  type: z.literal("ping"),
+  x: coord,
+  y: coord,
+  kind: z.enum(["here", "danger"]),
+});
+/** Orders a socket may send in a second. */
+const SOCKET_ORDERS = 20;
 
 /** The week's ranking shown: the band's first, and the player's own line. */
 const RANKING_SHOWN = 20;
@@ -134,7 +156,34 @@ export function registerPortaRoutes(app: FastifyInstance, deps: PortaRouteDeps):
       return;
     }
     porta.subscribe(account.id, socket);
-    // The orders go by their route: the socket only listens.
-    socket.on("message", () => undefined);
+    // The orders come by the socket too (docs/plan-porta-jeu.md, B1): each answered by its number,
+    // and the battle sent back at once so that the order shows before the next beat. No more than
+    // `SOCKET_ORDERS` a second.
+    let windowAt = 0;
+    let inWindow = 0;
+    socket.on("message", (raw: unknown) => {
+      const now = Date.now();
+      if (now - windowAt >= 1_000) {
+        windowAt = now;
+        inWindow = 0;
+      }
+      if (++inWindow > SOCKET_ORDERS) return;
+      let msg: unknown;
+      try {
+        msg = JSON.parse(String(raw));
+      } catch {
+        return;
+      }
+      const sign = socketPing.safeParse(msg);
+      if (sign.success) {
+        porta.ping(account.id, { x: sign.data.x, y: sign.data.y, kind: sign.data.kind });
+        return;
+      }
+      const parsed = socketOrder.safeParse(msg);
+      if (!parsed.success) return;
+      const refused = porta.order(account.id, parsed.data.order);
+      socket.send(orderAnswer(parsed.data.n, refused));
+      if (!refused) porta.pushTo(account.id);
+    });
   });
 }

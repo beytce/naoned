@@ -1145,11 +1145,29 @@ export const en: Dictionary = {
         ],
         [
           "Launch the gate when your convoy is ready.",
-          "The battle plays by itself: you watch and touch the trumps at the right moment.",
+          "Over there, you lead your convoy yourself: touch the map and it goes.",
         ],
         [
           "What you win, what you risk.",
           "You bring back relics, which give the plans of high-level modules. A vehicle destroyed comes back damaged; a vehicle still at the Porta when it closes is lost.",
+        ],
+      ] as [string, string][],
+      portaFight: [
+        [
+          "Your convoy: the fighter ahead, the transport behind.",
+          "The transport follows your fighter. Touch the map: both go there. The link between their two cards splits or joins them.",
+        ],
+        [
+          "Touch a town to load its relics.",
+          "Your fighter clears the way, the transport loads one relic at a time. Rome announces its blows: a black thread shows whom it aims at.",
+        ],
+        [
+          "Rome closes its lands.",
+          "At zero, whatever is not out is lost. Each vehicle shows how long it needs to get back to the gate.",
+        ],
+        [
+          "« Go home » brings the convoy back to the gate.",
+          "It goes out by itself as it gets there, with its relics. You can also touch the gate.",
         ],
       ] as [string, string][],
       remise: [

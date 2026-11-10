@@ -18,7 +18,7 @@ export interface FeatureStep {
 }
 
 export interface FeatureTutor {
-  id: "porta" | "remise" | "interior" | "terra" | "terraBoard" | "battle";
+  id: "porta" | "portaFight" | "remise" | "interior" | "terra" | "terraBoard" | "battle";
   /** Its place on the screen: the tutorial starts when this is in sight. */
   when: string;
   steps: () => FeatureStep[];
@@ -41,6 +41,19 @@ export const FEATURE_TUTORS: FeatureTutor[] = [
         ["[data-porta-tiers]"],
         ["[data-porta-go]", "[data-porta-next]"],
         [],
+      ]),
+  },
+  {
+    // The battle in the lands of Rome (docs/plan-porta-jeu.md): the convoy, a town, the closing,
+    // the way home. Short: the battle's clock runs meanwhile.
+    id: "portaFight",
+    when: "[data-battle-convoy]",
+    steps: () =>
+      zip(T().portaFight, [
+        ["[data-battle-convoy]"],
+        ["[data-battle-city]"],
+        ["[data-battle-timer]"],
+        ["[data-coach=battle-home]", "[data-battle-gate]"],
       ]),
   },
   {

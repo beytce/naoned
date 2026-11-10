@@ -56,6 +56,8 @@ interface Live {
   settled: Set<string>;
   /** Real time of the last step. */
   steppedAt: number;
+  /** The rules the screen draws by: the beat, the towns' radius, each rarity's loading. */
+  rules: { stepMs: number; cityRadiusCenti: number; loadS: Record<string, number> };
 }
 
 /** The few methods of a WebSocket the hub needs. */
@@ -64,6 +66,10 @@ export interface PortaSocket {
   send(data: string): void;
   on(event: "close", listener: () => void): unknown;
 }
+
+/** An order's answer on the socket: its number, and why it was refused if it was. */
+export const orderAnswer = (n: number, error: string | null) =>
+  JSON.stringify({ type: "order", n, ...(error ? { error } : {}) });
 
 /** Why the hub refuses: its own reasons, or the engine's on entering. */
 export type PortaRefusal =
@@ -290,7 +296,19 @@ export class PortaHub {
       return portaEntrant(h, m.playerId, s);
     });
     const battle = createBattle({ seed: randomInt(0, 2 ** 31), tier, players: entrants }, s);
-    this.battles.set(id, { id, battle, settled: new Set(), steppedAt: this.world.now() });
+    this.battles.set(id, {
+      id,
+      battle,
+      settled: new Set(),
+      steppedAt: this.world.now(),
+      rules: {
+        stepMs: s.porta.battle.stepMs,
+        cityRadiusCenti: s.porta.battle.cityRadiusCenti,
+        loadS: Object.fromEntries(
+          Object.entries(s.porta.relics ?? {}).map(([k, r]) => [k, r.loadS]),
+        ),
+      },
+    });
     for (const m of inside) this.battleOf.set(m.playerId, id);
     return { battle: id };
   }
@@ -299,7 +317,7 @@ export class PortaHub {
   order(playerId: string, order: BattleOrder): PortaRefusal | null {
     const live = this.liveOf(playerId);
     if (!live) return "not_in_battle";
-    return orderBattle(live.battle, playerId, order);
+    return orderBattle(live.battle, playerId, order, this.settings ?? undefined);
   }
 
   private liveOf(playerId: string): Live | undefined {
@@ -375,6 +393,27 @@ export class PortaHub {
     if (live) this.sendTo(playerId, live);
   }
 
+  /**
+   * A sign a player puts on the ground for his group (docs/plan-porta-jeu.md, A9): « here » or
+   * « danger », shown a few seconds to every player of his battle. Nothing of the rules.
+   */
+  ping(playerId: string, at: { x: number; y: number; kind: "here" | "danger" }): void {
+    const live = this.liveOf(playerId);
+    if (!live || live.battle.over) return;
+    for (const p of live.battle.players) {
+      const mine = this.sockets.get(p);
+      if (!mine) continue;
+      const data = JSON.stringify({ type: "ping", ...at, mine: p === playerId });
+      for (const socket of mine) if (socket.readyState === OPEN) socket.send(data);
+    }
+  }
+
+  /** A player's battle sent to him now (an order just taken shows without waiting for the beat). */
+  pushTo(playerId: string): void {
+    const live = this.liveOf(playerId);
+    if (live) this.sendTo(playerId, live);
+  }
+
   private push(live: Live): void {
     for (const p of live.battle.players) this.sendTo(p, live);
   }
@@ -444,6 +483,7 @@ export function snapshot(live: Live, playerId: string) {
     radius: b.radius,
     gate: b.gate,
     gateRadiusCenti: b.gateRadiusCenti,
+    ...live.rules,
     cities: b.cities.map((c) => ({
       id: c.id,
       x: c.x,
@@ -465,6 +505,10 @@ export function snapshot(live: Live, playerId: string) {
             rangeCenti: u.rangeCenti,
             visionCenti: u.visionCenti,
             dead: u.dead,
+            // A blow that takes its time (the bombard): when it falls next, and how wide.
+            ...(u.periodS > 0
+              ? { periodS: u.periodS, nextShotAt: u.nextShotAt, areaCenti: u.areaCenti }
+              : {}),
             // The incendiary: how far it has burnt its city, for the fire ring.
             ...(u.burnS > 0 ? { burnS: u.burnS, burning: u.burning ?? 0 } : {}),
           }
@@ -488,7 +532,12 @@ function playerView(u: PlayerUnit, playerId: string) {
     hp: Math.ceil(u.hp),
     maxHp: u.maxHp,
     outcome: u.outcome,
+    speedCenti: u.speedCenti,
     goal: mine ? u.goal : null,
+    route: mine ? (u.route ?? []) : [],
+    follow: u.follow ?? null,
+    attack: u.attack ?? null,
+    exiting: u.exiting === true,
     cargo: u.cargo,
     capacity: u.capacity,
     loading: u.loading,
@@ -506,6 +555,8 @@ function playerView(u: PlayerUnit, playerId: string) {
           readyAt: a.readyAt,
           until: a.until,
           rangeCenti: a.rangeCenti,
+          durationS: a.durationS,
+          cooldownS: a.cooldownS,
         }))
       : [],
   };

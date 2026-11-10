@@ -158,6 +158,44 @@ export const pt = {
     rs.length === 0 ? "Ville vide" : `Ville : ${rs.length} relique${rs.length > 1 ? "s" : ""}`,
   selectHint: "Touchez un de vos véhicules, puis l'endroit où il doit aller.",
   moveHint: "Touchez la destination.",
+  // The orders that say what they do (docs/plan-porta-jeu.md, lot A).
+  told: {
+    go: "Aller",
+    load: "Charger ici",
+    exit: "Rentrer",
+    attack: "Attaquer",
+    unarmed: "Sans arme",
+  },
+  mood: {
+    exiting: "Rentre",
+    fire: "Sous le feu",
+    attack: "Attaque",
+    follow: "Suit",
+    moving: "En route",
+    full: "Plein",
+    idle: "Attend",
+  } as Record<string, string>,
+  outcome: { in: "", exited: "Rentré", dead: "Tombé", lost: "Resté à Rome" } as Record<
+    string,
+    string
+  >,
+  loadingS: (s: number) => `Charge ${s} s`,
+  seconds: (s: number) => (s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s} s`),
+  gateIn: (s: number) => `Porte à ${s >= 60 ? `${Math.floor(s / 60)} min ${s % 60}` : `${s} s`}`,
+  short: (s: number) =>
+    s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${s} s`,
+  wholeIsland: "Voir toute l'île",
+  pingHere: "Ici",
+  pingDanger: "Danger",
+  hurry: "Rentre maintenant",
+  tooLate: "Trop loin de la porte",
+  convoy: "Convoi",
+  regroup: "Regrouper",
+  split: "Séparer",
+  recenter: "Recentrer sur mes véhicules",
+  convoyHint: "Touche la carte : ton convoi y va. Ou trace son chemin du doigt.",
+  aloneHint: "Touche la carte : ce véhicule y va seul.",
+  relicsOut: (home: number, all: number) => `${home} sur ${all} reliques rapportées`,
   // The battle's goal (the refonte claire, lot 4).
   goal: "Reliques rapportées",
   goalLine: (home: number, aboard: number, left: number) =>
@@ -257,6 +295,8 @@ export const pt = {
     vehicle_busy: "Ce véhicule n'est pas libre.",
     insufficient_stock: "Pas assez de pain pour l'entrée.",
     too_far: "Approchez-vous de la porte.",
+    no_weapon: "Ce véhicule n'a pas d'arme.",
+    unknown_unit: "Cet ordre n'a plus de cible.",
     not_ready: "Ce composant se recharge.",
     no_plans: "Il manque des plans pour ce niveau.",
     network: "Le réseau ne répond pas.",

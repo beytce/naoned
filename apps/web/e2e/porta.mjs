@@ -42,7 +42,9 @@ const override = {
           breadPerVehicle: 0,
         },
       ],
-      models: { cavaliere: { casa: 1, costDucats: 1500, hp: 1200, speedCenti: 600, slots: 1 } },
+      // A battle of two minutes, its vehicles quick: the fight, the loading and the closing are seen.
+      battle: { minutes: 2, transport: { speedCenti: 3000 } },
+      models: { cavaliere: { casa: 1, costDucats: 1500, hp: 1200, speedCenti: 3600, slots: 1 } },
       components: {
         lances: {
           kind: "weapon",
@@ -166,6 +168,16 @@ try {
       .getByRole("button", { name: /suivant|commencer/i })
       .click();
   await page.waitForSelector("[data-porcellana-map]");
+  // The guided start and the places' first times passed (docs/plan-tutoriels.md); the battle's own
+  // first time plays below.
+  await page.evaluate(() =>
+    localStorage.setItem(
+      "fondaco:tutor",
+      JSON.stringify({ first: "skip", porta: "done", remise: "done", interior: "done" }),
+    ),
+  );
+  await page.reload();
+  await page.waitForSelector("[data-porcellana-map]");
 
   // The Remise and the Porta on two tiles bought next to the house's (the square tiles: a place a
   // tile), their sites of a minute each.
@@ -257,25 +269,66 @@ try {
   // A battle alone, tier 1.
   await page.locator("[data-porta-go]").click();
   await page.waitForSelector("[data-battle-timer]", { timeout: 15_000 });
-  await page.waitForTimeout(1_500);
+  // The island opens (its tiles drop from the gate), the convoy is made: the transport follows.
+  await page.waitForTimeout(3_500);
+  // Its first time (docs/plan-tutoriels.md): four steps under the spotlight, then the battle.
+  const step = page.locator("[data-tutor-step^='portaFight:']");
+  await step.first().waitFor({ timeout: 8_000 });
+  await page.screenshot({ path: join(SHOTS, "5a-tuto.png") });
+  let steps = 0;
+  while ((await step.count()) > 0 && steps < 8) {
+    await page.locator("[data-tutor-next]").first().click();
+    await page.waitForTimeout(350);
+    steps++;
+  }
+  if (steps !== 4) faults.push(`battle: its tutorial played ${steps} steps, not 4`);
   await shot("5-bataille");
-  // The rider to the nearest city, then the transport.
-  // The town may lie beyond the first framing (it is near one's own vehicles): touched as a finger
-  // would after a drag.
+  await page.waitForSelector("[data-battle-convoy=joined]", { timeout: 5_000 });
+  // One touch on the nearest town: « Charger ici », the fighter goes, the transport behind it.
+  // The town may lie beyond the first framing: touched as a finger would after a drag.
   const city = page.locator("[data-battle-city]").first();
   await city.evaluate((el) => el.click());
-  await page.locator("[data-battle-unit]").nth(1).click();
-  await city.evaluate((el) => el.click());
-  await page.waitForTimeout(8_000);
+  await page.waitForTimeout(450);
+  await page.screenshot({ path: join(SHOTS, "5b-ordre.png") });
+  await page.waitForSelector("[data-battle-mood=moving]", { timeout: 5_000 });
+  await page.waitForSelector("[data-battle-mood=follow]", { timeout: 5_000 });
+  await page.waitForTimeout(2_500);
   await shot("6-bataille-en-route");
-  // Up close on the vehicles (a wheel over them): the figurines.
-  const unit = await page.locator("[data-battle-city]").first().boundingBox();
-  if (unit) {
-    await page.mouse.move(unit.x, unit.y + 40);
-    for (let i = 0; i < 6; i++) await page.mouse.wheel(0, -240);
-    await page.waitForTimeout(1_500);
-    await shot("6b-bataille-pres");
+  // The fight at the town, the camera on the convoy; then the relic loaded.
+  await page.waitForTimeout(7_000);
+  await shot("7-combat");
+  await page.waitForTimeout(700);
+  await page.screenshot({ path: join(SHOTS, "7b-combat.png") });
+  // Loading, or loaded already (a common relic takes ten seconds).
+  const loading = "[data-battle-mood=loading], [data-battle-cargo]:not([data-battle-cargo='0'])";
+  await page.waitForSelector(loading, { timeout: 40_000 }).catch(() => {
+    faults.push("battle: the transport never loaded at the town");
+  });
+  await page.waitForTimeout(1_500);
+  await shot("7c-charge");
+  // Up close on the vehicles (a wheel over the screen's middle): the pieces.
+  await page.mouse.move(vw / 2, vh / 2 - 60);
+  for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -240);
+  await page.waitForTimeout(1_500);
+  await shot("8-bataille-pres");
+  // The whole island (its button), the vehicles small but never lost; Rome closes its lands: the
+  // far tiles turn on their back.
+  await page.locator("[data-battle-view=whole]").click();
+  for (let i = 0; i < 220; i++) {
+    const [m, s] = ((await page.locator("[data-battle-timer]").textContent()) ?? "9:59")
+      .split(":")
+      .map(Number);
+    if (m * 60 + s <= 35) break;
+    await page.waitForTimeout(500);
   }
+  await shot("9-fermeture");
+  // Home by one order: both go to the gate and out of it.
+  await page.locator("[data-battle-gate]").evaluate((el) => el.click());
+  await page.waitForSelector("[data-battle-mood=exiting]", { timeout: 5_000 });
+  await page.waitForTimeout(1_200);
+  await shot("10-retour");
+  await page.waitForSelector("[data-battle-over]", { timeout: 40_000 });
+  await shot("11-sortis");
 } finally {
   await browser.close();
   server.stop();

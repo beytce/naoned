@@ -1515,20 +1515,7 @@ button.map-place {
   transform: translateX(-50%) translateY(30px) scale(calc(var(--inv, 1) / var(--chartk, 1)));
 }
 
-/* The battle's diorama (docs/plan-porta-3d.md): the night closing in its last minute, the blows'
-   damage rising and fading. */
-.battle-closing {
-  background: radial-gradient(ellipse at center, transparent 45%, rgb(8 17 31 / 0.75) 100%);
-  animation: battle-closing 2s ease-in-out infinite alternate;
-}
-@keyframes battle-closing {
-  from {
-    opacity: 0.6;
-  }
-  to {
-    opacity: 1;
-  }
-}
+/* The battle's diorama (docs/plan-porta-3d.md, docs/plan-porta-jeu.md): what moves over it. */
 /* The damage rises when the blow lands, 300 ms after the beat (its bolt's flight). */
 .battle-damage {
   animation: battle-damage var(--t-moment) var(--ease-out) 300ms both;
@@ -1543,9 +1530,88 @@ button.map-place {
     opacity: 0;
   }
 }
+/* An order's word where the finger fell (docs/plan-porta-jeu.md, A2): it lands, stays, goes. */
+.battle-word {
+  animation: battle-word 1.1s var(--ease-out) both;
+}
+@keyframes battle-word {
+  0% {
+    transform: translateY(8px) scale(0.7);
+    opacity: 0;
+  }
+  14% {
+    transform: translateY(0) scale(1.06);
+    opacity: 1;
+  }
+  22%,
+  72% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-14px) scale(1);
+    opacity: 0;
+  }
+}
+/* Rome's « ! » and « ? » over its units (A5). */
+.battle-sign {
+  animation: battle-sign 1.4s var(--ease-out) both;
+}
+@keyframes battle-sign {
+  0% {
+    transform: translateY(6px) scale(0.3);
+    opacity: 0;
+  }
+  12% {
+    transform: translateY(-4px) scale(1.25);
+    opacity: 1;
+  }
+  22%,
+  78% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-8px) scale(0.9);
+    opacity: 0;
+  }
+}
+/* What presses: a vehicle under fire, the last minute, a town burning. */
+.battle-alarm {
+  animation: battle-alarm 0.9s ease-in-out infinite alternate;
+}
+@keyframes battle-alarm {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(1.22);
+  }
+}
+/* A sign on the ground for the group (A9): its ring beats three times, then goes. */
+.battle-ping > span:first-child {
+  animation: battle-ping 1s ease-out 3 both;
+}
+@keyframes battle-ping {
+  from {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+/* The arrow at the screen's edge, turned toward the vehicle out of sight. */
+.battle-edge {
+  transform: rotate(var(--turn, 0rad));
+}
 @media (prefers-reduced-motion: reduce) {
-  .battle-closing,
-  .battle-damage {
+  .battle-damage,
+  .battle-word,
+  .battle-sign,
+  .battle-alarm,
+  .battle-ping > span:first-child {
     animation: none;
   }
 }

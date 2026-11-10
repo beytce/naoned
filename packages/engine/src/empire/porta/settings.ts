@@ -148,6 +148,12 @@ const battle = z
     /** A vehicle within this of the gate may leave; a transport within that of a city loads. */
     gateRadiusCenti: positive.prefault(100),
     cityRadiusCenti: positive.prefault(100),
+    /** A vehicle following another keeps this far behind it (docs/plan-porta-jeu.md, A1). */
+    followCenti: positive.prefault(60),
+    /** A vehicle told to attack comes within this share of its shortest weapon's range. */
+    attackReachBps: bps.prefault(9_000),
+    /** The steps a way may have after its first. */
+    maxWaypoints: positive.prefault(5),
     /** A unit of Rome that sees an enemy warns those of its city so near. */
     alertRadiusCenti: positive.prefault(300),
     /** A unit struck sees its striker so long, and counts it more threatening. */

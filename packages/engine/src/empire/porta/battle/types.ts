@@ -41,6 +41,14 @@ export interface PlayerUnit extends Vec {
   maxHp: number;
   speedCenti: number;
   goal: Vec | null;
+  /** The steps of its way after its goal (docs/plan-porta-jeu.md, A3). */
+  route?: Vec[];
+  /** The vehicle of its house it follows, a little behind (the convoy, A1). */
+  follow?: string | null;
+  /** The unit of Rome it was told to attack: it comes within its reach and keeps it (A2). */
+  attack?: string | null;
+  /** On its way to the gate, to go out of it as it gets there (A2). */
+  exiting?: boolean;
   weapons: WeaponState[];
   actives: ActiveState[];
   damageCutBps: number;
@@ -115,7 +123,10 @@ export interface Battle {
 
 /** An order of a player (plan-porta.md § 6.2). */
 export type BattleOrder =
-  | { type: "move"; unitId: string; x: number; y: number }
+  | { type: "move"; unitId: string; x: number; y: number; via?: Vec[] }
+  | { type: "follow"; unitId: string; leaderId: string }
+  | { type: "attack"; unitId: string; targetId: string }
+  | { type: "exit"; unitId: string }
   | { type: "stop"; unitId: string }
   | { type: "activate"; unitId: string; componentId: string }
   | { type: "leave"; unitId: string };
