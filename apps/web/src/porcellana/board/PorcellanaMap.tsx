@@ -49,6 +49,7 @@ import { PlaceCard, type PlaceCardHandle } from "../PlaceCard.js";
 import { Stage } from "../Stage.js";
 import { easeOutCubic, pinOut, routesDrawn, tileDelay, tileDrop } from "../arrival.js";
 import { bake } from "../bake.js";
+import { Burst } from "../burst.js";
 import { Crowd } from "../crowd.js";
 import {
   flipAngle,
@@ -60,12 +61,13 @@ import {
   showsBack,
 } from "../flip.js";
 import { type Palette, createPalette } from "../materials.js";
+import { tierOf } from "../models/domain.js";
 import { slab } from "../models/ground.js";
 import type { Built, ModelOpts } from "../models/model.js";
 import type { Vehicle } from "../models/vehicles.js";
 import { drawChevron, drawnIndices, ribbonGeometry, roundedPath } from "../ribbon.js";
 import { Blush } from "../selection.js";
-import { BISCUIT, BOARD, CAMERA, FLIP, RIBBON, SELECT } from "../tokens.js";
+import { ARRIVAL, BISCUIT, BOARD, CAMERA, FLIP, RIBBON, SELECT } from "../tokens.js";
 import { FlatBoard } from "./FlatBoard.js";
 import { PARK, modelOf, vehicleModel } from "./models.js";
 import { peopleOf, portersWay } from "./people.js";
@@ -121,6 +123,8 @@ interface Shared {
   flip: FlipRun | null;
   /** A tile's width on the screen now, in pixels (the Terraferma's board matches it). */
   tilePx: number;
+  /** The Fondaco greeted once more (its level's moment closed): counted, the board answers. */
+  cheer: number;
 }
 
 /** The tiles turning over from the Campo (the way into the Terraferma), or back face up. */
@@ -180,6 +184,20 @@ function Board({
   });
   /** The lots that waited at each workshop at the last look: gone, they are carried home. */
   const waiting = useRef(new Map<string, number>());
+  // The moments (lot 2): what each tile was at the last look, the towns' deliveries, and what is
+  // to fly up when a tile that has just grown lands.
+  const burst = useMemo(() => {
+    const b = new Burst(P);
+    root.add(b.group);
+    return b;
+  }, [P, root]);
+  useEffect(() => () => burst.dispose(), [burst]);
+  const cheered = useRef(sh.cheer);
+  const kinds = useRef(new Map<string, { model: string | null; size: number; tier: number }>());
+  const paid = useRef(new Map<string, number>());
+  const moments = useRef<{ at: number; kind: "dust" | "petals" | "coins"; x: number; z: number }[]>(
+    [],
+  );
   const vehicles = useRef(new Map<string, Vehicle & { opts: ModelOpts }>());
 
   // The roads: a ribbon each, one texture whose chevrons run.
@@ -274,15 +292,54 @@ function Board({
       };
     }
     const seen = new Set<string>();
+    let appeared = 0;
     for (const tile of scene.tiles) {
       seen.add(tile.key);
-      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}|${(tile.crates ?? []).map(Number).join("")}|${(tile.decor ?? []).join(",")}|${tile.loyalty ?? 0}|${tile.held ? 1 : 0}|${tile.raft ? 1 : 0}|${tile.biscuit ? 1 : 0}|${(tile.stalls ?? []).map((x) => `${x.n}${x.hot ? "h" : ""}`).join(",")}`;
+      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}|${(tile.crates ?? []).map(Number).join("")}|${(tile.decor ?? []).join(",")}|${tile.loyalty ?? 0}|${tile.held ? 1 : 0}|${tile.raft ? 1 : 0}|${tile.biscuit ? 1 : 0}|${(tile.stalls ?? []).map((x) => `${x.n}${x.hot ? "h" : ""}`).join(",")}|${tierOf(tile.level)}|${tile.casa ?? 0}|${Math.floor((tile.progress ?? 0) * 4)}`;
       const was = tiles.current.get(tile.key);
+      const before = kinds.current.get(tile.key);
+      const tier = tierOf(tile.level);
+      kinds.current.set(tile.key, { model: tile.model, size: tile.size ?? 0, tier });
       if (was && was.sig === sig) continue;
       if (was) root.remove(was.group);
-      const made = build(tile, sig, was);
+      // What has just grown lands again, and is greeted (lot 2 of the living map): a plot bought
+      // in its dust; a workshop built, a tier or a level of the Fondaco gained under petals.
+      const settled = live && clock.current.t > 3;
+      const bought = before?.model === "plot" && tile.model === "lane";
+      const grown =
+        !!before &&
+        ((before.model === "site" && tile.model !== "site" && tile.model !== "lane") ||
+          (tile.model === "fondaco" &&
+            before.model === "fondaco" &&
+            (tile.size ?? 0) > before.size) ||
+          (before.model === tile.model && tier > before.tier));
+      // The tiles that appear together come one after the other, nearest first.
+      const again = settled && (bought || grown);
+      const fresh = settled && !was ? appeared++ : 0;
+      const made = build(tile, sig, again ? undefined : was, fresh * 0.09);
+      if (again) {
+        made.lift = was?.lift ?? 0;
+        const [x, z] = world(tile.i, tile.j);
+        moments.current.push({
+          at: made.from + ARRIVAL.duration * 0.62,
+          kind: bought ? "dust" : "petals",
+          x,
+          z,
+        });
+      }
       tiles.current.set(tile.key, made);
       byNo.current.set(tileNo(tile.i, tile.j), made);
+    }
+    for (const k of kinds.current.keys()) if (!seen.has(k)) kinds.current.delete(k);
+    // A town that has just paid: coins jump over it.
+    for (const tile of scene.tiles) {
+      if (tile.served === undefined || !tile.place) continue;
+      const had = paid.current.get(tile.place.id);
+      paid.current.set(tile.place.id, tile.served);
+      if (live && had !== undefined && tile.served > had && clock.current.t > 3) {
+        const [x, z] = world(tile.i, tile.j);
+        moments.current.push({ at: clock.current.t, kind: "coins", x, z });
+      }
     }
     for (const [k, l] of tiles.current)
       if (!seen.has(k)) {
@@ -308,7 +365,7 @@ function Board({
     waiting.current = now;
   };
 
-  const build = (tile: BoardTile, sig: string, was: Live | undefined): Live => {
+  const build = (tile: BoardTile, sig: string, was: Live | undefined, wait = 0): Live => {
     const [x, z] = world(tile.i, tile.j);
     const g = new Group();
     g.position.set(x, 0, z);
@@ -329,7 +386,7 @@ function Board({
     const from = was
       ? was.from
       : clock.current.t > 3
-        ? clock.current.t
+        ? clock.current.t + wait
         : tileDelay(tile.i - minI.current, tile.j - minJ.current, tile.water);
     return { key: tile.key, sig, group: g, built, opts, from, lift: was?.lift ?? 0 };
   };
@@ -648,6 +705,34 @@ function Board({
         root.remove(a.group);
         vehicles.current.delete(id);
       }
+    // The Fondaco greeted (its level's moment closed): it lands again, under petals.
+    if (cheered.current !== sh.cheer) {
+      cheered.current = sh.cheer;
+      const home = tiles.current.get(sh.scene.home);
+      if (home && live) {
+        home.from = c.t + 0.35;
+        moments.current.push({
+          at: home.from + ARRIVAL.duration * 0.62,
+          kind: "petals",
+          x: home.group.position.x,
+          z: home.group.position.z,
+        });
+      }
+    }
+    // The moments due: the dust of a tile that lands, petals over what grew, a town's coins.
+    if (moments.current.length) {
+      const due = moments.current.filter((m) => m.at <= c.t);
+      if (due.length) {
+        moments.current = moments.current.filter((m) => m.at > c.t);
+        for (const m of due) {
+          if (m.kind === "dust") burst.dust(m.x, 0, m.z, c.t);
+          else if (m.kind === "petals") burst.petals(m.x, 0, m.z, c.t);
+          else burst.coins(m.x, 0, m.z, c.t);
+        }
+      }
+    }
+    burst.group.visible = !sh.flip;
+    burst.tick(c.t);
     // The people: out once the roads are drawn, each on its tile wherever the tile is.
     crowd.group.visible = drawn > 0.99 && !sh.flip;
     if (crowd.group.visible)
@@ -864,6 +949,11 @@ export interface EmpireMapHandle {
   flip(backwards: boolean, back?: (dx: number, dz: number) => number): void;
   /** A tile's width on the screen now, in pixels. */
   tilePx(): number;
+  /**
+   * The Fondaco's new level greeted on the board (its moment closed): the camera comes up close,
+   * the Fondaco lands again as it now stands, under petals.
+   */
+  celebrate(): void;
 }
 
 /** A point picked to put a place down: its tile, its middle on the chart. */
@@ -924,6 +1014,7 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       zoom: 1,
       flip: null,
       tilePx: 0,
+      cheer: 0,
     };
   if (sh.current && scene) {
     sh.current.scene = scene;
@@ -1008,6 +1099,10 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
       if (sh.current) sh.current.zoom *= k;
     },
     tilePx: () => sh.current?.tilePx ?? 0,
+    celebrate: () => {
+      if (sh.current) sh.current.cheer++;
+      goHome(true);
+    },
     flip: (backwards, back) => {
       const s = sh.current;
       if (!s) return;

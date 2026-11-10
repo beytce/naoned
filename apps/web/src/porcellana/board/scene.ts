@@ -109,6 +109,10 @@ export interface BoardTile {
   size?: number;
   /** A workshop's level: its people, its dressing (docs/plan-carte-vivante.md, lots 1 and 2). */
   level?: number;
+  /** A free tile of the house's: the Fondaco's level, its land lived on as it rises (lot 2). */
+  casa?: number;
+  /** A site under way: how far its work is, 0 to 1. */
+  progress?: number;
   /** A workshop whose lots wait for the harvest: how many (its porters sit, then carry them). */
   lots?: number;
   /** The deliveries a town received from the house: its people, the travellers on its road. */
@@ -240,6 +244,7 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       water: false,
       model: "lane",
       running: false,
+      casa: house.casa,
       place: {
         id: `free:${k}`,
         target: { kind: "free", tile: k },
@@ -367,7 +372,17 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     put(s.cell, { water: false, model: "site", running: true, place: null });
   for (const b of house.builds ?? [])
     if (b.kind === "newWorkshop" && b.cell)
-      put(b.cell, { water: false, model: "site", running: true, place: null });
+      put(b.cell, {
+        water: false,
+        model: "site",
+        running: true,
+        place: null,
+        // Its walls rise with its work (lot 2 of the living map).
+        progress: Math.min(
+          1,
+          Math.max(0, (now - b.startedAt) / Math.max(1, b.endsAt - b.startedAt)),
+        ),
+      });
   place(map.depot, "depot", { kind: "depot" }, t.porcellana.depot, t.porcellana.depotSub, "");
   place(map.camp, "campo", { kind: "terra" }, t.porcellana.campo, t.porcellana.campoSub, "");
   // The supply by road: the Campo's orders of the day in crates on its quay, what it asks, and

@@ -17,6 +17,12 @@ export interface DemoOpts {
   harvested: boolean;
   /** Every workshop a few levels higher. */
   lift: number;
+  /** A plot more bought, east of the domain. */
+  bought?: boolean;
+  /** The site finished: its mill stands. */
+  built?: boolean;
+  /** A delivery more paid at Padua. */
+  paid?: boolean;
 }
 
 const WORKSHOPS: {
@@ -103,14 +109,27 @@ export function demoPayload(now: number, o: DemoOpts): EmpirePayload {
     }
   land["12,13"] = { region: "veneto", coast: true };
   const sq = { tileSize: SIZE, tiles: land };
-  const owned = new Set(OWNED);
+  const owned = new Set(o.bought ? [...OWNED, "13,9"] : OWNED);
+  const shops = o.built
+    ? [
+        ...WORKSHOPS,
+        {
+          id: "w9",
+          type: "mill",
+          recipe: "mill_flour",
+          tile: "8,10",
+          level: 1,
+          state: "run" as const,
+        },
+      ]
+    : WORKSHOPS;
   const townTiles = new Set(TOWNS.map((t) => t.cell));
   const road = (from: string, to: string) => {
     const through = ownedRoadTiles(from, to, sq, townTiles, owned);
     return through ? gridRoad(point(from), point(to), sq, townTiles, through) : null;
   };
   const roads: { from: string; to: string; pts: [number, number][] }[] = [];
-  for (const w of WORKSHOPS) {
+  for (const w of shops) {
     const pts = road(w.tile, HOME);
     if (pts) roads.push({ from: w.id, to: "home", pts });
   }
@@ -122,7 +141,7 @@ export function demoPayload(now: number, o: DemoOpts): EmpirePayload {
   if (quay) roads.push({ from: "depot", to: "home", pts: quay });
 
   const hour = 3_600_000;
-  const workshops = WORKSHOPS.map((w) => ({
+  const workshops = shops.map((w) => ({
     id: w.id,
     type: w.type,
     recipe: w.recipe,
@@ -181,16 +200,18 @@ export function demoPayload(now: number, o: DemoOpts): EmpirePayload {
         joinedAt: now - 30 * 24 * hour,
         lastActionAt: now,
         workshops,
-        builds: [
-          {
-            kind: "newWorkshop",
-            cell: "8,10",
-            level: 1,
-            workshopType: "mill",
-            startedAt: now - hour,
-            endsAt: now + hour,
-          },
-        ],
+        builds: o.built
+          ? []
+          : [
+              {
+                kind: "newWorkshop",
+                cell: "8,10",
+                level: 1,
+                workshopType: "mill",
+                startedAt: now - hour,
+                endsAt: now + hour,
+              },
+            ],
         favour: 0,
         seals: 0,
       },
@@ -229,7 +250,7 @@ export function demoPayload(now: number, o: DemoOpts): EmpirePayload {
           orders: [{ id: "venezia#1", city: "venezia", good: "bricks", qty: 20, pay: "30000" }],
         },
       ],
-      served: { padova: 14, venezia: 31, treviso: 1 },
+      served: { padova: o.paid ? 15 : 14, venezia: 31, treviso: 1 },
       embellishments: { owned: o.casa >= 4 ? ["well", "banners"] : [], prices: {} },
       vehicles: {
         shop: [],
@@ -246,12 +267,12 @@ export function demoPayload(now: number, o: DemoOpts): EmpirePayload {
         tileSize: SIZE,
         hexSize: 24,
         cells: Object.fromEntries(
-          [...OWNED, ...TOWNS.map((t) => t.cell)].map((k) => [
+          [...owned, ...TOWNS.map((t) => t.cell)].map((k) => [
             k,
             { region: "veneto", coast: !!land[k]?.coast },
           ]),
         ),
-        revealed: [...OWNED, ...SEA],
+        revealed: [...owned, ...SEA],
         posts: [],
         home: { x: hx, y: hy, level: o.casa, reach: 0, cell: HOME, placed: true },
         reach: null,
@@ -261,7 +282,7 @@ export function demoPayload(now: number, o: DemoOpts): EmpirePayload {
         water: [],
         transferUnitsPerHour: 20,
         covered: ["padova", "treviso", "venezia"],
-        unlocked: OWNED,
+        unlocked: [...owned],
         toLink: {},
         buyable,
         sectorCost: "12000",

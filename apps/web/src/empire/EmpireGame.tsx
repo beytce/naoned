@@ -1064,7 +1064,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           <CasaMoment
             level={moment}
             opens={p.casa.find((c) => c.level === moment)?.opens ?? []}
-            onClose={() => setMoment(null)}
+            onClose={() => {
+              setMoment(null);
+              // The level is seen where it stands: the Fondaco lands again on the board, grown.
+              map.current?.celebrate();
+            }}
           />
         )}
         <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />

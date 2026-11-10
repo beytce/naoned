@@ -13,7 +13,7 @@ import {
 import { bake } from "../src/porcellana/bake.js";
 import { CATALOGUE } from "../src/porcellana/catalogue.js";
 import { createPalette } from "../src/porcellana/materials.js";
-import { fondaco } from "../src/porcellana/models/fondaco.js";
+import { FONDACO_LEVELS, fondaco, fondacoStage } from "../src/porcellana/models/fondaco.js";
 import { grove, plot, slab } from "../src/porcellana/models/ground.js";
 import { market } from "../src/porcellana/models/market.js";
 import { mill } from "../src/porcellana/models/workshops.js";
@@ -131,6 +131,45 @@ describe("the models", () => {
       });
       expect(b.pin[1]).toBeGreaterThan(box.max.y - 3);
     });
+
+  it("the Fondaco grows with its level: each level adds one thing, none takes any away", () => {
+    // The first level is the palazzo validated, nothing added.
+    expect(fondacoStage(1)).toMatchObject({ yard: 0, rows: 2, tower: 0, cupola: false });
+    for (let level = 2; level <= FONDACO_LEVELS; level++) {
+      const was = fondacoStage(level - 1) as Record<string, number | boolean>;
+      const now = fondacoStage(level) as Record<string, number | boolean>;
+      const grew = Object.keys(now).filter((k) => k !== "level" && Number(now[k]) > Number(was[k]));
+      expect(grew, `level ${level}`).toHaveLength(1);
+      for (const k of Object.keys(now))
+        expect(Number(now[k])).toBeGreaterThanOrEqual(Number(was[k]));
+    }
+    // Beyond its top, and before its first, it stays what it is.
+    expect(fondacoStage(40)).toEqual(fondacoStage(FONDACO_LEVELS));
+    expect(fondacoStage(0)).toEqual(fondacoStage(1));
+  });
+
+  it("the Fondaco stands on its tile at every level, taller as it rises", () => {
+    let top = 0;
+    for (let level = 1; level <= FONDACO_LEVELS; level++) {
+      const b = fondaco(P, level);
+      const box = new Box3().setFromObject(b.group);
+      expect(box.min.y).toBeGreaterThan(-0.05);
+      expect(Math.max(-box.min.x, box.max.x, -box.min.z, box.max.z)).toBeLessThanOrEqual(
+        BOARD.tile / 2,
+      );
+      expect(box.max.y).toBeGreaterThanOrEqual(top - 1e-6);
+      expect(b.pin[1]).toBeGreaterThan(box.max.y);
+      top = box.max.y;
+      let broken = 0;
+      b.group.traverse((o) => {
+        if (!(o instanceof Mesh)) return;
+        const pos = o.geometry.getAttribute("position");
+        for (let i = 0; i < pos.array.length; i++) if (!Number.isFinite(pos.array[i])) broken++;
+      });
+      expect(broken, `level ${level}`).toBe(0);
+    }
+    expect(top).toBeGreaterThan(7);
+  });
 
   it("the market is San Marco: the campanile stands highest, its ball of accent on top", () => {
     const m = market(createPalette());

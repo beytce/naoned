@@ -186,7 +186,7 @@ export const CATALOGUE: Entry[] = [
     name: "Le Fondaco",
     sub: "Ton comptoir",
     sign: "Le drapeau flotte.",
-    make: fondaco,
+    make: (P) => fondaco(P),
   },
   {
     key: "market",

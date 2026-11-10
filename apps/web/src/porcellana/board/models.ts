@@ -2,43 +2,23 @@
  * The board's models by their key (scene.ts): the catalogue's, the board's own (a plain tile and
  * its dressing, a site under way), a town by its size.
  */
-import { Group } from "three";
+import type { Group } from "three";
 import { CATALOGUE } from "../catalogue.js";
 import type { Palette } from "../materials.js";
 import { lockedPlot } from "../models/decor.js";
+import { domainTile, site, tierDress, tierOf } from "../models/domain.js";
 import { fondaco } from "../models/fondaco.js";
-import { grove, plot } from "../models/ground.js";
+import { plot } from "../models/ground.js";
 import { adornments, barque, heldBanner, loyaltyBanners, marketStalls } from "../models/life.js";
 import { zattera } from "../models/lot7.js";
 import { market } from "../models/market.js";
 import type { Built, ModelOpts } from "../models/model.js";
 import { town } from "../models/towns.js";
 import { type Vehicle, cart, mule, rider, ship } from "../models/vehicles.js";
-import { box, crate } from "../shapes.js";
+import { crate } from "../shapes.js";
 import type { BoardTile, ModelKey } from "./scene.js";
 
 const BY_KEY = new Map(CATALOGUE.map((e) => [e.key, e]));
-
-/** A site under way: its plot, a scaffold of poles, crates of accent. */
-function site(P: Palette): Built {
-  const g = new Group();
-  box(g, 4.4, 0.05, 4.4, 0, 0, 0, P.m("soil"), 0.25);
-  for (const [x, z] of [
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-    [1, 1],
-  ] as const)
-    box(g, 0.1, 1.8, 0.1, x, 0.05, z, P.m("wood"), 0.02);
-  for (const y of [0.9, 1.75]) {
-    box(g, 2.1, 0.07, 0.07, 0, y, -1, P.m("wood"), 0.015);
-    box(g, 2.1, 0.07, 0.07, 0, y, 1, P.m("wood"), 0.015);
-  }
-  box(g, 1.8, 0.7, 1.8, 0, 0.05, 0, P.m("wall2"), 0.03);
-  crate(g, 1.6, 0.05, 1.6, P.accent, 0.4);
-  crate(g, 1.6, 0.45, 1.62, P.m("wood"), 0.34, 0.3);
-  return { group: g, pin: [0, 2.4, 0] };
-}
 
 /**
  * A town's orders as crates on its quay, along the tile's south edge (the side the camera sees):
@@ -70,7 +50,8 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
   }
   switch (key) {
     case "fondaco": {
-      const b = fondaco(P);
+      // It grows with its level: each one adds something one can name (fondacoStage).
+      const b = fondaco(P, tile.size ?? 1);
       if (tile.decor?.length) adornments(P, b.group, tile.decor);
       // Its people walk with the board's crowd (board/people.ts), one more a level.
       return b;
@@ -99,9 +80,9 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
     case "locked":
       return lockedPlot(P);
     case "site":
-      return site(P);
+      return site(P, tile.progress ?? 0);
     case "lane":
-      return grove(P, o.seed, 4, ["round", "cypress"], o.keepOff);
+      return domainTile(P, o.seed, tile.casa ?? 1, o.keepOff);
     case "campo": {
       // Its orders of the day in crates on its quay (the supply by road).
       const b = BY_KEY.get("campo")?.make?.(P, o) ?? null;
@@ -113,6 +94,15 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
       const b = make ? make(P, o) : null;
       // A workshop's lots ready, stacked before it in crates (P3-02 of the players' audit).
       if (b && tile.crates?.length) quayCrates(P, b.group, tile.crates);
+      // Its tier, every five levels: a paved yard, posts, walls, a dovecote, its banners.
+      const wave = b ? tierDress(P, b.group, tierOf(tile.level)) : null;
+      if (b && wave) {
+        const own = b.tick;
+        b.tick = (t, dt) => {
+          own?.(t, dt);
+          wave(t);
+        };
+      }
       return b;
     }
   }
