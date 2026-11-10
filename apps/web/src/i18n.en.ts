@@ -310,8 +310,7 @@ export const en: Dictionary = {
         pasture: "Pasture",
         sand: "Sandy shore",
       } as Record<string, string>,
-      favours: (land: string, whom: string, pct: number) =>
-        `${land}: ${whom} yields +${pct}% here.`,
+      favours: (land: string, whom: string, pct: number) => `${land}: +${pct}% for ${whom}.`,
       sub: (land: string) => `Terroir: ${land}`,
       tag: (pct: number) => `Terroir +${pct}%`,
       bonusTerroir: (pct: number) => `Terroir +${pct}%`,
@@ -322,7 +321,6 @@ export const en: Dictionary = {
       moveTitle: (name: string) => `Move: ${name}`,
       moveHint:
         "Touch a free tile of yours: the workshop stands there at once, at no cost, its lots kept.",
-      moveNone: "No free tile of yours: buy a « + » plot, then move.",
       moveHere: "Put it here",
       moveGain: (pct: number) => `On its terroir: +${pct}%.`,
       movePlain: "Off its terroir: it will yield as elsewhere.",
@@ -1276,7 +1274,7 @@ export const en: Dictionary = {
           "Forest, clay, fields, pasture, sandy shore: each tile shows its land before you buy it.",
         ],
         [
-          "The workshop that suits it yields 10% more there.",
+          "The workshop that suits it yields more there.",
           "A lumber camp in a forest, a clay pit on clay, a farm in the fields. Elsewhere it yields as usual, never less.",
         ],
         [

@@ -8,7 +8,14 @@ import { tileAt } from "@comptoirs/engine";
 import { buildingName, workshopStatus } from "../../empire/logic.js";
 import { type Target, deliveryPlan } from "../../empire/map/logic.js";
 import { welcomeStep } from "../../empire/next.js";
-import { pct, terrainName, terroirLine, tileBonusLine } from "../../empire/terroir.js";
+import {
+  betterTiles,
+  pct,
+  terrainName,
+  terroirAt,
+  terroirLine,
+  tileBonusLine,
+} from "../../empire/terroir.js";
 import type { EmpirePayload } from "../../empire/types.js";
 import { hourOf } from "../../game/format.js";
 import { fr } from "../../i18n.js";
@@ -501,7 +508,8 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
 
   // The workshops on their tiles, working when the game says so.
   const seated = new Set(house.workshops.map((w) => w.tile));
-  const freeOwned = [...owned].some((k) => !seated.has(k) && out.get(k)?.model === "lane");
+  const freeList = [...owned].filter((k) => !seated.has(k) && out.get(k)?.model === "lane");
+  const freeOwned = freeList.length > 0;
   for (const w of house.workshops) {
     if (!w.tile) continue;
     const st = workshopStatus(p, w, now);
@@ -509,6 +517,13 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     const lots = st.state === "ready" ? st.lots : 0;
     // What its tile gives it, in one line: its terroir, its neighbourhood (lot 3).
     const bonus = tileBonusLine(p, w.id);
+    // Off its land while a free tile of the house's is of it: said, it would yield more there.
+    const [betterAt] = betterTiles(p, w.id, freeList);
+    const better = betterAt ? terroirAt(p, betterAt) : null;
+    const nudge =
+      better && st.state !== "ready" && st.state !== "full"
+        ? ` ${t.terroir.better(terrainName(better.kind), pct(better.bonusBps))}`
+        : "";
     put(w.tile, {
       water: false,
       model,
@@ -535,12 +550,12 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
           st.state === "ready"
             ? t.porcellana.ready(st.lots)
             : st.state === "running"
-              ? t.porcellana.running
+              ? `${t.porcellana.running}${nudge}`
               : st.state === "blocked"
                 ? t.porcellana.blocked(goodName(p, st.resource))
                 : st.state === "full"
                   ? t.orbit.full(goodName(p, st.good))
-                  : t.porcellana.idle,
+                  : `${t.porcellana.idle}${nudge}`,
         go: t.porcellana.enter,
         pin: lots > 0 ? String(lots) : "",
         ready: lots > 0,

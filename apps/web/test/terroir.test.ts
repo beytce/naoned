@@ -98,8 +98,9 @@ describe("a tile's terroir", () => {
   });
 
   it("is told in a line, the workshops by their names", () => {
-    expect(terroirLine(p, "3,1")).toBe("Forêt : Camp de bûcherons y rend +10 %.");
-    expect(terroirLine(p, "4,2")).toBe("Rive de sable : sand_pit y rend +12.5 %.");
+    expect(terroirLine(p, "3,1")).toBe("Forêt : +10 % pour Camp de bûcherons.");
+    // A land whose workshops this world does not offer: its name only.
+    expect(terroirLine(p, "4,2")).toBe("Terroir : Rive de sable");
     expect(terroirLine(p, "2,1")).toBeNull();
   });
 
@@ -125,7 +126,7 @@ describe("the terroirs on the board", () => {
     const forest = card("plot:4,1");
     expect(forest?.terrain).toBe("forest");
     expect(forest?.place?.name).toBe("Forêt");
-    expect(forest?.place?.line).toBe("Forêt : Camp de bûcherons y rend +10 %.");
+    expect(forest?.place?.line).toBe("Forêt : +10 % pour Camp de bûcherons.");
     expect(forest?.place?.sub).toContain("75");
     // Plain land: the plot of before.
     expect(card("plot:2,0")?.terrain).toBeUndefined();
@@ -136,7 +137,7 @@ describe("the terroirs on the board", () => {
     const free = card("free:3,1");
     expect(free?.terrain).toBe("forest");
     expect(free?.place?.sub).toBe("Terroir : Forêt");
-    expect(free?.place?.line).toBe("Forêt : Camp de bûcherons y rend +10 %.");
+    expect(free?.place?.line).toBe("Forêt : +10 % pour Camp de bûcherons.");
   });
 
   it("says what its tile gives a workshop, and offers to move it while a tile is free", () => {
@@ -147,6 +148,12 @@ describe("the terroirs on the board", () => {
     const camp = card("workshop:w1");
     expect(camp?.suited).toBe(false);
     expect(camp?.place?.sub).toBe("Niveau 2");
+    // Off its land while a forest of the house's lies free: its card says what it would gain.
+    expect(camp?.place?.line).toBe(
+      "À l'arrêt. Une case de forêt est libre chez toi : il y rendrait +10 %.",
+    );
+    // The farm stands in its fields: nothing to say.
+    expect(farm?.place?.line).toBe("À l'arrêt.");
   });
 
   it("offers no move without a free tile of the house's", () => {

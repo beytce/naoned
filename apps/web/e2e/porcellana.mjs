@@ -142,6 +142,66 @@ try {
       await build.click();
       await shot("4d-chantier", 10_000);
     }
+    // The living map (docs/plan-carte-vivante.md): a land's card says its terroir; a workshop
+    // built is moved to a free tile of the house's, at once.
+    await page.keyboard.press("Escape");
+    const house = () =>
+      page.evaluate(() =>
+        fetch("/api/empire")
+          .then((r) => r.json())
+          .then((b) => ({
+            workshops: b.view.house.workshops.map((w) => ({ id: w.id, tile: w.tile })),
+            terrain: b.view.map.terrain ?? {},
+            horizon: (b.view.map.horizon ?? []).length,
+          })),
+      );
+    const land = await house();
+    if (Object.keys(land.terrain).length === 0)
+      faults.push(`${label}: no terroir told by the view`);
+    if (land.horizon === 0) faults.push(`${label}: no horizon told by the view`);
+    // A tile of the house's or a plot whose land has a terroir: its card names it.
+    const withLand = Object.keys(land.terrain);
+    let named = false;
+    for (const cell of withLand) {
+      const pin = page.locator(`[data-place='free:${cell}'], [data-place='plot:${cell}']`).first();
+      if ((await pin.count()) === 0) continue;
+      await pin.evaluate((el) => el.click());
+      const card = page.locator(".pc-card[data-card-terroir]");
+      if ((await card.count()) === 0) continue;
+      named = true;
+      await shot("7-terroir", 6_000);
+      break;
+    }
+    if (!named) faults.push(`${label}: no card names its terroir`);
+    await page.keyboard.press("Escape");
+    // The workshop built a minute ago stands: touched, its card offers to move it.
+    const workshop = page.locator("[data-place^='workshop:']").first();
+    await workshop.waitFor({ state: "attached", timeout: 150_000 }).catch(() => {});
+    if ((await workshop.count()) === 0) faults.push(`${label}: no workshop stands after its site`);
+    else {
+      const [before] = (await house()).workshops;
+      await workshop.evaluate((el) => el.click());
+      await page.locator(".pc-card").waitFor();
+      const move = page.locator(".pc-alt");
+      if ((await move.count()) === 0) faults.push(`${label}: the workshop's card offers no move`);
+      else {
+        await move.click();
+        await page.locator("[data-move-bar]").waitFor();
+        const free = page.locator("[data-place^='free:']").first();
+        await free.evaluate((el) => el.click());
+        await page.locator("[data-move-gain]").waitFor();
+        await shot("8-demenager", 5_000);
+        await page
+          .locator("[data-move-bar]")
+          .getByRole("button", { name: /poser ici/i })
+          .click();
+        await page.locator("[data-move-bar]").waitFor({ state: "detached", timeout: 15_000 });
+        const [after] = (await house()).workshops;
+        if (!before || !after || before.tile === after.tile)
+          faults.push(`${label}: the workshop did not move (${before?.tile} → ${after?.tile})`);
+        await shot("8b-demenage", 8_000);
+      }
+    }
     // The Fondaco's tab: up close on it, its bar at the foot.
     await page.keyboard.press("Escape");
     await page

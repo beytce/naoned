@@ -35,11 +35,17 @@ export const pct = (bps: number) => Math.round(bps / 10) / 10;
 /** A terrain's name. */
 export const terrainName = (kind: string) => fr.empire.terroir.names[kind] ?? kind;
 
-/** « Forêt : camp de bûcherons +10 % » — what a tile's land is and whom it favours; null on plain land. */
+/** « Forêt : +10 % pour Camp de bûcherons. » — a tile's land and whom it favours; null on plain land. */
 export function terroirLine(p: EmpirePayload, tile: string | undefined): string | null {
   const t = terroirAt(p, tile);
   if (!t) return null;
-  const whom = t.buildings.map((b) => buildingName(p, b)).join(", ");
+  // Only the workshops this world lets one build (its catalogue): the others would be a name
+  // no screen knows.
+  const whom = t.buildings
+    .filter((b) => p.catalog.some((c) => c.type === b))
+    .map((b) => buildingName(p, b))
+    .join(", ");
+  if (!whom) return fr.empire.terroir.sub(terrainName(t.kind));
   return fr.empire.terroir.favours(terrainName(t.kind), whom, pct(t.bonusBps));
 }
 

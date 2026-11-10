@@ -229,7 +229,7 @@ const frDict = {
         pasture: "Pré",
         sand: "Rive de sable",
       } as Record<string, string>,
-      favours: (land: string, whom: string, pct: number) => `${land} : ${whom} y rend +${pct} %.`,
+      favours: (land: string, whom: string, pct: number) => `${land} : +${pct} % pour ${whom}.`,
       /** On a tile's card, after what it is. */
       sub: (land: string) => `Terroir : ${land}`,
       /** In the list of workshops to build on a tile. */
@@ -243,7 +243,6 @@ const frDict = {
       moveTitle: (name: string) => `Déménager : ${name}`,
       moveHint:
         "Touche une case libre à toi : l'atelier s'y pose aussitôt, sans frais, ses lots gardés.",
-      moveNone: "Aucune case libre à toi : achète une parcelle « + », puis déménage.",
       moveHere: "Poser ici",
       moveGain: (pct: number) => `Sur son terroir : +${pct} %.`,
       movePlain: "Hors de son terroir : il rendra comme ailleurs.",
@@ -1231,7 +1230,7 @@ const frDict = {
           "Forêt, glaise, champs, pré, rive de sable : chaque case montre sa terre avant que tu l'achètes.",
         ],
         [
-          "L'atelier qui lui correspond y rend 10 % de plus.",
+          "L'atelier qui lui correspond y rend plus.",
           "Un camp de bûcherons en forêt, une carrière sur la glaise, une ferme dans les champs. Ailleurs, il rend comme d'habitude, jamais moins.",
         ],
         [
