@@ -277,20 +277,23 @@ function startMan(pass){
   const a=pass.i-3, b=pass.j-4;
   man = { pass, a, b, round:1, phase:'plan', anim:0, path:[], flash:[], lost:0,
     pieces:[{x:3,y:6,t:'tete',hp:2},{x:3,y:7,t:'cale',hp:1},{x:3,y:8,t:'cale',hp:1},{x:3,y:9,t:'escorte',hp:2}],
-    gal: pass.holder==='npc' ? [{x:1,y:2,alive:true},{x:5,y:3,alive:true}] : [{x:5,y:2,alive:true},{x:1,y:4,alive:true}],
+    gal: pass.holder==='npc' ? [{x:1,y:2,alive:true},{x:6,y:3,alive:true,fixed:true}] : [{x:5,y:2,alive:true},{x:0,y:2,alive:true,fixed:true}],
     rocks: new Set(pass.holder==='npc' ? ['3,4','0,4','6,6','3,2','5,0'] : ['3,4','2,2','6,5','0,7','4,0']), strikes:[] };
   man.pieces.forEach(p => { p.px=p.x; p.py=p.y; });
   telegraph(); Object.assign(goal,{x:a+3.5,y:b+5.2,z:Math.min(vw/6.2,(vh-250)/3.6,96)}); markRuler();
   $('manbar').hidden=false; $('thread').hidden=true; manText();
   setCaption(pass.holder==='npc' ? 'La Manœuvre : forcer Segna' : 'La Manœuvre : forcer Chioggia',
-    (pass.holder==='npc' ? 'Ivo le Borgne tient ce détroit. ' : 'Ici, la garde a été disposée par un joueur, absent ce soir. C’est le même jeu. ') + 'Ton convoi avance en file : la tête rouge, deux cales, l’escorte au cercle. Chaque pièce prend la place de celle qui la précède. Les cases hachurées seront frappées quand la cloche sonne : une cale qui s’y trouve est perdue, l’escorte encaisse deux coups. Avant de sonner, des cadres en pointillé montrent où chaque pièce va s’arrêter.',
+    (pass.holder==='npc' ? 'Ivo le Borgne tient ce détroit. ' : 'Ici, la garde a été disposée par un joueur, absent ce soir. C’est le même jeu. ') + 'Ton convoi avance en file : la tête rouge, deux cales, l’escorte au cercle. Chaque pièce prend la place de celle qui la précède. La galère à voile noire frappe les quatre cases qui la touchent, et te suit. La bombarde, la tour basse, tire sur toute sa ligne une cloche sur deux. Les cases hachurées seront frappées quand la cloche sonne : ne laisse aucune pièce dessus. Les cadres en pointillé montrent où chaque pièce va s’arrêter.',
     'Touche les cases devant la tête (une à trois), regarde les cadres, puis sonne la cloche. But : amener la tête sur le bord rosé.');
 }
 const mfree = (x,y) => x>=0&&y>=0&&x<GW&&y<GH && !man.rocks.has(x+','+y) && !man.gal.some(q=>q.alive&&q.x===x&&q.y===y);
 function telegraph(){
   const h=man.pieces[0], s=[]; const add=(x,y)=>{ if(x>=0&&y>=0&&x<GW&&y<GH&&!man.rocks.has(x+','+y)&&!s.some(q=>q.x===x&&q.y===y)) s.push({x,y}); };
-  if (man.gal[0].alive){ add(h.x,h.y); add(h.x,h.y-1); }
-  if (man.gal[1].alive){ for(let d=-1;d<=1;d++) add(h.x+d,h.y-2); }
+  const s0 = s.length;
+  for (const q of man.gal){ if (!q.alive) continue; const n0 = s.length;
+    if (!q.fixed){ add(q.x+1,q.y); add(q.x-1,q.y); add(q.x,q.y+1); add(q.x,q.y-1); }
+    else if (man.round % 2 === 0) for (const d of [-1,1]) for (let x=q.x+d; x>=0 && x<GW && !man.rocks.has(x+','+q.y); x+=d) add(x,q.y);
+    for (let k=n0;k<s.length;k++) s[k].from = q; }
   man.strikes=s;
 }
 function landing(){ const L=man.path.length, old=man.pieces.map(p=>({x:p.x,y:p.y}));
@@ -326,7 +329,7 @@ function ring(){
     if (esc) man.gal.forEach(q=>{ if(q.alive && Math.abs(q.x-esc.x)+Math.abs(q.y-esc.y)===1){ q.alive=false; say('L’escorte éperonne une galère.'); } });
     if (head.dead) return endMan(false);
     if (head.y===0) return endMan(true);
-    man.gal.forEach(q=>{ if(!q.alive) return; const dx=Math.sign(head.x-q.x), dy=Math.sign(head.y-q.y);
+    man.gal.forEach(q=>{ if(!q.alive||q.fixed) return; const dx=Math.sign(head.x-q.x), dy=Math.sign(head.y-q.y);
       const tryv=[[Math.abs(head.x-q.x)>=Math.abs(head.y-q.y)?dx:0, Math.abs(head.x-q.x)>=Math.abs(head.y-q.y)?0:dy],[0,dy],[dx,0]];
       for(const [mx,my] of tryv){ if(!mx&&!my) continue; const nx=q.x+mx, ny=q.y+my; if(mfree(nx,ny)&&!man.pieces.some(p=>p.x===nx&&p.y===ny)){ q.x=nx; q.y=ny; break; } } });
     man.round++; man.phase='plan'; man.pieces.forEach(p=>{p.px=p.x;p.py=p.y;}); telegraph(); manText();
@@ -459,6 +462,8 @@ function frame(t){
       poly(q, y===0?'rgba(194,59,46,.22)':'rgba(246,244,240,.16)');
       if (man.rocks.has(x+','+y)) box(i+.25,j+.25,.5,.5,.3,-.08,'#8A8279','#6B645C','#57514A');
     }
+    for (const s of man.strikes){ if (!s.from) continue; const a=iso(man.a+s.from.x+.5,man.b+s.from.y+.5,.12), b=iso(man.a+s.x+.5,man.b+s.y+.5,-.07);
+      g.strokeStyle='rgba(42,39,37,.55)'; g.lineWidth=1.5; g.setLineDash([3,4]); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); g.setLineDash([]); }
     for (const s of man.strikes){ const i=man.a+s.x, j=man.b+s.y, q=[iso(i+.06,j+.06,-.07),iso(i+.94,j+.06,-.07),iso(i+.94,j+.94,-.07),iso(i+.06,j+.94,-.07)];
       g.save(); g.beginPath(); g.moveTo(q[0][0],q[0][1]); q.slice(1).forEach(v=>g.lineTo(v[0],v[1])); g.closePath(); g.clip();
       g.fillStyle='rgba(246,244,240,.85)'; g.fill(); g.strokeStyle='#2A2725'; g.lineWidth=2; const st=cam.z*.11, x0=q[3][0], x1=q[1][0], y0=q[0][1], y1=q[2][1];
@@ -495,6 +500,7 @@ function frame(t){
   for (const o of things){
     if (o.q) drawPlace(o.q,t);
     else if (o.boat){ const [x,y]=o.boat; if (cam.z<18) { const c=iso(x,y,.05); g.fillStyle=o.col; g.fillRect(c[0]-1.5,c[1]-1.5,3,3); } else { box(x-.11,y-.07,.22,.14,.06,0,'#F6F4F0','#DDD5C8','#CFC6B8'); const m=iso(x,y,.06), s=cam.z*.13; poly([[m[0],m[1]-s*1.3],[m[0]+s*.6,m[1]-s*.2],[m[0],m[1]-s*.1]],o.col); } }
+    else if (o.gal && o.gal.fixed){ const i=man.a+o.gal.x, j=man.b+o.gal.y; box(i+.22,j+.22,.56,.56,.3,-.08,'#3A3633','#2A2725','#1E1C1A'); box(i+.4,j+.4,.2,.2,.16,.22,'#57514A','#3A3633','#2A2725'); }
     else if (o.gal){ const i=man.a+o.gal.x, j=man.b+o.gal.y; box(i+.2,j+.3,.6,.4,.16,-.08,'#3A3633','#2A2725','#1E1C1A'); const m=iso(i+.5,j+.5,.1), s=cam.z*.3; poly([[m[0],m[1]-s*1.2],[m[0]+s*.55,m[1]-s*.3],[m[0],m[1]-s*.15]],'#2A2725'); }
     else if (o.pc){ const i=man.a+o.x, j=man.b+o.y, p=o.pc, col=p.t==='tete'?RED:p.t==='escorte'?'#F6F4F0':'#E4DCCF';
       box(i+.24,j+.3,.52,.4,p.t==='cale'?.26:.16,-.08,col,p.t==='tete'?'#A53227':'#DDD5C8',p.t==='tete'?'#8E281E':'#C8BFB1');
