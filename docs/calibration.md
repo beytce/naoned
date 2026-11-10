@@ -2938,3 +2938,62 @@ Décision du porteur du 9 novembre 2026 : la première Bataille classée du jour
 | 10 | 4006 | 255 · 255 | 6.0 % | 7.3 % | 8 % | active → active |
 
 **Lecture.** La Bataille pèse 6,0 % de la Gloire d'un régulier en médiane (rang parmi les marchands), 7,9 % s'il est premier chaque jour ; le plafond (315) fait 8,6 % de la semaine médiane d'un régulier sans Bataille, au-dessus de 10 % sur deux graines seulement (11 et 12 %, les semaines les plus maigres). La cible tient sans changer le barème. Un assidu n'en tire pas plus qu'un régulier (une seule classée par jour). Le Signore change sur 4 graines sur 10, par le canal déjà mesuré pour les escarmouches (les alliances demandées au voisin le plus glorieux), plus petit que le hasard ordinaire de la semaine. À suivre en bêta.
+
+## La Carte vivante : les terroirs et la fidélité des villes (10 novembre 2026, décisions du porteur du 9)
+
+Lots 3 et 5 de `docs/plan-carte-vivante.md`. Deux règles nouvelles, éteintes en production tant que le serveur ne dit pas `EMPIRE_TERROIRS=on` et `EMPIRE_LOYALTY=on` (note du chapitre : `docs/notes-chapitre-2026-12-carte-vivante.md`).
+
+### Ce qui change
+
+- **Les terroirs** (`map.terrain`, `venice1450.square.ts`) : chaque case de terre a un terrain, tiré de la case sur les poids de sa région (Vénétie : forêt 3, glaise 3, champs 4, pré 2, rive de sable 4 sur les côtes seulement, plaine 4 ; ailleurs : 2, 1, 3, 2, 3 et plaine 6), aucun sous une ville. L'atelier brut qui lui correspond y rend **+10 %** (`bonusBps` 1 000, la part d'un lien de voisinage) : camp de bûcherons en forêt, carrière d'argile sur la glaise, ferme et champ de chanvre dans les champs, bergerie au pré, sablière et saline sur la rive. Jamais moins ailleurs. Un atelier se déménage vers une case libre à soi, sans frais (`empireMoveWorkshop`). La graine du tirage (17) est celle qui donne au premier Fondaco une forêt, de la glaise et des champs à ses côtés.
+- **La fidélité des villes** (`orders.loyalty`, `venice1450.empire.ts`) : à 3, 10, 25 et 60 livraisons reçues, les commandes à venir d'une ville paient **+2 % par palier** (200, 400, 600, 800 points de base), fixés au tirage de la commande.
+- **Les robots** : ils regardent la terre avant d'acheter la case d'un nouvel atelier selon leur assiduité (`terroirSeek` : 90 % des assidus, 60 % des médians, 30 % des occasionnels, 10 % des absents), et prennent alors la case de leur terroir si elle est à trois cases de plus au plus ; une livraison par ville et par session compte pour la fidélité.
+
+### Les essais
+
+`npx tsx src/empire-cli.ts --square --cohort 60 --seeds 1,2,3` (24 mois, la carte en cases du jeu en service, cohortes aux mois 0, 3, 6 et 12), trois fois : la référence (`--no-terroirs --no-loyalty`), les terroirs seuls (`--no-loyalty`), les deux règles.
+
+**Des cohortes de 60 Maisons, pas de 200** : la machine de cette session redémarrait avant la fin d'un essai à 200 (environ 25 minutes par graine après l'accélération ci-dessous, plus d'une heure avant). Les trois essais sont à la même taille, donc comparables entre eux ; le bruit est plus fort qu'à 200 (une cible au bord de sa borne bascule d'une graine à l'autre). **À refaire à 200 sur une machine stable avant d'allumer les règles** : les trois mêmes commandes sans `--cohort 60`.
+
+| Essai | Graines 1 / 2 / 3 | Cibles tenues sur 10 |
+| --- | --- | --- |
+| Référence (le jeu en service, carte en cases) | | 5 / 6 / 5 |
+| Les terroirs seuls | | 5 / 6 / 5 |
+| Les terroirs et la fidélité | | **5 / 6 / 6** |
+
+| Cible | Référence (g. 1 / 2 / 3) | Terroirs seuls | Terroirs et fidélité |
+| --- | --- | --- | --- |
+| Calendrier du Fondaco (cohorte 0) | ✗ 4 hors bornes / ✓ / ✗ 2 | ✗ 1 / ✓ / ✗ 3 | ✗ 1 / ✗ 2 / ✗ 4 |
+| … dont le niveau 20, en jours (cible 750, bornes 375 à 1 500) | 349 / 399 / 359 | 363 / 385 / 360 | 371 / 359 / 338 |
+| Tournées avec un objectif à moins de 24 h (≥ 90 %) | ✓ 98,4 / 97,4 / 99,7 % | ✓ 99,6 / 98,1 / 99,0 % | ✓ 98,9 / 99,2 / 99,5 % |
+| Prochain palier en jours de revenu (2 à 7) | ✗ 3,6 à 15,8 / 3,8 à 15,7 / 3,3 à 17,1 | ✗ 3,4 à 14,1 / 3,8 à 14,2 / 3,1 à 16,1 | ✗ 3,7 à 18,5 / 3,0 à 16,6 / 3,2 à 18,3 |
+| Cohorte du mois 12 hors de la 1re bande (4 à 6 mois) | ✗ 3,1 / 3,0 / 3,1 | ✗ 3,3 / 3,1 / 3,0 | ✗ 3,1 / 3,0 / 3,0 |
+| Indice des prix (80 à 130) | ✓ 93 à 103 | ✓ 93 à 103 | ✓ 93 à 103 |
+| Puits ÷ sources, jeunes puis anciennes (0,6–0,8 puis 0,9–1,0) | ✗ 0,83 puis 0,94 / 0,85 puis 0,95 / 0,82 puis 0,95 | ✗ 0,82 puis 0,96 / 0,85 puis 0,97 / 0,82 puis 0,95 | ✗ 0,81 puis 0,96 / **✓ 0,78 puis 0,96** / **✓ 0,80 puis 0,96** |
+| Part de la Terraferme (≤ 15 %) | ✓ 0,0 % | ✓ 0,0 % | ✓ 0,0 % |
+| Intendance, places prises par le Campo (≤ 10 %) | ✓ 0,7 / 0,6 / 0,7 % | ✓ 0,7 % | ✓ 0,7 % |
+| Bruts des jeunes Maisons à Venise (≥ 10 %) | ✗ 2,3 / 1,9 / 2,1 % | ✗ 2,2 / 2,0 / 2,0 % | ✗ 1,9 / 2,0 / 2,1 % |
+| Part des commandes dans les recettes (60 à 85 %) | ✓ 72,1 / 73,2 / 72,6 % | ✓ 73,7 / 73,2 / 74,4 % | ✓ 74,8 / 74,9 / 75,0 % |
+
+| Ce que gagnent les Maisons (médiane sur 24 mois, cohortes 0 à 12) | Terroirs seuls contre la référence | Terroirs et fidélité contre la référence |
+| --- | --- | --- |
+| Assidus | +0,2 / −0,1 / +0,6 % | +5,3 / +4,8 / +5,6 % |
+| Médians | −0,3 / −3,3 / −1,7 % | +7,0 / +13,7 / +5,3 % |
+| Occasionnels | −2,3 / +1,1 / −1,2 % | +6,2 / +13,7 / −0,9 % |
+| Recettes de tout le monde | −0,6 / +1,0 / −0,9 % | +3,2 / +8,0 / +4,3 % |
+| Recettes des commandes | +1,6 / +1,0 / +1,6 % | +6,8 / +10,4 / +7,5 % |
+
+Avec les terroirs, 12 à 15 % des ateliers du monde se tiennent sur leur terroir (les ateliers bruts sont une minorité, et tous les robots ne regardent pas la terre). Avec la fidélité, neuf couples Maison-ville sur dix ont passé le premier palier au bout de 24 mois (964 à 969 sur 1 075 à 1 103).
+
+**Lecture.**
+- **Aucune cible n'est perdue** : les deux règles tiennent autant de cibles que la référence sur chaque graine, une de plus sur la troisième (l'épargne des jeunes Maisons entre dans sa cible sur deux graines).
+- **Les terroirs ne déplacent pas l'argent** : un atelier sur sa terre fait 10 % de plus, mais c'est la demande des villes qui borne les recettes (± 1 % sur les recettes, dans le bruit). Le terroir donne une raison de choisir sa case et de s'étendre, il ne gonfle pas l'économie. Les prix ne bougent pas (93 à 103).
+- **La fidélité relève les recettes de 3 à 8 %** (5 % pour un assidu, 5 à 14 % pour un médian), à tous les niveaux d'assiduité : sur 24 mois, presque toutes les villes servies ont passé un palier. C'est l'effet voulu, borné par la prime la plus haute (+8 %).
+- **Le calendrier de la fin de partie est au bord de sa borne basse dans la référence elle-même** (le niveau 20 vers 350 à 400 jours pour une borne à 375) : il entre ou sort d'une graine à l'autre. La fidélité le rapproche de quelques jours de plus sur deux graines. Si le porteur veut tenir ce calendrier, deux leviers : une prime d'un point par palier au lieu de deux (`premiumBps` 100, 200, 300, 400), ou les coûts des niveaux 16 à 20, qui sont la vraie cause.
+- Les cibles hors bornes de la référence (palier en jours de revenu, sortie de la première bande, bruts des jeunes Maisons) le restent, sans lien avec ces règles.
+
+### Le simulateur accéléré
+
+Le profil d'un essai sur la carte en cases montrait 38 % du temps dans `parseTile` (la clé d'une case relue des millions de fois par les routes et les distances). `parseTile` lit maintenant sans découper et garde les cases déjà lues (bornées à 50 000, figées) ; le simulateur garde par Maison ce que le moteur dit de sa terre tant qu'elle ne change pas. Trois mois, graine 1 : 85 s → 32 s, rapport identique ligne à ligne.
+
+**Mise en œuvre** : rien ne s'applique avant la décision du porteur. Publier la note du chapitre, puis régler `EMPIRE_TERROIRS=on` et `EMPIRE_LOYALTY=on` (`docs/deploiement.md`) ; le monde reprend alors les réglages du thème au démarrage suivant, sans migration. Les livraisons déjà comptées valent pour la fidélité ; aucun atelier ne rend moins qu'avant.
