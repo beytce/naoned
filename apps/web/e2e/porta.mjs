@@ -168,8 +168,14 @@ try {
       .getByRole("button", { name: /suivant|commencer/i })
       .click();
   await page.waitForSelector("[data-porcellana-map]");
-  // The guided start and the places' first times passed (docs/plan-tutoriels.md): the Porta's play here.
-  await page.evaluate(() => localStorage.setItem("fondaco:tutor", JSON.stringify({ all: "skip" })));
+  // The guided start and the places' first times passed (docs/plan-tutoriels.md); the battle's own
+  // first time plays below.
+  await page.evaluate(() =>
+    localStorage.setItem(
+      "fondaco:tutor",
+      JSON.stringify({ first: "skip", porta: "done", remise: "done", interior: "done" }),
+    ),
+  );
   await page.reload();
   await page.waitForSelector("[data-porcellana-map]");
 
@@ -265,6 +271,17 @@ try {
   await page.waitForSelector("[data-battle-timer]", { timeout: 15_000 });
   // The island opens (its tiles drop from the gate), the convoy is made: the transport follows.
   await page.waitForTimeout(3_500);
+  // Its first time (docs/plan-tutoriels.md): four steps under the spotlight, then the battle.
+  const step = page.locator("[data-tutor-step^='portaFight:']");
+  await step.first().waitFor({ timeout: 8_000 });
+  await page.screenshot({ path: join(SHOTS, "5a-tuto.png") });
+  let steps = 0;
+  while ((await step.count()) > 0 && steps < 8) {
+    await page.locator("[data-tutor-next]").first().click();
+    await page.waitForTimeout(350);
+    steps++;
+  }
+  if (steps !== 4) faults.push(`battle: its tutorial played ${steps} steps, not 4`);
   await shot("5-bataille");
   await page.waitForSelector("[data-battle-convoy=joined]", { timeout: 5_000 });
   // One touch on the nearest town: « Charger ici », the fighter goes, the transport behind it.

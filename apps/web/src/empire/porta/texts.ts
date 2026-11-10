@@ -185,6 +185,8 @@ export const pt = {
   short: (s: number) =>
     s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${s} s`,
   wholeIsland: "Voir toute l'île",
+  pingHere: "Ici",
+  pingDanger: "Danger",
   hurry: "Rentre maintenant",
   tooLate: "Trop loin de la porte",
   convoy: "Convoi",

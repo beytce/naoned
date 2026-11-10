@@ -61,6 +61,7 @@ l'explication.
 | Tutoriel | Déclencheur | Étapes |
 |---|---|---|
 | Porta | `[data-porta-dock]` | 5 : les terres de Rome, le quai, les portes, lancer, reliques et risques (règle 2) |
+| Bataille de la Porta | le convoi à l'écran (`[data-battle-convoy]`) | 4 : le convoi et son maillon, toucher une ville pour charger (Rome annonce ses coups), la fermeture et le temps de retour, « Rentrer » (10 novembre 2026, docs/plan-porta-jeu.md) |
 | Remise | `[data-remise]` | 4 : la Remise, la flotte, les modèles, livrer |
 | Intérieur | `[data-interior-scene]` | 5 : l'en-tête, le goulot, récolter et relancer, poser un poste, le conseil |
 | Terraferme | la scène de la Terraferme ouverte (`[data-terra-stage=open]`) | 3 : une semaine de conquête, à armes égales sans rien risquer, le seuil et ce que rapporte la semaine (Faveur, villes tenues) |

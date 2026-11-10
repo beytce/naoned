@@ -1588,6 +1588,20 @@ button.map-place {
     filter: brightness(1.22);
   }
 }
+/* A sign on the ground for the group (A9): its ring beats three times, then goes. */
+.battle-ping > span:first-child {
+  animation: battle-ping 1s ease-out 3 both;
+}
+@keyframes battle-ping {
+  from {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
 /* The arrow at the screen's edge, turned toward the vehicle out of sight. */
 .battle-edge {
   transform: rotate(var(--turn, 0rad));
@@ -1596,7 +1610,8 @@ button.map-place {
   .battle-damage,
   .battle-word,
   .battle-sign,
-  .battle-alarm {
+  .battle-alarm,
+  .battle-ping > span:first-child {
     animation: none;
   }
 }

@@ -393,6 +393,21 @@ export class PortaHub {
     if (live) this.sendTo(playerId, live);
   }
 
+  /**
+   * A sign a player puts on the ground for his group (docs/plan-porta-jeu.md, A9): « here » or
+   * « danger », shown a few seconds to every player of his battle. Nothing of the rules.
+   */
+  ping(playerId: string, at: { x: number; y: number; kind: "here" | "danger" }): void {
+    const live = this.liveOf(playerId);
+    if (!live || live.battle.over) return;
+    for (const p of live.battle.players) {
+      const mine = this.sockets.get(p);
+      if (!mine) continue;
+      const data = JSON.stringify({ type: "ping", ...at, mine: p === playerId });
+      for (const socket of mine) if (socket.readyState === OPEN) socket.send(data);
+    }
+  }
+
   /** A player's battle sent to him now (an order just taken shows without waiting for the beat). */
   pushTo(playerId: string): void {
     const live = this.liveOf(playerId);

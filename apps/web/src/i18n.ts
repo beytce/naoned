@@ -1086,11 +1086,29 @@ const frDict = {
         ],
         [
           "Lance la porte quand ton convoi est prêt.",
-          "Le combat se joue seul : tu regardes et tu touches les atouts au bon moment.",
+          "Là-bas, c'est toi qui mènes ton convoi : tu touches la carte, il y va.",
         ],
         [
           "Ce que tu y gagnes, ce que tu y risques.",
           "Tu rapportes des reliques, qui donnent les plans des modules de haut niveau. Un véhicule détruit rentre abîmé ; un véhicule encore à la Porta quand elle ferme est perdu.",
+        ],
+      ] as [string, string][],
+      portaFight: [
+        [
+          "Ton convoi : le combat devant, le transport derrière.",
+          "Le transport suit ton véhicule de combat. Touche la carte : les deux y vont. Le maillon entre leurs deux cartes les sépare ou les regroupe.",
+        ],
+        [
+          "Touche une ville pour y charger ses reliques.",
+          "Ton véhicule de combat ouvre la route, le transport charge une relique à la fois. Rome annonce ses coups : un fil noir montre qui elle vise.",
+        ],
+        [
+          "Rome referme ses terres.",
+          "À zéro, ce qui n'est pas sorti est perdu. Chaque véhicule affiche le temps qu'il lui faut pour revenir à la porte.",
+        ],
+        [
+          "« Rentrer » ramène le convoi à la porte.",
+          "Il sort tout seul en y arrivant, avec ses reliques. Tu peux aussi toucher la porte.",
         ],
       ] as [string, string][],
       remise: [

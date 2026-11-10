@@ -43,6 +43,16 @@ export const portaApi = {
   order: (order: BattleOrder) => call("POST", "/api/empire/porta/order", order),
 };
 
+/** A sign on the battle's ground, and how long it shows (ms). */
+export interface BattlePing {
+  x: number;
+  y: number;
+  kind: "here" | "danger";
+  mine: boolean;
+  at: number;
+}
+export const PING_MS = 3_000;
+
 /**
  * The battle's socket: a snapshot a beat while it lasts (reconnected after a drop), and the orders
  * sent by it (docs/plan-porta-jeu.md, B1), each answered by its number; by their route when the
@@ -52,8 +62,12 @@ export function useBattleLink(on: boolean): {
   battle: BattleSnapshot | null;
   /** Sends an order: its refusal's code, or null once taken. */
   order: (o: BattleOrder) => Promise<string | null>;
+  /** The signs put on the ground by the group (docs/plan-porta-jeu.md, A9), the last ones. */
+  pings: BattlePing[];
+  ping: (x: number, y: number, kind: BattlePing["kind"]) => void;
 } {
   const [battle, setBattle] = useState<BattleSnapshot | null>(null);
+  const [pings, setPings] = useState<BattlePing[]>([]);
   const link = useRef<{
     socket: WebSocket | null;
     n: number;
@@ -75,9 +89,16 @@ export function useBattleLink(on: boolean): {
         try {
           const msg = JSON.parse(String(e.data)) as
             | { type: "battle"; battle: BattleSnapshot }
-            | { type: "order"; n: number; error?: string };
+            | { type: "order"; n: number; error?: string }
+            | ({ type: "ping" } & Omit<BattlePing, "at">);
           if (msg.type === "battle") setBattle(msg.battle);
-          else if (msg.type === "order") {
+          else if (msg.type === "ping") {
+            const at = performance.now();
+            setPings((p) => [
+              ...p.filter((x) => at - x.at < PING_MS),
+              { x: msg.x, y: msg.y, kind: msg.kind, mine: msg.mine, at },
+            ]);
+          } else if (msg.type === "order") {
             l.waiting.get(msg.n)?.(msg.error ?? null);
             l.waiting.delete(msg.n);
           }
@@ -116,7 +137,11 @@ export function useBattleLink(on: boolean): {
     }
     return (await portaApi.order(o)).error ?? null;
   }, []);
-  return { battle, order };
+  const ping = useCallback((x: number, y: number, kind: BattlePing["kind"]) => {
+    const s = link.current.socket;
+    if (s?.readyState === WebSocket.OPEN) s.send(JSON.stringify({ type: "ping", x, y, kind }));
+  }, []);
+  return { battle, order, pings, ping };
 }
 
 /** The battle alone, for a screen that sends its orders by their route (the disc of SVG). */

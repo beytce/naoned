@@ -9,7 +9,7 @@ import { Guard3D } from "../map3d/Guard.js";
 import { groundAt } from "../map3d/camera.js";
 import { useCoverBoard } from "../map3d/pause.js";
 import type { Battle3DHandle, Impact } from "./Battle3D.js";
-import { useBattleLink } from "./api.js";
+import { type BattlePing, PING_MS, useBattleLink } from "./api.js";
 import { extentOf, fromChart, toChart } from "./chart.js";
 import { RARITY_HEX } from "./colours.js";
 import { battleGoal } from "./goal.js";
@@ -103,7 +103,7 @@ export function BattleDiorama({
   /** The 3D failed: the battle goes on in 2D. */
   onFail: () => void;
 }) {
-  const { battle, order } = useBattleLink(true);
+  const { battle, order, pings, ping } = useBattleLink(true);
   useCoverBoard(true);
   if (!battle)
     return (
@@ -114,7 +114,14 @@ export function BattleDiorama({
   return (
     <>
       <BattleFeel battle={battle} />
-      <Field battle={battle} order={order} onClose={onClose} onFail={onFail} />
+      <Field
+        battle={battle}
+        order={order}
+        pings={pings}
+        ping={ping}
+        onClose={onClose}
+        onFail={onFail}
+      />
     </>
   );
 }
@@ -169,11 +176,15 @@ function BattleFeel({ battle }: { battle: BattleSnapshot }) {
 function Field({
   battle,
   order,
+  pings,
+  ping,
   onClose,
   onFail,
 }: {
   battle: BattleSnapshot;
   order: (o: BattleOrder) => Promise<string | null>;
+  pings: BattlePing[];
+  ping: (x: number, y: number, kind: BattlePing["kind"]) => void;
   onClose: () => void;
   onFail: () => void;
 }) {
@@ -285,6 +296,18 @@ function Field({
       const s = fit(latest.current)(v).s;
       return { min: s * 0.7, max: s * 5 };
     },
+    // A finger held still: a sign for the group where it rests (A9), « danger » on Rome's units.
+    onHold: (on) => {
+      const at = heldAt.current;
+      if (!on || !at) return;
+      const b = latest.current;
+      const g = groundOf(at);
+      const foe = b.units.some(
+        (u) => u.side === "rome" && !u.dead && Math.hypot(u.x - g.x, u.y - g.y) < 1.2,
+      );
+      ping(g.x, g.y, foe ? "danger" : "here");
+      haptic("tap");
+    },
     onTap: (at) => {
       const b = latest.current;
       // A piece under the finger: one of mine is chosen, one of Rome's attacked.
@@ -304,6 +327,7 @@ function Field({
       issue(tell(b, chosen, pickGround(b, g.x, g.y)));
     },
   });
+  const heldAt = useRef<Point | null>(null);
   const camRef = useRef(camera);
   camRef.current = camera;
   const onBoard = useCallback((h: Battle3DHandle | null) => {
@@ -324,6 +348,8 @@ function Field({
     const onDown = (e: PointerEvent) => {
       if ((e.target as HTMLElement | null)?.closest?.("[data-drag-handle]")) return;
       down = { x: e.clientX, y: e.clientY };
+      const r = el.getBoundingClientRect();
+      heldAt.current = { x: e.clientX - r.left, y: e.clientY - r.top };
     };
     const onMove = (e: PointerEvent) => {
       if (!down || !follow.current) return;
@@ -607,6 +633,25 @@ function Field({
                 </span>
               </Pinned>
             )}
+            {pings
+              .filter((x) => performance.now() - x.at < PING_MS)
+              .map((x) => (
+                <Pinned key={x.at} battle={battle} x={x.x} y={x.y}>
+                  <span
+                    className="battle-ping relative flex h-12 w-12 items-center justify-center"
+                    data-battle-ping={x.kind}
+                  >
+                    <span
+                      className={`absolute inset-0 rounded-full border-[3px] ${x.kind === "danger" ? "border-[#C23B2E]" : "border-[#17150F]"}`}
+                    />
+                    <span
+                      className={`absolute -top-6 whitespace-nowrap rounded-full px-2 py-0.5 font-display text-xs font-extrabold text-white ${x.kind === "danger" ? "bg-face" : "bg-[#17150F]"}`}
+                    >
+                      {x.kind === "danger" ? pt.pingDanger : pt.pingHere}
+                    </span>
+                  </span>
+                </Pinned>
+              ))}
             <Signs battle={battle} />
             <Damage battle={battle} />
           </div>
@@ -797,7 +842,12 @@ function Field({
               )}
               {(sel?.actives.length ?? 0) > 0 && <span className="flex-1" />}
               {sel && !sel.exiting && (
-                <Slab tone={hurry || full ? "gold" : "ghost"} size="md" onClick={goHome}>
+                <Slab
+                  tone={hurry || full ? "gold" : "ghost"}
+                  size="md"
+                  onClick={goHome}
+                  coach="battle-home"
+                >
                   {pt.told.exit}
                 </Slab>
               )}

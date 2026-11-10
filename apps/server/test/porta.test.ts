@@ -210,6 +210,24 @@ describe("a battle alone", () => {
     expect(house(a.id)?.arms?.vehicles).toHaveLength(1);
   });
 
+  it("shows a player's sign to his battle, and to no one outside it", async () => {
+    const a = await armed("ada@example.org");
+    const b = await armed("bob@example.org");
+    await hub.queue(a.id, { tier: 1, combatId: a.combatId, transportId: a.transportId }, "solo");
+    const heard = (id: string) => {
+      const got: string[] = [];
+      hub.subscribe(id, { readyState: 1, send: (d) => got.push(d), on: () => undefined });
+      return got;
+    };
+    const mine = heard(a.id);
+    const theirs = heard(b.id);
+    hub.ping(a.id, { x: 1, y: 2, kind: "danger" });
+    expect(mine.map((d) => JSON.parse(d)).filter((m) => m.type === "ping")).toEqual([
+      { type: "ping", x: 1, y: 2, kind: "danger", mine: true },
+    ]);
+    expect(theirs.filter((d) => d.includes('"ping"'))).toEqual([]);
+  });
+
   it("refuses a tier not open, and gives nothing away", async () => {
     const a = await armed("ada@example.org");
     const res = await post(a.cookie, "/api/empire/porta/queue", {

@@ -83,3 +83,29 @@ C2 demande un calcul de chemin dans le moteur (les pics) : c'est le plus gros mo
 2. **Le convoi par défaut (A1)** : oui (recommandé) ou deux véhicules séparés comme aujourd'hui.
 3. **Les cases qui se retournent à la fermeture (B7)** : oui, ou garder un simple voile.
 4. **Lot C** : lesquelles des quatre idées garder. Recommandé : C3 et C4 d'abord (peu de moteur), C1 ensuite, C2 en dernier.
+
+## 6. État (10 novembre 2026)
+
+| Lot | État |
+| --- | --- |
+| A1 | fait : ordre `follow` (moteur), le convoi formé à l'ouverture, le maillon entre les deux cartes pour séparer ou regrouper |
+| A2 | fait : `tell` (`porta/orders.ts`, testé) dit l'ordre et son mot ; ordres `attack` et `exit` (moteur) |
+| A3 | fait : la route en ruban du kit (`porcellana/ribbon.ts`), le temps au bout ; un doigt glissé depuis un véhicule trace son chemin (`move` et `via`, cinq étapes) |
+| A4 | fait pour le chemin tracé du doigt (la route fantôme, son temps, les regards de Rome traversés en accent) ; un simple toucher ordonne tout de suite, sans aperçu |
+| A5 | fait : le fil d'encre vers la cible, la zone de la bombarde qui se remplit, « ! » et « ? », le décompte de l'incendiaire sur la ville. La route de l'incendiaire vers sa ville n'est pas dessinée |
+| A6 | fait : le temps de retour sur chaque carte ; sous 15 s de marge, « Rentre maintenant », une vibration, et « Rentrer » passe à l'accent |
+| A7 | fait : la caméra suit le convoi jusqu'au premier glissement ; un bouton pour toute l'île ou pour revenir au convoi (plus de double toucher : le premier des deux touchers donnait un ordre) ; flèches au bord pour un véhicule hors champ |
+| A8 | fait : l'objectif en une pilule, les cartes (signe, vie en barre, état en un mot), les composants avec leur signe et leur portée au sol quand on les tient |
+| A9 | fait : un appui long pose « Ici », ou « Danger » près d'une unité de Rome, vu trois secondes par le groupe (`PortaHub.ping`) |
+| B1 | fait : les ordres par le socket, répondus par leur numéro, l'instantané renvoyé aussitôt ; l'anneau et le mot tombent à l'instant du toucher |
+| B2 | fait : chaque pion continue à sa vitesse entre deux battements, puis rejoint la position du serveur ; une image par rafraîchissement de l'écran, une sur deux si l'appareil peine. **Pas mesuré sur un vrai téléphone** (le conteneur dessine en logiciel) |
+| B3 | fait : taille plancher de 30 px, socles (la maison en accent, Rome en encre, un associé en violet), deux pions superposés s'écartent ; les maisons d'une ville reculent derrière sa place pour laisser voir le convoi qui charge |
+| B4 | fait : l'élan du pion, le trait, les éclats ; arrêt de 80 ms et secousse pour une mort, un boulet ou le Gonfalonier ; dégâts regroupés par seconde |
+| B5 | fait pour la casse (le pion se brise en éclats). Le véhicule abîmé qui rentre en fumant n'est pas fait |
+| B6 | fait : la gemme saute du pied des maisons au mulet, puis son losange vole à la pilule du haut |
+| B7 | fait : les cases tombent depuis la Porte à l'ouverture ; la dernière minute, elles se retournent côté encre du bord vers la Porte, celles des villes et de la Porte à la toute fin |
+| B8 | fait avec les sons existants : la cloche du campanile à la dernière minute, une vibration à l'ordre, à l'alerte de retour et à la perte. Pas de son nouveau |
+| Tutoriel | fait : quatre étapes à la première bataille (`portaFight`, docs/plan-tutoriels.md) |
+| C | à faire, idée par idée, chacune au simulateur de 24 mois |
+
+Vérification : `apps/web/e2e/porta.mjs` joue une bataille de deux minutes de bout en bout (tutoriel, convoi, « Charger ici », combat, chargement, fermeture, « Rentrer », sortie), en 390 × 844. Le disque SVG de secours (`Battle.tsx`, sans WebGL) garde les anciens gestes.

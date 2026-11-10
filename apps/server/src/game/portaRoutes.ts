@@ -49,6 +49,12 @@ const socketOrder = z.object({
   n: z.number().int().min(0).max(1_000_000_000),
   order,
 });
+const socketPing = z.object({
+  type: z.literal("ping"),
+  x: coord,
+  y: coord,
+  kind: z.enum(["here", "danger"]),
+});
 /** Orders a socket may send in a second. */
 const SOCKET_ORDERS = 20;
 
@@ -166,6 +172,11 @@ export function registerPortaRoutes(app: FastifyInstance, deps: PortaRouteDeps):
       try {
         msg = JSON.parse(String(raw));
       } catch {
+        return;
+      }
+      const sign = socketPing.safeParse(msg);
+      if (sign.success) {
+        porta.ping(account.id, { x: sign.data.x, y: sign.data.y, kind: sign.data.kind });
         return;
       }
       const parsed = socketOrder.safeParse(msg);
