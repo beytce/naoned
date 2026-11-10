@@ -21,6 +21,8 @@ export interface PlaceCardInfo {
   alt?: string;
   /** The place's id (« workshop:w3 »): the tutorial finds its button by it. */
   id?: string;
+  /** Its tile's land (the terroirs): its first card shown starts their short tutorial. */
+  terroir?: string;
 }
 
 export interface PlaceCardHandle {
@@ -52,6 +54,7 @@ export const PlaceCard = forwardRef<
       aria-live="polite"
       aria-label={info.name}
       data-card-place={info.id}
+      data-card-terroir={info.terroir}
     >
       <button type="button" className="pc-x" aria-label="Fermer" onClick={onClose}>
         <svg

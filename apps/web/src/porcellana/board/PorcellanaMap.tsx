@@ -1182,6 +1182,11 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
   const shared = sh.current;
   const places = scene.tiles.flatMap((t) => (t.place ? [t.place] : []));
   const current = places.find((x) => x.id === chosen);
+  // A plot's or a free tile's land: its card starts the terroirs' short tutorial, once.
+  const currentLand =
+    current && (current.id.startsWith("plot:") || current.id.startsWith("free:"))
+      ? scene.tiles.find((x) => x.place?.id === current.id)?.terrain
+      : undefined;
   return (
     <div className="porcellana absolute inset-0" data-porcellana-map>
       {!MAP_3D ? (
@@ -1260,6 +1265,7 @@ const PorcellanaMap = forwardRef<EmpireMapHandle, PorcellanaMapProps>(function P
             ready: current.ready,
             tag: fr.empire.porcellana.readyTag,
             ...(current.alt ? { alt: current.alt } : {}),
+            ...(currentLand ? { terroir: currentLand } : {}),
           }}
           onGo={() => {
             setCarded(false);

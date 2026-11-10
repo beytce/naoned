@@ -5,6 +5,8 @@
  * selector), plays once on the device, and is passed with the others from the profile. A step
  * lights the first of its `chain` in sight, or none (Lorenzo speaks over the veil).
  *
+ * The terroirs' (the living map, lot 3) starts at the first card of a tile whose land has one.
+ *
  * The Terraferma's three (9 November 2026, the new Terraferma): its overview when its stage first
  * opens; its board's pieces (troops, chest, a front, the place, the supply) at the first sight of
  * the board of the week (not the Battle's); the Battle's when its card first shows.
@@ -18,7 +20,7 @@ export interface FeatureStep {
 }
 
 export interface FeatureTutor {
-  id: "porta" | "remise" | "interior" | "terra" | "terraBoard" | "battle";
+  id: "porta" | "remise" | "interior" | "terra" | "terraBoard" | "battle" | "terroir";
   /** Its place on the screen: the tutorial starts when this is in sight. */
   when: string;
   steps: () => FeatureStep[];
@@ -77,6 +79,12 @@ export const FEATURE_TUTORS: FeatureTutor[] = [
         ["[data-terra-rank]"],
         ["[data-terra-nav]"],
       ]),
+  },
+  {
+    // The terroirs (the living map, lot 3): at the first card of a land that has one.
+    id: "terroir",
+    when: "[data-card-terroir]",
+    steps: () => zip(T().terroir, [["[data-card-terroir]"], [], []]),
   },
   {
     id: "battle",

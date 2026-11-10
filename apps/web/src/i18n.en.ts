@@ -1261,6 +1261,20 @@ export const en: Dictionary = {
           "Your first ranked Battle of the day brings Glory to your Terraferma week. A private room is played among friends, unrated.",
         ],
       ] as [string, string][],
+      terroir: [
+        [
+          "This land has its terroir.",
+          "Forest, clay, fields, pasture, sandy shore: each tile shows its land before you buy it.",
+        ],
+        [
+          "The workshop that suits it yields 10% more there.",
+          "A lumber camp in a forest, a clay pit on clay, a farm in the fields. Elsewhere it yields as usual, never less.",
+        ],
+        [
+          "A workshop already built can be moved.",
+          "Touch it, then « Move »: it stands at once on a free tile of yours, at no cost, its lots kept.",
+        ],
+      ] as [string, string][],
     },
     tutor: {
       hint: "Touch what glows red.",

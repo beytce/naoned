@@ -1213,6 +1213,20 @@ const frDict = {
           "Ta première Bataille classée du jour rapporte de la Gloire à ta semaine de Terraferme. Une salle privée se joue entre amis, sans cote.",
         ],
       ] as [string, string][],
+      terroir: [
+        [
+          "Cette terre a son terroir.",
+          "Forêt, glaise, champs, pré, rive de sable : chaque case montre sa terre avant que tu l'achètes.",
+        ],
+        [
+          "L'atelier qui lui correspond y rend 10 % de plus.",
+          "Un camp de bûcherons en forêt, une carrière sur la glaise, une ferme dans les champs. Ailleurs, il rend comme d'habitude, jamais moins.",
+        ],
+        [
+          "Un atelier déjà bâti se déménage.",
+          "Touche-le, puis « Déménager » : il se pose aussitôt sur une case libre à toi, sans frais, ses lots gardés.",
+        ],
+      ] as [string, string][],
     },
     tutor: {
       hint: "Touche ce qui brille en rouge.",
