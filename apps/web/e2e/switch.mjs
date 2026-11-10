@@ -113,8 +113,15 @@ try {
   await page.screenshot({ path: join(SHOTS, "2-apres-cases.png"), timeout: 120_000 });
   if ((await page.locator("[data-place^='fondaco:']").count()) !== 1)
     faults.push("square: the fondaco not on the board");
-  if ((await page.locator("[data-place^='workshop:']").count()) < 1)
-    faults.push("square: no workshop on its tile");
+  // Each workshop of the house on its tile (none since the first steps of 6 November 2026: a
+  // house starts without a workshop; the check held « at least one » before).
+  const owned = await page.evaluate(() =>
+    fetch("/api/empire")
+      .then((r) => r.json())
+      .then((b) => b.view.house.workshops.length),
+  );
+  if ((await page.locator("[data-place^='workshop:']").count()) !== owned)
+    faults.push("square: a workshop is not on its tile");
   await page.close();
   server.stop();
 } finally {
