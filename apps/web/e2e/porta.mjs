@@ -168,9 +168,7 @@ try {
   // This journey goes straight to the Porta: the tutorials passed, as « Passer les tutoriels »
   // does (the guided start has its own journey, e2e/tutorial-empire.mjs). Without it, the guided
   // start's veil (8 November 2026) kept every touch from the board.
-  await page.evaluate(() =>
-    localStorage.setItem("fondaco:tutor", JSON.stringify({ all: "skip" })),
-  );
+  await page.evaluate(() => localStorage.setItem("fondaco:tutor", JSON.stringify({ all: "skip" })));
   await page.waitForSelector("[data-porcellana-map]");
 
   // The Remise and the Porta on two tiles bought next to the house's (the square tiles: a place a
