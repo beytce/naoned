@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import {
   type EmpireSettingsInput,
+  loyaltyTier,
   venice1450Empire,
   venice1450EmpireSquare,
   venice1450Interior,
@@ -101,7 +102,7 @@ if (r) {
   writeFileSync(
     join(values.out, "empire-houses.csv"),
     [
-      "id,cohort,activity,bent,casa,power,cash,earned,spent,orders,market,voyages,extraction,expeditions,terraValue,workshops,counters,vehicles,galleys",
+      "id,cohort,activity,bent,casa,power,cash,earned,spent,orders,market,voyages,extraction,expeditions,terraValue,workshops,counters,vehicles,galleys,onTerroir,townsServed,townsLoyal",
       ...w.houses.map((h) =>
         [
           h.id,
@@ -123,6 +124,10 @@ if (r) {
           h.counters.size,
           h.vehicles.length,
           h.galleys,
+          // The living map's rules: its workshops on their terroir, the towns that know it.
+          h.workshops.filter((x) => (x.terroir ?? 0) > 0).length,
+          h.served.size,
+          [...h.served.values()].filter((n) => loyaltyTier(w.s, n) > 0).length,
         ].join(","),
       ),
     ].join("\n"),
