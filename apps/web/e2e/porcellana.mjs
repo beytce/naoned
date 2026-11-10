@@ -111,7 +111,8 @@ try {
     await page.locator(".pc-card").waitFor();
     await shot("2-fondaco");
     // A « + » plot open to buy: its card, its price; its round button opens the purchase, bought.
-    const plot = page.locator("[data-place^='plot:'][aria-label='Parcelle libre']").first();
+    // An open plot (a locked one shows a lock): named by its land when it has a terroir.
+    const plot = page.locator("[data-place^='plot:'][data-badge='text']").first();
     if ((await plot.count()) === 0) faults.push(`${label}: no plot to buy round the house`);
     else {
       const cell = (await plot.getAttribute("data-place"))?.slice(5) ?? "";

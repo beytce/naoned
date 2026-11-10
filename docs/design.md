@@ -15,6 +15,19 @@ Décision du porteur (« les visuels sont parfaits », « c'est exactement de ce
 - **Les terres de Rome en biscuit** (porcelaine non émaillée), Rome à l'encre ; les unités en pions de porcelaine.
 - **Les surfaces** de l'interface en papier (la palette `porcellana`, le défaut) ; la typographie et le relief suivent la Porcellana ludique ci-dessous.
 
+### La Carte vivante (9 novembre 2026) — fait foi pour la vie de la Carte
+
+Décision du porteur (« la carte doit être plus vivante et donner envie de se développer et de s'étendre »). Plan et état : `docs/plan-carte-vivante.md`. La grammaire de Porcellana tient ; s'y ajoutent :
+
+- **Chaque personnage a une raison de jeu.** La foule (`porcellana/crowd.ts`, deux appels de dessin) dit ce qui est bâti, ce qui tourne, ce qui est livré : porteurs chargés sur la route d'un atelier en marche, ouvriers autour de lui, hommes assis près des lots qui attendent, bâtisseurs sur un chantier, habitants d'une ville selon sa taille et sa fidélité, gens de la Maison selon le niveau du Fondaco, voyageurs sur la route d'une ville déjà servie. Qui marche où : `board/people.ts`, pur. Des pions de porcelaine, plus grands que nature pour se lire de loin ; la caisse d'accent sur la tête dit qu'on porte.
+- **Ce qui grandit se voit.** Le Fondaco ajoute une chose à chaque niveau (`fondacoStage`), un atelier change tous les cinq niveaux (`tierDress`), une case à soi s'habite quand le Fondaco monte, un chantier monte avec son avancement.
+- **La terre a un visage.** Chaque terroir se lit à son relief, jamais à une couleur : sapins de la forêt, fosse et mare de la glaise, sillons et meules des champs, clôture et moutons du pré, dunes de la rive (`models/terrain.ts`). Une case de plaine ne dessine jamais de sillons ni de troupeau.
+- **L'horizon** remplace « au-delà, rien » : les terres à quelques cases du domaine en plaques basses et pâles, leur relief et les villes hors de portée en silhouette, qui s'estompent dans le fond (`board/Horizon.ts`). Ni cadre ni bord, ni repère ni clic.
+- **L'eau vit** : des houles lentes, un liseré d'écume le long des rives, des bricole et des roseaux.
+- **Les moments** (`porcellana/burst.ts`) : la poussière d'une case achetée, des pétales d'accent sur ce qui vient de grandir, des pièces d'or sur une ville qui paie. Un clin d'œil, pas un feu d'artifice.
+- **Moins d'animations** : personne ne marche, rien ne vole, l'eau est immobile ; tout reste dessiné à sa place.
+- **Le téléphone d'abord** : 70 personnes au plus (200 sur ordinateur), moins quand les images ralentissent ; la foule ne porte d'ombre que sur ordinateur.
+
 ### Porcellana ludique (6 novembre 2026) — fait foi pour l'interface
 
 Décision du porteur sur la proposition D (« La D est parfaite, applique-la » ; toile `Fondaco — interface moderne`, rangée D) : les menus, inspirés de tableaux de bord modernes, un peu plus joueurs, sans changer les couleurs.

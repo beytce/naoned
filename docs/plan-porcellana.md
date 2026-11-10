@@ -36,6 +36,7 @@ On extrait du prototype des valeurs, pas une impression. Chaque élément ci-des
 **Le plateau a la forme de ce qu'on a bâti** (demande du porteur, 5 novembre 2026 : « que le plateau ne soit pas limité à un carré et que l'on puisse s'étendre comme on le souhaite »).
 - Jamais un rectangle : on voit les cases qu'on possède, dans la forme où on les a achetées, et tout autour, les parcelles « + » qu'on peut acheter, dans toutes les directions.
 - Au-delà, rien : pas de cadre, pas de bord dessiné. Le plateau flotte sur le fond de porcelaine et grandit d'une case à chaque achat (la case tombe en place comme à l'arrivée).
+  - *Amendé le 9 novembre 2026 (décision du porteur, `docs/plan-carte-vivante.md` lot 4)* : toujours ni cadre ni bord, mais **un horizon** : les terres à quelques cases du domaine en plaques basses et pâles, leur relief et les villes hors de portée en silhouette, qui s'estompent dans le fond. On voit où s'étendre.
 - Les villes et le Marché, les terres des autres régions apparaissent comme des îlots de cases, reliés au domaine par les routes.
 
 **Les routes font la carte** (demande du porteur : « les routes ont disparu, il n'y a plus d'interconnexions entre les cases, ça ne ressemble plus à une carte mais à un empilement de bâtiments »).
@@ -87,7 +88,7 @@ On extrait du prototype des valeurs, pas une impression. Chaque élément ci-des
 - Work Sans (400–600) pour tout le reste.
 
 **Le mouvement.**
-- Rien ne bouge sans raison de jeu.
+- Rien ne bouge sans raison de jeu. *(Tenu par la Carte vivante, 9 novembre 2026 : chaque personnage de la foule a la sienne, `board/people.ts`.)*
 - Quand l'appareil demande moins d'animations : pas d'arrivée, rien qui tourne, la sélection sans glissement.
 
 ## 2. Les décisions

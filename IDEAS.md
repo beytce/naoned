@@ -202,3 +202,17 @@ Décisions du porteur après l'audit des quatre experts (`docs/audit-carte-2026-
 
 - **L'intérieur du Palais** : un intérieur de prestige (salons, collections), dans un plan à part, une fois les ateliers finis (décision du porteur, docs/plan-ateliers.md § 11).
 - **La porte reliée entre deux ateliers voisins d'une même chaîne** : décidée, mais après le lot A8 ; les intrants passent d'une halle à l'autre sans le stock.
+
+## La Carte vivante (9 novembre 2026), hors du chantier
+
+Plan : `docs/plan-carte-vivante.md`. Ce qui a été pensé et laissé dehors :
+- **Les quartiers nommés (*sestieri*)** : un nom et une bannière quand trois ateliers voisins se nourrissent. Le voisinage et le terroir disent déjà ce que donne une case.
+- **Les fêtes et les événements du chapitre sur la carte** (Sensa, Carnaval, une galère qui arrive, l'acqua alta) : demandent un calendrier ; à faire avec les ères.
+- **Le jour et la nuit** : retirés le 8 novembre (décision du porteur : la nuit rendait mal), non repris.
+- **Les barques en trajets** entre le quai et San Marco selon les étals, **les pigeons de la Piazza** qui s'envolent quand on touche le Marché : des détails de vie, sans règle ; les barques tournent toujours sur leur case.
+- **Un terroir sous les ateliers travaillés** (un moulin sur une rivière, une verrerie sur une île) et **des rivières** sur la carte : demanderaient de redessiner la carte en cases.
+- **La fidélité qui agrandit le carnet d'une ville** (plus de commandes, pas seulement mieux payées) : à mesurer d'abord sur de vrais joueurs ; la prime seule a été retenue.
+- **Un coût ou un délai au déménagement d'un atelier** : gratuit et immédiat aujourd'hui, comme l'échange ; à revoir si les joueurs déménagent sans cesse.
+- **Les bâtisseurs et la foule qui saluent** à un niveau gagné : les pétales suffisent.
+- **Le réglage de qualité 3D au profil** (I12 de l'audit des joueurs) : la foule s'allège seule quand les images ralentissent ; un réglage manuel reste à faire.
+
