@@ -448,3 +448,158 @@ describe("the vehicles' models in the battle (their figurines, docs/plan-porta-3
     expect(mine.find((u) => u.role === "transport")?.model).toBe("mule");
   });
 });
+
+// The orders that say what they do (docs/plan-porta-jeu.md, lot A): the convoy, the attack, the
+// way by steps, the gate.
+describe("the convoy and the orders of lot A", () => {
+  const dist = (a: { x: number; y: number }, c: { x: number; y: number }) =>
+    Math.hypot(a.x - c.x, a.y - c.y);
+
+  it("walks a way by its steps, one after the other, and cuts a way too long", () => {
+    const b = empty();
+    const c = unit(b, "p0c");
+    at(c, 0, 0);
+    c.speedCenti = 6_000;
+    const then = [1, 2, 3, 4, 5, 6, 7].map((i) => ({ x: 1, y: i * 0.1 }));
+    expect(orderBattle(b, "a", { type: "move", unitId: "p0c", x: 1, y: 0, then })).toBeNull();
+    expect(c.route).toHaveLength(s.porta.battle.maxWaypoints);
+    run(b, 1.5);
+    // Past the first step, on its way to the next ones.
+    expect(c.x).toBeCloseTo(1, 1);
+    expect(c.y).toBeGreaterThan(0);
+    run(b, 20);
+    expect(c.goal).toBeNull();
+    expect(c.route ?? []).toEqual([]);
+    expect(c.y).toBeCloseTo(0.5, 5);
+  });
+
+  it("has the transport follow its fighter a cell behind, and stand when it stands", () => {
+    const b = empty();
+    const c = unit(b, "p0c");
+    const t = unit(b, "p0t");
+    at(c, 0, 0);
+    at(t, 0, 0);
+    expect(orderBattle(b, "a", { type: "follow", unitId: "p0t", leaderId: "p0c" })).toBeNull();
+    orderBattle(b, "a", { type: "move", unitId: "p0c", x: 4, y: 0 });
+    run(b, 120);
+    expect(c.x).toBeCloseTo(4, 5);
+    const gap = s.porta.battle.followCenti / 100;
+    expect(dist(t, c)).toBeLessThanOrEqual(gap + 1e-6);
+    expect(dist(t, c)).toBeGreaterThan(gap - 0.2);
+    // It follows no one but one's own, and not itself.
+    expect(orderBattle(b, "a", { type: "follow", unitId: "p0t", leaderId: "p0t" })).toBe(
+      "unknown_unit",
+    );
+  });
+
+  it("loads while it follows a fighter that stands, and a new way ends the following", () => {
+    const b = empty();
+    const city = b.cities[0];
+    if (!city) throw new Error("no city");
+    const c = unit(b, "p0c");
+    const t = unit(b, "p0t");
+    at(c, city.x, city.y);
+    at(t, city.x + 0.5, city.y);
+    orderBattle(b, "a", { type: "follow", unitId: "p0t", leaderId: "p0c" });
+    run(b, 1);
+    expect(t.loading?.cityId).toBe(city.id);
+    orderBattle(b, "a", { type: "move", unitId: "p0t", x: city.x + 3, y: city.y });
+    expect(t.follow ?? null).toBeNull();
+    expect(t.loading).toBeNull();
+  });
+
+  it("stops a follower whose fighter falls, and sends it out behind one gone out", () => {
+    const b = empty();
+    const c = unit(b, "p0c");
+    const t = unit(b, "p0t");
+    at(c, 0, 0);
+    at(t, 3, 0);
+    orderBattle(b, "a", { type: "follow", unitId: "p0t", leaderId: "p0c" });
+    c.outcome = "dead";
+    run(b, 1);
+    expect(t.follow ?? null).toBeNull();
+    expect(t.x).toBe(3);
+    const b2 = empty();
+    const c2 = unit(b2, "p0c");
+    const t2 = unit(b2, "p0t");
+    at(t2, b2.gate.x + 3, 0);
+    orderBattle(b2, "a", { type: "follow", unitId: "p0t", leaderId: "p0c" });
+    expect(orderBattle(b2, "a", { type: "leave", unitId: "p0c" })).toBeNull();
+    expect(c2.outcome).toBe("exited");
+    run(b2, 120);
+    expect(t2.outcome).toBe("exited");
+  });
+
+  it("goes to the gate and out of it by one order, its cargo with it", () => {
+    const b = empty();
+    const t = unit(b, "p0t");
+    at(t, b.gate.x + 4, 1);
+    t.cargo.push("rare");
+    expect(orderBattle(b, "a", { type: "exit", unitId: "p0t" })).toBeNull();
+    run(b, 1);
+    expect(t.outcome).toBe("in");
+    run(b, 120);
+    expect(t.outcome).toBe("exited");
+    expect(battleResult(b).a?.relics).toEqual(["rare"]);
+    // Another way takes the order back.
+    const b2 = empty();
+    const t2 = unit(b2, "p0t");
+    at(t2, b2.gate.x + 4, 1);
+    orderBattle(b2, "a", { type: "exit", unitId: "p0t" });
+    orderBattle(b2, "a", { type: "move", unitId: "p0t", x: b2.gate.x, y: b2.gate.y });
+    run(b2, 120);
+    expect(t2.outcome).toBe("in");
+  });
+
+  it("attacks the one it is told: comes within its reach, keeps it before a nearer one, then rests", () => {
+    const b = empty();
+    const c = unit(b, "p0c");
+    at(c, 0, 0);
+    const far = place(b, "crossbowman", 5, 0);
+    // Both hold through the test: the order is what is looked at.
+    c.hp = c.maxHp = 1_000_000;
+    far.hp = far.maxHp = 1_000_000;
+    expect(orderBattle(b, "a", { type: "attack", unitId: "p0c", targetId: far.id })).toBeNull();
+    run(b, 60);
+    expect(dist(c, far) * 100).toBeLessThanOrEqual(150);
+    expect(dist(c, far) * 100).toBeGreaterThan(100);
+    // A nearer one comes: the weapon stays on the one ordered.
+    const near = place(b, "crossbowman", c.x, c.y + 0.3);
+    run(b, 1);
+    expect(c.weapons[0]?.targetId).toBe(far.id);
+    far.hp = 1;
+    run(b, 1);
+    expect(far.dead).toBe(true);
+    expect(c.attack ?? null).toBeNull();
+    expect(c.weapons[0]?.targetId).toBe(near.id);
+  });
+
+  it("refuses to attack what is not Rome's, what is dead, or without a weapon", () => {
+    const b = empty();
+    const r = place(b, "crossbowman", 5, 0);
+    expect(orderBattle(b, "a", { type: "attack", unitId: "p0c", targetId: "p0t" })).toBe(
+      "unknown_unit",
+    );
+    expect(orderBattle(b, "a", { type: "attack", unitId: "p0t", targetId: r.id })).toBe(
+      "no_weapon",
+    );
+    r.dead = true;
+    expect(orderBattle(b, "a", { type: "attack", unitId: "p0c", targetId: r.id })).toBe(
+      "unknown_unit",
+    );
+  });
+
+  it("leaves the old orders as they were: the same battle, step for step", () => {
+    const play = () => {
+      const b = battle(1);
+      const city = b.cities[0] ?? { x: 0, y: 0 };
+      orderBattle(b, "a", { type: "move", unitId: "p0c", x: city.x, y: city.y });
+      orderBattle(b, "a", { type: "move", unitId: "p0t", x: city.x, y: city.y });
+      run(b, 90);
+      return b;
+    };
+    expect(play()).toEqual(play());
+    const t = unit(play(), "p0t");
+    expect(t.follow ?? null).toBeNull();
+  });
+});

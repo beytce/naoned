@@ -17,13 +17,36 @@ const isRome = (u: Battle["units"][number]): u is RomeUnit => u.side === "rome";
 const rank = (r: Rarity) => RARITIES.indexOf(r);
 
 /** Why an order is refused, or null when it is taken. */
-export type OrderRefusal = "battle_over" | "unknown_unit" | "not_yours" | "not_ready" | "too_far";
+export type OrderRefusal =
+  | "battle_over"
+  | "unknown_unit"
+  | "not_yours"
+  | "not_ready"
+  | "too_far"
+  | "no_weapon";
+
+/** A new order takes back what the vehicle was told before. */
+function clearOrders(u: PlayerUnit) {
+  u.goal = null;
+  u.route = [];
+  u.follow = null;
+  u.attack = null;
+  u.exiting = false;
+}
+
+/** A point kept on the map's disc. */
+function onDisc(b: Battle, p: { x: number; y: number }) {
+  const d = Math.hypot(p.x, p.y);
+  const k = d > b.radius ? b.radius / d : 1;
+  return { x: p.x * k, y: p.y * k };
+}
 
 /** Applies a player's order between two steps. */
 export function orderBattle(
   b: Battle,
   playerId: PlayerId,
   order: BattleOrder,
+  s?: EmpireSettings,
 ): OrderRefusal | null {
   if (b.over) return "battle_over";
   const u = b.units.find((x): x is PlayerUnit => isPlayer(x) && x.id === order.unitId);
@@ -31,15 +54,39 @@ export function orderBattle(
   if (u.owner !== playerId) return "not_yours";
   switch (order.type) {
     case "move": {
-      // Kept on the map's disc.
-      const d = Math.hypot(order.x, order.y);
-      const k = d > b.radius ? b.radius / d : 1;
-      u.goal = { x: order.x * k, y: order.y * k };
+      clearOrders(u);
+      u.goal = onDisc(b, order);
+      u.route = (order.then ?? [])
+        .slice(0, s?.porta.battle.maxWaypoints ?? 5)
+        .map((p) => onDisc(b, p));
       u.loading = null;
       return null;
     }
+    case "follow": {
+      const leader = b.units.find(
+        (x): x is PlayerUnit => isPlayer(x) && x.id === order.leaderId && x.id !== u.id,
+      );
+      if (!leader || !stillIn(leader) || leader.owner !== playerId) return "unknown_unit";
+      clearOrders(u);
+      u.follow = leader.id;
+      return null;
+    }
+    case "attack": {
+      const target = b.units.find((x): x is RomeUnit => isRome(x) && x.id === order.targetId);
+      if (!target || target.dead) return "unknown_unit";
+      if (u.weapons.length === 0) return "no_weapon";
+      clearOrders(u);
+      u.attack = target.id;
+      return null;
+    }
+    case "exit":
+      clearOrders(u);
+      u.goal = { ...b.gate };
+      u.exiting = true;
+      u.loading = null;
+      return null;
     case "stop":
-      u.goal = null;
+      clearOrders(u);
       return null;
     case "activate": {
       const a = u.actives.find((x) => x.componentId === order.componentId);
@@ -71,9 +118,50 @@ export function orderBattle(
 
 function leave(b: Battle, u: PlayerUnit) {
   u.outcome = "exited";
-  u.goal = null;
+  clearOrders(u);
   u.loading = null;
   b.events.push({ kind: "exited", unit: u.id });
+  // Those that followed it go out behind it.
+  for (const f of b.units)
+    if (isPlayer(f) && stillIn(f) && f.follow === u.id) {
+      clearOrders(f);
+      f.goal = { ...b.gate };
+      f.exiting = true;
+      f.loading = null;
+    }
+}
+
+/**
+ * A vehicle's own way this step (docs/plan-porta-jeu.md, lot A): toward the one it attacks until
+ * within its reach, behind the one it follows, else to its goal and the next steps of its way.
+ * True when it moved otherwise than to a goal (a goal alone already stops the loading).
+ */
+function advance(u: PlayerUnit, b: Battle, s: EmpireSettings, len: number): boolean {
+  const bs = s.porta.battle;
+  if (u.attack) {
+    const target = b.units.find((x): x is RomeUnit => isRome(x) && x.id === u.attack);
+    if (!target || target.dead) u.attack = null;
+    else {
+      const range = Math.min(...u.weapons.map((w) => w.rangeCenti));
+      const need = distance(u, target) - (range * bs.attackReachBps) / 1_000_000;
+      if (need <= 0) return false;
+      moveToward(u, target, Math.min(len, need));
+      return true;
+    }
+  }
+  if (u.follow) {
+    const leader = b.units.find((x): x is PlayerUnit => isPlayer(x) && x.id === u.follow);
+    if (!leader || !stillIn(leader)) u.follow = null;
+    else {
+      const need = distance(u, leader) - bs.followCenti / 100;
+      if (need <= 1e-9) return false;
+      moveToward(u, leader, Math.min(len, need));
+      return true;
+    }
+  }
+  if (u.goal && moveToward(u, u.goal, len)) u.goal = u.route?.shift() ?? null;
+  if (u.exiting && distance(u, b.gate) * 100 <= b.gateRadiusCenti) leave(b, u);
+  return false;
 }
 
 /** The speed bonus a vehicle has from the trumpets sounding near it, in bps. */
@@ -88,8 +176,8 @@ function boostBps(u: PlayerUnit, b: Battle): number {
 }
 
 /** A transport standing in a city with its owner's relics loads the rarest, one at a time. */
-function load(u: PlayerUnit, b: Battle, s: EmpireSettings) {
-  if (u.role !== "transport" || u.goal || u.cargo.length >= u.capacity) {
+function load(u: PlayerUnit, b: Battle, s: EmpireSettings, moved = false) {
+  if (u.role !== "transport" || u.goal || moved || u.cargo.length >= u.capacity) {
     u.loading = null;
     return;
   }
@@ -145,11 +233,9 @@ export function stepBattle(b: Battle, s: EmpireSettings): void {
 
   // The vehicles move, the transports load.
   for (const u of players) {
-    if (u.goal) {
-      const len = stepLength(u.speedCenti, ms) * (1 + boostBps(u, b) / 10_000);
-      if (moveToward(u, u.goal, len)) u.goal = null;
-    }
-    load(u, b, s);
+    const len = stepLength(u.speedCenti, ms) * (1 + boostBps(u, b) / 10_000);
+    const moved = advance(u, b, s, len);
+    if (stillIn(u)) load(u, b, s, moved);
   }
 
   // Rome thinks and moves.
@@ -165,6 +251,8 @@ export function stepBattle(b: Battle, s: EmpireSettings): void {
     b.events.push({ kind: "hit", from, to, damage: Math.round(dmg) });
   };
   for (const u of players) {
+    // Gone out by the gate this very step.
+    if (!stillIn(u)) continue;
     let fired = false;
     for (const w of u.weapons) {
       const inRange = rome.filter((r) => distance(u, r) * 100 <= w.rangeCenti);
@@ -178,8 +266,9 @@ export function stepBattle(b: Battle, s: EmpireSettings): void {
         fired = true;
         continue;
       }
+      const told = u.attack ? inRange.find((r) => r.id === u.attack) : undefined;
       const keep = inRange.find((r) => r.id === w.targetId);
-      const target = keep ?? nearest;
+      const target = told ?? keep ?? nearest;
       if (target.id !== w.targetId) {
         w.targetId = target.id;
         w.since = b.timeMs;
@@ -242,7 +331,7 @@ export function stepBattle(b: Battle, s: EmpireSettings): void {
     if (isPlayer(u)) {
       u.outcome = "dead";
       u.cargo = [];
-      u.goal = null;
+      clearOrders(u);
       u.loading = null;
     } else u.dead = true;
     b.events.push({ kind: "dead", unit: u.id });
