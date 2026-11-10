@@ -416,11 +416,37 @@ function cityOrdersNow(w: World, h: House, c: (typeof w.s.map.cities)[number]) {
   return rec;
 }
 
+/**
+ * What the engine tells of a house's land, kept until the house changes it: asked at every session
+ * of every house, it is the same until a tile is bought, a counter put down or raised, a Casa
+ * reached (the simulator's own saving: the engine's answer is unchanged).
+ */
+const kept = new WeakMap<House, { sig: string; covered?: Set<string>; buyable?: string[] }>();
+function keptOf(h: House) {
+  const sig = `${h.casa}|${h.homeLevel}|${h.revealed.size}|${h.spots.map((p) => `${p.x},${p.y},${p.level}`).join(";")}`;
+  let k = kept.get(h);
+  if (!k || k.sig !== sig) {
+    k = { sig };
+    kept.set(h, k);
+  }
+  return k;
+}
+function coveredOf(w: World, h: House): Set<string> {
+  const k = keptOf(h);
+  k.covered ??= citiesCovered(seen(h), w.s);
+  return k.covered;
+}
+function buyableKept(w: World, h: House): string[] {
+  const k = keptOf(h);
+  k.buyable ??= buyableOf(seen(h), w.s);
+  return k.buyable;
+}
+
 /** The orders a session finds in the cities its counters serve. */
 function ordersPerSession(w: World, h: House): number {
   if (!w.s.orders) return Number.POSITIVE_INFINITY;
   if (orderGoods(h).length === 0) return 0;
-  const covered = citiesCovered(seen(h), w.s);
+  const covered = coveredOf(w, h);
   return w.s.map.cities
     .filter((c) => covered.has(c.code))
     .reduce((n, c) => n + cityOrdersNow(w, h, c).list.length, 0);
@@ -438,7 +464,7 @@ function deliverOrders(w: World, h: House, _sinceHours: number) {
     h.campoTrips++;
     places--;
   }
-  const covered = citiesCovered(seen(h), w.s);
+  const covered = coveredOf(w, h);
   const convoy = tradeEffect(w, h, "orderBonus") + identityEffect(w, h, "orderBonus");
   for (const c of w.s.map.cities) {
     if (places <= 0) return;
@@ -882,7 +908,7 @@ function bestPoint(
   cell: string,
 ): { x: number; y: number; covers: number } | null {
   if (!w.s.map.reach) return null;
-  const before = citiesCovered(seen(h), w.s);
+  const before = coveredOf(w, h);
   const [cx, cy] = cellCentreOf(cell, w.s);
   const points = [
     ...w.s.map.cities
@@ -916,7 +942,7 @@ const townsIn = (w: World, cell: string) =>
 function tryUnlock(w: World, h: House): boolean {
   if (!w.s.map.unlock) return false;
   if (squareGrid(w.s)) return tryUnlockTile(w, h);
-  const best = buyableOf(seen(h), w.s)
+  const best = buyableKept(w, h)
     .filter((c) => {
       const r = w.s.regions.find((x) => x.code === w.s.map.cells[c]?.region);
       return r !== undefined && r.casa <= h.casa;
@@ -943,13 +969,14 @@ function tryUnlockTile(w: World, h: House): boolean {
   };
   const towns = w.s.map.cities.map((c) => c.cell).filter((c) => !h.revealed.has(c) && reached(c));
   if (towns.length === 0) return false;
-  const best = buyableOf(seen(h), w.s)
+  // Its price first: the way to the towns is reckoned only by one who can pay the tile.
+  const cost = sectorCost(seen(h), w.s);
+  if (spendable(w, h) < cost) return false;
+  const best = buyableKept(w, h)
     .filter(reached)
     .map((c) => ({ c, d: Math.min(...towns.map((t) => cellDistance(c, t, w.s))) }))
     .sort((a, b) => a.d - b.d || a.c.localeCompare(b.c))[0];
   if (!best) return false;
-  const cost = sectorCost(seen(h), w.s);
-  if (spendable(w, h) < cost) return false;
   destroy(w, h, cost, "counters");
   h.revealed.add(best.c);
   return true;
@@ -969,7 +996,7 @@ function terroirOf(w: World, tile: string, good: string): number {
 function tileForWorkshop(w: World, h: House, region: string, good: string): string | null {
   const home = w.s.map.home;
   const from = home ? cellAtPoint(home.x, home.y, w.s) : (regionCells(w.s, "veneto")[0] ?? "0,0");
-  const near = buyableOf(seen(h), w.s)
+  const near = buyableKept(w, h)
     .filter((c) => w.s.map.cells[c]?.region === region)
     .sort((a, b) => cellDistance(from, a, w.s) - cellDistance(from, b, w.s) || a.localeCompare(b));
   const first = near[0];

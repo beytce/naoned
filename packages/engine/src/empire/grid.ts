@@ -15,9 +15,28 @@ export interface SquareMap {
 
 export const tileKey = (i: number, j: number) => `${i},${j}`;
 
+/** The tiles read already, by their key: reading one is asked millions of times (the roads). */
+const parsed = new Map<string, [number, number]>();
+/** Past this many, the keys kept are let go: a key may be anything a player sends. */
+const PARSED_MAX = 50_000;
+
+/**
+ * A tile's « i,j » from its key (not a number where the key says none). The same tile is given at
+ * every call for a key, never to be written on (it is frozen).
+ */
 export function parseTile(key: string): [number, number] {
-  const [i = Number.NaN, j = Number.NaN] = key.split(",").map(Number);
-  return [i, j];
+  const kept = parsed.get(key);
+  if (kept) return kept;
+  const a = key.indexOf(",");
+  let j = Number.NaN;
+  if (a >= 0) {
+    const b = key.indexOf(",", a + 1);
+    j = Number(b < 0 ? key.slice(a + 1) : key.slice(a + 1, b));
+  }
+  const tile = Object.freeze([Number(a < 0 ? key : key.slice(0, a)), j]) as [number, number];
+  if (parsed.size >= PARSED_MAX) parsed.clear();
+  parsed.set(key, tile);
+  return tile;
 }
 
 /** The tile under a point of the chart. */

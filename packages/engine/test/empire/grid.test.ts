@@ -25,6 +25,19 @@ describe("the square tiles", () => {
   it("keys a tile « i,j » and reads it back", () => {
     expect(tileKey(3, -2)).toBe("3,-2");
     expect(parseTile("3,-2")).toEqual([3, -2]);
+    // Read as before whatever the text, and the same at every call (its tiles are kept).
+    expect(parseTile("3")).toEqual([3, Number.NaN]);
+    expect(parseTile("")).toEqual([0, Number.NaN]);
+    expect(parseTile("3,")).toEqual([3, 0]);
+    expect(parseTile("3,4,5")).toEqual([3, 4]);
+    expect(parseTile("a,b")).toEqual([Number.NaN, Number.NaN]);
+    expect(parseTile(" 7 , 8 ")).toEqual([7, 8]);
+    expect(parseTile("12,34")).toEqual(parseTile("12,34"));
+    // What it gives is not to be written on: every caller reads the same tile.
+    expect(() => {
+      (parseTile("5,6") as number[])[0] = 99;
+    }).toThrow();
+    expect(parseTile("5,6")).toEqual([5, 6]);
   });
 
   it("finds the tile under a point, and the tile's middle", () => {
