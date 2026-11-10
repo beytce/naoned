@@ -48,6 +48,9 @@ interface Agent {
   born: number | null;
 }
 
+/** Room kept beyond the crowd's own for those sent once (a harvest's file of porters). */
+const SENT_ROOM = 16;
+
 const TONES = [COL.trim, COL.wood, COL.roof].map((c) => new Color(c));
 const UP = new Vector3(0, 1, 0);
 
@@ -125,13 +128,13 @@ export class Crowd {
     shadows: boolean,
   ) {
     const glaze = new MeshStandardMaterial({ color: "#ffffff", roughness: ROUGH.matt });
-    this.figures = new InstancedMesh(figureGeometry(), glaze, capacity);
+    this.figures = new InstancedMesh(figureGeometry(), glaze, capacity + SENT_ROOM);
     this.crates = new InstancedMesh(
       new BoxGeometry(0.19, 0.14, 0.16)
         .translate(0, FIGURE.crateY, 0)
         .scale(FIGURE.scale, FIGURE.scale, FIGURE.scale),
       P.accent,
-      capacity,
+      capacity + SENT_ROOM,
     );
     for (const mesh of [this.figures, this.crates]) {
       mesh.count = 0;
@@ -162,7 +165,7 @@ export class Crowd {
    * figures a step apart, gone at the end.
    */
   send(pts: [number, number][], count: number, S: number, now: number): void {
-    for (let k = 0; k < count; k++)
+    for (let k = 0; k < count && this.sent.length < SENT_ROOM; k++)
       this.sent.push(
         agentOf(
           {
@@ -190,7 +193,7 @@ export class Crowd {
   tick(t: number, S: number, heightAt: (i: number, j: number) => number | null): void {
     this.sent = this.sent.filter((a) => a.born !== null && (t - a.born) * a.speed < a.len);
     const all = this.sent.length ? [...this.agents, ...this.sent] : this.agents;
-    const n = Math.min(all.length, this.capacity);
+    const n = Math.min(all.length, this.capacity + SENT_ROOM);
     for (let k = 0; k < n; k++) {
       const a = all[k] as Agent;
       // Where along its way, and which way it faces.

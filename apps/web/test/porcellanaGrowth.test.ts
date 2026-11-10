@@ -239,4 +239,18 @@ describe("the crowd", () => {
     c.tick(60, 6, () => 0);
     expect(c.size).toBe(0);
   });
+
+  it("keeps room for those sent when the crowd is full, and never sends without end", () => {
+    const c = new Crowd(P, 5, false);
+    c.set(
+      Array.from({ length: 5 }, () => walk),
+      6,
+    );
+    c.send(walk.pts, 3, 6, 0);
+    c.tick(1, 6, () => 0);
+    // The five who stay, and the three sent beside them.
+    expect(meshes(c)[0]?.count).toBe(8);
+    for (let k = 0; k < 20; k++) c.send(walk.pts, 5, 6, 0);
+    expect(c.size).toBeLessThanOrEqual(5 + 16);
+  });
 });
