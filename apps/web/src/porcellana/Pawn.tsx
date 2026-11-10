@@ -108,7 +108,11 @@ export const Pawn = forwardRef<FigureHandle, { role: Role; live: boolean }>(func
       man.rotation.z = Math.sin(clock.current * 9) * 0.07;
       man.position.y = Math.abs(Math.sin(clock.current * 9)) * 0.05;
     } else if (act === "strike" && u < 0.45) {
-      man.rotation.x = Math.sin((u / 0.45) * Math.PI) * 0.35;
+      // Its blow in two times (docs/plan-porta-jeu.md, B4): it leans back, then throws itself.
+      man.rotation.x =
+        u < 0.12
+          ? -Math.sin((u / 0.12) * (Math.PI / 2)) * 0.2
+          : -0.2 + Math.sin(((u - 0.12) / 0.33) * Math.PI) * 0.62 + ((u - 0.12) / 0.33) * 0.2;
     } else if (act === "hit" && u < 0.35) {
       man.rotation.x = -Math.sin((u / 0.35) * Math.PI) * 0.3;
     } else if (act === "cheer" && u < 0.8) {

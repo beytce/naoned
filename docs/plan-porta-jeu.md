@@ -1,6 +1,6 @@
 # La Porta qui se joue : lisibilité, fluidité, idées (proposition du 10 novembre 2026)
 
-*Demande du porteur : « une vraie amélioration du mode PvE. Animations belles et fluides, rendu très qualitatif, déplacements et fonctionnalités ludiques et sans ambiguïté, dans la DA générale. » Ce document est une proposition : rien n'est codé tant qu'il n'est pas validé. Les règles de la Porta restent celles de `docs/plan-porta.md` ; l'écran reste en Porcellana (`docs/plan-porta-porcellana.md`).*
+*Demande du porteur : « une vraie amélioration du mode PvE. Animations belles et fluides, rendu très qualitatif, déplacements et fonctionnalités ludiques et sans ambiguïté, dans la DA générale. » Validé par le porteur le 10 novembre 2026 (« Lance ») avec les choix recommandés du § 5 ; l'état des travaux est au § 6. Les règles de la Porta restent celles de `docs/plan-porta.md` ; l'écran reste en Porcellana (`docs/plan-porta-porcellana.md`).*
 
 ## 1. Le constat (une bataille de palier 1 jouée le 10 novembre, téléphone 390 × 844)
 
@@ -32,7 +32,7 @@ Trois lots. A et B ne changent aucun chiffre : ni le simulateur ni la calibratio
 
 | # | Quoi | Détail |
 | --- | --- | --- |
-| A1 | **Le convoi** | Par défaut, le transport suit son véhicule de combat, une case derrière (ordre `follow`, moteur). Un toucher déplace les deux. Toucher la carte d'un véhicule le détache ; « Regrouper » le rattache. |
+| A1 | **Le convoi** | Par défaut, le transport suit son véhicule de combat, un peu plus d'une demi-case derrière (ordre `follow`, moteur). Un toucher déplace les deux. Toucher la carte d'un véhicule le détache ; « Regrouper » le rattache. |
 | A2 | **Le toucher qui dit ce qu'il fait** | Sur une ville : « Charger ici » (le combat s'avance, le transport se pose au milieu et charge). Sur un ennemi : « Attaquer » (ordre `attack` : se met à portée et le suit dans sa laisse). Sur la Porte : « Rentrer » (ordre `leave` à l'arrivée, sans second toucher). Sur le sol : aller là. Le mot s'affiche une seconde au point touché. |
 | A3 | **La route rouge** | Le chemin en ruban d'accent à chevrons, comme les routes de la Carte, avec le temps de trajet au bout (« 14 s »). Glisser depuis un véhicule trace un chemin par étapes (`move` avec une file de points, cinq au plus). |
 | A4 | **L'aperçu avant de lâcher** | Doigt posé : la route fantôme, le temps, et les regards de Rome qu'elle traverse qui s'allument. On lâche pour ordonner, on glisse hors de la carte pour annuler. |

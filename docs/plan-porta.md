@@ -106,6 +106,12 @@ Un composant est un objet de l'inventaire de la Maison (`{ id, code, level }`). 
   - toucher un véhicule, puis toucher un point ou une ville : il y va en ligne droite ;
   - un bouton rond par composant actif ;
   - « **Rentrer** » : un véhicule posé sur la porte sort aussitôt de la bataille, avec sa cargaison.
+- **Les ordres du 10 novembre 2026** (`docs/plan-porta-jeu.md`, lot A), qui s'ajoutent aux précédents sans les changer :
+  - `follow` : un véhicule en suit un autre de sa Maison, à `battle.followCenti` (0,6 case) derrière. C'est **le convoi** : le transport suit son véhicule de combat, un seul toucher déplace les deux. Un transport qui suit charge dès que son meneur s'arrête dans une ville. Si le meneur tombe, le suiveur s'arrête ; s'il sort par la porte, le suiveur y va et sort derrière lui ;
+  - `attack` : le véhicule vient à portée de l'ennemi désigné (`battle.attackReachBps` de sa plus courte arme), le suit, et ses armes le visent avant tout autre ;
+  - `move` avec ses étapes (`via`, `battle.maxWaypoints` au plus) : un chemin tracé du doigt ;
+  - `exit` : le véhicule va à la porte et sort en y arrivant, sans second toucher.
+  Tout nouvel ordre annule le précédent. Les ordres passent par le socket de la bataille (ou par leur route si le socket est fermé).
 - Le tir est **automatique** : chaque arme vise l'ennemi le plus proche dans sa portée, et garde sa cible tant qu'elle y reste (ce qui fait monter les lances).
 - Un joueur qui se déconnecte laisse ses véhicules où ils sont ; il peut revenir dans la bataille tant qu'elle dure.
 

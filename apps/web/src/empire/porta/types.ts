@@ -129,6 +129,10 @@ export interface RomeUnitView {
   rangeCenti: number;
   visionCenti: number;
   dead: boolean;
+  /** A blow that takes its time (the bombard): its period, when it falls next, how wide. */
+  periodS?: number;
+  nextShotAt?: number;
+  areaCenti?: number;
   /** The incendiary: the seconds it burns a city, and how long it has so far (ms). */
   burnS?: number;
   burning?: number;
@@ -147,7 +151,15 @@ export interface PlayerUnitView {
   hp: number;
   maxHp: number;
   outcome: "in" | "exited" | "dead" | "lost";
+  speedCenti: number;
   goal: { x: number; y: number } | null;
+  /** The steps of its way after its goal. */
+  route: { x: number; y: number }[];
+  /** The vehicle it follows (the convoy), the unit of Rome it was told to attack. */
+  follow: string | null;
+  attack: string | null;
+  /** On its way out by the gate. */
+  exiting: boolean;
   cargo: Rarity[];
   capacity: number;
   loading: { cityId: string; rarity: Rarity; doneAt: number } | null;
@@ -160,6 +172,8 @@ export interface PlayerUnitView {
     readyAt: number;
     until: number;
     rangeCenti: number;
+    durationS: number;
+    cooldownS: number;
   }[];
 }
 
@@ -181,6 +195,10 @@ export interface BattleSnapshot {
   radius: number;
   gate: { x: number; y: number };
   gateRadiusCenti: number;
+  /** The rules the screen draws by: the beat, the towns' radius, each rarity's loading (s). */
+  stepMs: number;
+  cityRadiusCenti: number;
+  loadS: Record<Rarity, number>;
   cities: { id: string; x: number; y: number; relics: Record<Rarity, number> }[];
   units: (RomeUnitView | PlayerUnitView)[];
   events: BattleEvent[];
@@ -207,7 +225,10 @@ export interface PortaState {
 }
 
 export type BattleOrder =
-  | { type: "move"; unitId: string; x: number; y: number }
+  | { type: "move"; unitId: string; x: number; y: number; via?: { x: number; y: number }[] }
+  | { type: "follow"; unitId: string; leaderId: string }
+  | { type: "attack"; unitId: string; targetId: string }
+  | { type: "exit"; unitId: string }
   | { type: "stop"; unitId: string }
   | { type: "activate"; unitId: string; componentId: string }
   | { type: "leave"; unitId: string };

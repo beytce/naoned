@@ -149,7 +149,7 @@ const battle = z
     gateRadiusCenti: positive.prefault(100),
     cityRadiusCenti: positive.prefault(100),
     /** A vehicle following another keeps this far behind it (docs/plan-porta-jeu.md, A1). */
-    followCenti: positive.prefault(100),
+    followCenti: positive.prefault(60),
     /** A vehicle told to attack comes within this share of its shortest weapon's range. */
     attackReachBps: bps.prefault(9_000),
     /** The steps a way may have after its first. */
