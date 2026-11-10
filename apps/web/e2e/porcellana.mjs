@@ -38,6 +38,9 @@ async function startServer() {
       WEB_DIST: join(here, "..", "dist"),
       WORLD_KIND: "empire",
       EMPIRE_GRID: "square",
+      // The living map's two rules, seen on the board (docs/plan-carte-vivante.md).
+      EMPIRE_TERROIRS: "on",
+      EMPIRE_LOYALTY: "on",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });

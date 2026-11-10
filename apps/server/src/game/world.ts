@@ -78,6 +78,12 @@ export interface WorldOptions {
    * switch changes the trade: on in production only on the owner's decision, announced first.
    */
   empireInterior?: boolean;
+  /**
+   * The terroirs and the towns' loyalty (docs/plan-carte-vivante.md, lots 3 and 5): each off unless
+   * set. They change the trade: on in production only once announced in the chapter's notes.
+   */
+  empireTerroirs?: boolean;
+  empireLoyalty?: boolean;
   /** A snapshot of the state at least this often (ms) … */
   snapshotEveryMs?: number;
   /** … or after this many saved versions, whichever comes first. */
@@ -803,6 +809,26 @@ async function createEmpireWorld(db: Db, now: number) {
   return world;
 }
 
+/**
+ * The living map's two rules (docs/plan-carte-vivante.md): switched off, the terroirs leave the
+ * map and the loyalty the orders — the land and the towns as before, nothing else touched.
+ */
+function livingRules(
+  empire: Record<string, unknown>,
+  options: Pick<WorldOptions, "empireTerroirs" | "empireLoyalty">,
+): Record<string, unknown> {
+  let out = empire;
+  if (!options.empireTerroirs && out.map) {
+    const { terrain: _terrain, ...map } = out.map as Record<string, unknown>;
+    out = { ...out, map };
+  }
+  if (!options.empireLoyalty && out.orders) {
+    const { loyalty: _loyalty, ...orders } = out.orders as Record<string, unknown>;
+    out = { ...out, orders };
+  }
+  return out;
+}
+
 /** Engine context and saved state of a world (a fresh state for a new one). */
 async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: string) {
   const theme = THEMES[world.theme as keyof typeof THEMES];
@@ -837,7 +863,7 @@ async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: 
     // Switched off, the insides go: the workshops run as before (their insides kept, unread).
     const { interior, ...without } = merged;
     const empire = square && options.empireInterior ? { ...without, interior } : without;
-    stored = { ...(stored as object), empire };
+    stored = { ...(stored as object), empire: livingRules(empire, options) };
   }
   if (options.settingsOverride) stored = mergeDefaults(stored, options.settingsOverride);
   // A world saved before live-2: the Pass's retired perks go to zero, and are saved so.

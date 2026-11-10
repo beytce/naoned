@@ -17,6 +17,7 @@ Un seul service : le serveur Fastify sert l'API (`/api/…`) et l'application we
 | `ALERT_WEBHOOK_URL` | non | Webhook Discord ou Slack : alerte si le monde est bloqué, si une erreur serveur survient, si le grand livre a un écart ou lors d'une relève de déploiement |
 | `WORLD_KIND` | non | `season` par défaut (les saisons mensuelles) ; `empire` ouvre le monde persistant de CADRAGE-v3 (développement, e2e) |
 | `EMPIRE_FROM` | non | La bascule (instant ISO) : passé cet instant, le mois qui se clôt laisse place à l'empire, pour de bon. Absente par défaut ; ne la régler en production que sur décision du porteur |
+| `EMPIRE_TERROIRS`, `EMPIRE_LOYALTY` | non | `off` par défaut. `on` allume les terroirs (chaque case a sa terre, l'atelier brut qui lui correspond y rend plus) et la fidélité des villes (leurs livraisons valent une prime). Elles changent le commerce : ne les régler en production qu'après l'annonce dans les notes du chapitre (`docs/notes-chapitre-2026-12-carte-vivante.md`). Éteintes de nouveau, le monde reprend la terre et les villes d'avant |
 | `PORT` | non | Fourni par Railway |
 | `NODE_ENV` | non | `production` (déjà fixé dans le Dockerfile) |
 
@@ -96,6 +97,8 @@ La Terraferme de l'empire n'a pas de tick : ses théâtres de la semaine (lundi 
 pnpm install
 pnpm dev   # serveur sur :3000 (PGlite dans apps/server/.data), web sur :5173
 ```
+
+La Carte vivante avec ses deux règles : `EMPIRE_TERROIRS=on EMPIRE_LOYALTY=on WORLD_KIND=empire pnpm dev`.
 
 Le socle de l'empire : `WORLD_KIND=empire pnpm dev` (sur une base neuve, ou à côté d'un monde mensuel déjà ouvert : le serveur prend le monde ouvert de l'empire, ou le crée). Son parcours de bout en bout : `pnpm --filter @comptoirs/web build && pnpm --filter @comptoirs/web e2e:empire`.
 

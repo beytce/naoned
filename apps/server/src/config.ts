@@ -62,6 +62,14 @@ const schema = z
      */
     EMPIRE_INTERIOR: z.enum(["off", "on"]).default("off"),
     /**
+     * The terroirs and the towns' loyalty (docs/plan-carte-vivante.md, lots 3 and 5), each off
+     * unless « on »: they change the trade (a workshop on its land yields more, a town that knows
+     * the house pays more), so they are switched on in production only once announced in the
+     * chapter's notes (docs/notes-chapitre-2026-12-carte-vivante.md).
+     */
+    EMPIRE_TERROIRS: z.enum(["off", "on"]).default("off"),
+    EMPIRE_LOYALTY: z.enum(["off", "on"]).default("off"),
+    /**
      * The switch (CADRAGE-v3 § 12), off unless set: from this instant (ISO), the month that ends
      * opens the persistent empire in its place, and a server started after it opens the empire.
      * Set in production only on the decision of the game's owner.

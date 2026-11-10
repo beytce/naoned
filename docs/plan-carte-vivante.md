@@ -113,6 +113,10 @@ CHROMIUM=/opt/pw-browsers/chromium node apps/web/e2e/map-fps.mjs
 - Lots 3 et 5 : `pnpm --filter @comptoirs/simulator empire --seeds 1,2,3 --scenario apps/simulator/scenarios/cases-carrees.json`, avant et après ; nombre de cibles tenues au moins égal ; tableau dans `docs/calibration.md`.
 - En fin de parcours : `e2e/porta.mjs`, `e2e/switch.mjs`, `e2e:guided` (les tutoriels ne cassent pas).
 
+## Les deux règles s'allument sur décision
+
+Comme l'intérieur des ateliers (`EMPIRE_INTERIOR`), les terroirs et la fidélité changent le commerce : le serveur les garde éteints tant qu'il ne dit pas `EMPIRE_TERROIRS=on` et `EMPIRE_LOYALTY=on` (`apps/server/src/config.ts`, test `apps/server/test/empire-living.test.ts`). Le porteur publie la note du chapitre (`docs/notes-chapitre-2026-12-carte-vivante.md`), puis les allume. Tout le reste (foule, croissance visible, horizon, eau, déménagement d'un atelier) est en ligne sans interrupteur.
+
 ## État
 
 | Lot | État |

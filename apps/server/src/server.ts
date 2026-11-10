@@ -37,6 +37,8 @@ const world = await GameWorld.open(database.db, clock, {
   settingsFromTheme: config.WORLD_SETTINGS_FROM_THEME,
   empireGrid: config.EMPIRE_GRID,
   empireInterior: config.EMPIRE_INTERIOR === "on",
+  empireTerroirs: config.EMPIRE_TERROIRS === "on",
+  empireLoyalty: config.EMPIRE_LOYALTY === "on",
   empire: config.WORLD_KIND === "empire",
   ...(config.EMPIRE_FROM !== undefined ? { empireFrom: config.EMPIRE_FROM } : {}),
   ...(config.WORLD_SETTINGS_OVERRIDE ? { settingsOverride: config.WORLD_SETTINGS_OVERRIDE } : {}),

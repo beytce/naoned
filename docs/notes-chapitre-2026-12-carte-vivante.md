@@ -1,6 +1,6 @@
 # Notes du chapitre : la Carte vivante (décembre 2026, brouillon)
 
-Brouillon à publier dans le jeu **avant** que les deux règles ci-dessous ne s'appliquent (au commerce, un changement s'annonce dans les notes du chapitre). Décisions du porteur du 9 novembre 2026 ; plan : `docs/plan-carte-vivante.md` ; chiffres du simulateur de 24 mois : `docs/calibration.md`, § « Les terroirs » et « La fidélité des villes ».
+Brouillon à publier dans le jeu **avant** que les deux règles ci-dessous ne s'appliquent (au commerce, un changement s'annonce dans les notes du chapitre). Elles sont éteintes tant que le serveur ne dit pas `EMPIRE_TERROIRS=on` et `EMPIRE_LOYALTY=on` (`docs/deploiement.md`) : la foule, les bâtiments qui grandissent, l'horizon et l'eau, eux, sont en ligne dès la mise en production. Décisions du porteur du 9 novembre 2026 ; plan : `docs/plan-carte-vivante.md` ; chiffres du simulateur de 24 mois : `docs/calibration.md`, § « Les terroirs » et « La fidélité des villes ».
 
 ## Ce qui change pour toi
 
