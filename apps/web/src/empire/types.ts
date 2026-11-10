@@ -346,6 +346,8 @@ export interface EmpireMapView {
    */
   terrain?: Record<string, string>;
   terrains?: Record<string, { buildings: string[]; bonusBps: number }>;
+  /** The horizon (lot 4): the land beyond the house's own, a town out of reach by its size. */
+  horizon?: { cell: string; town?: number }[];
   /** The counters put down: their name, their point, their level and their reach. */
   posts: {
     id: string;

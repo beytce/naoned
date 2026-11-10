@@ -66,6 +66,20 @@ export function FlatBoard({
       data-flat-board
       aria-hidden="true"
     >
+      {/* The horizon (lot 4 of the living map): the land beyond, paler the further it lies. */}
+      {scene.horizon.map((h) => (
+        <rect
+          key={`h${h.i},${h.j}`}
+          x={h.i * T + 3}
+          y={h.j * T + 3}
+          width={T - 6}
+          height={T - 6}
+          rx={4}
+          fill={COL.ground}
+          opacity={Math.max(0.12, 0.6 - h.far * 0.1)}
+          data-horizon
+        />
+      ))}
       {scene.tiles.map((t) => (
         <rect
           key={t.key}

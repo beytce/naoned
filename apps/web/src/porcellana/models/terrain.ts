@@ -38,7 +38,7 @@ function sheep(P: Palette, g: Group, x: number, z: number, rot: number): void {
 }
 
 /** A tuft of reeds: thin stems, a few leaning. */
-function reeds(P: Palette, g: Group, x: number, z: number, rnd: () => number): void {
+export function reeds(P: Palette, g: Group, x: number, z: number, rnd: () => number, y = 0): void {
   for (let k = 0; k < 5; k++) {
     const r = cyl(
       g,
@@ -46,7 +46,7 @@ function reeds(P: Palette, g: Group, x: number, z: number, rnd: () => number): v
       0.02,
       0.38 + rnd() * 0.22,
       x + (rnd() - 0.5) * 0.24,
-      0,
+      y,
       z + (rnd() - 0.5) * 0.24,
       P.m("wood"),
       5,

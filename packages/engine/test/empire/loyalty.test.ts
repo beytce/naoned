@@ -47,7 +47,9 @@ function serve(w: World, code: string): void {
 describe("a town's loyalty", () => {
   it("rises by tiers with the deliveries it received", () => {
     expect([0, 1, 2, 3, 4, 50].map((n) => loyaltyTier(s, n))).toEqual([0, 0, 1, 1, 2, 2]);
-    expect([0, 1, 2, 3, 4, 50].map((n) => loyaltyBps(s, n))).toEqual([0, 0, 500, 500, 1_000, 1_000]);
+    expect([0, 1, 2, 3, 4, 50].map((n) => loyaltyBps(s, n))).toEqual([
+      0, 0, 500, 500, 1_000, 1_000,
+    ]);
   });
 
   it("is nothing without its settings", () => {

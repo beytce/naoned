@@ -356,6 +356,12 @@ export interface EmpireMapView {
    */
   terrain: Record<string, string>;
   terrains: Record<string, { buildings: string[]; bonusBps: number }>;
+  /**
+   * The horizon (docs/plan-carte-vivante.md, lot 4): the land within `HORIZON_TILES` of a tile of
+   * the house's, beyond what it owns and may buy, for the board to draw low and pale; a town that
+   * stands there and that the board does not show yet, by its size. Sorted; empty off square tiles.
+   */
+  horizon: { cell: string; town?: number }[];
   /** The counters put down: their name, their point, their level and their reach. */
   posts: {
     id: string;
@@ -863,8 +869,39 @@ function roadsOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView["roads"] 
 }
 
 /** The map as the house sees it: its cells, its counters, its Arsenal, the cities it found. */
+/** How far beyond its own tiles a house sees the land, by their sides (the horizon). */
+export const HORIZON_TILES = 4;
+
+/** The horizon of a house on square tiles: the land beyond, each tile once, sorted. */
+function horizonOf(
+  house: EmpireHouse,
+  s: EmpireSettings,
+  buyable: string[],
+  shownTowns: Set<string>,
+): EmpireMapView["horizon"] {
+  if (!squareGrid(s)) return [];
+  const own = unlockedOf(house, s);
+  const shown = new Set([...own, ...buyable]);
+  const towns = new Map(s.map.cities.map((c) => [c.cell, c]));
+  const out = new Map<string, { cell: string; town?: number }>();
+  for (const from of own)
+    for (const cell of cellsWithin(from, HORIZON_TILES, s)) {
+      if (shown.has(cell) || out.has(cell) || !(cell in s.map.cells)) continue;
+      const town = towns.get(cell);
+      out.set(cell, { cell, ...(town && !shownTowns.has(town.code) ? { town: town.size } : {}) });
+    }
+  return [...out.values()].sort((a, b) => a.cell.localeCompare(b.cell));
+}
+
 function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
   const seen = revealedOf(house, s);
+  const buyable = buyableOf(house, s);
+  const cities = s.map.cities.filter(
+    (c) =>
+      seen.has(c.cell) ||
+      (squareGrid(s) && (s.regions.find((r) => r.code === c.region)?.casa ?? 99) <= house.casa),
+  );
+  const horizon = horizonOf(house, s, buyable, new Set(cities.map((c) => c.code)));
   return {
     cells: Object.fromEntries(
       Object.entries(s.map.cells)
@@ -874,7 +911,8 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     // The sea along the coasts seen, seen too (decision of the owner, 3 November 2026: Venice on
     // its lagoon from the first screen); nothing to buy there, only the board's dressing.
     revealed: [...new Set([...seen, ...seaAlong(seen, s)])].sort(),
-    terrain: terrainsOf([...seen, ...buyableOf(house, s)], s),
+    terrain: terrainsOf([...seen, ...buyable, ...horizon.map((h) => h.cell)], s),
+    horizon,
     terrains: Object.fromEntries(
       Object.entries(s.map.terrain?.kinds ?? {}).map(([k, v]) => [
         k,
@@ -908,7 +946,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     zoneCasa: zoneCasaOf(house, s),
     unlocked: unlockedOf(house, s),
     ...(walkableOf(house, s) ? { toLink: citiesToLink(house, s) } : {}),
-    buyable: buyableOf(house, s).map((cell) => {
+    buyable: buyable.map((cell) => {
       const c = s.map.cells[cell];
       return {
         cell,
@@ -931,16 +969,10 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
       })),
     arsenal: house.arsenal ?? null,
     camp: house.camp ?? null,
-    cities: s.map.cities
-      .filter(
-        (c) =>
-          seen.has(c.cell) ||
-          (squareGrid(s) && (s.regions.find((r) => r.code === c.region)?.casa ?? 99) <= house.casa),
-      )
-      .map((c) => {
-        const [x, y] = citySpot(c, s);
-        return { code: c.code, cell: c.cell, region: c.region, x, y, size: c.size };
-      }),
+    cities: cities.map((c) => {
+      const [x, y] = citySpot(c, s);
+      return { code: c.code, cell: c.cell, region: c.region, x, y, size: c.size };
+    }),
     roads: squareGrid(s) ? roadsOf(house, s) : [],
     radius: s.map.revealRadius,
     campSite:

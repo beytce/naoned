@@ -28,7 +28,7 @@ const place = (id: string, badge?: BoardTile["place"] extends infer P ? unknown 
   }) as NonNullable<BoardTile["place"]>;
 
 function scene(tiles: BoardTile[], roads: BoardScene["roads"] = []): BoardScene {
-  return { tileSize: 10, tiles, roads, home: "3,1" };
+  return { tileSize: 10, tiles, roads, home: "3,1", horizon: [], horizonReach: 0 };
 }
 
 const fondaco = (casa = 1) =>

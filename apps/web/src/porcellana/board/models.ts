@@ -2,7 +2,7 @@
  * The board's models by their key (scene.ts): the catalogue's, the board's own (a plain tile and
  * its dressing, a site under way), a town by its size.
  */
-import type { Group } from "three";
+import { Group } from "three";
 import { CATALOGUE } from "../catalogue.js";
 import type { Palette } from "../materials.js";
 import { lockedPlot } from "../models/decor.js";
@@ -15,6 +15,7 @@ import {
   heldBanner,
   loyaltyBanners,
   marketStalls,
+  shore,
   townMarket,
 } from "../models/life.js";
 import { zattera } from "../models/lot7.js";
@@ -45,16 +46,22 @@ export function quayCrates(P: Palette, g: Group, covered: boolean[]): void {
 export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null {
   const key: ModelKey | null = tile.model;
   if (!key) {
-    // A boat on one lagoon tile in three (P3-04 of the players' audit: the water was still).
-    if (tile.water && tile.raft && tile.seed % 2 === 0) {
-      const r = zattera(P);
-      return { group: r.group, pin: r.pin, tick: (t, dt) => r.tick?.(t, dt) };
-    }
-    if (tile.water && tile.seed % 3 === 0) {
-      const b = barque(P, tile.seed);
-      return { group: b.group, pin: [0, 1, 0], tick: (t) => b.tick(t) };
-    }
-    return null;
+    if (!tile.water) return null;
+    // The water: a boat on one lagoon tile in three (P3-04 of the players' audit), a raft of logs
+    // near a lumber camp; its shores' foam, posts and reeds where it touches the land (lot 4).
+    const boat =
+      tile.raft && tile.seed % 2 === 0
+        ? zattera(P)
+        : tile.seed % 3 === 0
+          ? (() => {
+              const b = barque(P, tile.seed);
+              return { group: b.group, pin: [0, 1, 0], tick: (t: number) => b.tick(t) } as Built;
+            })()
+          : null;
+    if (!tile.shore) return boat;
+    const g = boat?.group ?? new Group();
+    shore(P, g, tile.shore, tile.seed);
+    return boat ?? { group: g, pin: [0, 1, 0] };
   }
   switch (key) {
     case "fondaco": {

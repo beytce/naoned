@@ -138,11 +138,28 @@ export interface BoardTile {
   held?: boolean;
   /** A tile of water near a lumber camp: its boat is a raft of logs (the Cadore's, lot 7). */
   raft?: boolean;
+  /**
+   * A tile of water: its sides that touch the land, north, east, south, west — the foam along the
+   * shore, its mooring posts, its reeds (lot 4 of the living map).
+   */
+  shore?: [boolean, boolean, boolean, boolean];
   /** The Market's stalls: the house's goods it trades, their crates, hot above their rate (P3-08). */
   stalls?: { n: number; hot: boolean }[];
   /** Unglazed, closed: the Porta before the Fondaco's level opens it (P1-06 of the players' audit). */
   biscuit?: boolean;
   place: BoardPlace | null;
+  seed: number;
+}
+
+/** A tile of the horizon (lot 4 of the living map): land beyond the board, drawn low and pale. */
+export interface BoardHorizon {
+  i: number;
+  j: number;
+  /** How many tiles from the house's own land, by their sides: the further, the paler. */
+  far: number;
+  terrain?: string;
+  /** A town out of reach that stands there, by its size: a silhouette. */
+  town?: number;
   seed: number;
 }
 
@@ -159,12 +176,18 @@ export interface BoardScene {
   roads: BoardRoad[];
   /** The first fondaco's tile: where the camera starts. */
   home: string;
+  /** The land beyond the board, and how far its furthest tile lies (0: none). */
+  horizon: BoardHorizon[];
+  horizonReach: number;
   /**
    * The first fondaco's zone (the first steps, lot 3): its middle and reach in the chart's units,
    * and the reach at the next Casa, drawn while the Fondaco is chosen.
    */
   zone?: { x: number; y: number; reach: number; next?: number };
 }
+
+/** Beyond this many tiles from the house's land, nothing of the horizon is drawn. */
+export const HORIZON_FAR = 5;
 
 const parse = (k: string): [number, number] => {
   const [i = 0, j = 0] = k.split(",").map(Number);
@@ -598,8 +621,53 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
       });
   }
 
+  // The shores: each tile of water knows which of its sides touch the land.
+  for (const tile of out.values()) {
+    if (!tile.water) continue;
+    const land = (di: number, dj: number) => {
+      const n = out.get(`${tile.i + di},${tile.j + dj}`);
+      return !!n && !n.water;
+    };
+    const shore: [boolean, boolean, boolean, boolean] = [
+      land(0, -1),
+      land(1, 0),
+      land(0, 1),
+      land(-1, 0),
+    ];
+    if (shore.some(Boolean)) tile.shore = shore;
+  }
+
+  // The horizon: the land the engine tells beyond the house's own, and the plots it may buy that
+  // the board leaves out (a region not open yet, across the sea), each by how far it lies.
+  const mine = [...owned].map(parse);
+  const farOf = (k: string) => {
+    const [i, j] = parse(k);
+    return mine.reduce((n, [oi, oj]) => Math.min(n, Math.abs(oi - i) + Math.abs(oj - j)), 99);
+  };
+  const beyond = new Map<string, BoardHorizon>();
+  const far = (k: string, town?: number) => {
+    if (out.has(k) || beyond.has(k)) return;
+    const [i, j] = parse(k);
+    const land = map.terrain?.[k];
+    beyond.set(k, {
+      i,
+      j,
+      far: farOf(k),
+      seed: seedOf(k),
+      ...(land ? { terrain: land } : {}),
+      ...(town ? { town } : {}),
+    });
+  };
+  for (const h of map.horizon ?? []) far(h.cell, h.town);
+  for (const b of map.buyable) far(b.cell);
+  const horizon = [...beyond.values()]
+    .filter((h) => h.far <= HORIZON_FAR)
+    .sort((a, b) => a.j - b.j || a.i - b.i);
+
   return {
     tileSize: size,
+    horizon,
+    horizonReach: horizon.reduce((n, h) => Math.max(n, h.far), 0),
     tiles: [...out.values()].sort((a, b) => a.j - b.j || a.i - b.i),
     roads: (map.roads ?? []).map((r) => ({ from: r.from, to: r.to, pts: r.pts })),
     home: homeTile,

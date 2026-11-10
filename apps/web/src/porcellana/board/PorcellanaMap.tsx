@@ -69,6 +69,7 @@ import { drawChevron, drawnIndices, ribbonGeometry, roundedPath } from "../ribbo
 import { Blush } from "../selection.js";
 import { ARRIVAL, BISCUIT, BOARD, CAMERA, FLIP, RIBBON, SELECT } from "../tokens.js";
 import { FlatBoard } from "./FlatBoard.js";
+import { Horizon } from "./Horizon.js";
 import { PARK, modelOf, vehicleModel } from "./models.js";
 import { peopleOf, portersWay } from "./people.js";
 import {
@@ -192,6 +193,13 @@ function Board({
     return b;
   }, [P, root]);
   useEffect(() => () => burst.dispose(), [burst]);
+  // The horizon (lot 4): the land beyond the board, low and pale, in three draw calls.
+  const horizon = useMemo(() => {
+    const h = new Horizon();
+    root.add(h.group);
+    return h;
+  }, [root]);
+  useEffect(() => () => horizon.dispose(), [horizon]);
   const cheered = useRef(sh.cheer);
   const kinds = useRef(new Map<string, { model: string | null; size: number; tier: number }>());
   const paid = useRef(new Map<string, number>());
@@ -295,7 +303,7 @@ function Board({
     let appeared = 0;
     for (const tile of scene.tiles) {
       seen.add(tile.key);
-      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}|${(tile.crates ?? []).map(Number).join("")}|${(tile.decor ?? []).join(",")}|${tile.loyalty ?? 0}|${tile.held ? 1 : 0}|${tile.raft ? 1 : 0}|${tile.biscuit ? 1 : 0}|${(tile.stalls ?? []).map((x) => `${x.n}${x.hot ? "h" : ""}`).join(",")}|${tierOf(tile.level)}|${tile.casa ?? 0}|${Math.floor((tile.progress ?? 0) * 4)}|${tile.terrain ?? ""}`;
+      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}|${(tile.crates ?? []).map(Number).join("")}|${(tile.decor ?? []).join(",")}|${tile.loyalty ?? 0}|${tile.held ? 1 : 0}|${tile.raft ? 1 : 0}|${tile.biscuit ? 1 : 0}|${(tile.stalls ?? []).map((x) => `${x.n}${x.hot ? "h" : ""}`).join(",")}|${tierOf(tile.level)}|${tile.casa ?? 0}|${Math.floor((tile.progress ?? 0) * 4)}|${tile.terrain ?? ""}|${(tile.shore ?? []).map(Number).join("")}`;
       const was = tiles.current.get(tile.key);
       const before = kinds.current.get(tile.key);
       const tier = tierOf(tile.level);
@@ -349,6 +357,7 @@ function Board({
         byNo.current.delete(tileNo(i, j));
       }
     crowd.set(peopleOf(scene, people.current.budget), S);
+    horizon.set(scene.horizon, S, scene.horizonReach);
     // The harvest is seen (golden rule 3, D4 of the publication plan): the lots that waited at a
     // workshop and wait no more are carried to the Fondaco, a porter a lot, in file on its road.
     const now = new Map<string, number>();
@@ -733,6 +742,11 @@ function Board({
     }
     burst.group.visible = !sh.flip;
     burst.tick(c.t);
+    // The water's ripples follow the scene's life (still in « moins d'animations »).
+    const swell = P.m("water").userData.time as { value: number } | undefined;
+    if (swell) swell.value = c.life;
+    // The horizon rises once the board has landed; gone while the tiles turn over.
+    horizon.tick(c.t, drawn > 0.99 && !sh.flip, live);
     // The people: out once the roads are drawn, each on its tile wherever the tile is.
     crowd.group.visible = drawn > 0.99 && !sh.flip;
     if (crowd.group.visible)

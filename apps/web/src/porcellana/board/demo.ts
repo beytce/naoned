@@ -193,7 +193,8 @@ export function demoPayload(now: number, o: DemoOpts): EmpirePayload {
     })
     .map((cell) => ({ cell, region: "veneto", coast: false, casa: 1 }));
   const types = [...new Set(WORKSHOPS.map((w) => w.type))];
-  const cities = TOWNS.map((t) => {
+  // Verona lies beyond what the house reaches: a silhouette on the horizon.
+  const cities = TOWNS.filter((t) => t.code !== "verona").map((t) => {
     const [x, y] = point(t.cell);
     return { code: t.code, cell: t.cell, region: "veneto", x, y, size: t.size };
   });
@@ -310,6 +311,12 @@ export function demoPayload(now: number, o: DemoOpts): EmpirePayload {
           ]),
         ),
         revealed: [...owned, ...SEA],
+        horizon: Object.keys(land)
+          .filter((k) => !owned.has(k) && !buyable.some((b) => b.cell === k))
+          .map((cell) => {
+            const town = TOWNS.find((t) => t.cell === cell);
+            return { cell, ...(town && town.code === "verona" ? { town: town.size } : {}) };
+          }),
         // The terroirs: a land of each kind round the domain, some of it the house's already.
         terrain: TERRAIN,
         terrains: {

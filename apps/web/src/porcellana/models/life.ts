@@ -12,8 +12,10 @@ import {
   SphereGeometry,
 } from "three";
 import type { Palette } from "../materials.js";
-import { ball, box, cached, cyl, dyn } from "../shapes.js";
+import { ball, box, cached, cyl, dyn, seeded } from "../shapes.js";
+import { BOARD } from "../tokens.js";
 import type { ModelOpts } from "./model.js";
+import { reeds } from "./terrain.js";
 
 /** Puffs rising from a chimney's top, drifting east; none while the place is idle. */
 export function smoke(
@@ -249,4 +251,64 @@ export function townMarket(P: Palette, p: Object3D, tier: number): void {
       p.add(flag);
     }
   }
+}
+
+/**
+ * A shore (lot 4 of the living map): along each side of a tile of water that touches the land, a
+ * line of foam at the water's level; by some, mooring posts (the lagoon's bricole) or a tuft of
+ * reeds, from the tile's seed. Still: it is baked with its tile.
+ */
+export function shore(
+  P: Palette,
+  p: Object3D,
+  sides: readonly [boolean, boolean, boolean, boolean],
+  seed: number,
+): void {
+  const rnd = seeded(seed * 11 + 5);
+  const half = (BOARD.tile + BOARD.gap) / 2;
+  // North, east, south, west: the side's middle and whether it runs along x.
+  const at: [number, number, boolean][] = [
+    [0, -half, true],
+    [half, 0, false],
+    [0, half, true],
+    [-half, 0, false],
+  ];
+  sides.forEach((touches, k) => {
+    if (!touches) return;
+    const [x, z, alongX] = at[k] as [number, number, boolean];
+    const inX = x === 0 ? 0 : -Math.sign(x);
+    const inZ = z === 0 ? 0 : -Math.sign(z);
+    const len = BOARD.tile + BOARD.gap;
+    const foam = box(
+      p,
+      alongX ? len : 0.16,
+      0.03,
+      alongX ? 0.16 : len,
+      x + inX * 0.1,
+      BOARD.waterY - 0.012,
+      z + inZ * 0.1,
+      P.m("trim"),
+      0.012,
+    );
+    foam.castShadow = false;
+    const what = Math.floor(rnd() * 4);
+    const along = (rnd() - 0.5) * 3.6;
+    const px = alongX ? along : x + inX * 0.55;
+    const pz = alongX ? z + inZ * 0.55 : along;
+    if (what === 0) {
+      // Bricole: three posts leaning together, a cap of trim on the tallest.
+      for (const [dx, dz, h] of [
+        [0, 0, 1.0],
+        [0.14, 0.06, 0.8],
+        [-0.05, 0.15, 0.72],
+      ] as const)
+        cyl(p, 0.05, 0.06, h, px + dx, BOARD.waterY - 0.3, pz + dz, P.m("wood"), 8);
+      cyl(p, 0.065, 0.065, 0.06, px, BOARD.waterY + 0.7, pz, P.m("trim"), 8);
+    } else if (what === 1) {
+      const sx = alongX ? along : x + inX * 0.3;
+      const sz = alongX ? z + inZ * 0.3 : along;
+      reeds(P, p as Group, sx, sz, rnd, BOARD.waterY);
+      reeds(P, p as Group, sx + (alongX ? 0.4 : 0), sz + (alongX ? 0 : 0.4), rnd, BOARD.waterY);
+    }
+  });
 }
