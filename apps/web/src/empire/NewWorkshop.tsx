@@ -120,7 +120,7 @@ export function NewWorkshopList({
                     {terroirBonus(p, at ?? undefined, b.type) > 0 && (
                       // Its land: it yields more on this tile (the terroirs).
                       <span
-                        className="ml-2 rounded-full bg-face/15 px-2 py-0.5 text-[0.6875rem] font-bold text-cream"
+                        className="ml-2 inline-block whitespace-nowrap rounded-full bg-face/15 px-2 py-0.5 align-middle text-[0.6875rem] font-bold text-cream"
                         data-terroir-tag
                       >
                         {t.terroir.tag(pct(terroirBonus(p, at ?? undefined, b.type)))}
