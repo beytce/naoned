@@ -166,6 +166,12 @@ try {
       .getByRole("button", { name: /suivant|commencer/i })
       .click();
   await page.waitForSelector("[data-porcellana-map]");
+  // The guided start and the places' first times passed (docs/plan-tutoriels.md): the Porta's play here.
+  await page.evaluate(() =>
+    localStorage.setItem("fondaco:tutor", JSON.stringify({ all: "skip" })),
+  );
+  await page.reload();
+  await page.waitForSelector("[data-porcellana-map]");
 
   // The Remise and the Porta on two tiles bought next to the house's (the square tiles: a place a
   // tile), their sites of a minute each.
