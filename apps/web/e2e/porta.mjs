@@ -167,9 +167,7 @@ try {
       .click();
   await page.waitForSelector("[data-porcellana-map]");
   // The guided start and the places' first times passed (docs/plan-tutoriels.md): the Porta's play here.
-  await page.evaluate(() =>
-    localStorage.setItem("fondaco:tutor", JSON.stringify({ all: "skip" })),
-  );
+  await page.evaluate(() => localStorage.setItem("fondaco:tutor", JSON.stringify({ all: "skip" })));
   await page.reload();
   await page.waitForSelector("[data-porcellana-map]");
 
