@@ -93,8 +93,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 <div class="ui foot">
   <div id="manbar" hidden>
     <div class="state" id="manstate"></div>
-    <button class="bell" id="bell" disabled>Sonner la cloche</button>
-    <button class="bell ghost" id="order">Ordre</button>
+    <button class="bell" id="bell" disabled>Brûlot (1)</button>
+    <button class="bell ghost" id="order">Recommencer</button>
     <button class="bell ghost" id="quit">Rompre</button>
   </div>
   <div class="caption" id="caption"><h2></h2><p></p><p class="do"></p></div>
@@ -273,143 +273,113 @@ function pill(x,y,title,sub,gauge,dark){
 }
 const price = q => Math.round(q.base*(.35+.65*q.d));
 
-/* ---------- the Manoeuvre: one tactical grammar for PvE and PvP ---------- */
-// The Manoeuvre rules, pure and deterministic: the same code plays the page and feeds the solver.
-const ENG = (() => {
-  const D = [[0,-1],[1,0],[0,1],[-1,0]]; // 0 north (towards the exit), 1 east, 2 south, 3 west
-  const key = (x,y) => x+','+y;
-  function init(L, order){
-    const pcs = [{t:'tete',hp:2}].concat(order.map(t => ({t, hp: t==='escorte' ? 2 : 1})));
-    pcs.forEach((p,k) => { p.x = L.start[0]; p.y = L.start[1]+k; });
-    return { W:L.W, H:L.H, rocks:new Set(L.rocks), bell:1, limit:L.limit, pcs, lost:0, res:null,
-      g: L.guard.map(q => ({k:q.k, x:q.x, y:q.y, d:q.d||0, ph:q.ph||0, alive:true, armed:-1})) };
-  }
-  const clone = s => ({...s, pcs:s.pcs.map(p => ({...p})), g:s.g.map(q => ({...q}))});
-  const inb = (s,x,y) => x>=0 && y>=0 && x<s.W && y<s.H;
-  const rock = (s,x,y) => s.rocks.has(key(x,y));
-  const gAt = (s,x,y) => s.g.find(q => q.alive && q.x===x && q.y===y);
-  const pAt = (s,x,y) => s.pcs.find(p => p.x===x && p.y===y);
-  function ray(s,x,y,d,max){ const out=[]; for (let n=0;n<max;n++){ x+=D[d][0]; y+=D[d][1]; if (!inb(s,x,y) || rock(s,x,y)) break; out.push([x,y]); } return out; }
-  // what the guard announces for the coming bell
-  function threats(s){ const out=[];
-    s.g.forEach((q,i) => { if (!q.alive) return;
-      if (q.k==='bombarde'){ if (s.bell%2===q.ph) ray(s,q.x,q.y,q.d,99).forEach(c => out.push({x:c[0],y:c[1],from:i})); }
-      else if (q.k==='sentinelle') ray(s,q.x,q.y,q.d,2).forEach(c => out.push({x:c[0],y:c[1],from:i}));
-      else if (q.k==='galere') D.forEach(v => { const x=q.x+v[0], y=q.y+v[1]; if (inb(s,x,y) && !rock(s,x,y)) out.push({x,y,from:i}); });
-      else if (q.k==='brulot' && q.armed>=0) ray(s,q.x,q.y,q.armed,99).forEach(c => out.push({x:c[0],y:c[1],from:i}));
-    }); return out; }
-  function canStep(s,path,x,y){ const h=s.pcs[0], last=path.length ? path[path.length-1] : h;
-    return Math.abs(x-last.x)+Math.abs(y-last.y)===1 && path.length<3 && inb(s,x,y) && !rock(s,x,y) && !gAt(s,x,y) && !pAt(s,x,y) && !path.some(p => p.x===x && p.y===y); }
-  function step(s0,path){ const s=clone(s0), ev=[], L=path.length, old=s.pcs.map(p => ({x:p.x,y:p.y}));
-    s.pcs.forEach((p,k) => { const q = k<L ? path[L-1-k] : old[k-L]; p.x=q.x; p.y=q.y; });
-    const hit = (p,by) => { p.hp--; ev.push({hit:p.t, x:p.x, y:p.y, by}); };
-    const kill = (q,by) => { q.alive=false; ev.push({sunk:q.k, x:q.x, y:q.y, by}); };
-    const live = p => p.hp>0;
-    const occP = (x,y) => s.pcs.find(p => live(p) && p.x===x && p.y===y);
-    // 1. the escort rams a galley it touches
-    const esc = s.pcs.find(p => p.t==='escorte');
-    if (esc) s.g.forEach(q => { if (q.alive && q.k==='galere' && Math.abs(q.x-esc.x)+Math.abs(q.y-esc.y)===1) kill(q,'escorte'); });
-    // 2. an armed fireship runs until something stops it, then blows up everything it touches, friend or foe
-    s.g.forEach(q => { if (!q.alive || q.k!=='brulot' || q.armed<0) return; const d=q.armed;
-      for (;;){ const x=q.x+D[d][0], y=q.y+D[d][1]; if (!inb(s,x,y) || rock(s,x,y) || occP(x,y) || gAt(s,x,y)) break; q.x=x; q.y=y; }
-      ev.push({boom:1, x:q.x, y:q.y}); q.alive=false;
-      D.forEach(v => { const x=q.x+v[0], y=q.y+v[1], p=occP(x,y), o=gAt(s,x,y); if (p) hit(p,'brulot'); if (o) kill(o,'brulot'); }); });
-    // 3. a shot stops at the first piece on its line, whoever it belongs to
-    const shot = (q,max) => { for (const c of ray(s,q.x,q.y,q.d,max)){ const p=occP(c[0],c[1]); if (p){ hit(p,q.k); return; } const o=gAt(s,c[0],c[1]); if (o){ kill(o,q.k); return; } } };
-    s.g.forEach(q => { if (q.alive && q.k==='bombarde' && s.bell%2===q.ph) shot(q,99); });
-    s.g.forEach(q => { if (q.alive && q.k==='sentinelle') shot(q,2); });
-    s.g.forEach(q => { if (q.alive && q.k==='galere') D.forEach(v => { const p=occP(q.x+v[0],q.y+v[1]); if (p) hit(p,'galere'); }); });
-    const head = s.pcs[0], headDead = head.hp<=0;
-    s.lost += s.pcs.filter(p => p.hp<=0 && p.t==='cale').length; s.pcs = s.pcs.filter(live);
-    if (headDead){ s.res='coule'; return {s,ev}; }
-    if (head.y===0){ s.res='passe'; return {s,ev}; }
-    // 4. the guard reacts, each piece by its own fixed rule
-    s.g.forEach(q => { if (!q.alive) return;
-      if (q.k==='galere'){ const dx=Math.sign(head.x-q.x), dy=Math.sign(head.y-q.y), hz=Math.abs(head.x-q.x)>=Math.abs(head.y-q.y);
-        for (const [mx,my] of hz ? [[dx,0],[0,dy]] : [[0,dy],[dx,0]]){ if (!mx && !my) continue; const x=q.x+mx, y=q.y+my;
-          if (inb(s,x,y) && !rock(s,x,y) && !gAt(s,x,y) && !pAt(s,x,y)){ q.x=x; q.y=y; break; } } }
-      else if (q.k==='sentinelle') q.d=(q.d+1)%4;
-      else if (q.k==='brulot' && q.armed<0){ for (let d=0; d<4 && q.armed<0; d++){ let x=q.x, y=q.y;
-        for (;;){ x+=D[d][0]; y+=D[d][1]; if (!inb(s,x,y) || rock(s,x,y) || gAt(s,x,y)) break; if (pAt(s,x,y)){ q.armed=d; break; } } } } });
-    s.bell++; if (s.bell>s.limit) s.res='chaine';
-    return {s,ev}; }
-  return {D, init, clone, threats, canStep, step};
+/* ---------- la Passe: the thread against the chain, one duel for PvE and PvP ---------- */
+// "La Passe": the thread against the chain. Pure and deterministic; the page and the balance script share it.
+// Cells: 0 empty, 1 thread (attacker), 2 chain (defender), 3 reef (the chain may hook onto it).
+// The thread wins by linking the south bank to the north bank; the chain by linking the west bank to the east bank.
+// Two pieces are linked side by side, or along the one diagonal the current runs (north-east / south-west).
+// With these six neighbours the square board is a Hex board: once it is full exactly one side has linked, so no game is drawn.
+const PASSE = (() => {
+  const N6 = [[0,-1],[1,-1],[1,0],[0,1],[-1,1],[-1,0]];
+  const init = L => ({ W:L.W, H:L.H, g:L.cells.slice(), turn:L.first||1, moves:[0,0,0], fire:[0, L.fire?L.fire[0]:1, L.fire?L.fire[1]:1], win:0 });
+  const clone = s => ({...s, g:s.g.slice(), moves:s.moves.slice(), fire:s.fire.slice()});
+  // fewest empty cells a side still has to take to link its two banks (99: cut off)
+  function dist(s, side){ const {W,H,g} = s, d = new Array(W*H).fill(99), dq = [];
+    const mine = v => side===1 ? v===1 : (v===2 || v===3), cost = v => mine(v) ? 0 : v===0 ? 1 : 99;
+    const push = (i,c) => { if (c < d[i]){ d[i] = c; if (cost(g[i])===0) dq.unshift(i); else dq.push(i); } };
+    if (side===1){ for (let x=0;x<W;x++){ const i=(H-1)*W+x, c=cost(g[i]); if (c<99) push(i,c); } }
+    else for (let y=0;y<H;y++){ const i=y*W, c=cost(g[i]); if (c<99) push(i,c); }
+    let best = 99;
+    while (dq.length){ const i = dq.shift(), x = i%W, y = (i-x)/W;
+      if (side===1 ? y===0 : x===W-1) best = Math.min(best, d[i]);
+      for (const v of N6){ const nx=x+v[0], ny=y+v[1]; if (nx<0||ny<0||nx>=W||ny>=H) continue;
+        const j=ny*W+nx, c=cost(g[j]); if (c<99) push(j, d[i]+c); } }
+    return best; }
+  const lonely = (s,i) => { const x=i%s.W, y=(i-x)/s.W; return !N6.some(v => { const nx=x+v[0], ny=y+v[1]; return nx>=0&&ny>=0&&nx<s.W&&ny<s.H && s.g[ny*s.W+nx]===1; }); };
+  const touches = (s,i,val) => { const x=i%s.W, y=(i-x)/s.W; return N6.some(v => { const nx=x+v[0], ny=y+v[1]; return nx>=0&&ny>=0&&nx<s.W&&ny<s.H && s.g[ny*s.W+nx]===val; }); };
+  // A move is {i} (lay a piece) or {i, fire:true}: the thread's fireship burns a chain post next to one of its barges;
+  // the chain's bombard sinks a barge that stands alone.
+  function legal(s){ const out = [], me = s.turn;
+    for (let i=0;i<s.g.length;i++){ if (s.g[i]===0) out.push({i});
+      else if (s.fire[me] > 0 && me===1 && s.g[i]===2 && touches(s,i,1)) out.push({i, fire:true});
+      else if (s.fire[me] > 0 && me===2 && s.g[i]===1 && lonely(s,i)) out.push({i, fire:true}); }
+    return out; }
+  function play(s0, m){ const s = clone(s0), me = s.turn;
+    if (m.fire){ s.g[m.i] = 0; s.fire[me]--; } else s.g[m.i] = me;
+    s.moves[me]++; s.turn = 3 - me;
+    if (dist(s,1)===0) s.win = 1; else if (dist(s,2)===0) s.win = 2;
+    return s; }
+  // A plain opponent: looks one reply ahead and weighs how far each side still is from linking its banks.
+  function think(s, rnd){ const me = s.turn, other = 3 - me, val = t => t.win===me ? 500 : t.win===other ? -500 : dist(t,other) - dist(t,me);
+    const first = legal(s).map(m => { const t = play(s,m); return {m, t, v:val(t) - (m.fire ? 1.5 : 0)}; }).sort((a,b) => b.v - a.v).slice(0, 12);
+    let best = null;
+    for (const c of first){ let w = c.v;
+      if (!c.t.win){ w = 999; for (const r of legal(c.t)){ const u = play(c.t, r), x = u.win===me ? 500 : u.win===other ? -500 : dist(u,other) - dist(u,me); if (x < w) w = x; } }
+      const cx = c.m.i % s.W - (s.W-1)/2, cy = Math.floor(c.m.i / s.W) - (s.H-1)/2;
+      c.w = w - (Math.abs(cx) + Math.abs(cy)) * .01 + (rnd ? rnd() * .3 : 0);
+      if (!best || c.w > best.w) best = c; }
+    return best && best.m; }
+  return {N6, init, clone, dist, legal, play, think, lonely, touches};
 })();
 let man = null;
 const foot = document.querySelector('.foot');
 $('caption').onclick = () => $('caption').classList.toggle('open');
-const GW=7, GH=10;
-// Two guards found by search: both can be passed with the whole cargo, neither by haste nor by avoiding only the next blow.
-const GUARDS = {
-  npc:   {W:7,H:10,start:[3,6],limit:6,rocks:['3,4','0,7','1,4','5,7','2,5'],guard:[{k:'bombarde',x:6,y:3,d:3,ph:1},{k:'sentinelle',x:1,y:3,d:2},{k:'sentinelle',x:4,y:4,d:2},{k:'galere',x:1,y:1},{k:'galere',x:2,y:8},{k:'brulot',x:0,y:4}]},
-  rival: {W:7,H:10,start:[3,6],limit:6,rocks:['3,4','2,6','0,2','6,4'],guard:[{k:'bombarde',x:6,y:1,d:3,ph:1},{k:'sentinelle',x:5,y:3,d:2},{k:'galere',x:2,y:1},{k:'brulot',x:2,y:3}]},
+const GW=7, GH=7;
+// 0 empty, 2 a chain post laid in advance, 3 a reef the chain hooks onto (the tower itself stands on one)
+const BOARDS = {
+  npc:   {W:7,H:7,first:1,cells:[0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,3,0,0,0,0,0, 0,0,0,3,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0]},
+  rival: {W:7,H:7,first:1,cells:[0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,2,0, 0,0,0,3,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0]},
 };
-const ORDERS=[['escorte','cale','cale'],['cale','escorte','cale'],['cale','cale','escorte']];
-const NAMES={tete:'tête',cale:'cale',escorte:'escorte'}, GN={bombarde:'bombarde',sentinelle:'sentinelle',galere:'galère',brulot:'brûlot'};
-function resetMan(){
-  const s=ENG.init(man.L,ORDERS[man.ord]); s.pcs.forEach((p,k)=>{ p.id=k; });
-  Object.assign(man,{s,rocks:s.rocks,path:[],phase:'plan',started:false,moving:null,flash:[],fore:null,strikes:ENG.threats(s)}); manText();
-}
+function resetMan(){ Object.assign(man,{s:PASSE.init(man.L),mode:'place',busy:false,flash:[],last:-1}); manText(); }
 function startMan(pass){
   select(null);
-  man = { pass, a:pass.i-3, b:pass.j-4, L:GUARDS[pass.holder==='npc'?'npc':'rival'], ord:2 };
-  resetMan(); Object.assign(goal,{x:man.a+3.5,y:man.b+5.2,z:Math.min(vw/6.2,(vh-250)/3.6,96)}); markRuler();
+  man = { pass, a:pass.i-3, b:pass.j-3, L:BOARDS[pass.holder==='npc'?'npc':'rival'] };
+  resetMan(); Object.assign(goal,{x:man.a+3.5,y:man.b+3.9,z:Math.min(vw/5.4,(vh-260)/2.9,112)}); markRuler();
   $('manbar').hidden=false; $('thread').hidden=true; foot.classList.add('man'); $('caption').classList.remove('open');
-  setCaption(pass.holder==='npc' ? 'La Manœuvre : forcer Segna' : 'La Manœuvre : forcer Chioggia',
-    (pass.holder==='npc' ? 'La garde d’Ivo le Borgne. ' : 'Cette garde a été disposée par un joueur, absent ce soir : c’est le même jeu. ') + 'Tout est visible, rien n’est caché ni tiré au sort : étudie avant de bouger. La bombarde tire sur sa ligne une cloche sur deux, et son tir s’arrête à la première pièce qu’il rencontre, à toi ou à elle. La sentinelle frappe deux cases devant elle, puis tourne d’un quart de tour. La galère frappe les cases qui la touchent et te suit ; ton escorte la coule en la frôlant. Le brûlot dort : dès qu’il voit une de tes pièces dans sa ligne, il fonce à la cloche suivante et fait sauter tout ce qu’il touche, ses amis compris. Six cloches, pas une de plus.',
-    'Choisis l’ordre de ta file, trace une à trois cases depuis la tête rouge, lis la prévision, sonne. Sauver les deux cales demande de voir plusieurs cloches à l’avance.');
+  setCaption(pass.holder==='npc' ? 'La Passe : forcer Segna' : 'La Passe : forcer Chioggia',
+    (pass.holder==='npc' ? 'Un duel contre Ivo le Borgne. ' : 'Les Contarini sont absents : leur lieutenant joue pour eux, avec le maillon qu’ils ont posé d’avance. Présents, ce serait eux, en direct. ') + 'Toi, tu es le fil : relie la rive du sud à la rive du nord. Lui, c’est la chaîne : il veut relier l’ouest à l’est. Chacun pose une pièce à son tour. Deux pièces se tiennent quand elles sont côte à côte, ou en biais dans le sens du courant (les petits traits au sol). Une seule des deux lignes peut aboutir : il n’y a jamais de partie nulle. Une fois par duel, ton brûlot brûle un maillon voisin d’une de tes barges ; une fois, sa bombarde coule une barge restée seule.',
+    'Touche une case pour y poser une barge. Moins tu en poses, plus tu sauves de cargaison.');
 }
-function landing(){ const L=man.path.length, old=man.s.pcs.map(p=>({x:p.x,y:p.y})); return man.s.pcs.map((p,k)=>({p, q:k<L?man.path[L-1-k]:old[k-L]})); }
 function manText(){
-  const s=man.s, c=s.pcs.filter(p=>p.t==='cale').length, e=s.pcs.find(p=>p.t==='escorte');
-  let f='';
-  if (man.phase==='plan' && man.fore){ const h=man.fore.ev.filter(o=>o.hit).map(o=>NAMES[o.hit]), k=man.fore.ev.filter(o=>o.sunk).map(o=>GN[o.sunk]);
-    f=' · si tu sonnes : '+(h.length?h.join(', ')+' touchée'+(h.length>1?'s':''):'rien de touché chez toi')+(k.length?' ; '+k.join(', ')+' détruite'+(k.length>1?'s':''):''); }
-  $('manstate').textContent=`Cloche ${Math.min(s.bell,s.limit)} sur ${s.limit} · ${c} cale${c>1?'s':''} · escorte ${e?e.hp+'/2':'perdue'}`+f;
-  $('bell').disabled = man.phase!=='plan' || !man.path.length;
-  $('order').textContent = man.started ? 'Recommencer' : 'Ordre : tête, '+ORDERS[man.ord].join(', ');
+  const s=man.s, a=PASSE.dist(s,1), d=PASSE.dist(s,2);
+  $('manstate').textContent = s.win ? (s.win===1?'Le fil est passé.':'La chaîne est tendue.') :
+    `${man.busy?'À lui':'À toi'} · il te manque ${a} case${a>1?'s':''} · il lui en manque ${d} · ${s.moves[1]} barge${s.moves[1]>1?'s':''} posée${s.moves[1]>1?'s':''}`;
+  const can = !s.win && !man.busy && s.fire[1]>0 && PASSE.legal(s).some(m=>m.fire);
+  $('bell').disabled = !can && man.mode!=='fire';
+  $('bell').textContent = man.mode==='fire' ? 'Choisis un maillon à brûler' : s.fire[1]>0 ? 'Brûlot (1)' : 'Brûlot utilisé';
+  $('order').textContent = 'Recommencer';
+}
+function reply(){
+  man.busy=true; manText();
+  setTimeout(()=>{ if (!man) return; const s=man.s, m=PASSE.think(s);
+    if (m.fire) say('Sa bombarde coule ta barge restée seule.');
+    man.s=PASSE.play(s,m); man.last=m.i; man.flash=[{i:m.i,t:performance.now()}]; man.busy=false; manText();
+    if (man.s.win) endMan();
+  }, reduce?10:560);
 }
 function manTap(x,y){
-  if (!man || man.phase!=='plan') return;
-  const h=man.s.pcs[0], n=man.path.length, prev=n>1?man.path[n-2]:(n?h:null);
-  if (x===h.x && y===h.y) man.path=[];
-  else if (prev && prev.x===x && prev.y===y) man.path.pop();
-  else if (ENG.canStep(man.s,man.path,x,y)) man.path.push({x,y});
-  else return;
-  man.fore = man.path.length ? ENG.step(man.s,man.path) : null; manText();
+  if (!man || man.busy || man.s.win || x<0 || y<0 || x>=GW || y>=GH) return;
+  const s=man.s, i=y*GW+x, m=PASSE.legal(s).find(m=>m.i===i && !!m.fire===(man.mode==='fire'));
+  if (!m){ if (man.mode==='fire'){ man.mode='place'; manText(); } return; }
+  if (m.fire) say('Ton brûlot emporte un maillon.');
+  man.s=PASSE.play(s,m); man.mode='place'; man.flash=[{i,t:performance.now()}]; manText();
+  if (man.s.win) endMan(); else reply();
 }
-function ring(){
-  if (!man || man.phase!=='plan' || !man.path.length) return;
-  const r = man.fore || ENG.step(man.s,man.path);
-  man.moving = landing().map(o=>({p:o.p, fx:o.p.x, fy:o.p.y, tx:o.q.x, ty:o.q.y}));
-  Object.assign(man,{path:[],fore:null,started:true,phase:'move',anim:performance.now()}); manText();
-  setTimeout(()=>{ if (!man) return; const now=performance.now();
-    man.flash = r.ev.filter(e=>e.hit||e.boom||e.sunk).map(e=>({x:e.x,y:e.y,t:now}));
-    const sunk = r.ev.filter(e=>e.sunk);
-    if (sunk.length) say(sunk.map(e=>GN[e.sunk]+' détruite par '+(e.by==='escorte'?'ton escorte':e.by==='brulot'?'le brûlot':'le tir de la '+GN[e.by])).join(' ; ')+'.');
-    man.s=r.s; man.rocks=r.s.rocks; man.moving=null;
-    if (r.s.res) return endMan(r.s.res);
-    man.phase='plan'; man.strikes=ENG.threats(man.s); manText();
-  }, reduce?10:520);
-}
-function endMan(res){
-  const pass=man.pass, cales=man.s.pcs.filter(p=>p.t==='cale').length, was=pass.holder;
-  man.phase='end'; man.strikes=[]; manText();
+function endMan(){
+  const pass=man.pass, won=man.s.win===1, n=man.s.moves[1], cales=n<=8?3:n<=10?2:1, was=pass.holder; manText();
   setTimeout(()=>{ if (!man) return;
-    if (res!=='passe' || !cales){
-      say(res==='coule' ? 'La tête est coulée : tu perds la cargaison engagée, rien d’autre. Recommence.' : res==='chaine' ? 'Sixième cloche : la chaîne du port se referme. Recommence.' : 'Passé, mais sans une seule cale : rien à vendre. Recommence.');
-      resetMan(); return; }
+    if (!won){ say('La chaîne est tendue d’une rive à l’autre : tu perds la cargaison engagée, rien d’autre. Recommence.'); resetMan(); return; }
     man=null; $('manbar').hidden=true; $('thread').hidden=false; foot.classList.remove('man');
     pass.holder='me'; pass.toll=10; ducats += cales*60; paint();
-    say(`Passé, ${cales} cale${cales>1?'s':''} sur 2.` + (cales<2 ? ' Une solution sauve les deux.' : ' Sans une perte.'));
-    setCaption('Le passage est à toi', was==='npc' ? 'L’encre recule autour du détroit : la planche redevient blanche, la route de Raguse s’ouvre, et chaque convoi qui passe te paie un péage. D’autres Maisons viendront te le disputer, par la même Manœuvre, contre la garde que tu auras disposée et prouvée toi-même.' : 'Les Contarini ne perdent ni leur île ni leurs ateliers : seulement cette tour, qu’ils pourront te reprendre. Tes convois vers Ferrare ne paient plus.', 'Tire un fil du quai vers ' + (was==='npc'?'Raguse':'Ferrare') + ', ou continue la visite.');
+    say(`Passé en ${n} barges : ${cales} cale${cales>1?'s':''} sur 3 sauvée${cales>1?'s':''}.`);
+    setCaption('Le passage est à toi', was==='npc' ? 'L’encre recule autour du détroit : la planche redevient blanche, la route de Raguse s’ouvre, et chaque convoi qui passe te paie un péage. D’autres Maisons viendront te le disputer : cette fois, la chaîne, ce sera toi.' : 'Les Contarini ne perdent ni leur île ni leurs ateliers : seulement cette tour, qu’ils pourront te reprendre. Tes convois vers Ferrare ne paient plus.', 'Tire un fil du quai vers ' + (was==='npc'?'Raguse':'Ferrare') + ', ou continue la visite.');
     go(2,{i:(pass.i+20)/2,j:(pass.j+15)/2});
-  }, 900);
+  }, 1100);
 }
-$('bell').onclick = ring;
-$('order').onclick = () => { if (!man) return; if (!man.started) man.ord=(man.ord+1)%3; resetMan(); };
+$('bell').onclick = () => { if (!man || man.busy || man.s.win) return; man.mode = man.mode==='fire' ? 'place' : 'fire'; manText(); };
+$('order').onclick = () => { if (man) resetMan(); };
 $('quit').onclick = () => { if(!man) return; man=null; $('manbar').hidden=true; $('thread').hidden=false; foot.classList.remove('man'); showBead(cur); };
-window.__man = { tap:manTap, ring, get:()=>man };
+window.__man = { tap:manTap, get:()=>man };
 
 /* ---------- selection, petals, card ---------- */
 let sel = null;
@@ -428,8 +398,8 @@ function factsFor(q){
 function actionsFor(q){
   const tour = t => () => say(t);
   if (q.k==='pass'){
-    if (q.holder==='me') return [{label:'Disposer la garde',sub:'pour quand on te défiera',run:tour('Tu places galères et écueils : ta défense se joue sans toi.')},{label:'Régler le péage',sub:q.toll+' ducats',run:tour('Trop cher, les convois font le détour ; trop bas, tu ne gagnes rien.')}];
-    return [{label:'Payer',sub:q.toll+' ducats par convoi',run:tour(q.holder==='npc'?'Ivo prend sa rançon et laisse passer, cette fois.':'Tes convois passent ; les Contarini encaissent.')},{label:'Forcer le passage',sub:'la Manœuvre, 2 minutes',go:true,run:()=>startMan(q)}];
+    if (q.holder==='me') return [{label:'Poser tes maillons',sub:'pour ton lieutenant',run:tour('Tu poses d’avance quelques maillons : ton lieutenant défend avec, quand tu n’es pas là.')},{label:'Régler le péage',sub:q.toll+' ducats',run:tour('Trop cher, les convois font le détour ; trop bas, tu ne gagnes rien.')}];
+    return [{label:'Payer',sub:q.toll+' ducats par convoi',run:tour(q.holder==='npc'?'Ivo prend sa rançon et laisse passer, cette fois.':'Tes convois passent ; les Contarini encaissent.')},{label:'Forcer le passage',sub:'la Passe, un duel de 2 minutes',go:true,run:()=>startMan(q)}];
   }
   if (q.dst){ const mine=threads.find(t=>t.owner==='me'&&t.to===q);
     return mine ? [{label:'Reprendre le fil',sub:'rend une bobine',run:()=>{ threads.splice(threads.indexOf(mine),1); spools++; paint(); select(q); say('Fil repris.'); }}] : [{label:'Tirer un fil jusqu’ici',sub:'glisse depuis ton quai',go:true,run:()=>pull(q)}]; }
@@ -459,7 +429,7 @@ const beads = [
   {n:'Le fil', t:'Un seul geste : tirer un fil rouge', p:'Tu n’envoies pas des charrettes une à une. Tu tends un fil de ton quai à une ville, et tes barques le suivent. Tu n’as que cinq bobines : où vont tes fils, c’est toute ta stratégie.', d:'Glisse du quai (la caisse rouge) jusqu’à Vérone ou Padoue.', run:()=>{ go(2,{i:15,j:13}); }},
   {n:'Les autres', t:'On te devance, on ne te vole pas', p:'Le fil d’encre est celui des Contarini, le céladon celui de tes associés. Chaque ville a une demande limitée, commune à tous : plus il y a de fils, plus le prix tombe. Le premier fournisseur y plante son pavillon. Reprendre un fil pour le tendre ailleurs, voilà la décision de chaque visite.', d:'Touche Padoue : regarde sa demande, tends un fil, compare avec Vérone.', run:()=>{ go(2,{i:13,j:14}); select(P('padoue')); }},
   {n:'Le passage', t:'PvE et PvP : le même acte', p:'Les routes riches passent par des passages, et tout passage est tenu par quelqu’un. Chioggia par une Maison rivale, Segna par un corsaire. Devant l’un comme devant l’autre, le choix est le même : payer, ou forcer. Affronter le jeu ou affronter un joueur n’est plus un mode, c’est une question de qui tient la tour.', d:'Touche la Bouche de Chioggia, au sud de la lagune.', run:()=>{ go(2,{i:24,j:19}); select(P('chioggia')); }},
-  {n:'La Manœuvre', t:'Deux minutes de vrai jeu', p:'Le détroit de Segna ferme la route des épices. Le forcer se joue ici même, sur les cases de la carte, avec ta vraie cargaison.', d:'Touche « Forcer le passage ».', run:()=>{ tideTarget=0; go(2,{i:31,j:11}); goal.z*=1.25; select(P('segna')); }},
+  {n:'La Passe', t:'Le fil contre la chaîne', p:'Le détroit de Segna ferme la route des épices. Le forcer est un duel : ton fil du sud au nord, sa chaîne d’ouest en est. Il se joue ici même, sur les cases de la carte.', d:'Touche « Forcer le passage ».', run:()=>{ tideTarget=0; go(2,{i:31,j:11}); goal.z*=1.25; select(P('segna')); }},
   {n:'La marée', t:'La marée d’encre : l’histoire du monde', p:'Toutes les six semaines, l’encre monte du Large : le Turc, Milan, la peste. Les passages que les joueurs tiennent la repoussent ; ceux qu’ils lâchent noircissent. À la fin de la marée, le Large est redistribué et la course repart, à égalité. Ta lagune, elle, ne noircit jamais. La couleur de la planche dit où en est le monde.', d:'Regarde l’encre monter, puis reviens au début : elle se retire.', run:()=>{ go(3); tideTarget=1; }},
 ];
 let cur = 0;
@@ -516,31 +486,24 @@ function frame(t){
     if (joints){ poly([a,b,d,e], mix(jt,INK,p*.92)); const n=.045; poly([iso(i+n,j+n),iso(i+1-n,j+n),iso(i+1-n,j+1-n),iso(i+n,j+1-n)], mix(top,INK,p*.86)); }
     else poly([a,b,d,e], mix(top,INK,p*.86));
   }
-  // the Manoeuvre floor
-  if (man){
-    const cellQ=(x,y,n,z)=>{ const i=man.a+x, j=man.b+y; return [iso(i+n,j+n,z),iso(i+1-n,j+n,z),iso(i+1-n,j+1-n,z),iso(i+n,j+1-n,z)]; };
-    const trace=q=>{ g.beginPath(); g.moveTo(q[0][0],q[0][1]); q.slice(1).forEach(v=>g.lineTo(v[0],v[1])); g.closePath(); };
-    for (let x=0;x<GW;x++) for (let y=0;y<GH;y++){
-      poly(cellQ(x,y,.04,-.08), y===0?'rgba(194,59,46,.22)':'rgba(246,244,240,.16)');
-      if (man.rocks.has(x+','+y)) box(man.a+x+.25,man.b+y+.25,.5,.5,.3,-.08,'#8A8279','#6B645C','#57514A');
-    }
-    for (const s of man.strikes){ const f=man.s.g[s.from], a=iso(man.a+f.x+.5,man.b+f.y+.5,.12), b=iso(man.a+s.x+.5,man.b+s.y+.5,-.07);
-      g.strokeStyle='rgba(42,39,37,.5)'; g.lineWidth=1.5; g.setLineDash([3,4]); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); g.setLineDash([]); }
-    const seen=new Set();
-    for (const s of man.strikes){ if (seen.has(s.x+','+s.y)) continue; seen.add(s.x+','+s.y); const q=cellQ(s.x,s.y,.06,-.07);
-      g.save(); trace(q); g.clip();
-      g.fillStyle='rgba(246,244,240,.85)'; g.fill(); g.strokeStyle='#2A2725'; g.lineWidth=2; const st=cam.z*.11, x0=q[3][0], x1=q[1][0], y0=q[0][1], y1=q[2][1];
-      for (let u=x0-(y1-y0); u<x1; u+=st){ g.beginPath(); g.moveTo(u,y1); g.lineTo(u+(y1-y0),y0); g.stroke(); } g.restore();
-      g.strokeStyle='#2A2725'; g.lineWidth=2; trace(q); g.stroke(); }
-    if (man.path.length){ const h=man.s.pcs[0]; g.beginPath(); const s0=iso(man.a+h.x+.5,man.b+h.y+.5); g.moveTo(s0[0],s0[1]); man.path.forEach(p=>{ const s=iso(man.a+p.x+.5,man.b+p.y+.5); g.lineTo(s[0],s[1]); }); g.strokeStyle=RED; g.lineWidth=cam.z*.16; g.lineJoin='round'; g.lineCap='round'; g.globalAlpha=.85; g.stroke(); g.globalAlpha=1; }
-    // what the bell would do: where each piece stops, which are hit, what the guard loses
-    if (man.phase==='plan' && man.fore){ const ev=man.fore.ev, fs=Math.max(10,cam.z*.15);
-      const tag=(x,y,txt,col)=>{ const c=iso(man.a+x+.5,man.b+y+.5,-.06); g.font=`800 ${fs}px Manrope,system-ui,sans-serif`; g.textAlign='center'; g.textBaseline='middle'; g.lineWidth=3; g.strokeStyle='rgba(246,244,240,.92)'; g.strokeText(txt,c[0],c[1]); g.fillStyle=col; g.fillText(txt,c[0],c[1]); };
-      for (const o of landing()){ const hit=ev.some(e=>e.hit && e.x===o.q.x && e.y===o.q.y), q=cellQ(o.q.x,o.q.y,.14,-.06);
-        trace(q); g.fillStyle=hit?'rgba(42,39,37,.55)':'rgba(194,59,46,.28)'; g.fill(); g.strokeStyle=hit?'#2A2725':RED; g.lineWidth=2.5; g.setLineDash([5,4]); g.stroke(); g.setLineDash([]);
-        tag(o.q.x,o.q.y,NAMES[o.p.t]+(hit?' !':''),hit?'#2A2725':'#8E281E'); }
-      for (const e of ev){ if (e.boom){ const c=iso(man.a+e.x+.5,man.b+e.y+.5,-.05); g.strokeStyle=RED; g.lineWidth=2.5; g.beginPath(); g.ellipse(c[0],c[1],cam.z*.75,cam.z*.375,0,0,7); g.setLineDash([4,5]); g.stroke(); g.setLineDash([]); tag(e.x,e.y,'explose',RED); }
-        if (e.sunk){ const c=iso(man.a+e.x+.5,man.b+e.y+.5,.5), u=cam.z*.16; g.strokeStyle=RED; g.lineWidth=4; g.beginPath(); g.moveTo(c[0]-u,c[1]-u); g.lineTo(c[0]+u,c[1]+u); g.moveTo(c[0]+u,c[1]-u); g.lineTo(c[0]-u,c[1]+u); g.stroke(); } } }
+  // la Passe: the board, the banks, the current, the links
+  if (man){ const s=man.s, at=(x,y,z)=>iso(man.a+x,man.b+y,z==null?-.07:z), ctr=i=>iso(man.a+i%GW+.5,man.b+Math.floor(i/GW)+.5,-.05);
+    poly([at(0,GH),at(GW,GH),at(GW,GH+.45),at(0,GH+.45)],'rgba(194,59,46,.6)'); poly([at(0,-.45),at(GW,-.45),at(GW,0),at(0,0)],'rgba(194,59,46,.6)');
+    poly([at(-.45,0),at(0,0),at(0,GH),at(-.45,GH)],'rgba(42,39,37,.7)'); poly([at(GW,0),at(GW+.45,0),at(GW+.45,GH),at(GW,GH)],'rgba(42,39,37,.7)');
+    for (let y=0;y<GH;y++) for (let x=0;x<GW;x++){ const n=.04, v=s.g[y*GW+x];
+      poly([at(x+n,y+n),at(x+1-n,y+n),at(x+1-n,y+1-n),at(x+n,y+1-n)],'rgba(246,244,240,.3)');
+      if (v===0){ const a=at(x+.36,y+.64), b=at(x+.64,y+.36); g.strokeStyle='rgba(42,39,37,.22)'; g.lineWidth=1.5; g.lineCap='round'; g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); } }
+    const side=v=>v===1?1:v>=2?2:0;
+    for (let i=0;i<s.g.length;i++){ const me=side(s.g[i]); if (!me) continue; const x=i%GW, y=Math.floor(i/GW);
+      for (const [dx,dy] of [[1,0],[0,1],[1,-1]]){ const nx=x+dx, ny=y+dy; if (nx<0||ny<0||nx>=GW||ny>=GH||side(s.g[ny*GW+nx])!==me) continue;
+        const a=ctr(i), b=ctr(ny*GW+nx); g.lineCap='round'; g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]);
+        if (me===1){ g.strokeStyle=RED; g.lineWidth=cam.z*.17; g.stroke(); } else { g.strokeStyle='#2A2725'; g.lineWidth=cam.z*.09; g.setLineDash([cam.z*.08,cam.z*.09]); g.stroke(); g.setLineDash([]); } } }
+    for (let x=0;x<GW;x++){ for (const y of [0,GH-1]) if (s.g[y*GW+x]===1){ const a=ctr(y*GW+x), b=iso(man.a+x+.5,man.b+(y?GH+.2:-.2),-.05); g.strokeStyle=RED; g.lineWidth=cam.z*.17; g.lineCap='round'; g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); } }
+    for (let y=0;y<GH;y++){ for (const x of [0,GW-1]) if (s.g[y*GW+x]>=2){ const a=ctr(y*GW+x), b=iso(man.a+(x?GW+.2:-.2),man.b+y+.5,-.05); g.strokeStyle='#2A2725'; g.lineWidth=cam.z*.09; g.setLineDash([cam.z*.08,cam.z*.09]); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); g.setLineDash([]); } }
+    if (man.mode==='fire') for (const m of PASSE.legal(s)) if (m.fire){ const c=ctr(m.i); g.strokeStyle=RED; g.lineWidth=3; g.beginPath(); g.ellipse(c[0],c[1],cam.z*.5,cam.z*.25,0,0,7); g.stroke(); }
+    if (man.last>=0 && s.g[man.last]){ const c=ctr(man.last); g.strokeStyle='#2A2725'; g.lineWidth=2; g.setLineDash([4,4]); g.beginPath(); g.ellipse(c[0],c[1],cam.z*.46,cam.z*.23,0,0,7); g.stroke(); g.setLineDash([]); }
+    const fs=Math.max(11,cam.z*.15), tag=(x,y,txt,col)=>{ const c=iso(man.a+x,man.b+y,-.05); g.font=`800 ${fs}px Manrope,system-ui,sans-serif`; g.textAlign='center'; g.textBaseline='middle'; g.lineWidth=4; g.strokeStyle='rgba(246,244,240,.9)'; g.strokeText(txt,c[0],c[1]); g.fillStyle=col; g.fillText(txt,c[0],c[1]); };
+    tag(GW/2,GH+.95,'SUD · ta rive','#8E281E'); tag(GW/2,-.95,'NORD · ta rive','#8E281E'); tag(-1.1,GH/2,'OUEST','#2A2725'); tag(GW+1.1,GH/2,'EST','#2A2725');
   }
   // threads
   for (const th of threads){ const me=th.owner==='me', age=(t-th.born)/700, bl=blocked(th);
@@ -558,29 +521,17 @@ function frame(t){
     if (th.owner==='me' && th.ph<before){ const gain=price(th.to)*4 - (th.via&&th.via.holder!=='me'?th.via.toll:0); ducats+=gain; paint(); pops.push({q:th.to,v:gain,t}); }
     for (let b=0;b<n;b++){ const f=(th.ph+b/n)%1, q=along(th.r,f*th.r.L); things.push({d:q[0]+q[1],boat:q,col:OWN[th.owner].c}); } }
   for (const q of places) things.push({d:q.i+q.j+(q.k==='rialto'?2.2:1),q});
-  if (man){ man.s.g.forEach(q=>{ if(q.alive) things.push({d:man.a+q.x+man.b+q.y+1,gal:q}); });
-    if (man.moving){ const f=sm((t-man.anim)/480); man.moving.forEach(m=>{ const x=m.fx+(m.tx-m.fx)*f, y=m.fy+(m.ty-m.fy)*f; things.push({d:man.a+x+man.b+y+1,pc:m.p,x,y}); }); }
-    else man.s.pcs.forEach(p=>things.push({d:man.a+p.x+man.b+p.y+1,pc:p,x:p.x,y:p.y})); }
+  if (man) for (let i=0;i<man.s.g.length;i++){ const v=man.s.g[i]; if (v && !(v===3 && i===24)) things.push({d:man.a+i%GW+man.b+Math.floor(i/GW)+1, st:v, x:i%GW, y:Math.floor(i/GW)}); }
   things.sort((a,b)=>a.d-b.d);
   for (const o of things){
     if (o.q) drawPlace(o.q,t);
     else if (o.boat){ const [x,y]=o.boat; if (cam.z<18) { const c=iso(x,y,.05); g.fillStyle=o.col; g.fillRect(c[0]-1.5,c[1]-1.5,3,3); } else { box(x-.11,y-.07,.22,.14,.06,0,'#F6F4F0','#DDD5C8','#CFC6B8'); const m=iso(x,y,.06), s=cam.z*.13; poly([[m[0],m[1]-s*1.3],[m[0]+s*.6,m[1]-s*.2],[m[0],m[1]-s*.1]],o.col); } }
-    else if (o.gal){ const q=o.gal, i=man.a+q.x, j=man.b+q.y, v=ENG.D[q.k==='brulot'&&q.armed>=0?q.armed:q.d], m=iso(i+.5,j+.5,.1), s=cam.z*.3;
-      if (q.k==='bombarde'){ box(i+.2,j+.2,.6,.6,.3,-.08,'#3A3633','#2A2725','#1E1C1A'); box(i+.4+v[0]*.26,j+.4+v[1]*.26,.2,.2,.14,.22,'#6B645C','#57514A','#3A3633'); }
-      else if (q.k==='sentinelle'){ box(i+.34,j+.34,.32,.32,.7,-.08,'#57514A','#3A3633','#2A2725'); box(i+.28,j+.28,.44,.44,.08,.62,'#6B645C','#57514A','#3A3633');
-        const a=iso(i+.5,j+.5,.78), b=iso(i+.5+v[0]*.42,j+.5+v[1]*.42,.78); g.strokeStyle=RED; g.lineWidth=3; g.lineCap='round'; g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); }
-      else if (q.k==='galere'){ box(i+.2,j+.3,.6,.4,.16,-.08,'#3A3633','#2A2725','#1E1C1A'); poly([[m[0],m[1]-s*1.2],[m[0]+s*.55,m[1]-s*.3],[m[0],m[1]-s*.15]],'#2A2725'); }
-      else { box(i+.28,j+.34,.44,.32,.12,-.08,'#57514A','#3A3633','#2A2725'); g.fillStyle=RED; g.beginPath(); g.arc(m[0],m[1]-s*.2,s*(q.armed>=0?.3*(reduce?1:1+.25*Math.sin(t/120)):.14),0,7); g.fill(); }
-      if (!man.started && cam.z>40){ const c=iso(i+.5,j+.5,q.k==='sentinelle'?1.1:.62), fs=Math.max(10,cam.z*.14), txt=GN[q.k]; g.font=`700 ${fs}px Manrope,system-ui,sans-serif`; g.textAlign='center'; g.textBaseline='middle'; const w=g.measureText(txt).width+10;
-        g.fillStyle='#2A2725'; g.beginPath(); g.roundRect(c[0]-w/2,c[1]-fs*.75,w,fs*1.5,3); g.fill(); g.fillStyle='#F6F4F0'; g.fillText(txt,c[0],c[1]); } }
-    else if (o.pc){ const i=man.a+o.x, j=man.b+o.y, p=o.pc, col=p.t==='tete'?RED:p.t==='escorte'?'#F6F4F0':'#E4DCCF';
-      box(i+.24,j+.3,.52,.4,p.t==='cale'?.26:.16,-.08,col,p.t==='tete'?'#A53227':'#DDD5C8',p.t==='tete'?'#8E281E':'#C8BFB1');
-      const m=iso(i+.5,j+.5,.12), s=cam.z*.3;
-      if (p.t==='tete') poly([[m[0],m[1]-s*1.2],[m[0]+s*.55,m[1]-s*.3],[m[0],m[1]-s*.15]],RED);
-      if (p.t==='escorte'){ g.strokeStyle=RED; g.lineWidth=3; g.beginPath(); g.arc(m[0],m[1]-s*.35,s*.28,0,7); g.stroke(); if(p.hp<2){ g.strokeStyle='#2A2725'; g.lineWidth=1.5; g.beginPath(); g.moveTo(m[0]-s*.3,m[1]-s*.1); g.lineTo(m[0]+s*.1,m[1]+s*.25); g.stroke(); } }
-      if (p.t==='cale'){ g.fillStyle=RED; g.fillRect(m[0]-s*.12,m[1]-s*.62,s*.24,s*.2); } }
+    else if (o.st){ const i=man.a+o.x, j=man.b+o.y, m=iso(i+.5,j+.5,.1), s=cam.z*.3;
+      if (o.st===1){ box(i+.24,j+.32,.52,.36,.14,-.06,'#F6F4F0','#DDD5C8','#C8BFB1'); poly([[m[0],m[1]-s*1.25],[m[0]+s*.6,m[1]-s*.3],[m[0],m[1]-s*.15]],RED); }
+      else if (o.st===2){ box(i+.33,j+.33,.34,.34,.34,-.06,'#3A3633','#2A2725','#1E1C1A'); box(i+.28,j+.28,.44,.44,.07,.28,'#57514A','#3A3633','#2A2725'); }
+      else box(i+.22,j+.22,.56,.56,.26,-.06,'#8A8279','#6B645C','#57514A'); }
   }
-  if (man) for (const f of man.flash){ const a=1-(t-f.t)/500; if (a<=0) continue; const c=iso(man.a+f.x+.5,man.b+f.y+.5); g.beginPath(); g.ellipse(c[0],c[1],cam.z*.5*(1.3-a*.4),cam.z*.25*(1.3-a*.4),0,0,7); g.fillStyle=`rgba(42,39,37,${a*.6})`; g.fill(); }
+  if (man) for (const f of man.flash){ const a=1-(t-f.t)/600; if (a<=0) continue; const c=iso(man.a+f.i%GW+.5,man.b+Math.floor(f.i/GW)+.5,-.05); g.beginPath(); g.ellipse(c[0],c[1],cam.z*.5*(1.5-a*.5),cam.z*.25*(1.5-a*.5),0,0,7); g.strokeStyle=`rgba(194,59,46,${a})`; g.lineWidth=3; g.stroke(); }
   // labels
   if (!man) for (const q of places){ if (q.k==='libre'||q.k==='atelier'&&cam.z<70||q.k==='quai'&&cam.z<70) continue;
     if (cam.z<26 && q.k==='palazzo' && !q.mine) continue;

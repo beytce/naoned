@@ -22,7 +22,7 @@ Elles remplacent les huit règles du 1er novembre. En cas de conflit, elles prim
 2. **Un seul geste : le fil.** Le rouge est réservé à ce que le joueur a tracé et à la seule action mise en avant. Toute fonctionnalité nouvelle se fait avec le fil ou les pétales (§ 14), sinon elle n'entre pas.
 3. **Ton île t'appartient.** Personne ne prend ni ne détruit ce qui s'y trouve.
 4. **On te devance, on ne te vole pas.** Ce qui se dispute, ce sont les places de la planche commune et le rang. On ne risque que ce qu'on engage.
-5. **Tout coup est annoncé.** Dans une Manœuvre comme sur la planche (une sortie de corsaires, la marée), on ne perd jamais sans avoir pu le voir venir. La Manœuvre est un problème à information complète : rien de caché, aucun hasard, et aucune garde qu'on ne puisse résoudre.
+5. **Tout est visible.** La Passe est un duel sans hasard ni pièce cachée ; sur la planche (une sortie de corsaires, la marée), rien ne tombe sans avoir été annoncé.
 6. **À armes égales.** La force engagée dans un passage est fixée par le passage, la même pour tous. Ni la caisse, ni le rang, ni l'ancienneté, ni l'argent réel ne donnent de puissance.
 7. **Chacun peut être le meilleur.** Le rang repart de zéro à chaque marée. Les classements mesurent l'adresse, jamais la taille ni l'ancienneté. **(revue)**
 8. **Rien ne s'accumule sans fin, et on ne perd rien en dormant.** Tout a un plafond ; les tours ont une trêve de nuit ; aucune série de connexion, aucune récompense qui expire.
@@ -106,7 +106,7 @@ Un fil vers le quai d'une autre Maison lui vend ou lui achète directement. **(r
 
 ### 7.2 Forcer
 
-- **Forcer** un passage, c'est gagner une Manœuvre (§ 9) contre sa garde, avec un convoi et une cargaison prise dans son entrepôt.
+- **Forcer** un passage, c'est gagner une Passe (§ 9) : un duel où ton fil doit traverser le détroit avant que la chaîne ne le barre. On y engage des barges et une cargaison prise dans son entrepôt.
 - **Gagné** : la cargaison passe ; le fil engagé traverse sans payer pendant 24 heures ; la tour perd **un sceau**.
 - **Perdu** : la cargaison engagée est perdue. **(revue)** Un quart seulement va à celui qui tient la tour, rien s'il est un associé ; le reste est détruit.
 - Une tour a **trois sceaux**, qui se refont d'un par jour. Au troisième brisé, elle passe à la Maison qui en a brisé le plus. Une tour prise est à l'abri douze heures.
@@ -114,13 +114,13 @@ Un fil vers le quai d'une autre Maison lui vend ou lui achète directement. **(r
 
 ### 7.3 Tenir (revue)
 
-- Celui qui tient une tour **règle son péage** et **compose sa garde** (§ 9.7) : une disposition au début, **trois** plus tard, tirées tour à tour pour que la solution ne circule pas. Chacune doit avoir été forcée par son auteur.
-- **La reprise** : chaque assaut laisse au tenant une perle qui **rejoue la Manœuvre de l'attaquant**. On apprend de sa défaite, on redispose.
+- Celui qui tient une tour **règle son péage**, **joue la chaîne** quand on le défie en personne, et **prépare sa garde** pour son lieutenant quand il n'est pas là (§ 9.7).
+- **La reprise** : chaque assaut laisse au tenant une perle qui **rejoue le duel**. On apprend de sa défaite.
 - Une Maison tient **deux passages au plus**. Un passage tenu **repousse l'encre** autour de lui.
 
 ### 7.4 Un seul acte
 
-Forcer un corsaire ou forcer la garde d'un joueur, c'est le même geste, la même tour, la même Manœuvre. Le jeu contre le jeu et le jeu contre les joueurs ne sont pas deux modes : ce sont deux sortes de tours sur la même planche. Mais **chacun garde sa part propre** : le § 8 pour le premier, le § 10 pour le second.
+Forcer un corsaire ou forcer la tour d'un joueur, c'est le même geste, la même tour, la même Passe. Le jeu contre le jeu et le jeu contre les joueurs ne sont pas deux modes : ce sont deux sortes de tours sur la même planche. Mais **chacun garde sa part propre** : le § 8 pour le premier, le § 10 pour le second.
 
 ## 8. Les corsaires et les puissances : le jeu contre le jeu (revue)
 
@@ -131,111 +131,117 @@ Forcer un corsaire ou forcer la garde d'un joueur, c'est le même geste, la mêm
 | **Les capitaines** | Une douzaine par marée, **chacun avec un nom, un pavillon et une manière**. Chaque sceau brisé change leur garde : trois phases, de plus en plus dures. Ils s'échelonnent du gris au noir. | Un visage et une montée. On « fait » Ivo le Borgne comme on fait un boss. |
 | **Les trophées** | Vaincre un capitaine donne ce que lui seul donne : une pièce de convoi, son pavillon à accrocher à sa façade. | Une raison propre d'aller au Large. Les pièces se gagnent en jouant, pas en payant. |
 | **Les détroits noirs** | Les passages les plus sombres **ne peuvent pas être tenus**. Ils restent aux puissances (le Turc, Gênes, Milan). Les forcer rapporte les plus belles cargaisons et **repousse l'encre pour tout le monde**. | Un PvE qui ne tarit pas, et une œuvre commune du monde. |
-| **La garde du jour** | La garde des corsaires change chaque jour, la même pour tous. | Les solutions ne circulent plus. Elle porte la Passe du jour (§ 10.4). |
+| **Le style du capitaine** | Chaque capitaine joue la chaîne à sa manière, avec ses maillons d'avance et ses pièces. Il change d'ouverture d'un jour à l'autre. | On ne le bat pas deux fois de la même façon. |
 | **Les sorties** | Les capitaines encore libres sortent contre les tours tenues. **Annoncées 24 heures avant**, par une perle et sur la planche. La garde du tenant y répond ; il peut aussi aller au-devant. | Tenir une tour est un jeu, pas une rente. Rien ne tombe sans prévenir. |
 
-Un joueur qui ne veut affronter personne a donc une partie entière : les capitaines, les détroits noirs, la Passe du jour, et la défense de ses tours contre les sorties.
+Un joueur qui ne veut affronter personne a donc une partie entière : les capitaines, les détroits noirs, le Problème du jour, et la défense de ses tours contre les sorties.
 
-## 9. La Manœuvre
+## 9. La Passe : le fil contre la chaîne
 
-*Réécrite le 10 novembre 2026, à la demande du porteur : « trop simple ; il faut une vraie difficulté de réflexion, à la manière d'un problème d'échecs, une vraie stratégie aussi bien en tant que défenseur qu'en tant qu'attaquant ». La maquette joue ces règles ; le moteur et les outils de mesure sont dans `docs/refonte-totale-2026-11-10/` (`manoeuvre-moteur.js`, `manoeuvre-recherche.js`, `manoeuvre-solution.js`).*
+*Troisième écriture, le 10 novembre 2026. La première (un convoi qui esquive) se gagnait par une routine. La deuxième (un problème à résoudre seul) était dure, mais le porteur l'a dit : « peu amusant, le système n'attirera pas les joueurs ; réfléchis à un autre moyen, innovant, qui attire les joueurs de stratégie et d'échecs ». Elles sont abandonnées. La maquette joue la troisième ; son moteur et sa mesure d'équilibre sont dans `docs/refonte-totale-2026-11-10/` (`passe-moteur.js`, `passe-equilibre.js`).*
 
-### 9.1 Ce que c'est
+### 9.1 Ce qui manquait
 
-Un **problème à résoudre**, comme aux échecs : tout est visible, rien n'est caché, rien n'est tiré au sort, et un coup joué ne se reprend pas. L'attaquant doit faire traverser un détroit à son convoi en six cloches. Le défenseur a **composé** la position, et il a dû **la résoudre lui-même** avant de pouvoir la poser.
+Un casse-tête, même difficile, n'a ni adversaire, ni initiative, ni retournement : on y esquive, on n'y attaque pas. Ce qui attire un joueur d'échecs, c'est **un autre esprit en face**, des règles qui tiennent en une phrase, des menaces qu'on pose et qu'on pare, et une partie qui se lit d'un coup d'œil.
 
-### 9.2 Les quatre temps de l'attaquant
+### 9.2 La règle, en entier
 
-| Temps | Ce qu'on fait | Ce qui se décide |
-| --- | --- | --- |
-| 1. **Étudier** | On regarde la garde aussi longtemps qu'on veut. Chaque pièce dit sa règle. | Y a-t-il un chemin ? Lequel ? |
-| 2. **Composer** | On choisit ses pièces et **leur ordre** dans la file, dans le budget du passage. | L'escorte devant, au milieu ou en queue : ce n'est pas le même problème. |
-| 3. **Miser** | On charge une, deux ou trois cales. | Plus de cales, c'est plus de gain, et une file plus longue à faire passer. |
-| 4. **Jouer** | Cloche après cloche, sans reprise. | La solution qu'on a vue était-elle la bonne ? |
+Le détroit est un damier de 7 cases sur 7, pris sur la carte, autour de la tour.
 
-Un seul assaut par tour et par jour : on ne tâtonne pas, on réfléchit.
+- **Toi, tu es le fil** : tu dois relier la rive du sud à la rive du nord.
+- **Lui, c'est la chaîne** : il doit relier la rive de l'ouest à celle de l'est.
+- **Chacun pose une pièce à son tour**, sur une case libre. Une pièce posée ne bouge plus.
+- **Deux pièces se tiennent** quand elles sont côte à côte, ou en biais dans le sens du courant (marqué au sol).
+- **Le premier qui relie ses deux rives a gagné.** Les deux lignes se croisent forcément : une seule peut aboutir. **Il n'y a jamais de partie nulle.**
 
-### 9.3 Une cloche
+C'est tout. On l'explique en dix secondes, et c'est le geste du jeu : tirer un fil.
 
-1. **La garde annonce** : les cases menacées se hachurent, un trait les relie à la pièce qui les menace.
-2. **Tu traces** le chemin de la tête, d'une à trois cases. La prévision montre où chaque pièce s'arrêtera, laquelle serait touchée, et ce que la garde perdrait.
-3. **Tu sonnes.** Dans cet ordre : la file avance ; l'escorte éperonne ; les brûlots armés foncent ; les bombardes tirent ; les sentinelles frappent ; les galères abordent ; puis la garde réagit.
+### 9.3 D'où ça vient, et ce qui est à nous
 
-### 9.4 Les cinq lois
+Cette géométrie est celle des **jeux de connexion**, dont le plus connu, Hex, a été inventé en 1942 et étudié par le mathématicien John Nash. C'est une famille que les joueurs d'échecs et de go respectent : des règles minuscules, une profondeur sans fond, aucune part de hasard. Nous ne l'inventons pas, et il faut le dire.
 
-| Loi | Ce qu'elle dit | Ce qu'elle fait naître |
-| --- | --- | --- |
-| **La file suit la tête** | Chaque pièce prend la place de celle qui la précède. | La queue passe où la tête était : il faut penser à toute la file. |
-| **Les coups tombent après le mouvement** | Sur les cases annoncées, et seulement elles. | On peut traverser une ligne de tir, pas s'y arrêter. |
-| **Un tir s'arrête à la première pièce** | À toi **ou à la garde**. Un écueil l'arrête aussi. | Faire écran avec l'escorte. Amener la garde à se tirer dessus. |
-| **Chaque pièce de garde suit sa règle** | Une seule, fixe, connue. | On peut la prévoir sur six cloches, donc la manœuvrer : l'attirer, la retourner, la faire attendre. |
-| **Six cloches, pas une de plus** | À la septième, la chaîne du port se referme. | Pas de prudence infinie : chaque détour se paie. |
+Ce qui est à nous :
 
-### 9.5 Les pièces de la garde
-
-Chacune a une manière, comme une pièce d'échecs.
-
-| Pièce | Sa règle | Comment on la retourne contre elle |
-| --- | --- | --- |
-| **L'écueil** | Il barre une case et arrête les tirs. | On s'abrite derrière. |
-| **La bombarde** | Fixe. Elle tire sur sa ligne une cloche sur deux ; le tir s'arrête à la première pièce. | On passe à la cloche creuse ; on fait écran ; on place une de ses propres pièces sur sa ligne. |
-| **La sentinelle** | Fixe. Elle frappe deux cases devant elle, puis tourne d'un quart de tour. | Affaire de moment : elle regarde ailleurs une cloche sur quatre. |
-| **La galère** | Elle frappe les quatre cases qui la touchent et avance d'une case vers la tête. | L'escorte la coule en la frôlant ; on l'attire dans une ligne de tir. |
-| **Le brûlot** | Il dort. Dès qu'il voit une de tes pièces dans sa ligne, il fonce à la cloche suivante jusqu'au premier obstacle et fait sauter les quatre cases autour, **amis compris**. | On le réveille exprès pour qu'il aille s'écraser sur la bombarde. |
-| **Le capitaine** (corsaires seulement) | Il saute comme le cavalier des échecs et frappe sa case d'arrivée, annoncée. | À étudier, capitaine par capitaine. |
-
-### 9.6 Les pièces du convoi
-
-Quatre à six pièces ; on commence avec six sortes.
-
-| Pièce | Ce qu'elle fait |
+| Apport | Ce qu'il change |
 | --- | --- |
-| **La tête** | Elle mène. Deux coups la coulent, et c'est perdu. |
-| **La cale** | Elle porte la cargaison. Un coup la perd. |
-| **L'escorte** | Elle encaisse deux coups, fait écran aux tirs, coule une galère qu'elle frôle. |
-| **Les arbalétriers** | Une fois par Manœuvre, ils abattent la première pièce de garde dans leur ligne, à deux cases. |
-| **Les rameurs** | Une fois par Manœuvre, quatre cases au lieu de trois. |
-| **Le leurre** | Un tonneau lâché par la queue. La galère le suit, le brûlot le voit. |
+| **Le thème est la règle** | Forcer un détroit, c'est faire passer un fil ; le tenir, c'est tendre une chaîne. Personne n'a besoin d'une métaphore. |
+| **Sur nos cases carrées** | Le courant donne la sixième et dernière liaison : pas de plateau à part, pas d'hexagones. Le sens du courant change d'un passage à l'autre. |
+| **Deux rôles vraiment différents** | L'attaquant est toujours le fil, le tenant toujours la chaîne, avec leurs pièces propres. |
+| **La cargaison, c'est l'économie de coups** | Tu charges autant de barges que tu veux en poser. Celles que tu n'as pas eu à poser arrivent pleines : passer en huit barges sauve plus qu'en douze. |
+| **Les maillons posés d'avance** | Le tenant en dispose quelques-uns avant tout duel : c'est sa garde, et c'est le réglage de l'équilibre (§ 9.7). |
+| **Les pièces de caractère** | Quelques pièces à pouvoir, choisies avant le duel (§ 9.5). |
+| **Un duel dans un monde** | L'enjeu est une tour, un péage, une route, un rang : pas une partie isolée. |
 
-**La file se coupe** : une pièce détruite au milieu sépare l'arrière, qui attend que la tête repasse à côté de lui.
+### 9.4 Pourquoi c'est un vrai jeu de stratégie
 
-### 9.7 La stratégie du défenseur
+- **L'initiative** : chaque pièce menace et pare à la fois. Qui force l'autre à répondre mène la partie.
+- **La double menace** : deux façons de se relier, l'adversaire n'en bouche qu'une. C'est la fourchette des échecs.
+- **Le pont** : deux pièces séparées par deux cases libres sont déjà presque liées. On apprend à voir les liaisons qui n'existent pas encore.
+- **Défendre, c'est attaquer** : barrer le fil, c'est avancer la chaîne. Aucun coup n'est seulement défensif.
+- **Des ouvertures, des fins de partie, des problèmes** : « le fil passe en trois coups » se pose comme un mat en trois.
+- **Deux minutes** : une dizaine de pièces chacun. En direct, quinze secondes par coup.
+- **Tout se lit** : deux lignes qui poussent, et deux nombres toujours affichés, les cases qui manquent à chacun.
 
-Tenir une tour, c'est **composer un problème**.
+### 9.5 Les pièces de caractère
 
-- **Un budget**, fixé par le niveau du passage, le même pour tous : tant de points, chaque pièce a son prix (une bombarde vaut plus qu'une sentinelle).
-- **Le terrain est celui du passage** : ses écueils, son courant, sa brume. Chaque détroit se défend autrement.
-- **On règle tout** : la case de chaque pièce, le sens de la bombarde et sa cloche, le premier regard de la sentinelle.
-- **L'épreuve** : une disposition n'est valable que si son auteur **l'a forcée lui-même**, avec le convoi de référence du passage, en sauvant au moins une cale. Aucune garde n'est donc impossible, et le défenseur connaît la clef de son propre problème.
-- **Les pièges se retournent** : puisque les tirs et les brûlots touchent aussi la garde, une disposition trop dense se détruit elle-même. Le bon défenseur couvre les couloirs **sans offrir ses pièces**.
-- **La cote de la garde** monte chaque fois qu'un assaillant échoue ou perd des cales. Elle est affichée sur la tour : « 14 assauts, 2 passés ».
-- **La reprise** : chaque assaut se rejoue. Le défenseur voit par où on l'a percé, et redispose.
-- Trois dispositions tournent, pour que la clef ne circule pas.
+La barge et le maillon font presque toute la partie. Chaque camp emporte en plus **trois pièces à pouvoir**, à usage unique, choisies dans sa collection. Le budget est celui du passage, le même pour tous.
 
-### 9.8 La difficulté se mesure
+| Le fil | La chaîne |
+| --- | --- |
+| **Le brûlot** : brûle un maillon voisin d'une de tes barges. | **La bombarde** : coule une barge restée seule. |
+| **L'ancre** : une barge que rien ne peut couler. | **Le corps-mort** : un maillon que rien ne peut brûler. |
+| **Le relais** : une barge qui se lie à deux cases de distance, en ligne droite. | **La herse** : ferme une case libre pendant deux tours. |
 
-Un solveur parcourt toutes les suites de coups d'une garde. Il donne, pour chaque disposition : le meilleur résultat possible, la part des suites qui l'atteignent, et ce qu'obtiennent des joueurs simplistes. Premières mesures, sur les deux gardes de la maquette (trois ordres de file chacune) :
+Le brûlot punit la chaîne qui s'approche trop ; la bombarde punit le fil qui s'éparpille. Chaque pouvoir a sa parade par le placement. La maquette joue le brûlot et la bombarde ; les autres sont à prouver au prototype, une par une. D'autres pièces viendront des capitaines (§ 8).
 
-| Garde | Pièces | Suites de coups possibles | Suites qui sauvent les deux cales | Un joueur qui évite seulement les coups annoncés, une ou deux cloches à l'avance |
-| --- | --- | --- | --- | --- |
-| Segna (corsaire) | 6 | 0,8 à 1,1 million | 0,3 à 1,3 % | Échoue, quel que soit l'ordre |
-| Chioggia (joueur) | 4 | 4,3 à 4,8 millions | 3,2 à 5,5 % | Échoue, quel que soit l'ordre |
+### 9.6 Contre qui on joue
 
-Ces deux gardes viennent d'une recherche automatique sur 151 dispositions tirées au sort : deux seulement avaient à la fois une solution parfaite et aucun passage pour le joueur à courte vue. **Une garde difficile et juste est donc rare : la composer est un vrai savoir-faire.** Le même outil servira à classer les passages par difficulté, à vérifier l'épreuve du défenseur et à calibrer les budgets.
+| En face | Comment | Ce que ça vaut |
+| --- | --- | --- |
+| **Un capitaine corsaire** | L'ordinateur, avec le style du capitaine : ses maillons d'avance, ses pièces, sa manière (l'un mure le centre, l'autre court sur les bords). | La route s'ouvre, un sceau saute, ses trophées. |
+| **Le lieutenant d'un joueur absent** | L'ordinateur joue la chaîne avec les maillons et les pièces que le tenant a choisis. | Le passage gratuit pour ton fil, un sceau. Jamais le dernier. |
+| **Le joueur lui-même** | En direct, s'il est là ou s'il accepte le rendez-vous. | **Le dernier sceau d'une tour ne saute que contre son tenant en personne** (ou contre son lieutenant s'il ne se présente pas sous 48 heures). |
+| **Un rival, par défi** | Tirer un fil vers son île : deux parties, chacun joue une fois le fil et une fois la chaîne. | Du rang, rien d'autre. |
 
-### 9.9 Gagner, perdre, à armes égales
+On ne perd donc jamais sa tour sans avoir pu la défendre soi-même, et on ne la prend jamais sans avoir battu quelqu'un.
 
-- **Gagné** : la tête atteint le bord opposé avant la fin de la sixième cloche. Le résultat se compte en cales sauvées.
-- **Perdu** : la tête est coulée, ou la chaîne se referme.
-- Les budgets du convoi et de la garde sont ceux du passage, les mêmes pour tous.
-- Tout est déterministe : une Manœuvre se rejoue et se partage, comme une partie d'échecs.
-- **À deux** : le second convoi entre par un autre bord.
+### 9.7 Tenir une tour : la stratégie du défenseur
+
+- **Jouer la chaîne** est un rôle entier, avec ses ouvertures et ses pièges. Un bon attaquant n'est pas forcément un bon défenseur.
+- **Poser ses maillons d'avance** : le niveau du passage dit combien (de zéro à trois). Où les mettre est un art : trop près du centre, le brûlot les prend ; trop loin, ils ne servent pas.
+- **Choisir ses trois pièces** et **le terrain qu'on garde** : chaque passage a ses écueils (la chaîne s'y accroche) et son courant.
+- **Instruire son lieutenant** : trois manières au choix (murer, harceler, attendre).
+- **Revoir ses défaites** : chaque duel se rejoue. On voit par où le fil est passé.
+
+### 9.8 L'équilibre se règle, et il est mesuré
+
+L'ordinateur a joué contre lui-même, 40 parties par réglage, sur le damier de 7 sur 7.
+
+| Réglage | Le fil gagne |
+| --- | --- |
+| Damier nu, le fil commence | 68 % |
+| Deux écueils, le fil commence | 48 % |
+| Deux maillons d'avance, le fil commence | 38 % |
+| Trois maillons d'avance, la chaîne commence | 28 % |
+| Cinq maillons d'avance, la chaîne commence | 13 % |
+
+Deux leçons. **Le réglage existe** : les écueils, les maillons d'avance et le premier coup déplacent l'équilibre pas à pas, de la bouche de lagune facile au détroit noir. Et **la géométrie compte** : dans un premier essai où le fil passait par toutes les diagonales, il gagnait de 63 à 100 % des parties quel que soit le réglage ; c'est la liaison par le seul courant qui équilibre le duel.
+
+Limite : ces chiffres viennent d'un joueur artificiel simple, qui ne voit qu'un coup d'avance. Ils montrent que le réglage existe, pas sa valeur exacte entre bons joueurs.
+
+### 9.9 Autour du duel
+
+- **Le Problème du jour** : une position, la même pour tous ; « le fil passe en trois coups ». Un seul essai, résultats à minuit.
+- **La cote**, comme aux échecs, pour les duels entre joueurs. C'est le laurier de la Passe (§ 10.2).
+- **Les parties se rejouent et se partagent** ; les duels de la Sérénissime se regardent.
+- **À deux contre deux**, pour les tours de compagnie : un damier de 9 sur 9, les associés jouent à tour de rôle.
+- **Plus grand au Large** : 9 sur 9 dans les détroits noirs.
 
 ### 9.10 L'apprendre
 
-Trois casse-têtes d'une seule cloche, sous le projecteur : passer derrière une galère ; faire écran avec l'escorte ; réveiller un brûlot. Le premier passage forcé arrive **avant la vingtième minute**, sur une bouche de lagune à deux pièces de garde. La difficulté monte avec l'encre.
+Le premier duel se joue **avant la dixième minute**, sur un damier de 5 sur 5, contre un péager de la lagune : la règle tient dans le projecteur en une phrase. Viennent ensuite, un par un : le pont, la double menace, le brûlot.
 
-*C'est la pièce la plus neuve du jeu. Elle est la première chose à prototyper (§ 17) : il reste à prouver qu'elle amuse autant qu'elle fait réfléchir.*
+*C'est la pièce que le porteur a refusée deux fois. Elle est la première chose à prototyper (§ 17), et le critère est le sien : est-ce qu'on a envie d'en refaire une ?*
 
 ## 10. La rivalité (revue)
 
@@ -253,7 +259,7 @@ Dans chaque monde, trois classements, et trois seulement :
 | Laurier | Ce qu'il mesure | Pourquoi ce n'est pas la taille qui gagne |
 | --- | --- | --- |
 | **Le Négoce** | Le gain par bobine et par jour | Douze bobines mal placées valent moins que cinq bien tenues |
-| **La Manœuvre** | Une cote, comme aux échecs : forcer une garde mieux cotée rapporte plus | Budgets égaux ; les robots sont hors cote ; les gains décroissent entre deux mêmes Maisons |
+| **La Passe** | Une cote, comme aux échecs, sur les duels entre joueurs | Pièces et budgets égaux ; les robots sont hors cote ; les gains décroissent entre deux mêmes Maisons |
 | **La Garde** | Les heures tenues, pondérées par le péril, et les assauts repoussés | Deux tours au plus par Maison |
 
 **Le Doge** du monde est la Maison la mieux classée sur l'ensemble des trois. Il n'y en a qu'un par monde et par marée.
@@ -275,8 +281,8 @@ Dans chaque monde, trois classements, et trois seulement :
 
 | Quoi | La règle | Ce qu'on y risque |
 | --- | --- | --- |
-| **La Passe du jour** | Chaque jour, un passage et un convoi imposés, **les mêmes pour tous**. Seul le premier essai compte (cales sauvées, puis cloches). Résultats à minuit. | Rien. Un rendez-vous de deux minutes, à égalité pure. |
-| **Le défi par le fil** | Tirer un fil vers l'île d'une autre Maison lui propose un duel miroir : même budget, chacun force la garde de l'autre. Refusable ; une fois par paire et par semaine. | Du rang, rien d'autre. |
+| **Le Problème du jour** | Chaque jour, une position, **la même pour tous** : « le fil passe en trois coups ». Un seul essai. Résultats à minuit. | Rien. Un rendez-vous d'une minute, à égalité pure. |
+| **Le défi par le fil** | Tirer un fil vers l'île d'une autre Maison lui propose deux Passes en direct : chacun joue une fois le fil, une fois la chaîne. Refusable ; une fois par paire et par semaine. | Du rang, rien d'autre. |
 | **L'assaut d'une tour** | § 7.2. | La cargaison engagée. |
 
 ### 10.5 Le rang se voit sur la planche
@@ -303,7 +309,7 @@ Des titres, de l'apparat, le droit de nommer une tour ou une marée, une place d
 - De quatre à douze Maisons, une île commune dans la lagune.
 - **Le phare** : chaque membre peut tendre un fil vers l'île commune. Ce qu'il apporte bâtit un phare, qui **repousse l'encre** autour des tours de la compagnie et **arme ses gardes**. Le bâtisseur paisible nourrit ceux qui se battent. Apport plafonné par jour, aucun tableau par membre.
 - **Les tours communes** : une compagnie tient des passages à plusieurs, au-delà des deux par Maison.
-- **La Manœuvre à deux**, le fil commun entre associés, la montée de ligue ensemble.
+- **La Passe à deux contre deux**, le fil commun entre associés, la montée de ligue ensemble.
 - Une compagnie a son classement, entre compagnies de même ligue.
 
 ## 13. Ce qui grandit, et l'économie
@@ -314,7 +320,7 @@ Des titres, de l'apparat, le droit de nommer une tour ou une marée, une place d
 | --- | --- | --- |
 | **L'île** | 4 cases, 2 ateliers | 40 cases, trois étages de chaîne |
 | **Les bobines** | 3, courtes | 12, teintes, jusqu'au bout du Large |
-| **Le convoi et la garde** | Tête, cale, escorte | 6 places, des pièces gagnées aux capitaines, trois dispositions |
+| **Les pièces** | Barges et maillons | Six pièces de caractère par camp, d'autres gagnées aux capitaines ; trois emportées par duel |
 | **Le renom** | — | Pierres gravées, pavillons pris, titres |
 
 ### 13.2 Deux monnaies
@@ -359,7 +365,7 @@ En haut : les ducats, les bobines libres, la pastille de rang.
 
 **Le code des fils** **(revue)** : le tien en ruban large et rouge ; un rival en pointillé fin à l'encre ; un associé en tirets doubles ; ton rival de la semaine d'un trait propre. La forme d'abord, la teinte ensuite. Les jauges sont à l'encre, pas en rouge.
 
-**La Manœuvre** se joue en plein cadre : des cases d'au moins 44 px, des pictogrammes plutôt que des mots, le reste de la planche voilé, un fondu continu depuis la tour.
+**La Passe** se joue en plein cadre : des cases d'au moins 44 px, les deux rives de chacun marquées, les cases qui manquent à chaque camp toujours affichées, le reste de la planche voilé, un fondu continu depuis la tour.
 
 **Aucun geste caché** (ni appui long, ni deux doigts). **Les tutoriels guidés** restent la règle (décision du 8 novembre) ; le guide vit dans le projecteur, pas dans les perles.
 
@@ -377,7 +383,7 @@ Ce qui s'ajoute, dans la même grammaire :
 | **Le fil** | Le ruban d'accent à chevrons des routes. Patiné, il se lustre ; tressé, il se double. |
 | **Les fils des autres** | Le même ruban, fin, distingué par son trait. Le céladon, seule teinte ajoutée, pour les associés. |
 | **Les passages** | Une tour du kit, à la manière du fort de la Terraferme, au pavillon de celui qui la tient. |
-| **Les pièces de la Manœuvre** | Les figurines existantes sur leur socle. |
+| **Les pièces de la Passe** | La barge à voile rouge, le maillon d'encre, l'écueil : de petits volumes du kit. Le fil qui les relie est le ruban des routes ; la chaîne, un ruban d'encre en maillons. |
 | **Les marques du rang** | Coiffe du Doge, lauriers, pierres gravées, pavillons accrochés : de petits objets de porcelaine sur les îles. |
 
 ## 16. Ce qui est retiré
@@ -392,14 +398,14 @@ Une étape à la fois, chacune avec son plan validé, ses tests d'abord, et le s
 
 | # | Étape | Ce qu'elle livre | Réussie quand |
 | --- | --- | --- | --- |
-| 1 | **La Manœuvre, en prototype** | Le moteur pur (les cinq lois, six pièces de convoi, cinq pièces de garde, un terrain), le solveur qui mesure chaque garde, l'atelier du défenseur avec son épreuve, un laboratoire jouable dans le rendu de Porcellana à 390 px, les trois casse-têtes d'apprentissage, trente passages classés par difficulté | Le porteur et quelques testeurs en redemandent après vingt parties, en attaque comme en défense ; le solveur ne trouve **aucune routine gagnante** ; aucune garde valable n'est impossible |
+| 1 | **La Passe, en prototype** | Le moteur pur, un adversaire artificiel à plusieurs forces et plusieurs styles, le duel en direct entre deux joueurs, un laboratoire jouable dans le rendu de Porcellana à 390 px, le brûlot et la bombarde, vingt problèmes « le fil passe en trois coups » | **Le porteur et quelques testeurs ont envie d'en refaire une**, en fil comme en chaîne ; un joueur d'échecs y trouve de quoi réfléchir ; l'équilibre se règle à 50 % par les maillons d'avance |
 | 2 | **La planche et les fils, au simulateur** | 100 Maisons robots sur quatre marées : fils, patine, tresse, demande commune, ville tissée, passages | Aucune stratégie unique ne domine ; se connecter huit fois par jour ne rapporte pas plus que trois ; l'économie tient ; les tricheurs simulés ne gagnent rien |
 | 3 | **L'île** | Le domaine porté sur la planche commune : terrains, voisinages vus avant la pose, quai | Deux îles de même niveau diffèrent |
 | 4 | **Les fils et les villes, à l'écran** | Tirer, tenir, reprendre ; les jauges découpées ; les fils des autres | Une visite de cinq minutes contient une vraie décision |
-| 5 | **Les passages et les capitaines** | Payer, forcer, tenir ; les sceaux ; trois capitaines à trois phases ; la garde du jour | Un joueur seul a de quoi faire au Large pendant toute une marée |
-| 6 | **La rivalité** | Le rang, les trois lauriers, le rival de la semaine, le sestiere, la Passe du jour, le défi par le fil ; les marques sur la planche | Les testeurs savent dire, sans rien ouvrir, leur rang et le nom de leur rival |
+| 5 | **Les passages et les capitaines** | Payer, forcer, tenir ; les sceaux ; le lieutenant ; trois capitaines à trois phases, chacun son style | Un joueur seul a de quoi faire au Large pendant toute une marée |
+| 6 | **La rivalité** | Le rang, les trois lauriers, le rival de la semaine, le sestiere, le Problème du jour, le défi par le fil ; les marques sur la planche | Les testeurs savent dire, sans rien ouvrir, leur rang et le nom de leur rival |
 | 7 | **L'interface sans menu** | Pétales, échelle, perles, médaillon ; les tutoriels | Premier fil en moins d'une minute, premier rival vu avant la dixième, premier passage forcé avant la vingtième |
-| 8 | **Les compagnies** | Le phare, les tours communes, la Manœuvre à deux | Un membre paisible se sent utile |
+| 8 | **Les compagnies** | Le phare, les tours communes, la Passe à deux contre deux | Un membre paisible se sent utile |
 | 9 | **La marée et les ligues** | La montée, les sorties, la fin, les pierres gravées, la montée de monde | Une marée entière jouée en test |
 | 10 | **Bêta** | Retest par les profils de l'audit du 7 novembre, plus un joueur de compétition | Moyenne d'au moins 7,5 sur 10 |
 
@@ -409,15 +415,15 @@ Les plans en cours (publication, Terraferme, Porta, ateliers) sont **gelés** d�
 
 Ce qui reste non négociable : montants en entiers et taux en points de base ; grand livre et mouvements de stock ; `world_id` sur toute table du monde ; la logique dans `packages/engine`, pure et testée ; les réglages dans `worlds.settings` ; la production calculée à la lecture.
 
-Ce qui est neuf : toute livraison est une transaction sérialisée par (monde, ville, marchandise) ; une Manœuvre est une suite de coups que le serveur valide en la rejouant ; la cote et le rang sont recalculés par le moteur, jamais par le client.
+Ce qui est neuf : toute livraison est une transaction sérialisée par (monde, ville, marchandise) ; une Passe est une suite de coups que le serveur valide en la rejouant ; la cote et le rang sont recalculés par le moteur, jamais par le client.
 
 ## 19. Les questions ouvertes
 
 1. **La taille d'un monde** et celle d'un sestiere. À fixer à l'étape 2.
 2. **L'intérieur des ateliers** (décision du 6 novembre) : gardé pour tous, réservé au métier de la Maison, ou retiré ? *Proposé : réservé au métier.*
-3. **La Passe du jour** : la même pour tous les mondes, ou une par monde ? *Proposé : une par monde, pour que les solutions circulent moins.*
+3. **Le dernier sceau contre le tenant en personne** : faut-il vraiment un rendez-vous en direct, ou une partie par correspondance (un coup quand on peut, un jour au plus par coup) ? *Proposé : les deux, au choix du tenant.*
 4. **Les ligues** : quelle part monte à chaque marée ? *Proposé : le sixième du haut ; à mesurer.*
 5. **La famille et le personnel** : absents de ce cadrage. *Proposé : y revenir après l'étape 6, comme capitaines de convoi et gardiens de tour.*
 6. **L'histoire** : portée par les capitaines, les puissances et la marée. Des marées à thème (1453, la chute de Constantinople) ? *Proposé : après la bêta.*
 7. **Les joueurs actuels** : y a-t-il des Maisons en production à reprendre sur la nouvelle planche (la bascule `EMPIRE_FROM` dépend du porteur) ?
-8. **Le nom des choses** : fil, bobine, patine, tresse, passage, Manœuvre, cloche, marée, laurier, sestiere, pétales. À confirmer avant d'écrire les textes.
+8. **Le nom des choses** : fil, bobine, patine, tresse, passage, Passe, chaîne, maillon, marée, laurier, sestiere, pétales. À confirmer avant d'écrire les textes.

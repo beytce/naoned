@@ -2,7 +2,9 @@
 
 *Demande du porteur, après le plan global v4 : « tu pars trop de l'existant. Fais une critique de l'existant et de ce que tu as proposé. La refonte doit être totale. La coexistence de tous ces modes sans réelle connexion est le vrai point noir. Fais une proposition de maquette que je validerai. Remets en question aussi l'interface et les menus. »*
 
-*Ce document remplace `docs/plan-global-v4.md` comme proposition. **Rien n'est décidé, rien n'est codé.** La maquette jouable est à côté : `maquette.html` (en ligne, privée : https://claude.ai/artifact/PwWx9caj5Zs9urBcChRopm). Captures : `maquette-planche.png`, `maquette-ile.png`, `maquette-manoeuvre.png`, `maquette-telephone.png`.*
+*Ce document remplace `docs/plan-global-v4.md` comme proposition. **Rien n'est décidé, rien n'est codé.** La maquette jouable est à côté : `maquette.html` (en ligne, privée : https://claude.ai/artifact/PwWx9caj5Zs9urBcChRopm). Captures : `maquette-planche.png`, `maquette-ile.png`, `maquette-passe.png`, `maquette-telephone.png`.*
+
+*Note du 10 novembre au soir : la « Manœuvre » décrite plus bas (§ 3.6) a été refusée deux fois par le porteur et remplacée par **la Passe**, un duel entre le fil et la chaîne. La version qui fait foi est dans `docs/CADRAGE-v4.md` § 9.*
 
 ---
 
