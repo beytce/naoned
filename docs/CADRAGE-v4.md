@@ -22,7 +22,7 @@ Elles remplacent les huit règles du 1er novembre. En cas de conflit, elles prim
 2. **Un seul geste : le fil.** Le rouge est réservé à ce que le joueur a tracé et à la seule action mise en avant. Toute fonctionnalité nouvelle se fait avec le fil ou les pétales (§ 14), sinon elle n'entre pas.
 3. **Ton île t'appartient.** Personne ne prend ni ne détruit ce qui s'y trouve.
 4. **On te devance, on ne te vole pas.** Ce qui se dispute, ce sont les places de la planche commune et le rang. On ne risque que ce qu'on engage.
-5. **Tout coup est annoncé.** Dans une Manœuvre comme sur la planche (une sortie de corsaires, la marée), on ne perd jamais sans avoir pu le voir venir. Aucun coup caché, aucun hasard dans la Manœuvre.
+5. **Tout coup est annoncé.** Dans une Manœuvre comme sur la planche (une sortie de corsaires, la marée), on ne perd jamais sans avoir pu le voir venir. La Manœuvre est un problème à information complète : rien de caché, aucun hasard, et aucune garde qu'on ne puisse résoudre.
 6. **À armes égales.** La force engagée dans un passage est fixée par le passage, la même pour tous. Ni la caisse, ni le rang, ni l'ancienneté, ni l'argent réel ne donnent de puissance.
 7. **Chacun peut être le meilleur.** Le rang repart de zéro à chaque marée. Les classements mesurent l'adresse, jamais la taille ni l'ancienneté. **(revue)**
 8. **Rien ne s'accumule sans fin, et on ne perd rien en dormant.** Tout a un plafond ; les tours ont une trêve de nuit ; aucune série de connexion, aucune récompense qui expire.
@@ -33,7 +33,7 @@ Elles remplacent les huit règles du 1er novembre. En cas de conflit, elles prim
 
 ### 3.1 Un monde
 
-Un **monde** réunit de 60 à 120 Maisons sur une planche de cases carrées. Les Maisons tenues par l'ordinateur portent un **pavillon gris**, sont dites comme telles et restent hors de tout classement ; un monde de moins de trente joueurs fusionne avec un autre. **(revue)**
+Un **monde** réunit de 60 à 120 Maisons sur **une même planche** de cases carrées : tous s'y disputent les mêmes villes, les mêmes passages et le même titre (confirmé par le porteur le 10 novembre : « j'aime bien l'idée »). Les Maisons tenues par l'ordinateur portent un **pavillon gris**, sont dites comme telles et restent hors de tout classement ; un monde de moins de trente joueurs fusionne avec un autre. **(revue)**
 
 | Zone | Matière | Contenu |
 | --- | --- | --- |
@@ -114,7 +114,7 @@ Un fil vers le quai d'une autre Maison lui vend ou lui achète directement. **(r
 
 ### 7.3 Tenir (revue)
 
-- Celui qui tient une tour **règle son péage** et **dispose sa garde** : une disposition au début, **trois** plus tard, tirées tour à tour pour que la solution ne circule pas.
+- Celui qui tient une tour **règle son péage** et **compose sa garde** (§ 9.7) : une disposition au début, **trois** plus tard, tirées tour à tour pour que la solution ne circule pas. Chacune doit avoir été forcée par son auteur.
 - **La reprise** : chaque assaut laisse au tenant une perle qui **rejoue la Manœuvre de l'attaquant**. On apprend de sa défaite, on redispose.
 - Une Maison tient **deux passages au plus**. Un passage tenu **repousse l'encre** autour de lui.
 
@@ -138,65 +138,104 @@ Un joueur qui ne veut affronter personne a donc une partie entière : les capita
 
 ## 9. La Manœuvre
 
-### 9.1 En trois phrases
+*Réécrite le 10 novembre 2026, à la demande du porteur : « trop simple ; il faut une vraie difficulté de réflexion, à la manière d'un problème d'échecs, une vraie stratégie aussi bien en tant que défenseur qu'en tant qu'attaquant ». La maquette joue ces règles ; le moteur et les outils de mesure sont dans `docs/refonte-totale-2026-11-10/` (`manoeuvre-moteur.js`, `manoeuvre-recherche.js`, `manoeuvre-solution.js`).*
 
-Ton convoi est **une file de pièces** qui doit traverser une grille. À chaque **cloche**, les pièces de la garde montrent les cases qu'elles vont frapper, tu traces le chemin de ta file, puis tout se joue d'un coup. Il faut amener la tête de l'autre côté, avec le plus de cales possible.
+### 9.1 Ce que c'est
 
-### 9.2 Une cloche
+Un **problème à résoudre**, comme aux échecs : tout est visible, rien n'est caché, rien n'est tiré au sort, et un coup joué ne se reprend pas. L'attaquant doit faire traverser un détroit à son convoi en six cloches. Le défenseur a **composé** la position, et il a dû **la résoudre lui-même** avant de pouvoir la poser.
 
-| Temps | Ce qui se passe |
-| --- | --- |
-| 1. **La garde annonce** | Chaque pièce de garde hachure les cases qu'elle frappera. **Un trait la relie à ses cases.** |
-| 2. **Tu traces** | Depuis la tête, une à trois cases. Des cadres montrent **où chaque pièce s'arrêtera** ; celle qui serait touchée se fêle. |
-| 3. **Tu sonnes** | La file avance : chaque pièce prend la place de celle qui la précède. Les coups tombent. Puis la garde bouge. |
+### 9.2 Les quatre temps de l'attaquant
 
-**La règle à retenir** : *les coups tombent après ton mouvement ; ne laisse rien sur une case hachurée.*
+| Temps | Ce qu'on fait | Ce qui se décide |
+| --- | --- | --- |
+| 1. **Étudier** | On regarde la garde aussi longtemps qu'on veut. Chaque pièce dit sa règle. | Y a-t-il un chemin ? Lequel ? |
+| 2. **Composer** | On choisit ses pièces et **leur ordre** dans la file, dans le budget du passage. | L'escorte devant, au milieu ou en queue : ce n'est pas le même problème. |
+| 3. **Miser** | On charge une, deux ou trois cales. | Plus de cales, c'est plus de gain, et une file plus longue à faire passer. |
+| 4. **Jouer** | Cloche après cloche, sans reprise. | La solution qu'on a vue était-elle la bonne ? |
 
-### 9.3 Les coups partent de la garde (revue)
+Un seul assaut par tour et par jour : on ne tâtonne pas, on réfléchit.
 
-Dans la première version, les coups visaient la tête du convoi : il suffisait d'avancer toujours de trois cases. **C'était une faute.** Désormais chaque pièce de garde frappe **depuis sa case**, selon son motif, et les écueils coupent les lignes. Il y a donc des angles morts, des approches, des moments.
+### 9.3 Une cloche
 
-| Pièce de garde | Son motif |
-| --- | --- |
-| **L'écueil** | Il barre une case et coupe les lignes de tir. |
-| **La galère** | Elle frappe les quatre cases qui la touchent, et avance d'une case par cloche vers la tête. |
-| **La bombarde** | Elle ne bouge pas. Elle tire sur toute sa ligne, une cloche sur deux. |
-| **Les archers** | Fixes. Ils frappent un cône de trois cases devant eux. |
-| **La chaîne du port** | Elle ferme une ligne une cloche sur deux. |
-| **Le capitaine** | Deux motifs qui alternent. |
+1. **La garde annonce** : les cases menacées se hachurent, un trait les relie à la pièce qui les menace.
+2. **Tu traces** le chemin de la tête, d'une à trois cases. La prévision montre où chaque pièce s'arrêtera, laquelle serait touchée, et ce que la garde perdrait.
+3. **Tu sonnes.** Dans cet ordre : la file avance ; l'escorte éperonne ; les brûlots armés foncent ; les bombardes tirent ; les sentinelles frappent ; les galères abordent ; puis la garde réagit.
 
-### 9.4 La file
+### 9.4 Les cinq lois
 
-Quatre à six pièces. **Leur ordre est l'équipement.** On commence avec six pièces possibles, pas vingt.
+| Loi | Ce qu'elle dit | Ce qu'elle fait naître |
+| --- | --- | --- |
+| **La file suit la tête** | Chaque pièce prend la place de celle qui la précède. | La queue passe où la tête était : il faut penser à toute la file. |
+| **Les coups tombent après le mouvement** | Sur les cases annoncées, et seulement elles. | On peut traverser une ligne de tir, pas s'y arrêter. |
+| **Un tir s'arrête à la première pièce** | À toi **ou à la garde**. Un écueil l'arrête aussi. | Faire écran avec l'escorte. Amener la garde à se tirer dessus. |
+| **Chaque pièce de garde suit sa règle** | Une seule, fixe, connue. | On peut la prévoir sur six cloches, donc la manœuvrer : l'attirer, la retourner, la faire attendre. |
+| **Six cloches, pas une de plus** | À la septième, la chaîne du port se referme. | Pas de prudence infinie : chaque détour se paie. |
+
+### 9.5 Les pièces de la garde
+
+Chacune a une manière, comme une pièce d'échecs.
+
+| Pièce | Sa règle | Comment on la retourne contre elle |
+| --- | --- | --- |
+| **L'écueil** | Il barre une case et arrête les tirs. | On s'abrite derrière. |
+| **La bombarde** | Fixe. Elle tire sur sa ligne une cloche sur deux ; le tir s'arrête à la première pièce. | On passe à la cloche creuse ; on fait écran ; on place une de ses propres pièces sur sa ligne. |
+| **La sentinelle** | Fixe. Elle frappe deux cases devant elle, puis tourne d'un quart de tour. | Affaire de moment : elle regarde ailleurs une cloche sur quatre. |
+| **La galère** | Elle frappe les quatre cases qui la touchent et avance d'une case vers la tête. | L'escorte la coule en la frôlant ; on l'attire dans une ligne de tir. |
+| **Le brûlot** | Il dort. Dès qu'il voit une de tes pièces dans sa ligne, il fonce à la cloche suivante jusqu'au premier obstacle et fait sauter les quatre cases autour, **amis compris**. | On le réveille exprès pour qu'il aille s'écraser sur la bombarde. |
+| **Le capitaine** (corsaires seulement) | Il saute comme le cavalier des échecs et frappe sa case d'arrivée, annoncée. | À étudier, capitaine par capitaine. |
+
+### 9.6 Les pièces du convoi
+
+Quatre à six pièces ; on commence avec six sortes.
 
 | Pièce | Ce qu'elle fait |
 | --- | --- |
-| **La tête** | Elle mène. Deux coups la coulent. |
+| **La tête** | Elle mène. Deux coups la coulent, et c'est perdu. |
 | **La cale** | Elle porte la cargaison. Un coup la perd. |
-| **L'escorte** | Elle encaisse deux coups. Elle coule une galère qu'elle frôle. |
-| **Les arbalétriers** | Ils frappent la première pièce de garde dans leur ligne, à deux cases. |
+| **L'escorte** | Elle encaisse deux coups, fait écran aux tirs, coule une galère qu'elle frôle. |
+| **Les arbalétriers** | Une fois par Manœuvre, ils abattent la première pièce de garde dans leur ligne, à deux cases. |
 | **Les rameurs** | Une fois par Manœuvre, quatre cases au lieu de trois. |
-| **Le charpentier** | Il répare d'un coup la pièce placée devant lui. |
+| **Le leurre** | Un tonneau lâché par la queue. La galère le suit, le brûlot le voit. |
 
-**La file se coupe** **(revue)** : une pièce détruite au milieu sépare l'arrière, qui reste sur place jusqu'à ce que la tête repasse à côté de lui. Perdre une cale au milieu peut donc coûter toute la queue.
+**La file se coupe** : une pièce détruite au milieu sépare l'arrière, qui attend que la tête repasse à côté de lui.
 
-### 9.5 Le terrain (revue)
+### 9.7 La stratégie du défenseur
 
-Chaque passage a **un** terrain, pas plus : le **courant** (il pousse la file d'une case à chaque cloche), la **brume** (les archers n'y voient pas), le **haut-fond** (une seule pièce par cloche y passe). Chaque détroit a ainsi son caractère.
+Tenir une tour, c'est **composer un problème**.
 
-### 9.6 Gagner, perdre, à armes égales
+- **Un budget**, fixé par le niveau du passage, le même pour tous : tant de points, chaque pièce a son prix (une bombarde vaut plus qu'une sentinelle).
+- **Le terrain est celui du passage** : ses écueils, son courant, sa brume. Chaque détroit se défend autrement.
+- **On règle tout** : la case de chaque pièce, le sens de la bombarde et sa cloche, le premier regard de la sentinelle.
+- **L'épreuve** : une disposition n'est valable que si son auteur **l'a forcée lui-même**, avec le convoi de référence du passage, en sauvant au moins une cale. Aucune garde n'est donc impossible, et le défenseur connaît la clef de son propre problème.
+- **Les pièges se retournent** : puisque les tirs et les brûlots touchent aussi la garde, une disposition trop dense se détruit elle-même. Le bon défenseur couvre les couloirs **sans offrir ses pièces**.
+- **La cote de la garde** monte chaque fois qu'un assaillant échoue ou perd des cales. Elle est affichée sur la tour : « 14 assauts, 2 passés ».
+- **La reprise** : chaque assaut se rejoue. Le défenseur voit par où on l'a percé, et redispose.
+- Trois dispositions tournent, pour que la clef ne circule pas.
 
-- **Gagné** : la tête atteint le bord opposé. **Perdu** : la tête est coulée.
-- Cinq à sept cloches, deux minutes, sans chronomètre.
-- Chaque passage a un niveau, qui fixe le **budget de la garde** et le **budget du convoi**, les mêmes pour tous.
-- Tout est déterministe : une Manœuvre se rejoue, se partage, se teste au simulateur.
-- **À deux** : le second convoi entre par un autre bord et attire les tirs.
+### 9.8 La difficulté se mesure
 
-### 9.7 L'apprendre (revue)
+Un solveur parcourt toutes les suites de coups d'une garde. Il donne, pour chaque disposition : le meilleur résultat possible, la part des suites qui l'atteignent, et ce qu'obtiennent des joueurs simplistes. Premières mesures, sur les deux gardes de la maquette (trois ordres de file chacune) :
 
-Trois casse-têtes d'une seule cloche, sous le projecteur : passer à côté d'une galère ; faire encaisser l'escorte ; attendre que la bombarde ait tiré. Le premier passage forcé arrive **avant la vingtième minute** de jeu, sur une bouche de lagune.
+| Garde | Pièces | Suites de coups possibles | Suites qui sauvent les deux cales | Un joueur qui évite seulement les coups annoncés, une ou deux cloches à l'avance |
+| --- | --- | --- | --- | --- |
+| Segna (corsaire) | 6 | 0,8 à 1,1 million | 0,3 à 1,3 % | Échoue, quel que soit l'ordre |
+| Chioggia (joueur) | 4 | 4,3 à 4,8 millions | 3,2 à 5,5 % | Échoue, quel que soit l'ordre |
 
-*C'est la pièce la plus neuve du jeu, et la moins sûre. Elle est la première chose à prototyper (§ 17).*
+Ces deux gardes viennent d'une recherche automatique sur 151 dispositions tirées au sort : deux seulement avaient à la fois une solution parfaite et aucun passage pour le joueur à courte vue. **Une garde difficile et juste est donc rare : la composer est un vrai savoir-faire.** Le même outil servira à classer les passages par difficulté, à vérifier l'épreuve du défenseur et à calibrer les budgets.
+
+### 9.9 Gagner, perdre, à armes égales
+
+- **Gagné** : la tête atteint le bord opposé avant la fin de la sixième cloche. Le résultat se compte en cales sauvées.
+- **Perdu** : la tête est coulée, ou la chaîne se referme.
+- Les budgets du convoi et de la garde sont ceux du passage, les mêmes pour tous.
+- Tout est déterministe : une Manœuvre se rejoue et se partage, comme une partie d'échecs.
+- **À deux** : le second convoi entre par un autre bord.
+
+### 9.10 L'apprendre
+
+Trois casse-têtes d'une seule cloche, sous le projecteur : passer derrière une galère ; faire écran avec l'escorte ; réveiller un brûlot. Le premier passage forcé arrive **avant la vingtième minute**, sur une bouche de lagune à deux pièces de garde. La difficulté monte avec l'encre.
+
+*C'est la pièce la plus neuve du jeu. Elle est la première chose à prototyper (§ 17) : il reste à prouver qu'elle amuse autant qu'elle fait réfléchir.*
 
 ## 10. La rivalité (revue)
 
@@ -353,7 +392,7 @@ Une étape à la fois, chacune avec son plan validé, ses tests d'abord, et le s
 
 | # | Étape | Ce qu'elle livre | Réussie quand |
 | --- | --- | --- | --- |
-| 1 | **La Manœuvre, en prototype** | Le moteur pur (coups ancrés à la garde, file qui se coupe, six pièces, cinq pièces de garde, un terrain), des robots qui la jouent, un laboratoire jouable dans le rendu de Porcellana à 390 px, les trois casse-têtes d'apprentissage | Le porteur et quelques testeurs en redemandent après vingt parties ; les robots ne trouvent **aucune routine gagnante** ; aucune garde n'est imbattable |
+| 1 | **La Manœuvre, en prototype** | Le moteur pur (les cinq lois, six pièces de convoi, cinq pièces de garde, un terrain), le solveur qui mesure chaque garde, l'atelier du défenseur avec son épreuve, un laboratoire jouable dans le rendu de Porcellana à 390 px, les trois casse-têtes d'apprentissage, trente passages classés par difficulté | Le porteur et quelques testeurs en redemandent après vingt parties, en attaque comme en défense ; le solveur ne trouve **aucune routine gagnante** ; aucune garde valable n'est impossible |
 | 2 | **La planche et les fils, au simulateur** | 100 Maisons robots sur quatre marées : fils, patine, tresse, demande commune, ville tissée, passages | Aucune stratégie unique ne domine ; se connecter huit fois par jour ne rapporte pas plus que trois ; l'économie tient ; les tricheurs simulés ne gagnent rien |
 | 3 | **L'île** | Le domaine porté sur la planche commune : terrains, voisinages vus avant la pose, quai | Deux îles de même niveau diffèrent |
 | 4 | **Les fils et les villes, à l'écran** | Tirer, tenir, reprendre ; les jauges découpées ; les fils des autres | Une visite de cinq minutes contient une vraie décision |
