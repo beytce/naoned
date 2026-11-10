@@ -1,5 +1,7 @@
 # Fondaco — plan global : « la Sérénissime » (proposition de cadrage v4)
 
+*Remplacée le jour même par `docs/refonte-totale-2026-11-10/00-critique-et-concept.md` (le porteur : « tu pars trop de l'existant ») ; gardée pour son diagnostic et sa recherche.*
+
 *Proposition du 10 novembre 2026, à la demande du porteur : « oublie toutes les règles mises en place, tu peux absolument tout remettre en question […] il faut que Fondaco soit un vrai jeu complet de stratégie-gestion, innovant ». **Rien n'est décidé, rien n'est codé.** Ce document ne remplace CADRAGE-v3 et les plans en cours que s'il est validé ; les questions à trancher sont au § 15.*
 
 *Méthode : lecture du cadrage (CADRAGE-v3), des audits (joueurs du 7 novembre, gameplay du 5, profondeur du 1er, Terraferme du 8), des plans en cours (publication, Porcellana, Porta, Terraferme, ateliers), des captures du jeu ; recherche sur une vingtaine de jeux de référence et sur ce qu'en disent critiques et joueurs (§ 2, sources au § 16). Limite : le réseau de la session refuse `steamcommunity.com`, Reddit et la plupart des sites de presse en lecture directe ; les avis viennent donc des résultats de recherche (critiques, agrégateurs d'avis Steam, fils de forum cités), pas d'une lecture page par page.*
