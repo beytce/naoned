@@ -299,7 +299,9 @@ try {
   await shot("7-combat");
   await page.waitForTimeout(700);
   await page.screenshot({ path: join(SHOTS, "7b-combat.png") });
-  await page.waitForSelector("[data-battle-mood=loading]", { timeout: 40_000 }).catch(() => {
+  // Loading, or loaded already (a common relic takes ten seconds).
+  const loading = "[data-battle-mood=loading], [data-battle-cargo]:not([data-battle-cargo='0'])";
+  await page.waitForSelector(loading, { timeout: 40_000 }).catch(() => {
     faults.push("battle: the transport never loaded at the town");
   });
   await page.waitForTimeout(1_500);

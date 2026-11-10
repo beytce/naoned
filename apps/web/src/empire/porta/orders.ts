@@ -154,7 +154,7 @@ export function moodOf(b: BattleSnapshot, u: PlayerUnitView): UnitMood {
   if (u.loading) return "loading";
   if (u.attack) return "attack";
   if (u.goal) return "moving";
-  if (u.follow) return "follow";
   if (u.role === "transport" && u.cargo.length >= u.capacity) return "full";
+  if (u.follow) return "follow";
   return "idle";
 }

@@ -1163,6 +1163,7 @@ function UnitCard({
       disabled={!inside}
       data-battle-unit={u.id}
       data-battle-mood={inside ? mood : u.outcome}
+      data-battle-cargo={u.cargo.length}
       aria-pressed={chosen}
       className={`flex min-h-[4.25rem] min-w-0 flex-1 flex-col justify-center gap-1 rounded-[1.25rem] px-2.5 py-2 text-left transition active:translate-y-0.5 disabled:opacity-55 ${chosen ? "ink-pill" : along ? "bg-night-4 text-cream shadow-[inset_0_0_0_2px_rgb(var(--cream))]" : "bg-night-4 text-cream"}`}
     >

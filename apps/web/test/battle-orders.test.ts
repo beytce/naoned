@@ -145,8 +145,8 @@ describe("the orders a touch gives", () => {
     r.state = "attack";
     r.targetId = "c";
     expect(moodOf(b, c)).toBe("fire");
+    // Full, it says so before it says whom it follows.
     t.cargo = ["common", "common"];
-    t.follow = null;
     expect(moodOf(b, t)).toBe("full");
   });
 });
