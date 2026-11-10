@@ -9,7 +9,14 @@ import { lockedPlot } from "../models/decor.js";
 import { domainTile, site, tierDress, tierOf } from "../models/domain.js";
 import { fondaco } from "../models/fondaco.js";
 import { plot } from "../models/ground.js";
-import { adornments, barque, heldBanner, loyaltyBanners, marketStalls } from "../models/life.js";
+import {
+  adornments,
+  barque,
+  heldBanner,
+  loyaltyBanners,
+  marketStalls,
+  townMarket,
+} from "../models/life.js";
 import { zattera } from "../models/lot7.js";
 import { market } from "../models/market.js";
 import type { Built, ModelOpts } from "../models/model.js";
@@ -72,7 +79,11 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
     case "town": {
       const b = town(P, { ...o, size: tile.size ?? 1, venetian: tile.venetian });
       quayCrates(P, b.group, tile.crates ?? []);
-      if (tile.loyalty) loyaltyBanners(P, b.group, tile.loyalty);
+      if (tile.loyalty) {
+        loyaltyBanners(P, b.group, tile.loyalty);
+        // The market its loyalty grew at its gate (lot 5 of the living map).
+        townMarket(P, b.group, tile.loyalty);
+      }
       if (tile.held) heldBanner(P, b.group);
       return b;
     }

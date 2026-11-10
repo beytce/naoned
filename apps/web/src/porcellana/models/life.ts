@@ -217,3 +217,36 @@ export function marketStalls(
       box(p, 0.2, 0.18, 0.2, x - 0.24 + c * 0.24, 0.5, z + 0.04, P.m("trim"), 0.02);
   });
 }
+
+/**
+ * A town that knows the house grows a market at its gate (the towns' loyalty, lot 5 of the living
+ * map): a stall a tier along its quay, the side the board shows, its awning of accent at the last
+ * tier under a line of pennants. What the house's deliveries made is seen from afar.
+ */
+export function townMarket(P: Palette, p: Object3D, tier: number): void {
+  const n = Math.min(3, tier);
+  for (let k = 0; k < n; k++) {
+    const x = -0.55 + k * 0.82;
+    const z = 2.52;
+    box(p, 0.62, 0.34, 0.32, x, 0.08, z, P.m("wood"), 0.02);
+    for (const dx of [-0.28, 0.28])
+      box(p, 0.035, 0.78, 0.035, x + dx, 0.08, z - 0.14, P.m("wood"), 0.01);
+    const awning = box(p, 0.72, 0.035, 0.42, x, 0.84, z, tier >= 4 ? P.accent : P.m("trim"), 0.01);
+    awning.rotation.x = 0.26;
+    awning.castShadow = false;
+    box(p, 0.16, 0.14, 0.16, x - 0.14, 0.42, z + 0.02, P.m("trim"), 0.02);
+    box(p, 0.16, 0.14, 0.16, x + 0.12, 0.42, z + 0.03, k % 2 ? P.m("roof") : P.accent, 0.02);
+  }
+  if (tier >= 4) {
+    // The fair's line of pennants, from a pole to the other over the stalls.
+    for (const x of [-1.05, 1.6]) cyl(p, 0.025, 0.03, 1.5, x, 0.08, 2.52, P.m("wood"), 8);
+    for (let k = 0; k < 7; k++) {
+      const u = k / 6;
+      const flag = dyn(new Mesh(cached("pennant", () => new BoxGeometry(0.16, 0.2, 0.015))));
+      flag.material = P.accentCloth;
+      flag.position.set(-1.05 + u * 2.65, 1.5 - Math.sin(u * Math.PI) * 0.22, 2.52);
+      flag.castShadow = false;
+      p.add(flag);
+    }
+  }
+}

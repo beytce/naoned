@@ -35,6 +35,45 @@ export interface CityOrders {
   nextAt: number | null;
   /** The house's counters that serve it (a vehicle docked there may bring its orders). */
   posts: string[];
+  /**
+   * How well it knows the house (lot 5 of the living map): its tier, the deliveries it received,
+   * the premium its orders pay now, and what the next tier asks and gives (null at the last).
+   * Absent without the loyalty.
+   */
+  loyalty?: {
+    tier: number;
+    served: number;
+    premiumBps: number;
+    next: { at: number; premiumBps: number } | null;
+  };
+}
+
+/** A town's tier of loyalty for so many deliveries received: 0 before the first threshold. */
+export function loyaltyTier(s: EmpireSettings, served: number): number {
+  const at = s.orders?.loyalty?.at ?? [];
+  let tier = 0;
+  while (tier < at.length && served >= (at[tier] ?? Number.POSITIVE_INFINITY)) tier++;
+  return tier;
+}
+
+/** The premium a town's orders pay for so many deliveries received, in bps. */
+export function loyaltyBps(s: EmpireSettings, served: number): number {
+  const tier = loyaltyTier(s, served);
+  return tier > 0 ? (s.orders?.loyalty?.premiumBps[tier - 1] ?? 0) : 0;
+}
+
+/** A town's loyalty as the view tells it; undefined without the loyalty. */
+export function loyaltyOf(s: EmpireSettings, served: number): CityOrders["loyalty"] {
+  const l = s.orders?.loyalty;
+  if (!l) return undefined;
+  const tier = loyaltyTier(s, served);
+  const at = l.at[tier];
+  return {
+    tier,
+    served,
+    premiumBps: loyaltyBps(s, served),
+    next: at !== undefined ? { at, premiumBps: l.premiumBps[tier] ?? 0 } : null,
+  };
 }
 
 const sizeOf = (size: number) => Math.min(5, Math.max(1, size));
@@ -118,6 +157,7 @@ function drawOrder(
   seq: number,
   goods: string[],
   distance: number,
+  served: number,
 ): EmpireOrder | null {
   if (goods.length === 0) return null;
   const good = goods[draw(ctx, `order|${playerId}|${code}|${seq}`) % goods.length] ?? "";
@@ -125,7 +165,9 @@ function drawOrder(
   if (ref === null) return null;
   const tier = ctx.theme.resources.find((r) => r.code === good)?.tier;
   const qty = orderLot(lotOf(s, good, ref, tier), s, seq === 0);
-  const premium = (s.orders?.premiumBps ?? 0) + distanceBonusBps(s, distance);
+  // What the town pays over the reference: its premium, the long road's, its loyalty's.
+  const premium =
+    (s.orders?.premiumBps ?? 0) + distanceBonusBps(s, distance) + loyaltyBps(s, served);
   const pay = applyBpsFloor(ref * BigInt(qty), 10_000 + premium);
   return { id: `${code}#${seq}`, city: code, good, qty, pay };
 }
@@ -167,10 +209,12 @@ export function cityOrdersAt(
   const learnsUntil = learning ? h.joinedAt + learning.hours * HOUR_MS : 0;
   const everyAt = (at: number) =>
     learning && at < learnsUntil ? Math.min(every, learning.everyMinutes * MINUTE_MS) : every;
+  // How well the town knows the house: its orders to come pay its tier's premium.
+  const served = h.served?.[code] ?? 0;
   let next = kept?.next ?? now;
   let seq = kept?.seq ?? 0;
   while (next <= now && list.length < cap) {
-    const o = drawOrder(ctx, s, playerId, code, c.region, seq, goods, distance);
+    const o = drawOrder(ctx, s, playerId, code, c.region, seq, goods, distance, served);
     // Nothing the house could be asked for yet: the town keeps its turn for when there is
     // (the players' audit of 7 November 2026, P0-05: the turn was burnt, two hours of nothing).
     if (!o) {
@@ -224,6 +268,7 @@ export function ordersOf(
         // Full, the next one waits for a place: it comes an interval after one is freed.
         nextAt: full ? null : rec.next,
         posts: postsServing(h, s, c.code),
+        ...(s.orders?.loyalty ? { loyalty: loyaltyOf(s, h.served?.[c.code] ?? 0) } : {}),
       };
     });
 }

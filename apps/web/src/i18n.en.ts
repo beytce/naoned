@@ -327,6 +327,15 @@ export const en: Dictionary = {
       moveGain: (pct: number) => `On its terroir: +${pct}%.`,
       movePlain: "Off its terroir: it will yield as elsewhere.",
     },
+    loyalty: {
+      sub: (tier: number, pct: number) =>
+        pct > 0 ? `loyalty ${tier} · orders +${pct}%` : `loyalty ${tier}`,
+      next: (left: number, pct: number) =>
+        left > 1
+          ? `${left} more deliveries: its orders will pay +${pct}%.`
+          : `One more delivery: its orders will pay +${pct}%.`,
+      top: "It knows you best: its orders pay the most.",
+    },
     region: "Venetia",
     store: {
       kicker: "The Fondaco",

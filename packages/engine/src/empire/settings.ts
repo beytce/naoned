@@ -142,6 +142,21 @@ export const empireSettingsSchema = z.object({
        * asks at least every `everyMinutes`, then at its own pace. None: its own pace from the start.
        */
       learning: z.object({ hours: positive, everyMinutes: positive }).optional(),
+      /**
+       * The towns' loyalty (docs/plan-carte-vivante.md, lot 5; decision of the owner, 9 November
+       * 2026): a town that received `at[k]` deliveries of the house is at its tier k + 1, and its
+       * orders pay `premiumBps[k]` more from then on (the price of an order is set when it comes).
+       * As many premiums as tiers, both rising. None: the deliveries count for nothing.
+       */
+      loyalty: z
+        .object({ at: z.array(positive).min(1), premiumBps: z.array(bps).min(1) })
+        .refine((l) => l.at.length === l.premiumBps.length, {
+          message: "as many premiums as tiers",
+        })
+        .refine((l) => l.at.every((n, i) => i === 0 || n > (l.at[i - 1] ?? 0)), {
+          message: "the tiers rise",
+        })
+        .optional(),
     })
     .nullable()
     .prefault(null),

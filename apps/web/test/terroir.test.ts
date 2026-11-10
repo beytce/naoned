@@ -154,3 +154,60 @@ describe("the terroirs on the board", () => {
     expect(full?.tiles.find((x) => x.place?.id === "workshop:w2")?.place?.alt).toBeUndefined();
   });
 });
+
+// The towns' loyalty on the board (docs/plan-carte-vivante.md, lot 5).
+describe("a town's loyalty on its card", () => {
+  const withTown = (loyalty: unknown, served: number): EmpirePayload => {
+    const p = payload() as unknown as {
+      view: {
+        served: Record<string, number>;
+        orders: unknown[];
+        map: { cities: unknown[]; covered: string[] };
+      };
+    };
+    p.view.served = { padova: served };
+    p.view.map.cities = [{ code: "padova", cell: "6,6", region: "veneto", x: 65, y: 65, size: 3 }];
+    p.view.map.covered = ["padova"];
+    p.view.orders = [
+      {
+        city: "padova",
+        region: "veneto",
+        size: 3,
+        cap: 2,
+        fillBps: 0,
+        nextAt: null,
+        orders: [],
+        loyalty,
+      },
+    ];
+    return p as unknown as EmpirePayload;
+  };
+  const town = (p: EmpirePayload) =>
+    boardOf(p, NOW)?.tiles.find((x) => x.place?.id === "city:padova");
+
+  it("says its tier, what its orders pay more, and what the next asks", () => {
+    const t = town(
+      withTown({ tier: 2, served: 12, premiumBps: 400, next: { at: 25, premiumBps: 600 } }, 12),
+    );
+    expect(t?.loyalty).toBe(2);
+    expect(t?.place?.sub).toContain("fidélité 2 · commandes +4 %");
+    expect(t?.place?.line).toContain("Encore 13 livraisons : ses commandes paieront +6 %.");
+  });
+
+  it("says a town at its best, and one not known yet", () => {
+    const top = town(withTown({ tier: 4, served: 80, premiumBps: 800, next: null }, 80));
+    expect(top?.loyalty).toBe(4);
+    expect(top?.place?.line).toContain("Elle te connaît au mieux");
+    const none = town(
+      withTown({ tier: 0, served: 0, premiumBps: 0, next: { at: 3, premiumBps: 200 } }, 0),
+    );
+    expect(none?.loyalty).toBe(0);
+    expect(none?.place?.sub).not.toContain("fidélité");
+    expect(none?.place?.line).toContain("Encore 3 livraisons");
+  });
+
+  it("keeps the banners of before where the engine tells no tier", () => {
+    expect(town(withTown(undefined, 11))?.loyalty).toBe(2);
+    expect(town(withTown(undefined, 11))?.place?.sub).toContain("11 livraisons");
+  });
+});

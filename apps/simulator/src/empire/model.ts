@@ -95,6 +95,8 @@ export interface House {
   seals: number;
   plans: number;
   casa: number;
+  /** The deliveries each town received from it (the towns' loyalty, the living map's lot 5). */
+  served: Map<string, number>;
   /** The hour each Casa level was reached (index level − 1). */
   casaAt: number[];
   /** The first day its Power took it out of the first band. */

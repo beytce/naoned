@@ -15,6 +15,7 @@ import {
   citiesCovered,
   citySpot,
   distanceBonusBps,
+  loyaltyBps,
   effectOf,
   highRecipeRaw,
   levelCost,
@@ -106,6 +107,7 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     casa: 1,
     casaAt: [w.now],
     workshops: startWorkshops(w, activity, w.nextId),
+    served: new Map(),
     counters: new Map([["veneto", 1]]),
     revealed: new Set([...startCells(w.s), ...startTiles(w)]),
     posts: 0,
@@ -404,7 +406,9 @@ function cityOrdersNow(w: World, h: House, c: (typeof w.s.map.cities)[number]) {
     const ref = orderRefOf(w.s, c.region, good);
     if (ref === null) continue;
     const qty = orderLot(lotOf(w.s, good, ref, tierOf.get(good)), w.s, rec.seq === 0);
-    const premium = o.premiumBps + distanceBonusBps(w.s, road);
+    // The town's loyalty with the rest (the living map's lot 5): it knows the house by its deliveries.
+    const premium =
+      o.premiumBps + distanceBonusBps(w.s, road) + loyaltyBps(w.s, h.served.get(c.code) ?? 0);
     rec.list.push({ good, qty, pay: applyBpsFloor(ref * BigInt(qty), 10_000 + premium) });
     rec.seq++;
   }
@@ -442,6 +446,7 @@ function deliverOrders(w: World, h: House, _sinceHours: number) {
     const rec = cityOrdersNow(w, h, c);
     // « Livrer »: the best paid first, those the stock covers; the others wait (and block).
     const order = [...rec.list].sort((a, b) => (b.pay > a.pay ? 1 : b.pay < a.pay ? -1 : 0));
+    let brought = false;
     for (const x of order) {
       if (places <= 0) break;
       if (!homesOf(h, x.good).has(c.region)) continue;
@@ -473,7 +478,10 @@ function deliverOrders(w: World, h: House, _sinceHours: number) {
       receive(w, h, gross, "orders", "orders");
       h.ordersValue += gross;
       h.favour += Number(gross / (100n * DENIERS_PER_DUCAT)) * w.m.favourPer100Ducats;
+      brought = true;
     }
+    // A delivery of the session to this town: it knows the house a little better.
+    if (brought) h.served.set(c.code, (h.served.get(c.code) ?? 0) + 1);
   }
 }
 

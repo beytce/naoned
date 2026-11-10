@@ -8,7 +8,7 @@ import { tileAt } from "@comptoirs/engine";
 import { buildingName, workshopStatus } from "../../empire/logic.js";
 import { type Target, deliveryPlan } from "../../empire/map/logic.js";
 import { welcomeStep } from "../../empire/next.js";
-import { terrainName, terroirLine, tileBonusLine } from "../../empire/terroir.js";
+import { pct, terrainName, terroirLine, tileBonusLine } from "../../empire/terroir.js";
 import type { EmpirePayload } from "../../empire/types.js";
 import { hourOf } from "../../game/format.js";
 import { fr } from "../../i18n.js";
@@ -290,6 +290,17 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     const toLink = inZone && !venice ? map.toLink?.[c.code] : undefined;
     const crates = waiting > 0 ? deliveryPlan(p, c.code).orders.map((x) => x.covered) : [];
     const served = v.served?.[c.code] ?? 0;
+    // How well it knows the house (lot 5 of the living map): the engine's tier where it tells
+    // one, else the banners of before (3, 10, 25 deliveries).
+    const loyal = o?.loyalty;
+    const tier = loyal ? loyal.tier : served >= 25 ? 3 : served >= 10 ? 2 : served >= 3 ? 1 : 0;
+    const loyalSub =
+      loyal && loyal.tier > 0 ? t.loyalty.sub(loyal.tier, pct(loyal.premiumBps)) : "";
+    const loyalNext = !loyal
+      ? ""
+      : loyal.next
+        ? t.loyalty.next(loyal.next.at - loyal.served, pct(loyal.next.premiumBps))
+        : t.loyalty.top;
     // On San Marco's square, a stall for each good the house holds and the Market trades.
     const stalls = venice
       ? (p.market ?? [])
@@ -304,7 +315,7 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     put(k, {
       crates,
       ...(stalls.length ? { stalls } : {}),
-      loyalty: served >= 25 ? 3 : served >= 10 ? 2 : served >= 3 ? 1 : 0,
+      loyalty: tier,
       served,
       held: (v.terraCities ?? []).includes(c.code),
       water: false,
@@ -317,17 +328,19 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         name: venice ? t.porcellana.market : (t.cityNames[c.code] ?? c.code),
         sub: venice
           ? t.porcellana.marketSub
-          : `${t.regionNames[c.region] ?? c.region} · ${t.porcellana.townSize(c.size ?? 1)}${served > 0 ? ` · ${t.porcellana.served(served)}` : ""}`,
+          : `${t.regionNames[c.region] ?? c.region} · ${t.porcellana.townSize(c.size ?? 1)}${loyalSub ? ` · ${loyalSub}` : served > 0 ? ` · ${t.porcellana.served(served)}` : ""}`,
         line: !inZone
           ? t.porcellana.outOfZone(map.zoneCasa?.[c.code] ?? null)
           : toLink
             ? t.porcellana.toLink(toLink.length)
-            : waiting > 0
-              ? t.porcellana.cityOrders(waiting)
-              : o?.nextAt
-                ? // When its next order comes (P2-04 of the players' audit).
-                  t.porcellana.nextOrder(hourOf(o.nextAt))
-                : t.porcellana.cityQuiet,
+            : `${
+                waiting > 0
+                  ? t.porcellana.cityOrders(waiting)
+                  : o?.nextAt
+                    ? // When its next order comes (P2-04 of the players' audit).
+                      t.porcellana.nextOrder(hourOf(o.nextAt))
+                    : t.porcellana.cityQuiet
+              }${loyalNext && !venice ? ` ${loyalNext}` : ""}`,
         go: venice ? t.porcellana.openMarket : t.porcellana.openCity,
         pin: waiting > 0 ? String(waiting) : "",
         ready: waiting > 0 && !toLink,

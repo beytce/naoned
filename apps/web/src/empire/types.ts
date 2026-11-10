@@ -161,6 +161,16 @@ export interface EmpireView {
     nextAt: number | null;
     /** The house's counters that serve it. */
     posts?: string[];
+    /**
+     * How well it knows the house (the living map's lot 5): its tier, its deliveries, the premium
+     * its orders pay now (bps), what the next tier asks and gives (null at the last).
+     */
+    loyalty?: {
+      tier: number;
+      served: number;
+      premiumBps: number;
+      next: { at: number; premiumBps: number } | null;
+    };
   }[];
   /** The last deliveries brought (played again on the player's return). */
   delivered?: { city: string; pay: string; at: number }[];

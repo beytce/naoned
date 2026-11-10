@@ -248,6 +248,18 @@ const frDict = {
       moveGain: (pct: number) => `Sur son terroir : +${pct} %.`,
       movePlain: "Hors de son terroir : il rendra comme ailleurs.",
     },
+    /** The towns' loyalty (docs/plan-carte-vivante.md, lot 5): what a town's deliveries earn. */
+    loyalty: {
+      /** On a town's card, after its size: its tier and what its orders pay more. */
+      sub: (tier: number, pct: number) =>
+        pct > 0 ? `fidélité ${tier} · commandes +${pct} %` : `fidélité ${tier}`,
+      /** What the next tier asks and gives. */
+      next: (left: number, pct: number) =>
+        left > 1
+          ? `Encore ${left} livraisons : ses commandes paieront +${pct} %.`
+          : `Encore une livraison : ses commandes paieront +${pct} %.`,
+      top: "Elle te connaît au mieux : ses commandes paient le plus.",
+    },
     region: "Vénétie",
     /** The Warehouse's sheet (the players' audit, P1: no screen showed the stock). */
     store: {

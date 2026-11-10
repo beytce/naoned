@@ -39,10 +39,10 @@ export const PEOPLE = {
   workers: 3,
   waiting: 2,
   builders: 2,
-  citizens: 9,
+  citizens: 11,
   market: 12,
   house: 10,
-  travellers: 4,
+  travellers: 5,
 } as const;
 
 /** A number from 0 to 1 out of whole numbers, the same at every call. */

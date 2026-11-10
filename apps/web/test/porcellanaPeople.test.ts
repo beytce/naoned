@@ -104,7 +104,7 @@ describe("the towns and the house", () => {
       scene([tile(6, 6, { model: "town", size: 3, place: place("city:padova"), ...over })]);
     expect(count(town({}), "citizen")).toBe(4);
     expect(count(town({ loyalty: 2 }), "citizen")).toBe(8);
-    expect(count(town({ size: 5, loyalty: 3 }), "citizen")).toBe(PEOPLE.citizens);
+    expect(count(town({ size: 5, loyalty: 4 }), "citizen")).toBe(PEOPLE.citizens);
   });
 
   it("leaves a town the house cannot serve yet to itself", () => {
@@ -149,7 +149,8 @@ describe("the towns and the house", () => {
       );
     expect(count(town({}), "traveller")).toBe(0);
     expect(count(town({ served: 1 }), "traveller")).toBe(1);
-    expect(count(town({ served: 30, loyalty: 3 }), "traveller")).toBe(PEOPLE.travellers);
+    expect(count(town({ served: 30, loyalty: 3 }), "traveller")).toBe(4);
+    expect(count(town({ served: 80, loyalty: 4 }), "traveller")).toBe(PEOPLE.travellers);
   });
 
   it("puts builders on a site", () => {

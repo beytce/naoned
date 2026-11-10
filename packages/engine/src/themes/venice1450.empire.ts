@@ -349,6 +349,10 @@ export const venice1450Empire: EmpireSettingsInput = {
     // The house that learns (docs/plan-publication.md, lot 2): an order every twelve minutes a
     // town for its first two hours, then each town's own pace.
     learning: { hours: 2, everyMinutes: 12 },
+    // The towns' loyalty (docs/plan-carte-vivante.md, lot 5; decision of the owner, 9 November
+    // 2026; docs/calibration.md, « La fidélité des villes »): the banners of 3, 10 and 25
+    // deliveries now count, and a fourth tier at 60; each two points of premium more.
+    loyalty: { at: [3, 10, 25, 60], premiumBps: [200, 400, 600, 800] },
   },
   // A hop: ten seconds to leave (left at once, or taken back), then eleven seconds a unit of the
   // chart (3 November, the long voyages): five minutes from the first fondaco to Venice, seven to
