@@ -220,6 +220,34 @@ const frDict = {
       noFreeTile:
         "Aucune case libre à toi dans cette région : achète une parcelle « + » à côté de ton domaine.",
     },
+    /** The terroirs (docs/plan-carte-vivante.md, lot 3): each tile's land, whom it favours. */
+    terroir: {
+      names: {
+        forest: "Forêt",
+        clay: "Glaise",
+        fields: "Champs",
+        pasture: "Pré",
+        sand: "Rive de sable",
+      } as Record<string, string>,
+      favours: (land: string, whom: string, pct: number) => `${land} : ${whom} y rend +${pct} %.`,
+      /** On a tile's card, after what it is. */
+      sub: (land: string) => `Terroir : ${land}`,
+      /** In the list of workshops to build on a tile. */
+      tag: (pct: number) => `Terroir +${pct} %`,
+      bonusTerroir: (pct: number) => `Terroir +${pct} %`,
+      bonusNeighbours: (pct: number) => `voisinage +${pct} %`,
+      /** A workshop off its land, a free tile of its land within the domain. */
+      better: (land: string, pct: number) =>
+        `Une case de ${land.toLowerCase()} est libre chez toi : il y rendrait +${pct} %.`,
+      move: "Déménager",
+      moveTitle: (name: string) => `Déménager : ${name}`,
+      moveHint:
+        "Touche une case libre à toi : l'atelier s'y pose aussitôt, sans frais, ses lots gardés.",
+      moveNone: "Aucune case libre à toi : achète une parcelle « + », puis déménage.",
+      moveHere: "Poser ici",
+      moveGain: (pct: number) => `Sur son terroir : +${pct} %.`,
+      movePlain: "Hors de son terroir : il rendra comme ailleurs.",
+    },
     region: "Vénétie",
     /** The Warehouse's sheet (the players' audit, P1: no screen showed the stock). */
     store: {

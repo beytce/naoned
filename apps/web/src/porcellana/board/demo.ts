@@ -95,6 +95,29 @@ const SEA = [
   "10,13",
 ];
 
+const TERRAIN: Record<string, string> = {
+  "9,10": "forest",
+  "10,11": "fields",
+  "12,9": "forest",
+  "12,10": "pasture",
+  "13,10": "fields",
+  "8,11": "clay",
+  "12,11": "sand",
+  "10,8": "pasture",
+  "7,10": "forest",
+  "13,9": "clay",
+  "7,9": "forest",
+  "8,8": "fields",
+  "9,8": "clay",
+  "11,8": "pasture",
+  "12,8": "forest",
+  "13,11": "sand",
+  "7,11": "fields",
+  "8,12": "sand",
+  "6,9": "forest",
+  "13,8": "fields",
+};
+
 const point = (cell: string): [number, number] => {
   const [x, y] = tileCentre(cell, SIZE);
   return [x, y];
@@ -260,6 +283,20 @@ export function demoPayload(now: number, o: DemoOpts): EmpirePayload {
         ],
       },
       stores: [{ post: "home", region: "veneto", goods: { wood: 60, planks: 45, bricks: 30 } }],
+      workshopPlaces: Object.fromEntries(
+        shops.map((w) => [
+          w.id,
+          {
+            slots: 0,
+            neighbourBps: w.type === "sawmill" || w.type === "lumber_camp" ? 1_000 : 0,
+            terrainBps:
+              (TERRAIN[w.tile] === "forest" && w.type === "lumber_camp") ||
+              (TERRAIN[w.tile] === "fields" && w.type === "farm")
+                ? 1_000
+                : 0,
+          },
+        ]),
+      ),
       storeCap: 400,
       full: [],
       map: {
@@ -273,6 +310,15 @@ export function demoPayload(now: number, o: DemoOpts): EmpirePayload {
           ]),
         ),
         revealed: [...owned, ...SEA],
+        // The terroirs: a land of each kind round the domain, some of it the house's already.
+        terrain: TERRAIN,
+        terrains: {
+          forest: { buildings: ["lumber_camp"], bonusBps: 1_000 },
+          clay: { buildings: ["clay_pit"], bonusBps: 1_000 },
+          fields: { buildings: ["farm", "hemp_field"], bonusBps: 1_000 },
+          pasture: { buildings: ["sheepfold"], bonusBps: 1_000 },
+          sand: { buildings: ["sand_pit", "salt_pans"], bonusBps: 1_000 },
+        },
         posts: [],
         home: { x: hx, y: hy, level: o.casa, reach: 0, cell: HOME, placed: true },
         reach: null,

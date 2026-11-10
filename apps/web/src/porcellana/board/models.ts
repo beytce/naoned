@@ -13,6 +13,7 @@ import { adornments, barque, heldBanner, loyaltyBanners, marketStalls } from "..
 import { zattera } from "../models/lot7.js";
 import { market } from "../models/market.js";
 import type { Built, ModelOpts } from "../models/model.js";
+import { isTerrain, terrainDress } from "../models/terrain.js";
 import { town } from "../models/towns.js";
 import { type Vehicle, cart, mule, rider, ship } from "../models/vehicles.js";
 import { crate } from "../shapes.js";
@@ -76,13 +77,17 @@ export function modelOf(P: Palette, tile: BoardTile, o: ModelOpts): Built | null
       return b;
     }
     case "plot":
-      return plot(P);
-    case "locked":
-      return lockedPlot(P);
+    case "locked": {
+      // Its land drawn round its « + », seen before it is bought (the terroirs, lot 3).
+      const b = key === "plot" ? plot(P) : lockedPlot(P);
+      if (isTerrain(tile.terrain))
+        terrainDress(P, b.group, tile.terrain, { seed: o.seed, sparse: true });
+      return b;
+    }
     case "site":
       return site(P, tile.progress ?? 0);
     case "lane":
-      return domainTile(P, o.seed, tile.casa ?? 1, o.keepOff);
+      return domainTile(P, o.seed, tile.casa ?? 1, o.keepOff, tile.terrain);
     case "campo": {
       // Its orders of the day in crates on its quay (the supply by road).
       const b = BY_KEY.get("campo")?.make?.(P, o) ?? null;

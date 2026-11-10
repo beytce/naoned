@@ -7,6 +7,7 @@ import { fr } from "../i18n.js";
 import { Sheet, Slab } from "../ui.js";
 import { regionName } from "./World.js";
 import { affordable } from "./logic.js";
+import { pct, terroirBonus } from "./terroir.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
 const t = fr.empire;
@@ -116,6 +117,15 @@ export function NewWorkshopList({
                   </span>
                   <span className="flex-1 text-sm text-cream">
                     <span className="font-display text-base font-extrabold">{b.name}</span>
+                    {terroirBonus(p, at ?? undefined, b.type) > 0 && (
+                      // Its land: it yields more on this tile (the terroirs).
+                      <span
+                        className="ml-2 rounded-full bg-face/15 px-2 py-0.5 text-[0.6875rem] font-bold text-cream"
+                        data-terroir-tag
+                      >
+                        {t.terroir.tag(pct(terroirBonus(p, at ?? undefined, b.type)))}
+                      </span>
+                    )}
                     <span className="block text-xs text-cream-dim">
                       {Object.entries(r.outputs)
                         .map(([g, n]) => `${n} ${goodName(p, g)}`)

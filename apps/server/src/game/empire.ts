@@ -275,6 +275,11 @@ const action = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("empireSwap"), a: z.string().max(32), b: z.string().max(32) }),
   z.object({
+    type: z.literal("empireMoveWorkshop"),
+    workshopId: z.string().max(32),
+    tile: z.string().max(12),
+  }),
+  z.object({
     type: z.literal("empireChooseArte"),
     arte: z.string().max(40),
     minor: z.boolean().optional(),

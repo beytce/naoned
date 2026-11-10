@@ -19,6 +19,7 @@ import { Slab, clock } from "../../ui.js";
 import { memberName } from "../Identity.js";
 import { regionName } from "../World.js";
 import { affordable, buildingName, readyLots, recipeOf, workshopStatus } from "../logic.js";
+import { tileBonusLine } from "../terroir.js";
 import type { EmpireAction, EmpirePayload, EmpireWorkshop } from "../types.js";
 
 const t = () => fr.empire.dock;
@@ -265,10 +266,11 @@ function Front({
           attrs={{ "data-dock-door": "master" }}
         />
       </div>
-      {(places?.neighbourBps ?? 0) > 0 && (
-        <p className="flex items-center gap-2 text-xs text-cream-dim">
+      {tileBonusLine(p, ws.id) && (
+        // What its tile gives it, in one line: its terroir, its neighbourhood (the living map).
+        <p className="flex items-center gap-2 text-xs text-cream-dim" data-tile-bonus>
           <span className="h-2 w-2 rounded-full bg-gold" aria-hidden="true" />
-          {fr.empire.identity.neighbours((places?.neighbourBps ?? 0) / 100)}
+          {tileBonusLine(p, ws.id)}
         </p>
       )}
       {master && (

@@ -225,7 +225,7 @@ export interface EmpireView {
       next: EmpireSite | null;
     }[];
   };
-  workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
+  workshopPlaces: Record<string, { slots: number; neighbourBps: number; terrainBps?: number }>;
   /** The workshops' insides, by workshop (docs/plan-ateliers.md § 5.6); absent or empty when off. */
   interiors?: Record<string, InteriorView>;
   /** Their rules (the stations' footprints and levels), for the screen's own reckoning. */
@@ -330,6 +330,12 @@ export interface EmpireRegion {
 export interface EmpireMapView {
   cells: Record<string, { region: string; coast: boolean }>;
   revealed: string[];
+  /**
+   * The terroirs (docs/plan-carte-vivante.md, lot 3): the terrain of each land tile seen or to buy
+   * that has one, and what each kind gives (the workshops it favours, their share more, in bps).
+   */
+  terrain?: Record<string, string>;
+  terrains?: Record<string, { buildings: string[]; bonusBps: number }>;
   /** The counters put down: their name, their point, their level and their reach. */
   posts: {
     id: string;
@@ -517,6 +523,7 @@ export type EmpireAction =
   | { type: "empireFit"; workshopId: string; slot: number; module: string }
   | { type: "empireCourt"; good: string; qty: number }
   | { type: "empireSwap"; a: string; b: string }
+  | { type: "empireMoveWorkshop"; workshopId: string; tile: string }
   | { type: "empireChooseArte"; arte: string; minor?: boolean }
   | { type: "empireLearn"; code: string }
   | { type: "empireHire"; role: string }

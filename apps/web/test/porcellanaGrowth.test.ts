@@ -4,6 +4,7 @@ import { BURST, Burst } from "../src/porcellana/burst.js";
 import { Crowd } from "../src/porcellana/crowd.js";
 import { createPalette } from "../src/porcellana/materials.js";
 import { domainTile, site, tierDress, tierOf } from "../src/porcellana/models/domain.js";
+import { TERRAINS, terrainDress } from "../src/porcellana/models/terrain.js";
 import { BOARD } from "../src/porcellana/tokens.js";
 
 // What grows is seen (docs/plan-carte-vivante.md, lot 2), and the crowd that draws the people.
@@ -87,6 +88,56 @@ describe("a free tile of the house's", () => {
         const c = new Box3().setFromObject(o).getCenter(o.position.clone());
         expect(Math.hypot(c.x, c.z), `seed ${seed}`).toBeGreaterThan(0.9);
       });
+    }
+  });
+});
+
+describe("a tile's land drawn", () => {
+  const count = (g: Group) => {
+    let n = 0;
+    g.traverse((o) => {
+      if (o instanceof Mesh) n++;
+    });
+    return n;
+  };
+
+  it("stands on its tile, each kind of its own pieces", () => {
+    const seen = new Set<number>();
+    for (const kind of TERRAINS)
+      for (let seed = 1; seed <= 8; seed++) {
+        const g = new Group();
+        terrainDress(P, g, kind, { seed });
+        expect(count(g), kind).toBeGreaterThan(3);
+        expect(within(g), `${kind}, seed ${seed}`).toBe(true);
+        expect(sound(g)).toBe(true);
+        if (seed === 1) seen.add(count(g));
+      }
+    // No two kinds draw the same.
+    expect(seen.size).toBeGreaterThan(3);
+  });
+
+  it("keeps a plot's « + » clear, wider than a free tile's middle", () => {
+    for (const kind of TERRAINS)
+      for (let seed = 1; seed <= 8; seed++) {
+        const g = new Group();
+        terrainDress(P, g, kind, { seed, sparse: true });
+        g.updateMatrixWorld(true);
+        g.traverse((o) => {
+          if (!(o instanceof Mesh)) return;
+          const b = new Box3().setFromObject(o);
+          // Nothing over the plus (1.3 across): its nearest side stays off the middle.
+          const nearX = Math.max(0, Math.max(b.min.x, -b.max.x));
+          const nearZ = Math.max(0, Math.max(b.min.z, -b.max.z));
+          expect(Math.hypot(nearX, nearZ), `${kind}, seed ${seed}`).toBeGreaterThan(0.6);
+        });
+      }
+  });
+
+  it("is drawn in full on a free tile of the house's, its houses kept", () => {
+    for (const kind of TERRAINS) {
+      const b = domainTile(P, 4, 12, () => false, kind);
+      expect(within(b.group), kind).toBe(true);
+      expect(count(b.group)).toBeGreaterThan(count(domainTile(P, 4, 1, () => false, kind).group));
     }
   });
 });

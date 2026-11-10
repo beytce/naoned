@@ -71,6 +71,25 @@ export const venice1450EmpireSquare: EmpireSettingsInput = {
     water: [],
     home: { x: Math.round(hx), y: Math.round(hy) },
     unlock: { costDucats: 75, stepBps: 470, seaHops: 8 },
+    // The terroirs (docs/plan-carte-vivante.md, lot 3; decision of the owner, 9 November 2026;
+    // docs/calibration.md, « Les terroirs »): the raw trades love their land, a tenth more of their
+    // lot there, as a neighbour that feeds them gives. Sand and salt only on a coast. Venetia is
+    // richer in terrains than the regions further on; the seed is the one whose draw gives the
+    // first Fondaco a forest, clay and fields by its sides (the guide's first three workshops).
+    terrain: {
+      kinds: {
+        forest: { buildings: ["lumber_camp"], bonusBps: 1_000 },
+        clay: { buildings: ["clay_pit"], bonusBps: 1_000 },
+        fields: { buildings: ["farm", "hemp_field"], bonusBps: 1_000 },
+        pasture: { buildings: ["sheepfold"], bonusBps: 1_000 },
+        sand: { buildings: ["sand_pit", "salt_pans"], bonusBps: 1_000, coast: true },
+      },
+      weights: {
+        veneto: { forest: 3, clay: 3, fields: 4, pasture: 2, sand: 4, plain: 4 },
+        default: { forest: 2, clay: 1, fields: 3, pasture: 2, sand: 3, plain: 6 },
+      },
+      seed: 17,
+    },
     // A new drawing: the houses are taken up on it once.
     version: (hexMap.version ?? 1) + 1,
   },

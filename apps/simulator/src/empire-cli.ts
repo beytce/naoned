@@ -2,7 +2,12 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { venice1450Empire, venice1450Interior } from "@comptoirs/engine";
+import {
+  type EmpireSettingsInput,
+  venice1450Empire,
+  venice1450EmpireSquare,
+  venice1450Interior,
+} from "@comptoirs/engine";
 import { evaluate, reportMarkdown } from "./empire/report.js";
 import { DEFAULT_EMPIRE_OPTIONS, type EmpireResult, runEmpire } from "./empire/run.js";
 import { power } from "./empire/world.js";
@@ -18,8 +23,23 @@ const { values } = parseArgs({
     out: { type: "string", default: join(here, "..", "out") },
     /** The workshops' insides switched on (docs/plan-ateliers.md lot A8). */
     interior: { type: "boolean", default: false },
+    /** The game's own map in square tiles (venice1450.square.ts), as the world in service. */
+    square: { type: "boolean", default: false },
+    /** Without the terroirs, without the towns' loyalty: the measure of before (the living map). */
+    "no-terroirs": { type: "boolean", default: false },
+    "no-loyalty": { type: "boolean", default: false },
   },
 });
+
+/** The settings measured: the game's, less what the flags switch off. */
+function baseSettings(): EmpireSettingsInput {
+  const base = values.square ? venice1450EmpireSquare : venice1450Empire;
+  const map = { ...base.map };
+  if (values["no-terroirs"]) map.terrain = undefined;
+  const orders = base.orders ? { ...base.orders } : undefined;
+  if (orders && values["no-loyalty"]) (orders as { loyalty?: unknown }).loyalty = undefined;
+  return { ...base, map, ...(orders ? { orders } : {}) };
+}
 
 const scenario = values.scenario ? JSON.parse(readFileSync(resolve(values.scenario), "utf8")) : {};
 const results: EmpireResult[] = [];
@@ -30,7 +50,7 @@ for (const seed of values.seeds.split(",").map(Number)) {
     months: Number(values.months),
     cohortSize: Number(values.cohort),
     settings: {
-      ...venice1450Empire,
+      ...baseSettings(),
       ...(values.interior ? { interior: venice1450Interior } : {}),
       ...scenario.settings,
     },

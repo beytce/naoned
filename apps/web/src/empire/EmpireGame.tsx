@@ -48,6 +48,7 @@ import { BottomSlot } from "./map/BottomSlot.js";
 import { FondacoGains } from "./map/Domain.js";
 import { DomainBar } from "./map/Domain.js";
 import { Hud } from "./map/Hud.js";
+import { MoveBar } from "./map/MoveBar.js";
 import { OrdersPanel } from "./map/OrdersPanel.js";
 import { type PlaceId, PlaceTabs } from "./map/PlaceTabs.js";
 import { PlacingBar } from "./map/PlacingBar.js";
@@ -503,6 +504,17 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   };
   const place = async () => {
     if (!placing || !picked) return;
+    if (placing.kind === "move") {
+      if (placing.workshopId)
+        await act({
+          type: "empireMoveWorkshop",
+          workshopId: placing.workshopId,
+          tile: picked.cell,
+        });
+      setPlacing(null);
+      setPicked(null);
+      return;
+    }
     await act(
       placing.kind === "camp"
         ? { type: "empireBuildCamp", cell: picked.cell }
@@ -683,6 +695,14 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
                 // The Campo's « Livrer »: its orders of the day, loaded and gone (the supply by road).
                 if (place.id.startsWith("campo:"))
                   void act({ type: "empireDeliverCity", city: "campo" });
+                // A workshop's « Déménager » (the terroirs): a free tile of the house's to touch.
+                if (place.id.startsWith("workshop:")) {
+                  const id = place.id.slice("workshop:".length);
+                  const ws = p.view?.house.workshops.find((w) => w.id === id);
+                  setTarget(null);
+                  setPicked(null);
+                  setPlacing({ kind: "move", workshopId: id, region: ws?.region ?? "veneto" });
+                }
               }}
               onTarget={(x) => {
                 if (placing) return;
@@ -823,6 +843,18 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
               />
               {placeTabs}
             </div>
+          ) : placing?.kind === "move" && placing.workshopId ? (
+            <MoveBar
+              p={p}
+              workshopId={placing.workshopId}
+              picked={picked}
+              busy={busy}
+              onPlace={() => void place()}
+              onCancel={() => {
+                setPlacing(null);
+                setPicked(null);
+              }}
+            />
           ) : placing ? (
             <PlacingBar
               p={p}

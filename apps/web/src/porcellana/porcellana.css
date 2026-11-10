@@ -147,6 +147,20 @@
   color: var(--pc-accent-ink);
   font: 900 10px / 14px var(--pc-display);
 }
+/* A workshop on its terroir: a leaf of accent at its pin's foot. */
+.pc-pin-suit {
+  position: absolute;
+  left: -5px;
+  bottom: -5px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--pc-accent);
+  color: var(--pc-accent-ink);
+}
 .pc-pin-tag {
   position: absolute;
   bottom: -14px;

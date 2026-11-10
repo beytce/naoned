@@ -295,7 +295,7 @@ function Board({
     let appeared = 0;
     for (const tile of scene.tiles) {
       seen.add(tile.key);
-      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}|${(tile.crates ?? []).map(Number).join("")}|${(tile.decor ?? []).join(",")}|${tile.loyalty ?? 0}|${tile.held ? 1 : 0}|${tile.raft ? 1 : 0}|${tile.biscuit ? 1 : 0}|${(tile.stalls ?? []).map((x) => `${x.n}${x.hot ? "h" : ""}`).join(",")}|${tierOf(tile.level)}|${tile.casa ?? 0}|${Math.floor((tile.progress ?? 0) * 4)}`;
+      const sig = `${tile.model}|${tile.size ?? ""}|${tile.water}|${tile.model === "lane" ? roadSig : ""}|${(tile.crates ?? []).map(Number).join("")}|${(tile.decor ?? []).join(",")}|${tile.loyalty ?? 0}|${tile.held ? 1 : 0}|${tile.raft ? 1 : 0}|${tile.biscuit ? 1 : 0}|${(tile.stalls ?? []).map((x) => `${x.n}${x.hot ? "h" : ""}`).join(",")}|${tierOf(tile.level)}|${tile.casa ?? 0}|${Math.floor((tile.progress ?? 0) * 4)}|${tile.terrain ?? ""}`;
       const was = tiles.current.get(tile.key);
       const before = kinds.current.get(tile.key);
       const tier = tierOf(tile.level);
@@ -1291,6 +1291,19 @@ function PinFace({ badge }: { badge: PinBadge }) {
             style={{ "--p": badge.state === "running" ? badge.progress : 0 } as CSSProperties}
           />
           <GoodsMark code={badge.good} size={18} />
+          {badge.suited && (
+            // On its terroir: a leaf at the pin's foot (the terroirs, seen).
+            <span className="pc-pin-suit" data-suited aria-hidden="true">
+              <svg viewBox="0 0 12 12" width="9" height="9">
+                <path
+                  d="M2 10C2 5 5 2 10 2c0 5-3 8-8 8Zm0 0 5-5"
+                  fill="currentColor"
+                  stroke="#fff"
+                  strokeWidth=".8"
+                />
+              </svg>
+            </span>
+          )}
           {badge.state === "ready" && <span className="pc-pin-count">{badge.n}</span>}
           {badge.state === "blocked" && <span className="pc-pin-count">!</span>}
           {badge.state === "full" && <span className="pc-pin-tag">{tp.full}</span>}

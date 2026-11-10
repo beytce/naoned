@@ -35,6 +35,7 @@ import {
   squareGrid,
   standingPosts,
   startCells,
+  terrainBonusBps,
   venice1450,
   weightedGoods,
 } from "@comptoirs/engine";
@@ -104,7 +105,7 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     plans: 0,
     casa: 1,
     casaAt: [w.now],
-    workshops: w.m.startWorkshops.map((x) => ({ ...x, level: 1 })),
+    workshops: startWorkshops(w, activity, w.nextId),
     counters: new Map([["veneto", 1]]),
     revealed: new Set([...startCells(w.s), ...startTiles(w)]),
     posts: 0,
@@ -198,7 +199,11 @@ function rateOf(w: World, h: House, ws: { good: string; level: number }): number
       : 0;
   // Its identity: the Arte's chain, the knowledge, its master, the lineage, its neighbourhood.
   const i = h.workshops.indexOf(ws as Workshop);
-  const identity = identityEffect(w, h, "workshopYield", i) + neighbourEffect(w, h, i);
+  // What its tile gives it: its neighbourhood, its terroir (the living map's lot 3).
+  const identity =
+    identityEffect(w, h, "workshopYield", i) +
+    neighbourEffect(w, h, i) +
+    ((ws as Workshop).terroir ?? 0);
   const pace = insidesOn(w) ? paceOf(ws as Workshop) : 10_000;
   return (base * lotYieldBps(ws.level, w.s) * (10_000 + tools + identity) * pace) / 1e12;
 }
@@ -760,18 +765,20 @@ function tryNewWorkshop(w: World, h: House): boolean {
   const pick = bestNewWorkshop(w, h, short);
   if (!pick) return false;
   // On square tiles, its tile bought first, next to one's own (D7).
+  let terroir = 0;
   if (squareGrid(w.s)) {
-    const tile = tileForWorkshop(w, h, pick.region);
+    const tile = tileForWorkshop(w, h, pick.region, pick.good);
     const land = sectorCost(seen(h), w.s);
     if (!tile || (short ? h.cash : spendable(w, h)) < cost + land) return false;
     destroy(w, h, land, "counters");
     h.revealed.add(tile);
+    terroir = terroirOf(w, tile, pick.good);
   }
   destroy(w, h, cost, "workshops");
   startBuild(
     w,
     h,
-    { kind: "newWorkshop", target: `${pick.region}:${pick.good}` },
+    { kind: "newWorkshop", target: `${pick.region}:${pick.good}`, ...(terroir ? { terroir } : {}) },
     buildMinutesOf(1, w.s),
   );
   return true;
@@ -940,17 +947,49 @@ function tryUnlockTile(w: World, h: House): boolean {
   return true;
 }
 
-/** On square tiles, the tile a new workshop of a region is built on: bought next to one's own. */
-function tileForWorkshop(w: World, h: House, region: string): string | null {
+/** What a tile's terroir gives a workshop of a good, in bps of its lot (0: not its land). */
+function terroirOf(w: World, tile: string, good: string): number {
+  const building = w.m.buildings[good];
+  return building ? terrainBonusBps(w.s, tile, building) : 0;
+}
+
+/**
+ * On square tiles, the tile a new workshop of a region is built on: bought next to one's own, the
+ * nearest; one who looks at the land (`terroirSeek`, by how often it plays) takes the nearest tile
+ * of the good's terroir instead, when one lies no more than three tiles further.
+ */
+function tileForWorkshop(w: World, h: House, region: string, good: string): string | null {
   const home = w.s.map.home;
   const from = home ? cellAtPoint(home.x, home.y, w.s) : (regionCells(w.s, "veneto")[0] ?? "0,0");
+  const near = buyableOf(seen(h), w.s)
+    .filter((c) => w.s.map.cells[c]?.region === region)
+    .sort((a, b) => cellDistance(from, a, w.s) - cellDistance(from, b, w.s) || a.localeCompare(b));
+  const first = near[0];
+  if (!first) return null;
+  const seeks =
+    hashOf(`terroir|${h.id}|${h.workshops.length}|${good}`) % 10_000 < w.m.terroirSeek[h.activity];
+  if (!seeks) return first;
+  const reach = cellDistance(from, first, w.s) + 3;
   return (
-    buyableOf(seen(h), w.s)
-      .filter((c) => w.s.map.cells[c]?.region === region)
-      .sort(
-        (a, b) => cellDistance(from, a, w.s) - cellDistance(from, b, w.s) || a.localeCompare(b),
-      )[0] ?? null
+    near.find((c) => cellDistance(from, c, w.s) <= reach && terroirOf(w, c, good) > 0) ?? first
   );
+}
+
+/**
+ * The first workshops, each on one of the free tiles given at the start: one who looks at the land
+ * (`terroirSeek`) seats each on its terroir when one of those tiles has it; the others take the
+ * tiles as they come.
+ */
+function startWorkshops(w: World, activity: House["activity"], id: number): Workshop[] {
+  const tiles = squareGrid(w.s) ? startTiles(w).slice(0, -1) : [];
+  const left = [...tiles];
+  return w.m.startWorkshops.map((x, k) => {
+    const seeks = hashOf(`terroir|${id}|${k}|${x.good}`) % 10_000 < w.m.terroirSeek[activity];
+    const at = seeks ? left.findIndex((t) => terroirOf(w, t, x.good) > 0) : -1;
+    const [tile] = left.splice(at >= 0 ? at : 0, 1);
+    const terroir = tile ? terroirOf(w, tile, x.good) : 0;
+    return { ...x, level: 1, ...(terroir ? { terroir } : {}) };
+  });
 }
 
 /**
@@ -1178,7 +1217,7 @@ export function finishBuild(w: World, h: House, b: Build) {
     if (ws) ws.level++;
   } else if (b.kind === "newWorkshop") {
     const [region = "veneto", good = "wheat"] = b.target.split(":");
-    h.workshops.push({ region, good, level: 1 });
+    h.workshops.push({ region, good, level: 1, ...(b.terroir ? { terroir: b.terroir } : {}) });
   } else if (b.kind === "counter") {
     const level = (h.counters.get(b.target) ?? 0) + 1;
     h.counters.set(b.target, level);

@@ -302,6 +302,31 @@ export const en: Dictionary = {
       build: "Build a workshop",
       noFreeTile: "No free tile of yours in this region: buy a « + » plot next to your domain.",
     },
+    terroir: {
+      names: {
+        forest: "Forest",
+        clay: "Clay",
+        fields: "Fields",
+        pasture: "Pasture",
+        sand: "Sandy shore",
+      } as Record<string, string>,
+      favours: (land: string, whom: string, pct: number) =>
+        `${land}: ${whom} yields +${pct}% here.`,
+      sub: (land: string) => `Terroir: ${land}`,
+      tag: (pct: number) => `Terroir +${pct}%`,
+      bonusTerroir: (pct: number) => `Terroir +${pct}%`,
+      bonusNeighbours: (pct: number) => `neighbourhood +${pct}%`,
+      better: (land: string, pct: number) =>
+        `A tile of ${land.toLowerCase()} is free on your land: it would yield +${pct}% there.`,
+      move: "Move",
+      moveTitle: (name: string) => `Move: ${name}`,
+      moveHint:
+        "Touch a free tile of yours: the workshop stands there at once, at no cost, its lots kept.",
+      moveNone: "No free tile of yours: buy a « + » plot, then move.",
+      moveHere: "Put it here",
+      moveGain: (pct: number) => `On its terroir: +${pct}%.`,
+      movePlain: "Off its terroir: it will yield as elsewhere.",
+    },
     region: "Venetia",
     store: {
       kicker: "The Fondaco",

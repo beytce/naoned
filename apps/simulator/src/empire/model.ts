@@ -23,6 +23,8 @@ export interface Workshop {
   region: string;
   good: string;
   level: number;
+  /** What its tile's terroir gives it, in bps of its lot (docs/plan-carte-vivante.md, lot 3). */
+  terroir?: number;
   /** Its inside (docs/plan-ateliers.md lot A8), when the world has them. */
   inside?: import("@comptoirs/engine").WorkshopInterior;
   /** Its pace, in bps of its default plan, frozen at its last relaunch. */
@@ -71,6 +73,8 @@ export interface Build {
   /** The workshop's index, the counter's region, the vehicle's type… */
   target: string;
   endsAt: number;
+  /** A new workshop's terroir, from the tile bought for it (bps of its lot). */
+  terroir?: number;
 }
 
 export interface Research {
@@ -273,6 +277,14 @@ export interface SimModel {
   rates: Record<string, number>;
   /** Crafted goods and their inputs, a unit each (a share of a unit when the theme says so). */
   recipes: Record<string, Record<string, number>>;
+  /** The building that makes each good (the theme's): what a tile's terroir is asked for. */
+  buildings: Record<string, string>;
+  /**
+   * The terroirs (docs/plan-carte-vivante.md, lot 3): the share of its new workshops a bot seats
+   * on their terroir when a tile of it lies within reach, by how often it plays (bps): one who
+   * plays often looks at the land before buying, one who seldom does takes the nearest tile.
+   */
+  terroirSeek: Record<Activity, number>;
   /** The workshops' queue (CADRAGE-v3 § 4.1): they work this long past a relaunch. */
   queueHours: number;
   /** Units of the cities' common board a day, per active house with access. */

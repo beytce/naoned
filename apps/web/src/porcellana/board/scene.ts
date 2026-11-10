@@ -8,6 +8,7 @@ import { tileAt } from "@comptoirs/engine";
 import { buildingName, workshopStatus } from "../../empire/logic.js";
 import { type Target, deliveryPlan } from "../../empire/map/logic.js";
 import { welcomeStep } from "../../empire/next.js";
+import { terrainName, terroirLine, tileBonusLine } from "../../empire/terroir.js";
 import type { EmpirePayload } from "../../empire/types.js";
 import { hourOf } from "../../game/format.js";
 import { fr } from "../../i18n.js";
@@ -93,6 +94,8 @@ export type PinBadge =
       progress: number;
       /** Lots ready. */
       n: number;
+      /** It stands on its terroir (lot 3 of the living map): a leaf on its pin. */
+      suited?: boolean;
     }
   | { kind: "orders"; n: number; good: string; covered: boolean }
   | { kind: "lock"; casa?: number };
@@ -113,6 +116,12 @@ export interface BoardTile {
   casa?: number;
   /** A site under way: how far its work is, 0 to 1. */
   progress?: number;
+  /**
+   * Its terrain (the terroirs, lot 3 of the living map): a plot's and a free tile's land is drawn
+   * on it, seen before it is bought; under a workshop, whether it stands on its terroir (`suited`).
+   */
+  terrain?: string;
+  suited?: boolean;
   /** A workshop whose lots wait for the harvest: how many (its porters sit, then carry them). */
   lots?: number;
   /** The deliveries a town received from the house: its people, the travellers on its road. */
@@ -212,19 +221,22 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
     const open = b.casa <= house.casa;
     if (!touches(b.cell) && !open) continue;
     const way = open ? onWay.get(b.cell) : undefined;
+    // Its land, seen before it is bought: what would yield more there (the terroirs).
+    const land = map.terrain?.[b.cell];
     put(b.cell, {
       water: false,
       model: open ? "plot" : "locked",
       running: false,
+      ...(land ? { terrain: land } : {}),
       place: {
         id: `plot:${b.cell}`,
         target: { kind: "sector", cell: b.cell },
-        name: open ? t.porcellana.plot : t.porcellana.locked,
+        name: open ? (land ? terrainName(land) : t.porcellana.plot) : t.porcellana.locked,
         sub: open ? t.porcellana.plotPrice(ducats) : t.porcellana.lockedCasa(b.casa),
         line: way
           ? t.porcellana.plotLink(way)
           : open
-            ? t.porcellana.plotLine
+            ? (terroirLine(p, b.cell) ?? t.porcellana.plotLine)
             : t.porcellana.lockedLine,
         go: open ? t.porcellana.buy : t.porcellana.see,
         pin: "+",
@@ -239,18 +251,20 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
   // While the welcome asks the first workshop (the first steps, lot 2), the free tiles call: a « + »
   // in accent over each, the one to touch.
   const calling = welcomeStep(p, now)?.phase === "build";
-  for (const k of owned)
+  for (const k of owned) {
+    const land = map.terrain?.[k];
     put(k, {
       water: false,
       model: "lane",
       running: false,
       casa: house.casa,
+      ...(land ? { terrain: land } : {}),
       place: {
         id: `free:${k}`,
         target: { kind: "free", tile: k },
         name: t.porcellana.freeTile,
-        sub: t.porcellana.freeSub,
-        line: t.porcellana.freeLine,
+        sub: land ? t.terroir.sub(terrainName(land)) : t.porcellana.freeSub,
+        line: terroirLine(p, k) ?? t.porcellana.freeLine,
         go: t.porcellana.build,
         // A « + » on each free tile of the house's, always (the players' audit, P0-12: free tiles
         // were invisible out of the guide); in accent when the guide calls for one.
@@ -259,6 +273,7 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         ready: calling,
       },
     });
+  }
 
   // The towns of the regions reached: islands where they are not the house's.
   const orders = new Map(v.orders.map((o) => [o.city, o]));
@@ -449,16 +464,22 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
   );
 
   // The workshops on their tiles, working when the game says so.
+  const seated = new Set(house.workshops.map((w) => w.tile));
+  const freeOwned = [...owned].some((k) => !seated.has(k) && out.get(k)?.model === "lane");
   for (const w of house.workshops) {
     if (!w.tile) continue;
     const st = workshopStatus(p, w, now);
     const model = WORKSHOP_MODELS.has(w.type) ? (w.type as ModelKey) : "post";
     const lots = st.state === "ready" ? st.lots : 0;
+    // What its tile gives it, in one line: its terroir, its neighbourhood (lot 3).
+    const bonus = tileBonusLine(p, w.id);
     put(w.tile, {
       water: false,
       model,
       running: st.state === "running",
       level: w.level,
+      ...(map.terrain?.[w.tile] ? { terrain: map.terrain[w.tile] } : {}),
+      suited: (v.workshopPlaces?.[w.id]?.terrainBps ?? 0) > 0,
       ...(lots > 0 || st.state === "full" ? { lots: Math.max(1, lots) } : {}),
       // Its lots ready in crates before it, of accent; full, a stack of wood that waits for the
       // harvest (golden rule 3, seen: P3-02 of the players' audit).
@@ -471,7 +492,9 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
         id: `workshop:${w.id}`,
         target: { kind: "workshop", id: w.id },
         name: buildingName(p, w.type),
-        sub: t.porcellana.level(w.level),
+        sub: bonus ? `${t.porcellana.level(w.level)} · ${bonus}` : t.porcellana.level(w.level),
+        // Moved to a free tile of the house's, at once (the terroirs): its second way.
+        ...(freeOwned ? { alt: t.terroir.move } : {}),
         line:
           st.state === "ready"
             ? t.porcellana.ready(st.lots)
@@ -495,6 +518,7 @@ export function boardOf(p: EmpirePayload, now: number): BoardScene | null {
           state: st.state,
           progress: st.state === "running" ? st.progress : 0,
           n: lots,
+          ...((v.workshopPlaces?.[w.id]?.terrainBps ?? 0) > 0 ? { suited: true } : {}),
         },
       },
     });

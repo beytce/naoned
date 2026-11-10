@@ -8,6 +8,7 @@ import type { SimModel } from "./model.js";
 function venetiaChains(): {
   rates: Record<string, number>;
   recipes: Record<string, Record<string, number>>;
+  buildings: Record<string, string>;
 } {
   const veneto = venice1450Empire.regions?.find((r) => r.code === "veneto");
   const goods = new Set([
@@ -20,8 +21,10 @@ function venetiaChains(): {
       for (const g of Object.keys(r.inputs)) goods.add(g);
   const rates: Record<string, number> = {};
   const recipes: Record<string, Record<string, number>> = {};
+  const buildings: Record<string, string> = {};
   for (const r of venice1450.recipes) {
     const [good, out] = Object.entries(r.outputs)[0] ?? [];
+    if (good && !(good in buildings)) buildings[good] = r.building;
     if (!good || !out || !goods.has(good)) continue;
     // A good's first recipe of the theme (the glass of wood before the glass of soda, lot 7).
     if (good in rates) continue;
@@ -31,7 +34,7 @@ function venetiaChains(): {
         Object.entries(r.inputs).map(([g, n = 0]) => [g, n / out]),
       );
   }
-  return { rates, recipes };
+  return { rates, recipes, buildings };
 }
 
 const VENETIA = venetiaChains();
@@ -56,6 +59,9 @@ export const DEFAULT_MODEL: SimModel = {
   rawPerHour: 10,
   craftedPerHour: 5,
   rates: VENETIA.rates,
+  buildings: VENETIA.buildings,
+  // The terroirs: who looks at the land before buying (the living map's lot 3, calibration.md).
+  terroirSeek: { assidu: 9_000, median: 6_000, occasional: 3_000, absent: 1_000 },
   // Venetia's chains from the theme; the others, the model's guesses until their step.
   recipes: {
     glass: { salt: 1, wood: 1 },

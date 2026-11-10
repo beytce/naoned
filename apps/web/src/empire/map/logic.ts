@@ -105,7 +105,12 @@ export function hudOf(p: EmpirePayload): { id: "ducats" | "favour" | "seals"; va
 }
 
 /** What may be put on the map: a counter, or the Arsenal. */
-export type Placing = { kind: "post" | "camp" | "depot" | "porta" | "home"; region?: string };
+export type Placing = {
+  kind: "post" | "camp" | "depot" | "porta" | "home" | "move";
+  region?: string;
+  /** A workshop moved to a free tile of the house's (the terroirs): which one. */
+  workshopId?: string;
+};
 
 /**
  * The cells where the house may put what it places: for a counter, the land cells it sees, of a

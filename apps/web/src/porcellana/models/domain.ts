@@ -9,6 +9,7 @@ import type { Palette } from "../materials.js";
 import { ball, box, cone, crate, cyl, gable, seeded, tree } from "../shapes.js";
 import { banner } from "./fondaco.js";
 import type { Built } from "./model.js";
+import { isTerrain, terrainDress } from "./terrain.js";
 
 /** A workshop's tier, 0 to 4: a step every five levels. */
 export const tierOf = (level: number | undefined) =>
@@ -80,27 +81,51 @@ function cottage(P: Palette, g: Group, x: number, z: number, rot: number, s: num
   box(h, 0.2 * s, 0.36 * s, 0.04, 0, 0, 0.375 * s + 0.01, P.m("open"), 0.01);
 }
 
-/** The looks a free tile of the house's takes, from its seed. */
-const LOOKS = ["meadow", "fields", "orchard"] as const;
+/**
+ * The looks a free tile of plain land takes, from its seed: trees and hedges only, nothing that
+ * reads as a terroir (no furrows, no flock: those are the fields' and the pasture's, terrain.ts).
+ */
+const LOOKS = ["garden", "grove", "orchard"] as const;
 
 /**
- * A free tile of the house's (it was four trees): hedges and haystacks, furrows, an orchard, from
- * its seed; a cottage once the Fondaco is at its third level, on one tile in two, then on every one
- * (7), then a second and a shrine (12): the land is lived on as the house grows. Its middle stays
- * clear for its « + », its roads stay clear (`keepOff`).
+ * A free tile of the house's (it was four trees): its terroir drawn in full when it has one (lot
+ * 3), else a garden, a grove or an orchard from its seed; a cottage once the Fondaco is at its third
+ * level, on one tile in two, then on every one (7), then a second and a shrine (12): the land is
+ * lived on as the house grows. Its middle stays clear for its « + », its roads stay clear
+ * (`keepOff`).
  */
 export function domainTile(
   P: Palette,
   seed: number,
   casa: number,
   keepOff: (x: number, z: number) => boolean = () => false,
+  terrain?: string,
 ): Built {
   const g = new Group();
   const rnd = seeded(seed * 3 + 11);
-  const look = LOOKS[seed % LOOKS.length];
-  // Round its « + », and off its roads.
+  // Its people's houses first, as the Fondaco rises: the land is dressed round them.
+  const homes = casa >= 12 ? 2 : casa >= 7 ? 1 : casa >= 3 && seed % 2 === 0 ? 1 : 0;
+  const corners: [number, number][] = [
+    [-1.95, -1.95],
+    [1.95, 1.9],
+    [1.95, -1.95],
+    [-1.95, 1.9],
+  ];
+  const built: [number, number][] = [];
+  for (let k = 0; k < corners.length && built.length < homes; k++) {
+    const [x, z] = corners[(k + seed) % corners.length] as [number, number];
+    // The clay's pit holds that corner.
+    if (keepOff(x, z) || (terrain === "clay" && x > 0 && z < 0)) continue;
+    cottage(P, g, x, z, (rnd() - 0.5) * 0.5 + (k % 2 ? Math.PI / 2 : 0), casa >= 12 ? 1.12 : 1);
+    // Its woodpile, a crate.
+    if (!keepOff(x * 0.62, z)) crate(g, x * 0.62, 0, z, P.m("wood"), 0.22, rnd());
+    built.push([x, z]);
+  }
+  const taken = (x: number, z: number) =>
+    keepOff(x, z) || built.some(([bx, bz]) => Math.abs(bx - x) < 1.0 && Math.abs(bz - z) < 0.95);
+  // Round its « + », off its roads and its houses.
   const free = (x: number, z: number, r = 0.5) =>
-    Math.hypot(x, z) > 1.0 + r && !keepOff(x, z) && Math.abs(x) < 2.3 && Math.abs(z) < 2.3;
+    Math.hypot(x, z) > 1.0 + r && !taken(x, z) && Math.abs(x) < 2.3 && Math.abs(z) < 2.3;
   const spot = (r = 0.5): [number, number] | null => {
     for (let k = 0; k < 14; k++) {
       const x = (rnd() - 0.5) * 4.6;
@@ -110,67 +135,34 @@ export function domainTile(
     return null;
   };
 
-  if (look === "fields") {
-    // Furrows in a quarter of the tile, a scarecrow of sorts: a stake.
-    const qx = seed % 2 ? 1.45 : -1.45;
-    const qz = seed % 4 < 2 ? 1.45 : -1.45;
-    for (let k = -3; k <= 3; k++) {
-      const z = qz + k * 0.3;
-      if (free(qx, z, 0.1)) box(g, 2.0, 0.07, 0.15, qx, 0, z, P.m("soil"), 0.03).castShadow = false;
-    }
-    for (let k = 0; k < 2; k++) {
-      const at = spot(0.4);
-      if (at) tree(P, g, at[0], at[1], 0.75 + rnd() * 0.3, "round");
-    }
-  } else if (look === "meadow") {
-    // A hedge along a side, haystacks.
-    const side = seed % 2 ? 2.55 : -2.55;
-    for (let k = -4; k <= 4; k++) {
-      const u = k * 0.52;
-      if (!keepOff(u, side))
-        ball(g, 0.26, u, 0.19, side, P.m("leaf"), 14).scale.set(1.15, 0.8, 0.9);
-    }
-    for (let k = 0; k < 3; k++) {
-      const at = spot(0.35);
-      if (!at) continue;
-      cone(g, 0.3, 0.42, at[0], 0, at[1], P.m("crop"), 16);
-    }
-    const at = spot(0.4);
-    if (at) tree(P, g, at[0], at[1], 0.85, "round");
-  } else {
-    // An orchard: small round trees in rows, a cypress.
-    for (const x of [-1.9, 1.9])
-      for (const z of [-1.9, -0.65, 0.65, 1.9]) {
-        const px = x + (rnd() - 0.5) * 0.2;
-        if (free(px, z, 0.3)) tree(P, g, px, z, 0.62 + rnd() * 0.12, "round");
+  if (isTerrain(terrain)) terrainDress(P, g, terrain, { seed, keepOff: taken });
+  else {
+    const look = LOOKS[seed % LOOKS.length];
+    if (look === "garden") {
+      // A hedge along a side, a cypress or two.
+      const side = seed % 2 ? 2.55 : -2.55;
+      for (let k = -4; k <= 4; k++) {
+        const u = k * 0.52;
+        if (!taken(u, side))
+          ball(g, 0.26, u, 0.19, side, P.m("leaf"), 14).scale.set(1.15, 0.8, 0.9);
       }
-    const at = spot(0.3);
-    if (at) tree(P, g, at[0], at[1], 0.9, "cypress");
-  }
-
-  // Its people's houses, as the Fondaco rises.
-  const homes = casa >= 12 ? 2 : casa >= 7 ? 1 : casa >= 3 && seed % 2 === 0 ? 1 : 0;
-  const corners: [number, number][] = [
-    [-1.95, -1.95],
-    [1.95, 1.9],
-    [1.95, -1.95],
-    [-1.95, 1.9],
-  ];
-  let built = 0;
-  for (let k = 0; k < corners.length && built < homes; k++) {
-    const [x, z] = corners[(k + seed) % corners.length] as [number, number];
-    if (keepOff(x, z)) continue;
-    cottage(
-      P,
-      g,
-      x,
-      z,
-      (rnd() - 0.5) * 0.5 + (k % 2 ? Math.PI / 2 : 0),
-      1 + (casa >= 12 ? 0.12 : 0),
-    );
-    // Its woodpile, a crate.
-    if (!keepOff(x * 0.62, z)) crate(g, x * 0.62, 0, z, P.m("wood"), 0.22, rnd());
-    built++;
+      for (let k = 0; k < 2; k++) {
+        const at = spot(0.3);
+        if (at) tree(P, g, at[0], at[1], 0.85 + rnd() * 0.2, "cypress");
+      }
+    } else if (look === "grove") {
+      for (let k = 0; k < 4; k++) {
+        const at = spot(0.4);
+        if (at) tree(P, g, at[0], at[1], 0.75 + rnd() * 0.4, k % 3 === 2 ? "cypress" : "round");
+      }
+    } else {
+      // An orchard: small round trees in rows.
+      for (const x of [-1.9, 1.9])
+        for (const z of [-1.9, -0.65, 0.65, 1.9]) {
+          const px = x + (rnd() - 0.5) * 0.2;
+          if (free(px, z, 0.3)) tree(P, g, px, z, 0.62 + rnd() * 0.12, "round");
+        }
+    }
   }
   if (casa >= 12 && seed % 3 === 0) {
     // A wayside shrine: a pillar under a small roof.
