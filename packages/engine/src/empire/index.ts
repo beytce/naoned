@@ -22,6 +22,7 @@ export * from "./terra.js";
 export * from "./campo.js";
 export * from "./map.js";
 export * from "./grid.js";
+export * from "./terrain.js";
 export * from "./slots.js";
 export * from "./fleet.js";
 export * from "./interior/settings.js";

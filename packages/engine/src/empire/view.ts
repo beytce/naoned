@@ -77,6 +77,7 @@ import { roadBetween } from "./slots.js";
 import { staffHireCost, staffSlots } from "./staff.js";
 import { postsServing, storesOf, workshopPost } from "./stores.js";
 import { isContesaWeek, terraWeekStart } from "./terra.js";
+import { terrainBonusBps, terrainsOf } from "./terrain.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
 import { vehicleSlotsOf } from "./vehicleModules.js";
 import { lotsThatFit, moduleSlotsOf, neighbourBonus, workshopYieldBps } from "./workshops.js";
@@ -233,8 +234,11 @@ export interface EmpireView {
       next: EmpireSite | null;
     }[];
   };
-  /** The workshops' places for modules, and their neighbourhood's bonus (bps). */
-  workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
+  /**
+   * The workshops' places for modules, and what their tile gives them (bps of their lot): their
+   * neighbourhood's bonus, their terroir's (docs/plan-carte-vivante.md, lot 3).
+   */
+  workshopPlaces: Record<string, { slots: number; neighbourBps: number; terrainBps: number }>;
   /** The workshops' insides, by workshop (docs/plan-ateliers.md § 5.6); none without them. */
   interiors: Record<string, InteriorView>;
   /** Their rules, for the screen to reckon a rate while a machine is dragged; null without them. */
@@ -345,6 +349,13 @@ export interface EmpireMapView {
   cells: Record<string, { region: string; coast: boolean }>;
   /** Every cell seen, land or sea. */
   revealed: string[];
+  /**
+   * The terroirs (docs/plan-carte-vivante.md, lot 3): the terrain of each land tile seen or to buy
+   * that has one (plain land left out), and what each kind gives: the workshops it favours, their
+   * share more. Empty without terroirs.
+   */
+  terrain: Record<string, string>;
+  terrains: Record<string, { buildings: string[]; bonusBps: number }>;
   /** The counters put down: their name, their point, their level and their reach. */
   posts: {
     id: string;
@@ -598,7 +609,11 @@ export function empireView(
     workshopPlaces: Object.fromEntries(
       house.workshops.map((w) => [
         w.id,
-        { slots: moduleSlotsOf(w.level, s, house), neighbourBps: neighbourBonus(ctx, house, w, s) },
+        {
+          slots: moduleSlotsOf(w.level, s, house),
+          neighbourBps: neighbourBonus(ctx, house, w, s),
+          terrainBps: terrainBonusBps(s, w.tile, w.type),
+        },
       ]),
     ),
     courtLeft:
@@ -859,6 +874,13 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     // The sea along the coasts seen, seen too (decision of the owner, 3 November 2026: Venice on
     // its lagoon from the first screen); nothing to buy there, only the board's dressing.
     revealed: [...new Set([...seen, ...seaAlong(seen, s)])].sort(),
+    terrain: terrainsOf([...seen, ...buyableOf(house, s)], s),
+    terrains: Object.fromEntries(
+      Object.entries(s.map.terrain?.kinds ?? {}).map(([k, v]) => [
+        k,
+        { buildings: v.buildings, bonusBps: v.bonusBps },
+      ]),
+    ),
     posts: standingPosts(house, s)
       .slice(1)
       .map((p) => ({ ...p, reach: reachOf(p.level, s) })),

@@ -13,7 +13,7 @@ const applyBps = (base: number, bps: number) => Math.floor((base * (10_000 + bps
 import { casaLevelOf, lotYieldBps } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { tilesTouch } from "./grid.js";
-import { empireSettings, ownHouse } from "./house.js";
+import { empireSettings, ownHouse, regionOfWorkshop } from "./house.js";
 import {
   interiorByproduct,
   interiorInputsBps,
@@ -22,11 +22,13 @@ import {
   interiorXp,
   settleInterior,
 } from "./interior/run.js";
+import { freeTileFault, squareGrid } from "./map.js";
 import { giveWelcomeOrder, welcomeOrderId } from "./orders.js";
 import { highRecipeRaw } from "./recipes.js";
 import type { EmpireSettings } from "./settings.js";
 import { gainXp } from "./staff.js";
 import { putAt, storeOf, takeAt, workshopPost } from "./stores.js";
+import { terrainBonusBps } from "./terrain.js";
 
 function recipeOf(tx: Tx, ws: EmpireWorkshop) {
   const r = tx.ctx.theme.recipes.find((x) => x.code === ws.recipe && x.building === ws.type);
@@ -108,7 +110,10 @@ export function lotsThatFit(
   return fit;
 }
 
-/** A workshop's lot now, in bps of its recipe's: its level, its house's effects, its neighbours. */
+/**
+ * A workshop's lot now, in bps of its recipe's: its level, its house's effects, and what its tile
+ * gives it — its neighbours, its terroir (docs/plan-carte-vivante.md, lot 3).
+ */
 export function workshopYieldBps(
   ctx: WorldContext,
   h: EmpireHouse,
@@ -117,7 +122,9 @@ export function workshopYieldBps(
 ): number {
   return applyBps(
     lotYieldBps(ws.level, s),
-    houseEffect(h, "workshopYield", s, { workshopId: ws.id }) + neighbourBonus(ctx, h, ws, s),
+    houseEffect(h, "workshopYield", s, { workshopId: ws.id }) +
+      neighbourBonus(ctx, h, ws, s) +
+      terrainBonusBps(s, ws.tile, ws.type),
   );
 }
 
@@ -369,4 +376,20 @@ export function swapWorkshops(tx: Tx, playerId: PlayerId, a: string, b: string):
   }
   h.workshops[i] = wb;
   h.workshops[j] = wa;
+}
+
+/**
+ * Moves a workshop to a free tile of the house's own, of its region (docs/plan-carte-vivante.md,
+ * lot 3): free and at once, as the exchange of two is, its lots and its queue kept — so that a
+ * house already built may seat each workshop on its terroir. On square tiles only.
+ */
+export function moveWorkshop(tx: Tx, playerId: PlayerId, workshopId: string, tile: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const ws = h.workshops.find((w) => w.id === workshopId);
+  if (!ws) fail("unknown_building");
+  if (!squareGrid(s) || !ws.tile) fail("unknown_cell");
+  const fault = freeTileFault(h, s, tile, regionOfWorkshop(ws));
+  if (fault) fail(fault);
+  ws.tile = tile;
 }

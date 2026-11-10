@@ -128,6 +128,7 @@ import { ensureFitted, fitVehicle } from "./empire/vehicleModules.js";
 import { buyEmpireVehicle } from "./empire/voyages.js";
 import {
   fitModule,
+  moveWorkshop,
   relaunchAll,
   relaunchWorkshop,
   setPriority,
@@ -546,6 +547,8 @@ type EmpireCommandOf =
   | { type: "empireFit"; playerId: PlayerId; workshopId: string; slot: number; module: string }
   | { type: "empireCourt"; playerId: PlayerId; good: string; qty: number }
   | { type: "empireSwap"; playerId: PlayerId; a: string; b: string }
+  /** A workshop moved to a free tile of the house's own (the terroirs, the living map's lot 3). */
+  | { type: "empireMoveWorkshop"; playerId: PlayerId; workshopId: string; tile: string }
   | { type: "empireChooseArte"; playerId: PlayerId; arte: string; minor?: boolean }
   | { type: "empireLearn"; playerId: PlayerId; code: string }
   | { type: "empireHire"; playerId: PlayerId; role: string }
@@ -854,6 +857,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireSwap":
       swapWorkshops(tx, cmd.playerId, cmd.a, cmd.b);
+      break;
+    case "empireMoveWorkshop":
+      moveWorkshop(tx, cmd.playerId, cmd.workshopId, cmd.tile);
       break;
     case "empireChooseArte":
       chooseArte(tx, cmd.playerId, cmd.arte, cmd.minor);

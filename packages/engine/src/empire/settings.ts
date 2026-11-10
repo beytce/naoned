@@ -527,8 +527,37 @@ export const empireSettingsSchema = z.object({
   map: z
     .object({
       cells: z
-        .record(z.string(), z.object({ region: z.string(), coast: z.boolean().prefault(false) }))
+        .record(
+          z.string(),
+          z.object({
+            region: z.string(),
+            coast: z.boolean().prefault(false),
+            /** Its terrain, when the map writes it (else drawn, terrain.ts); « plain » for none. */
+            terrain: z.string().optional(),
+          }),
+        )
         .prefault({}),
+      /**
+       * The terroirs (docs/plan-carte-vivante.md, lot 3; decision of the owner, 9 November 2026):
+       * the kinds of land, each with the workshops it favours and their share more (bps of their
+       * lot), some only on a coast; how often each is drawn in a region (`weights`, by region, with
+       * « plain » for the land without any and « default » for the regions not listed); the draw's
+       * seed. None: no terrain, the land as before.
+       */
+      terrain: z
+        .object({
+          kinds: z.record(
+            z.string(),
+            z.object({
+              buildings: z.array(z.string()),
+              bonusBps: bps,
+              coast: z.boolean().prefault(false),
+            }),
+          ),
+          weights: z.record(z.string(), z.record(z.string(), qty)),
+          seed: z.number().int().prefault(1),
+        })
+        .optional(),
       cities: z
         .array(
           z.object({
