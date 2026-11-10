@@ -55,7 +55,9 @@ Trois lots. A et B ne changent aucun chiffre : ni le simulateur ni la calibratio
 | B7 | **L'ouverture et la fermeture** | Ouverture : les cases tombent en place depuis la Porte, les villes se posent, le convoi sort (2 s, passable d'un toucher). Dernière minute : les cases du bord se retournent une à une, face d'encre, du plus loin vers la Porte ; à zéro, tout est retourné. C'est le dessin, pas la règle : un véhicule sur une case retournée n'est perdu qu'à zéro. |
 | B8 | **Le son et la vibration** | Les sons existants (`sound.ts`) étendus : ordre pris, alerte, coup lourd, relique, dernière minute. |
 
-### Lot C — Idées de jeu (règles nouvelles, au simulateur)
+### Lot C — Idées de jeu (abandonné le 10 novembre 2026)
+
+*Décision du porteur du 10 novembre 2026, après les lots A et B : ces quatre idées ne sont pas retenues et ne seront pas codées. Elles restent ici pour mémoire.*
 
 | # | Idée | D'où | Effet |
 | --- | --- | --- | --- |
@@ -75,14 +77,14 @@ C2 demande un calcul de chemin dans le moteur (les pics) : c'est le plus gros mo
 | 3 | A4, A5, A7, A8 : l'aperçu, les annonces de Rome, la caméra, l'interface | Captures avant et après |
 | 4 | B4 à B8 : les coups, la casse, la relique, l'ouverture et la fermeture | Captures, `prefers-reduced-motion` respecté |
 | 5 | Le tutoriel de la bataille (`empire/tutor/`) refait sur les nouveaux gestes ; A9 | `e2e/tutorial-empire.mjs` |
-| 6 | Lot C, idée par idée, chacune avec son réglage dans `worlds.settings.porta` | Simulateur de 24 mois, `docs/calibration.md`, notes du chapitre |
+| 6 | (Abandonnée.) Lot C, idée par idée, chacune avec son réglage dans `worlds.settings.porta` | Simulateur de 24 mois, `docs/calibration.md`, notes du chapitre |
 
 ## 5. À trancher par le porteur
 
 1. **Le périmètre** : A et B d'abord (recommandé), C ensuite, idée par idée.
 2. **Le convoi par défaut (A1)** : oui (recommandé) ou deux véhicules séparés comme aujourd'hui.
 3. **Les cases qui se retournent à la fermeture (B7)** : oui, ou garder un simple voile.
-4. **Lot C** : lesquelles des quatre idées garder. Recommandé : C3 et C4 d'abord (peu de moteur), C1 ensuite, C2 en dernier.
+4. **Lot C** (tranché : aucune) : lesquelles des quatre idées garder. Recommandé : C3 et C4 d'abord (peu de moteur), C1 ensuite, C2 en dernier.
 
 ## 6. État (10 novembre 2026)
 
@@ -106,6 +108,6 @@ C2 demande un calcul de chemin dans le moteur (les pics) : c'est le plus gros mo
 | B7 | fait : les cases tombent depuis la Porte à l'ouverture ; la dernière minute, elles se retournent côté encre du bord vers la Porte, celles des villes et de la Porte à la toute fin |
 | B8 | fait avec les sons existants : la cloche du campanile à la dernière minute, une vibration à l'ordre, à l'alerte de retour et à la perte. Pas de son nouveau |
 | Tutoriel | fait : quatre étapes à la première bataille (`portaFight`, docs/plan-tutoriels.md) |
-| C | à faire, idée par idée, chacune au simulateur de 24 mois |
+| C | abandonné (décision du porteur du 10 novembre 2026) : aucune des quatre idées n'est retenue |
 
 Vérification : `apps/web/e2e/porta.mjs` joue une bataille de deux minutes de bout en bout (tutoriel, convoi, « Charger ici », combat, chargement, fermeture, « Rentrer », sortie), en 390 × 844. Le disque SVG de secours (`Battle.tsx`, sans WebGL) garde les anciens gestes.
