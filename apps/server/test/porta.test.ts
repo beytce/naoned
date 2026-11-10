@@ -192,7 +192,7 @@ describe("a battle alone", () => {
           unitId: combat.id,
           x: 0,
           y: 0,
-          then: [{ x: 1, y: 1 }],
+          via: [{ x: 1, y: 1 }],
         })
       ).statusCode,
     ).toBe(200);

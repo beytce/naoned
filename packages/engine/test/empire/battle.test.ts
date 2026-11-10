@@ -460,8 +460,8 @@ describe("the convoy and the orders of lot A", () => {
     const c = unit(b, "p0c");
     at(c, 0, 0);
     c.speedCenti = 6_000;
-    const then = [1, 2, 3, 4, 5, 6, 7].map((i) => ({ x: 1, y: i * 0.1 }));
-    expect(orderBattle(b, "a", { type: "move", unitId: "p0c", x: 1, y: 0, then })).toBeNull();
+    const via = [1, 2, 3, 4, 5, 6, 7].map((i) => ({ x: 1, y: i * 0.1 }));
+    expect(orderBattle(b, "a", { type: "move", unitId: "p0c", x: 1, y: 0, via })).toBeNull();
     expect(c.route).toHaveLength(s.porta.battle.maxWaypoints);
     run(b, 1.5);
     // Past the first step, on its way to the next ones.

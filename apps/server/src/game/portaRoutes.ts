@@ -31,7 +31,7 @@ const order = z.discriminatedUnion("type", [
     unitId: id,
     x: coord,
     y: coord,
-    then: z
+    via: z
       .array(z.object({ x: coord, y: coord }))
       .max(8)
       .optional(),

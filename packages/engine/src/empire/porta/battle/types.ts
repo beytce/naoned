@@ -123,7 +123,7 @@ export interface Battle {
 
 /** An order of a player (plan-porta.md § 6.2). */
 export type BattleOrder =
-  | { type: "move"; unitId: string; x: number; y: number; then?: Vec[] }
+  | { type: "move"; unitId: string; x: number; y: number; via?: Vec[] }
   | { type: "follow"; unitId: string; leaderId: string }
   | { type: "attack"; unitId: string; targetId: string }
   | { type: "exit"; unitId: string }

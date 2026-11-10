@@ -56,7 +56,7 @@ export function orderBattle(
     case "move": {
       clearOrders(u);
       u.goal = onDisc(b, order);
-      u.route = (order.then ?? [])
+      u.route = (order.via ?? [])
         .slice(0, s?.porta.battle.maxWaypoints ?? 5)
         .map((p) => onDisc(b, p));
       u.loading = null;
