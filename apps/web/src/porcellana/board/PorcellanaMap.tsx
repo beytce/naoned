@@ -1314,7 +1314,7 @@ function PinFace({ badge }: { badge: PinBadge }) {
           {badge.suited && (
             // On its terroir: a leaf at the pin's foot (the terroirs, seen).
             <span className="pc-pin-suit" data-suited aria-hidden="true">
-              <svg viewBox="0 0 12 12" width="9" height="9">
+              <svg viewBox="0 0 12 12" width="9" height="9" aria-hidden="true">
                 <path
                   d="M2 10C2 5 5 2 10 2c0 5-3 8-8 8Zm0 0 5-5"
                   fill="currentColor"
