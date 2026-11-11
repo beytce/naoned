@@ -238,3 +238,31 @@
     border-left: 1px solid var(--pc-hair);
   }
 }
+
+.pc-passe-link,
+.pc-passe-code {
+  border: 1px solid var(--pc-hair);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--pc-ink);
+  min-height: 44px;
+  padding: 0 12px;
+  font: 700 14px var(--pc-ui);
+}
+.pc-passe-link {
+  width: 100%;
+  margin-bottom: 12px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.pc-passe-code {
+  width: 110px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.pc-passe-opts button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

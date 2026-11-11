@@ -28,6 +28,7 @@ import { Canvas } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { OrthographicCamera } from "three";
 import { PasseBoard, type PasseMarks } from "./PasseBoard.js";
+import { usePasseRoom } from "./usePasseRoom.js";
 
 const { rules, boards, problems } = venice1450Passe;
 type BoardKey = keyof typeof boards;
@@ -76,6 +77,30 @@ export default function LabPasse() {
   const [said, setSaid] = useState("");
   const [thinking, setThinking] = useState(false);
   const game = useRef(0);
+  // A duel on line (P6): the server holds the game; its state replaces ours at each read.
+  const net = usePasseRoom();
+  const room = net.room;
+  const [codeTyped, setCodeTyped] = useState("");
+  const [, setBeat] = useState(0);
+  useEffect(() => {
+    if (!room) return;
+    const key = (room.board in boards ? room.board : "segna") as BoardKey;
+    setState(room.state ?? passeInit(setupOf(key, null)));
+    setLast(room.last);
+  }, [room]);
+  // The link a friend was sent: ?lab=passe&salle=CODE comes straight into the room.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, when the page opens.
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get("salle");
+    if (c) void net.join(c);
+  }, []);
+  // The clock of a duel on line is redrawn four times a second.
+  const ticking = !!room?.deadline;
+  useEffect(() => {
+    if (!ticking) return;
+    const timer = window.setInterval(() => setBeat((b) => b + 1), 250);
+    return () => window.clearInterval(timer);
+  }, [ticking]);
 
   const restart = useCallback(() => {
     game.current += 1;
@@ -89,12 +114,22 @@ export default function LabPasse() {
   useEffect(() => restart(), [restart]);
 
   /** The side the person at the screen plays now (both, when two share it). */
-  const mine: PasseSide = seat === "deux" ? state.turn : seat === "chaine" ? 2 : 1;
-  const theirTurn = !state.winner && seat !== "deux" && state.turn !== mine;
+  const mine: PasseSide = room
+    ? room.you === 2
+      ? 2
+      : 1
+    : seat === "deux"
+      ? state.turn
+      : seat === "chaine"
+        ? 2
+        : 1;
+  const theirTurn = room
+    ? !state.winner && (room.waiting || room.you === 0 || state.turn !== room.you)
+    : !state.winner && seat !== "deux" && state.turn !== mine;
 
   // The opponent answers, after a breath.
   useEffect(() => {
-    if (!theirTurn) return;
+    if (!theirTurn || room) return;
     const id = game.current;
     setThinking(true);
     const timer = window.setTimeout(() => {
@@ -114,7 +149,7 @@ export default function LabPasse() {
       setThinking(false);
     }, 520);
     return () => window.clearTimeout(timer);
-  }, [theirTurn, state, depth, style, problem]);
+  }, [theirTurn, state, depth, style, problem, room]);
 
   const legal = useMemo(() => passeLegal(state), [state]);
   const fires = useMemo(
@@ -131,6 +166,11 @@ export default function LabPasse() {
     const move: PasseMove | undefined = legal.find((m) => m.at === i && !!m.fire === firing);
     if (!move) {
       if (firing) setFiring(false);
+      return;
+    }
+    if (room) {
+      void net.play(move);
+      setFiring(false);
       return;
     }
     if (move.fire)
@@ -150,36 +190,57 @@ export default function LabPasse() {
   const c = passeDistance(state, 2);
   const failed = !!problem && !state.winner && state.turn === 1 && state.laid[0] >= problem.moves;
   const over = !!state.winner || failed;
-  const cargo = passeCargo(setup, state);
+  const cargo = room ? room.cargo : passeCargo(setup, state);
   const marks: PasseMarks = { last, aim: firing ? fires : [], hint };
   const phone = typeof window !== "undefined" && window.innerWidth < 640;
   const plain = phone || new URLSearchParams(window.location.search).has("simple");
 
-  const title = problem
-    ? `Le fil passe en ${problem.moves} coups`
-    : `${boards[board].name} · ${FORCES[depth - 1] ?? ""}`;
+  const foe = room?.names ? (mine === 1 ? room.names.chain : room.names.thread) : "ton adversaire";
+  const left = room?.deadline
+    ? Math.max(0, Math.ceil((room.deadline - net.serverNow()) / 1000))
+    : 0;
+  const title = room
+    ? `${room.boardName} · salle ${room.code}`
+    : problem
+      ? `Le fil passe en ${problem.moves} coups`
+      : `${boards[board].name} · ${FORCES[depth - 1] ?? ""}`;
   const turn = state.winner
     ? ""
-    : thinking
-      ? "Il réfléchit…"
-      : seat === "deux"
-        ? state.turn === 1
-          ? "Au fil de jouer"
-          : "À la chaîne de jouer"
-        : "À toi";
+    : room
+      ? room.waiting
+        ? "En attente de ton adversaire"
+        : room.you === 0
+          ? "Tu regardes"
+          : state.turn === room.you
+            ? `À toi · ${left} s`
+            : `À ${foe} · ${left} s`
+      : thinking
+        ? "Il réfléchit…"
+        : seat === "deux"
+          ? state.turn === 1
+            ? "Au fil de jouer"
+            : "À la chaîne de jouer"
+          : "À toi";
   const verdict = failed
     ? "Ce n'était pas la clef."
     : state.winner === 1
       ? problem
         ? "Passé : c'était la clef."
-        : mine === 1 || seat === "deux"
-          ? `Le fil est passé en ${plural(state.laid[0], "barge", "barges")} : ${plural(cargo, "cale sauvée", "cales sauvées")} sur ${setup.cargo.holds}.`
-          : "Le fil est passé : ta chaîne n'a pas tenu."
+        : room && mine === 2
+          ? `Le fil de ${foe} est passé : ta chaîne n'a pas tenu.`
+          : mine === 1 || seat === "deux"
+            ? `Le fil est passé en ${plural(state.laid[0], "barge", "barges")} : ${plural(cargo, "cale sauvée", "cales sauvées")} sur ${setup.cargo.holds}.`
+            : "Le fil est passé : ta chaîne n'a pas tenu."
       : state.winner === 2
-        ? mine === 2 && seat !== "deux"
-          ? "Ta chaîne est tendue d'une rive à l'autre."
-          : "La chaîne est tendue d'une rive à l'autre."
+        ? room && mine === 1
+          ? `La chaîne de ${foe} est tendue d'une rive à l'autre.`
+          : mine === 2 && seat !== "deux"
+            ? "Ta chaîne est tendue d'une rive à l'autre."
+            : "La chaîne est tendue d'une rive à l'autre."
         : "";
+  const link = room
+    ? `${window.location.origin}${window.location.pathname}?lab=passe&salle=${room.code}`
+    : "";
 
   return (
     <div className="porcellana fixed inset-0 pc-passe" data-passe-lab data-winner={state.winner}>
@@ -240,14 +301,63 @@ export default function LabPasse() {
       </div>
 
       <footer className="pc-passe-foot">
-        {said && !over ? <p className="pc-passe-said">{said}</p> : null}
+        {said && !over && !room ? <p className="pc-passe-said">{said}</p> : null}
+        {net.error ? <p className="pc-passe-said">{net.error}</p> : null}
+        {room?.waiting ? (
+          <div className="pc-passe-end" data-passe-wait>
+            <p>
+              Salle <b data-passe-code>{room.code}</b> : envoie ce lien à ton adversaire. Le duel
+              commence dès qu'il arrive.
+            </p>
+            <input
+              className="pc-passe-link"
+              id="passe-link"
+              readOnly
+              value={link}
+              aria-label="Le lien de la salle"
+              onFocus={(e) => e.currentTarget.select()}
+            />
+            <div>
+              <button
+                type="button"
+                className="pc-passe-go"
+                onClick={() => {
+                  navigator.clipboard?.writeText(link).catch(() => {});
+                  setSaid("");
+                }}
+              >
+                Copier le lien
+              </button>
+            </div>
+          </div>
+        ) : null}
         {over ? (
           <div className="pc-passe-end" data-passe-end>
             <p>{verdict}</p>
             <div>
-              <button type="button" className="pc-passe-go" onClick={restart}>
-                {problem ? "Réessayer" : "Rejouer"}
-              </button>
+              {room ? (
+                <>
+                  <button
+                    type="button"
+                    className="pc-passe-go"
+                    disabled={room.again.you || room.you === 0}
+                    onClick={() => void net.again()}
+                  >
+                    {room.again.you
+                      ? "Revanche demandée…"
+                      : room.again.other
+                        ? `${foe} veut sa revanche`
+                        : "Revanche, camps échangés"}
+                  </button>
+                  <button type="button" className="pc-passe-quiet" onClick={net.leave}>
+                    Quitter la salle
+                  </button>
+                </>
+              ) : (
+                <button type="button" className="pc-passe-go" onClick={restart}>
+                  {problem ? "Réessayer" : "Rejouer"}
+                </button>
+              )}
               {problem && failed ? (
                 <button
                   type="button"
@@ -281,9 +391,15 @@ export default function LabPasse() {
                     : "Bombarde"}
               </button>
             ) : null}
-            <button type="button" className="pc-passe-quiet" onClick={restart}>
-              Recommencer
-            </button>
+            {room ? (
+              <button type="button" className="pc-passe-quiet" onClick={net.leave}>
+                Quitter la salle
+              </button>
+            ) : (
+              <button type="button" className="pc-passe-quiet" onClick={restart}>
+                Recommencer
+              </button>
+            )}
             <button
               type="button"
               className="pc-passe-quiet"
@@ -344,6 +460,45 @@ export default function LabPasse() {
                 {name}
               </button>
             ))}
+          </div>
+          <h2>Un ami, en ligne</h2>
+          <p>
+            Ouvre une salle sur le passage choisi et envoie le lien. Quinze secondes par coup ;
+            passé ce délai, ton lieutenant pose une pièce pour toi. La revanche échange les camps.
+          </p>
+          <div className="pc-passe-opts">
+            <button
+              type="button"
+              data-passe-open
+              onClick={() => {
+                setProblem(null);
+                setOpen(false);
+                void net.open(board);
+              }}
+            >
+              Ouvrir une salle
+            </button>
+            <input
+              id="passe-code"
+              className="pc-passe-code"
+              aria-label="Le code d'une salle"
+              placeholder="CODE"
+              maxLength={6}
+              autoCapitalize="characters"
+              value={codeTyped}
+              onChange={(e) => setCodeTyped(e.target.value.toUpperCase())}
+            />
+            <button
+              type="button"
+              disabled={codeTyped.length !== 6}
+              onClick={() => {
+                setProblem(null);
+                setOpen(false);
+                void net.join(codeTyped);
+              }}
+            >
+              Rejoindre
+            </button>
           </div>
           <h2>Le passage</h2>
           <div className="pc-passe-opts">

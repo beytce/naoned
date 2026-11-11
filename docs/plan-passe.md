@@ -15,7 +15,7 @@ Le critère est celui du porteur : **a-t-on envie d'en refaire une ?** S'y ajout
 | P3 | **Les problèmes** : « le fil passe en deux coups », « en trois coups ». Un solveur de gain forcé ; vingt problèmes tirés de parties jouées par l'adversaire, à clef unique. | `passe/problems.ts`, `themes/venice1450.passe.ts`, `apps/simulator/src/passe-problems.ts` | `passe/problems.test.ts` : chaque clef gagne, aucun problème ne se gagne en moins de coups |
 | P4 | **L'équilibre** : l'adversaire contre lui-même, selon les écueils, les maillons d'avance et le premier coup. | `apps/simulator/src/passe-bench.ts` | `docs/calibration.md`, § La Passe |
 | P5 | **Le laboratoire** : le duel dans le rendu de Porcellana (`?lab=passe`), au toucher, sur téléphone d'abord. Contre l'adversaire (en fil ou en chaîne), à deux sur le même écran, et les problèmes. | `apps/web/src/porcellana/passe/` | parcours `apps/web/e2e/passe.mjs`, captures à 390 px |
-| P6 | **Le duel en ligne** entre deux joueurs (salon, lien à partager, quinze secondes par coup). | serveur et laboratoire | à faire après le retour du porteur sur P5 |
+| P6 | **Le duel en ligne** entre deux joueurs (salle privée, lien à partager, quinze secondes par coup, revanche). | `apps/server/src/game/passe.ts`, `passeRoutes.ts`, laboratoire | `passe-hub.test.ts`, `passe-routes.test.ts`, parcours `e2e/passe-duel.mjs` |
 | P7 | **Les quatre autres pièces de caractère** (ancre, relais, corps-mort, herse), une par une, chacune mesurée. | moteur | à faire après P5 |
 
 ## 3. Ce qui n'est pas dans cette étape
@@ -31,7 +31,7 @@ La planche commune, les fils, les villes, les tours et leurs sceaux, le lieutena
 | P3 | fait : `passe/problems.ts`, vingt problèmes (douze en deux coups, huit en trois), 8 tests. La clef unique des problèmes en trois coups est vérifiée à la génération, pas dans les tests (trop long) |
 | P4 | fait : `docs/calibration.md`, § La Passe. Trois passages de Venise entre 50 et 58 % ; le 9 sur 9 non mesuré à la force 3 |
 | P5 | fait : `?lab=passe`, parcours `pnpm --filter @comptoirs/web e2e:passe` (avec `BASE` et `CHROMIUM`). **Pas mesuré sur un vrai téléphone** : le conteneur dessine en logiciel. Sur téléphone la caméra est plus haute que celle du kit, pour des cases plus grandes sous le pouce |
-| P6 | à faire : le duel en ligne entre deux joueurs |
+| P6 | fait : `PasseHub` et ses routes `/api/passe/room` (13 tests), l'écran (« Réglages », « Un ami, en ligne » : ouvrir une salle, copier le lien, rejoindre par un code ; compte à rebours ; revanche camps échangés), ouvert aux invités. Parcours à deux navigateurs `e2e:passe-duel`. La salle se lit une fois par seconde (pas de WebSocket) ; pas de cote, pas d'appariement public : seulement des salles privées |
 | P7 | à faire : ancre, relais, corps-mort, herse |
 
 ## 5. Pour l'essayer
@@ -40,4 +40,4 @@ La planche commune, les fils, les villes, les tours et leurs sceaux, le lieutena
 pnpm dev
 ```
 
-puis ouvrir `http://localhost:5173/?lab=passe`. « Réglages » donne la règle, le camp (fil, chaîne, à deux), le passage, la force et la manière de l'adversaire, et les problèmes.
+puis ouvrir `http://localhost:5173/?lab=passe`. Pour un duel en ligne : « Réglages », « Ouvrir une salle », puis envoyer le lien (l'autre joueur doit pouvoir joindre le même serveur). « Réglages » donne la règle, le camp (fil, chaîne, à deux), le passage, la force et la manière de l'adversaire, et les problèmes.
