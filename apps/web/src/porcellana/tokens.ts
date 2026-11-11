@@ -154,6 +154,37 @@ export const RIBBON = {
   still: 0.55,
 } as const;
 
+/**
+ * The thread on the shared board (docs/audit-visuel-2026-11-11, « le fil est le plus bel objet »):
+ * a wide ribbon of accent on its dark-red shadow, its chevrons further apart, a light sheen that
+ * widens with the patina; the others' threads in dashed ink.
+ */
+export const THREAD = {
+  width: 1.7,
+  period: 2.2,
+  shadow: "#8A2A20",
+  /** Where the shadow lies: toward the camera, under the ribbon. */
+  shadowOffset: 0.3,
+  sheen: "#F6C7BF",
+  sheenMin: 0.1,
+  sheenMax: 0.42,
+  other: 0.7,
+  otherDash: 1.6,
+  boat: 1.6,
+} as const;
+
+/** The water of the shared board, in one piece: from the lagoon's white to the ink of the open sea. */
+export const SEA = {
+  lagoon: "#CFD8DA",
+  mid: "#8B9497",
+  deep: "#2B2E32",
+  /** The land, biscuit, darker toward the open sea; the islands of the houses, porcelain. */
+  land: "#E9DFD0",
+  isle: "#F7F5F1",
+  /** How much a spot of the wash varies. */
+  stain: 0.06,
+} as const;
+
 /** The paper of the interface (cards, pins, pills). */
 export const PAPER = {
   paper: "#FBFAF7",

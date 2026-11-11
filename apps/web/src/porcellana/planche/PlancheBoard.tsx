@@ -9,11 +9,13 @@ import {
   type PlancheSetup,
   type PlancheState,
   plancheIsCorsair,
+  planchePatina,
   plancheRouteOpen,
 } from "@comptoirs/engine";
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import {
+  BufferAttribute,
   CanvasTexture,
   Color,
   Group,
@@ -25,6 +27,7 @@ import {
   MeshStandardMaterial,
   type Object3D,
   type OrthographicCamera,
+  PlaneGeometry,
   RepeatWrapping,
   RingGeometry,
   SRGBColorSpace,
@@ -43,7 +46,7 @@ import { flagCloth, rocca } from "../models/terra.js";
 import { town } from "../models/towns.js";
 import { type Vehicle, ship } from "../models/vehicles.js";
 import { drawChevron, ribbonGeometry, roundedPath } from "../ribbon.js";
-import { BOARD, CAMERA, COL, RIBBON } from "../tokens.js";
+import { BOARD, CAMERA, COL, RIBBON, SEA, THREAD } from "../tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
 const BY_KEY = new Map(CATALOGUE.map((e) => [e.key, e]));
@@ -95,39 +98,75 @@ export function PlancheBoard({
   const wx = (x: number) => (x - (W - 1) / 2) * S;
   const wz = (y: number) => (y - (H - 1) / 2) * S;
 
-  // The ground: every tile of the kit, once, tinted from porcelain to ink by its peril.
+  // The ground (docs/audit-visuel-2026-11-11): the land in the kit's tiles, biscuit, darker toward
+  // the open sea; the houses' islands in porcelain; the water in one piece, without joints, washed
+  // from the lagoon's white to the ink of the open sea, a little stained.
   // biome-ignore lint/correctness/useExhaustiveDependencies: built once for a board.
   const ground = useMemo(() => {
     const root = new Group();
-    const tiles: [number, number, boolean][] = [];
-    const isles = new Set<string>([
-      ...setup.houses.map((h) => `${h.x},${h.y}`),
+    const isles = new Set<string>(setup.houses.map((h) => `${h.x},${h.y}`));
+    const rocks = new Set<string>([
       ...setup.passages.map((p) => `${p.x},${p.y}`),
       `${land.rialto.x},${land.rialto.y}`,
     ]);
+    const tiles: [number, number, string][] = [];
     for (let y = 0; y < H; y++)
-      for (let x = 0; x < W; x++) tiles.push([x, y, land.land(x, y) || isles.has(`${x},${y}`)]);
+      for (let x = 0; x < W; x++) {
+        const k = `${x},${y}`;
+        if (isles.has(k)) tiles.push([x, y, "isle"]);
+        else if (rocks.has(k) || land.land(x, y)) tiles.push([x, y, "land"]);
+      }
     const m = new Matrix4();
     const c = new Color();
     const ink = new Color(COL.ink);
-    const make = (isLand: boolean, base: string, rough: number) => {
-      const list = tiles.filter((t) => t[2] === isLand);
-      const geo = isLand
-        ? new RoundedBoxGeometry(BOARD.tile, BOARD.thick, BOARD.tile, 3, BOARD.radius)
-        : new RoundedBoxGeometry(S + 0.02, 1.2, S + 0.02, 1, 0.02);
-      const mat = new MeshStandardMaterial({ color: "#ffffff", roughness: rough });
-      const mesh = new InstancedMesh(geo, mat, list.length);
-      list.forEach(([x, y], k) => {
-        m.makeTranslation(wx(x), isLand ? -BOARD.thick / 2 : BOARD.waterY - 0.6, wz(y));
-        mesh.setMatrixAt(k, m);
-        mesh.setColorAt(k, c.set(base).lerp(ink, land.peril(x, y) * (isLand ? 0.82 : 0.7)));
-      });
-      mesh.receiveShadow = true;
-      mesh.castShadow = isLand;
-      root.add(mesh);
-    };
-    make(true, COL.ground, 0.86);
-    make(false, COL.water, 0.38);
+    const geo = new RoundedBoxGeometry(BOARD.tile, BOARD.thick, BOARD.tile, 3, BOARD.radius);
+    const mat = new MeshStandardMaterial({ color: "#ffffff", roughness: 0.86 });
+    const mesh = new InstancedMesh(geo, mat, tiles.length);
+    tiles.forEach(([x, y, kind], k) => {
+      m.makeTranslation(wx(x), -BOARD.thick / 2, wz(y));
+      mesh.setMatrixAt(k, m);
+      if (kind === "isle") c.set(SEA.isle);
+      else c.set(SEA.land).lerp(ink, land.peril(x, y) * 0.72);
+      mesh.setColorAt(k, c);
+    });
+    mesh.receiveShadow = true;
+    mesh.castShadow = true;
+    root.add(mesh);
+    // The water: one sheet, its colour at each vertex.
+    const seg = 4;
+    const sheet = new PlaneGeometry(W * S, H * S, W * seg, H * seg);
+    sheet.rotateX(-Math.PI / 2);
+    const pos = sheet.getAttribute("position");
+    const col = new Float32Array(pos.count * 3);
+    const lagoon = new Color(SEA.lagoon);
+    const mid = new Color(SEA.mid);
+    const deep = new Color(SEA.deep);
+    for (let i = 0; i < pos.count; i++) {
+      const gx = pos.getX(i) / S + (W - 1) / 2;
+      const gy = pos.getZ(i) / S + (H - 1) / 2;
+      // The ink comes early: the open sea reads dark from the lagoon's edge.
+      const p = Math.min(1, Math.sqrt(land.peril(gx, gy)) * 1.15);
+      if (p < 0.5) c.copy(lagoon).lerp(mid, p * 2);
+      else c.copy(mid).lerp(deep, (p - 0.5) * 2);
+      const n = Math.sin(gx * 1.7 + gy * 0.9) * Math.sin(gx * 0.6 - gy * 1.3);
+      c.multiplyScalar(1 + n * SEA.stain * (0.4 + p));
+      col.set([c.r, c.g, c.b], i * 3);
+    }
+    sheet.setAttribute("color", new BufferAttribute(col, 3));
+    const water = new Mesh(
+      sheet,
+      new MeshStandardMaterial({ color: "#ffffff", vertexColors: true, roughness: 0.38 }),
+    );
+    water.position.y = BOARD.waterY;
+    water.receiveShadow = true;
+    root.add(water);
+    // Its edge: a slab under the sheet, so that the board keeps its thickness.
+    const edge = new Mesh(
+      new RoundedBoxGeometry(W * S, 1.2, H * S, 2, 0.4),
+      new MeshStandardMaterial({ color: SEA.mid, roughness: 0.6 }),
+    );
+    edge.position.y = BOARD.waterY - 0.61;
+    root.add(edge);
     return root;
   }, [setup, land]);
 
@@ -241,7 +280,12 @@ export function PlancheBoard({
 
   // The threads: one's own in the ribbon of accent, the others' in thin ink.
   const threads = setup.houses
-    .map((h) => `${h.id}:${(state.houses[h.id]?.threads ?? []).map((t) => t.to).join(",")}`)
+    .map(
+      (h) =>
+        `${h.id}:${(state.houses[h.id]?.threads ?? [])
+          .map((t) => `${t.to}~${Math.floor(planchePatina(setup, t, state.now) / 500)}`)
+          .join(",")}`,
+    )
     .join("|");
   const chevrons = useMemo(() => {
     const canvas = document.createElement("canvas");
@@ -253,8 +297,27 @@ export function PlancheBoard({
     tex.wrapS = RepeatWrapping;
     tex.colorSpace = SRGBColorSpace;
     tex.anisotropy = 8;
+    tex.repeat.x = RIBBON.period / THREAD.period;
     return tex;
   }, [P]);
+  // The others' threads: dashes of ink.
+  const dashes = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 64;
+    canvas.height = 16;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.fillStyle = COL.ink;
+      ctx.beginPath();
+      ctx.roundRect(2, 2, 36, 12, 6);
+      ctx.fill();
+    }
+    const tex = new CanvasTexture(canvas);
+    tex.wrapS = RepeatWrapping;
+    tex.colorSpace = SRGBColorSpace;
+    tex.repeat.x = RIBBON.period / THREAD.otherDash;
+    return tex;
+  }, []);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the threads' signature stands for the state.
   const web = useMemo(() => {
     const root = new Group();
@@ -266,7 +329,14 @@ export function PlancheBoard({
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
     });
-    const other = new MeshBasicMaterial({ color: COL.ink, transparent: true, opacity: 0.5 });
+    const other = new MeshBasicMaterial({
+      map: dashes,
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false,
+    });
+    const shadow = new MeshStandardMaterial({ color: THREAD.shadow, roughness: 0.8 });
+    const sheen = new MeshBasicMaterial({ color: THREAD.sheen, toneMapped: false });
     const seen = new Set<string>();
     for (const h of setup.houses) {
       const own = h.id === me;
@@ -293,21 +363,32 @@ export function PlancheBoard({
         const clean = pts.filter((p, k) => k === 0 || p.distanceTo(pts[k - 1] as Vector3) > 0.01);
         const route = roundedPath(clean);
         const ribbon = new Mesh(
-          ribbonGeometry(route, own ? RIBBON.width : 0.2),
+          ribbonGeometry(route, own ? THREAD.width : THREAD.other),
           own ? accent : other,
         );
         ribbon.receiveShadow = own;
         root.add(ribbon);
         if (own) {
+          // Its shadow, toward the camera and a little lower: the ribbon has a thickness.
+          const under = new Mesh(ribbonGeometry(route, THREAD.width), shadow);
+          under.position.set(THREAD.shadowOffset, -0.015, THREAD.shadowOffset);
+          root.add(under);
+          // The sheen of the patina, along its far edge: the longer held, the wider.
+          const share = planchePatina(setup, th, state.now) / Math.max(1, setup.rules.patinaMaxBps);
+          const w = THREAD.sheenMin + (THREAD.sheenMax - THREAD.sheenMin) * share;
+          const shine = new Mesh(ribbonGeometry(route, w), sheen);
+          const off = -(THREAD.width / 2 - w / 2 - 0.12) / Math.SQRT2;
+          shine.position.set(off, 0.012, off);
+          root.add(shine);
           const boat = ship(P, { seed: 1, running: true });
-          boat.group.scale.setScalar(0.9);
+          boat.group.scale.setScalar(THREAD.boat);
           root.add(boat.group);
           mine.push({ route, boat, open: plancheRouteOpen(setup, state, me, th.to, state.now) });
         }
       }
     }
     return { root, mine };
-  }, [setup, threads, me, chevrons, holders]);
+  }, [setup, threads, me, chevrons, dashes, holders]);
 
   const ring = useMemo(() => {
     const m = new Mesh(
