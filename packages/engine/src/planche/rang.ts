@@ -163,25 +163,31 @@ export function plancheTrend(S: PlancheSetup, s: PlancheState, house: string): n
   return now === undefined || then === undefined ? 0 : then - now;
 }
 
-/** Each person's rival: the nearest above, a person first, never last week's. */
+/** A person's rival in this order: the nearest above, a person first, never last week's. */
+function rivalOf(s: PlancheState, order: string[], h: string): string | undefined {
+  const i = order.indexOf(h);
+  if (i < 0) return undefined;
+  const above = order.slice(0, i).reverse();
+  const below = order.slice(i + 1);
+  const last = s.rank.lastRivals[h];
+  const fresh = (l: string[]) => l.filter((o) => o !== last);
+  const person = (l: string[]) => l.find((o) => s.rank.humans.includes(o));
+  return (
+    person(fresh(above)) ??
+    fresh(above)[0] ??
+    person(fresh(below)) ??
+    fresh(below)[0] ??
+    above[0] ??
+    below[0]
+  );
+}
+
+/** Each person's rival for the week. */
 function designate(S: PlancheSetup, s: PlancheState): void {
   const order = plancheStanding(S, s).map((r) => r.house);
   const rivals: Record<string, string> = {};
   for (const h of s.rank.humans) {
-    const i = order.indexOf(h);
-    if (i < 0) continue;
-    const above = order.slice(0, i).reverse();
-    const below = order.slice(i + 1);
-    const last = s.rank.lastRivals[h];
-    const fresh = (l: string[]) => l.filter((o) => o !== last);
-    const person = (l: string[]) => l.find((o) => s.rank.humans.includes(o));
-    const pick =
-      person(fresh(above)) ??
-      fresh(above)[0] ??
-      person(fresh(below)) ??
-      fresh(below)[0] ??
-      above[0] ??
-      below[0];
+    const pick = rivalOf(s, order, h);
     if (pick) rivals[h] = pick;
   }
   s.rank.rivals = rivals;
@@ -269,13 +275,20 @@ export function plancheRankTurn(S: PlancheSetup, s: PlancheState): void {
   if (Math.floor(s.now / DAY) !== s.rank.markDay) markNow(S, s);
 }
 
-/** A house a person takes counts as a person's from then on. */
+/** A house a person takes counts as a person's from then on, and has its rival at once. */
 export function plancheClaim(S: PlancheSetup, s0: PlancheState, house: string): PlancheState {
   if (!has(s0.houses, house) || !S.houses.some((h) => h.id === house))
     return fail("planche_unknown");
   if (s0.rank.humans.includes(house)) return s0;
   const s = structuredClone(s0);
   s.rank.humans.push(house);
+  // A rival at once, not on Monday: the first is seen in the first minutes.
+  const pick = rivalOf(
+    s,
+    plancheStanding(S, s).map((r) => r.house),
+    house,
+  );
+  if (pick) s.rank.rivals[house] = pick;
   return s;
 }
 

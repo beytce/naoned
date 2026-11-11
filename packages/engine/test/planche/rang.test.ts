@@ -242,6 +242,8 @@ describe("the rival of the week", () => {
     const S = setup();
     let s = plancheClaim(S, plancheInit(S, T0), "cid");
     expect(s.rank.humans).toContain("cid");
+    // Its rival at once: a person, the nearest above it (all level, in the order of names).
+    expect(s.rank.rivals.cid).toBe("ana");
     s = plancheAdvance(S, s, T0 + WEEK);
     expect(s.rank.rivals.cid).toBeDefined();
     expect(() => plancheClaim(S, s, "nobody")).toThrow("planche_unknown");
