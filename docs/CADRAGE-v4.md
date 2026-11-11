@@ -215,19 +215,19 @@ On ne perd donc jamais sa tour sans avoir pu la défendre soi-même, et on ne la
 
 ### 9.8 L'équilibre se règle, et il est mesuré
 
-L'ordinateur a joué contre lui-même, 40 parties par réglage, sur le damier de 7 sur 7.
+Mesuré le 11 novembre avec le moteur du prototype (`docs/calibration.md`, § La Passe) : l'adversaire artificiel contre lui-même, 24 parties par case, sur le damier de 7 sur 7.
 
-| Réglage | Le fil gagne |
+| Réglage | Le fil passe (force 2, puis force 3) |
 | --- | --- |
-| Damier nu, le fil commence | 68 % |
-| Deux écueils, le fil commence | 48 % |
-| Deux maillons d'avance, le fil commence | 38 % |
-| Trois maillons d'avance, la chaîne commence | 28 % |
-| Cinq maillons d'avance, la chaîne commence | 13 % |
+| Damier nu, le fil commence | 50 %, 58 % |
+| Damier nu, la chaîne commence | 50 %, 54 % |
+| Un écueil au centre | 29 %, 25 % |
+| Un écueil au centre, une barge d'avance pour le fil | 46 %, 50 % |
+| Deux écueils aux bords | 50 %, 58 % |
 
-Deux leçons. **Le réglage existe** : les écueils, les maillons d'avance et le premier coup déplacent l'équilibre pas à pas, de la bouche de lagune facile au détroit noir. Et **la géométrie compte** : dans un premier essai où le fil passait par toutes les diagonales, il gagnait de 63 à 100 % des parties quel que soit le réglage ; c'est la liaison par le seul courant qui équilibre le duel.
+Trois leçons. **Le duel est équilibré de lui-même** sur un damier nu. **Le réglage existe** : l'écueil au centre donne la partie à la chaîne, une barge d'avance la rend au fil. Et **voir plus loin fait gagner** : l'adversaire qui voit trois pièces d'avance bat celui qui n'en voit qu'une dans 96 % des parties.
 
-Limite : ces chiffres viennent d'un joueur artificiel simple, qui ne voit qu'un coup d'avance. Ils montrent que le réglage existe, pas sa valeur exacte entre bons joueurs.
+Limites : 24 parties par case, donc à une vingtaine de points près ; et un adversaire qui ne voit que trois pièces d'avance. Les premiers chiffres de ce chapitre, tirés de la maquette, étaient faux et sont retirés.
 
 ### 9.9 Autour du duel
 

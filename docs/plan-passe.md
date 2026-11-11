@@ -22,14 +22,22 @@ Le critère est celui du porteur : **a-t-on envie d'en refaire une ?** S'y ajout
 
 La planche commune, les fils, les villes, les tours et leurs sceaux, le lieutenant d'un joueur, la cote : ce sont les étapes 2 à 6 du cadrage.
 
-## 4. État
+## 4. État (11 novembre 2026)
 
 | Lot | État |
 | --- | --- |
-| P1 | fait |
-| P2 | fait |
-| P3 | fait |
-| P4 | fait (docs/calibration.md) |
-| P5 | fait ; **pas mesuré sur un vrai téléphone** (le conteneur dessine en logiciel) |
-| P6 | à faire |
-| P7 | à faire |
+| P1 | fait : `passe/board.ts`, 16 tests (dont : jamais de partie nulle sur 400 damiers remplis au hasard) |
+| P2 | fait : `passe/mind.ts`, quatre forces, trois manières, 6 tests. La force 4 est lente sur téléphone (non mesurée) |
+| P3 | fait : `passe/problems.ts`, vingt problèmes (douze en deux coups, huit en trois), 8 tests. La clef unique des problèmes en trois coups est vérifiée à la génération, pas dans les tests (trop long) |
+| P4 | fait : `docs/calibration.md`, § La Passe. Trois passages de Venise entre 50 et 58 % ; le 9 sur 9 non mesuré à la force 3 |
+| P5 | fait : `?lab=passe`, parcours `pnpm --filter @comptoirs/web e2e:passe` (avec `BASE` et `CHROMIUM`). **Pas mesuré sur un vrai téléphone** : le conteneur dessine en logiciel. Sur téléphone la caméra est plus haute que celle du kit, pour des cases plus grandes sous le pouce |
+| P6 | à faire : le duel en ligne entre deux joueurs |
+| P7 | à faire : ancre, relais, corps-mort, herse |
+
+## 5. Pour l'essayer
+
+```
+pnpm dev
+```
+
+puis ouvrir `http://localhost:5173/?lab=passe`. « Réglages » donne la règle, le camp (fil, chaîne, à deux), le passage, la force et la manière de l'adversaire, et les problèmes.

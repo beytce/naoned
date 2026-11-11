@@ -2938,3 +2938,46 @@ Décision du porteur du 9 novembre 2026 : la première Bataille classée du jour
 | 10 | 4006 | 255 · 255 | 6.0 % | 7.3 % | 8 % | active → active |
 
 **Lecture.** La Bataille pèse 6,0 % de la Gloire d'un régulier en médiane (rang parmi les marchands), 7,9 % s'il est premier chaque jour ; le plafond (315) fait 8,6 % de la semaine médiane d'un régulier sans Bataille, au-dessus de 10 % sur deux graines seulement (11 et 12 %, les semaines les plus maigres). La cible tient sans changer le barème. Un assidu n'en tire pas plus qu'un régulier (une seule classée par jour). Le Signore change sur 4 graines sur 10, par le canal déjà mesuré pour les escarmouches (les alliances demandées au voisin le plus glorieux), plus petit que le hasard ordinaire de la semaine. À suivre en bêta.
+
+## La Passe : l'équilibre du duel (11 novembre 2026, docs/plan-passe.md P4)
+
+*Prototype de l'étape 1 de CADRAGE-v4. Mesure : `pnpm --filter @comptoirs/simulator passe-bench 24`. L'adversaire artificiel (`packages/engine/src/passe/mind.ts`) joue contre lui-même ; chaque partie s'ouvre par une pièce au hasard de chaque camp, sans quoi deux esprits fixes rejouent la même partie. La force est le nombre de pièces qu'il voit à l'avance. Réglages : `packages/engine/src/themes/venice1450.passe.ts`.*
+
+### Les passages de Venise (24 parties par case, l'adversaire contre lui-même)
+
+| Passage | Damier | Force 2 : le fil passe | Force 3 : le fil passe | Barges posées |
+| --- | --- | --- | --- | --- |
+| Bouche du Lido | 5 × 5 | 58 % | 50 % | 7.0 |
+| Bouche de Chioggia | 7 × 7 | 54 % | 58 % | 10.3 |
+| Détroit de Segna | 7 × 7 | 50 % | 58 % | 11.1 |
+| Canal d’Otrante | 9 × 9 | 33 % | non mesuré | 12.1 |
+
+### Ce qui déplace l'équilibre (damier de 7 × 7, 24 parties par case)
+
+| Réglage | Force 2 : le fil passe | Force 3 : le fil passe |
+| --- | --- | --- |
+| Damier nu, le fil commence | 50 % | 58 % |
+| Damier nu, la chaîne commence | 50 % | 54 % |
+| Un écueil au centre, le fil commence | 29 % | 25 % |
+| Un écueil au bord, le fil commence | 58 % | 71 % |
+| Deux écueils aux bords, le fil commence | 50 % | 58 % |
+| Un écueil au centre, une barge d'avance | 46 % | 50 % |
+| Un écueil au centre, deux barges d'avance | 29 % | 46 % |
+| Un maillon d'avance, le fil commence | 54 % | 58 % |
+
+### Voir plus loin fait-il gagner ? (damier nu, chacun joue le fil puis la chaîne)
+
+| Le plus fort | Le plus faible | Parties gagnées par le plus fort |
+| --- | --- | --- |
+| 2 | 1 | 75 % |
+| 3 | 1 | 96 % |
+| 3 | 2 | 83 % |
+
+**Lecture.**
+- **Le duel est équilibré sur un damier nu** : le fil passe une fois sur deux, qu'il commence ou non.
+- **L'écueil au centre est le grand levier** : il donne la partie à la chaîne (le fil ne passe plus qu'une fois sur quatre). Une barge posée d'avance le compense. Aux bords, les écueils ne pèsent presque pas.
+- **Les trois premiers passages de Venise sont réglés entre 50 et 58 %.** Le Canal d'Otrante (33 % à la force 2) est voulu dur : c'est un détroit du Large.
+- **Voir plus loin fait gagner** : la force 3 bat la force 1 dans 96 % des parties, la force 2 dans 83 %. C'est le signe d'un jeu où la réflexion paie.
+- **Une partie dure de 7 à 12 barges** par camp : deux minutes.
+
+**Limites.** 24 parties par case : à ±20 points près. L'adversaire ne voit que trois pièces d'avance, sur les douze meilleures cases : entre bons joueurs, l'équilibre peut différer. Une première série, sans ouverture tirée au sort, donnait des chiffres faux (jusqu'à 100 %) parce que les parties se répétaient ; elle est écartée. Le damier de 9 sur 9 n'est pas mesuré à la force 3 (trop lent pour l'instant).
