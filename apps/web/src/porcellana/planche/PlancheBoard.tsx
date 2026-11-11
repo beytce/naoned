@@ -79,6 +79,7 @@ export function PlancheBoard({
   onPick,
   phone,
   plain,
+  zoom = 1,
 }: {
   setup: PlancheSetup;
   land: PlancheLand;
@@ -90,6 +91,8 @@ export function PlancheBoard({
   onPick: (p: PlanchePick | null) => void;
   phone: boolean;
   plain: boolean;
+  /** The scale asked from the interface: 1 the lagoon, less the whole world. */
+  zoom?: number;
 }) {
   const { camera, gl, size } = useThree();
   const live = useMemo(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, []);
@@ -446,13 +449,25 @@ export function PlancheBoard({
     return c;
   }, [camera, gl]);
   useEffect(() => () => controls.dispose(), [controls]);
+  // The scale (monde, lagune): the camera's zoom eases toward it.
+  const zoomTo = useRef(zoom);
+  useEffect(() => {
+    zoomTo.current = zoom;
+  }, [zoom]);
 
   const clock = useRef(0);
+  /** The scale last reached: once there, the reader's own zoom is left alone. */
+  const lastZoom = useRef(1);
   const tmp = useMemo(() => new Vector3(), []);
   useFrame((_, rawDt) => {
     const dt = Math.min(0.05, rawDt);
     clock.current += dt;
     const t = clock.current;
+    const cam = camera as OrthographicCamera;
+    if (Math.abs(cam.zoom - zoomTo.current) > 0.002 && zoomTo.current !== lastZoom.current) {
+      cam.zoom += (zoomTo.current - cam.zoom) * (live ? 0.12 : 1);
+      cam.updateProjectionMatrix();
+    } else lastZoom.current = zoomTo.current;
     controls.update();
     // The board stays in sight: the camera's aim never leaves it.
     controls.target.x = Math.max(wx(0), Math.min(wx(W - 1), controls.target.x));

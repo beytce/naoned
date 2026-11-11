@@ -20,6 +20,7 @@ import {
   planchePrice,
   plancheRobot,
   plancheRouteOpen,
+  plancheShares,
   plancheSupply,
   plancheThread,
   plancheToll,
@@ -30,8 +31,11 @@ import {
 import { Canvas } from "@react-three/fiber";
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { OrthographicCamera } from "three";
+import { Emblem } from "../../art/logo.js";
+import { DucatCoin } from "../../art/plateau/coins.js";
 import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
+import { Bobbin, Flag, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
 
 const LabPasse = lazy(() => import("../passe/LabPasse.js"));
 
@@ -108,6 +112,9 @@ export default function LabPlanche() {
   const [news, setNews] = useState<News[]>([]);
   const [duel, setDuel] = useState<string | null>(null);
   const [inIsle, setInIsle] = useState(false);
+  /** The good the card of a town is about, and the scale of the view. */
+  const [focus, setFocus] = useState<string | null>(null);
+  const [scale, setScale] = useState<"monde" | "lagune">("lagune");
   const pins = useRef(new Map<string, HTMLElement>()).current;
   const seq = useRef(0);
   const tell = useCallback(
@@ -346,7 +353,381 @@ export default function LabPlanche() {
   const passage =
     chosen?.kind === "passage" ? S.passages.find((p) => p.id === chosen.id) : undefined;
   const house = chosen?.kind === "house" ? S.houses.find((h) => h.id === chosen.id) : undefined;
-
+  const short = (id: string) => houseName(id, view?.names);
+  const playing = !(online && !ME);
+  // The bobbins, drawn: stretched, coming home, free.
+  const bobbins: ("out" | "back" | "free")[] = [
+    ...(me?.threads ?? []).map(() => "out" as const),
+    ...(me?.rewinding ?? []).filter((t) => t > state.now).map(() => "back" as const),
+  ];
+  while (bobbins.length < S.rules.bobbins) bobbins.push("free");
+  // A town's shares, for its label: one's own and the others', over all it asks.
+  const sharesOf = (cityId: string) => {
+    const c = S.cities.find((x) => x.id === cityId);
+    const goods = Object.keys(c?.wants ?? {});
+    const by = new Map<string, number>();
+    for (const g of goods)
+      for (const h of plancheShares(S, state, cityId, g, state.now).houses)
+        by.set(h.house, (by.get(h.house) ?? 0) + h.bps / Math.max(1, goods.length));
+    const mine = by.get(ME) ?? 0;
+    by.delete(ME);
+    return { mine, others: [...by.values()].sort((x, y) => y - x) };
+  };
+  const tie = (cityId: string, cityName: string, good: string) =>
+    act(() => plancheThread(S, state, ME, cityId, good, state.now), `Fil tendu vers ${cityName}.`, [
+      "/thread",
+      { city: cityId, good },
+    ]);
+  const untie = (cityId: string, good: string) =>
+    act(
+      () => plancheUnthread(S, state, ME, cityId, good, state.now),
+      "Fil repris : la bobine revient au quai.",
+      ["/unthread", { city: cityId, good }],
+    );
+  const pick = (p: PlanchePick | null) => {
+    setChosen(p);
+    setFocus(null);
+  };
+  const closeX = (
+    <button
+      type="button"
+      className="pc-pl-x"
+      aria-label="Fermer la fiche"
+      onClick={() => pick(null)}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+        <path
+          d="M2 2 L12 12 M12 2 L2 12"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    </button>
+  );
+  const cityCard = (() => {
+    if (!city) return null;
+    const open = plancheRouteOpen(S, state, ME, city.id, state.now);
+    const goods = Object.entries(city.wants).map(([good, w]) => {
+      const sh = plancheShares(S, state, city.id, good, state.now);
+      const held = me?.threads.find((t) => t.to === city.id && t.good === good);
+      return {
+        good,
+        w,
+        sh,
+        held,
+        makes: sells.has(good),
+        mine: sh.houses.find((h) => h.house === ME)?.bps ?? 0,
+        others: sh.houses.filter((h) => h.house !== ME),
+        price: planchePrice(S, state, city.id, good),
+      };
+    });
+    const shown = goods
+      .filter((g) => g.held || g.makes)
+      .sort((x, y) => Number(!!y.held) - Number(!!x.held));
+    const folded = goods.filter((g) => !g.held && !g.makes);
+    const at = shown.find((g) => g.good === focus) ?? shown[0];
+    const passed = goods.find((g) => g.held && g.others[0] && g.others[0].bps > g.mine);
+    const another = shown.find((g) => !g.held && g.good !== at?.good);
+    return (
+      <section className="pc-planche-card pc-pl-card" data-planche-card>
+        <div className="pc-pl-head">
+          <div>
+            <h2>{city.name}</h2>
+            <span>
+              {city.via.length
+                ? `Par ${city.via.map((id) => S.passages.find((p) => p.id === id)?.name).join(", ")}`
+                : city.x === S.rialto.x && city.y === S.rialto.y
+                  ? "Le marché de Venise · il achète tout"
+                  : "Terraferme"}
+              {` · ${goods.length} marchandise${goods.length > 1 ? "s" : ""} demandée${goods.length > 1 ? "s" : ""}`}
+            </span>
+          </div>
+          {closeX}
+        </div>
+        {!playing ? (
+          <p>Toutes les Maisons sont prises : tu regardes la planche sans y jouer.</p>
+        ) : !open ? (
+          <p>
+            Route fermée :{" "}
+            {city.via
+              .filter((id) => plancheIsCorsair(state.passages[id]?.holder ?? ""))
+              .map((id) => S.passages.find((p) => p.id === id)?.name)
+              .join(", ")}{" "}
+            est aux corsaires. Force le passage.
+          </p>
+        ) : null}
+        {passed ? (
+          <div className="pc-pl-alert">
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                d="M3 14 L8 9 L11 12 L17 6 M13 6 H17 V10"
+                stroke="#E0614F"
+                strokeWidth="2.4"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span>
+              <b>{short(passed.others[0]?.house ?? "")} vient de te passer devant</b> sur{" "}
+              {S.goods[passed.good]?.toLowerCase()} : {pct(passed.others[0]?.bps ?? 0)} contre tes{" "}
+              {pct(passed.mine)}.
+            </span>
+          </div>
+        ) : null}
+        {shown.map((g) => (
+          <button
+            key={g.good}
+            type="button"
+            className="pc-pl-good"
+            data-good={g.good}
+            data-held={String(!!g.held)}
+            aria-pressed={at?.good === g.good}
+            onClick={() => setFocus(g.good)}
+          >
+            <span className="pc-pl-good-top">
+              <b>{S.goods[g.good]}</b>
+              <strong>
+                {ducats(g.price)} <small>ducats</small>
+              </strong>
+            </span>
+            <ShareBar mine={g.mine} others={g.others.map((o) => o.bps)} big />
+            <span className="pc-pl-good-says">
+              {g.held || g.others.length ? (
+                <>
+                  {g.held ? <em>toi {pct(g.mine)}</em> : null}
+                  {g.others.slice(0, 2).map((o) => (
+                    <span key={o.house}>
+                      {" "}
+                      · {short(o.house)} {pct(o.bps)}
+                    </span>
+                  ))}
+                  <span> · libre {pct(g.sh.freeBps)}</span>
+                  {g.held ? (
+                    <span className="pc-pl-patina">
+                      patine +{Math.round(planchePatina(S, g.held, state.now) / 100)} %
+                    </span>
+                  ) : null}
+                </>
+              ) : (
+                <>Personne ne la sert · libre {pct(g.sh.freeBps)}</>
+              )}
+            </span>
+          </button>
+        ))}
+        {!shown.length && playing ? (
+          <p>Ton île ne fait encore rien de ce que {city.name} demande.</p>
+        ) : null}
+        {folded.length ? (
+          <div className="pc-pl-also">
+            <span>{shown.length ? "Aussi demandé :" : "Demandé :"}</span>
+            {folded.map((g) => (
+              <i key={g.good}>{S.goods[g.good]}</i>
+            ))}
+            <span>ton île n'en fait pas</span>
+          </div>
+        ) : null}
+        {playing ? (
+          <div className="pc-pl-acts">
+            {!shown.length ? (
+              <button
+                type="button"
+                className="pc-passe-go"
+                data-enter-isle
+                onClick={() => {
+                  pick(null);
+                  setInIsle(true);
+                }}
+              >
+                Entrer dans ton île
+              </button>
+            ) : at && !at.held ? (
+              <button
+                type="button"
+                className="pc-passe-go"
+                data-tie={at.good}
+                disabled={!open}
+                onClick={() => tie(city.id, city.name, at.good)}
+              >
+                Tirer un fil · {S.goods[at.good]?.toLowerCase()}
+              </button>
+            ) : another ? (
+              <button
+                type="button"
+                className="pc-passe-go"
+                data-tie={another.good}
+                disabled={!open}
+                onClick={() => tie(city.id, city.name, another.good)}
+              >
+                Tirer un fil · {S.goods[another.good]?.toLowerCase()}
+              </button>
+            ) : null}
+            {at?.held ? (
+              <button
+                type="button"
+                className="pc-passe-quiet"
+                data-untie={at.good}
+                onClick={() => untie(city.id, at.good)}
+              >
+                Reprendre
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+    );
+  })();
+  const passageCard = (() => {
+    if (!passage) return null;
+    const p = state.passages[passage.id];
+    const holder = p?.holder ?? passage.holder;
+    const corsair = plancheIsCorsair(holder);
+    const freeUntil = me?.free[passage.id] ?? 0;
+    return (
+      <section className="pc-planche-card pc-pl-card" data-planche-card>
+        <div className="pc-pl-head">
+          <div>
+            <h2>{passage.name}</h2>
+            <span>
+              {holder === ME
+                ? "Tu tiens cette tour"
+                : corsair
+                  ? `Tenu par ${holder.slice(8)}, corsaire`
+                  : `Tenu par ${nameOf(holder, view?.names)}`}
+            </span>
+          </div>
+          {closeX}
+        </div>
+        <p>
+          {corsair
+            ? "Il ne laisse passer personne : force le passage pour ouvrir la route."
+            : `Péage de ${Math.round((p?.tollBps ?? 0) / 100)} % sur chaque cargaison qui passe.`}
+          {freeUntil > state.now
+            ? ` Tu passes librement encore ${Math.ceil((freeUntil - state.now) / HOUR)} h.`
+            : ""}
+        </p>
+        <div className="pc-pl-seal-line">
+          <Seals left={p?.seals ?? 0} />
+          <span>
+            {p?.seals} sceau{(p?.seals ?? 0) > 1 ? "x" : ""} : au dernier brisé, la tour change de
+            main
+          </span>
+        </div>
+        {!playing ? null : holder === ME ? (
+          <div className="pc-passe-opts">
+            {[500, 1000, 1500].map((bps) => (
+              <button
+                key={bps}
+                type="button"
+                aria-pressed={p?.tollBps === bps}
+                onClick={() =>
+                  act(
+                    () => plancheToll(S, state, ME, passage.id, bps),
+                    `Péage réglé à ${bps / 100} %.`,
+                    ["/toll", { passage: passage.id, tollBps: bps }],
+                  )
+                }
+              >
+                Péage {bps / 100} %
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="pc-pl-acts">
+            <button
+              type="button"
+              className="pc-passe-go"
+              data-force
+              onClick={() => setDuel(passage.id)}
+            >
+              Forcer le passage
+              <small>la Passe, un duel de deux minutes</small>
+            </button>
+          </div>
+        )}
+      </section>
+    );
+  })();
+  const houseCard = (() => {
+    if (!house) return null;
+    const mine = house.id === ME;
+    const supply = plancheSupply(S, state, house.id, state.now);
+    const stockList = Object.entries(state.houses[house.id]?.stock ?? {}).filter(([, n]) => n > 0);
+    return (
+      <section className="pc-planche-card pc-pl-card" data-planche-card>
+        <div className="pc-pl-head">
+          <div>
+            <h2>{mine ? "Ta Maison" : short(house.id)}</h2>
+            <span>
+              {(online ? !view?.players.includes(house.id) : house.robot)
+                ? "Maison tenue par l'ordinateur"
+                : mine
+                  ? "Ton île et ton quai"
+                  : "Maison d'un joueur"}
+            </span>
+          </div>
+          {closeX}
+        </div>
+        <p>
+          {mine ? "Ton île fait" : "Son île fait"} :{" "}
+          {Object.entries(supply)
+            .map(([g, n]) => `${S.goods[g]?.toLowerCase()} (${Math.round(n)} par heure)`)
+            .join(", ") || "rien encore"}
+          .
+        </p>
+        {mine ? (
+          <div className="pc-pl-also">
+            <span>En entrepôt :</span>
+            {stockList.length ? (
+              stockList.map(([g, n]) => (
+                <i key={g}>
+                  {S.goods[g]} {n}
+                </i>
+              ))
+            ) : (
+              <span>vide</span>
+            )}
+            <span>plafond {S.rules.store}</span>
+          </div>
+        ) : null}
+        {(state.houses[house.id]?.threads ?? []).map((t) => (
+          <div key={`${t.to}|${t.good}`} className="pc-planche-row">
+            <div>
+              <b>{S.cities.find((c) => c.id === t.to)?.name}</b>
+              <span>
+                {S.goods[t.good]} · patine +{Math.round(planchePatina(S, t, state.now) / 100)} %
+              </span>
+            </div>
+          </div>
+        ))}
+        {mine && !me?.threads.length ? (
+          <p className="pc-planche-do">
+            {Object.keys(supply).length || stockList.length
+              ? "Touche une ville pour y tirer ton premier fil."
+              : "Bâtis d'abord un atelier dans ton île : il fera ce que tes fils vendront."}
+          </p>
+        ) : null}
+        {mine && state.houses[ME]?.ile ? (
+          <div className="pc-pl-acts">
+            <button
+              type="button"
+              className="pc-passe-go"
+              data-enter-isle
+              onClick={() => {
+                pick(null);
+                setInIsle(true);
+              }}
+            >
+              Entrer dans ton île
+              <small>bâtir, améliorer, voir l'entrepôt</small>
+            </button>
+          </div>
+        ) : null}
+      </section>
+    );
+  })();
+  const latest = news.at(-1);
   return (
     <div className="porcellana fixed inset-0 pc-passe pc-planche" data-planche-lab>
       <Canvas
@@ -356,7 +737,7 @@ export default function LabPlanche() {
         onCreated={({ camera }) => {
           (camera as OrthographicCamera & { manual?: boolean }).manual = true;
         }}
-        onPointerMissed={() => setChosen(null)}
+        onPointerMissed={() => pick(null)}
       >
         <PlancheBoard
           setup={S}
@@ -365,80 +746,97 @@ export default function LabPlanche() {
           me={ME}
           chosen={chosen}
           pins={pins}
-          onPick={setChosen}
+          onPick={pick}
           phone={phone}
           plain={plain}
+          zoom={scale === "monde" ? 0.5 : 1}
         />
       </Canvas>
       <div className="pc-vignette" />
-
       {/* The labels: every place is a button, for the thumb, the keyboard and the screen reader. */}
       <div className="pc-planche-pins">
         {S.cities.map((c) => {
           const served = me?.threads.some((t) => t.to === c.id);
+          const sh = sharesOf(c.id);
           return (
             <button
               key={c.id}
               type="button"
               ref={pin(`city:${c.id}`)}
-              className="pc-planche-pin"
+              className="pc-planche-pin pc-pl-city"
               data-city={c.id}
               data-mine={String(!!served)}
+              data-chosen={String(chosen?.kind === "city" && chosen.id === c.id)}
               data-shut={String(!plancheRouteOpen(S, state, ME, c.id, state.now))}
-              onClick={() => setChosen({ kind: "city", id: c.id })}
+              onClick={() => pick({ kind: "city", id: c.id })}
             >
               <b>{c.name}</b>
-              <span className="pc-planche-bars">
-                {Object.entries(c.wants).map(([good, w]) => (
-                  <i
-                    key={good}
-                    title={S.goods[good]}
-                    style={{
-                      ["--fill" as string]: `${Math.round(((state.gauges[c.id]?.[good]?.left ?? 0) / w.cap) * 100)}%`,
-                    }}
-                  />
-                ))}
-              </span>
+              <ShareBar mine={sh.mine} others={sh.others} />
             </button>
           );
         })}
         {S.passages.map((p) => {
           const holder = state.passages[p.id]?.holder ?? p.holder;
+          const corsair = plancheIsCorsair(holder);
           return (
             <button
               key={p.id}
               type="button"
               ref={pin(`passage:${p.id}`)}
-              className="pc-planche-pin"
+              className="pc-planche-pin pc-pl-tower"
               data-passage={p.id}
               data-mine={String(holder === ME)}
-              data-dark={String(plancheIsCorsair(holder))}
-              onClick={() => setChosen({ kind: "passage", id: p.id })}
+              data-dark={String(corsair)}
+              onClick={() => pick({ kind: "passage", id: p.id })}
             >
-              <b>{p.name}</b>
+              {corsair ? (
+                <svg width="12" height="14" viewBox="0 0 12 14" aria-hidden="true">
+                  <rect x="1.5" y="6" width="9" height="7" rx="1.5" fill="currentColor" />
+                  <path
+                    d="M3.5 6 V4 a2.5 2.5 0 0 1 5 0 V6"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    fill="none"
+                  />
+                </svg>
+              ) : null}
+              <b>
+                {p.name}
+                {corsair ? ` · ${holder.slice(8)}` : ""}
+              </b>
+              <Seals left={state.passages[p.id]?.seals ?? 0} light={corsair} />
             </button>
           );
         })}
-        {S.houses.map((h) => (
-          <button
-            key={h.id}
-            type="button"
-            ref={pin(`house:${h.id}`)}
-            className="pc-planche-pin pc-planche-house"
-            data-house={h.id}
-            data-mine={String(h.id === ME)}
-            onClick={() => setChosen({ kind: "house", id: h.id })}
-          >
-            <b>{h.id === ME ? "Ta Maison" : houseName(h.id, view?.names)}</b>
-          </button>
-        ))}
+        {S.houses.map((h) => {
+          const robot = online ? !view?.players.includes(h.id) : h.robot;
+          return (
+            <button
+              key={h.id}
+              type="button"
+              ref={pin(`house:${h.id}`)}
+              className="pc-planche-pin pc-planche-house"
+              data-house={h.id}
+              data-mine={String(h.id === ME)}
+              onClick={() => pick({ kind: "house", id: h.id })}
+            >
+              {h.id === ME ? null : <Flag tone={robot ? "robot" : "player"} />}
+              <b>{h.id === ME ? "Ta Maison" : short(h.id)}</b>
+            </button>
+          );
+        })}
       </div>
-
-      <header className="pc-passe-top">
-        <div className="pc-passe-title">
-          <b>
-            Jour {day} · {hour} h
-          </b>
+      <header className="pc-passe-top pc-pl-top">
+        <div className="pc-pl-left">
+          <div className="pc-pl-brand">
+            <Emblem size={36} />
+            <span>
+              <b>{me ? (ME === "toi" ? "Ta Maison" : short(ME)) : "Fondaco"}</b>
+              <span>
+                Jour {day} · {hour} h
+              </span>
+            </span>
+          </div>
           {online ? (
             <span className="pc-planche-online" data-planche-online>
               {view && !view.me
@@ -466,240 +864,82 @@ export default function LabPlanche() {
             </span>
           )}
         </div>
-        <div className="pc-passe-race">
-          <div data-side="fil" data-mine="true">
-            <i />
+        <div className="pc-pl-purse">
+          <span className="pc-pl-ducats">
+            <DucatCoin size={phone ? 22 : 26} />
             <b data-planche-ducats>{ducats(me?.ducats ?? 0n)}</b>
-            <span>ducats</span>
-          </div>
-          <div data-side="fil">
-            <i />
-            <b data-planche-bobbins>
-              {free}
-              <small>/{S.rules.bobbins}</small>
-            </b>
-            <span>bobines</span>
-          </div>
-          <div data-side="chaine">
-            <i />
+          </span>
+          <i className="pc-pl-sep" />
+          <span
+            className="pc-pl-bobbins"
+            aria-label={`Bobines : ${bobbins.filter((b) => b === "out").length} tendues, ${bobbins.filter((b) => b === "back").length} qui reviennent, ${free} libres`}
+          >
+            {bobbins.map((b, k) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: the bobbins are only counted.
+              <Bobbin key={k} state={b} size={phone ? 20 : 24} />
+            ))}
+            <small data-planche-bobbins>
+              {free} libre{free > 1 ? "s" : ""}
+            </small>
+          </span>
+          <i className="pc-pl-sep" />
+          <span className="pc-pl-rank">
             <b data-planche-rank>
               {rank.place}
-              <small>e</small>
+              <sup>e</sup>
             </b>
-            <span>sur {S.houses.length}</span>
-          </div>
+            <small>sur {S.houses.length}</small>
+          </span>
         </div>
       </header>
-
-      <footer className="pc-passe-foot">
+      <nav className="pc-pl-scale" aria-label="L'échelle">
+        <button type="button" aria-pressed={scale === "monde"} onClick={() => setScale("monde")}>
+          monde
+        </button>
+        <button type="button" aria-pressed={scale === "lagune"} onClick={() => setScale("lagune")}>
+          lagune
+        </button>
+        <button
+          type="button"
+          disabled={!me?.ile}
+          onClick={() => {
+            pick(null);
+            setInIsle(true);
+          }}
+        >
+          île
+        </button>
+      </nav>
+      <footer className="pc-passe-foot pc-pl-foot">
         {said ? <p className="pc-passe-said">{said}</p> : null}
-        {city ? (
-          <section className="pc-planche-card" data-planche-card>
-            <h2>{city.name}</h2>
-            {online && !ME ? (
-              <p>Toutes les Maisons sont prises : tu regardes la planche sans y jouer.</p>
-            ) : !plancheRouteOpen(S, state, ME, city.id, state.now) ? (
-              <p>
-                Route fermée :{" "}
-                {city.via
-                  .filter((id) => plancheIsCorsair(state.passages[id]?.holder ?? ""))
-                  .map((id) => S.passages.find((p) => p.id === id)?.name)
-                  .join(", ")}{" "}
-                est aux corsaires. Force le passage.
-              </p>
-            ) : city.via.length ? (
-              <p>
-                Par {city.via.map((id) => S.passages.find((p) => p.id === id)?.name).join(", ")}.
-              </p>
-            ) : null}
-            {Object.entries(city.wants).map(([good, w]) => {
-              const price = planchePrice(S, state, city.id, good);
-              const left = state.gauges[city.id]?.[good]?.left ?? 0;
-              const held = me?.threads.find((t) => t.to === city.id && t.good === good);
-              const makes = sells.has(good);
-              const others = S.houses.filter(
-                (h) =>
-                  h.id !== ME &&
-                  state.houses[h.id]?.threads.some((t) => t.to === city.id && t.good === good),
-              );
-              return (
-                <div key={good} className="pc-planche-row">
-                  <div>
-                    <b>{S.goods[good]}</b>
-                    <span>
-                      {ducats(price)} ducats · demande {Math.round((left / w.cap) * 100)} %
-                      {others.length
-                        ? ` · ${others.map((o) => houseName(o.id, view?.names).replace("Ca’ ", "")).join(", ")}`
-                        : " · personne d'autre"}
-                    </span>
-                    <i style={{ ["--fill" as string]: `${Math.round((left / w.cap) * 100)}%` }} />
-                  </div>
-                  {online && !ME ? null : held ? (
-                    <button
-                      type="button"
-                      className="pc-passe-quiet"
-                      data-untie={good}
-                      onClick={() =>
-                        act(
-                          () => plancheUnthread(S, state, ME, city.id, good, state.now),
-                          "Fil repris : la bobine revient au quai.",
-                          ["/unthread", { city: city.id, good }],
-                        )
-                      }
-                    >
-                      Reprendre
-                      <small>patine +{Math.round(planchePatina(S, held, state.now) / 100)} %</small>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="pc-passe-go"
-                      data-tie={good}
-                      disabled={!makes}
-                      onClick={() =>
-                        act(
-                          () => plancheThread(S, state, ME, city.id, good, state.now),
-                          `Fil tendu vers ${city.name}.`,
-                          ["/thread", { city: city.id, good }],
-                        )
-                      }
-                    >
-                      {makes ? "Tirer un fil" : "Ton île n'en fait pas"}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </section>
-        ) : null}
-        {passage ? (
-          <section className="pc-planche-card" data-planche-card>
-            <h2>{passage.name}</h2>
-            {(() => {
-              const p = state.passages[passage.id];
-              const holder = p?.holder ?? passage.holder;
-              const freeUntil = me?.free[passage.id] ?? 0;
-              return (
-                <>
-                  <p>
-                    Tenu par {holder === ME ? "toi" : nameOf(holder, view?.names)} · {p?.seals}{" "}
-                    sceau
-                    {(p?.seals ?? 0) > 1 ? "x" : ""} ·{" "}
-                    {plancheIsCorsair(holder)
-                      ? "il ne laisse passer personne"
-                      : `péage de ${Math.round((p?.tollBps ?? 0) / 100)} %`}
-                    {freeUntil > state.now
-                      ? ` · tu passes librement encore ${Math.ceil((freeUntil - state.now) / HOUR)} h`
-                      : ""}
-                  </p>
-                  {online && !ME ? null : holder === ME ? (
-                    <div className="pc-passe-opts">
-                      {[500, 1000, 1500].map((bps) => (
-                        <button
-                          key={bps}
-                          type="button"
-                          aria-pressed={p?.tollBps === bps}
-                          onClick={() =>
-                            act(
-                              () => plancheToll(S, state, ME, passage.id, bps),
-                              `Péage réglé à ${bps / 100} %.`,
-                              ["/toll", { passage: passage.id, tollBps: bps }],
-                            )
-                          }
-                        >
-                          Péage {bps / 100} %
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className="pc-passe-go"
-                      data-force
-                      onClick={() => setDuel(passage.id)}
-                    >
-                      Forcer le passage
-                      <small>la Passe, un duel de deux minutes</small>
-                    </button>
-                  )}
-                </>
-              );
-            })()}
-          </section>
-        ) : null}
-        {house ? (
-          <section className="pc-planche-card" data-planche-card>
-            <h2>{house.id === ME ? "Ta Maison" : houseName(house.id, view?.names)}</h2>
-            <p>
-              {house.id === ME ? "Ton île fait" : "Son île fait"} :{" "}
-              {Object.entries(plancheSupply(S, state, house.id, state.now))
-                .map(([g, n]) => `${S.goods[g]?.toLowerCase()} (${Math.round(n)} par heure)`)
-                .join(", ") || "rien encore"}
-              .
-              {(online ? !view?.players.includes(house.id) : house.robot)
-                ? " Maison tenue par l'ordinateur."
-                : house.id === ME
-                  ? ""
-                  : " Maison d'un joueur."}
-            </p>
-            {house.id === ME && state.houses[ME]?.ile ? (
-              <button
-                type="button"
-                className="pc-passe-go"
-                data-enter-isle
-                onClick={() => {
-                  setChosen(null);
-                  setInIsle(true);
-                }}
-              >
-                Entrer dans ton île
-                <small>bâtir, améliorer, voir l'entrepôt</small>
-              </button>
-            ) : null}
-            {house.id === ME ? (
-              <p>
-                En entrepôt :{" "}
-                {Object.entries(me?.stock ?? {})
-                  .map(([g, n]) => `${n} ${S.goods[g]?.toLowerCase()}`)
-                  .join(", ")}{" "}
-                (plafond {S.rules.store}).
-              </p>
-            ) : null}
-            {(state.houses[house.id]?.threads ?? []).map((t) => (
-              <div key={`${t.to}|${t.good}`} className="pc-planche-row">
-                <div>
-                  <b>{S.cities.find((c) => c.id === t.to)?.name}</b>
-                  <span>
-                    {S.goods[t.good]} · patine +{Math.round(planchePatina(S, t, state.now) / 100)} %
-                  </span>
-                </div>
-              </div>
-            ))}
-            {house.id === ME && !me?.threads.length ? (
-              <p className="pc-planche-do">Touche une ville pour y tirer ton premier fil.</p>
-            ) : null}
-          </section>
-        ) : null}
+        {cityCard}
+        {passageCard}
+        {houseCard}
         {!chosen ? (
           <div className="pc-planche-news" aria-label="Le fil des nouvelles">
-            {news.length ? (
-              news.map((n) => (
-                <button key={n.id} type="button" onClick={() => setChosen(n.pick)}>
-                  <i />
-                  {n.text}
-                </button>
-              ))
+            {latest ? (
+              <button key={latest.id} type="button" onClick={() => pick(latest.pick)}>
+                <NewsMark />
+                <span>{latest.text}</span>
+              </button>
             ) : (
-              <button type="button" onClick={() => setChosen({ kind: "house", id: ME })}>
-                <i />
-                {me?.threads.length
-                  ? "Tes barges suivent tes fils. Touche une ville pour voir sa demande."
-                  : "Touche une ville, puis « Tirer un fil » : tes barges feront le reste."}
+              <button type="button" onClick={() => pick({ kind: "house", id: ME })}>
+                <NewsMark />
+                <span>
+                  {me?.threads.length
+                    ? "Tes barges suivent tes fils. Touche une ville pour voir sa demande."
+                    : "Touche une ville, puis « Tirer un fil » : tes barges feront le reste."}
+                </span>
               </button>
             )}
           </div>
         ) : null}
       </footer>
+      <div className="pc-pl-peril" aria-hidden="true">
+        <span>lagune</span>
+        <i />
+        <span>le Large · péril</span>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,12 @@
-/* The laboratory of the shared board (docs/plan-planche.md): labels on the scene, cards of paper. */
+/* The shared board (docs/plan-planche.md), as on the canvas the owner validated on 11 November
+   2026 (docs/audit-visuel-2026-11-11): labels of three sizes, one purse, cards of paper. */
+.pc-planche {
+  --pc-text-2: #4a443e;
+  --pc-text-3: #6b645c;
+  --pc-foot: #d3ccc0;
+  --pc-accent-deep: #8a2a20;
+  --pc-accent-soft: #a8302a;
+}
 .pc-planche-pins {
   position: absolute;
   inset: 0;
@@ -10,100 +18,424 @@
   left: 0;
   top: 0;
   pointer-events: auto;
-  border: 1px solid var(--pc-hair);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 0;
   background: var(--pc-paper);
   color: var(--pc-ink);
-  border-radius: 10px;
-  padding: 4px 9px 5px;
+  border-radius: 12px;
+  padding: 6px 10px 7px;
   min-width: 44px;
-  min-height: 30px;
-  font: 800 12px / 1.15 var(--pc-display);
+  min-height: 32px;
+  box-shadow: 0 2px 0 var(--pc-foot), 0 8px 18px rgba(42, 39, 37, 0.08);
+  font: 900 14px / 1.1 var(--pc-display);
   white-space: nowrap;
   cursor: pointer;
   will-change: transform;
 }
 .pc-planche-pin b {
   display: block;
+  font-weight: 900;
 }
-.pc-planche-pin[data-mine="true"] {
-  border-color: var(--pc-accent);
-  box-shadow: 0 2px 0 var(--pc-accent);
-}
-.pc-planche-pin[data-shut="true"] {
-  opacity: 0.6;
-}
-.pc-planche-pin[data-dark="true"] {
+/* A town: its name and its demand cut by supplier. */
+.pc-pl-city[data-chosen="true"] {
   background: var(--pc-ink);
-  border-color: var(--pc-ink);
   color: #fff;
+  outline: 3px solid var(--pc-accent);
+  box-shadow: 0 2px 0 var(--pc-accent-deep), 0 8px 18px rgba(42, 39, 37, 0.18);
 }
-.pc-planche-house:not([data-mine="true"]) {
+.pc-pl-city[data-shut="true"] {
+  background: rgba(42, 39, 37, 0.82);
+  color: #f6f4f0;
+}
+.pc-pl-share {
+  display: flex;
+  gap: 2px;
+  width: 60px;
+  height: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #e6e1d8;
+}
+.pc-pl-share i {
+  display: block;
+  height: 100%;
+  background: var(--pc-ink);
+}
+.pc-pl-share i[data-mine="true"] {
+  background: var(--pc-accent);
+}
+.pc-pl-city[data-chosen="true"] .pc-pl-share,
+.pc-pl-city[data-shut="true"] .pc-pl-share {
+  background: #6b645c;
+}
+.pc-pl-city[data-chosen="true"] .pc-pl-share i {
+  background: #d9d2c6;
+}
+.pc-pl-city[data-chosen="true"] .pc-pl-share i[data-mine="true"] {
+  background: #e0614f;
+}
+.pc-pl-share[data-big="true"] {
+  width: 100%;
+  height: 12px;
+  border-radius: 6px;
+  background: #eeebe5;
+}
+/* A tower: its name, its holder if a corsair, its seals. */
+.pc-pl-tower {
+  flex-direction: row;
+  gap: 7px;
+  font-size: 13px;
+}
+.pc-pl-tower[data-dark="true"] {
+  background: var(--pc-ink);
+  color: #fff;
+  box-shadow: 0 2px 0 #000, 0 8px 18px rgba(42, 39, 37, 0.18);
+}
+.pc-pl-tower[data-mine="true"] {
+  outline: 3px solid var(--pc-accent);
+}
+.pc-pl-seals {
+  display: inline-flex;
+  gap: 3px;
+}
+.pc-pl-seals i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pc-accent);
+}
+.pc-pl-seals i[data-whole="false"] {
+  background: #d9d2c6;
+}
+.pc-pl-seals[data-light="true"] i {
+  background: #fff;
+}
+.pc-pl-seals[data-light="true"] i[data-whole="false"] {
   background: transparent;
-  border-color: transparent;
-  color: var(--pc-ink-soft);
+  box-shadow: inset 0 0 0 2px #6b645c;
+}
+/* A house: its flag and its name, small; one's own in a red pill. */
+.pc-planche-house {
+  flex-direction: row;
+  gap: 4px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--pc-text-2);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 6px;
+}
+.pc-planche-house b {
+  font-weight: 800;
+}
+.pc-planche-house[data-mine="true"] {
+  background: var(--pc-accent);
+  color: #fff;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  box-shadow: 0 2px 0 var(--pc-accent-deep);
+}
+.pc-planche-house[data-mine="true"] b {
+  font-weight: 900;
+}
+.pc-pl-flag {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--pc-ink);
+}
+.pc-pl-flag[data-tone="robot"] {
+  background: #8b9497;
+}
+/* The top: the brand and the day on the left, one purse on the right. */
+.pc-pl-top {
+  align-items: flex-start;
+}
+.pc-pl-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  pointer-events: auto;
+}
+.pc-pl-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--pc-paper);
+  border-radius: 999px;
+  padding: 6px 16px 6px 6px;
+  box-shadow: 0 3px 0 var(--pc-foot), 0 10px 24px rgba(42, 39, 37, 0.08);
+}
+.pc-pl-brand > span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.pc-pl-brand b {
+  font: 900 16px var(--pc-display);
+}
+.pc-pl-brand span span {
+  font: 600 12px var(--pc-ui);
+  color: var(--pc-text-3);
+}
+.pc-pl-purse {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--pc-paper);
+  border-radius: 999px;
+  padding: 8px 18px 8px 10px;
+  box-shadow: 0 3px 0 var(--pc-foot), 0 10px 24px rgba(42, 39, 37, 0.08);
+  pointer-events: auto;
+}
+.pc-pl-ducats,
+.pc-pl-bobbins,
+.pc-pl-rank {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pc-pl-bobbins {
+  gap: 3px;
+}
+.pc-pl-ducats b,
+.pc-pl-rank b {
+  font: 900 19px var(--pc-display);
+  font-variant-numeric: tabular-nums;
+}
+.pc-pl-rank b sup {
   font-size: 11px;
 }
-.pc-planche-bars {
-  display: flex;
-  gap: 3px;
-  margin-top: 3px;
+.pc-pl-bobbins small,
+.pc-pl-rank small {
+  font: 600 12px var(--pc-ui);
+  color: var(--pc-text-3);
+  margin-left: 3px;
 }
-.pc-planche-bars i,
-.pc-planche-row i {
-  flex: 1;
-  height: 4px;
-  min-width: 12px;
-  border-radius: 2px;
-  background: linear-gradient(to right, var(--pc-ink) var(--fill), var(--pc-hair) var(--fill));
+.pc-pl-sep {
+  width: 1px;
+  height: 26px;
+  background: #e0d8cb;
 }
 .pc-planche-speed {
   display: flex;
   gap: 4px;
-  margin-top: 4px;
   pointer-events: auto;
 }
 .pc-planche-speed button {
-  border: 1px solid var(--pc-hair);
+  border: 0;
   background: var(--pc-paper);
   border-radius: 999px;
   min-width: 44px;
   min-height: 32px;
+  box-shadow: 0 2px 0 var(--pc-foot);
   font: 800 12px var(--pc-display);
   color: var(--pc-ink);
   cursor: pointer;
 }
 .pc-planche-speed button[aria-pressed="true"] {
   background: var(--pc-ink);
-  border-color: var(--pc-ink);
   color: #fff;
+  box-shadow: 0 2px 0 #000;
 }
-.pc-planche .pc-passe-race small {
-  font-size: 12px;
-  color: var(--pc-ink-soft);
+.pc-planche-online {
+  display: block;
+  font: 700 12px var(--pc-ui);
+  color: var(--pc-text-3);
 }
+/* The scale: monde, lagune, île. */
+.pc-pl-scale {
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--pc-paper);
+  border-radius: 18px;
+  padding: 8px;
+  box-shadow: 0 3px 0 var(--pc-foot);
+}
+.pc-pl-scale button {
+  width: 48px;
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  font: 800 11px var(--pc-display);
+  color: var(--pc-text-3);
+  cursor: pointer;
+}
+.pc-pl-scale button[aria-pressed="true"] {
+  background: var(--pc-ink);
+  color: #fff;
+  box-shadow: 0 3px 0 #000;
+}
+.pc-pl-scale button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+/* The cards: paper on its foot, a head with its cross. */
 .pc-planche-card {
   width: 100%;
   max-width: 460px;
-  max-height: 46vh;
+  max-height: 52vh;
   overflow: auto;
   background: var(--pc-paper);
-  border: 1px solid var(--pc-hair);
-  border-radius: 18px;
-  padding: 14px 16px 16px;
-  box-shadow: 0 14px 30px -18px rgba(23, 21, 15, 0.6);
+  border-radius: 20px;
+  padding: 18px 20px 20px;
+  box-shadow: 0 4px 0 var(--pc-foot), 0 22px 50px rgba(42, 39, 37, 0.16);
   touch-action: pan-y;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 .pc-planche-card h2 {
-  margin: 0 0 6px;
-  font: 800 18px var(--pc-display);
+  margin: 0;
+  font: 900 24px / 1 var(--pc-display);
 }
 .pc-planche-card p {
-  margin: 0 0 10px;
+  margin: 0;
   font: 500 13.5px / 1.45 var(--pc-ui);
+  color: var(--pc-text-2);
 }
 .pc-planche-card .pc-planche-do {
-  color: var(--pc-accent);
+  color: var(--pc-accent-soft);
   font-weight: 700;
+}
+.pc-pl-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.pc-pl-head > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pc-pl-head span {
+  font: 500 13px var(--pc-ui);
+  color: var(--pc-text-3);
+}
+.pc-pl-x {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 22px;
+  background: #eeebe5;
+  color: var(--pc-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.pc-pl-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--pc-ink);
+  color: #fff;
+  border-radius: 14px;
+  padding: 10px 12px;
+  font: 500 13.5px / 1.35 var(--pc-ui);
+}
+.pc-pl-good {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  text-align: left;
+  background: transparent;
+  border-radius: 14px;
+  padding: 10px 14px;
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-pl-good[aria-pressed="true"] {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--pc-accent);
+}
+.pc-pl-good-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.pc-pl-good-top b,
+.pc-pl-good-top strong {
+  font: 900 16px var(--pc-display);
+}
+.pc-pl-good-top small {
+  font: 700 12px var(--pc-ui);
+  color: var(--pc-text-3);
+}
+.pc-pl-good-says {
+  font: 500 12.5px / 1.4 var(--pc-ui);
+  color: var(--pc-text-2);
+}
+.pc-pl-good-says em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--pc-accent-soft);
+}
+.pc-pl-patina {
+  float: right;
+}
+.pc-pl-also {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  font: 500 12.5px var(--pc-ui);
+  color: var(--pc-text-2);
+}
+.pc-pl-also i {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--pc-ink);
+  background: #eeebe5;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.pc-pl-seal-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 500 12.5px var(--pc-ui);
+  color: var(--pc-text-2);
+}
+.pc-pl-seal-line .pc-pl-seals i {
+  width: 12px;
+  height: 12px;
+}
+.pc-pl-acts {
+  display: flex;
+  gap: 10px;
+}
+.pc-pl-acts .pc-passe-go {
+  flex: 1 1 auto;
+}
+.pc-pl-card .pc-passe-go,
+.pc-pl-card .pc-passe-quiet {
+  min-height: 52px;
+  border-radius: 16px;
+  font-size: 16px;
+}
+.pc-planche-card button small,
+.pc-planche-row button small {
+  display: block;
+  font: 600 10.5px var(--pc-ui);
+  opacity: 0.85;
 }
 .pc-planche-row {
   display: flex;
@@ -123,11 +455,7 @@
 .pc-planche-row span {
   display: block;
   font: 600 12px / 1.35 var(--pc-ui);
-  color: var(--pc-ink-soft);
-}
-.pc-planche-row i {
-  display: block;
-  margin-top: 5px;
+  color: var(--pc-text-3);
 }
 .pc-planche-row button {
   flex: none;
@@ -136,51 +464,112 @@
   font-size: 13.5px;
   line-height: 1.15;
 }
-.pc-planche-card button small,
-.pc-planche-row button small {
-  display: block;
-  font: 600 10.5px var(--pc-ui);
-  opacity: 0.8;
-}
-/* The thread of news: beads on a red thread, the latest last. */
+/* The news: one pill, its note of ink. */
 .pc-planche-news {
   width: 100%;
-  max-width: 460px;
+  max-width: 560px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  border-left: 3px solid var(--pc-accent);
-  padding-left: 0;
 }
 .pc-planche-news button {
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   text-align: left;
-  border: 1px solid var(--pc-hair);
+  border: 0;
   background: var(--pc-paper);
-  border-radius: 0 14px 14px 0;
-  margin-left: 12px;
+  border-radius: 16px;
   min-height: 44px;
-  padding: 8px 12px;
-  font: 700 13px / 1.35 var(--pc-ui);
+  padding: 10px 16px 10px 12px;
+  box-shadow: 0 3px 0 var(--pc-foot), 0 10px 24px rgba(42, 39, 37, 0.08);
+  font: 500 14px / 1.4 var(--pc-ui);
   color: var(--pc-ink);
   cursor: pointer;
 }
-.pc-planche-news i {
-  position: absolute;
-  left: -22px;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  margin-top: -6px;
-  border-radius: 50%;
-  background: var(--pc-paper);
-  border: 3px solid var(--pc-accent);
+.pc-planche-news svg {
+  flex: none;
 }
-.pc-planche-online {
-  display: block;
-  margin-top: 2px;
-  font: 700 12px var(--pc-ui);
-  color: var(--pc-ink-soft);
+.pc-pl-peril {
+  position: absolute;
+  right: max(24px, env(safe-area-inset-right, 0px));
+  bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--pc-paper);
+  border-radius: 999px;
+  padding: 6px 12px;
+  box-shadow: 0 2px 0 var(--pc-foot);
+  font: 500 12px var(--pc-ui);
+  color: var(--pc-text-2);
+  pointer-events: none;
+}
+.pc-pl-peril i {
+  width: 140px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #cfd8da, #8b9497 50%, #2e3236);
+}
+/* On a computer: the card beside the board, on the right; the news at the bottom left. */
+@media (min-width: 900px) {
+  .pc-pl-foot {
+    align-items: flex-start;
+  }
+  .pc-pl-foot .pc-passe-said {
+    align-self: center;
+  }
+  .pc-pl-card {
+    position: fixed;
+    right: 20px;
+    top: 92px;
+    width: 380px;
+    max-height: calc(100vh - 120px);
+  }
+}
+/* On a phone: the card is a sheet at the bottom; the purse tighter; no scale, no legend. */
+@media (max-width: 899px) {
+  .pc-pl-peril {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .pc-pl-scale {
+    display: none;
+  }
+  .pc-pl-foot {
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+  }
+  .pc-pl-foot .pc-planche-news {
+    padding: 0 12px calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .pc-pl-card {
+    max-width: none;
+    border-radius: 24px 24px 0 0;
+    padding: 18px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -16px 40px rgba(42, 39, 37, 0.14);
+  }
+  .pc-pl-brand {
+    padding: 6px;
+  }
+  .pc-pl-brand > span {
+    display: none;
+  }
+  .pc-pl-purse {
+    gap: 9px;
+    padding: 7px 12px 7px 8px;
+  }
+  .pc-pl-ducats b,
+  .pc-pl-rank b {
+    font-size: 16px;
+  }
+  .pc-pl-bobbins small,
+  .pc-pl-rank small,
+  .pc-pl-sep {
+    display: none;
+  }
 }
 /* The island (docs/plan-ile.md I4). */
 .pc-ile-gain {
