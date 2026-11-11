@@ -66,6 +66,8 @@ L'intérieur des ateliers (machines, ouvriers, usure), le métier de la Maison (
 
 ## 8. État (11 novembre 2026)
 
+*Le 11 novembre, l'aspect suit la toile validée par le porteur (`docs/audit-visuel-2026-11-11/`, § « Ce qui est fait ») : le terrain qui se voit, les cases à acheter pâles, les gains en couleur, viser puis « Poser », l'entrepôt qui prévient.*
+
 | Lot | État |
 | --- | --- |
 | I1 | fait : `packages/engine/src/ile/`, 11 tests |

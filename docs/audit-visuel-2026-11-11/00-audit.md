@@ -2,7 +2,9 @@
 
 *Demande du porteur : « Fais un audit complet de l'aspect visuel actuel du jeu, de ce qui fonctionne et ne fonctionne pas. Propose ensuite une maquette d'amélioration du design […]. Propose aussi un logo simple, épuré, tout en restant attractif. »*
 
-*Version auditée : la dernière, celle du lot I5 de l'île (`?lab=planche&simple&seul`, puis « Entrer dans ton île » et « Forcer le passage »), capturée à 1280 × 800 et 390 × 844. **Rien n'est décidé, rien n'est codé** : c'est une proposition, à valider.*
+*Version auditée : la dernière, celle du lot I5 de l'île (`?lab=planche&simple&seul`, puis « Entrer dans ton île » et « Forcer le passage »), capturée à 1280 × 800 et 390 × 844.*
+
+*Validée par le porteur le 11 novembre 2026 : « je valide c'est parfait, applique la maquette et le logo au jeu, tout doit ressembler exactement à ce que tu as fait ». Appliquée le même jour (§ « Ce qui est fait ») ; captures d'après dans `apres/`.*
 
 Toile de design (audit, logo, quatre écrans) : https://claude.ai/artifact/KA5AP17HukkQ1dDpJT9omg (privée, au compte du porteur). Captures de l'état actuel dans ce dossier ; le logo en `logo.svg` (et `logo-16.svg` pour l'onglet du navigateur).
 
@@ -46,3 +48,21 @@ Les tuiles et les bâtiments ne changent pas (règle 10 du cadrage v4).
 6. **Le terrain se voit** : argile rosée, sable grenu, pré strié, forêt, rive mouillée ; les cases à acheter pâles et pointillées.
 7. **Un visage en face** : médaillon et manière du capitaine, courant fléché au sol, menace tracée sur le plateau, case décisive cerclée.
 8. **Une marque tirée du jeu** : l'arche du fondaco tracée d'un seul fil rouge, le point d'encre du quai sur son seuil, posée sur une case de porcelaine.
+
+## Ce qui est fait (11 novembre 2026)
+
+Plan validé par le porteur, sept lots, un commit chacun, sur la branche `claude/fervent-wozniak-e5wqoq`.
+
+| Lot | Contenu | Où |
+| --- | --- | --- |
+| 1 | **Le logo, partout** : sources SVG, icônes et favicon rendus depuis elles, `Emblem`, `Mark` et `Logotype`, couleurs de l'application en porcelaine, nom « fondaco » en minuscules à la connexion | `apps/web/brand/`, `scripts/icons.mjs`, `src/art/logo.tsx`, `docs/design.md` § Logo |
+| 2 | **Les parts d'une ville** : `plancheShares`, la part libre et celle de chaque Maison, d'après le débit de ses fils (4 tests) | `packages/engine/src/planche/planche.ts` |
+| 3 | **La planche en 3D** : l'eau d'un seul tenant, lavée du blanc à l'encre ; les terres en biscuit, les îles en porcelaine ; le fil en ruban de 1,7 sur son ombre, avec son reflet de patine ; les rivaux en encre pointillée | `porcellana/planche/PlancheBoard.tsx`, `tokens.ts` (`THREAD`, `SEA`) |
+| 4 | **La planche, l'interface** : la pastille du logo, une seule bourse (ducat, bobines dessinées, rang), les étiquettes en trois tailles, la fiche d'une ville en parts (« X vient de te passer devant »), l'échelle, la nouvelle, la légende du péril | `LabPlanche.tsx`, `PlancheUi.tsx`, `planche.css` |
+| 5 | **L'île** : le terrain teinte sa case, les cases à acheter pâles et pointillées, sans ombre ; les gains en rouge, gris, encre, la meilleure case pulsée ; viser puis « Poser sur … » ; l'entrepôt qui prévient ; la légende | `ile/IleBoard.tsx`, `ile/IleScreen.tsx` |
+| 6 | **La Passe** : le capitaine à l'encre avec son pavillon et ses sceaux, les deux comptes côte à côte, la menace tracée (les plus courts chemins, la case qui décide), le courant fléché, les pièces qui disent pourquoi, la cargaison au mieux | `passe/LabPasse.tsx`, `passe/PasseBoard.tsx`, `passe.css` |
+| 7 | **Vérifié** : 1 924 tests, typage, lint ; parcours `e2e:planche` (seul), `e2e:planche-online`, `e2e:ile` (seul et en ligne), `e2e:passe`, `e2e:empire` | `apps/web/e2e/` |
+
+**Écarts à la toile, voulus.** Ne sont pas affichés tant que leur mécanique n'existe pas : la ville tissée, le pavillon de la semaine, « Tresser », la foire de Padoue, la marée n° 2, la phase et la manière du capitaine, l'Ancre et le Relais. Dans la Passe, on pose toujours d'un toucher : une touche « Poser une barge en E3 » serait un indice. Le jeu en ligne (l'empire) n'a reçu que le logo.
+
+**Reste.** Pas d'essai sur un vrai téléphone ; le rectangle blanc vu à 1280 px n'est plus apparu depuis la nouvelle fiche, sans qu'on en ait isolé la cause.

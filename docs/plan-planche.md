@@ -27,6 +27,8 @@ La marée d'encre et sa fin, les classements et lauriers, le rival de la semaine
 
 ## 4. État (11 novembre 2026)
 
+*Le 11 novembre, l'aspect suit la toile validée par le porteur (`docs/audit-visuel-2026-11-11/`, § « Ce qui est fait ») : l'eau d'un seul tenant qui vire à l'encre, le fil en large ruban, la bourse, les étiquettes, la fiche d'une ville en parts (`plancheShares`).*
+
 | Lot | État |
 | --- | --- |
 | L1 | fait |
