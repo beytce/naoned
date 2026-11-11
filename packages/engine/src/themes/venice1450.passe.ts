@@ -24,8 +24,12 @@ function board(name: string, first: 1 | 2, rows: string[]): Board {
   return { name, width: rows[0]?.length ?? 0, height: rows.length, cells, first };
 }
 
+/** The duel on line: fifteen seconds a piece, then the lieutenant lays one; a room lives half an hour. */
+const duel = { moveSeconds: 15, roomMinutes: 30, lieutenant: 2 };
+
 export const venice1450Passe = {
   rules,
+  duel,
   boards: {
     /** The first duel: a toll keeper of the lagoon, a small bare board. */
     lido: board("Bouche du Lido", 1, [".....", ".....", ".....", ".....", "....."]),

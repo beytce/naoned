@@ -63,6 +63,7 @@ import {
   startGeneration,
 } from "./dynasty.js";
 import { registerEmpireRoutes } from "./empire.js";
+import { registerPasseRoutes } from "./passeRoutes.js";
 import {
   ChatError,
   familyThread,
@@ -338,6 +339,14 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     db,
     world,
     requireAccount,
+    accountIfAny,
+    perMerchant,
+    secureCookies: deps.secureCookies,
+  });
+  // The duels on line of the Passe (docs/plan-passe.md P6): a prototype beside the game, open to guests.
+  registerPasseRoutes(app, {
+    db,
+    now: () => world.now(),
     accountIfAny,
     perMerchant,
     secureCookies: deps.secureCookies,
