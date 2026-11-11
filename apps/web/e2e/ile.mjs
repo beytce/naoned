@@ -66,6 +66,9 @@ for (const [name, w, h] of [
         .sort((a, b) => b.v - a.v)[0]?.k,
   );
   await click(`.pc-ile-gain[data-tile="${best}"]`);
+  await page.waitForSelector("[data-ile-place]:not([disabled])");
+  await page.screenshot({ path: `${SHOTS}/${name}-2b-vise.png` });
+  await click("[data-ile-place]");
   await page.waitForTimeout(2500);
   if (!(await said()).includes("chantier"))
     fail(`${name}: the sand pit was not built: « ${await said()} »`);

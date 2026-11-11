@@ -7,7 +7,15 @@
 import { ILE_FONDACO, type IleState, type IleTerrain } from "@comptoirs/engine";
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { Group, MOUSE, type Object3D, type OrthographicCamera, TOUCH, Vector3 } from "three";
+import {
+  Group,
+  MOUSE,
+  MeshStandardMaterial,
+  type Object3D,
+  type OrthographicCamera,
+  TOUCH,
+  Vector3,
+} from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Stage } from "../Stage.js";
 import { palette } from "../TileBoard.js";
@@ -17,7 +25,7 @@ import { CATALOGUE } from "../catalogue.js";
 import type { Palette } from "../materials.js";
 import { rocks } from "../models/decor.js";
 import { fondaco } from "../models/fondaco.js";
-import { grove, plot, slab } from "../models/ground.js";
+import { grove, slab } from "../models/ground.js";
 import { box, cyl } from "../shapes.js";
 import { BOARD, CAMERA } from "../tokens.js";
 
@@ -60,6 +68,56 @@ function terrainMark(P: Palette, t: IleTerrain, seed: number): Group {
   return g;
 }
 
+/**
+ * The colour of a terrain on the top of its tile (docs/audit-visuel-2026-11-11, « le terrain se
+ * voit »): pinkish clay, grainy sand, a greener meadow, the shore and the forest paler.
+ */
+export const TERRAIN_TINT: Record<IleTerrain, string> = {
+  rive: "#E6ECEB",
+  argile: "#E6C3B2",
+  foret: "#DEDACB",
+  pre: "#DCE3D0",
+  sable: "#F0E3C8",
+};
+const tints = new Map<string, MeshStandardMaterial>();
+function tint(t: IleTerrain, pale: boolean): MeshStandardMaterial {
+  const key = `${t}|${pale}`;
+  let m = tints.get(key);
+  if (!m) {
+    m = new MeshStandardMaterial({
+      color: TERRAIN_TINT[t],
+      roughness: 0.86,
+      transparent: pale,
+      opacity: pale ? 0.5 : 1,
+    });
+    tints.set(key, m);
+  }
+  return m;
+}
+const dash = new MeshStandardMaterial({ color: "#A89F91", roughness: 0.9 });
+
+/** The top of a tile in the colour of its terrain. */
+function terrainTop(g: Group, t: IleTerrain): void {
+  box(g, BOARD.tile - 0.36, 0.04, BOARD.tile - 0.36, 0, 0, 0, tint(t, false), 0.3);
+}
+
+/** A plot one may buy: a pale plate of its terrain, dashed round its edge, without relief. */
+function plotOf(t: IleTerrain): Group {
+  const g = new Group();
+  const w = BOARD.tile - 0.6;
+  box(g, w, 0.22, w, 0, -0.22, 0, tint(t, true), 0.2);
+  const n = 6;
+  const step = w / n;
+  for (let k = 0; k < n; k++) {
+    const at = -w / 2 + step * (k + 0.5);
+    for (const side of [-1, 1]) {
+      box(g, step * 0.55, 0.05, 0.12, at, 0, (side * w) / 2, dash, 0.02);
+      box(g, 0.12, 0.05, step * 0.55, (side * w) / 2, 0, at, dash, 0.02);
+    }
+  }
+  return g;
+}
+
 /** A site under way: four poles, a beam, crates of accent. */
 function scaffold(P: Palette): Group {
   const g = new Group();
@@ -90,6 +148,7 @@ function pickOf(o: Object3D | null): IlePick | null {
 export function IleBoard({
   ile,
   buyable,
+  ground,
   now,
   chosen,
   pins,
@@ -99,6 +158,8 @@ export function IleBoard({
 }: {
   ile: IleState;
   buyable: string[];
+  /** The terrain of any tile, bought or not. */
+  ground: (x: number, y: number) => IleTerrain;
   now: number;
   chosen: string | null;
   /** The labels that follow the scene, by tile. */
@@ -153,13 +214,11 @@ export function IleBoard({
       const tile = ile.tiles[k];
       if (!tile) {
         g.userData.pick = { kind: "plot", at: k } satisfies IlePick;
-        g.add(slab(P, false));
-        const p = plot(P);
-        g.add(p.group);
-        g.scale.setScalar(0.92);
+        g.add(plotOf(ground(x, y)));
       } else {
         g.userData.pick = { kind: "tile", at: k } satisfies IlePick;
         g.add(slab(P, false));
+        if (tile.building?.type !== ILE_FONDACO) terrainTop(g, tile.terrain);
         const b = tile.building;
         if (!b) g.add(terrainMark(P, tile.terrain, n * 13 + 5));
         else if (b.type === ILE_FONDACO) g.add(fondaco(P).group);
@@ -171,6 +230,12 @@ export function IleBoard({
         }
       }
       bake(g);
+      // A plot is a pale plate: it neither casts nor takes a shadow (no grey patches on it).
+      if (!tile)
+        g.traverse((o) => {
+          o.castShadow = false;
+          o.receiveShadow = false;
+        });
       root.add(g);
       // A tile comes in turning over (the way into the island), or drops when bought later.
       map.set(k, {

@@ -16,7 +16,8 @@ import {
 import { Canvas } from "@react-three/fiber";
 import { useMemo, useRef, useState } from "react";
 import type { OrthographicCamera } from "three";
-import { IleBoard, type IlePick, TERRAIN_NAMES } from "./IleBoard.js";
+import { DucatCoin } from "../../art/plateau/coins.js";
+import { IleBoard, type IlePick, TERRAIN_NAMES, TERRAIN_TINT } from "./IleBoard.js";
 
 /** A gesture on the island, as the board takes it. */
 export type IleGesture =
@@ -63,6 +64,8 @@ export function IleScreen({
   /** The workshop in hand: to lay (a type) or to move (from a tile). */
   const [hand, setHand] = useState<{ type: string; from?: string } | null>(null);
   const [sheet, setSheet] = useState(false);
+  /** With a workshop in hand, the free tile one aims at before laying it. */
+  const [aim, setAim] = useState<string | null>(null);
   const [said, setSaid] = useState("");
   const pins = useRef(new Map<string, HTMLElement>()).current;
   const pin = (k: string) => (el: HTMLElement | null) => {
@@ -80,6 +83,7 @@ export function IleScreen({
     if (res === "ok") {
       setHand(null);
       setChosen(null);
+      setAim(null);
     }
   };
   const free = Object.entries(ile.tiles)
@@ -91,21 +95,37 @@ export function IleScreen({
   const b = tile?.building;
   const w = b && b.type !== ILE_FONDACO ? R.workshops[b.type] : undefined;
   const goods = Object.entries(h.stock).filter(([, n]) => n > 0);
+  const gains = hand
+    ? free.map((k) => ({ k, v: ileBonusBps(R, ile, hand.type, k) })).sort((a, c) => c.v - a.v)
+    : [];
+  const best = gains[0] && gains[0].v > 0 ? gains[0].k : null;
+  const terrainOf = (k: string) => {
+    const [x = 0, y = 0] = k.split(",").map(Number);
+    return ground(x, y);
+  };
+  // What a plot would give the workshop in hand, were it bought.
+  const plotGain = (k: string) =>
+    hand
+      ? ileBonusBps(
+          R,
+          { ...ile, tiles: { ...ile.tiles, [k]: { terrain: terrainOf(k) } } },
+          hand.type,
+          k,
+        )
+      : 0;
+  const full = goods.filter(([, n]) => n >= S.rules.store * 0.85);
+  const inHand = hand ? R.workshops[hand.type] : undefined;
 
   const tap = (p: IlePick | null) => {
     setSaid("");
+    // With a workshop in hand, a free tile is aimed at: its gain is said, then « Poser » lays it.
     if (hand && p?.kind === "tile" && !ile.tiles[p.at]?.building) {
-      if (hand.from)
-        void play(
-          { kind: "move", from: hand.from, to: p.at },
-          `${R.workshops[hand.type]?.name} déménage : le chantier reprend.`,
-        );
-      else
-        void play(
-          { kind: "build", type: hand.type, at: p.at },
-          `${R.workshops[hand.type]?.name} : le chantier commence.`,
-        );
+      setAim(p.at);
       return;
+    }
+    if (hand && p?.kind === "plot") {
+      setHand(null);
+      setAim(null);
     }
     setChosen(p);
   };
@@ -124,6 +144,7 @@ export function IleScreen({
         <IleBoard
           ile={ile}
           buyable={buyable}
+          ground={ground}
           now={now}
           chosen={chosen?.at ?? null}
           pins={pins}
@@ -147,6 +168,8 @@ export function IleScreen({
                 ref={pin(k)}
                 className="pc-planche-pin pc-ile-gain"
                 data-gain={v > 0 ? "up" : v < 0 ? "down" : "even"}
+                data-best={String(k === best)}
+                data-aim={String(k === aim)}
                 data-tile={k}
                 onClick={() => tap({ kind: "tile", at: k })}
               >
@@ -172,66 +195,171 @@ export function IleScreen({
             </button>
           );
         })}
-        {hand
-          ? null
-          : buyable.map((k) => (
-              <button
-                key={k}
-                type="button"
-                ref={pin(k)}
-                className="pc-planche-pin pc-ile-plot"
-                data-plot={k}
-                onClick={() => tap({ kind: "plot", at: k })}
-              >
-                <b>
-                  + {(() => {
-                    const [x = 0, y = 0] = k.split(",").map(Number);
-                    return TERRAIN_NAMES[ground(x, y)];
-                  })()}
-                </b>
-              </button>
-            ))}
+        {buyable.map((k) => {
+          const v = plotGain(k);
+          if (hand && v <= 0) return null;
+          return (
+            <button
+              key={k}
+              type="button"
+              ref={pin(k)}
+              className="pc-planche-pin pc-ile-plot"
+              data-plot={k}
+              data-gain={hand ? "up" : undefined}
+              onClick={() => tap({ kind: "plot", at: k })}
+            >
+              <b>
+                {hand
+                  ? `${pct(v)} · ${ducats(ileTileCost(R, ile))}`
+                  : `+ ${TERRAIN_NAMES[terrainOf(k)]}`}
+              </b>
+            </button>
+          );
+        })}
       </div>
 
-      <header className="pc-passe-top">
-        <div className="pc-passe-title">
-          <b>Ton île</b>
-          <span className="pc-planche-online">
-            {Object.keys(ile.tiles).length} cases sur {R.maxTiles}
+      <header className="pc-passe-top pc-ile-top">
+        <button type="button" className="pc-passe-quiet pc-ile-back" data-ile-back onClick={onBack}>
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+            <path
+              d="M11 3 L5 9 L11 15"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          La planche
+        </button>
+        <div className="pc-pl-purse">
+          <span className="pc-pl-ducats">
+            <DucatCoin size={phone ? 22 : 26} />
+            <b data-ile-ducats>{ducats(h.ducats)}</b>
           </span>
         </div>
-        <div className="pc-passe-race">
-          <div data-side="fil" data-mine="true">
-            <i />
-            <b data-ile-ducats>{ducats(h.ducats)}</b>
-            <span>ducats</span>
-          </div>
-          <button
-            type="button"
-            className="pc-passe-quiet pc-ile-back"
-            data-ile-back
-            onClick={onBack}
-          >
-            La planche
-          </button>
-        </div>
       </header>
+      <div className="pc-ile-title">
+        <b>Ton île</b>
+        <span>
+          {Object.keys(ile.tiles).length} cases sur {R.maxTiles}
+        </span>
+      </div>
+      <ul className="pc-ile-legend" aria-label="Les terrains">
+        {(Object.keys(TERRAIN_NAMES) as (keyof typeof TERRAIN_NAMES)[]).map((t) => (
+          <li key={t}>
+            <i data-terrain={t} style={{ background: TERRAIN_TINT[t] }} />
+            {TERRAIN_NAMES[t].toLowerCase()}
+          </li>
+        ))}
+      </ul>
+      <section className="pc-ile-store" aria-label="L'entrepôt">
+        <b>Entrepôt</b>
+        {goods.length ? (
+          goods.map(([g, n]) => (
+            <div key={g}>
+              <span>
+                {S.goods[g] ?? g}
+                <strong>{n}</strong>
+              </span>
+              <i>
+                <i
+                  data-full={String(n >= S.rules.store * 0.85)}
+                  style={{ width: `${Math.min(100, Math.round((n / S.rules.store) * 100))}%` }}
+                />
+              </i>
+            </div>
+          ))
+        ) : (
+          <span>vide</span>
+        )}
+        {full.length ? (
+          <em>{S.goods[full[0]?.[0] ?? ""] ?? ""} presque plein : l'atelier va s'arrêter.</em>
+        ) : null}
+      </section>
 
       <footer className="pc-passe-foot">
         {said ? <p className="pc-passe-said">{said}</p> : null}
 
-        {hand ? (
-          <section className="pc-planche-card" data-ile-hand>
-            <h2>{R.workshops[hand.type]?.name} en main</h2>
-            <p>
-              Touche une case libre : chacune dit ce que l'atelier y gagnerait. Il aime{" "}
-              {TERRAIN_NAMES[R.workshops[hand.type]?.terrain ?? "pre"].toLowerCase()} (+
-              {R.bonus.terrainBps / 100} %), et son fournisseur à côté (+{R.bonus.supplierBps / 100}{" "}
-              %).
-            </p>
-            <button type="button" className="pc-passe-quiet" onClick={() => setHand(null)}>
-              Reposer
-            </button>
+        {hand && inHand ? (
+          <section className="pc-planche-card pc-ile-hand" data-ile-hand>
+            <div className="pc-pl-head">
+              <div>
+                <h2>
+                  {inHand.name} {hand.from ? "à déplacer" : "en main"}
+                </h2>
+                <span>
+                  {Object.keys(inHand.inputs).length
+                    ? `${Object.keys(inHand.inputs)
+                        .map((g) => S.goods[g] ?? g)
+                        .join(" et ")} → `
+                    : ""}
+                  {Object.keys(inHand.outputs)
+                    .map((g) => S.goods[g] ?? g)
+                    .join(", ")}{" "}
+                  · {inHand.lotsPerHour} par heure au niveau 1
+                </span>
+              </div>
+            </div>
+            <div className="pc-ile-rules">
+              <span data-tone="up">
+                <b>+{R.bonus.terrainBps / 100} %</b>
+                sur {TERRAIN_NAMES[inHand.terrain].toLowerCase()}
+              </span>
+              <span data-tone="up">
+                <b>+{R.bonus.supplierBps / 100} %</b>
+                son fournisseur à côté
+              </span>
+              <span data-tone="down">
+                <b>−{Math.abs(R.bonus.nuisanceBps) / 100} %</b>
+                {inHand.nuisance?.length
+                  ? `${inHand.nuisance.map((n) => R.workshops[n]?.name.toLowerCase() ?? n).join(", ")} à côté`
+                  : "un voisin qui gêne"}
+              </span>
+            </div>
+            <div className="pc-pl-acts">
+              <button
+                type="button"
+                className="pc-passe-go"
+                data-ile-place
+                disabled={!aim || (!hand.from && BigInt(inHand.cost[0] ?? 0) > h.ducats)}
+                onClick={() => {
+                  if (!aim) return;
+                  if (hand.from)
+                    void play(
+                      { kind: "move", from: hand.from, to: aim },
+                      `${inHand.name} déménage : le chantier reprend.`,
+                    );
+                  else
+                    void play(
+                      { kind: "build", type: hand.type, at: aim },
+                      `${inHand.name} : le chantier commence.`,
+                    );
+                }}
+              >
+                {aim
+                  ? `Poser sur ${TERRAIN_NAMES[ile.tiles[aim]?.terrain ?? "pre"].toLowerCase()}`
+                  : "Touche une case libre"}
+                {aim ? (
+                  <small>
+                    {pct(ileBonusBps(R, ile, hand.type, aim))}
+                    {hand.from
+                      ? ""
+                      : ` · ${ducats(inHand.cost[0] ?? 0)} ducats · ${duration(inHand.buildMs[0] ?? 0)}`}
+                  </small>
+                ) : null}
+              </button>
+              <button
+                type="button"
+                className="pc-passe-quiet"
+                onClick={() => {
+                  setHand(null);
+                  setAim(null);
+                }}
+              >
+                Reposer
+              </button>
+            </div>
           </section>
         ) : chosen?.kind === "plot" ? (
           <section className="pc-planche-card" data-planche-card>
@@ -405,15 +533,6 @@ export function IleScreen({
             >
               Bâtir un atelier
             </button>
-            <div className="pc-ile-stock" aria-label="L'entrepôt">
-              {goods.length
-                ? goods.map(([g, n]) => (
-                    <span key={g}>
-                      {S.goods[g] ?? g} <b>{n}</b>
-                    </span>
-                  ))
-                : "Entrepôt vide"}
-            </div>
           </div>
         )}
       </footer>
