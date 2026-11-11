@@ -14,6 +14,7 @@
     "empire": "tsx src/empire-cli.ts",
     "porta-bench": "tsx src/porta-bench.ts",
     "passe-bench": "tsx src/passe-bench.ts",
+    "planche-bench": "tsx src/planche-bench.ts",
     "passe-problems": "tsx src/passe-problems.ts"
   },
   "dependencies": {
