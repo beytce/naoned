@@ -96,7 +96,12 @@ for (const h of S.houses) {
   const moved = median(runs.map((r) => (r.moves[h.id] ?? 0) / days));
   const sent = median(runs.map((r) => (r.s.houses[h.id]?.delivered ?? 0) / days));
   console.log(
-    `| ${h.name} | ${Object.keys(h.makes).join(", ")} | ${ducats(BigInt(Math.round(earned)))} | ${moved.toFixed(2)} | ${Math.round(sent)} |`,
+    `| ${h.name} | ${(h.plan ?? Object.keys(h.makes))
+      .slice(0, 3)
+      .map((t) => S.ile?.workshops[t]?.name ?? t)
+      .join(
+        ", ",
+      )} | ${ducats(BigInt(Math.round(earned)))} | ${moved.toFixed(2)} | ${Math.round(sent)} |`,
   );
 }
 const totals = runs.map((r) => S.houses.map((h) => Number(r.s.houses[h.id]?.earned ?? 0n)));
@@ -107,6 +112,33 @@ console.log(
 console.log(
   `Chaque denier est compté dans les ${SEEDS} marées : ${runs.every((r) => plancheInvariant(r.s)) ? "oui" : "NON"}.`,
 );
+
+console.log("\n### Les îles à la fin de la marée (médiane des graines)\n");
+console.log(
+  "| Maison | Cases | Ateliers | Niveau moyen | Dépensé sur l'île (milliers de deniers) |",
+);
+console.log("| --- | --- | --- | --- | --- |");
+for (const h of S.houses) {
+  const isle = (r: Run) => Object.values(r.s.houses[h.id]?.ile?.tiles ?? {});
+  const shops = (r: Run) => isle(r).filter((t) => t.building && t.building.type !== "fondaco");
+  const tiles = median(runs.map((r) => isle(r).length));
+  const count = median(runs.map((r) => shops(r).length));
+  const level = median(
+    runs.map((r) => {
+      const b = shops(r);
+      return b.length ? b.reduce((n, t) => n + (t.building?.level ?? 0), 0) / b.length : 0;
+    }),
+  );
+  const spent = median(
+    runs.map((r) => {
+      const hs = r.s.houses[h.id];
+      return hs ? Number(hs.earned - hs.ducats + BigInt(S.rules.startDucats)) : 0;
+    }),
+  );
+  console.log(
+    `| ${h.name} | ${tiles} | ${count} | ${level.toFixed(1)} | ${ducats(BigInt(Math.round(spent)))} |`,
+  );
+}
 
 console.log("\n### Les passages à la fin de la marée\n");
 console.log("| Passage | Tenu par (une ligne par graine) |");

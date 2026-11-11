@@ -116,11 +116,20 @@ export function plancheRobotBuild(
   const have = new Map<string, number>();
   for (const [, t] of tiles)
     if (t.building) have.set(t.building.type, (have.get(t.building.type) ?? 0) + 1);
-  const want = new Map<string, number>();
+  // The plan is played round after round: the next round only once every workshop is at its top.
+  const top = tiles.every(([, t]) => {
+    const b = t.building;
+    if (!b || b.type === ILE_FONDACO) return true;
+    return b.level >= (R.workshops[b.type]?.cost.length ?? 0);
+  });
   let next: string | undefined;
-  for (const type of plan) {
-    want.set(type, (want.get(type) ?? 0) + 1);
-    if (!next && (have.get(type) ?? 0) < (want.get(type) ?? 0)) next = type;
+  for (let round = 1; round <= 6 && !next; round++) {
+    const want = new Map<string, number>();
+    for (const type of plan) {
+      want.set(type, (want.get(type) ?? 0) + 1);
+      if (!next && (have.get(type) ?? 0) < (want.get(type) ?? 0) * round) next = type;
+    }
+    if (!next && !top) break;
   }
   const purse = h.ducats;
   const tryIt = (f: () => PlancheState) => {

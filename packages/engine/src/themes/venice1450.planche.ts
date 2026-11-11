@@ -1,12 +1,15 @@
 /**
- * Venice's board for the prototype of the threads (docs/plan-planche.md): eight houses in the
- * lagoon, the towns of the mainland all dispute, three passages, two ports of the open sea.
- * In the game these are a world's settings (`worlds.settings`), never constants of the engine.
- * Orders of magnitude, measured at the bench (docs/calibration.md, § La planche).
+ * Venice's board with its islands (docs/plan-planche.md, docs/plan-ile.md): eight houses in the
+ * lagoon, each on its island; the Rialto, which buys the raw goods; the towns of the mainland and
+ * of the sea, which want the worked ones; three passages. The workshops are Venice's recipes, the
+ * ones the kit draws. In the game these are a world's settings (`worlds.settings`), never constants
+ * of the engine. Orders of magnitude, measured at the bench (docs/calibration.md, § L'île).
  */
+import type { IleRules, IleWorkshop } from "../ile/ile.js";
 import type { PlancheCity, PlancheSetup, PlancheWant } from "../planche/planche.js";
 
 const HOUR = 3_600_000;
+const MIN = 60_000;
 const want = (price: number, cap: number, regenPerHour: number, floorBps = 3_000): PlancheWant => ({
   price,
   floorBps,
@@ -22,10 +25,64 @@ const city = (
   via: string[] = [],
 ): PlancheCity => ({ id, name, x, y, via, wants });
 
+/** A workshop of the first tier (the raw) or the second (the worked), at Venice's prices. */
+const raw = (
+  name: string,
+  terrain: IleWorkshop["terrain"],
+  outputs: Record<string, number>,
+): IleWorkshop => ({
+  name,
+  tier: 1,
+  terrain,
+  inputs: {},
+  outputs,
+  lotsPerHour: 2,
+  cost: [60_000, 300_000, 900_000],
+  buildMs: [5 * MIN, 2 * HOUR, 12 * HOUR],
+});
+const worked = (
+  name: string,
+  terrain: IleWorkshop["terrain"],
+  inputs: Record<string, number>,
+  outputs: Record<string, number>,
+  nuisance?: string[],
+): IleWorkshop => ({
+  name,
+  tier: 2,
+  terrain,
+  inputs,
+  outputs,
+  lotsPerHour: 2,
+  cost: [150_000, 700_000, 2_000_000],
+  buildMs: [10 * MIN, 3 * HOUR, 16 * HOUR],
+  ...(nuisance ? { nuisance } : {}),
+});
+
+const ile: IleRules = {
+  maxTiles: 36,
+  startTiles: ["0,0", "1,0", "0,1", "1,1"],
+  tileCost: { base: 40_000, growthBps: 2_500 },
+  levelYieldBps: [10_000, 18_000, 26_000],
+  bonus: { terrainBps: 5_000, supplierBps: 2_000, nuisanceBps: -2_000 },
+  workshops: {
+    farm: raw("Ferme", "pre", { wheat: 8 }),
+    clay_pit: raw("Carrière d'argile", "argile", { clay: 8 }),
+    lumber_camp: raw("Camp de bûcherons", "foret", { wood: 12 }),
+    sand_pit: raw("Sablière", "sable", { sand: 8 }),
+    salt_pans: raw("Saline", "rive", { salt: 10 }),
+    hemp_field: raw("Champ de chanvre", "pre", { hemp: 10 }),
+    mill: worked("Moulin", "pre", { wheat: 10 }, { flour: 8 }),
+    sawmill: worked("Scierie", "rive", { wood: 10 }, { planks: 6 }),
+    brickworks: worked("Briqueterie", "argile", { clay: 8, wood: 2 }, { bricks: 6 }, ["farm"]),
+    glassworks: worked("Verrerie", "rive", { sand: 10, wood: 4 }, { glass: 5 }, ["farm"]),
+    rope_walk: worked("Corderie", "rive", { hemp: 8 }, { rope: 4 }),
+  },
+};
+
 export const venice1450Planche: PlancheSetup & {
   /** The lagoon's middle and the reach of the calm water, for the board's ink. */
   lagoon: { x: number; y: number };
-  /** The Rialto's tile: the market of Venice, a landmark. */
+  /** The Rialto's tile: the market of Venice, which buys the raw goods. */
   rialto: { x: number; y: number };
 } = {
   width: 28,
@@ -33,16 +90,41 @@ export const venice1450Planche: PlancheSetup & {
   lagoon: { x: 13, y: 9 },
   rialto: { x: 15, y: 6 },
   sliceMs: HOUR / 6,
-  goods: { verre: "Verre", drap: "Drap", planches: "Planches", sel: "Sel" },
+  goods: {
+    wheat: "Blé",
+    clay: "Argile",
+    wood: "Bois",
+    sand: "Sable",
+    salt: "Sel",
+    hemp: "Chanvre",
+    flour: "Farine",
+    planks: "Planches",
+    bricks: "Briques",
+    glass: "Verre",
+    rope: "Cordages",
+  },
+  ile,
   houses: [
-    { id: "toi", name: "Ta Maison", robot: false, x: 12, y: 8, makes: { verre: 12, planches: 6 } },
+    {
+      id: "toi",
+      name: "Ta Maison",
+      robot: false,
+      x: 12,
+      y: 8,
+      makes: {},
+      soil: { rive: 2, sable: 2, foret: 2, pre: 1, argile: 1 },
+      // Played by the computer only while no player holds it (the bench, a board on line).
+      plan: ["sand_pit", "lumber_camp", "glassworks", "salt_pans", "sawmill", "lumber_camp"],
+    },
     {
       id: "contarini",
       name: "Ca’ Contarini",
       robot: true,
       x: 15,
       y: 10,
-      makes: { verre: 12, sel: 6 },
+      makes: {},
+      soil: { sable: 2, rive: 2, foret: 1 },
+      plan: ["sand_pit", "lumber_camp", "glassworks", "sand_pit", "lumber_camp", "glassworks"],
     },
     {
       id: "loredan",
@@ -50,7 +132,9 @@ export const venice1450Planche: PlancheSetup & {
       robot: true,
       x: 10,
       y: 11,
-      makes: { drap: 12, planches: 6 },
+      makes: {},
+      soil: { foret: 3, argile: 2, rive: 1 },
+      plan: ["lumber_camp", "sawmill", "clay_pit", "brickworks", "lumber_camp", "sawmill"],
     },
     {
       id: "morosini",
@@ -58,7 +142,9 @@ export const venice1450Planche: PlancheSetup & {
       robot: true,
       x: 13,
       y: 12,
-      makes: { sel: 12, drap: 6 },
+      makes: {},
+      soil: { rive: 3, pre: 2 },
+      plan: ["salt_pans", "hemp_field", "rope_walk", "salt_pans", "hemp_field", "rope_walk"],
     },
     {
       id: "dandolo",
@@ -66,16 +152,29 @@ export const venice1450Planche: PlancheSetup & {
       robot: true,
       x: 16,
       y: 8,
-      makes: { planches: 12, verre: 6 },
+      makes: {},
+      soil: { argile: 3, foret: 2 },
+      plan: ["clay_pit", "lumber_camp", "brickworks", "clay_pit", "brickworks", "lumber_camp"],
     },
-    { id: "foscari", name: "Ca’ Foscari", robot: true, x: 11, y: 6, makes: { drap: 12, sel: 6 } },
+    {
+      id: "foscari",
+      name: "Ca’ Foscari",
+      robot: true,
+      x: 11,
+      y: 6,
+      makes: {},
+      soil: { pre: 3, rive: 1 },
+      plan: ["farm", "mill", "farm", "hemp_field", "mill", "salt_pans"],
+    },
     {
       id: "grimani",
       name: "Ca’ Grimani",
       robot: true,
       x: 14,
       y: 14,
-      makes: { sel: 12, planches: 6 },
+      makes: {},
+      soil: { pre: 2, rive: 2 },
+      plan: ["hemp_field", "rope_walk", "salt_pans", "hemp_field", "rope_walk", "farm"],
     },
     {
       id: "mocenigo",
@@ -83,32 +182,51 @@ export const venice1450Planche: PlancheSetup & {
       robot: true,
       x: 9,
       y: 9,
-      makes: { verre: 12, drap: 6 },
+      makes: {},
+      soil: { sable: 2, foret: 2, rive: 1 },
+      plan: ["sand_pit", "lumber_camp", "glassworks", "sawmill", "sand_pit", "lumber_camp"],
     },
   ],
   cities: [
+    city("rialto", "Rialto", 15, 6, {
+      wheat: want(150, 300, 20, 4_000),
+      clay: want(180, 300, 20, 4_000),
+      wood: want(200, 300, 20, 4_000),
+      sand: want(160, 300, 20, 4_000),
+      salt: want(400, 240, 16, 4_000),
+      hemp: want(220, 300, 20, 4_000),
+    }),
     city("padoue", "Padoue", 5, 9, {
-      verre: want(900, 140, 9),
-      drap: want(1_000, 140, 9),
-      sel: want(700, 120, 8),
+      glass: want(1_300, 140, 9),
+      rope: want(900, 120, 8),
+      flour: want(500, 140, 9),
     }),
     city("trevise", "Trévise", 12, 2, {
-      planches: want(800, 140, 9),
-      sel: want(750, 120, 8),
-      drap: want(950, 120, 8),
+      bricks: want(650, 140, 9),
+      planks: want(700, 140, 9),
+      salt: want(500, 120, 8),
     }),
-    city("vicence", "Vicence", 3, 5, { drap: want(1_150, 130, 8), verre: want(1_050, 130, 8) }),
+    city("vicence", "Vicence", 3, 5, {
+      glass: want(1_400, 120, 8),
+      flour: want(550, 130, 8),
+      rope: want(950, 120, 8),
+    }),
     city("verone", "Vérone", 1, 8, {
-      verre: want(1_500, 150, 8),
-      planches: want(1_200, 130, 7),
-      sel: want(1_100, 120, 7),
+      bricks: want(750, 140, 8),
+      planks: want(800, 140, 8),
+      glass: want(1_500, 120, 7),
     }),
     city(
       "ferrare",
       "Ferrare",
       4,
       15,
-      { verre: want(2_200, 160, 8), drap: want(2_400, 160, 8), planches: want(1_900, 140, 7) },
+      {
+        glass: want(2_000, 150, 8),
+        rope: want(1_500, 140, 8),
+        flour: want(900, 140, 8),
+        bricks: want(1_100, 140, 8),
+      },
       ["chioggia"],
     ),
     city(
@@ -117,9 +235,10 @@ export const venice1450Planche: PlancheSetup & {
       23,
       12,
       {
-        verre: want(4_200, 200, 9, 5_000),
-        drap: want(4_600, 200, 9, 5_000),
-        sel: want(3_400, 180, 8, 5_000),
+        glass: want(3_800, 200, 9, 5_000),
+        rope: want(3_400, 200, 9, 5_000),
+        bricks: want(3_000, 180, 8, 5_000),
+        planks: want(3_200, 180, 8, 5_000),
       },
       ["segna"],
     ),
@@ -129,9 +248,10 @@ export const venice1450Planche: PlancheSetup & {
       25,
       16,
       {
-        verre: want(8_000, 220, 8, 5_000),
-        planches: want(7_000, 220, 8, 5_000),
-        drap: want(8_500, 220, 8, 5_000),
+        glass: want(6_500, 220, 8, 5_000),
+        planks: want(5_500, 220, 8, 5_000),
+        rope: want(6_000, 220, 8, 5_000),
+        flour: want(4_500, 220, 8, 5_000),
       },
       ["segna", "otrante"],
     ),
@@ -171,8 +291,8 @@ export const venice1450Planche: PlancheSetup & {
   rules: {
     bobbins: 5,
     store: 240,
-    startStock: 40,
-    startDucats: 0,
+    startStock: 0,
+    startDucats: 300_000,
     threadPerHour: 10,
     patinaBpsPerDay: 500,
     patinaMaxBps: 5_000,

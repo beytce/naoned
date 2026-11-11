@@ -3052,3 +3052,98 @@ Chaque denier est compté dans les 5 marées : oui.
 - **Les tours changent de main** : Segna et Otrante passent des corsaires aux Maisons au fil de la marée.
 
 **Limites.** Cinq graines. La patine ne pèse presque pas : les robots retendent trop souvent pour la garder. La production des îles est fixe (l'île viendra à l'étape 3).
+
+## L'île posée sur la planche (11 novembre 2026, docs/plan-ile.md I2 et I3)
+
+*Mesure : `pnpm --filter @comptoirs/simulator planche-bench 5`. Huit Maisons tenues par l'ordinateur, chacune bâtissant son île selon son plan (`venice1450.planche.ts`), six semaines, trois visites par jour. Ce que fait une Maison vient désormais de son île : plus de production fixe.*
+
+### La planche de Venise : une marée de 6 semaines, 5 graines, trois visites par jour
+
+| Maison | Ce qu'elle fait | Gagné (milliers de deniers, médiane) | Fils déplacés par jour | Livré par jour |
+| --- | --- | --- | --- | --- |
+| Ta Maison | Sablière, Camp de bûcherons, Verrerie | 22 234 | 2.60 | 363 |
+| Ca’ Contarini | Sablière, Camp de bûcherons, Verrerie | 23 587 | 2.31 | 609 |
+| Ca’ Loredan | Camp de bûcherons, Scierie, Carrière d'argile | 18 419 | 0.81 | 615 |
+| Ca’ Morosini | Saline, Champ de chanvre, Corderie | 19 709 | 0.62 | 542 |
+| Ca’ Dandolo | Carrière d'argile, Camp de bûcherons, Briqueterie | 13 573 | 0.12 | 997 |
+| Ca’ Foscari | Ferme, Moulin, Ferme | 23 808 | 1.81 | 995 |
+| Ca’ Grimani | Champ de chanvre, Corderie, Saline | 19 345 | 0.64 | 542 |
+| Ca’ Mocenigo | Sablière, Camp de bûcherons, Verrerie | 21 410 | 2.38 | 369 |
+
+L'écart entre la Maison la plus riche et la plus pauvre : ×1.92 (médiane).
+Chaque denier est compté dans les 5 marées : oui.
+
+### Les îles à la fin de la marée (médiane des graines)
+
+| Maison | Cases | Ateliers | Niveau moyen | Dépensé sur l'île (milliers de deniers) |
+| --- | --- | --- | --- | --- |
+| Ta Maison | 13 | 11 | 3.0 | 21 014 |
+| Ca’ Contarini | 13 | 12 | 2.9 | 21 777 |
+| Ca’ Loredan | 12 | 11 | 2.9 | 16 270 |
+| Ca’ Morosini | 12 | 11 | 2.9 | 17 424 |
+| Ca’ Dandolo | 9 | 8 | 3.0 | 11 678 |
+| Ca’ Foscari | 14 | 13 | 2.9 | 22 618 |
+| Ca’ Grimani | 11 | 10 | 2.9 | 15 973 |
+| Ca’ Mocenigo | 12 | 11 | 2.9 | 20 114 |
+
+### Les passages à la fin de la marée
+
+| Passage | Tenu par (une ligne par graine) |
+| --- | --- |
+| Bouche de Chioggia | contarini · contarini · contarini · contarini · contarini |
+| Détroit de Segna | loredan · dandolo · loredan · morosini · dandolo |
+| Canal d’Otrante | loredan · foscari · toi · loredan · mocenigo |
+
+### Le prix payé dans chaque ville (part du plein prix, médiane des graines)
+
+| Ville | Marchandise | Plein prix | En moyenne sur la marée | Au plus bas |
+| --- | --- | --- | --- | --- |
+| Rialto | Blé | 150 | 100 % | 100 % |
+| Rialto | Argile | 180 | 100 % | 96 % |
+| Rialto | Bois | 200 | 88 % | 41 % |
+| Rialto | Sable | 160 | 100 % | 74 % |
+| Rialto | Sel | 400 | 86 % | 41 % |
+| Rialto | Chanvre | 220 | 97 % | 48 % |
+| Padoue | Verre | 1300 | 65 % | 30 % |
+| Padoue | Cordages | 900 | 35 % | 31 % |
+| Padoue | Farine | 500 | 72 % | 30 % |
+| Trévise | Briques | 650 | 36 % | 31 % |
+| Trévise | Planches | 700 | 52 % | 30 % |
+| Trévise | Sel | 500 | 68 % | 30 % |
+| Vicence | Verre | 1400 | 60 % | 31 % |
+| Vicence | Farine | 550 | 65 % | 30 % |
+| Vicence | Cordages | 950 | 34 % | 31 % |
+| Vérone | Briques | 750 | 35 % | 30 % |
+| Vérone | Planches | 800 | 38 % | 31 % |
+| Vérone | Verre | 1500 | 56 % | 31 % |
+| Ferrare | Verre | 2000 | 33 % | 30 % |
+| Ferrare | Cordages | 1500 | 33 % | 30 % |
+| Ferrare | Farine | 900 | 34 % | 30 % |
+| Ferrare | Briques | 1100 | 34 % | 30 % |
+| Raguse | Verre | 3800 | 63 % | 50 % |
+| Raguse | Cordages | 3400 | 62 % | 50 % |
+| Raguse | Briques | 3000 | 63 % | 50 % |
+| Raguse | Planches | 3200 | 63 % | 50 % |
+| Alexandrie | Verre | 6500 | 65 % | 50 % |
+| Alexandrie | Planches | 5500 | 66 % | 50 % |
+| Alexandrie | Cordages | 6000 | 65 % | 50 % |
+| Alexandrie | Farine | 4500 | 67 % | 50 % |
+
+### Venir huit fois par jour rapporte-t-il plus que trois ?
+
+| Maison | Trois visites par jour | Huit visites par jour (elle seule) | Écart |
+| --- | --- | --- | --- |
+| Ta Maison | 22 234 | 24 466 | 10.0 % |
+| Ca’ Loredan | 18 419 | 20 117 | 9.2 % |
+| Ca’ Morosini | 19 709 | 19 775 | 0.3 % |
+
+**Réglages retenus.** Ateliers de matière : 600, 3 000 puis 9 000 ducats ; d'ouvrage : 1 500, 7 000 puis 20 000 ducats. Case : 400 ducats, un quart de plus à chaque case. Départ : 3 000 ducats.
+
+**Lecture.**
+- **Une marée remplit un tiers de l'île** (9 à 14 cases sur 36, une dizaine d'ateliers au niveau 3) : il reste des mois de croissance. Avec des prix moitié moindres, les deux tiers étaient bâtis en une marée.
+- **Les gains ne suivent pas la taille de l'île** : ils sont bornés par la demande commune des villes et par les fils. Bâtir plus permet d'aller plus loin, pas de vendre sans fin.
+- **L'écart entre Maisons reste mesuré** (×1,9). La Maison de la brique (Dandolo) est la plus pauvre : la brique se vend moins cher par matière employée. À reprendre.
+- **Chaque denier est compté**, dépenses de l'île comprises.
+- **Venir huit fois par jour rapporte au plus 10 % de plus que trois fois.**
+
+**Limites.** Les plans des Maisons de l'ordinateur sont écrits à la main ; un joueur réel peut faire mieux, ou moins bien. La marée ne finit pas encore.
