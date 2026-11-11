@@ -1,7 +1,7 @@
 import { type FormEvent, type ReactNode, Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Admin } from "./Admin.js";
 import { type Account, ApiError, api, tokenFromLocation } from "./api.js";
-import { Emblem } from "./art/logo.js";
+import { Mark } from "./art/logo.js";
 import { LagoonNight } from "./art/scenes.js";
 import { EmpireOrSeason } from "./empire/Home.js";
 import { CanalHero } from "./game/Canal.js";
@@ -148,10 +148,10 @@ function Hero({ children }: { children: ReactNode }) {
     <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] [@media(max-height:700px)]:pt-4">
       <header className="flex flex-col items-center text-center">
         <span className="hero-medal hidden [@media(max-height:700px)]:block">
-          <Emblem size={56} className="drop-shadow-xl" />
+          <Mark size={56} className="drop-shadow-xl" />
         </span>
         <span className="[@media(max-height:700px)]:hidden">
-          <Emblem size={88} className="drop-shadow-xl" />
+          <Mark size={88} className="drop-shadow-xl" />
         </span>
         {/* Lagune: the name in the letters of a place, gold, as the counter's star. */}
         <h1 className="mt-3 pl-[0.2em] font-place text-[2.2rem] font-bold uppercase leading-none tracking-[0.2em] text-gold [@media(max-height:700px)]:mt-2 [@media(max-height:700px)]:text-[1.8rem]">

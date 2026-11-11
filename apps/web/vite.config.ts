@@ -40,8 +40,8 @@ export default defineConfig({
         // Opened from a notification or a shortcut: the window already there, not a second one.
         launch_handler: { client_mode: "focus-existing" },
         display: "standalone",
-        background_color: "#16263E",
-        theme_color: "#16263E",
+        background_color: "#EEEBE5",
+        theme_color: "#EEEBE5",
         icons: [
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },

@@ -76,18 +76,19 @@ Décision du porteur : **tout ajout suit cette direction**. Les maquettes de cha
 - **L'écriture** : Cinzel en capitales espacées pour les lieux et les titres de lieu, Archivo élargi pour les chiffres, Space Grotesk pour le reste.
 - **Petits écrans** (moins de 640 à 700 px de haut) : ce qui n'est pas l'action cède (frise, puces du magasin), jamais l'action ni le retour.
 
-## Logo : le lion ailé
+## Logo : l'arche et le fil (11 novembre 2026)
 
-Logo officiel (depuis le 18 octobre 2026) : le lion ailé de saint Marc, de face, rugissant, ailes déployées, debout sur les vagues, frappé en relief sur une médaille d'or à frise tressée, sur un fond olive très sombre. Pas de nom dans le logo.
+Décision du porteur sur la toile de l'audit visuel (`docs/audit-visuel-2026-11-11/`, « je valide c'est parfait, applique la maquette et le logo au jeu ») ; il remplace le lion ailé du 18 octobre. Une arche vénitienne en accolade, celle des fondaci du Grand Canal, tracée d'un seul trait rouge (le fil, le geste du jeu) ; un point d'encre sur le seuil (ton quai) ; posée sur une case de porcelaine biseautée, avec son pied. Deux couleurs, aucun dégradé ; le nom « fondaco » en Nunito 900, en minuscules.
 
-- **Source** : `apps/web/brand/logo.webp` (1024 px, carré : la médaille sur son fond sombre, bord à bord). On ne le redessine pas : on remplace ce fichier.
-- **Rendus** : `apps/web/scripts/icons.mjs` en tire toutes les tailles ; le fond autour d'un logo réduit (version masquable) est l'olive sombre de la source (`#16140C`). À relancer après tout changement de la source : `npx -y -p playwright-core node apps/web/scripts/icons.mjs`.
-  - iPhone : `apple-touch-icon` 180 et 1024 px, carré plein sans transparence (iOS arrondit lui-même). Le 1024 px et les icônes Android ne sont pas mis en cache par le service worker (le système les télécharge à l'installation).
-  - Android : 192 et 512 px arrondis, plus une version masquable dont le logo tient dans la zone sûre de 80 %.
-  - `favicon.png` (64 px) et `icons/logo-256.webp`, le logo affiché dans le jeu.
+- **Sources** : `apps/web/brand/fondaco.svg` (la case), `fondaco-16.svg` (l'arche blanche sur le rouge, pour l'onglet du navigateur), `fondaco-badge.svg` (la silhouette des notifications).
+- **Rendus** : `apps/web/scripts/icons.mjs` en tire toutes les tailles, sur la porcelaine `#EEEBE5`. À relancer après tout changement d'une source : `npx -y -p playwright-core node apps/web/scripts/icons.mjs`.
+  - iOS : 180 et 1024 px, carrés pleins ;
+  - Android : 192 et 512 px, la case seule, plus une version masquable dont la case tient dans la zone sûre ;
+  - `favicon.png` (64 px, la version rouge) et `icons/logo-256.webp`.
 - **Composants** (`apps/web/src/art/logo.tsx`) :
-  - `Emblem` : le logo. Écran de connexion, introduction, chargement, cérémonie de fin de saison, Pass Négociant, sceau du Pass à côté du nom dans les classements.
-  - `Logotype` : le logo et « Fondaco » côte à côte, dans la barre latérale sur PC.
+  - `Emblem` : la pastille ronde rouge à l'arche blanche (en-tête de la planche, sceaux) ; le trait s'épaissit sous 36 px ;
+  - `Mark` : la case de porcelaine (écran de connexion) ;
+  - `Logotype` : la pastille et « fondaco » côte à côte.
 - **Ducat** : pièce or frappée du galion du logo sur ses vagues (`Coin`).
 
 Dans le jeu, le lion ailé se montre en **médaille ronde** (`Emblem`) : le cercle recadre le carré sombre de la source, qui n'est jamais redessinée. Sous le logo, « Venise 1450 · saison d'octobre » : une saison est un mois civil, l'année civile n'y figure pas. Sur un écran court (moins de 700 px de haut), l'accueil réduit la médaille et le ciel et passe les promesses sous le bouton : le champ et « Recevoir mon code » restent au-dessus du pli.
