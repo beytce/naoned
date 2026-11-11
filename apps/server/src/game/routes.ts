@@ -63,7 +63,6 @@ import {
   startGeneration,
 } from "./dynasty.js";
 import { registerEmpireRoutes } from "./empire.js";
-import { registerPasseRoutes } from "./passeRoutes.js";
 import {
   ChatError,
   familyThread,
@@ -88,6 +87,7 @@ import { levelsOf } from "./level.js";
 import { LiveHub } from "./live.js";
 import { acceptChallenge, challenge, sfidaRival, sfidaView } from "./lustre.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
+import { registerPasseRoutes } from "./passeRoutes.js";
 import type { PortaHub } from "./porta.js";
 import { registerPortaRoutes } from "./portaRoutes.js";
 import { priceHistory, profile } from "./profile.js";

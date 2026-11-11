@@ -52,8 +52,8 @@ mkdirSync(SHOTS, { recursive: true });
       { timeout: 15000 },
     );
   // the host (the thread) runs up the middle column; the friend (the chain) lays along the top row, too late
-  const hostMoves = [22, 17, 12, 7, 2],
-    friendMoves = [20, 21, 23, 24];
+  const hostMoves = [22, 17, 12, 7, 2];
+  const friendMoves = [20, 21, 23, 24];
   for (let k = 0; k < 5; k++) {
     await mine(a);
     await tap(a, hostMoves[k]);
