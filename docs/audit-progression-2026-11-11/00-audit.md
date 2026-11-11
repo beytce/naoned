@@ -2,7 +2,7 @@
 
 *Demande du porteur : « Il faut que les joueurs créent un compte et gardent leur progression tout le temps […]. Refais un audit complet afin d'avoir un jeu de stratégie-gestion qui dure dans le temps, où les joueurs reviennent régulièrement et ont une vraie progression, tout en gardant le système actuel. J'ai l'ambition de créer une vraie communauté autour du jeu ; un chat devra s'ajouter. Je veux un système de bataille : le Hex est super pour garder des bouches et des détroits, mais pas assez exploité sur la carte […] ; il faudrait un autre système où les joueurs s'affrontent avec le développement qu'ils ont eu dans le jeu. Une partie du jeu se joue par période, une autre plus long terme où le joueur se développe grâce aux succès et victoires de la semaine. On peut accueillir des milliers de joueurs. Le concept des fils est génial, il ne faut pas y toucher. »*
 
-**À valider avant tout code.** Ce document propose ; le porteur tranche les questions du § 10.
+**Décisions du porteur, le 11 novembre 2026** (§ 10) : D1 oui (Prestige plafonné), D2 l'assaut sur le port de l'autre, D3 des planches de 48 Maisons, D5 **un compte dès l'arrivée** (et non « jouer d'abord »). D4 et D6 restent à trancher. Plan de l'étape 1 : `docs/plan-compte.md`.
 
 ---
 
@@ -85,8 +85,7 @@ La leçon commune : **trois horloges** (le jour, la semaine, la vie du compte), 
 
 ### 4.1 Le compte
 
-- **Jouer tout de suite, sauver ensuite** : on arrive sur la planche, on tire son premier fil en invité. Au premier moment qui compte (le premier rival, le premier passage forcé, ou au bout de dix minutes), le jeu propose : « Garde ta Maison : ton adresse mail suffit. » On reprend la connexion par lien de l'ancien jeu.
-- Une Maison sans compte vit sept jours, puis retourne à l'ordinateur.
+- **Un compte dès l'arrivée** (décision du porteur, D5) : l'adresse mail est demandée avant de jouer ; on reprend la connexion par lien de l'ancien jeu. La planche voilée reste visible derrière la fiche d'entrée.
 - Plus tard : se connecter avec Google ou Apple, et plusieurs appareils.
 
 ### 4.2 La Maison, persistante
@@ -244,7 +243,7 @@ La demande commune des villes ne tient que si une ville est servie par quelques 
 | **D2** | Quelle forme pour la nouvelle bataille ? | **L'assaut asynchrone sur le port bâti par l'autre**, en guerre de compagnie d'une semaine (§ 6). Les autres formes possibles : une carte d'ordres quotidiens (plus lente à lire), ou un combat en direct de 15 minutes (exige d'être là). |
 | **D3** | La taille d'une planche ? | **48 Maisons** (4 sestieri de 12) : assez pour que les villes soient disputées, assez peu pour qu'on se connaisse. |
 | **D4** | L'ancien jeu ? | **Le garder à `/ancien` jusqu'à la bêta**, en reprendre les comptes, les compagnies et la discussion, puis le retirer. Ses joueurs gardent leur compte. |
-| **D5** | Le compte : tout de suite, ou après dix minutes ? | **Jouer d'abord, sauver ensuite**, au premier moment qui compte (§ 4.1). |
+| **D5** | Le compte : tout de suite, ou après dix minutes ? | Je recommandais « jouer d'abord » ; **le porteur a choisi le compte dès l'arrivée**. |
 | **D6** | La discussion : jusqu'où ? | **Compagnie d'abord, sestiere ensuite** ; pas de discussion de monde entier avant d'avoir une modération éprouvée. |
 
 ---
