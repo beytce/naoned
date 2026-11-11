@@ -42,8 +42,7 @@ describe("the mind of the Passe", () => {
     for (let y = 1; y <= 4; y++) cells[at(2, y)] = PASSE_THREAD;
     cells[at(0, 0)] = PASSE_CHAIN;
     const s = passeInit(setup({ cells }));
-    for (const depth of [1, 2, 3, 4])
-      expect(passePlay(s, passeThink(s, { depth })).winner).toBe(1);
+    for (const depth of [1, 2, 3, 4]) expect(passePlay(s, passeThink(s, { depth })).winner).toBe(1);
   });
 
   it("bars the only way through when it sees one reply ahead", () => {

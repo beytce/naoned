@@ -189,7 +189,11 @@ describe("a game of the Passe cannot be drawn", () => {
 describe("the cargo saved", () => {
   it("is whole when the thread passes with few barges, and shrinks with each more", () => {
     const rules = setup();
-    const through = (laid: number) => ({ ...passeInit(rules), winner: 1 as const, laid: [laid, 0] as [number, number] });
+    const through = (laid: number) => ({
+      ...passeInit(rules),
+      winner: 1 as const,
+      laid: [laid, 0] as [number, number],
+    });
     expect(passeCargo(rules, through(5))).toBe(3);
     expect(passeCargo(rules, through(6))).toBe(2);
     expect(passeCargo(rules, through(7))).toBe(2);

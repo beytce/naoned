@@ -27,37 +27,37 @@ function board(name: string, first: 1 | 2, rows: string[]): Board {
 export const venice1450Passe = {
   rules,
   boards: {
-    /** The first duel: a toll keeper of the lagoon, a small board, nothing laid in advance. */
-    lido: board("Bouche du Lido", 1, [".....", ".....", "..#..", ".....", "....."]),
+    /** The first duel: a toll keeper of the lagoon, a small bare board. */
+    lido: board("Bouche du Lido", 1, [".....", ".....", ".....", ".....", "....."]),
     /** A passage held by a house: one post laid in advance. */
     chioggia: board("Bouche de Chioggia", 1, [
       ".......",
       ".......",
       ".....o.",
-      "...#...",
+      ".......",
       ".......",
       ".......",
       ".......",
     ]),
-    /** A corsair's strait: two reefs, measured even between two equal players (docs/calibration.md). */
+    /** A corsair's strait: a reef on each side, where the chain hooks. */
     segna: board("Détroit de Segna", 1, [
       ".......",
       ".......",
-      ".#.....",
-      "...#...",
+      "#......",
       ".......",
+      "......#",
       ".......",
       ".......",
     ]),
-    /** A dark strait of the open sea: larger, the chain plays first with two posts. */
-    otrante: board("Canal d’Otrante", 2, [
+    /** A dark strait of the open sea: larger, reefs on both sides and a post laid in advance. */
+    otrante: board("Canal d’Otrante", 1, [
       ".........",
       ".........",
-      "..o...#..",
+      "......o..",
+      "#........",
       ".........",
-      "....#....",
+      "........#",
       ".........",
-      "..#...o..",
       ".........",
       ".........",
     ]),

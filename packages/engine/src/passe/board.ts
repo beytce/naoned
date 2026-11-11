@@ -222,7 +222,8 @@ export function passeLinks(s: PasseState, side: PasseSide): [number, number][] {
 }
 
 function touches(s: PasseState, i: number, value: number): boolean {
-  for (const j of passeNeighbours(s.width, s.height)[i] ?? []) if (s.cells[j] === value) return true;
+  for (const j of passeNeighbours(s.width, s.height)[i] ?? [])
+    if (s.cells[j] === value) return true;
   return false;
 }
 
@@ -256,11 +257,13 @@ export function passePlay(s: PasseState, move: PasseMove): PasseState {
   if (move.fire) {
     if (!fireAllowed(s, i)) throw new Error("passe_illegal");
     cells[i] = PASSE_EMPTY;
-    fire[s.turn - 1] -= 1;
+    if (s.turn === 1) fire[0] -= 1;
+    else fire[1] -= 1;
   } else {
     if (cells[i] !== PASSE_EMPTY) throw new Error("passe_illegal");
     cells[i] = s.turn;
-    laid[s.turn - 1] += 1;
+    if (s.turn === 1) laid[0] += 1;
+    else laid[1] += 1;
   }
   const next: PasseState = {
     width: s.width,

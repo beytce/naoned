@@ -55,6 +55,8 @@ const root = document.getElementById("root");
 if (!root) throw new Error("#root missing");
 // Porcellana's laboratory (?lab=porcellana, docs/plan-porcellana.md lot 1): the kit on a small board.
 const PorcellanaLab = lazy(() => import("./porcellana/Lab.js"));
+// The duel of the Passe (?lab=passe, docs/plan-passe.md P5).
+const PasseLab = lazy(() => import("./porcellana/passe/LabPasse.js"));
 const labName = new URLSearchParams(window.location.search).get("lab");
 
 createRoot(root).render(
@@ -62,6 +64,10 @@ createRoot(root).render(
     {labName === "porcellana" ? (
       <Suspense fallback={null}>
         <PorcellanaLab />
+      </Suspense>
+    ) : labName === "passe" ? (
+      <Suspense fallback={null}>
+        <PasseLab />
       </Suspense>
     ) : (
       <App />
