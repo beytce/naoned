@@ -36,6 +36,7 @@ import type { OrthographicCamera } from "three";
 import { type Account, api, tokenFromLocation } from "../../api.js";
 import { Emblem } from "../../art/logo.js";
 import { DucatCoin } from "../../art/plateau/coins.js";
+import { connectLive } from "../../game/live.js";
 import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
 import { Entree, Fonder, Profil } from "./Entree.js";
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
@@ -228,6 +229,9 @@ export default function LabPlanche() {
     },
     [send],
   );
+  // A gesture of anyone on the board is heard at once (docs/plan-compte.md C5); reading now and
+  // then only shows time going by, more often while the line is down.
+  const [heard, setHeard] = useState(false);
   useEffect(() => {
     if (!online || duel || gate !== "in") return;
     let alive = true;
@@ -238,12 +242,18 @@ export default function LabPlanche() {
         setSaid("Le serveur ne répond pas. Lance « pnpm dev », ou ajoute « &seul » à l'adresse.");
     };
     void read();
-    const timer = window.setInterval(read, 2000);
+    const timer = window.setInterval(read, heard ? 6000 : 2000);
     return () => {
       alive = false;
       window.clearInterval(timer);
     };
-  }, [online, duel, call, gate]);
+  }, [online, duel, call, gate, heard]);
+  useEffect(() => {
+    if (!online || gate !== "in") return;
+    return connectLive((m) => {
+      if (m.type === "planche") void call();
+    }, setHeard);
+  }, [online, gate, call]);
 
   // Time, played here: a slice of the game a tick; the houses of the computer visit in their turn.
   useEffect(() => {
@@ -836,7 +846,13 @@ export default function LabPlanche() {
   })();
   const latest = news.at(-1);
   return (
-    <div className="porcellana fixed inset-0 pc-passe pc-planche" data-planche-lab data-gate={gate}>
+    <div
+      className="porcellana fixed inset-0 pc-passe pc-planche"
+      data-planche-lab
+      data-gate={gate}
+      data-threads={Object.values(state.houses).reduce((n, h) => n + h.threads.length, 0)}
+      data-live={String(heard)}
+    >
       <Canvas
         orthographic
         dpr={[1, 2]}

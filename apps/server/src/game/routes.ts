@@ -316,6 +316,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   live.start();
   world.onEffects((fx, _now, saved) => live.onEffects(fx, saved.version, saved.tick));
   app.addHook("onClose", async () => live.stop());
+  // The planche's players hear at once that their board changed (docs/plan-compte.md C5).
+  deps.planche?.onChange((players) => live.send(players, { type: "planche", version: 0 }));
   app.get("/api/live", { websocket: true }, async (socket, req) => {
     const account = await auth.accountForSession(req.cookies[deps.sessionCookie]);
     if (!account) {

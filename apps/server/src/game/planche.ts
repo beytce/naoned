@@ -224,6 +224,7 @@ export class PlancheHub {
   /** When each player last read or acted: in memory only (a restart counts everyone as present). */
   private readonly seen = new Map<string, number>();
   private queue: Promise<unknown> = Promise.resolve();
+  private readonly listeners: ((players: string[]) => void)[] = [];
 
   constructor(
     private readonly theme: PlancheHubTheme,
@@ -234,6 +235,11 @@ export class PlancheHub {
     this.doc = loaded?.doc ?? plancheDocInit(theme, now);
     this.version = loaded?.version ?? 0;
     for (const p of Object.keys(this.doc.seats)) this.seen.set(p, now);
+  }
+
+  /** Called after each change saved, with the board's players (docs/plan-compte.md C5). */
+  onChange(listener: (players: string[]) => void): void {
+    this.listeners.push(listener);
   }
 
   /** The board as it stands, and its version: what a snapshot writes. */
@@ -272,6 +278,14 @@ export class PlancheHub {
     await this.journal?.save(c, doc, this.version + 1);
     this.doc = doc;
     this.version += 1;
+    const players = Object.keys(doc.seats);
+    for (const l of this.listeners) {
+      try {
+        l(players);
+      } catch {
+        // A listener's fault is not the board's.
+      }
+    }
     return "ok";
   }
 

@@ -248,3 +248,19 @@ describe("the rank on line", () => {
     expect(after.rivals.a).not.toBe(before.rivals.a);
   });
 });
+
+// The board in real time (docs/plan-compte.md C5): its players are told after each gesture.
+describe("the board told in real time", () => {
+  it("tells every player of the board after a gesture, and no one after a refusal", async () => {
+    const hub = new PlancheHub(theme(), T0);
+    const told: string[][] = [];
+    hub.onChange((players) => told.push([...players].sort()));
+    await hub.view("ana", "Ana", T0);
+    await hub.view("ben", "Ben", T0);
+    told.length = 0;
+    expect(await hub.thread("ana", "near", "verre", T0)).toBe("ok");
+    expect(told).toEqual([["ana", "ben"]]);
+    expect(await hub.thread("ana", "near", "verre", T0)).toBe("planche_twice");
+    expect(told).toHaveLength(1);
+  });
+});

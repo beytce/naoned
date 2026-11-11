@@ -66,6 +66,8 @@ async function magicLink(email) {
 }
 
 const server = await startServer();
+/** Each player's cookies, for the walk in real time. */
+const cookies = {};
 const browser = await chromium.launch({
   ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
   args: ["--use-gl=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
@@ -153,8 +155,57 @@ try {
       fail("signed in, the sheet of the way in shows again");
     if (errs.length) fail(errs.join(" | "));
     console.log(`compte ${name}: ok`);
+    cookies[name] = await page.context().cookies();
     await again.close();
     await page.close();
+  }
+  // In real time (docs/plan-compte.md C5): what one player does shows on the other's board at once.
+  if (cookies.p && cookies.d) {
+    /** When the other's browser received the line's last message (seen from the network). */
+    let frameAt = 0;
+    const open = async (who) => {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      await ctx.addCookies(cookies[who]);
+      const pg = await ctx.newPage();
+      pg.on("websocket", (ws) =>
+        ws.on("framereceived", (f) => {
+          if (String(f.payload).includes("planche")) frameAt = Date.now();
+        }),
+      );
+      await pg.goto(server.url);
+      await pg.waitForSelector('[data-planche-lab][data-live="true"]', {
+        state: "attached",
+        timeout: 60_000,
+      });
+      return pg;
+    };
+    const two = await open("d");
+    await two.waitForTimeout(2000);
+    const count = () => two.getAttribute("[data-planche-lab]", "data-threads").then(Number);
+    const before = await count();
+    // The other's page hears the change and reads its board again: that answer is the measure.
+    const heard = two.waitForResponse(
+      (r) => new URL(r.url()).pathname === "/api/planche" && r.request().method() === "GET",
+      { timeout: 10_000 },
+    );
+    const at = Date.now();
+    // The gesture is sent from here, with the first player's session: the other page alone is timed.
+    const session = cookies.p.map((c) => `${c.name}=${c.value}`).join("; ");
+    const tied = await fetch(`${server.url}/api/planche/thread`, {
+      method: "POST",
+      headers: { cookie: session, "content-type": "application/json" },
+      body: JSON.stringify({ city: "rialto", good: "sand" }),
+    }).then((r) => r.status);
+    if (tied !== 200) fail(`the thread was refused (${tied})`);
+    await heard;
+    const read = Date.now() - at;
+    const took = frameAt ? frameAt - at : read;
+    while ((await count()) <= before && Date.now() - at < 15_000) await two.waitForTimeout(25);
+    console.log(
+      `temps réel : le message chez l'autre en ${took} ms, sa planche relue en ${read} ms, le fil dessiné en ${Date.now() - at} ms (rendu logiciel du test)`,
+    );
+    if ((await count()) <= before) fail("the other's board never showed the thread");
+    if (took > 1000) fail(`the other heard of the thread after ${took} ms`);
   }
 } finally {
   await browser.close();

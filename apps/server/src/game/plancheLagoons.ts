@@ -95,6 +95,7 @@ export class PlancheLagoons {
         );
         this.stores.push(store);
         if (this.timerMs) store.start(this.timerMs);
+        for (const l of this.listeners) store.hub.onChange(l);
       }
       await store.hub.view(accountId, name, now);
       const house = store.hub.houseOf(accountId);
@@ -112,6 +113,13 @@ export class PlancheLagoons {
   }
 
   private timerMs = 0;
+  private readonly listeners: ((players: string[]) => void)[] = [];
+
+  /** Called after each change saved on any board, with that board's players. */
+  onChange(listener: (players: string[]) => void): void {
+    this.listeners.push(listener);
+    for (const s of this.stores) s.hub.onChange(listener);
+  }
 
   /** Every board's ledger follows it, even when no one plays. */
   start(everyMs = 10 * 60_000): void {
