@@ -394,7 +394,7 @@ async function session(width, height, tag) {
       await field.fill(code);
     } else {
       const token = await magicLink(email);
-      await page.goto(`${base}/connexion?token=${token}`);
+      await page.goto(`${base}/connexion?token=${token}&ancien`);
     }
     await page.waitForSelector("input[autocomplete=nickname]");
     await check("nom");

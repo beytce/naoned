@@ -1,0 +1,162 @@
+// The way in (docs/plan-compte.md C4), on a phone and a computer: the site opens on the board,
+// veiled; an address; the link of the mail; the house founded (name and flag); a sand pit built on
+// its island. The game's server is started here, on a base in memory, serving the built web.
+// Needs the web built (pnpm --filter @comptoirs/web build): node e2e/compte.mjs
+// Env: CHROMIUM (a Chromium or headless shell), SHOTS (a folder for the pictures).
+import { spawn } from "node:child_process";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { chromium } from "playwright-core";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const SHOTS = resolve(process.env.SHOTS ?? join(here, "..", "e2e-shots", "compte"));
+const log = join(SHOTS, "server.log");
+const fail = (why) => {
+  console.error(`compte: ${why}`);
+  process.exitCode = 1;
+};
+
+async function startServer() {
+  const serverDir = join(here, "..", "..", "server");
+  const tsx = createRequire(join(serverDir, "package.json")).resolve("tsx/cli");
+  const port = 3100 + Math.floor(Math.random() * 800);
+  const url = `http://127.0.0.1:${port}`;
+  mkdirSync(SHOTS, { recursive: true });
+  writeFileSync(log, "");
+  const child = spawn(process.execPath, [tsx, "src/server.ts"], {
+    cwd: serverDir,
+    env: {
+      ...process.env,
+      LANG: "C.UTF-8",
+      NODE_ENV: "test",
+      DATABASE_URL: "pglite:memory",
+      HOST: "127.0.0.1",
+      PORT: String(port),
+      APP_URL: url,
+      WEB_DIST: join(here, "..", "dist"),
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let out = "";
+  const keep = (chunk) => {
+    out += chunk;
+    writeFileSync(log, out);
+  };
+  child.stdout.on("data", keep);
+  child.stderr.on("data", keep);
+  for (let i = 0; i < 240 && !/Server listening/.test(out); i++) {
+    if (child.exitCode !== null) throw new Error(`the server stopped:\n${out.slice(-2000)}`);
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  if (!/Server listening/.test(out)) throw new Error("the server did not start in 60 s");
+  return { url, stop: () => child.kill("SIGTERM") };
+}
+
+async function magicLink(email) {
+  for (let i = 0; i < 50; i++) {
+    await new Promise((r) => setTimeout(r, 200));
+    const text = readFileSync(log, "utf8");
+    const at = text.lastIndexOf(email);
+    const token = at >= 0 ? text.slice(at).match(/token=([\w-]+)/)?.[1] : undefined;
+    if (token) return token;
+  }
+  throw new Error("no magic link in the server's log");
+}
+
+const server = await startServer();
+const browser = await chromium.launch({
+  ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
+  args: ["--use-gl=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
+});
+try {
+  for (const [name, w, h] of [
+    ["p", 390, 844],
+    ["d", 1280, 800],
+  ].filter(([n]) => !process.env.ONLY || process.env.ONLY === n)) {
+    const page = await browser.newPage({ viewport: { width: w, height: h }, locale: "fr-FR" });
+    const errs = [];
+    page.on("pageerror", (e) => errs.push(e.message));
+    const tap = (q) => page.evaluate((s) => document.querySelector(s)?.click(), q);
+    // The site opens on the board, veiled, and asks for an address.
+    await page.goto(server.url);
+    await page.waitForSelector("[data-planche-entree]", { state: "attached", timeout: 60_000 });
+    await page.waitForTimeout(2500);
+    await page.screenshot({ path: join(SHOTS, `compte-${name}-1-entree.png`) });
+    const email = `bembo_${name}@example.org`;
+    await page.fill("[data-entree-mail]", email, { force: true });
+    await page.waitForSelector("[data-entree-ask]:not([disabled])", { state: "attached" });
+    await tap("[data-entree-ask]");
+    await page
+      .waitForSelector("[data-entree-code]", { state: "attached", timeout: 60_000 })
+      .catch(async (e) => {
+        await page.screenshot({ path: join(SHOTS, `compte-${name}-echec.png`) });
+        throw e;
+      });
+    await page.screenshot({ path: join(SHOTS, `compte-${name}-2-envoye.png`) });
+    // The link of the mail: back on the board, signed in; the first time, the house is founded.
+    await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);
+    await page.waitForSelector("[data-planche-fonder]", { state: "attached", timeout: 30_000 });
+    if (new URL(page.url()).pathname !== "/") fail(`the link leaves the address at ${page.url()}`);
+    await page.fill("[data-fonder-name]", name === "p" ? "Bembo" : "Zane", { force: true });
+    await tap('.pc-in-colors button[aria-label="Vert de mer"]');
+    await tap(".pc-in-charges button:nth-child(2)");
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: join(SHOTS, `compte-${name}-3-fonder.png`) });
+    await page.waitForSelector("[data-fonder-go]:not([disabled])", { state: "attached" });
+    await tap("[data-fonder-go]");
+    await page.waitForSelector("[data-planche-fonder]", { state: "detached", timeout: 60_000 });
+    await page.waitForSelector('[data-house][data-mine="true"]', {
+      state: "attached",
+      timeout: 30_000,
+    });
+    await page.waitForTimeout(2500);
+    const label = await page.textContent("[data-planche-medallion] b");
+    if (!label?.includes(name === "p" ? "Bembo" : "Zane"))
+      fail(`the medallion reads « ${label} », not the house's name`);
+    await page.screenshot({ path: join(SHOTS, `compte-${name}-4-planche.png`) });
+    // The island: a sand pit on the best tile, paid from the purse.
+    await tap('[data-house][data-mine="true"]');
+    await page.waitForSelector("[data-enter-isle]", { state: "attached", timeout: 60_000 });
+    await tap("[data-enter-isle]");
+    await page.waitForSelector("[data-ile-screen]", { state: "attached", timeout: 30_000 });
+    await page.waitForTimeout(1500);
+    await tap("[data-ile-open]");
+    await page.waitForSelector('[data-hand="sand_pit"]', { state: "attached", timeout: 60_000 });
+    await tap('[data-hand="sand_pit"]');
+    await page.waitForSelector(".pc-ile-gain", { state: "attached", timeout: 30_000 });
+    await tap('.pc-ile-gain[data-best="true"], .pc-ile-gain');
+    await page.waitForSelector("[data-ile-place]:not([disabled])", {
+      state: "attached",
+      timeout: 60_000,
+    });
+    await tap("[data-ile-place]");
+    await page.waitForTimeout(2000);
+    await page.screenshot({ path: join(SHOTS, `compte-${name}-5-sabliere.png`) });
+    // The profile, behind the medallion: the way out.
+    await tap("[data-ile-back]");
+    await page.waitForSelector("[data-planche-lab]", { state: "attached", timeout: 30_000 });
+    await tap("[data-planche-medallion]");
+    await page.waitForSelector("[data-planche-profil]", { state: "attached", timeout: 30_000 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: join(SHOTS, `compte-${name}-6-profil.png`) });
+    // Signed in again on a new page: the same house, its sand pit still there.
+    const again = await browser.newPage({ viewport: { width: w, height: h } });
+    await again.context().addCookies(await page.context().cookies());
+    await again.goto(server.url);
+    await again.waitForSelector('[data-house][data-mine="true"]', {
+      state: "attached",
+      timeout: 60_000,
+    });
+    if (await again.$("[data-planche-entree]"))
+      fail("signed in, the sheet of the way in shows again");
+    if (errs.length) fail(errs.join(" | "));
+    console.log(`compte ${name}: ok`);
+    await again.close();
+    await page.close();
+  }
+} finally {
+  await browser.close();
+  server.stop();
+}

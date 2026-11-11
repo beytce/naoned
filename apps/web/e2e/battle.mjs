@@ -106,7 +106,7 @@ try {
     await page.goto(`${server.url}/ancien`);
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
-    await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);
+    await page.goto(`${server.url}/connexion?token=${await magicLink(email)}&ancien`);
     await page.waitForSelector("input[autocomplete=nickname]");
     await page.fill("input", `Battle_${width}`);
     await page.keyboard.press("Enter");

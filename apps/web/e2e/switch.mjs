@@ -83,7 +83,7 @@ try {
   await page.goto(`${server.url}/ancien`);
   await page.fill("input[type=email]", email);
   await page.keyboard.press("Enter");
-  await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);
+  await page.goto(`${server.url}/connexion?token=${await magicLink(email)}&ancien`);
   await page.waitForSelector("input[autocomplete=nickname]");
   await page.fill("input", "Casa_bascule");
   await page.keyboard.press("Enter");
@@ -107,7 +107,7 @@ try {
   await page.goto(`${server.url}/ancien`);
   await page.fill("input[type=email]", email);
   await page.keyboard.press("Enter");
-  await page.goto(`${server.url}/connexion?token=${await magicLink(email)}&map=3d`);
+  await page.goto(`${server.url}/connexion?token=${await magicLink(email)}&ancien&map=3d`);
   await page.waitForSelector("[data-porcellana-map]", { timeout: 30_000 });
   await page.waitForTimeout(15_000);
   await page.screenshot({ path: join(SHOTS, "2-apres-cases.png"), timeout: 120_000 });
