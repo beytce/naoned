@@ -12,6 +12,7 @@ import {
   planchePrice,
   plancheRobot,
   plancheRouteOpen,
+  plancheShares,
   plancheSupply,
   plancheThread,
   plancheToll,
@@ -372,5 +373,48 @@ describe("the island on the board", () => {
     expect(types).toContain("scierie");
     expect(s.houses.ben?.threads.length).toBeGreaterThan(0);
     expect(plancheInvariant(s)).toBe(true);
+  });
+});
+
+// Who serves a town (docs/audit-visuel-2026-11-11: the gauge cut by supplier, CADRAGE-v4 § 6).
+describe("the shares of a town's demand", () => {
+  it("is all free while nobody serves it", () => {
+    const S = setup();
+    const r = plancheShares(S, plancheInit(S, T0), "padoue", "verre", T0);
+    expect(r).toEqual({ freeBps: 10_000, houses: [] });
+  });
+
+  it("splits what is spent between the houses by what their threads carry", () => {
+    const S = setup();
+    let s = plancheThread(S, plancheInit(S, T0), "ana", "padoue", "verre", T0);
+    s = plancheThread(S, s, "ben", "padoue", "verre", T0);
+    s = plancheAdvance(S, s, T0 + 2 * HOUR);
+    const r = plancheShares(S, s, "padoue", "verre", s.now);
+    const left = s.gauges.padoue?.verre?.left ?? 0;
+    expect(r.freeBps).toBe(Math.floor((left * 10_000) / 100));
+    expect(r.houses.map((h) => h.house).sort()).toEqual(["ana", "ben"]);
+    const [a, b] = r.houses;
+    expect(a?.bps).toBe(b?.bps);
+    expect((a?.bps ?? 0) + (b?.bps ?? 0) + r.freeBps).toBeLessThanOrEqual(10_000);
+    expect((a?.bps ?? 0) + (b?.bps ?? 0) + r.freeBps).toBeGreaterThan(9_990);
+  });
+
+  it("gives the larger share to the thread with the patina, largest first", () => {
+    const S = setup({ startStock: 200, store: 2_000 });
+    let s = plancheThread(S, plancheInit(S, T0), "ana", "padoue", "verre", T0);
+    s = plancheAdvance(S, s, T0 + 4 * DAY);
+    s = plancheThread(S, s, "ben", "padoue", "verre", s.now);
+    const r = plancheShares(S, s, "padoue", "verre", s.now);
+    expect(r.houses[0]?.house).toBe("ana");
+    expect(r.houses[0]?.bps).toBeGreaterThan(r.houses[1]?.bps ?? 0);
+  });
+
+  it("counts no house whose barges cannot get through", () => {
+    const S = setup();
+    let s = plancheForced(S, plancheInit(S, T0), "ana", "segna", T0);
+    s = plancheThread(S, s, "ana", "raguse", "verre", T0);
+    expect(plancheShares(S, s, "raguse", "verre", T0).houses.map((h) => h.house)).toEqual(["ana"]);
+    // a day later the corsair's chain is up again
+    expect(plancheShares(S, s, "raguse", "verre", T0 + 2 * DAY).houses).toEqual([]);
   });
 });

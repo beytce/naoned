@@ -248,6 +248,40 @@ export function planchePatina(S: PlancheSetup, thread: PlancheThread, now: numbe
   return Math.min(S.rules.patinaMaxBps, days * S.rules.patinaBpsPerDay);
 }
 
+/**
+ * Who serves a town's good (docs/audit-visuel-2026-11-11, CADRAGE-v4 § 6, the gauge cut by
+ * supplier): the share still free, and what is spent split between the houses whose threads carry
+ * there now, by what each carries (its patina counted). Points of base, largest share first.
+ */
+export function plancheShares(
+  S: PlancheSetup,
+  s: PlancheState,
+  city: string,
+  good: string,
+  now: number,
+): { freeBps: number; houses: { house: string; bps: number }[] } {
+  const w = own(cityOf(S, city)?.wants ?? {}, good);
+  const g = own(s.gauges[city] ?? {}, good);
+  if (!w || !g) return { freeBps: 0, houses: [] };
+  const freeBps = Math.floor((Math.max(0, g.left) * BPS) / Math.max(1, w.cap));
+  const rates: { house: string; rate: number }[] = [];
+  for (const [id, h] of Object.entries(s.houses)) {
+    if (!plancheRouteOpen(S, s, id, city, now)) continue;
+    const has = (h.stock[good] ?? 0) > 0 || (plancheSupply(S, s, id, now)[good] ?? 0) > 0;
+    if (!has) continue;
+    const rate = h.threads
+      .filter((t) => t.to === city && t.good === good)
+      .reduce((n, t) => n + BPS + planchePatina(S, t, now), 0);
+    if (rate > 0) rates.push({ house: id, rate });
+  }
+  const total = rates.reduce((n, r) => n + r.rate, 0);
+  const spent = BPS - freeBps;
+  const houses = rates
+    .map((r) => ({ house: r.house, bps: Math.floor((spent * r.rate) / total) }))
+    .sort((a, b) => b.bps - a.bps || a.house.localeCompare(b.house));
+  return { freeBps, houses };
+}
+
 /** One slice of time: the islands make, the threads carry, the towns pay and tire, then rest. */
 function slice(S: PlancheSetup, s: PlancheState): void {
   const t = s.now;
