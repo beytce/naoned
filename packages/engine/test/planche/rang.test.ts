@@ -241,6 +241,16 @@ describe("the rival of the week", () => {
     expect(s.houses.ana?.rank.week).toEqual({});
   });
 
+  it("counts its weeks from the start it is given, a Monday at midnight", () => {
+    const S = setup();
+    let s = plancheInit(S, T0 + 6 * HOUR, T0);
+    expect(s.rank.tideStart).toBe(T0);
+    s = plancheAdvance(S, s, T0 + WEEK - HOUR);
+    expect(s.rank.week).toBe(0);
+    s = plancheAdvance(S, s, T0 + WEEK);
+    expect(s.rank.week).toBe(1);
+  });
+
   it("counts a house a person takes as a person from then on", () => {
     const S = setup();
     let s = plancheClaim(S, plancheInit(S, T0), "cid");

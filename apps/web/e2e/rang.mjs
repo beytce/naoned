@@ -54,4 +54,28 @@ for (const [name, w, h] of [
   console.log(`rang ${name}: place ${place?.trim()}, rival ${rival}`);
   await pg.close();
 }
+// On line: two more guests, two more houses; a rival is a person's house before the computer's.
+if (!MODE) {
+  const guest = async () => {
+    const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
+    const pg = await ctx.newPage();
+    await pg.goto(`${BASE}/?lab=planche&simple`, { waitUntil: "domcontentloaded" });
+    await pg.waitForSelector('[data-house][data-mine="true"]', { timeout: 60_000 });
+    await pg.waitForTimeout(2500);
+    return pg;
+  };
+  const one = await guest();
+  const two = await guest();
+  await one.waitForTimeout(2500);
+  const mine = (pg) => pg.getAttribute('[data-house][data-mine="true"]', "data-house");
+  const rivalOf = (pg) => pg.getAttribute('[data-house][data-rival="true"]', "data-house");
+  const [m1, m2, r2] = [await mine(one), await mine(two), await rivalOf(two)];
+  // Its rival is a player's house (the flag of a player, not the computer's grey).
+  const tone = await two.getAttribute(`[data-house="${r2}"] .pc-pl-flag`, "data-tone");
+  if (r2 !== m1 && tone !== "player") fail(`the second guest's rival ${r2} is the computer's`);
+  await two.click("[data-planche-rank-open]");
+  await two.waitForSelector("[data-planche-palace]", { timeout: 5_000 });
+  await two.screenshot({ path: `${D}/rang-online.png` });
+  console.log(`rang en ligne : ${m1} et ${m2}, le rival du second est ${r2}`);
+}
 await b.close();

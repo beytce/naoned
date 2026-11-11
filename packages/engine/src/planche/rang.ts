@@ -246,10 +246,10 @@ const markNow = (S: PlancheSetup, s: PlancheState) => {
 };
 
 /** The rank at the board's start: everyone level, a rival for each person. */
-export function plancheRankInit(S: PlancheSetup, s: PlancheState): void {
+export function plancheRankInit(S: PlancheSetup, s: PlancheState, tideStart = s.now): void {
   s.rank = {
     tide: 0,
-    tideStart: s.now,
+    tideStart,
     week: 0,
     humans: S.houses.filter((h) => !h.robot).map((h) => h.id),
     rivals: {},

@@ -180,7 +180,8 @@ export function plancheGround(S: PlancheSetup, house: string) {
   return ileGround(seed, h?.soil ?? { pre: 1 });
 }
 
-export function plancheInit(S: PlancheSetup, now: number): PlancheState {
+/** The board at its start; its tide counts its weeks from `tideStart` (the server: a Monday). */
+export function plancheInit(S: PlancheSetup, now: number, tideStart = now): PlancheState {
   const houses: Record<string, PlancheHouse> = {};
   for (const h of S.houses) {
     const stock: Record<string, number> = {};
@@ -223,7 +224,7 @@ export function plancheInit(S: PlancheSetup, now: number): PlancheState {
     spent: 0n,
     rank: {} as PlancheRank,
   };
-  plancheRankInit(S, s);
+  plancheRankInit(S, s, tideStart);
   return s;
 }
 

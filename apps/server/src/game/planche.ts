@@ -9,6 +9,7 @@ import {
   plancheAdvance,
   plancheBuild,
   plancheBuyTile,
+  plancheClaim,
   plancheForced,
   plancheInit,
   plancheInvariant,
@@ -21,6 +22,14 @@ import {
 } from "@comptoirs/engine";
 
 const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+
+/** The Monday at midnight (UTC) on or before `t`: the tide's weeks run from Monday to Sunday. */
+export const mondayOf = (t: number) => {
+  const day = Math.floor(t / DAY);
+  // 1 January 1970 was a Thursday: day 4 is a Monday.
+  return (day - ((((day - 4) % 7) + 7) % 7)) * DAY;
+};
 
 /** What the hub is given: the board, the duels of its passages, how often the computer's houses visit. */
 export interface PlancheHubTheme {
@@ -72,7 +81,12 @@ export class PlancheHub {
     now: number,
   ) {
     this.t0 = now;
-    this.state = plancheInit(theme.board, now);
+    // On line no house is a person's until one takes it: the rank's people are the seated ones.
+    const board = {
+      ...theme.board,
+      houses: theme.board.houses.map((h) => ({ ...h, robot: true })),
+    };
+    this.state = plancheInit(board, now, mondayOf(now));
   }
 
   private held(): Set<string> {
@@ -111,6 +125,8 @@ export class PlancheHub {
     const free = this.theme.board.houses.find((h) => !held.has(h.id));
     if (!free) return null;
     this.seats.set(player, { house: free.id, name, seen: now });
+    // A person's house from now on: it has its rival at once, and its cote (docs/plan-classement.md).
+    this.state = plancheClaim(this.theme.board, this.state, free.id);
     return free.id;
   }
 
