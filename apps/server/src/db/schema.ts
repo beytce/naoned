@@ -732,3 +732,26 @@ export const companyMessageReports = pgTable(
   },
   (t) => [primaryKey({ columns: [t.messageId, t.reporterId] })],
 );
+
+/**
+ * Who holds which house of the shared board (docs/plan-compte.md C3): one house per account, for
+ * good. The board itself (in `world_states`) knows its people too; this is how an account finds
+ * its board among the lagoons.
+ */
+export const plancheSeats = pgTable(
+  "planche_seats",
+  {
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    house: text("house").notNull(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.worldId, t.house] }),
+    uniqueIndex("planche_seats_account_key").on(t.accountId),
+  ],
+);

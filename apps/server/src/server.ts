@@ -5,7 +5,7 @@ import { loadConfig } from "./config.js";
 import { openDatabase } from "./db/client.js";
 import { BotRunner } from "./game/bots.js";
 import { plancheTheme } from "./game/planche.js";
-import { PlancheStore } from "./game/plancheStore.js";
+import { PlancheLagoons } from "./game/plancheLagoons.js";
 import { GameWorld } from "./game/world.js";
 import { ConsoleMailer, ResendMailer } from "./mail/mailer.js";
 import { Alerts } from "./monitor.js";
@@ -57,7 +57,7 @@ notifier.start(60_000, (err) => console.error(err));
 world.onEffects((fx, now) => void notifier.fromEffects(fx, now).catch(console.error));
 world.onSeasonOpened((closed) => void notifier.seasonOpened(closed).catch(console.error));
 // The shared board, kept in the base: a deploy or a restart loses nothing (docs/plan-compte.md).
-const planche = await PlancheStore.open(database.db, plancheTheme(), clock());
+const planche = await PlancheLagoons.open(database.db, plancheTheme(), clock());
 // Its ledger follows it every ten minutes, even when no one plays (docs/plan-compte.md C2).
 planche.start();
 const here = dirname(fileURLToPath(import.meta.url));
@@ -67,7 +67,7 @@ const app = await buildApp({
   appUrl: config.APP_URL.replace(/\/$/, ""),
   production,
   world,
-  planche: planche.hub,
+  planche,
   notifier,
   adminEmails: config.ADMIN_EMAILS.split(",")
     .map((e) => e.trim().toLowerCase())

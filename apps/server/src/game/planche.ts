@@ -46,7 +46,7 @@ export interface PlancheHubTheme {
     lieutenant: number;
   };
   visitHours: number;
-  /** Game hours without a read or a gesture after which a player's house goes back to the computer. */
+  /** Game hours without a read or a gesture after which a player's house goes back to the computer (0: never). */
   idleHours: number;
 }
 
@@ -69,7 +69,8 @@ export const plancheTheme = (): PlancheHubTheme => ({
   board: venice1450Planche,
   passe: { rules: venice1450Passe.rules, boards: venice1450Passe.boards, lieutenant: 3 },
   visitHours: 8,
-  idleHours: 7 * 24,
+  // An account keeps its house for good (docs/plan-compte.md C3).
+  idleHours: 0,
 });
 
 export type PlancheAnswer = "ok" | "not_seated" | "duel_lost" | "duel_illegal" | string;
@@ -240,6 +241,16 @@ export class PlancheHub {
     return { doc: this.doc, version: this.version };
   }
 
+  /** The houses no one holds yet. */
+  free(): number {
+    return this.theme.board.houses.length - held(this.doc).size;
+  }
+
+  /** The house a player holds on this board, if any. */
+  houseOf(player: string): string | null {
+    return this.doc.seats[player]?.house ?? null;
+  }
+
   /** The game time the board has reached. */
   reached(): number {
     return this.doc.state.now;
@@ -272,8 +283,12 @@ export class PlancheHub {
       if (had.name !== name) await this.run({ type: "seat", player, name, t: now });
       return had.house;
     }
+    // A house left too long goes back to the computer, unless houses are kept for good (0).
     const idle = this.theme.idleHours * HOUR;
-    const gone = Object.keys(this.doc.seats).filter((p) => now - (this.seen.get(p) ?? now) > idle);
+    const gone =
+      idle > 0
+        ? Object.keys(this.doc.seats).filter((p) => now - (this.seen.get(p) ?? now) > idle)
+        : [];
     if (gone.length) await this.run({ type: "release", players: gone, t: now });
     for (const p of gone) this.seen.delete(p);
     const res = await this.run({ type: "seat", player, name, t: now });

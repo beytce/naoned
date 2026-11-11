@@ -88,6 +88,23 @@ const bookOf = (doc: PlancheDoc): Booked => ({
   burnt: doc.state.burnt,
 });
 
+/** The names of the lagoons, in the order they open: a new one when the others are full. */
+export const LAGOONS = [
+  "Lagune de Murano",
+  "Lagune de Burano",
+  "Lagune de Torcello",
+  "Lagune du Lido",
+  "Lagune de Pellestrina",
+  "Lagune de Mazzorbo",
+  "Lagune de la Giudecca",
+  "Lagune de Chioggia",
+];
+export const lagoonName = (n: number) =>
+  LAGOONS[n] ?? `${LAGOONS[n % LAGOONS.length]} ${Math.floor(n / LAGOONS.length) + 1}`;
+
+const settingsOf = (theme: PlancheHubTheme) =>
+  encode({ board: theme.board, visitHours: theme.visitHours, idleHours: theme.idleHours });
+
 export interface PlancheStoreOptions {
   /** This server instance, owner of the board while it runs. */
   instance?: string;
@@ -106,6 +123,8 @@ export interface PlancheStoreOptions {
  */
 export class PlancheStore implements PlancheJournal {
   hub!: PlancheHub;
+  /** The lagoon's name, as players read it. */
+  name = "";
   private snapshotVersion: number;
   private snapshotAt: number;
   private readonly clock: () => number;
@@ -137,37 +156,55 @@ export class PlancheStore implements PlancheJournal {
     now: number,
     options: PlancheStoreOptions = {},
   ): Promise<PlancheStore> {
-    const instance = options.instance ?? randomUUID();
-    const settings = encode({
-      board: theme.board,
-      visitHours: theme.visitHours,
-      idleHours: theme.idleHours,
-    });
-    let [row] = await db
+    const [row] = await db
       .select()
       .from(worlds)
       .where(and(eq(worlds.status, PLANCHE_STATUS), eq(worlds.theme, PLANCHE_THEME)))
       .orderBy(asc(worlds.createdAt))
       .limit(1);
-    if (!row) {
-      [row] = await db
-        .insert(worlds)
-        .values({
-          name: "La lagune",
-          theme: PLANCHE_THEME,
-          status: PLANCHE_STATUS,
-          startsAt: new Date(now),
-          // A board has no end: the tides follow one another (CADRAGE-v4 § 11).
-          endsAt: new Date(now + 100 * 365 * 86_400_000),
-          settings,
-        })
-        .returning();
-    } else {
-      // The board's settings are those the server plays, written where the rules say they live.
-      await db.update(worlds).set({ settings }).where(eq(worlds.id, row.id));
-    }
+    return row
+      ? PlancheStore.load(db, theme, row.id, now, options)
+      : PlancheStore.create(db, theme, now, LAGOONS[0] ?? "La lagune", options);
+  }
+
+  /** A new board, saved at once as a world of its own. */
+  static async create(
+    db: Db,
+    theme: PlancheHubTheme,
+    now: number,
+    name: string,
+    options: PlancheStoreOptions = {},
+  ): Promise<PlancheStore> {
+    const [row] = await db
+      .insert(worlds)
+      .values({
+        name,
+        theme: PLANCHE_THEME,
+        status: PLANCHE_STATUS,
+        startsAt: new Date(now),
+        // A board has no end: the tides follow one another (CADRAGE-v4 § 11).
+        endsAt: new Date(now + 100 * 365 * 86_400_000),
+        settings: settingsOf(theme),
+      })
+      .returning();
     if (!row) throw new Error("the board could not be created");
-    const worldId = row.id;
+    return PlancheStore.load(db, theme, row.id, now, options);
+  }
+
+  /** A board saved in the base: this instance takes it over, and plays its journal again. */
+  static async load(
+    db: Db,
+    theme: PlancheHubTheme,
+    worldId: string,
+    now: number,
+    options: PlancheStoreOptions = {},
+  ): Promise<PlancheStore> {
+    const instance = options.instance ?? randomUUID();
+    // The board's settings are those the server plays, written where the rules say they live.
+    await db
+      .update(worlds)
+      .set({ settings: settingsOf(theme) })
+      .where(eq(worlds.id, worldId));
     // Take over first, then read: an old instance can no longer write once we hold the board.
     await db.update(worldStates).set({ owner: instance }).where(eq(worldStates.worldId, worldId));
     const [saved] = await db.select().from(worldStates).where(eq(worldStates.worldId, worldId));
@@ -206,6 +243,10 @@ export class PlancheStore implements PlancheJournal {
         .insert(worldStates)
         .values({ worldId, version: 0, state: encode(doc), owner: instance });
     }
+    const [named] = await db
+      .select({ name: worlds.name })
+      .from(worlds)
+      .where(eq(worlds.id, worldId));
     const store = new PlancheStore(
       db,
       worldId,
@@ -216,6 +257,7 @@ export class PlancheStore implements PlancheJournal {
       BigInt(theme.board.rules.startDucats),
     );
     store.hub = new PlancheHub(theme, now, { doc, version }, store);
+    store.name = named?.name ?? "";
     if (version > snapshotVersion || !saved) await store.snapshot();
     return store;
   }

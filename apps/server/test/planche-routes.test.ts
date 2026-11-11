@@ -1,8 +1,11 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { buildApp } from "../src/app.js";
+import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
+import { accounts } from "../src/db/schema.js";
+import { plancheTheme } from "../src/game/planche.js";
+import { PlancheLagoons } from "../src/game/plancheLagoons.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
@@ -12,6 +15,7 @@ let dbUrl: string;
 let dropDb: () => Promise<void>;
 let app: FastifyInstance;
 let now: number;
+let mailer: MemoryMailer;
 
 beforeAll(async () => {
   ({ url: dbUrl, drop: dropDb } = await testDatabase());
@@ -27,9 +31,10 @@ beforeEach(async () => {
   );
   now = Date.parse("2026-11-16T06:00:00Z");
   const world = await GameWorld.open(database.db, () => now, { empire: true });
+  mailer = new MemoryMailer();
   app = await buildApp({
     db: database.db,
-    mailer: new MemoryMailer(),
+    mailer,
     appUrl: "https://comptoirs.test",
     production: false,
     world,
@@ -41,26 +46,21 @@ afterEach(async () => {
   await database.close();
 });
 
-function guest() {
-  let cookie = "";
-  return async (method: "GET" | "POST", url: string, payload?: unknown) => {
-    const res = await app.inject({
-      method,
-      url,
-      payload: payload as never,
-      headers: cookie ? { cookie } : {},
-    });
-    const given = res.cookies.find((c) => c.name === "fondaco_guest")?.value;
-    if (given) cookie = `fondaco_guest=${given}`;
-    return res;
-  };
+/** A player with an account: signed in by the link of his mail, then his calls carry his session. */
+async function player(email: string) {
+  await app.inject({ method: "POST", url: "/api/auth/request", payload: { email } });
+  const token = decodeURIComponent(mailer.sent.at(-1)?.text.match(/token=([\w%-]+)/)?.[1] ?? "");
+  const res = await app.inject({ method: "POST", url: "/api/auth/verify", payload: { token } });
+  const cookie = `${SESSION_COOKIE}=${res.cookies.find((c) => c.name === SESSION_COOKIE)?.value}`;
+  return (method: "GET" | "POST", url: string, payload?: unknown) =>
+    app.inject({ method, url, payload: payload as never, headers: { cookie } });
 }
 
-// The shared board on line (docs/plan-planche.md L5), through its routes, by two guests.
+// The shared board on line (docs/plan-planche.md L5), through its routes, by two players with an account.
 describe("the board on line", () => {
-  it("seats two guests in two houses of one board, and shows each the other's thread", async () => {
-    const ana = guest();
-    const ben = guest();
+  it("seats two players in two houses of one board, and shows each the other's thread", async () => {
+    const ana = await player("ana@example.org");
+    const ben = await player("ben@example.org");
     const a = (await ana("GET", "/api/planche")).json().planche;
     const b = (await ben("GET", "/api/planche")).json().planche;
     expect(a.me).toBeTruthy();
@@ -88,8 +88,8 @@ describe("the board on line", () => {
   });
 
   it("builds the player's island: a workshop paid from the purse, seen by the other", async () => {
-    const ana = guest();
-    const ben = guest();
+    const ana = await player("ana@example.org");
+    const ben = await player("ben@example.org");
     const a = (await ana("GET", "/api/planche")).json().planche;
     const before = BigInt(a.state.houses[a.me].ducats);
     const tiles = a.state.houses[a.me].ile.tiles;
@@ -110,7 +110,7 @@ describe("the board on line", () => {
   });
 
   it("refuses what the board refuses, with a code", async () => {
-    const ana = guest();
+    const ana = await player("ana@example.org");
     expect(
       (await ana("POST", "/api/planche/thread", { city: "raguse", good: "glass" })).json().error,
     ).toBe("planche_route_shut");
@@ -122,5 +122,59 @@ describe("the board on line", () => {
       (await ana("POST", "/api/planche/force", { passage: "segna", moves: [{ at: 24 }] })).json()
         .error,
     ).toBe("duel_lost");
+  });
+});
+
+// The account and the house kept for good (docs/plan-compte.md C3).
+describe("the board for accounts", () => {
+  it("refuses whoever has no account", async () => {
+    const res = await app.inject({ method: "GET", url: "/api/planche" });
+    expect(res.statusCode).toBe(401);
+    expect(res.json().error).toBe("not_signed_in");
+    const tie = await app.inject({
+      method: "POST",
+      url: "/api/planche/thread",
+      payload: { city: "rialto", good: "sand" },
+    });
+    expect(tie.statusCode).toBe(401);
+  });
+
+  it("gives an account one house, named after it, and the same one every time", async () => {
+    const ana = await player("ana@example.org");
+    const a = (await ana("GET", "/api/planche")).json().planche;
+    expect(a.me).toBeTruthy();
+    expect(a.names[a.me]).toMatch(/^Ca’ /);
+    expect(a.lagoon).toBe("Lagune de Murano");
+    now += 10 * 86_400_000;
+    const again = (await ana("GET", "/api/planche")).json().planche;
+    expect(again.me).toBe(a.me);
+  });
+
+  it("opens a second lagoon when the first one is full", async () => {
+    const seen: { me: string; lagoon: string }[] = [];
+    for (let k = 0; k < 9; k++) {
+      const p = await player(`p${k}@example.org`);
+      seen.push((await p("GET", "/api/planche")).json().planche);
+    }
+    const first = seen.slice(0, 8);
+    expect(new Set(first.map((v) => v.me)).size).toBe(8);
+    expect(first.every((v) => v.lagoon === "Lagune de Murano")).toBe(true);
+    expect(seen[8]?.lagoon).toBe("Lagune de Burano");
+  });
+
+  it("finds an account's house again after a restart", async () => {
+    const ana = await player("ana@example.org");
+    const a = (await ana("GET", "/api/planche")).json().planche;
+    await ana("POST", "/api/planche/thread", { city: "rialto", good: "sand" });
+    // A second server on the same base: it takes every board over and plays its journal again.
+    const lagoons = await PlancheLagoons.open(database.db, plancheTheme(), now);
+    const [row] = await database.db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(eq(accounts.email, "ana@example.org"));
+    const { store, house } = await lagoons.seatOf(row?.id ?? "", "Ca’ ana", now);
+    expect(house).toBe(a.me);
+    const v = await store.hub.view("x", "x", now);
+    expect(v.state.houses[a.me]?.threads.map((t) => t.to)).toEqual(["rialto"]);
   });
 });
