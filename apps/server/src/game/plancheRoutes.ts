@@ -26,6 +26,8 @@ export interface PlancheRouteDeps {
 const GUEST = "fondaco_guest";
 const STATUS: Record<string, number> = {
   not_seated: 403,
+  ile_unknown: 404,
+  ile_not_owned: 404,
   planche_unknown: 404,
   planche_no_thread: 404,
   duel_lost: 409,
@@ -110,6 +112,32 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const id = await seated(req, reply);
     return show(reply, id, hub.toll(id, b.data.passage, b.data.tollBps, now()));
+  });
+  // The island (docs/plan-ile.md I6): its tiles are « x,y » from the Fondaco.
+  const tile = z.string().regex(/^-?\d{1,2},-?\d{1,2}$/);
+  app.post("/api/planche/ile/buy", deps.perMerchant(60), async (req, reply) => {
+    const b = z.object({ at: tile }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const id = await seated(req, reply);
+    return show(reply, id, hub.buyTile(id, b.data.at, now()));
+  });
+  app.post("/api/planche/ile/build", deps.perMerchant(60), async (req, reply) => {
+    const b = z.object({ type: key, at: tile }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const id = await seated(req, reply);
+    return show(reply, id, hub.build(id, b.data.type, b.data.at, now()));
+  });
+  app.post("/api/planche/ile/upgrade", deps.perMerchant(60), async (req, reply) => {
+    const b = z.object({ at: tile }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const id = await seated(req, reply);
+    return show(reply, id, hub.upgrade(id, b.data.at, now()));
+  });
+  app.post("/api/planche/ile/move", deps.perMerchant(60), async (req, reply) => {
+    const b = z.object({ from: tile, to: tile }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const id = await seated(req, reply);
+    return show(reply, id, hub.move(id, b.data.from, b.data.to, now()));
   });
   app.post("/api/planche/force", deps.perMerchant(20), async (req, reply) => {
     const b = z

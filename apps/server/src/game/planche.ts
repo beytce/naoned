@@ -7,13 +7,17 @@ import {
   passePlay,
   passeThink,
   plancheAdvance,
+  plancheBuild,
+  plancheBuyTile,
   plancheForced,
   plancheInit,
   plancheInvariant,
+  plancheMove,
   plancheRobot,
   plancheThread,
   plancheToll,
   plancheUnthread,
+  plancheUpgrade,
 } from "@comptoirs/engine";
 
 const HOUR = 3_600_000;
@@ -155,6 +159,27 @@ export class PlancheHub {
   toll(player: string, passage: string, tollBps: number, now: number): PlancheAnswer {
     return this.act(player, now, (h) =>
       plancheToll(this.theme.board, this.state, h, passage, tollBps),
+    );
+  }
+
+  /** The island of the player's house: a tile bought, a workshop built, raised or moved. */
+  buyTile(player: string, at: string, now: number): PlancheAnswer {
+    return this.act(player, now, (h) => plancheBuyTile(this.theme.board, this.state, h, at, now));
+  }
+
+  build(player: string, type: string, at: string, now: number): PlancheAnswer {
+    return this.act(player, now, (h) =>
+      plancheBuild(this.theme.board, this.state, h, type, at, now),
+    );
+  }
+
+  upgrade(player: string, at: string, now: number): PlancheAnswer {
+    return this.act(player, now, (h) => plancheUpgrade(this.theme.board, this.state, h, at, now));
+  }
+
+  move(player: string, from: string, to: string, now: number): PlancheAnswer {
+    return this.act(player, now, (h) =>
+      plancheMove(this.theme.board, this.state, h, from, to, now),
     );
   }
 

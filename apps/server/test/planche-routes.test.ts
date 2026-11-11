@@ -68,10 +68,16 @@ describe("the board on line", () => {
     expect(a.me).not.toBe(b.me);
     expect(b.players).toEqual(expect.arrayContaining([a.me, b.me]));
 
-    const tied = await ana("POST", "/api/planche/thread", { city: "padoue", good: "verre" });
+    // a sand pit on a free tile of her island, and a thread of sand to the Rialto
+    const tiles = a.state.houses[a.me].ile.tiles;
+    const free = Object.keys(tiles).find((k) => !tiles[k].building) as string;
+    expect(
+      (await ana("POST", "/api/planche/ile/build", { type: "sand_pit", at: free })).statusCode,
+    ).toBe(200);
+    const tied = await ana("POST", "/api/planche/thread", { city: "rialto", good: "sand" });
     expect(tied.statusCode).toBe(200);
     const seen = (await ben("GET", "/api/planche")).json().planche;
-    expect(seen.state.houses[a.me].threads.map((t: { to: string }) => t.to)).toEqual(["padoue"]);
+    expect(seen.state.houses[a.me].threads.map((t: { to: string }) => t.to)).toEqual(["rialto"]);
     // the amounts come as strings of digits (deniers), never as floats
     expect(seen.state.houses[a.me].ducats).toMatch(/^\d+$/);
 
@@ -81,13 +87,35 @@ describe("the board on line", () => {
     expect(later.ok).toBe(true);
   });
 
+  it("builds the player's island: a workshop paid from the purse, seen by the other", async () => {
+    const ana = guest();
+    const ben = guest();
+    const a = (await ana("GET", "/api/planche")).json().planche;
+    const before = BigInt(a.state.houses[a.me].ducats);
+    const tiles = a.state.houses[a.me].ile.tiles;
+    const free = Object.keys(tiles).find((k) => !tiles[k].building) as string;
+    const built = await ana("POST", "/api/planche/ile/build", { type: "sand_pit", at: free });
+    expect(built.statusCode).toBe(200);
+    const after = built.json().planche.state.houses[a.me];
+    expect(after.ile.tiles[free].building.type).toBe("sand_pit");
+    expect(BigInt(after.ducats)).toBeLessThan(before);
+    const seen = (await ben("GET", "/api/planche")).json().planche;
+    expect(seen.state.houses[a.me].ile.tiles[free].building.type).toBe("sand_pit");
+    // a tile that touches the island, bought; a malformed tile, refused
+    expect((await ana("POST", "/api/planche/ile/buy", { at: "2,0" })).statusCode).toBe(200);
+    expect((await ana("POST", "/api/planche/ile/buy", { at: "nope" })).statusCode).toBe(400);
+    expect(
+      (await ana("POST", "/api/planche/ile/build", { type: "__proto__", at: "1,1" })).json().error,
+    ).toBe("ile_unknown");
+  });
+
   it("refuses what the board refuses, with a code", async () => {
     const ana = guest();
     expect(
-      (await ana("POST", "/api/planche/thread", { city: "raguse", good: "verre" })).json().error,
+      (await ana("POST", "/api/planche/thread", { city: "raguse", good: "glass" })).json().error,
     ).toBe("planche_route_shut");
     expect(
-      (await ana("POST", "/api/planche/thread", { city: "__proto__", good: "verre" })).statusCode,
+      (await ana("POST", "/api/planche/thread", { city: "__proto__", good: "glass" })).statusCode,
     ).toBe(404);
     expect((await ana("POST", "/api/planche/thread", { city: 3 })).statusCode).toBe(400);
     expect(
