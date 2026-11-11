@@ -88,6 +88,7 @@ import { LiveHub } from "./live.js";
 import { acceptChallenge, challenge, sfidaRival, sfidaView } from "./lustre.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { registerPasseRoutes } from "./passeRoutes.js";
+import { registerPlancheRoutes } from "./plancheRoutes.js";
 import type { PortaHub } from "./porta.js";
 import { registerPortaRoutes } from "./portaRoutes.js";
 import { priceHistory, profile } from "./profile.js";
@@ -342,6 +343,15 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     accountIfAny,
     perMerchant,
     secureCookies: deps.secureCookies,
+  });
+  // The shared board on line (docs/plan-planche.md L5): a prototype beside the game, open to guests.
+  registerPlancheRoutes(app, {
+    db,
+    now: () => world.now(),
+    accountIfAny,
+    perMerchant,
+    secureCookies: deps.secureCookies,
+    pace: Number(process.env.PLANCHE_PACE) || 1,
   });
   // The duels on line of the Passe (docs/plan-passe.md P6): a prototype beside the game, open to guests.
   registerPasseRoutes(app, {
