@@ -39,7 +39,7 @@ Le profil (nom, pavillon, déconnexion, suppression du compte) est derrière le 
   - le journal des gestes depuis cet instantané (`world_commands`), qu'on rejoue au chargement ;
   - le grand livre et les mouvements de stock écrits **dans la même transaction** que le geste ;
   - le relais au déploiement : la nouvelle instance prend la main, l'ancienne s'arrête à sa prochaine écriture.
-- **Le grand livre** : chaque geste écrit ses mouvements (ce qu'on paie pour l'île, le péage). Les ventes des fils, qui se comptent par tranches de dix minutes, s'écrivent **regroupées par Maison et par heure jouée** (« les fils de Ca' Morosini ont vendu pour 12 300 ducats entre 14 h et 15 h »). Au chargement, l'invariant est vérifié : ce que tiennent les caisses, plus ce qui a été détruit et dépensé, égale ce qui a été frappé, et égale la somme du grand livre.
+- **Le grand livre** : chaque geste écrit ses mouvements (ce qu'on paie pour l'île, le péage). Les ventes des fils, qui se comptent par tranches de dix minutes, s'écrivent **regroupées par Maison à chaque écriture** (un geste, un instantané, et au moins toutes les dix minutes) (« les fils de Ca' Morosini ont vendu pour 12 300 ducats entre 14 h et 15 h »). Au chargement, l'invariant est vérifié : ce que tiennent les caisses, plus ce qui a été détruit et dépensé, égale ce qui a été frappé, et égale la somme du grand livre.
 - **La table des places** : `planche_seats` (le monde, la Maison, le compte, la date d'arrivée). Nouvelle table : `schema.ts` puis migration générée.
 - **Le temps réel** : le hub de l'ancien jeu (`live.ts`, WebSocket) prévient chaque joueur quand sa planche change, au lieu de l'interroger toutes les deux secondes.
 - **Les invités** : la planche ne les accepte plus. Le laboratoire local (`?lab=planche&seul`) reste, pour le développement et les essais.
@@ -73,7 +73,7 @@ Les planches de 48 Maisons et les sestieri (étape 2), le Prestige et les niveau
 | Lot | État |
 | --- | --- |
 | C1 | fait : le hub de la planche joue des commandes (`PlancheCommand` : prendre une place, la rendre, tirer, reprendre, péage, île, passage forcé), écrites au journal avant la réponse ; `apps/server/src/game/plancheStore.ts` tient la planche dans `worlds` (statut `planche`, à part des mondes du jeu), son instantané dans `world_states`, ses commandes dans `world_commands`, la relève au déploiement ; instantané à l'arrêt ; l'horloge de la planche reprend où elle s'était arrêtée. 5 tests (rechargement par le journal seul, par instantané et journal, à l'arrêt, relève entre deux instances). Essai réel : un fil tiré survit à un redémarrage normal et à un arrêt brutal (`kill -9`). |
-| C2 | à faire |
+| C2 | fait : chaque Maison tient son livre dans le moteur (ventes, péages payés et reçus, île), 1 test ; chaque écriture (geste, instantané, et toutes les dix minutes) porte au grand livre ce qui a bougé depuis la précédente, en partie double (`planche:towns`, `planche:tolls`, `planche:burnt`, `planche:isle`, `planche:mint`, `house:<id>`), dans la même transaction ; 3 tests : après une semaine la somme du grand livre égale chaque caisse au denier près, rien n'est écrit deux fois quand un geste et un instantané se croisent, ni après un redémarrage |
 | C3 | à faire |
 | C4 | à faire |
 | C5 | à faire |

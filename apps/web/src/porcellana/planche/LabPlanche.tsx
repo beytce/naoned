@@ -90,6 +90,12 @@ function revive(raw: PlancheState): PlancheState {
       ...h,
       ducats: big(h.ducats),
       earned: big(h.earned),
+      book: {
+        sold: big(h.book?.sold),
+        tollPaid: big(h.book?.tollPaid),
+        tollIn: big(h.book?.tollIn),
+        isle: big(h.book?.isle),
+      },
       rank: {
         ...h.rank,
         earned: big(h.rank?.earned),

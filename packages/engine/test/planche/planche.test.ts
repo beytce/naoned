@@ -418,3 +418,30 @@ describe("the shares of a town's demand", () => {
     expect(plancheShares(S, s, "raguse", "verre", T0 + 2 * DAY).houses).toEqual([]);
   });
 });
+
+// Each purse explained (docs/plan-compte.md C2): what the ledger will write, house by house.
+describe("the book of each house", () => {
+  it("explains every purse: start, sold, tolls paid and received, spent on the island", () => {
+    const S = setup({ startDucats: 5_000 });
+    let s = plancheInit(S, T0);
+    s = plancheForced(S, s, "ben", "segna", T0);
+    s = plancheForced(S, s, "ben", "segna", T0);
+    s = plancheToll(S, s, "ben", "segna", 1_500);
+    s = plancheThread(S, s, "ana", "raguse", "verre", T0);
+    s = plancheThread(S, s, "ana", "padoue", "verre", T0);
+    s = plancheThread(S, s, "ben", "padoue", "verre", T0);
+    s = plancheAdvance(S, s, T0 + 3 * DAY);
+    for (const id of ["ana", "ben"]) {
+      const h = s.houses[id];
+      if (!h) throw new Error(id);
+      const b = h.book;
+      expect(h.ducats).toBe(5_000n + b.sold - b.tollPaid + b.tollIn - b.isle);
+    }
+    expect(s.houses.ana?.book.tollPaid).toBeGreaterThan(0n);
+    expect(s.houses.ben?.book.tollIn).toBeGreaterThan(0n);
+    // What tolls destroy is what was paid less what was received.
+    const paid = (s.houses.ana?.book.tollPaid ?? 0n) + (s.houses.ben?.book.tollPaid ?? 0n);
+    const got = (s.houses.ana?.book.tollIn ?? 0n) + (s.houses.ben?.book.tollIn ?? 0n);
+    expect(paid - got).toBe(s.burnt);
+  });
+});

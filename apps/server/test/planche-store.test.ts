@@ -132,3 +132,64 @@ describe("the board kept in the base", () => {
     expect(v.state.houses[v.me ?? ""]?.threads).toHaveLength(1);
   });
 });
+
+// The ledger of the board (docs/plan-compte.md C2): every denier written, in double entry.
+describe("the ledger of the board", () => {
+  it("explains every purse to the denier after a week, and destroys nothing it does not say", async () => {
+    const store = await PlancheStore.open(database.db, plancheTheme(), T0, {
+      snapshotEveryVersions: 3,
+    });
+    const hub = store.hub;
+    const me = (await hub.view("ana", "Ana", T0)).me ?? "";
+    await hub.view("ben", "Ben", T0);
+    expect(await hub.build("ana", "sand_pit", "1,0", T0 + HOUR)).toBe("ok");
+    await hub.thread("ana", "rialto", "sand", T0 + 2 * HOUR);
+    for (let d = 1; d <= 7; d++) await hub.view("ben", "Ben", T0 + d * 24 * HOUR);
+    await store.snapshot();
+    const v = await hub.view("ana", "Ana", T0 + 7 * 24 * HOUR);
+    const balances = await store.balances();
+    for (const [id, h] of Object.entries(v.state.houses))
+      expect(balances[`house:${id}`]).toBe(h.ducats);
+    // Sales were written (the computer's houses trade too), and the island's cost.
+    expect(v.state.houses[me]?.book.isle).toBeGreaterThan(0n);
+    expect(balances["planche:towns"]).toBeLessThan(0n);
+    // Double entry: everything sums to nothing.
+    expect(Object.values(balances).reduce((a, b) => a + b, 0n)).toBe(0n);
+  });
+
+  it("writes each movement once, even when a gesture and a snapshot race", async () => {
+    const store = await PlancheStore.open(database.db, plancheTheme(), T0);
+    const hub = store.hub;
+    await hub.view("ana", "Ana", T0);
+    await hub.thread("ana", "rialto", "sand", T0 + HOUR);
+    await Promise.all([
+      store.snapshot(),
+      hub.view("ana", "Ana", T0 + 30 * HOUR),
+      hub.unthread("ana", "rialto", "sand", T0 + 30 * HOUR),
+      store.snapshot(),
+    ]);
+    await store.snapshot();
+    const v = await hub.view("ana", "Ana", T0 + 30 * HOUR);
+    const balances = await store.balances();
+    for (const [id, h] of Object.entries(v.state.houses))
+      expect(balances[`house:${id}`]).toBe(h.ducats);
+  });
+
+  it("goes on from where it stopped after a restart, without writing anything twice", async () => {
+    const first = await PlancheStore.open(database.db, plancheTheme(), T0, {
+      snapshotEveryVersions: 1_000,
+      snapshotEveryMs: Number.POSITIVE_INFINITY,
+    });
+    await first.hub.view("ana", "Ana", T0);
+    await first.hub.thread("ana", "rialto", "sand", T0 + HOUR);
+    await first.hub.view("ben", "Ben", T0 + 20 * HOUR);
+    const second = await PlancheStore.open(database.db, plancheTheme(), T0 + 20 * HOUR);
+    await second.hub.view("ana", "Ana", T0 + 40 * HOUR);
+    await second.hub.thread("ana", "padoue", "sand", T0 + 41 * HOUR);
+    await second.snapshot();
+    const v = await second.hub.view("ana", "Ana", T0 + 41 * HOUR);
+    const balances = await second.balances();
+    for (const [id, h] of Object.entries(v.state.houses))
+      expect(balances[`house:${id}`]).toBe(h.ducats);
+  });
+});

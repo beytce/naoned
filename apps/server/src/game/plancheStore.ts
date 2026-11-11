@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, gt, lte, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { worldCommands, worldStates, worlds } from "../db/schema.js";
+import { ledgerEntries, worldCommands, worldStates, worlds } from "../db/schema.js";
 import {
   type PlancheCommand,
   type PlancheDoc,
@@ -24,6 +24,70 @@ export class PlancheLost extends Error {
   }
 }
 
+/** What the ledger already holds, house by house: the books as they were at the last write. */
+interface Booked {
+  houses: Record<string, { sold: bigint; tollPaid: bigint; tollIn: bigint; isle: bigint }>;
+  burnt: bigint;
+}
+
+/**
+ * The ledger's accounts of a board: each house, the towns that pay, the tolls on their way, what
+ * tolls destroy, the islands' builders, and the mint of the starting purses.
+ */
+export const PLANCHE_ACCOUNTS = {
+  towns: "planche:towns",
+  tolls: "planche:tolls",
+  burnt: "planche:burnt",
+  isle: "planche:isle",
+  mint: "planche:mint",
+} as const;
+const houseAccount = (id: string) => `house:${id}`;
+
+type LedgerRow = { from: string; to: string; amount: bigint; reason: string };
+
+/**
+ * What moved since the ledger was last written (docs/plan-compte.md C2): sales, tolls, what tolls
+ * destroyed, the islands' costs, and the starting purse of a house written for the first time.
+ * Grouped by house and by write: the board counts by the ten minutes, the ledger by the gesture.
+ */
+function ledgerSince(
+  doc: PlancheDoc,
+  booked: Booked,
+  startDucats: bigint,
+): { rows: LedgerRow[]; next: Booked } {
+  const rows: LedgerRow[] = [];
+  const next: Booked = { houses: { ...booked.houses }, burnt: doc.state.burnt };
+  const A = PLANCHE_ACCOUNTS;
+  for (const [id, h] of Object.entries(doc.state.houses)) {
+    const was = booked.houses[id];
+    const me = houseAccount(id);
+    if (!was && startDucats > 0n)
+      rows.push({ from: A.mint, to: me, amount: startDucats, reason: "planche_start" });
+    const b = was ?? { sold: 0n, tollPaid: 0n, tollIn: 0n, isle: 0n };
+    const d = (k: keyof typeof b) => h.book[k] - b[k];
+    if (d("sold") > 0n)
+      rows.push({ from: A.towns, to: me, amount: d("sold"), reason: "planche_sale" });
+    if (d("tollPaid") > 0n)
+      rows.push({ from: me, to: A.tolls, amount: d("tollPaid"), reason: "planche_toll" });
+    if (d("tollIn") > 0n)
+      rows.push({ from: A.tolls, to: me, amount: d("tollIn"), reason: "planche_toll" });
+    if (d("isle") > 0n)
+      rows.push({ from: me, to: A.isle, amount: d("isle"), reason: "planche_isle" });
+    next.houses[id] = { ...h.book };
+  }
+  const burnt = doc.state.burnt - booked.burnt;
+  if (burnt > 0n)
+    rows.push({ from: A.tolls, to: A.burnt, amount: burnt, reason: "planche_toll_burnt" });
+  return { rows, next };
+}
+
+const bookOf = (doc: PlancheDoc): Booked => ({
+  houses: Object.fromEntries(
+    Object.entries(doc.state.houses).map(([id, h]) => [id, { ...h.book }]),
+  ),
+  burnt: doc.state.burnt,
+});
+
 export interface PlancheStoreOptions {
   /** This server instance, owner of the board while it runs. */
   instance?: string;
@@ -45,6 +109,11 @@ export class PlancheStore implements PlancheJournal {
   private snapshotVersion: number;
   private snapshotAt: number;
   private readonly clock: () => number;
+  /** What the ledger holds; changed only inside a write. */
+  private booked: Booked;
+  /** One write after the other: two at once would write the same movement twice. */
+  private lock: Promise<unknown> = Promise.resolve();
+  private timer: NodeJS.Timeout | undefined;
 
   private constructor(
     private readonly db: Db,
@@ -52,7 +121,10 @@ export class PlancheStore implements PlancheJournal {
     private readonly instance: string,
     snapshotVersion: number,
     private readonly options: PlancheStoreOptions,
+    booked: Booked,
+    private readonly startDucats: bigint,
   ) {
+    this.booked = booked;
     this.snapshotVersion = snapshotVersion;
     this.clock = options.clock ?? Date.now;
     this.snapshotAt = this.clock();
@@ -102,8 +174,12 @@ export class PlancheStore implements PlancheJournal {
     let doc: PlancheDoc;
     let version: number;
     let snapshotVersion: number;
+    let booked: Booked = { houses: {}, burnt: 0n };
     if (saved) {
-      doc = decode<PlancheDoc>(saved.state);
+      const kept = decode<PlancheDoc & { booked?: Booked }>(saved.state);
+      const { booked: was, ...rest } = kept;
+      doc = rest;
+      if (was) booked = was;
       version = saved.version;
       snapshotVersion = saved.version;
       const rows = await db
@@ -120,6 +196,8 @@ export class PlancheStore implements PlancheJournal {
         }
         version = r.version;
       }
+      // Each command saved wrote the ledger up to itself: it holds the books as they replay.
+      if (version > saved.version) booked = bookOf(doc);
     } else {
       doc = plancheDocInit(theme, now);
       version = 0;
@@ -128,49 +206,116 @@ export class PlancheStore implements PlancheJournal {
         .insert(worldStates)
         .values({ worldId, version: 0, state: encode(doc), owner: instance });
     }
-    const store = new PlancheStore(db, worldId, instance, snapshotVersion, options);
+    const store = new PlancheStore(
+      db,
+      worldId,
+      instance,
+      snapshotVersion,
+      options,
+      booked,
+      BigInt(theme.board.rules.startDucats),
+    );
     store.hub = new PlancheHub(theme, now, { doc, version }, store);
-    if (version > snapshotVersion) await store.snapshot();
+    if (version > snapshotVersion || !saved) await store.snapshot();
     return store;
   }
 
+  private locked<T>(f: () => Promise<T>): Promise<T> {
+    const next = this.lock.then(f, f);
+    this.lock = next.catch(() => undefined);
+    return next;
+  }
+
   /** A command, written as the next version while this instance still owns the board. */
-  async save(command: PlancheCommand, doc: PlancheDoc, version: number): Promise<void> {
-    const due =
-      this.clock() - this.snapshotAt >= (this.options.snapshotEveryMs ?? 60_000) ||
-      version - this.snapshotVersion >= (this.options.snapshotEveryVersions ?? 200);
-    await this.db.transaction(async (tx) => {
-      const inserted = rowsOf(
-        await tx.execute(sql`
-          insert into world_commands (world_id, version, at, commands)
-          select ${this.worldId}, ${version}, ${command.t}, ${JSON.stringify(encode([command]))}::jsonb
-          where exists (
-            select 1 from world_states where world_id = ${this.worldId} and owner = ${this.instance}
-          )
-          on conflict do nothing
-          returning version`),
-      );
-      if (inserted.length !== 1) throw new PlancheLost();
-      if (due) await this.write(tx, doc, version);
+  save(command: PlancheCommand, doc: PlancheDoc, version: number): Promise<void> {
+    return this.locked(async () => {
+      const due =
+        this.clock() - this.snapshotAt >= (this.options.snapshotEveryMs ?? 60_000) ||
+        version - this.snapshotVersion >= (this.options.snapshotEveryVersions ?? 200);
+      const { rows, next } = ledgerSince(doc, this.booked, this.startDucats);
+      await this.db.transaction(async (tx) => {
+        const inserted = rowsOf(
+          await tx.execute(sql`
+            insert into world_commands (world_id, version, at, commands)
+            select ${this.worldId}, ${version}, ${command.t}, ${JSON.stringify(encode([command]))}::jsonb
+            where exists (
+              select 1 from world_states where world_id = ${this.worldId} and owner = ${this.instance}
+            )
+            on conflict do nothing
+            returning version`),
+        );
+        if (inserted.length !== 1) throw new PlancheLost();
+        await this.ledger(tx, rows, command.t);
+        if (due) await this.write(tx, doc, version, next);
+      });
+      this.booked = next;
+      if (due) {
+        this.snapshotVersion = version;
+        this.snapshotAt = this.clock();
+      }
     });
-    if (due) {
+  }
+
+  /** The whole board now (on shutdown, or now and then): the ledger brought up to it too. */
+  snapshot(): Promise<void> {
+    return this.locked(async () => {
+      const { doc, version } = this.hub.current();
+      const { rows, next } = ledgerSince(doc, this.booked, this.startDucats);
+      await this.db.transaction(async (tx) => {
+        await this.ledger(tx, rows, doc.state.now);
+        await this.write(tx, doc, version, next);
+      });
+      this.booked = next;
       this.snapshotVersion = version;
       this.snapshotAt = this.clock();
+    });
+  }
+
+  /** A snapshot every `everyMs`: the ledger follows the board even when no one acts. */
+  start(everyMs = 10 * 60_000): void {
+    this.stop();
+    this.timer = setInterval(() => void this.snapshot().catch(console.error), everyMs);
+    this.timer.unref?.();
+  }
+
+  stop(): void {
+    if (this.timer) clearInterval(this.timer);
+    this.timer = undefined;
+  }
+
+  /** Each account's balance in the ledger of this board (what comes in, less what goes out). */
+  async balances(): Promise<Record<string, bigint>> {
+    const rows = await this.db
+      .select()
+      .from(ledgerEntries)
+      .where(eq(ledgerEntries.worldId, this.worldId));
+    const out: Record<string, bigint> = {};
+    for (const r of rows) {
+      out[r.toAccount] = (out[r.toAccount] ?? 0n) + r.amount;
+      out[r.fromAccount] = (out[r.fromAccount] ?? 0n) - r.amount;
     }
+    return out;
   }
 
-  /** The whole board now (on shutdown, or when a snapshot is due): nothing left to replay. */
-  async snapshot(): Promise<void> {
-    const { doc, version } = this.hub.current();
-    await this.db.transaction((tx) => this.write(tx, doc, version));
-    this.snapshotVersion = version;
-    this.snapshotAt = this.clock();
+  private async ledger(tx: Db, rows: LedgerRow[], at: number): Promise<void> {
+    if (!rows.length) return;
+    await tx.insert(ledgerEntries).values(
+      rows.map((r) => ({
+        worldId: this.worldId,
+        fromAccount: r.from,
+        toAccount: r.to,
+        amount: r.amount,
+        reason: r.reason,
+        ref: null,
+        at: new Date(at),
+      })),
+    );
   }
 
-  private async write(tx: Db, doc: PlancheDoc, version: number): Promise<void> {
+  private async write(tx: Db, doc: PlancheDoc, version: number, booked: Booked): Promise<void> {
     const written = await tx
       .update(worldStates)
-      .set({ state: encode(doc), version, updatedAt: new Date() })
+      .set({ state: encode({ ...doc, booked }), version, updatedAt: new Date() })
       .where(and(eq(worldStates.worldId, this.worldId), eq(worldStates.owner, this.instance)))
       .returning({ version: worldStates.version });
     if (written.length !== 1) throw new PlancheLost();

@@ -58,6 +58,8 @@ world.onEffects((fx, now) => void notifier.fromEffects(fx, now).catch(console.er
 world.onSeasonOpened((closed) => void notifier.seasonOpened(closed).catch(console.error));
 // The shared board, kept in the base: a deploy or a restart loses nothing (docs/plan-compte.md).
 const planche = await PlancheStore.open(database.db, plancheTheme(), clock());
+// Its ledger follows it every ten minutes, even when no one plays (docs/plan-compte.md C2).
+planche.start();
 const here = dirname(fileURLToPath(import.meta.url));
 const app = await buildApp({
   db: database.db,
@@ -83,6 +85,7 @@ const shutdown = async () => {
   await app.close();
   // The next start replays nothing (a lost world writes nothing).
   await world.snapshot().catch(console.error);
+  planche.stop();
   await planche.snapshot().catch(console.error);
   await database.close();
   process.exit(0);
