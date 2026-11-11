@@ -209,7 +209,7 @@ export function ileMove(R: IleRules, s: IleState, from: string, to: string, now:
   if (!dest) return fail("ile_not_owned");
   if (dest.building) return fail("ile_taken");
   const tiles = cloneTiles(s.tiles);
-  delete (tiles[from] as IleTile).building;
+  tiles[from] = { terrain: (tiles[from] as IleTile).terrain };
   (tiles[to] as IleTile).building = {
     type: b.type,
     level: b.level,
@@ -274,4 +274,50 @@ export function ileSlice(
     }
   }
   return s;
+}
+
+/**
+ * What the island makes and uses of each good an hour at its present rates, every workshop running
+ * (for display, and for a house of the computer to weigh its threads).
+ */
+export function ileFlows(
+  R: IleRules,
+  s: IleState,
+  now: number,
+): { made: Record<string, number>; used: Record<string, number> } {
+  const made: Record<string, number> = {};
+  const used: Record<string, number> = {};
+  for (const [k, t] of Object.entries(s.tiles)) {
+    const b = t.building;
+    const w = b ? workshopOf(R, b.type) : undefined;
+    if (!b || !w || b.readyAt > now) continue;
+    const level = R.levelYieldBps[b.level - 1] ?? BPS;
+    const lots = (w.lotsPerHour * level * (BPS + ileBonusBps(R, s, b.type, k))) / (BPS * BPS);
+    for (const [g, n] of Object.entries(w.outputs)) made[g] = (made[g] ?? 0) + n * lots;
+    for (const [g, n] of Object.entries(w.inputs)) used[g] = (used[g] ?? 0) + n * lots;
+  }
+  return { made, used };
+}
+
+/** A tile's terrain drawn from a seed and the weights of a soil, the same at every call. */
+export function ileGround(
+  seed: number,
+  soil: Partial<Record<IleTerrain, number>>,
+): (x: number, y: number) => IleTerrain {
+  const weights = ILE_TERRAINS.map((t) => [t, Math.max(0, soil[t] ?? 0)] as const).filter(
+    ([, w]) => w > 0,
+  );
+  const total = weights.reduce((n, [, w]) => n + w, 0);
+  return (x, y) => {
+    if (!total) return "pre";
+    let h = (seed ^ Math.imul(x + 1_000, 73_856_093) ^ Math.imul(y + 1_000, 19_349_663)) >>> 0;
+    h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0;
+    h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0;
+    let pick = ((h ^ (h >>> 16)) >>> 0) % total;
+    for (const [t, w] of weights) {
+      if (pick < w) return t;
+      pick -= w;
+    }
+    return weights[0]?.[0] ?? "pre";
+  };
 }

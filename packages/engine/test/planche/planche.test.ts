@@ -3,6 +3,8 @@ import {
   type PlancheSetup,
   type PlancheState,
   plancheAdvance,
+  plancheBuild,
+  plancheBuyTile,
   plancheForced,
   plancheFreeBobbins,
   plancheInit,
@@ -10,9 +12,11 @@ import {
   planchePrice,
   plancheRobot,
   plancheRouteOpen,
+  plancheSupply,
   plancheThread,
   plancheToll,
   plancheUnthread,
+  plancheUpgrade,
 } from "../../src/index.js";
 
 const HOUR = 3_600_000;
@@ -258,6 +262,115 @@ describe("a house held by the computer", () => {
     s = plancheAdvance(S, s, T0 + DAY);
     s = plancheRobot(S, s, "ben", T0 + DAY);
     expect(s.houses.ben?.threads.map((t) => t.to)).toEqual(["padoue"]);
+    expect(plancheInvariant(s)).toBe(true);
+  });
+});
+
+/** The board of the fixture with islands: a camp and a sawmill, a town that wants planks. */
+function withIsles(): PlancheSetup {
+  const S = setup({ startDucats: 10_000, startStock: 0 });
+  S.goods = { bois: "Bois", planches: "Planches" };
+  for (const h of S.houses) {
+    h.makes = {};
+    h.soil = { foret: 1, rive: 1 };
+    h.plan = ["camp", "scierie"];
+  }
+  const padoue = S.cities[0];
+  if (padoue)
+    padoue.wants = { planches: { price: 1_000, floorBps: 3_000, cap: 100, regenPerHour: 5 } };
+  S.ile = {
+    maxTiles: 9,
+    startTiles: ["0,0", "1,0", "0,1", "1,1"],
+    tileCost: { base: 1_000, growthBps: 5_000 },
+    levelYieldBps: [10_000, 18_000, 26_000],
+    bonus: { terrainBps: 5_000, supplierBps: 2_000, nuisanceBps: -2_000 },
+    workshops: {
+      camp: {
+        name: "Camp",
+        tier: 1,
+        terrain: "foret",
+        inputs: {},
+        outputs: { bois: 10 },
+        lotsPerHour: 1,
+        cost: [2_000, 8_000, 20_000],
+        buildMs: [10 * 60_000, HOUR, 4 * HOUR],
+      },
+      scierie: {
+        name: "Scierie",
+        tier: 2,
+        terrain: "rive",
+        inputs: { bois: 10 },
+        outputs: { planches: 5 },
+        lotsPerHour: 1,
+        cost: [3_000, 9_000, 25_000],
+        buildMs: [10 * 60_000, HOUR, 4 * HOUR],
+      },
+    },
+  };
+  return S;
+}
+
+describe("the island on the board", () => {
+  it("gives each house its island: four tiles, the Fondaco, terrains of its soil only", () => {
+    const S = withIsles();
+    const s = plancheInit(S, T0);
+    const ile = s.houses.ana?.ile;
+    expect(Object.keys(ile?.tiles ?? {})).toHaveLength(4);
+    expect(ile?.tiles["0,0"]?.building?.type).toBe("fondaco");
+    for (const t of Object.values(ile?.tiles ?? {})) expect(["foret", "rive"]).toContain(t.terrain);
+    // the same house gets the same island every time
+    expect(plancheInit(S, T0).houses.ana?.ile).toEqual(ile);
+  });
+
+  it("pays for a workshop from the purse, and refuses what the purse cannot pay", () => {
+    const S = withIsles();
+    let s = plancheInit(S, T0);
+    s = plancheBuild(S, s, "ana", "camp", "1,0", T0);
+    expect(ducats(s, "ana")).toBe(8_000n);
+    expect(s.spent).toBe(2_000n);
+    expect(plancheInvariant(s)).toBe(true);
+    s = plancheBuyTile(S, s, "ana", "2,0", T0);
+    expect(ducats(s, "ana")).toBe(7_000n);
+    // raising the camp costs 8 000: more than the purse holds
+    expect(() => plancheUpgrade(S, s, "ana", "1,0", T0 + HOUR)).toThrow("planche_poor");
+    expect(ducats(s, "ana")).toBe(7_000n);
+  });
+
+  it("makes its goods on the island, and the threads sell them", () => {
+    const S = withIsles();
+    let s = plancheInit(S, T0);
+    s = plancheBuild(S, s, "ana", "camp", "1,0", T0);
+    s = plancheBuild(S, s, "ana", "scierie", "0,1", T0);
+    s = plancheThread(S, s, "ana", "padoue", "planches", T0);
+    s = plancheAdvance(S, s, T0 + 12 * HOUR);
+    expect(s.houses.ana?.delivered).toBeGreaterThan(0);
+    expect(s.houses.ana?.earned).toBeGreaterThan(0n);
+    expect(plancheInvariant(s)).toBe(true);
+  });
+
+  it("tells what a house has to sell of a good, an hour, net of what its island uses", () => {
+    const S = withIsles();
+    let s = plancheInit(S, T0);
+    s = plancheBuild(S, s, "ana", "camp", "1,0", T0);
+    const rates = plancheSupply(S, s, "ana", T0 + HOUR);
+    expect(rates.bois).toBeGreaterThan(0);
+    s = plancheBuild(S, s, "ana", "scierie", "0,1", T0);
+    const after = plancheSupply(S, s, "ana", T0 + HOUR);
+    expect(after.planches).toBeGreaterThan(0);
+    expect(after.bois ?? 0).toBeLessThan(rates.bois ?? 0);
+  });
+
+  it("lets a house of the computer build its island by its plan, then sell", () => {
+    const S = withIsles();
+    let s = plancheInit(S, T0);
+    for (let h = 0; h < 48; h += 8) {
+      s = plancheAdvance(S, s, T0 + h * HOUR);
+      s = plancheRobot(S, s, "ben", T0 + h * HOUR);
+    }
+    const types = Object.values(s.houses.ben?.ile?.tiles ?? {}).map((t) => t.building?.type);
+    expect(types).toContain("camp");
+    expect(types).toContain("scierie");
+    expect(s.houses.ben?.threads.length).toBeGreaterThan(0);
     expect(plancheInvariant(s)).toBe(true);
   });
 });

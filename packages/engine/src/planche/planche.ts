@@ -11,6 +11,20 @@
  * exactly, never rounded away.
  */
 
+import {
+  type IleRules,
+  type IleState,
+  type IleTerrain,
+  ileBuild,
+  ileBuyTile,
+  ileFlows,
+  ileGround,
+  ileInit,
+  ileMove,
+  ileSlice,
+  ileUpgrade,
+} from "../ile/ile.js";
+
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 const BPS = 10_000;
@@ -55,8 +69,12 @@ export interface PlancheHouseSetup {
   robot: boolean;
   x: number;
   y: number;
-  /** What its island makes, units an hour (the island's own game comes later). */
+  /** What it makes, units an hour, when the board has no islands. */
   makes: Record<string, number>;
+  /** Its island's soil: how often each terrain comes up (with islands). */
+  soil?: Partial<Record<IleTerrain, number>>;
+  /** What a house of the computer builds, in order (with islands). */
+  plan?: string[];
 }
 
 /** A world's board and its rules, as `worlds.settings` would give them. */
@@ -68,6 +86,8 @@ export interface PlancheSetup {
   houses: PlancheHouseSetup[];
   cities: PlancheCity[];
   passages: PlanchePassage[];
+  /** The islands' rules: with them, a house makes what its island makes, and pays to build it. */
+  ile?: IleRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -110,6 +130,8 @@ export interface PlancheHouse {
   /** Units it delivered, and what its threads earned (the tide's score). */
   delivered: number;
   earned: bigint;
+  /** Its island, when the board has islands. */
+  ile?: IleState;
 }
 
 export interface PlancheState {
@@ -121,6 +143,8 @@ export interface PlancheState {
   /** Every denier the towns paid, and every denier a toll destroyed. */
   minted: bigint;
   burnt: bigint;
+  /** Every denier spent on the islands. */
+  spent: bigint;
 }
 
 const fail = (code: string): never => {
@@ -131,6 +155,14 @@ const own = <T>(o: Record<string, T>, k: string): T | undefined =>
 const cityOf = (S: PlancheSetup, id: string) => S.cities.find((c) => c.id === id);
 const houseOf = (S: PlancheSetup, id: string) => S.houses.find((h) => h.id === id);
 export const plancheIsCorsair = (holder: string) => holder.startsWith("corsair:");
+
+/** The terrain of a house's island, drawn from its id and its soil. */
+export function plancheGround(S: PlancheSetup, house: string) {
+  const h = houseOf(S, house);
+  let seed = 2166136261;
+  for (const c of house) seed = Math.imul(seed ^ c.charCodeAt(0), 16777619) >>> 0;
+  return ileGround(seed, h?.soil ?? { pre: 1 });
+}
 
 export function plancheInit(S: PlancheSetup, now: number): PlancheState {
   const houses: Record<string, PlancheHouse> = {};
@@ -151,6 +183,7 @@ export function plancheInit(S: PlancheSetup, now: number): PlancheState {
       free: {},
       delivered: 0,
       earned: 0n,
+      ...(S.ile ? { ile: ileInit(S.ile, plancheGround(S, h.id)) } : {}),
     };
   }
   const gauges: PlancheState["gauges"] = {};
@@ -163,7 +196,7 @@ export function plancheInit(S: PlancheSetup, now: number): PlancheState {
   for (const p of S.passages)
     passages[p.id] = { holder: p.holder, tollBps: p.tollBps, seals: p.seals };
   const minted = BigInt(S.rules.startDucats) * BigInt(S.houses.length);
-  return { now, houses, gauges, passages, minted, burnt: 0n };
+  return { now, houses, gauges, passages, minted, burnt: 0n, spent: 0n };
 }
 
 const clone = (s: PlancheState): PlancheState => structuredClone(s);
@@ -172,7 +205,7 @@ const clone = (s: PlancheState): PlancheState => structuredClone(s);
 export function plancheInvariant(s: PlancheState): boolean {
   let held = 0n;
   for (const h of Object.values(s.houses)) held += h.ducats;
-  return held + s.burnt === s.minted;
+  return held + s.burnt + s.spent === s.minted;
 }
 
 /** What a town pays a unit of a good now: its full price, less as its demand is spent. */
@@ -223,6 +256,10 @@ function slice(S: PlancheSetup, s: PlancheState): void {
   for (const hs of S.houses) {
     const h = s.houses[hs.id];
     if (!h) continue;
+    if (S.ile && h.ile) {
+      ileSlice(S.ile, h.ile, h.stock, S.rules.store, ms, t);
+      continue;
+    }
     for (const [good, perHour] of Object.entries(hs.makes)) {
       const carry = (h.makeCarry[good] ?? 0) + perHour * ms;
       const made = Math.floor(carry / HOUR);
@@ -403,3 +440,72 @@ export function plancheToll(
   p.tollBps = Math.max(0, Math.min(S.rules.tollMaxBps, Math.floor(tollBps) || 0));
   return s;
 }
+
+/** What a house has to sell of each good an hour: its island's make, net of what it uses. */
+export function plancheSupply(
+  S: PlancheSetup,
+  s: PlancheState,
+  house: string,
+  now: number,
+): Record<string, number> {
+  const h = own(s.houses, house);
+  if (!h) return {};
+  if (!S.ile || !h.ile) return { ...(houseOf(S, house)?.makes ?? {}) };
+  const { made, used } = ileFlows(S.ile, h.ile, now);
+  const out: Record<string, number> = {};
+  for (const [g, n] of Object.entries(made)) {
+    const net = n - (used[g] ?? 0);
+    if (net > 0) out[g] = net;
+  }
+  return out;
+}
+
+/** A gesture on a house's island, paid from its purse; refused when the purse cannot pay. */
+function onIsle(
+  S: PlancheSetup,
+  s0: PlancheState,
+  house: string,
+  f: (R: IleRules, ile: IleState) => { ile: IleState; cost: bigint },
+): PlancheState {
+  const h0 = own(s0.houses, house);
+  if (!S.ile || !h0?.ile) return fail("planche_unknown");
+  const { ile, cost } = f(S.ile, h0.ile);
+  if (cost > h0.ducats) return fail("planche_poor");
+  const s = clone(s0);
+  const h = s.houses[house] as PlancheHouse;
+  h.ile = ile;
+  h.ducats -= cost;
+  s.spent += cost;
+  return s;
+}
+
+export const plancheBuyTile = (
+  S: PlancheSetup,
+  s: PlancheState,
+  house: string,
+  at: string,
+  _now: number,
+) => onIsle(S, s, house, (R, ile) => ileBuyTile(R, ile, at, plancheGround(S, house)));
+export const plancheBuild = (
+  S: PlancheSetup,
+  s: PlancheState,
+  house: string,
+  type: string,
+  at: string,
+  now: number,
+) => onIsle(S, s, house, (R, ile) => ileBuild(R, ile, type, at, now));
+export const plancheUpgrade = (
+  S: PlancheSetup,
+  s: PlancheState,
+  house: string,
+  at: string,
+  now: number,
+) => onIsle(S, s, house, (R, ile) => ileUpgrade(R, ile, at, now));
+export const plancheMove = (
+  S: PlancheSetup,
+  s: PlancheState,
+  house: string,
+  from: string,
+  to: string,
+  now: number,
+) => onIsle(S, s, house, (R, ile) => ({ ile: ileMove(R, ile, from, to, now), cost: 0n }));
