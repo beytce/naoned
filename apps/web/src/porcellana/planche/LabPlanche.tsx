@@ -9,22 +9,28 @@ import "./planche.css";
 import {
   type PlancheState,
   plancheAdvance,
+  plancheBuild,
+  plancheBuyTile,
   plancheForced,
   plancheFreeBobbins,
   plancheInit,
   plancheIsCorsair,
+  plancheMove,
   planchePatina,
   planchePrice,
   plancheRobot,
   plancheRouteOpen,
+  plancheSupply,
   plancheThread,
   plancheToll,
   plancheUnthread,
+  plancheUpgrade,
   venice1450Planche,
 } from "@comptoirs/engine";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { OrthographicCamera } from "three";
+import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
 
 const LabPasse = lazy(() => import("../passe/LabPasse.js"));
@@ -74,7 +80,13 @@ function revive(raw: PlancheState): PlancheState {
   const houses: PlancheState["houses"] = {};
   for (const [id, h] of Object.entries(raw.houses))
     houses[id] = { ...h, ducats: big(h.ducats), earned: big(h.earned) };
-  return { ...raw, houses, minted: big(raw.minted), burnt: big(raw.burnt) };
+  return {
+    ...raw,
+    houses,
+    minted: big(raw.minted),
+    burnt: big(raw.burnt),
+    spent: big(raw.spent),
+  };
 }
 
 interface Online {
@@ -95,6 +107,7 @@ export default function LabPlanche() {
   const [said, setSaid] = useState("");
   const [news, setNews] = useState<News[]>([]);
   const [duel, setDuel] = useState<string | null>(null);
+  const [inIsle, setInIsle] = useState(false);
   const pins = useRef(new Map<string, HTMLElement>()).current;
   const seq = useRef(0);
   const tell = useCallback(
@@ -223,7 +236,6 @@ export default function LabPlanche() {
   });
 
   const me = state.houses[ME];
-  const mine = S.houses.find((h) => h.id === ME);
   const free = plancheFreeBobbins(S, state, ME);
   const rank = useMemo(() => {
     const order = S.houses
@@ -252,6 +264,49 @@ export default function LabPlanche() {
   const hour = new Date(state.now).getUTCHours();
   const phone = typeof window !== "undefined" && window.innerWidth < 640;
   const plain = phone || new URLSearchParams(window.location.search).has("simple");
+
+  // What one's island makes, or what lies in store: what a thread may carry.
+  const sells = new Set([
+    ...Object.keys(plancheSupply(S, state, ME, state.now)),
+    ...Object.entries(me?.stock ?? {})
+      .filter(([, n]) => n > 0)
+      .map(([g]) => g),
+  ]);
+
+  if (inIsle && ME && me?.ile) {
+    const gesture = (g: IleGesture): Promise<string> | string => {
+      if (online) {
+        if (g.kind === "buy") return call("/ile/buy", { at: g.at });
+        if (g.kind === "build") return call("/ile/build", { type: g.type, at: g.at });
+        if (g.kind === "upgrade") return call("/ile/upgrade", { at: g.at });
+        return call("/ile/move", { from: g.from, to: g.to });
+      }
+      try {
+        const now = state.now;
+        setState(
+          g.kind === "buy"
+            ? plancheBuyTile(S, state, ME, g.at, now)
+            : g.kind === "build"
+              ? plancheBuild(S, state, ME, g.type, g.at, now)
+              : g.kind === "upgrade"
+                ? plancheUpgrade(S, state, ME, g.at, now)
+                : plancheMove(S, state, ME, g.from, g.to, now),
+        );
+        return "ok";
+      } catch (e) {
+        return (e as Error).message;
+      }
+    };
+    return (
+      <IleScreen
+        setup={S}
+        state={state}
+        house={ME}
+        onGesture={gesture}
+        onBack={() => setInIsle(false)}
+      />
+    );
+  }
 
   if (duel) {
     const p = S.passages.find((q) => q.id === duel);
@@ -461,7 +516,7 @@ export default function LabPlanche() {
               const price = planchePrice(S, state, city.id, good);
               const left = state.gauges[city.id]?.[good]?.left ?? 0;
               const held = me?.threads.find((t) => t.to === city.id && t.good === good);
-              const makes = !!mine && good in mine.makes;
+              const makes = sells.has(good);
               const others = S.houses.filter(
                 (h) =>
                   h.id !== ME &&
@@ -577,9 +632,9 @@ export default function LabPlanche() {
             <h2>{house.id === ME ? "Ta Maison" : houseName(house.id, view?.names)}</h2>
             <p>
               {house.id === ME ? "Ton île fait" : "Son île fait"} :{" "}
-              {Object.entries(house.makes)
-                .map(([g, n]) => `${S.goods[g]?.toLowerCase()} (${n} par heure)`)
-                .join(", ")}
+              {Object.entries(plancheSupply(S, state, house.id, state.now))
+                .map(([g, n]) => `${S.goods[g]?.toLowerCase()} (${Math.round(n)} par heure)`)
+                .join(", ") || "rien encore"}
               .
               {(online ? !view?.players.includes(house.id) : house.robot)
                 ? " Maison tenue par l'ordinateur."
@@ -587,6 +642,20 @@ export default function LabPlanche() {
                   ? ""
                   : " Maison d'un joueur."}
             </p>
+            {house.id === ME && state.houses[ME]?.ile ? (
+              <button
+                type="button"
+                className="pc-passe-go"
+                data-enter-isle
+                onClick={() => {
+                  setChosen(null);
+                  setInIsle(true);
+                }}
+              >
+                Entrer dans ton île
+                <small>bâtir, améliorer, voir l'entrepôt</small>
+              </button>
+            ) : null}
             {house.id === ME ? (
               <p>
                 En entrepôt :{" "}

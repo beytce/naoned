@@ -154,13 +154,17 @@ export function PlancheBoard({
         b.scale.setScalar(h.id === me ? 0.62 : 0.5);
         return b;
       });
-    setup.cities.forEach((c, k) =>
+    // A town on the Rialto's tile is the Rialto itself: the market of Venice stands there.
+    setup.cities.forEach((c, k) => {
+      const rialto = c.x === land.rialto.x && c.y === land.rialto.y;
       put(`city:${c.id}`, { kind: "city", id: c.id }, c.x, c.y, () => {
+        if (rialto) return market(P).group;
         const size = c.via.length ? 3 : 2;
         return town(P, { seed: k * 7 + 3, running: false, size }).group;
-      }),
-    );
-    put("rialto", null, land.rialto.x, land.rialto.y, () => market(P).group);
+      });
+    });
+    if (!setup.cities.some((c) => c.x === land.rialto.x && c.y === land.rialto.y))
+      put("rialto", null, land.rialto.x, land.rialto.y, () => market(P).group);
     return { root, at };
   }, [setup, land, me]);
 

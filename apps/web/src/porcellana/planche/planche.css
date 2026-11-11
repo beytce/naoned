@@ -182,3 +182,52 @@
   font: 700 12px var(--pc-ui);
   color: var(--pc-ink-soft);
 }
+/* The island (docs/plan-ile.md I4). */
+.pc-ile-gain {
+  min-width: 52px;
+  text-align: center;
+}
+.pc-ile-gain[data-gain="up"] {
+  border-color: var(--pc-accent);
+  color: var(--pc-accent);
+  box-shadow: 0 2px 0 var(--pc-accent);
+}
+.pc-ile-gain[data-gain="down"] {
+  background: var(--pc-ink);
+  border-color: var(--pc-ink);
+  color: #fff;
+}
+.pc-ile-back {
+  min-height: 44px;
+  align-self: center;
+  pointer-events: auto;
+}
+.pc-ile-stock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  max-width: 260px;
+  font: 600 12px var(--pc-ui);
+  color: var(--pc-ink-soft);
+}
+.pc-ile-stock span {
+  background: var(--pc-paper);
+  border: 1px solid var(--pc-hair);
+  border-radius: 999px;
+  padding: 4px 9px;
+}
+.pc-ile-stock b {
+  color: var(--pc-ink);
+}
+.pc-planche-pin span {
+  display: block;
+  font: 600 10.5px var(--pc-ui);
+  color: var(--pc-ink-soft);
+}
+.pc-ile-plot {
+  background: transparent;
+  border-style: dashed;
+  color: var(--pc-ink-soft);
+  font-size: 11px;
+}
