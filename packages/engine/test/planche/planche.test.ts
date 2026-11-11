@@ -7,6 +7,7 @@ import {
   plancheFreeBobbins,
   plancheInit,
   plancheInvariant,
+  plancheRobot,
   planchePrice,
   plancheRouteOpen,
   plancheThread,
@@ -245,5 +246,18 @@ describe("the passages", () => {
     expect(plancheToll(S, s, "ana", "segna", 500).passages.segna?.tollBps).toBe(500);
     expect(plancheToll(S, s, "ana", "segna", 9_000).passages.segna?.tollBps).toBe(1_500);
     expect(() => plancheToll(S, s, "ben", "segna", 500)).toThrow("planche_not_holder");
+  });
+});
+
+describe("a house held by the computer", () => {
+  it("stretches its free bobbins where they bring most, and never back to the town it leaves", () => {
+    const S = setup({ bobbins: 1 });
+    let s = plancheRobot(S, plancheInit(S, T0), "ben", T0);
+    expect(s.houses.ben?.threads.map((t) => t.to)).toEqual(["padoue"]);
+    // a whole day later its thread is still there: Raguse is shut, Padoue is the only town it can serve
+    s = plancheAdvance(S, s, T0 + DAY);
+    s = plancheRobot(S, s, "ben", T0 + DAY);
+    expect(s.houses.ben?.threads.map((t) => t.to)).toEqual(["padoue"]);
+    expect(plancheInvariant(s)).toBe(true);
   });
 });

@@ -76,7 +76,8 @@ export function plancheRobot(
     .sort((a, b) => a.v - b.v);
   const worst = held[0];
   const best = options()[0];
-  if (worst && best && best.v * BPS > worst.v * (BPS + eager))
+  // Never to stretch it again to the town it leaves: that is churn, not a choice.
+  if (worst && best && best.city !== worst.t.to && best.v * BPS > worst.v * (BPS + eager))
     s = plancheUnthread(S, s, house, worst.t.to, worst.t.good, now);
   return s;
 }

@@ -57,6 +57,8 @@ if (!root) throw new Error("#root missing");
 const PorcellanaLab = lazy(() => import("./porcellana/Lab.js"));
 // The duel of the Passe (?lab=passe, docs/plan-passe.md P5).
 const PasseLab = lazy(() => import("./porcellana/passe/LabPasse.js"));
+// The shared board and its threads (?lab=planche, docs/plan-planche.md).
+const PlancheLab = lazy(() => import("./porcellana/planche/LabPlanche.js"));
 const labName = new URLSearchParams(window.location.search).get("lab");
 
 createRoot(root).render(
@@ -68,6 +70,10 @@ createRoot(root).render(
     ) : labName === "passe" ? (
       <Suspense fallback={null}>
         <PasseLab />
+      </Suspense>
+    ) : labName === "planche" ? (
+      <Suspense fallback={null}>
+        <PlancheLab />
       </Suspense>
     ) : (
       <App />

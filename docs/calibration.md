@@ -2981,3 +2981,74 @@ Décision du porteur du 9 novembre 2026 : la première Bataille classée du jour
 - **Une partie dure de 7 à 12 barges** par camp : deux minutes.
 
 **Limites.** 24 parties par case : à ±20 points près. L'adversaire ne voit que trois pièces d'avance, sur les douze meilleures cases : entre bons joueurs, l'équilibre peut différer. Une première série, sans ouverture tirée au sort, donnait des chiffres faux (jusqu'à 100 %) parce que les parties se répétaient ; elle est écartée. Le damier de 9 sur 9 n'est pas mesuré à la force 3 (trop lent pour l'instant).
+
+## La planche : les fils et la demande commune (11 novembre 2026, docs/plan-planche.md L3)
+
+*Prototype de l'étape 2 de CADRAGE-v4. Mesure : `pnpm --filter @comptoirs/simulator planche-bench 5`. Huit Maisons tenues par l'ordinateur (`packages/engine/src/planche/robot.ts`) sur la planche de Venise (`venice1450.planche.ts`), six semaines, trois visites par jour. L'issue d'une Passe n'est pas jouée ici : une Maison qui tente un passage de corsaire le force quatre fois sur dix.*
+
+### La planche de Venise : une marée de 6 semaines, 5 graines, trois visites par jour
+
+| Maison | Ce qu'elle fait | Gagné (milliers de deniers, médiane) | Fils déplacés par jour | Livré par jour |
+| --- | --- | --- | --- | --- |
+| Ta Maison | verre, planches | 21 634 | 2.38 | 389 |
+| Ca’ Contarini | verre, sel | 18 970 | 2.43 | 388 |
+| Ca’ Loredan | drap, planches | 22 885 | 2.69 | 403 |
+| Ca’ Morosini | sel, drap | 17 287 | 2.50 | 377 |
+| Ca’ Dandolo | planches, verre | 21 286 | 2.36 | 395 |
+| Ca’ Foscari | drap, sel | 20 343 | 2.45 | 390 |
+| Ca’ Grimani | sel, planches | 14 458 | 2.57 | 407 |
+| Ca’ Mocenigo | verre, drap | 23 938 | 2.10 | 342 |
+
+L'écart entre la Maison la plus riche et la plus pauvre : ×1.69 (médiane).
+Chaque denier est compté dans les 5 marées : oui.
+
+### Les passages à la fin de la marée
+
+| Passage | Tenu par (une ligne par graine) |
+| --- | --- |
+| Bouche de Chioggia | contarini · contarini · contarini · contarini · contarini |
+| Détroit de Segna | loredan · dandolo · loredan · morosini · dandolo |
+| Canal d’Otrante | loredan · foscari · toi · loredan · mocenigo |
+
+### Le prix payé dans chaque ville (part du plein prix, médiane des graines)
+
+| Ville | Marchandise | Plein prix | En moyenne sur la marée | Au plus bas |
+| --- | --- | --- | --- | --- |
+| Padoue | Verre | 900 | 85 % | 31 % |
+| Padoue | Drap | 1000 | 85 % | 31 % |
+| Padoue | Sel | 700 | 59 % | 31 % |
+| Trévise | Planches | 800 | 80 % | 31 % |
+| Trévise | Sel | 750 | 52 % | 31 % |
+| Trévise | Drap | 950 | 85 % | 31 % |
+| Vicence | Drap | 1150 | 71 % | 31 % |
+| Vicence | Verre | 1050 | 74 % | 30 % |
+| Vérone | Verre | 1500 | 54 % | 30 % |
+| Vérone | Planches | 1200 | 51 % | 31 % |
+| Vérone | Sel | 1100 | 38 % | 31 % |
+| Ferrare | Verre | 2200 | 40 % | 30 % |
+| Ferrare | Drap | 2400 | 39 % | 30 % |
+| Ferrare | Planches | 1900 | 33 % | 30 % |
+| Raguse | Verre | 4200 | 63 % | 50 % |
+| Raguse | Drap | 4600 | 63 % | 50 % |
+| Raguse | Sel | 3400 | 62 % | 50 % |
+| Alexandrie | Verre | 8000 | 65 % | 50 % |
+| Alexandrie | Planches | 7000 | 65 % | 50 % |
+| Alexandrie | Drap | 8500 | 65 % | 50 % |
+
+### Venir huit fois par jour rapporte-t-il plus que trois ?
+
+| Maison | Trois visites par jour | Huit visites par jour (elle seule) | Écart |
+| --- | --- | --- | --- |
+| Ta Maison | 21 634 | 24 236 | 12.0 % |
+| Ca’ Loredan | 22 885 | 25 412 | 11.0 % |
+| Ca’ Morosini | 17 287 | 17 686 | 2.3 % |
+
+**Lecture.**
+- **Les fils bougent** : chaque Maison en déplace deux à trois par jour. La demande commune oblige à retendre.
+- **Aucune Maison n'écrase les autres** : la plus riche gagne 1,7 fois la plus pauvre. Ce qu'une île fait (le sel paie moins que le verre) explique l'écart.
+- **Les villes proches se lassent** (un tiers du plein prix au plus bas) et se reposent ; les ports du Large tiennent mieux (la moitié au plus bas).
+- **Venir huit fois par jour rapporte au plus 12 % de plus que trois fois** : l'assidu gagne des occasions, pas un multiplicateur. Cible du cadrage tenue, à surveiller.
+- **Chaque denier est compté** dans toutes les marées.
+- **Les tours changent de main** : Segna et Otrante passent des corsaires aux Maisons au fil de la marée.
+
+**Limites.** Cinq graines. La patine ne pèse presque pas : les robots retendent trop souvent pour la garder. La production des îles est fixe (l'île viendra à l'étape 3).

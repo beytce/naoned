@@ -62,8 +62,17 @@ const cellName = (s: PasseState, i: number) =>
   `${COLS[i % s.width] ?? "?"}${Math.floor(i / s.width) + 1}`;
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
-export default function LabPasse() {
-  const [board, setBoard] = useState<BoardKey>("segna");
+/** A duel asked by the shared board: one passage, its captain, and what to do once it is over. */
+export interface PasseDuel {
+  board: string;
+  foe: string;
+  onEnd: (won: boolean) => void;
+}
+
+export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
+  const [board, setBoard] = useState<BoardKey>(
+    duel && duel.board in boards ? (duel.board as BoardKey) : "segna",
+  );
   const [seat, setSeat] = useState<Seat>("fil");
   const [depth, setDepth] = useState(3);
   const [style, setStyle] = useState<PasseStyle | "aucune">("aucune");
@@ -199,11 +208,13 @@ export default function LabPasse() {
   const left = room?.deadline
     ? Math.max(0, Math.ceil((room.deadline - net.serverNow()) / 1000))
     : 0;
-  const title = room
-    ? `${room.boardName} · salle ${room.code}`
-    : problem
-      ? `Le fil passe en ${problem.moves} coups`
-      : `${boards[board].name} · ${FORCES[depth - 1] ?? ""}`;
+  const title = duel
+    ? `${boards[board].name} · ${duel.foe}`
+    : room
+      ? `${room.boardName} · salle ${room.code}`
+      : problem
+        ? `Le fil passe en ${problem.moves} coups`
+        : `${boards[board].name} · ${FORCES[depth - 1] ?? ""}`;
   const turn = state.winner
     ? ""
     : room
@@ -353,6 +364,15 @@ export default function LabPasse() {
                     Quitter la salle
                   </button>
                 </>
+              ) : duel ? (
+                <button
+                  type="button"
+                  className="pc-passe-go"
+                  data-passe-back
+                  onClick={() => duel.onEnd(state.winner === 1)}
+                >
+                  Revenir à la planche
+                </button>
               ) : (
                 <button type="button" className="pc-passe-go" onClick={restart}>
                   {problem ? "Réessayer" : "Rejouer"}
@@ -395,22 +415,28 @@ export default function LabPasse() {
               <button type="button" className="pc-passe-quiet" onClick={net.leave}>
                 Quitter la salle
               </button>
+            ) : duel ? (
+              <button type="button" className="pc-passe-quiet" onClick={() => duel.onEnd(false)}>
+                Rompre
+              </button>
             ) : (
               <button type="button" className="pc-passe-quiet" onClick={restart}>
                 Recommencer
               </button>
             )}
-            <button
-              type="button"
-              className="pc-passe-quiet"
-              aria-expanded={open}
-              onClick={() => setOpen((o) => !o)}
-            >
-              Réglages
-            </button>
+            {duel ? null : (
+              <button
+                type="button"
+                className="pc-passe-quiet"
+                aria-expanded={open}
+                onClick={() => setOpen((o) => !o)}
+              >
+                Réglages
+              </button>
+            )}
           </div>
         )}
-        {over ? (
+        {over && !duel ? (
           <button
             type="button"
             className="pc-passe-quiet pc-passe-more"

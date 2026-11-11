@@ -1,0 +1,178 @@
+/* The laboratory of the shared board (docs/plan-planche.md): labels on the scene, cards of paper. */
+.pc-planche-pins {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.pc-planche-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  border: 1px solid var(--pc-hair);
+  background: var(--pc-paper);
+  color: var(--pc-ink);
+  border-radius: 10px;
+  padding: 4px 9px 5px;
+  min-width: 44px;
+  min-height: 30px;
+  font: 800 12px / 1.15 var(--pc-display);
+  white-space: nowrap;
+  cursor: pointer;
+  will-change: transform;
+}
+.pc-planche-pin b {
+  display: block;
+}
+.pc-planche-pin[data-mine="true"] {
+  border-color: var(--pc-accent);
+  box-shadow: 0 2px 0 var(--pc-accent);
+}
+.pc-planche-pin[data-shut="true"] {
+  opacity: 0.6;
+}
+.pc-planche-pin[data-dark="true"] {
+  background: var(--pc-ink);
+  border-color: var(--pc-ink);
+  color: #fff;
+}
+.pc-planche-house:not([data-mine="true"]) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--pc-ink-soft);
+  font-size: 11px;
+}
+.pc-planche-bars {
+  display: flex;
+  gap: 3px;
+  margin-top: 3px;
+}
+.pc-planche-bars i,
+.pc-planche-row i {
+  flex: 1;
+  height: 4px;
+  min-width: 12px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--pc-ink) var(--fill), var(--pc-hair) var(--fill));
+}
+.pc-planche-speed {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  pointer-events: auto;
+}
+.pc-planche-speed button {
+  border: 1px solid var(--pc-hair);
+  background: var(--pc-paper);
+  border-radius: 999px;
+  min-width: 44px;
+  min-height: 32px;
+  font: 800 12px var(--pc-display);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-planche-speed button[aria-pressed="true"] {
+  background: var(--pc-ink);
+  border-color: var(--pc-ink);
+  color: #fff;
+}
+.pc-planche .pc-passe-race small {
+  font-size: 12px;
+  color: var(--pc-ink-soft);
+}
+.pc-planche-card {
+  width: 100%;
+  max-width: 460px;
+  max-height: 46vh;
+  overflow: auto;
+  background: var(--pc-paper);
+  border: 1px solid var(--pc-hair);
+  border-radius: 18px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 14px 30px -18px rgba(23, 21, 15, 0.6);
+  touch-action: pan-y;
+}
+.pc-planche-card h2 {
+  margin: 0 0 6px;
+  font: 800 18px var(--pc-display);
+}
+.pc-planche-card p {
+  margin: 0 0 10px;
+  font: 500 13.5px / 1.45 var(--pc-ui);
+}
+.pc-planche-card .pc-planche-do {
+  color: var(--pc-accent);
+  font-weight: 700;
+}
+.pc-planche-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--pc-hair);
+}
+.pc-planche-row > div {
+  flex: 1;
+  min-width: 0;
+}
+.pc-planche-row b {
+  display: block;
+  font: 800 14px var(--pc-display);
+}
+.pc-planche-row span {
+  display: block;
+  font: 600 12px / 1.35 var(--pc-ui);
+  color: var(--pc-ink-soft);
+}
+.pc-planche-row i {
+  display: block;
+  margin-top: 5px;
+}
+.pc-planche-row button {
+  flex: none;
+  min-height: 44px;
+  padding: 4px 14px;
+  font-size: 13.5px;
+  line-height: 1.15;
+}
+.pc-planche-card button small,
+.pc-planche-row button small {
+  display: block;
+  font: 600 10.5px var(--pc-ui);
+  opacity: 0.8;
+}
+/* The thread of news: beads on a red thread, the latest last. */
+.pc-planche-news {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-left: 3px solid var(--pc-accent);
+  padding-left: 0;
+}
+.pc-planche-news button {
+  position: relative;
+  text-align: left;
+  border: 1px solid var(--pc-hair);
+  background: var(--pc-paper);
+  border-radius: 0 14px 14px 0;
+  margin-left: 12px;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: 700 13px / 1.35 var(--pc-ui);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-planche-news i {
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--pc-paper);
+  border: 3px solid var(--pc-accent);
+}
