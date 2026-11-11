@@ -31,6 +31,8 @@ export interface PlancheHubTheme {
     lieutenant: number;
   };
   visitHours: number;
+  /** Game hours without a read or a gesture after which a player's house goes back to the computer. */
+  idleHours: number;
 }
 
 export interface PlancheView {
@@ -43,6 +45,8 @@ export interface PlancheView {
   players: string[];
   /** Every denier accounted for. */
   ok: boolean;
+  /** When the board began, for its days to be counted. */
+  since: number;
 }
 
 export type PlancheAnswer = "ok" | "not_seated" | "duel_lost" | "duel_illegal" | string;
@@ -56,7 +60,7 @@ export type PlancheAnswer = "ok" | "not_seated" | "duel_lost" | "duel_illegal" |
  */
 export class PlancheHub {
   private state: PlancheState;
-  private readonly seats = new Map<string, { house: string; name: string }>();
+  private readonly seats = new Map<string, { house: string; name: string; seen: number }>();
   private readonly t0: number;
 
   constructor(
@@ -89,22 +93,26 @@ export class PlancheHub {
     this.state = plancheAdvance(S, s, now);
   }
 
-  private seat(player: string, name: string): string | null {
+  private seat(player: string, name: string, now: number): string | null {
     const had = this.seats.get(player);
     if (had) {
       had.name = name;
+      had.seen = now;
       return had.house;
     }
+    // A house left too long goes back to the computer (its threads and its purse stay with it).
+    const idle = this.theme.idleHours * HOUR;
+    for (const [id, seat] of this.seats) if (now - seat.seen > idle) this.seats.delete(id);
     const held = this.held();
     const free = this.theme.board.houses.find((h) => !held.has(h.id));
     if (!free) return null;
-    this.seats.set(player, { house: free.id, name });
+    this.seats.set(player, { house: free.id, name, seen: now });
     return free.id;
   }
 
   view(player: string, name: string, now: number): PlancheView {
     this.advance(now);
-    const me = this.seat(player, name);
+    const me = this.seat(player, name, now);
     const names: Record<string, string> = {};
     for (const h of this.theme.board.houses) names[h.id] = h.name;
     for (const s of this.seats.values()) names[s.house] = s.name;
@@ -114,6 +122,7 @@ export class PlancheHub {
       names,
       players: this.theme.board.houses.map((h) => h.id).filter((id) => this.held().has(id)),
       ok: plancheInvariant(this.state),
+      since: this.t0,
     };
   }
 
@@ -122,6 +131,7 @@ export class PlancheHub {
     this.advance(now);
     const seat = this.seats.get(player);
     if (!seat) return "not_seated";
+    seat.seen = now;
     try {
       this.state = f(seat.house);
       return "ok";

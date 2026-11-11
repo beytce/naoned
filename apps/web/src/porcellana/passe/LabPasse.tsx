@@ -66,7 +66,8 @@ const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : 
 export interface PasseDuel {
   board: string;
   foe: string;
-  onEnd: (won: boolean) => void;
+  /** Won or not, and the thread's own pieces, for the server to replay the duel. */
+  onEnd: (won: boolean, moves: PasseMove[]) => void;
 }
 
 export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
@@ -86,6 +87,8 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
   const [said, setSaid] = useState("");
   const [thinking, setThinking] = useState(false);
   const game = useRef(0);
+  /** The pieces the person at the screen laid, in order (a duel of the board is replayed by the server). */
+  const laid = useRef<PasseMove[]>([]);
   // A duel on line (P6): the server holds the game; its state replaces ours at each read.
   const net = usePasseRoom();
   const room = net.room;
@@ -113,6 +116,7 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
 
   const restart = useCallback(() => {
     game.current += 1;
+    laid.current = [];
     setState(passeInit(setup));
     setLast(-1);
     setFiring(false);
@@ -189,6 +193,7 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
           : `Ta bombarde coule la barge en ${cellName(state, i)}.`,
       );
     else setSaid("");
+    laid.current.push(move);
     setState(passePlay(state, move));
     setLast(i);
     setFiring(false);
@@ -369,7 +374,7 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
                   type="button"
                   className="pc-passe-go"
                   data-passe-back
-                  onClick={() => duel.onEnd(state.winner === 1)}
+                  onClick={() => duel.onEnd(state.winner === 1, laid.current)}
                 >
                   Revenir à la planche
                 </button>
@@ -416,7 +421,11 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
                 Quitter la salle
               </button>
             ) : duel ? (
-              <button type="button" className="pc-passe-quiet" onClick={() => duel.onEnd(false)}>
+              <button
+                type="button"
+                className="pc-passe-quiet"
+                onClick={() => duel.onEnd(false, laid.current)}
+              >
                 Rompre
               </button>
             ) : (

@@ -16,6 +16,7 @@
     "e2e:passe": "node e2e/passe.mjs",
     "e2e:passe-duel": "node e2e/passe-duel.mjs",
     "e2e:planche": "node e2e/planche.mjs",
+    "e2e:planche-online": "node e2e/planche-online.mjs",
     "e2e:guided": "node e2e/tutorial-empire.mjs"
   },
   "dependencies": {

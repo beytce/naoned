@@ -84,6 +84,7 @@ function theme(): PlancheHubTheme {
       lieutenant: 3,
     },
     visitHours: 8,
+    idleHours: 48,
   };
 }
 const T0 = Date.parse("2026-11-16T06:00:00Z");
@@ -132,6 +133,19 @@ describe("the board on line", () => {
     const v = hub.view("p4", "p4", T0);
     expect(v.me).toBeNull();
     expect(hub.thread("p4", "near", "verre", T0)).toBe("not_seated");
+  });
+
+  it("gives back to the computer a house left too long, for a newcomer to take", () => {
+    const hub = new PlancheHub(theme(), T0);
+    for (const id of ["p1", "p2", "p3"]) hub.view(id, id, T0);
+    hub.view("p2", "p2", T0 + 40 * HOUR);
+    hub.view("p3", "p3", T0 + 40 * HOUR);
+    // p1 has not come back for 49 hours: its house is the newcomer's
+    const v = hub.view("p4", "p4", T0 + 49 * HOUR);
+    expect(v.me).toBe("a");
+    expect(v.names.a).toBe("p4");
+    // p1, coming back, finds every house taken
+    expect(hub.view("p1", "p1", T0 + 50 * HOUR).me).toBeNull();
   });
 
   it("plays the houses nobody took, never a player's", () => {

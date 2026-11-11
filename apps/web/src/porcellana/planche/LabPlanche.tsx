@@ -30,7 +30,6 @@ import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard
 const LabPasse = lazy(() => import("../passe/LabPasse.js"));
 
 const S = venice1450Planche;
-const ME = "toi";
 const HOUR = 3_600_000;
 const T0 = Date.parse("2026-11-16T06:00:00Z");
 /** Hours between two visits of a house held by the computer, and each one's own hour. */
@@ -53,10 +52,10 @@ const LAND: PlancheLand = {
 
 const ducats = (deniers: bigint | number) =>
   Math.round(Number(deniers) / 100).toLocaleString("fr-FR");
-const nameOf = (id: string) =>
-  plancheIsCorsair(id)
-    ? `le corsaire ${id.slice(8)}`
-    : (S.houses.find((h) => h.id === id)?.name ?? id);
+const houseName = (id: string, names?: Record<string, string>) =>
+  names?.[id] ?? S.houses.find((h) => h.id === id)?.name ?? id;
+const nameOf = (id: string, names?: Record<string, string>) =>
+  plancheIsCorsair(id) ? `le corsaire ${id.slice(8)}` : houseName(id, names);
 const SAID: Record<string, string> = {
   planche_no_bobbin: "Plus de bobine libre : reprends un fil, ou attends qu'une bobine revienne.",
   planche_route_shut: "La route est fermée par un corsaire : force le passage.",
@@ -69,7 +68,27 @@ interface News {
   pick: PlanchePick;
 }
 
+/** The board as the server sends it: its amounts are strings of deniers, made bigints again. */
+function revive(raw: PlancheState): PlancheState {
+  const big = (v: unknown) => BigInt(String(v ?? 0));
+  const houses: PlancheState["houses"] = {};
+  for (const [id, h] of Object.entries(raw.houses))
+    houses[id] = { ...h, ducats: big(h.ducats), earned: big(h.earned) };
+  return { ...raw, houses, minted: big(raw.minted), burnt: big(raw.burnt) };
+}
+
+interface Online {
+  since: number;
+  me: string | null;
+  names: Record<string, string>;
+  players: string[];
+}
+
 export default function LabPlanche() {
+  /** On line by default (the server holds the board); `&seul` plays a board of one's own, here. */
+  const online = useMemo(() => !new URLSearchParams(window.location.search).has("seul"), []);
+  const [view, setView] = useState<Online | null>(null);
+  const ME = online ? (view?.me ?? "") : "toi";
   const [state, setState] = useState<PlancheState>(() => plancheInit(S, T0));
   const [chosen, setChosen] = useState<PlanchePick | null>(null);
   const [speed, setSpeed] = useState(1);
@@ -91,9 +110,61 @@ export default function LabPlanche() {
     else pins.delete(key);
   };
 
-  // Time: a slice of the game a tick; the houses of the computer visit in their turn.
+  // On line: the board is read from the server every two seconds; it moves there, not here.
+  // One call after the other: two at once, before the guest's cookie is given, would be two guests.
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const send = useCallback(async (path = "", body?: unknown) => {
+    try {
+      const res = await fetch(`/api/planche${path}`, {
+        method: body === undefined ? "GET" : "POST",
+        credentials: "same-origin",
+        headers: body === undefined ? undefined : { "content-type": "application/json" },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+      const json = (await res.json().catch(() => null)) as {
+        planche?: Online & { state: PlancheState };
+        error?: string;
+      } | null;
+      if (!json?.planche) return json?.error ?? "offline";
+      setState(revive(json.planche.state));
+      setView({
+        since: json.planche.since,
+        me: json.planche.me,
+        names: json.planche.names,
+        players: json.planche.players,
+      });
+      return "ok";
+    } catch {
+      return "offline";
+    }
+  }, []);
+  const call = useCallback(
+    (path = "", body?: unknown): Promise<string> => {
+      const next = queue.current.then(() => send(path, body));
+      queue.current = next.catch(() => "offline");
+      return next;
+    },
+    [send],
+  );
   useEffect(() => {
-    if (!speed || duel) return;
+    if (!online || duel) return;
+    let alive = true;
+    const read = async () => {
+      const res = await call();
+      if (alive && res === "offline")
+        setSaid("Le serveur ne répond pas. Lance « pnpm dev », ou ajoute « &seul » à l'adresse.");
+    };
+    void read();
+    const timer = window.setInterval(read, 2000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, [online, duel, call]);
+
+  // Time, played here: a slice of the game a tick; the houses of the computer visit in their turn.
+  useEffect(() => {
+    if (online || !speed || duel) return;
     const timer = window.setInterval(() => {
       setState((s0) => {
         const now = s0.now + S.sliceMs;
@@ -102,24 +173,35 @@ export default function LabPlanche() {
         if ((now - T0) % HOUR === 0)
           for (const h of S.houses) {
             if (!h.robot || (hour + (OFFSET[h.id] ?? 0)) % VISIT !== 0) continue;
-            const before = new Set(s.houses[h.id]?.threads.map((t) => t.to));
             s = plancheRobot(S, s, h.id, now);
-            for (const t of s.houses[h.id]?.threads ?? [])
-              if (!before.has(t.to)) {
-                const city = S.cities.find((c) => c.id === t.to);
-                const mine = s.houses[ME]?.threads.some((m) => m.to === t.to);
-                if (city && mine)
-                  tell(`${h.name} tend un fil vers ${city.name}, où tu vends.`, {
-                    kind: "city",
-                    id: city.id,
-                  });
-              }
           }
         return s;
       });
     }, 1000 / speed);
     return () => window.clearInterval(timer);
-  }, [speed, duel, tell]);
+  }, [online, speed, duel]);
+
+  // A rival stretches a thread toward a town where one sells: said once, in both modes.
+  const seen = useRef<Record<string, string[]>>({});
+  useEffect(() => {
+    const mineTo = new Set(state.houses[ME]?.threads.map((t) => t.to));
+    for (const h of S.houses) {
+      if (h.id === ME) continue;
+      const now = state.houses[h.id]?.threads.map((t) => t.to) ?? [];
+      const before = seen.current[h.id];
+      if (before)
+        for (const to of now)
+          if (!before.includes(to) && mineTo.has(to)) {
+            const c = S.cities.find((x) => x.id === to);
+            if (c)
+              tell(`${houseName(h.id, view?.names)} tend un fil vers ${c.name}, où tu vends.`, {
+                kind: "city",
+                id: to,
+              });
+          }
+      seen.current[h.id] = now;
+    }
+  });
 
   // A town where one sells has tired: said once, until it has rested.
   const tired = useRef(new Set<string>());
@@ -148,8 +230,15 @@ export default function LabPlanche() {
       .map((h) => ({ id: h.id, earned: state.houses[h.id]?.earned ?? 0n }))
       .sort((a, b) => (b.earned > a.earned ? 1 : b.earned < a.earned ? -1 : 0));
     return { place: order.findIndex((o) => o.id === ME) + 1, order };
-  }, [state]);
-  const act = (f: () => PlancheState, done?: string) => {
+  }, [state, ME]);
+  /** A gesture: on line it is the server's to play, here it is the engine's. */
+  const act = (f: () => PlancheState, done?: string, remote?: [string, unknown]) => {
+    if (online && remote) {
+      void call(...remote).then((res) =>
+        setSaid(res === "ok" ? (done ?? "") : (SAID[res] ?? "Ce geste n'est pas possible.")),
+      );
+      return;
+    }
     try {
       setState(f());
       setSaid(done ?? "");
@@ -158,7 +247,8 @@ export default function LabPlanche() {
     }
   };
 
-  const day = Math.floor((state.now - T0) / (24 * HOUR)) + 1;
+  const day =
+    Math.floor((state.now - (online ? (view?.since ?? state.now) : T0)) / (24 * HOUR)) + 1;
   const hour = new Date(state.now).getUTCHours();
   const phone = typeof window !== "undefined" && window.innerWidth < 640;
   const plain = phone || new URLSearchParams(window.location.search).has("simple");
@@ -171,14 +261,19 @@ export default function LabPlanche() {
         <LabPasse
           duel={{
             board: p?.board ?? "segna",
-            foe: plancheIsCorsair(holder) ? holder.slice(8) : `le lieutenant de ${nameOf(holder)}`,
-            onEnd: (won) => {
+            foe: plancheIsCorsair(holder)
+              ? holder.slice(8)
+              : `le lieutenant de ${nameOf(holder, view?.names)}`,
+            onEnd: (won, moves) => {
               setDuel(null);
               if (!won) {
                 setSaid("La chaîne a tenu : tu perds la cargaison engagée, rien d'autre.");
                 return;
               }
-              act(() => plancheForced(S, state, ME, duel, state.now));
+              act(() => plancheForced(S, state, ME, duel, state.now), undefined, [
+                "/force",
+                { passage: duel, moves },
+              ]);
               const left = (state.passages[duel]?.seals ?? 1) - 1;
               setSaid(
                 left > 0
@@ -279,7 +374,7 @@ export default function LabPlanche() {
             data-mine={String(h.id === ME)}
             onClick={() => setChosen({ kind: "house", id: h.id })}
           >
-            <b>{h.name}</b>
+            <b>{h.id === ME ? "Ta Maison" : houseName(h.id, view?.names)}</b>
           </button>
         ))}
       </div>
@@ -289,19 +384,32 @@ export default function LabPlanche() {
           <b>
             Jour {day} · {hour} h
           </b>
-          <span className="pc-planche-speed">
-            {(
-              [
-                [0, "Pause"],
-                [1, "×1"],
-                [6, "×6"],
-              ] as const
-            ).map(([v, name]) => (
-              <button key={v} type="button" aria-pressed={speed === v} onClick={() => setSpeed(v)}>
-                {name}
-              </button>
-            ))}
-          </span>
+          {online ? (
+            <span className="pc-planche-online" data-planche-online>
+              {view && !view.me
+                ? "En ligne · tu regardes : toutes les Maisons sont prises"
+                : `En ligne · ${view?.players.length ?? 0} joueur${(view?.players.length ?? 0) > 1 ? "s" : ""}`}
+            </span>
+          ) : (
+            <span className="pc-planche-speed">
+              {(
+                [
+                  [0, "Pause"],
+                  [1, "×1"],
+                  [6, "×6"],
+                ] as const
+              ).map(([v, name]) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={speed === v}
+                  onClick={() => setSpeed(v)}
+                >
+                  {name}
+                </button>
+              ))}
+            </span>
+          )}
         </div>
         <div className="pc-passe-race">
           <div data-side="fil" data-mine="true">
@@ -333,7 +441,9 @@ export default function LabPlanche() {
         {city ? (
           <section className="pc-planche-card" data-planche-card>
             <h2>{city.name}</h2>
-            {!plancheRouteOpen(S, state, ME, city.id, state.now) ? (
+            {online && !ME ? (
+              <p>Toutes les Maisons sont prises : tu regardes la planche sans y jouer.</p>
+            ) : !plancheRouteOpen(S, state, ME, city.id, state.now) ? (
               <p>
                 Route fermée :{" "}
                 {city.via
@@ -364,12 +474,12 @@ export default function LabPlanche() {
                     <span>
                       {ducats(price)} ducats · demande {Math.round((left / w.cap) * 100)} %
                       {others.length
-                        ? ` · ${others.map((o) => o.name.replace("Ca’ ", "")).join(", ")}`
+                        ? ` · ${others.map((o) => houseName(o.id, view?.names).replace("Ca’ ", "")).join(", ")}`
                         : " · personne d'autre"}
                     </span>
                     <i style={{ ["--fill" as string]: `${Math.round((left / w.cap) * 100)}%` }} />
                   </div>
-                  {held ? (
+                  {online && !ME ? null : held ? (
                     <button
                       type="button"
                       className="pc-passe-quiet"
@@ -378,6 +488,7 @@ export default function LabPlanche() {
                         act(
                           () => plancheUnthread(S, state, ME, city.id, good, state.now),
                           "Fil repris : la bobine revient au quai.",
+                          ["/unthread", { city: city.id, good }],
                         )
                       }
                     >
@@ -394,6 +505,7 @@ export default function LabPlanche() {
                         act(
                           () => plancheThread(S, state, ME, city.id, good, state.now),
                           `Fil tendu vers ${city.name}.`,
+                          ["/thread", { city: city.id, good }],
                         )
                       }
                     >
@@ -415,7 +527,8 @@ export default function LabPlanche() {
               return (
                 <>
                   <p>
-                    Tenu par {holder === ME ? "toi" : nameOf(holder)} · {p?.seals} sceau
+                    Tenu par {holder === ME ? "toi" : nameOf(holder, view?.names)} · {p?.seals}{" "}
+                    sceau
                     {(p?.seals ?? 0) > 1 ? "x" : ""} ·{" "}
                     {plancheIsCorsair(holder)
                       ? "il ne laisse passer personne"
@@ -424,14 +537,20 @@ export default function LabPlanche() {
                       ? ` · tu passes librement encore ${Math.ceil((freeUntil - state.now) / HOUR)} h`
                       : ""}
                   </p>
-                  {holder === ME ? (
+                  {online && !ME ? null : holder === ME ? (
                     <div className="pc-passe-opts">
                       {[500, 1000, 1500].map((bps) => (
                         <button
                           key={bps}
                           type="button"
                           aria-pressed={p?.tollBps === bps}
-                          onClick={() => act(() => plancheToll(S, state, ME, passage.id, bps))}
+                          onClick={() =>
+                            act(
+                              () => plancheToll(S, state, ME, passage.id, bps),
+                              `Péage réglé à ${bps / 100} %.`,
+                              ["/toll", { passage: passage.id, tollBps: bps }],
+                            )
+                          }
                         >
                           Péage {bps / 100} %
                         </button>
@@ -455,13 +574,18 @@ export default function LabPlanche() {
         ) : null}
         {house ? (
           <section className="pc-planche-card" data-planche-card>
-            <h2>{house.id === ME ? "Ta Maison" : house.name}</h2>
+            <h2>{house.id === ME ? "Ta Maison" : houseName(house.id, view?.names)}</h2>
             <p>
               {house.id === ME ? "Ton île fait" : "Son île fait"} :{" "}
               {Object.entries(house.makes)
                 .map(([g, n]) => `${S.goods[g]?.toLowerCase()} (${n} par heure)`)
                 .join(", ")}
-              .{house.robot ? " Maison tenue par l'ordinateur." : ""}
+              .
+              {(online ? !view?.players.includes(house.id) : house.robot)
+                ? " Maison tenue par l'ordinateur."
+                : house.id === ME
+                  ? ""
+                  : " Maison d'un joueur."}
             </p>
             {house.id === ME ? (
               <p>

@@ -49,6 +49,7 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
         board: venice1450Planche,
         passe: { rules: venice1450Passe.rules, boards: venice1450Passe.boards, lieutenant: 3 },
         visitHours: 8,
+        idleHours: 7 * 24,
       },
       now(),
     );

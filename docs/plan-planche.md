@@ -18,7 +18,7 @@
 | L2 | **La planche de Venise** : huit Maisons, sept villes, trois passages, deux ports du Large. | `themes/venice1450.planche.ts` | le banc |
 | L3 | **Le banc** : six semaines, huit Maisons robots, plusieurs graines. | `apps/simulator/src/planche-bench.ts` | `docs/calibration.md`, § La planche |
 | L4 | **Le laboratoire** (`?lab=planche`) : la planche en Porcellana, les villes et leur demande, ta Maison et les sept autres, les fils (le tien en ruban rouge avec ses barques, les autres à l'encre), les passages et leurs tours, la fiche d'une ville (tirer, reprendre), la fiche d'un passage (forcer par la Passe, régler son péage), le fil des nouvelles, l'heure qui passe (pause, ×1, ×6). | `apps/web/src/porcellana/planche/` | parcours `apps/web/e2e/planche.mjs` |
-| L5 | **La planche partagée en ligne** : le serveur tient la planche, les joueurs y sont ensemble. | serveur | à faire |
+| L5 | **La planche partagée en ligne** : le serveur tient la planche, les joueurs y sont ensemble. | `apps/server/src/game/planche.ts`, `plancheRoutes.ts`, laboratoire | `planche-hub.test.ts`, `planche-routes.test.ts`, parcours à deux navigateurs `e2e/planche-online.mjs` |
 | L6 | **L'île** posée sur la planche (le domaine actuel, ses ateliers et voisinages), à la place des chiffres de production fixes. | | à faire (étape 3 du cadrage) |
 
 ## 3. Ce qui n'est pas dans cette étape
@@ -33,7 +33,7 @@ La marée d'encre et sa fin, les classements et lauriers, le rival de la semaine
 | L2 | fait |
 | L3 | fait (docs/calibration.md) |
 | L4 | fait ; la planche se dessine dans le navigateur seul (une partie locale, sept Maisons robots) ; **pas mesuré sur un vrai téléphone** |
-| L5 | à faire |
+| L5 | fait : une planche par serveur, en mémoire (un redémarrage en commence une neuve), avancée heure par heure à la lecture. Chaque nouveau venu, compte ou invité, prend une Maison de l'ordinateur et la garde ; une Maison laissée 7 jours de jeu retourne à l'ordinateur ; au-delà de huit joueurs, on regarde. Un passage se force par une Passe que le serveur rejoue : le joueur n'envoie que ses coups. `PLANCHE_PACE=60` accélère le temps (une heure de jeu par minute). La page se relit toutes les deux secondes, sans WebSocket |
 | L6 | à faire |
 
 ## 5. Pour l'essayer
@@ -42,4 +42,4 @@ La marée d'encre et sa fin, les classements et lauriers, le rival de la semaine
 pnpm dev
 ```
 
-puis ouvrir `http://localhost:5173/?lab=planche`. Touche une ville, puis « Tirer un fil » ; touche le Détroit de Segna, puis « Forcer le passage » pour jouer la Passe contre le corsaire.
+puis ouvrir `http://localhost:5173/?lab=planche` : la planche du serveur, partagée avec tous ceux qui l'ouvrent (`?lab=planche&seul` pour une planche à soi, dans le navigateur, avec Pause, ×1 et ×6). Pour voir passer les heures : `PLANCHE_PACE=60 pnpm dev`. Touche une ville, puis « Tirer un fil » ; touche le Détroit de Segna, puis « Forcer le passage » pour jouer la Passe contre le corsaire.

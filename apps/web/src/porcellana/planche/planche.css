@@ -176,3 +176,9 @@
   background: var(--pc-paper);
   border: 3px solid var(--pc-accent);
 }
+.pc-planche-online {
+  display: block;
+  margin-top: 2px;
+  font: 700 12px var(--pc-ui);
+  color: var(--pc-ink-soft);
+}
