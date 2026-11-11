@@ -85,7 +85,7 @@ try {
       await page.screenshot({ path: join(SHOTS, `${label}-${name}.png`), timeout: 120_000 });
     };
     const email = `porcellana_${width}@example.org`;
-    await page.goto(server.url);
+    await page.goto(`${server.url}/ancien`);
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
     await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);
@@ -171,7 +171,7 @@ try {
     await shot("5c-maison", 1_500);
     await page.keyboard.press("Escape");
     // Without WebGL: the same board, flat, its pins and its card.
-    await page.goto(`${server.url}/?map=svg`);
+    await page.goto(`${server.url}/ancien?map=svg`);
     await page.waitForSelector("[data-flat-board]", { timeout: 30_000 });
     await page.locator("[data-place^='fondaco:']").click();
     await page.locator(".pc-card").waitFor();

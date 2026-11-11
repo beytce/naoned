@@ -38,7 +38,7 @@ const fail = async (why) => {
 
 // Login by magic link, then the merchant's name, the introduction and the trade.
 const email = `e2e-${Date.now()}@example.org`;
-await page.goto(BASE);
+await page.goto(`${BASE}/ancien`);
 await page.fill("input[type=email]", email);
 await page.keyboard.press("Enter");
 let token = null;

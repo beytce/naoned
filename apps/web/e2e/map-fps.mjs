@@ -75,7 +75,7 @@ const browser = await chromium.launch({
 try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, locale: "fr-FR" });
   const email = "fps@example.org";
-  await page.goto(server.url);
+  await page.goto(`${server.url}/ancien`);
   await page.fill("input[type=email]", email);
   await page.keyboard.press("Enter");
   await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);

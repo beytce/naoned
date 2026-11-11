@@ -92,7 +92,7 @@ try {
       await page.screenshot({ path: join(SHOTS, `${label}-${name}.png`), timeout: 180_000 });
     };
     const email = `atelier_${width}@example.org`;
-    await page.goto(server.url);
+    await page.goto(`${server.url}/ancien`);
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
     await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);

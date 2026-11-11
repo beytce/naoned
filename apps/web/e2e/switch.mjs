@@ -80,7 +80,7 @@ try {
   let server = await startServer("hex", db);
   let page = await browser.newPage({ viewport: { width: 1280, height: 800 }, locale: "fr-FR" });
   page.on("pageerror", (e) => faults.push(`hex: ${e.message}`));
-  await page.goto(server.url);
+  await page.goto(`${server.url}/ancien`);
   await page.fill("input[type=email]", email);
   await page.keyboard.press("Enter");
   await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);
@@ -104,7 +104,7 @@ try {
   page = await browser.newPage({ viewport: { width: 1280, height: 800 }, locale: "fr-FR" });
   await page.emulateMedia({ reducedMotion: "reduce" });
   page.on("pageerror", (e) => faults.push(`square: ${e.message}`));
-  await page.goto(server.url);
+  await page.goto(`${server.url}/ancien`);
   await page.fill("input[type=email]", email);
   await page.keyboard.press("Enter");
   await page.goto(`${server.url}/connexion?token=${await magicLink(email)}&map=3d`);

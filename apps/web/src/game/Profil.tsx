@@ -12,6 +12,7 @@ import { Medal } from "../art/icons.js";
 import { P } from "../art/palette.js";
 import { replayTutors, skipAllTutors } from "../empire/tutor/flags.js";
 import { hapticsEnabled, setHapticsEnabled } from "../haptics.js";
+import { OLD_HOME } from "../home.js";
 import { fr } from "../i18n.js";
 import { LANG, LANGS, type Lang, keepLang, locale } from "../lang.js";
 import { LegalLinks } from "../legal/Legal.js";
@@ -772,7 +773,7 @@ function ProfileBody(props: GameProps) {
             disabled={typed.trim().toUpperCase() !== fr.misc.deleteWord}
             onClick={async () => {
               await api.deleteAccount().catch(() => undefined);
-              window.location.href = "/";
+              window.location.href = OLD_HOME;
             }}
           >
             {fr.game.data.confirm}

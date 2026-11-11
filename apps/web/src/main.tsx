@@ -10,6 +10,7 @@ import "@fontsource/nunito/700.css";
 import "@fontsource/nunito/800.css";
 import "@fontsource/nunito/900.css";
 import "./index.css";
+import { isBoardHome } from "./home.js";
 import { LANG } from "./lang.js";
 import { keepInvite, keepOrigin } from "./origin.js";
 import { applyPalette, applyTextSize } from "./theme.js";
@@ -60,6 +61,8 @@ const PasseLab = lazy(() => import("./porcellana/passe/LabPasse.js"));
 // The shared board and its threads (?lab=planche, docs/plan-planche.md).
 const PlancheLab = lazy(() => import("./porcellana/planche/LabPlanche.js"));
 const labName = new URLSearchParams(window.location.search).get("lab");
+// The shared board is the home (docs/plan-classement.md, decision of 11 November 2026).
+const board = labName === "planche" || isBoardHome(window.location.pathname, labName);
 
 createRoot(root).render(
   <StrictMode>
@@ -71,7 +74,7 @@ createRoot(root).render(
       <Suspense fallback={null}>
         <PasseLab />
       </Suspense>
-    ) : labName === "planche" ? (
+    ) : board ? (
       <Suspense fallback={null}>
         <PlancheLab />
       </Suspense>

@@ -9,6 +9,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { ApiError } from "../api.js";
 import type { TerraAction } from "../game/types.js";
+import { OLD_HOME } from "../home.js";
 import { fr } from "../i18n.js";
 import { Slab } from "../ui.js";
 import { TerraPlay } from "./Terra.js";
@@ -28,7 +29,7 @@ export function BattlePage({ room }: { room: string | null }) {
       now={now}
       room={room}
       backLabel={fr.appName}
-      onBack={() => window.location.assign("/")}
+      onBack={() => window.location.assign(OLD_HOME)}
     />
   );
 }
@@ -151,7 +152,7 @@ export function BattleStage({
                 {battle.guest && battle.name && (
                   <p className="text-sm" data-battle-guest="">
                     {t.guest(battle.name)}{" "}
-                    <a href="/" className="font-bold text-[#C23B2E] underline">
+                    <a href={OLD_HOME} className="font-bold text-[#C23B2E] underline">
                       {t.signUp}
                     </a>
                   </p>
@@ -240,7 +241,7 @@ export function BattleStage({
                   </p>
                 )}
                 {battle.guest && (
-                  <a href="/" className="block text-sm font-bold text-[#C23B2E] underline">
+                  <a href={OLD_HOME} className="block text-sm font-bold text-[#C23B2E] underline">
                     {t.signUp}
                   </a>
                 )}
