@@ -813,3 +813,181 @@
     width: 124px;
   }
 }
+/* The rank (docs/plan-classement.md R3): the place a button, its trend; the marks on the houses;
+   the Doge's palace, one red for oneself and ink for the others. */
+button.pc-pl-rank {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+.pc-rk-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font: 800 12px var(--pc-ui);
+  color: var(--pc-text-3);
+}
+.pc-rk-trend[data-up="true"] {
+  color: var(--pc-accent);
+}
+.pc-planche-house[data-rival="true"] {
+  background: var(--pc-paper);
+  color: var(--pc-ink);
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px var(--pc-ink), 0 2px 0 var(--pc-foot);
+  padding: 4px 10px;
+}
+.pc-rk-tag {
+  font: 800 10px var(--pc-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pc-paper);
+  background: var(--pc-ink);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+.pc-rk-marks {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.pc-rk-taken {
+  display: block;
+  width: 8px;
+  height: 10px;
+  background: var(--pc-ink);
+  clip-path: polygon(0 0, 100% 0, 70% 50%, 100% 100%, 0 100%);
+}
+.pc-planche-house[data-mine="true"] .pc-rk-taken {
+  background: #fff;
+}
+.pc-rk-place {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.pc-rk-place b {
+  font: 900 40px / 1 var(--pc-display);
+  color: var(--pc-accent);
+  font-variant-numeric: tabular-nums;
+}
+.pc-rk-place b sup {
+  font-size: 16px;
+}
+.pc-rk-rival {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: inset 0 0 0 2px var(--pc-ink);
+}
+.pc-rk-rival-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 800 14px var(--pc-ui);
+}
+.pc-rk-duel {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #eeebe5;
+  gap: 2px;
+}
+.pc-rk-duel i {
+  display: block;
+  flex-basis: 0;
+  background: var(--pc-ink);
+}
+.pc-rk-duel i[data-mine="true"] {
+  background: var(--pc-accent);
+}
+.pc-rk-laurels {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.pc-rk-laurel h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font: 900 16px var(--pc-display);
+}
+.pc-rk-laurel small {
+  display: block;
+  font: 500 12px var(--pc-ui);
+  color: var(--pc-text-3);
+  margin: 2px 0 6px;
+}
+.pc-rk-laurel ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pc-rk-laurel li {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: baseline;
+  gap: 6px;
+  font: 600 13px var(--pc-ui);
+  color: var(--pc-text-2);
+  padding: 3px 6px;
+  border-radius: 8px;
+}
+.pc-rk-laurel li em {
+  font: 900 14px var(--pc-display);
+  font-style: normal;
+  color: var(--pc-ink);
+}
+.pc-rk-laurel li span {
+  font-size: 12px;
+  color: var(--pc-text-3);
+  font-variant-numeric: tabular-nums;
+}
+.pc-rk-laurel li[data-mine="true"] {
+  background: var(--pc-accent);
+  color: #fff;
+}
+.pc-rk-laurel li[data-mine="true"] em,
+.pc-rk-laurel li[data-mine="true"] span {
+  color: #fff;
+}
+.pc-rk-laurel li[data-rival="true"] {
+  box-shadow: inset 0 0 0 2px var(--pc-ink);
+}
+.pc-planche-card .pc-rk-last,
+.pc-planche-card .pc-rk-note {
+  font-size: 12px;
+  color: var(--pc-text-3);
+}
+.pc-planche-card .pc-rk-empty,
+.pc-planche-card .pc-rk-you {
+  font-size: 12.5px;
+  color: var(--pc-text-3);
+}
+.pc-planche-card .pc-rk-you {
+  color: var(--pc-accent-soft);
+  font-weight: 700;
+  margin-top: 4px;
+}
+@media (max-width: 640px) {
+  .pc-pl-purse {
+    gap: 7px;
+    padding: 7px 10px 7px 7px;
+  }
+  .pc-pl-bobbins {
+    gap: 1px;
+  }
+  .pc-rk-trend {
+    font-size: 11px;
+  }
+}

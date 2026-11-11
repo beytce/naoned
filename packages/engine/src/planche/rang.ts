@@ -193,21 +193,33 @@ function designate(S: PlancheSetup, s: PlancheState): void {
   s.rank.rivals = rivals;
 }
 
+/**
+ * The week between two houses: the towns both have sold in, and what each sold there (in all, when
+ * they share none). What Sunday settles, and what the screen tells.
+ */
+export function plancheWeekDuel(
+  s: PlancheState,
+  a: string,
+  b: string,
+): { shared: string[]; a: bigint; b: bigint } {
+  const wa = s.houses[a]?.rank.week ?? {};
+  const wb = s.houses[b]?.rank.week ?? {};
+  const shared = Object.keys(wa).filter((c) => (wa[c] ?? 0n) > 0n && (wb[c] ?? 0n) > 0n);
+  const sum = (w: Record<string, bigint>) =>
+    (shared.length ? shared : Object.keys(w)).reduce((n, c) => n + (w[c] ?? 0n), 0n);
+  return { shared, a: sum(wa), b: sum(wb) };
+}
+
 /** Sunday: who sold more in the towns both serve (else in all) hangs the other's flag. */
 function settle(s: PlancheState): void {
   const flags: Record<string, string[]> = {};
   const done = new Set<string>();
   for (const [h, r] of Object.entries(s.rank.rivals)) {
-    const a = s.houses[h]?.rank.week;
-    const b = s.houses[r]?.rank.week;
-    if (!a || !b || done.has(pair(h, r))) continue;
+    if (!s.houses[h] || !s.houses[r] || done.has(pair(h, r))) continue;
     done.add(pair(h, r));
-    const shared = Object.keys(a).filter((c) => (a[c] ?? 0n) > 0n && (b[c] ?? 0n) > 0n);
-    const sum = (w: Record<string, bigint>) =>
-      (shared.length ? shared : Object.keys(w)).reduce((n, c) => n + (w[c] ?? 0n), 0n);
-    const [sa, sb] = [sum(a), sum(b)];
-    if (sa === sb) continue;
-    const [win, lose] = sa > sb ? [h, r] : [r, h];
+    const d = plancheWeekDuel(s, h, r);
+    if (d.a === d.b) continue;
+    const [win, lose] = d.a > d.b ? [h, r] : [r, h];
     flags[win] = [...(flags[win] ?? []), lose];
   }
   s.rank.flags = flags;

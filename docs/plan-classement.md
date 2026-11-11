@@ -109,7 +109,7 @@ Les ligues, la Sérénissime et la montée de monde (étape 9) ; la montée de l
 | --- | --- |
 | R1 | fait : `packages/engine/src/planche/rang.ts` (horloge de marée et semaines, Négoce par heure-bobine, Garde par heures tenues et péril, cote de la Passe reprise de `battleRatings`, places et Doge, rival désigné le lundi, duel du dimanche, lauriers proclamés en fin de marée), 13 tests ; règles dans `venice1450.planche.ts` (`rank`, `peril` des passages) |
 | R2 | fait : section du rang dans le banc de la planche, `docs/calibration.md` § Le rang (un rival chaque semaine pour tous, jamais deux fois le même ; le Négoce ne revient pas à la plus grande île) ; une Maison prise par un joueur reçoit son rival tout de suite |
-| R3 | à faire |
+| R3 | fait : la place et sa tendance dans la pilule (un bouton), le rival marqué sur la planche (étiquette « rival », fils d'encre plus épais), la coiffe du Doge, les lauriers et les pavillons pris à côté des noms, le palais du Doge (`apps/web/src/porcellana/planche/Palais.tsx`), les nouvelles du lundi et du dimanche ; parcours `e2e:rang` à 390 px et sur ordinateur, captures dans `docs/classement-captures/` |
 | R4 | à faire (le serveur devra faire partir la marée un lundi à minuit) |
 | R5 | à faire |
 | R6 | à faire |

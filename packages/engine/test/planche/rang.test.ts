@@ -13,6 +13,7 @@ import {
   plancheStanding,
   plancheThread,
   plancheTrend,
+  plancheWeekDuel,
 } from "../../src/index.js";
 
 const HOUR = 3_600_000;
@@ -232,6 +233,8 @@ describe("the rival of the week", () => {
     const dan = s.houses.dan?.rank.week.padoue ?? 0n;
     expect(ana).toBeGreaterThan(dan);
     expect(dan).toBeGreaterThan(0n);
+    // What the screen tells: the towns both serve, and each one's sales there.
+    expect(plancheWeekDuel(s, "ana", "dan")).toEqual({ shared: ["padoue"], a: ana, b: dan });
     s = plancheAdvance(S, s, T0 + WEEK);
     expect(s.rank.flags.ana).toEqual(["dan"]);
     expect(s.rank.flags.dan ?? []).toEqual([]);
