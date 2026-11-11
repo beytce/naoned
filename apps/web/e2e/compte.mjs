@@ -5,7 +5,6 @@
 // Env: CHROMIUM (a Chromium or headless shell), SHOTS (a folder for the pictures).
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
@@ -24,11 +23,12 @@ const fail = (why) => {
 
 async function startServer() {
   const serverDir = join(here, "..", "..", "server");
-  const tsx = createRequire(join(serverDir, "package.json")).resolve("tsx/cli");
   const url = `http://127.0.0.1:${port}`;
   mkdirSync(SHOTS, { recursive: true });
   writeFileSync(log, "");
-  const child = spawn(process.execPath, [tsx, "src/server.ts"], {
+  // The server is this process's own child (no runner in between): a signal stops it for real.
+  // `--import tsx` is resolved from the server's folder, where tsx is installed.
+  const child = spawn(process.execPath, ["--import", "tsx", "src/server.ts"], {
     cwd: serverDir,
     env: {
       ...process.env,
