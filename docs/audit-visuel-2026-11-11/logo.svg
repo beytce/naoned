@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Fondaco">
+  <rect x="3" y="5" width="58" height="57" rx="15" fill="#D9D2C6"/>
+  <rect x="3" y="2" width="58" height="57" rx="15" fill="#FBFAF7"/>
+  <path d="M19 49 V31 C19 23 26 21 29.5 16.5 C31 14.5 32 12.5 32 9.5 C32 12.5 33 14.5 34.5 16.5 C38 21 45 23 45 31 V49" fill="none" stroke="#C23B2E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="49" r="3.6" fill="#2A2725"/>
+</svg>
