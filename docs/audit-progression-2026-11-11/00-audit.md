@@ -115,6 +115,8 @@ La demande commune des villes ne tient que si une ville est servie par quelques 
 
 ## 6. La nouvelle bataille : la Guerre de la semaine
 
+> **Révisé le 11 novembre 2026** par `01-audit-guerre.md`, validé par le porteur : l'assaut se joue en **trois passes et trois manches** (et non en temps réel), le défenseur change ses **ruses** une fois par jour, et sur chaque port **seul le meilleur assaut compte**. Ce qui suit reste vrai pour le reste.
+
 *Le porteur : « un autre système où les joueurs s'affrontent en utilisant le développement qu'ils ont eu dans le jeu ».*
 
 ### 6.1 L'idée

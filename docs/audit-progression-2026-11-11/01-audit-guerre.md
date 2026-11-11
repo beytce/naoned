@@ -2,7 +2,7 @@
 
 *Demande du porteur : « Fais un audit de ta proposition de système de guerre et d'assaut afin de t'assurer qu'il est amusant et donnera envie aux joueurs d'y participer. Il faut qu'il soit facilement compréhensible tout en gardant l'aspect tactique et stratégique. »*
 
-Objet : le § 6 de `00-audit.md` et les écrans 3a à 3c de la maquette. **À valider.**
+Objet : le § 6 de `00-audit.md` et les écrans 3a à 3e de la maquette. **Validé par le porteur le 11 novembre 2026**, avec les trois recommandations du § 7.
 
 ---
 
@@ -127,8 +127,8 @@ C'est ce qui empêche la méta de se figer : la même flotte ne bat pas deux foi
 
 L'étape 6 (« La Guerre de la semaine ») commence par **un moteur d'assaut pur et son banc** (pièces, manches, intentions, ruses), puis le port d'entraînement et son tutoriel, et seulement ensuite la guerre entre compagnies. Durée inchangée (10 à 14 jours), mais la guerre n'ouvre qu'une fois l'assaut validé au banc et par trois testeurs.
 
-## 7. À trancher
+## 7. Tranché (11 novembre 2026, le porteur suit les trois recommandations)
 
-1. **L'assaut en trois passes et trois manches** remplace l'assaut en temps réel. D'accord ?
-2. **Les ruses du défenseur**, modifiables une fois par jour : d'accord, ou une seule fois le lundi, plus simple ?
-3. **Le meilleur assaut compte** (et non l'addition des sceaux) : d'accord ?
+1. **L'assaut en trois passes et trois manches** remplace l'assaut en temps réel.
+2. **Les ruses du défenseur** se changent une fois par jour.
+3. **Sur chaque port, le meilleur assaut compte** (et non l'addition des sceaux).
