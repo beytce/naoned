@@ -197,7 +197,7 @@ export function IleBoard({
     cam.near = 0.1;
     cam.far = 500;
     cam.updateProjectionMatrix();
-  }, [camera, size.width, size.height, span, phone]);
+  }, [camera, size.width, size.height, span]);
 
   const controls = useMemo(() => {
     // A little south-east of the middle: the island rises clear of the dock.

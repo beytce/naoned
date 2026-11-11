@@ -1,6 +1,6 @@
 # L'île posée sur la planche : plan (étape 3 de CADRAGE-v4 § 17)
 
-*Proposé le 11 novembre 2026, à la demande du porteur (« d'accord avec toi sur la suite avec l'île posée sur la planche ; on fera le classement et le rival par la suite »). **À valider avant de coder.** Les règles de fond sont celles de `docs/CADRAGE-v4.md` § 4.*
+*Proposé le 11 novembre 2026, à la demande du porteur (« d'accord avec toi sur la suite avec l'île posée sur la planche ; on fera le classement et le rival par la suite »), **validé le même jour** avec les trois propositions du § 7 (production sans récolte jusqu'au plafond, une scène à part où les cases se retournent, les ateliers d'aujourd'hui). Les règles de fond sont celles de `docs/CADRAGE-v4.md` § 4.*
 
 ## 1. Le problème à régler
 
@@ -63,3 +63,16 @@ L'intérieur des ateliers (machines, ouvriers, usure), le métier de la Maison (
 1. **La récolte** : la décision du 7 novembre (D4) veut qu'un atelier s'arrête et attende ta récolte. Sur la planche, ton geste est déjà le fil ; je propose que **la production aille seule à l'entrepôt jusqu'à son plafond**, sans récolte à la main. Plein, l'atelier s'arrête : on ne gagne donc pas sans revenir vider l'entrepôt par ses fils.
 2. **Entrer dans l'île** : une scène à part avec les cases qui se retournent (proposé, plus sûr sur téléphone), ou un vrai zoom continu depuis la planche (plus beau, plus long à faire, à garder pour plus tard) ?
 3. **Les ateliers et les recettes** : je reprends ceux d'aujourd'hui tels quels. D'accord ?
+
+## 8. État (11 novembre 2026)
+
+| Lot | État |
+| --- | --- |
+| I1 | fait : `packages/engine/src/ile/`, 11 tests |
+| I2 | fait : l'île branchée sur la planche (production, bourse, chaque denier compté), 20 tests de la planche ; les villes demandent les marchandises des recettes, le Rialto achète les matières brutes |
+| I3 | fait : les Maisons de l'ordinateur bâtissent selon leur plan, par tours ; banc dans `docs/calibration.md`, § L'île (une marée remplit un tiers de l'île, écart ×1,9) |
+| I4 | fait : l'écran de l'île (`apps/web/src/porcellana/ile/`), parcours `e2e:ile` à 390 px et sur ordinateur |
+| I5 | fait : les cases de l'île se retournent à l'entrée ; sur la planche, les ateliers de chaque île en petit autour de sa Maison. Pas de transition depuis la planche elle-même (la planche s'efface, l'île arrive) |
+| I6 | fait : routes `/api/planche/ile/*`, parcours `e2e:ile` en ligne |
+
+Reste : la Maison de la brique gagne moins que les autres (à reprendre au banc) ; pas d'essai sur un vrai téléphone ; la marée ne finit pas encore.

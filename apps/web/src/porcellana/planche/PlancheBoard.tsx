@@ -5,6 +5,7 @@
  * barges, the others' in thin ink.
  */
 import {
+  ILE_FONDACO,
   type PlancheSetup,
   type PlancheState,
   plancheIsCorsair,
@@ -35,6 +36,7 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import { Stage } from "../Stage.js";
 import { palette } from "../TileBoard.js";
 import { bake } from "../bake.js";
+import { CATALOGUE } from "../catalogue.js";
 import { fondaco } from "../models/fondaco.js";
 import { market } from "../models/market.js";
 import { flagCloth, rocca } from "../models/terra.js";
@@ -44,6 +46,7 @@ import { drawChevron, ribbonGeometry, roundedPath } from "../ribbon.js";
 import { BOARD, CAMERA, COL, RIBBON } from "../tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
+const BY_KEY = new Map(CATALOGUE.map((e) => [e.key, e]));
 
 /** What the board is made of beside its houses and towns: where the land lies, how dark each tile is. */
 export interface PlancheLand {
@@ -151,7 +154,7 @@ export function PlancheBoard({
     for (const h of setup.houses)
       put(`house:${h.id}`, { kind: "house", id: h.id }, h.x, h.y, () => {
         const b = fondaco(P).group;
-        b.scale.setScalar(h.id === me ? 0.62 : 0.5);
+        b.scale.setScalar(h.id === me ? 0.55 : 0.42);
         return b;
       });
     // A town on the Rialto's tile is the Rialto itself: the market of Venice stands there.
@@ -167,6 +170,47 @@ export function PlancheBoard({
       put("rialto", null, land.rialto.x, land.rialto.y, () => market(P).group);
     return { root, at };
   }, [setup, land, me]);
+
+  // Each island in small round its house: its four highest workshops at the tile's corners, so
+  // that a rival's trade reads from afar (docs/plan-ile.md I5).
+  const isles = setup.houses
+    .map((h) =>
+      Object.values(state.houses[h.id]?.ile?.tiles ?? {})
+        .map((t) => t.building)
+        .filter((b): b is NonNullable<typeof b> => !!b && b.type !== ILE_FONDACO)
+        .sort((a, b) => b.level - a.level || a.type.localeCompare(b.type))
+        .slice(0, 4)
+        .map((b) => b.type)
+        .join(","),
+    )
+    .join("|");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the islands' signature stands for the state.
+  const minis = useMemo(() => {
+    const root = new Group();
+    const corners = [
+      [-2.05, -2.05],
+      [2.05, -2.05],
+      [-2.05, 2.05],
+      [2.05, 2.05],
+    ] as const;
+    isles.split("|").forEach((list, k) => {
+      const h = setup.houses[k];
+      if (!h || !list) return;
+      list.split(",").forEach((type, n) => {
+        const entry = BY_KEY.get(type);
+        const model = entry?.make?.(P, { seed: k * 11 + n, running: false });
+        const [cx, cz] = corners[n] ?? [0, 0];
+        if (!model) return;
+        const g = new Group();
+        model.group.scale.setScalar(0.55);
+        g.add(model.group);
+        g.position.set(wx(h.x) + cx, 0, wz(h.y) + cz);
+        bake(g);
+        root.add(g);
+      });
+    });
+    return root;
+  }, [isles, setup, P]);
 
   // The towers of the passages: their flag tells who holds them.
   const holders = setup.passages.map((p) => state.passages[p.id]?.holder ?? "").join("|");
@@ -372,6 +416,7 @@ export function PlancheBoard({
       <Stage target={controls.target} phone={phone} plain={plain} scale={3} />
       <primitive object={ground} />
       <primitive object={web.root} />
+      <primitive object={minis} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: every place has its label, a button. */}
       <primitive object={places.root} onClick={pick} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: every passage has its label, a button. */}
