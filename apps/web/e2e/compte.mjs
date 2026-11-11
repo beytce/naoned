@@ -4,7 +4,7 @@
 // Needs the web built (pnpm --filter @comptoirs/web build): node e2e/compte.mjs
 // Env: CHROMIUM (a Chromium or headless shell), SHOTS (a folder for the pictures).
 import { spawn } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,6 +13,10 @@ import { chromium } from "playwright-core";
 const here = dirname(fileURLToPath(import.meta.url));
 const SHOTS = resolve(process.env.SHOTS ?? join(here, "..", "e2e-shots", "compte"));
 const log = join(SHOTS, "server.log");
+// A base on disk: the server is stopped and started again on it (docs/plan-compte.md C6).
+const BASE_DIR = join(SHOTS, "base");
+rmSync(BASE_DIR, { recursive: true, force: true });
+const port = 3100 + Math.floor(Math.random() * 800);
 const fail = (why) => {
   console.error(`compte: ${why}`);
   process.exitCode = 1;
@@ -21,7 +25,6 @@ const fail = (why) => {
 async function startServer() {
   const serverDir = join(here, "..", "..", "server");
   const tsx = createRequire(join(serverDir, "package.json")).resolve("tsx/cli");
-  const port = 3100 + Math.floor(Math.random() * 800);
   const url = `http://127.0.0.1:${port}`;
   mkdirSync(SHOTS, { recursive: true });
   writeFileSync(log, "");
@@ -31,7 +34,7 @@ async function startServer() {
       ...process.env,
       LANG: "C.UTF-8",
       NODE_ENV: "test",
-      DATABASE_URL: "pglite:memory",
+      DATABASE_URL: `pglite:${BASE_DIR}`,
       HOST: "127.0.0.1",
       PORT: String(port),
       APP_URL: url,
@@ -51,7 +54,15 @@ async function startServer() {
     await new Promise((r) => setTimeout(r, 250));
   }
   if (!/Server listening/.test(out)) throw new Error("the server did not start in 60 s");
-  return { url, stop: () => child.kill("SIGTERM") };
+  return {
+    url,
+    stop: (signal = "SIGTERM") =>
+      new Promise((done) => {
+        if (child.exitCode !== null) return done();
+        child.once("exit", () => done());
+        child.kill(signal);
+      }),
+  };
 }
 
 async function magicLink(email) {
@@ -65,7 +76,7 @@ async function magicLink(email) {
   throw new Error("no magic link in the server's log");
 }
 
-const server = await startServer();
+let server = await startServer();
 /** Each player's cookies, for the walk in real time. */
 const cookies = {};
 const browser = await chromium.launch({
@@ -207,7 +218,44 @@ try {
     if ((await count()) <= before) fail("the other's board never showed the thread");
     if (took > 1000) fail(`the other heard of the thread after ${took} ms`);
   }
+  // The test of a deploy (docs/plan-compte.md C6): the server stopped dead, then normally; each
+  // time, the house, its island, its thread and its purse are found again, to the denier.
+  if (cookies.p) {
+    const session = cookies.p.map((c) => `${c.name}=${c.value}`).join("; ");
+    const mine = async () => {
+      const v = (
+        await fetch(`${server.url}/api/planche`, { headers: { cookie: session } }).then((r) =>
+          r.json(),
+        )
+      ).planche;
+      const h = v.state.houses[v.me];
+      const built = Object.entries(h.ile.tiles)
+        .filter(([, t]) => t.building && t.building.type !== "fondaco")
+        .map(([k, t]) => `${k}:${t.building.type}`);
+      return {
+        me: v.me,
+        built,
+        threads: h.threads.map((t) => `${t.to}|${t.good}`),
+        spent: h.book.isle,
+        ok: v.ok,
+      };
+    };
+    const before = await mine();
+    for (const signal of ["SIGKILL", "SIGTERM"]) {
+      await server.stop(signal);
+      server = await startServer();
+      const after = await mine();
+      const same = JSON.stringify(after) === JSON.stringify(before);
+      console.log(
+        `redéploiement (${signal}) : ${same ? "tout est là" : "DIFFÉRENT"} — ${JSON.stringify(after)}`,
+      );
+      if (!same)
+        fail(`after ${signal}: ${JSON.stringify(after)} instead of ${JSON.stringify(before)}`);
+    }
+    if (!before.built.length || !before.threads.length)
+      fail("nothing was built or stretched before");
+  }
 } finally {
   await browser.close();
-  server.stop();
+  await server.stop();
 }
