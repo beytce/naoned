@@ -298,7 +298,10 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
           ) : null}
           <div className="pc-passe-title">
             <b>{duel ? duel.foe.replace(/^./, (x) => x.toUpperCase()) : title}</b>
-            <span data-passe-turn>{duel ? `${boards[board].name} · ${turn}` : turn}</span>
+            <span>
+              {duel ? `${boards[board].name} · ` : ""}
+              <span data-passe-turn>{turn}</span>
+            </span>
           </div>
           {duel?.seals !== undefined ? <Seals left={duel.seals} light /> : null}
           {left && room ? (

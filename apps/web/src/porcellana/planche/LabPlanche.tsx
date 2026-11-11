@@ -423,13 +423,16 @@ export default function LabPlanche() {
         price: planchePrice(S, state, city.id, good),
       };
     });
+    // What one serves first, then what one could; what others serve shows its shares too.
     const shown = goods
-      .filter((g) => g.held || g.makes)
-      .sort((x, y) => Number(!!y.held) - Number(!!x.held));
-    const folded = goods.filter((g) => !g.held && !g.makes);
-    const at = shown.find((g) => g.good === focus) ?? shown[0];
+      .filter((g) => g.held || g.makes || g.others.length)
+      .sort((x, y) => Number(!!y.held) - Number(!!x.held) || Number(y.makes) - Number(x.makes));
+    const folded = goods.filter((g) => !g.held && !g.makes && !g.others.length);
+    const at =
+      shown.find((g) => g.good === focus && (g.held || g.makes)) ??
+      shown.find((g) => g.held || g.makes);
     const passed = goods.find((g) => g.held && g.others[0] && g.others[0].bps > g.mine);
-    const another = shown.find((g) => !g.held && g.good !== at?.good);
+    const another = shown.find((g) => !g.held && g.makes && g.good !== at?.good);
     return (
       <section className="pc-planche-card pc-pl-card" data-planche-card>
         <div className="pc-pl-head">
@@ -485,6 +488,7 @@ export default function LabPlanche() {
             data-good={g.good}
             data-held={String(!!g.held)}
             aria-pressed={at?.good === g.good}
+            disabled={!g.held && !g.makes}
             onClick={() => setFocus(g.good)}
           >
             <span className="pc-pl-good-top">
@@ -497,14 +501,17 @@ export default function LabPlanche() {
             <span className="pc-pl-good-says">
               {g.held || g.others.length ? (
                 <>
-                  {g.held ? <em>toi {pct(g.mine)}</em> : null}
-                  {g.others.slice(0, 2).map((o) => (
-                    <span key={o.house}>
-                      {" "}
-                      · {short(o.house)} {pct(o.bps)}
-                    </span>
-                  ))}
-                  <span> · libre {pct(g.sh.freeBps)}</span>
+                  {[
+                    g.held ? <em key="me">toi {pct(g.mine)}</em> : null,
+                    ...g.others.slice(0, 2).map((o) => (
+                      <span key={o.house}>
+                        {short(o.house)} {pct(o.bps)}
+                      </span>
+                    )),
+                    <span key="free">libre {pct(g.sh.freeBps)}</span>,
+                  ]
+                    .filter(Boolean)
+                    .flatMap((x, k) => (k ? [" · ", x] : [x]))}
                   {g.held ? (
                     <span className="pc-pl-patina">
                       patine +{Math.round(planchePatina(S, g.held, state.now) / 100)} %
@@ -517,9 +524,7 @@ export default function LabPlanche() {
             </span>
           </button>
         ))}
-        {!shown.length && playing ? (
-          <p>Ton île ne fait encore rien de ce que {city.name} demande.</p>
-        ) : null}
+        {!at && playing ? <p>Ton île ne fait encore rien de ce que {city.name} demande.</p> : null}
         {folded.length ? (
           <div className="pc-pl-also">
             <span>{shown.length ? "Aussi demandé :" : "Demandé :"}</span>
@@ -531,7 +536,7 @@ export default function LabPlanche() {
         ) : null}
         {playing ? (
           <div className="pc-pl-acts">
-            {!shown.length ? (
+            {!at ? (
               <button
                 type="button"
                 className="pc-passe-go"

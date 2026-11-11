@@ -368,6 +368,11 @@
 }
 .pc-px-threat {
   margin: 0;
+  align-self: center;
+  background: var(--pc-paper);
+  border-radius: 999px;
+  padding: 6px 14px;
+  box-shadow: 0 2px 0 #d3ccc0;
   text-align: center;
   font: 800 14px / 1.35 var(--pc-display);
   color: #a8302a;

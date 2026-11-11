@@ -153,8 +153,11 @@ function Hero({ children }: { children: ReactNode }) {
         <span className="[@media(max-height:700px)]:hidden">
           <Mark size={88} className="drop-shadow-xl" />
         </span>
-        {/* Lagune: the name in the letters of a place, gold, as the counter's star. */}
-        <h1 className="mt-3 pl-[0.2em] font-place text-[2.2rem] font-bold uppercase leading-none tracking-[0.2em] text-gold [@media(max-height:700px)]:mt-2 [@media(max-height:700px)]:text-[1.8rem]">
+        {/* The wordmark (docs/design.md, logo): « fondaco », lower case, Nunito 900, in ink. */}
+        <h1
+          className="mt-3 text-[2.6rem] lowercase leading-none text-[#2A2725] [@media(max-height:700px)]:mt-2 [@media(max-height:700px)]:text-[2.1rem]"
+          style={{ fontFamily: "Nunito, system-ui, sans-serif", fontWeight: 900 }}
+        >
           {fr.appName}
         </h1>
         <p className="mt-2 text-sm text-cream-dim">{fr.seasonOf(new Date())}</p>
