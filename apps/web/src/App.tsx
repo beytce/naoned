@@ -6,6 +6,7 @@ import { LagoonNight } from "./art/scenes.js";
 import { EmpireOrSeason } from "./empire/Home.js";
 import { CanalHero } from "./game/Canal.js";
 import { Game } from "./game/Game.js";
+import { OLD_HOME } from "./home.js";
 import { fr } from "./i18n.js";
 import { LANG } from "./lang.js";
 import { LegalLinks, LegalPage, legalPageAt } from "./legal/Legal.js";
@@ -51,7 +52,7 @@ export function App() {
     const token = tokenFromLocation(window.location);
     if (token) {
       setScreen({ name: "verifying" });
-      window.history.replaceState(null, "", "/");
+      window.history.replaceState(null, "", OLD_HOME);
       api
         .verify(token)
         .then((account) => setScreen(screenFor(account)))

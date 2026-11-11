@@ -103,7 +103,7 @@ try {
       await route.fulfill({ response: res, json });
     });
     const email = `battle_${width}@example.org`;
-    await page.goto(server.url);
+    await page.goto(`${server.url}/ancien`);
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
     await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);
@@ -189,7 +189,7 @@ try {
     page.on("pageerror", (e) => faults.push(`${label}: ${e.message}`));
     const shot = (name) =>
       page.screenshot({ path: join(SHOTS, `${label}-${name}.png`), timeout: 120_000 });
-    await page.goto(server.url);
+    await page.goto(`${server.url}/ancien`);
     await page.locator("[data-play-battle]").click();
     await page.locator("[data-battle-stage=none]").waitFor({ timeout: 30_000 });
     if (!(await page.locator("[data-battle-guest]").count())) faults.push(`${label}: no guest`);

@@ -146,7 +146,7 @@ try {
       route.fulfill({ json: { terra: campo ? { theatre: THEATRE, view: WEEK.view } : null } }),
     );
     const email = `terra_${width}@example.org`;
-    await page.goto(server.url);
+    await page.goto(`${server.url}/ancien`);
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
     await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);
@@ -179,7 +179,7 @@ try {
     await free.waitFor({ state: "attached", timeout: 30_000 });
     campo = (await free.getAttribute("data-place"))?.slice(5) ?? null;
     // SLOW=20: the way twenty times slower (?lenteur), its frames seen on a slow renderer.
-    if (process.env.SLOW) await page.goto(`${server.url}/?lenteur=${process.env.SLOW}`);
+    if (process.env.SLOW) await page.goto(`${server.url}/ancien?lenteur=${process.env.SLOW}`);
     else await page.reload();
     await page.waitForSelector("[data-porcellana-map]", { timeout: 30_000 });
     const pin = page.locator(`[data-place='campo:${campo}']`);

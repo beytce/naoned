@@ -371,7 +371,7 @@ async function session(width, height, tag) {
     // The sign-in (by the mail's code or its link), the merchant's name, the introduction, the
     // trade.
     const email = `e2e-${width}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.org`;
-    await page.goto(LANG === "en" ? `${base}/?lang=en` : base);
+    await page.goto(LANG === "en" ? `${base}/ancien?lang=en` : `${base}/ancien`);
     await check("connexion");
     // On the short phone (an iPhone SE), the address field and its button above the fold; a tall
     // one shows Venice's sky first.
@@ -1545,7 +1545,7 @@ async function parts(page, check) {
     await route.fulfill({ response, json });
   });
   await closeAll(page);
-  await page.goto(new URL("/?open=shares", page.url()).toString());
+  await page.goto(new URL("/ancien?open=shares", page.url()).toString());
   await page.waitForTimeout(1200);
   // The Market at its « Actions » tab (refonte UX, lot 5).
   const tab = page.getByRole("tab", { name: WORDS.sharesTab });

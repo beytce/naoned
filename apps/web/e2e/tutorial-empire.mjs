@@ -84,7 +84,7 @@ try {
     });
     page.on("pageerror", (e) => faults.push(`${label}: ${e.message}`));
     const email = `guided_${width}@example.org`;
-    await page.goto(server.url);
+    await page.goto(`${server.url}/ancien`);
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
     await page.goto(`${server.url}/connexion?token=${await magicLink(email)}`);
