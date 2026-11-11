@@ -16,6 +16,7 @@ import {
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import {
+  CircleGeometry,
   Group,
   MOUSE,
   Mesh,
@@ -45,6 +46,11 @@ export interface PasseMarks {
   aim: number[];
   /** A cell pointed at (a problem's key), ringed in accent and breathing. */
   hint: number;
+  /**
+   * The threat on the board (docs/audit-visuel-2026-11-11): each side's shortest way to its banks,
+   * dots of accent for the thread and of ink for the chain, and the cell both need, ringed.
+   */
+  ways?: { thread: number[]; chain: number[]; decide: number };
 }
 
 interface Piece {
@@ -86,7 +92,7 @@ export function PasseBoard({
   // biome-ignore lint/correctness/useExhaustiveDependencies: the reefs' signature stands for the cells.
   const board = useMemo(() => {
     const root = new Group();
-    const tiles: { group: Group; groove: Mesh; delay: number }[] = [];
+    const tiles: { group: Group; groove: Group; delay: number }[] = [];
     for (let y = 0; y < H; y++)
       for (let x = 0; x < W; x++) {
         const i = y * W + x;
@@ -94,10 +100,16 @@ export function PasseBoard({
         g.position.set(wx(x), 0, wz(y));
         g.userData.cell = i;
         g.add(slab(P, false));
-        // The current: a groove from south-west to north-east, where two pieces also hold.
-        const groove = box(g, 2.2, 0.05, 0.16, 0, 0, 0, P.m("roof"), 0.02);
+        // The current: an arrow from south-west to north-east, where two pieces also hold.
+        const groove = new Group();
+        g.add(groove);
         groove.rotation.y = Math.PI / 4;
-        groove.castShadow = false;
+        box(groove, 2.6, 0.06, 0.24, 0, 0, 0, P.m("open"), 0.03).castShadow = false;
+        for (const side of [-1, 1]) {
+          const head = box(groove, 0.9, 0.06, 0.24, 0.98, 0, side * 0.3, P.m("open"), 0.03);
+          head.rotation.y = side * 0.75;
+          head.castShadow = false;
+        }
         if (reefs[i] === "#") {
           const r = rocks(P, { seed: i + 3, running: false });
           g.add(r.group);
@@ -133,6 +145,16 @@ export function PasseBoard({
       return m;
     };
     const accent = `#${P.accentColour.getHexString()}`;
+    const dot = (colour: string) => {
+      const m = new Mesh(
+        new CircleGeometry(1.15, 28),
+        new MeshBasicMaterial({ color: colour, transparent: true, opacity: 0, toneMapped: false }),
+      );
+      m.rotation.x = -Math.PI / 2;
+      m.renderOrder = 2;
+      root.add(m);
+      return m;
+    };
     return {
       root,
       tiles,
@@ -142,6 +164,11 @@ export function PasseBoard({
       hover: ring(accent, 2.3, 2.5),
       hint: ring(accent, 2.2, 2.55),
       aims: Array.from({ length: 8 }, () => ring(accent, 2.3, 2.55)),
+      decide: ring(COL.ink, 2.05, 2.4),
+      dots: {
+        thread: Array.from({ length: W * H }, () => dot(accent)),
+        chain: Array.from({ length: W * H }, () => dot(COL.ink)),
+      },
     };
   }, [P, W, H, reefs]);
 
@@ -264,6 +291,10 @@ export function PasseBoard({
     put(board.hover, h >= 0 && state.cells[h] === PASSE_EMPTY && !state.winner ? h : -1, 0.8);
     put(board.hint, marks.hint, 0.55 + (live ? Math.sin(c.t * 5) * 0.35 : 0.3), 0.06);
     board.aims.forEach((m, k) => put(m, marks.aim[k] ?? -1, 0.9, 2.4));
+    const w = marks.ways;
+    board.dots.thread.forEach((m, k) => put(m, w?.thread[k] ?? -1, 0.7, 0.07));
+    board.dots.chain.forEach((m, k) => put(m, w?.chain[k] ?? -1, 0.6, 0.08));
+    put(board.decide, w && w.decide >= 0 ? w.decide : -1, 0.85, 0.09);
   });
 
   const pick = (e: ThreeEvent<MouseEvent>) => {

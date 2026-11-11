@@ -323,6 +323,7 @@ export default function LabPlanche() {
         <LabPasse
           duel={{
             board: p?.board ?? "segna",
+            seals: state.passages[duel]?.seals,
             foe: plancheIsCorsair(holder)
               ? holder.slice(8)
               : `le lieutenant de ${nameOf(holder, view?.names)}`,

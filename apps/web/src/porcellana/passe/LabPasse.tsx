@@ -21,12 +21,14 @@ import {
   passeInit,
   passeLegal,
   passePlay,
+  passeShortestWay,
   passeThink,
   venice1450Passe,
 } from "@comptoirs/engine";
 import { Canvas } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { OrthographicCamera } from "three";
+import { Seals } from "../planche/PlancheUi.js";
 import { PasseBoard, type PasseMarks } from "./PasseBoard.js";
 import { usePasseRoom } from "./usePasseRoom.js";
 
@@ -66,6 +68,8 @@ const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : 
 export interface PasseDuel {
   board: string;
   foe: string;
+  /** The seals the tower still has (shown by its captain's name). */
+  seals?: number;
   /** Won or not, and the thread's own pieces, for the server to replay the duel. */
   onEnd: (won: boolean, moves: PasseMove[]) => void;
 }
@@ -205,7 +209,17 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
   const failed = !!problem && !state.winner && state.turn === 1 && state.laid[0] >= problem.moves;
   const over = !!state.winner || failed;
   const cargo = room ? room.cargo : passeCargo(setup, state);
-  const marks: PasseMarks = { last, aim: firing ? fires : [], hint };
+  // The threat (docs/audit-visuel-2026-11-11): each side's shortest way, and the cell both need.
+  const ways = useMemo(() => {
+    if (state.winner || problem) return undefined;
+    const free = (side: 1 | 2) =>
+      passeShortestWay(state, side).filter((i) => state.cells[i] === PASSE_EMPTY);
+    const thread = free(1);
+    const chain = free(2);
+    const both = new Set(chain);
+    return { thread, chain, decide: thread.find((i) => both.has(i)) ?? -1 };
+  }, [state, problem]);
+  const marks: PasseMarks = { last, aim: firing ? fires : [], hint, ways };
   const phone = typeof window !== "undefined" && window.innerWidth < 640;
   const plain = phone || new URLSearchParams(window.location.search).has("simple");
 
@@ -272,23 +286,70 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
       </Canvas>
       <div className="pc-vignette" />
 
-      <header className="pc-passe-top">
-        <div className="pc-passe-title">
-          <b>{title}</b>
-          <span data-passe-turn>{turn}</span>
+      <header className="pc-px-top">
+        <div className="pc-px-foe" data-duel={String(!!duel)}>
+          {duel ? (
+            <svg width="52" height="52" viewBox="0 0 52 52" role="img" aria-label="Son pavillon">
+              <circle cx="26" cy="26" r="25" fill="#3A3633" stroke="#6B645C" strokeWidth="2" />
+              <path d="M17 12 V42" stroke="#D9D2C6" strokeWidth="2" />
+              <path d="M18 13 H38 L33 20 L38 27 H18 Z" fill="#111111" />
+              <circle cx="25" cy="19.5" r="3" fill="#F6F4F0" />
+            </svg>
+          ) : null}
+          <div className="pc-passe-title">
+            <b>{duel ? duel.foe.replace(/^./, (x) => x.toUpperCase()) : title}</b>
+            <span data-passe-turn>{duel ? `${boards[board].name} · ${turn}` : turn}</span>
+          </div>
+          {duel?.seals !== undefined ? <Seals left={duel.seals} light /> : null}
+          {left && room ? (
+            <span className="pc-px-clock" aria-label={`${left} secondes`}>
+              <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+                <circle cx="15" cy="15" r="12" fill="none" stroke="#6B645C" strokeWidth="4" />
+                <circle
+                  cx="15"
+                  cy="15"
+                  r="12"
+                  fill="none"
+                  stroke="#E0614F"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray={`${Math.min(1, left / 15) * 75.4} 75.4`}
+                  transform="rotate(-90 15 15)"
+                />
+              </svg>
+              <b>{left} s</b>
+            </span>
+          ) : null}
         </div>
-        <div className="pc-passe-race" aria-live="polite">
+        <div className="pc-px-race" aria-live="polite">
           <div data-side="fil" data-mine={String(mine === 1 || seat === "deux")}>
-            <i />
             <b data-passe-thread>{a >= 99 ? "×" : a}</b>
-            <span>{seat === "chaine" ? "au fil" : seat === "deux" ? "au fil" : "à ton fil"}</span>
+            <span>
+              case{a > 1 ? "s" : ""} manque{a > 1 ? "nt" : ""}
+              <br />
+              <strong>
+                {seat === "chaine" || seat === "deux" || (room && mine === 2)
+                  ? "au fil"
+                  : "à ton fil"}
+              </strong>
+            </span>
           </div>
           <div data-side="chaine" data-mine={String(mine === 2 && seat !== "deux")}>
-            <i />
             <b data-passe-chain>{c >= 99 ? "×" : c}</b>
-            <span>{seat === "chaine" ? "à ta chaîne" : "à la chaîne"}</span>
+            <span>
+              case{c > 1 ? "s" : ""} manque{c > 1 ? "nt" : ""}
+              <br />
+              <strong>{mine === 2 && seat !== "deux" ? "à ta chaîne" : "à la chaîne"}</strong>
+            </span>
           </div>
         </div>
+        {ways && ways.decide >= 0 && !theirTurn && !over ? (
+          <p className="pc-px-threat">
+            {(mine === 1 ? c : a) <= (mine === 1 ? a : c)
+              ? `${mine === 1 ? "La chaîne" : "Le fil"} menace en ${cellName(state, ways.decide)} : pare, ou prends l'initiative.`
+              : `Les deux chemins se croisent en ${cellName(state, ways.decide)}.`}
+          </p>
+        ) : null}
       </header>
 
       {/* The board for a keyboard, a screen reader and the walk-through: one button a cell. */}
@@ -398,52 +459,101 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
             </div>
           </div>
         ) : (
-          <div className="pc-passe-bar">
-            {state.fire[mine === 1 ? 0 : 1] > 0 && !problem ? (
-              <button
-                type="button"
-                className="pc-passe-go"
-                aria-pressed={firing}
-                disabled={!canFire}
-                onClick={() => setFiring((f) => !f)}
-              >
-                {firing
-                  ? mine === 1
-                    ? "Touche un maillon"
-                    : "Touche une barge"
-                  : mine === 1
-                    ? "Brûlot"
-                    : "Bombarde"}
-              </button>
+          <section className="pc-px-tray" aria-label="Tes pièces">
+            {!problem ? (
+              <div className="pc-px-tray-head">
+                <b>Tes pièces</b>
+                {mine === 1 && seat !== "deux" ? (
+                  <span>
+                    {plural(state.laid[0], "barge posée", "barges posées")} · au mieux{" "}
+                    <strong>
+                      {(() => {
+                        // At best, the thread passes in the cells it still lacks: so many holds saved.
+                        const { holds, full, step } = setup.cargo;
+                        const over = Math.max(0, state.laid[0] + (a >= 99 ? 0 : a) - full);
+                        const n = Math.max(1, holds - Math.ceil(over / Math.max(1, step)));
+                        return `${n} cale${n > 1 ? "s" : ""} sur ${holds} arriveront pleines`;
+                      })()}
+                    </strong>
+                  </span>
+                ) : null}
+              </div>
             ) : null}
-            {room ? (
-              <button type="button" className="pc-passe-quiet" onClick={net.leave}>
-                Quitter la salle
-              </button>
-            ) : duel ? (
-              <button
-                type="button"
-                className="pc-passe-quiet"
-                onClick={() => duel.onEnd(false, laid.current)}
-              >
-                Rompre
-              </button>
-            ) : (
-              <button type="button" className="pc-passe-quiet" onClick={restart}>
-                Recommencer
-              </button>
-            )}
-            {duel ? null : (
-              <button
-                type="button"
-                className="pc-passe-quiet"
-                aria-expanded={open}
-                onClick={() => setOpen((o) => !o)}
-              >
-                Réglages
-              </button>
-            )}
-          </div>
+            <div className="pc-px-pieces">
+              {!problem ? (
+                <button
+                  type="button"
+                  className="pc-px-piece"
+                  aria-pressed={firing}
+                  disabled={!canFire || state.fire[mine === 1 ? 0 : 1] <= 0}
+                  onClick={() => setFiring((f) => !f)}
+                >
+                  {mine === 1 ? (
+                    <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+                      <path
+                        d="M14 3 C18 9 21 12 21 17 A7 7 0 0 1 7 17 C7 13 10 11 11 7 C12 10 13 11 14 11 Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  ) : (
+                    <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+                      <circle cx="12" cy="16" r="8" fill="currentColor" />
+                      <path
+                        d="M17 9 L22 4"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  )}
+                  <b>{mine === 1 ? "Brûlot" : "Bombarde"}</b>
+                  <small>
+                    {state.fire[mine === 1 ? 0 : 1] <= 0
+                      ? "déjà joué"
+                      : firing
+                        ? mine === 1
+                          ? "touche un maillon"
+                          : "touche une barge"
+                        : canFire
+                          ? `${mine === 1 ? "brûle" : "coule"} ${fires
+                              .slice(0, 2)
+                              .map((i) => cellName(state, i))
+                              .join(" ou ")}`
+                          : mine === 1
+                            ? "aucun maillon près de tes barges"
+                            : "aucune barge restée seule"}
+                  </small>
+                </button>
+              ) : null}
+              {room ? (
+                <button type="button" className="pc-passe-quiet" onClick={net.leave}>
+                  Quitter la salle
+                </button>
+              ) : duel ? (
+                <button
+                  type="button"
+                  className="pc-passe-quiet"
+                  onClick={() => duel.onEnd(false, laid.current)}
+                >
+                  Rompre
+                </button>
+              ) : (
+                <button type="button" className="pc-passe-quiet" onClick={restart}>
+                  Recommencer
+                </button>
+              )}
+              {duel ? null : (
+                <button
+                  type="button"
+                  className="pc-passe-quiet"
+                  aria-expanded={open}
+                  onClick={() => setOpen((o) => !o)}
+                >
+                  Réglages
+                </button>
+              )}
+            </div>
+          </section>
         )}
         {over && !duel ? (
           <button
