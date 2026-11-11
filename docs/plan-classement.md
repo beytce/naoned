@@ -1,6 +1,6 @@
 # Le rang, les lauriers et le rival de la semaine : plan (étape 6 de CADRAGE-v4 § 17)
 
-*Proposé le 11 novembre 2026, à la suite de l'île (« on fera le classement et le rival par la suite », puis « Enchaîne »). Les règles de fond sont celles de `docs/CADRAGE-v4.md` § 10 ; l'aspect suit la toile de l'audit visuel du 11 novembre (`docs/audit-visuel-2026-11-11/00-audit.md`). **À valider avant d'écrire une ligne de code.***
+*Proposé le 11 novembre 2026, à la suite de l'île (« on fera le classement et le rival par la suite », puis « Enchaîne »). Les règles de fond sont celles de `docs/CADRAGE-v4.md` § 10 ; l'aspect suit la toile de l'audit visuel du 11 novembre (`docs/audit-visuel-2026-11-11/00-audit.md`). **Validé le même jour**, avec les quatre recommandations du § 7.*
 
 ## 1. Le problème à régler
 
@@ -96,9 +96,20 @@ Un commit par lot au moins ; je fusionne sur la branche principale à la fin de 
 
 Les ligues, la Sérénissime et la montée de monde (étape 9) ; la montée de l'encre et les sorties des capitaines (étape 9) ; le renom et les titres (avec l'apparat, plus tard) ; les compagnies (étape 8) ; les tutoriels du palais (étape 7) ; les pierres gravées en fin de marée (étape 9).
 
-## 7. À trancher
+## 7. Tranché (11 novembre 2026, le porteur suit les quatre recommandations)
 
-1. **Le Négoce** : gain par heure-bobine tirée (proposé, récompense le fil bien placé), ou gain net de la marée (plus simple à lire, mais favorise l'île la plus riche) ?
-2. **Le rival** : une Maison de l'ordinateur quand aucun humain n'est juste au-dessus (proposé, chacun a un rival dès le premier jour), ou seulement des humains (plus fort, mais souvent personne en ligne aujourd'hui) ?
-3. **La place dans la pilule** : la place au classement du Doge (proposé, un seul chiffre), ou la meilleure de ses trois places (plus flatteur) ?
-4. **L'ordre** : je propose le rang et le rival d'abord (R1 à R4), le Problème du jour et le défi ensuite (R5, R6). Veux-tu le Problème du jour plus tôt, puisqu'il ne dépend de presque rien ?
+1. **Le Négoce** : le gain par heure-bobine tirée.
+2. **Le rival** : un joueur de préférence, une Maison de l'ordinateur sinon.
+3. **La place dans la pilule** : la place au classement du Doge.
+4. **L'ordre** : le rang et le rival d'abord (R1 à R4, puis fusion), le Problème du jour et le défi ensuite (R5, R6).
+
+## 8. État
+
+| Lot | État |
+| --- | --- |
+| R1 | fait : `packages/engine/src/planche/rang.ts` (horloge de marée et semaines, Négoce par heure-bobine, Garde par heures tenues et péril, cote de la Passe reprise de `battleRatings`, places et Doge, rival désigné le lundi, duel du dimanche, lauriers proclamés en fin de marée), 13 tests ; règles dans `venice1450.planche.ts` (`rank`, `peril` des passages) |
+| R2 | à faire |
+| R3 | à faire |
+| R4 | à faire (le serveur devra faire partir la marée un lundi à minuit) |
+| R5 | à faire |
+| R6 | à faire |

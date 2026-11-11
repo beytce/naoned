@@ -24,6 +24,14 @@ import {
   ileSlice,
   ileUpgrade,
 } from "../ile/ile.js";
+import {
+  type PlancheHouseRank,
+  type PlancheRank,
+  type PlancheRankRules,
+  plancheRankHouse,
+  plancheRankInit,
+  plancheRankTurn,
+} from "./rang.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -61,6 +69,8 @@ export interface PlanchePassage {
   /** The board of its Passe (the duel that forces it). */
   board: string;
   seals: number;
+  /** How perilous its tile is: an hour held there counts as many in the Garde (1 if unsaid). */
+  peril?: number;
 }
 
 export interface PlancheHouseSetup {
@@ -88,6 +98,8 @@ export interface PlancheSetup {
   passages: PlanchePassage[];
   /** The islands' rules: with them, a house makes what its island makes, and pays to build it. */
   ile?: IleRules;
+  /** The rank's rules: without them, the counters run but no week nor tide ever ends. */
+  rank?: PlancheRankRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -132,6 +144,8 @@ export interface PlancheHouse {
   earned: bigint;
   /** Its island, when the board has islands. */
   ile?: IleState;
+  /** Its counters for the tide (docs/plan-classement.md). */
+  rank: PlancheHouseRank;
 }
 
 export interface PlancheState {
@@ -145,6 +159,8 @@ export interface PlancheState {
   burnt: bigint;
   /** Every denier spent on the islands. */
   spent: bigint;
+  /** The tide, the weeks, the rivals and the laurels. */
+  rank: PlancheRank;
 }
 
 const fail = (code: string): never => {
@@ -183,6 +199,7 @@ export function plancheInit(S: PlancheSetup, now: number): PlancheState {
       free: {},
       delivered: 0,
       earned: 0n,
+      rank: plancheRankHouse(S),
       ...(S.ile ? { ile: ileInit(S.ile, plancheGround(S, h.id)) } : {}),
     };
   }
@@ -196,7 +213,18 @@ export function plancheInit(S: PlancheSetup, now: number): PlancheState {
   for (const p of S.passages)
     passages[p.id] = { holder: p.holder, tollBps: p.tollBps, seals: p.seals };
   const minted = BigInt(S.rules.startDucats) * BigInt(S.houses.length);
-  return { now, houses, gauges, passages, minted, burnt: 0n, spent: 0n };
+  const s: PlancheState = {
+    now,
+    houses,
+    gauges,
+    passages,
+    minted,
+    burnt: 0n,
+    spent: 0n,
+    rank: {} as PlancheRank,
+  };
+  plancheRankInit(S, s);
+  return s;
 }
 
 const clone = (s: PlancheState): PlancheState => structuredClone(s);
@@ -361,6 +389,8 @@ function slice(S: PlancheSetup, s: PlancheState): void {
       }
       a.h.ducats += kept;
       a.h.earned += kept;
+      a.h.rank.earned += kept;
+      a.h.rank.week[cityId] = (a.h.rank.week[cityId] ?? 0n) + kept;
       g.left -= sold;
     }
   }
@@ -375,8 +405,15 @@ function slice(S: PlancheSetup, s: PlancheState): void {
       g.left = Math.min(w.cap, g.left + back);
       if (g.left === w.cap) g.carry = 0;
     }
+  // 5. The rank's counters: bobbins out, towers held.
+  for (const h of Object.values(s.houses)) h.rank.threadMs += h.threads.length * ms;
+  for (const p of S.passages) {
+    const holder = own(s.houses, s.passages[p.id]?.holder ?? "");
+    if (holder) holder.rank.guardMs += ms * (p.peril ?? 1);
+  }
   s.now = t + ms;
   for (const h of Object.values(s.houses)) h.rewinding = h.rewinding.filter((at) => at > s.now);
+  plancheRankTurn(S, s);
 }
 
 /** The board at `now`: every whole slice since its last is played, in order. */

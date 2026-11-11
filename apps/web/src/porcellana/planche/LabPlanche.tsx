@@ -83,7 +83,16 @@ function revive(raw: PlancheState): PlancheState {
   const big = (v: unknown) => BigInt(String(v ?? 0));
   const houses: PlancheState["houses"] = {};
   for (const [id, h] of Object.entries(raw.houses))
-    houses[id] = { ...h, ducats: big(h.ducats), earned: big(h.earned) };
+    houses[id] = {
+      ...h,
+      ducats: big(h.ducats),
+      earned: big(h.earned),
+      rank: {
+        ...h.rank,
+        earned: big(h.rank?.earned),
+        week: Object.fromEntries(Object.entries(h.rank?.week ?? {}).map(([c, v]) => [c, big(v)])),
+      },
+    };
   return {
     ...raw,
     houses,
