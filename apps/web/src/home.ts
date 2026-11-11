@@ -6,6 +6,12 @@
  */
 export const OLD_HOME = "/ancien";
 
-/** The board is shown at the site's root, unless a laboratory is asked for. */
-export const isBoardHome = (pathname: string, lab: string | null) =>
-  !lab && (pathname === "/" || pathname === "");
+/**
+ * The board is shown at the site's root, unless a laboratory is asked for; and on the page a
+ * sign-in link opens (`/connexion`), unless it asks for the former game (`&ancien`).
+ */
+export const isBoardHome = (pathname: string, lab: string | null, search = "") =>
+  !lab &&
+  (pathname === "/" ||
+    pathname === "" ||
+    (pathname === "/connexion" && !new URLSearchParams(search).has("ancien")));

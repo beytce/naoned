@@ -146,6 +146,11 @@ export interface PlancheHouse {
   ile?: IleState;
   /** Its counters for the tide (docs/plan-classement.md). */
   rank: PlancheHouseRank;
+  /**
+   * Its book, since the board began (docs/plan-compte.md C2): what towns paid for its goods,
+   * the tolls it paid and received, what its island cost. Its purse is its start and these.
+   */
+  book: { sold: bigint; tollPaid: bigint; tollIn: bigint; isle: bigint };
 }
 
 export interface PlancheState {
@@ -201,6 +206,7 @@ export function plancheInit(S: PlancheSetup, now: number, tideStart = now): Plan
       delivered: 0,
       earned: 0n,
       rank: plancheRankHouse(S),
+      book: { sold: 0n, tollPaid: 0n, tollIn: 0n, isle: 0n },
       ...(S.ile ? { ile: ileInit(S.ile, plancheGround(S, h.id)) } : {}),
     };
   }
@@ -375,6 +381,7 @@ function slice(S: PlancheSetup, s: PlancheState): void {
       a.h.delivered += sold;
       const paid = price * BigInt(sold);
       s.minted += paid;
+      a.h.book.sold += paid;
       let kept = paid;
       // The toll of each passage a house holds on the way, a share of it destroyed.
       for (const id of city.via) {
@@ -385,6 +392,8 @@ function slice(S: PlancheSetup, s: PlancheState): void {
         const toll = (paid * BigInt(Math.min(p.tollBps, S.rules.tollMaxBps))) / BigInt(BPS);
         const burnt = (toll * BigInt(S.rules.tollBurnBps)) / BigInt(BPS);
         kept -= toll;
+        a.h.book.tollPaid += toll;
+        holder.book.tollIn += toll - burnt;
         holder.ducats += toll - burnt;
         s.burnt += burnt;
       }
@@ -547,6 +556,7 @@ function onIsle(
   const h = s.houses[house] as PlancheHouse;
   h.ile = ile;
   h.ducats -= cost;
+  h.book.isle += cost;
   s.spent += cost;
   return s;
 }

@@ -62,7 +62,8 @@ const PasseLab = lazy(() => import("./porcellana/passe/LabPasse.js"));
 const PlancheLab = lazy(() => import("./porcellana/planche/LabPlanche.js"));
 const labName = new URLSearchParams(window.location.search).get("lab");
 // The shared board is the home (docs/plan-classement.md, decision of 11 November 2026).
-const board = labName === "planche" || isBoardHome(window.location.pathname, labName);
+const board =
+  labName === "planche" || isBoardHome(window.location.pathname, labName, window.location.search);
 
 createRoot(root).render(
   <StrictMode>

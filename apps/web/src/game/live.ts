@@ -1,6 +1,7 @@
 /** What the server pushes: fetch the view again (now, or when convenient on the minute's tick). */
 export interface LiveMessage {
-  type: "changed" | "tick";
+  /** `planche`: one's board of the planche changed (docs/plan-compte.md C5). */
+  type: "changed" | "tick" | "planche";
   version: number;
 }
 

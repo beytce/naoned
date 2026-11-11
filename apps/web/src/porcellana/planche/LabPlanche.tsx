@@ -33,9 +33,12 @@ import {
 import { Canvas } from "@react-three/fiber";
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { OrthographicCamera } from "three";
+import { type Account, api, tokenFromLocation } from "../../api.js";
 import { Emblem } from "../../art/logo.js";
 import { DucatCoin } from "../../art/plateau/coins.js";
+import { connectLive } from "../../game/live.js";
 import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
+import { Entree, Fonder, Profil } from "./Entree.js";
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
 import { Bobbin, Flag, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
@@ -90,6 +93,12 @@ function revive(raw: PlancheState): PlancheState {
       ...h,
       ducats: big(h.ducats),
       earned: big(h.earned),
+      book: {
+        sold: big(h.book?.sold),
+        tollPaid: big(h.book?.tollPaid),
+        tollIn: big(h.book?.tollIn),
+        isle: big(h.book?.isle),
+      },
       rank: {
         ...h.rank,
         earned: big(h.rank?.earned),
@@ -107,6 +116,7 @@ function revive(raw: PlancheState): PlancheState {
 
 interface Online {
   since: number;
+  lagoon?: string;
   me: string | null;
   names: Record<string, string>;
   players: string[];
@@ -116,6 +126,44 @@ export default function LabPlanche() {
   /** On line by default (the server holds the board); `&seul` plays a board of one's own, here. */
   const online = useMemo(() => !new URLSearchParams(window.location.search).has("seul"), []);
   const [view, setView] = useState<Online | null>(null);
+  /**
+   * The way in (docs/plan-compte.md C4): on line, an account is needed; the first time, the
+   * house is founded (its name and flag). `in` once inside.
+   */
+  const [gate, setGate] = useState<"loading" | "signin" | "found" | "in">(
+    online ? "loading" : "in",
+  );
+  const [account, setAccount] = useState<Account | null>(null);
+  const [profil, setProfil] = useState(false);
+  const enter = useCallback((a: Account) => {
+    setAccount(a);
+    setGate(a.pseudoDefault || !a.crest ? "found" : "in");
+  }, []);
+  useEffect(() => {
+    if (!online) return;
+    let alive = true;
+    void (async () => {
+      // Opened from the link of a mail: the account is signed in, the address made clean.
+      const token = tokenFromLocation(window.location);
+      if (token) {
+        try {
+          await api.verify(token);
+        } catch {
+          // A used or old link: the sheet asks for the address again.
+        }
+        window.history.replaceState(null, "", "/");
+      }
+      try {
+        const a = await api.me();
+        if (alive) enter(a);
+      } catch {
+        if (alive) setGate("signin");
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [online, enter]);
   const ME = online ? (view?.me ?? "") : "toi";
   const [state, setState] = useState<PlancheState>(() => plancheInit(S, T0));
   const [chosen, setChosen] = useState<PlanchePick | null>(null);
@@ -163,6 +211,7 @@ export default function LabPlanche() {
       setState(revive(json.planche.state));
       setView({
         since: json.planche.since,
+        lagoon: (json.planche as Online).lagoon,
         me: json.planche.me,
         names: json.planche.names,
         players: json.planche.players,
@@ -180,21 +229,31 @@ export default function LabPlanche() {
     },
     [send],
   );
+  // A gesture of anyone on the board is heard at once (docs/plan-compte.md C5); reading now and
+  // then only shows time going by, more often while the line is down.
+  const [heard, setHeard] = useState(false);
   useEffect(() => {
-    if (!online || duel) return;
+    if (!online || duel || gate !== "in") return;
     let alive = true;
     const read = async () => {
       const res = await call();
+      if (alive && res === "not_signed_in") setGate("signin");
       if (alive && res === "offline")
         setSaid("Le serveur ne répond pas. Lance « pnpm dev », ou ajoute « &seul » à l'adresse.");
     };
     void read();
-    const timer = window.setInterval(read, 2000);
+    const timer = window.setInterval(read, heard ? 6000 : 2000);
     return () => {
       alive = false;
       window.clearInterval(timer);
     };
-  }, [online, duel, call]);
+  }, [online, duel, call, gate, heard]);
+  useEffect(() => {
+    if (!online || gate !== "in") return;
+    return connectLive((m) => {
+      if (m.type === "planche") void call();
+    }, setHeard);
+  }, [online, gate, call]);
 
   // Time, played here: a slice of the game a tick; the houses of the computer visit in their turn.
   useEffect(() => {
@@ -439,6 +498,7 @@ export default function LabPlanche() {
     setChosen(p);
     setFocus(null);
     setPalace(false);
+    setProfil(false);
   };
   const closeX = (
     <button
@@ -786,7 +846,13 @@ export default function LabPlanche() {
   })();
   const latest = news.at(-1);
   return (
-    <div className="porcellana fixed inset-0 pc-passe pc-planche" data-planche-lab>
+    <div
+      className="porcellana fixed inset-0 pc-passe pc-planche"
+      data-planche-lab
+      data-gate={gate}
+      data-threads={Object.values(state.houses).reduce((n, h) => n + h.threads.length, 0)}
+      data-live={String(heard)}
+    >
       <Canvas
         orthographic
         dpr={[1, 2]}
@@ -889,15 +955,25 @@ export default function LabPlanche() {
       </div>
       <header className="pc-passe-top pc-pl-top">
         <div className="pc-pl-left">
-          <div className="pc-pl-brand">
+          <button
+            type="button"
+            className="pc-pl-brand"
+            aria-label="Ton profil"
+            data-planche-medallion
+            onClick={() => {
+              if (!account) return;
+              pick(null);
+              setProfil(true);
+            }}
+          >
             <Emblem size={36} />
             <span>
-              <b>{me ? (ME === "toi" ? "Ta Maison" : short(ME)) : "Fondaco"}</b>
+              <b>{me ? (online ? short(ME) : "Ta Maison") : "Fondaco"}</b>
               <span>
                 Jour {day} · {hour} h
               </span>
             </span>
-          </div>
+          </button>
           {online ? (
             <span className="pc-planche-online" data-planche-online>
               {view && !view.me
@@ -996,7 +1072,26 @@ export default function LabPlanche() {
             onRival={(id) => pick({ kind: "house", id })}
           />
         ) : null}
-        {!chosen && !palace ? (
+        {profil && account ? (
+          <Profil
+            account={account}
+            {...(view?.lagoon ? { lagoon: view.lagoon } : {})}
+            close={() => setProfil(false)}
+            onFlag={() => {
+              setProfil(false);
+              setGate("found");
+            }}
+            onOut={() => {
+              setProfil(false);
+              void api.logout().finally(() => {
+                setAccount(null);
+                setView(null);
+                setGate("signin");
+              });
+            }}
+          />
+        ) : null}
+        {!chosen && !palace && !profil ? (
           <div className="pc-planche-news" aria-label="Le fil des nouvelles">
             {latest ? (
               <button key={latest.id} type="button" onClick={() => pick(latest.pick)}>
@@ -1021,6 +1116,16 @@ export default function LabPlanche() {
         <i />
         <span>le Large · péril</span>
       </div>
+      {gate === "signin" ? <Entree onIn={enter} /> : null}
+      {gate === "found" && account ? (
+        <Fonder
+          account={account}
+          onDone={(a) => {
+            setAccount(a);
+            setGate("in");
+          }}
+        />
+      ) : null}
     </div>
   );
 }

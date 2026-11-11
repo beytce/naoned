@@ -5,7 +5,9 @@ export type LiveMessage =
   /** Something of theirs changed (a trade, a delivery, an order filled…): fetch the view again. */
   | { type: "changed"; version: number }
   /** The world moved on (the minute's tick: board, market maker): fetch it when convenient. */
-  | { type: "tick"; version: number };
+  | { type: "tick"; version: number }
+  /** One's board of the planche changed (a gesture of someone there): read it again. */
+  | { type: "planche"; version: number };
 
 /** The few methods of a WebSocket the hub needs (the `ws` socket of @fastify/websocket). */
 export interface LiveSocket {

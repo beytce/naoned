@@ -991,3 +991,257 @@ button.pc-pl-rank {
     font-size: 11px;
   }
 }
+/* The way in (docs/plan-compte.md C4), as on the mock-up: the board veiled, a sheet of paper. */
+.pc-in {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  font-family: var(--pc-ui);
+  color: var(--pc-ink);
+}
+.pc-in-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(236, 232, 225, 0.35) 0%,
+    rgba(236, 232, 225, 0.72) 45%,
+    rgba(236, 232, 225, 0.95) 100%
+  );
+  backdrop-filter: blur(1.5px);
+}
+.pc-in-brand {
+  position: absolute;
+  left: 22px;
+  top: calc(28px + env(safe-area-inset-top, 0px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 900 30px var(--pc-display);
+  letter-spacing: -0.5px;
+}
+.pc-in-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100vh - 110px);
+  overflow: auto;
+  background: var(--pc-paper);
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -16px 40px rgba(42, 39, 37, 0.14);
+  padding: 26px 22px calc(30px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+@media (min-width: 640px) {
+  .pc-in {
+    justify-content: center;
+  }
+  .pc-in-sheet {
+    border-radius: 28px;
+    box-shadow: 0 4px 0 var(--pc-foot), 0 22px 50px rgba(42, 39, 37, 0.16);
+  }
+}
+.pc-in-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pc-in-head h1 {
+  margin: 0;
+  font: 900 27px / 1.1 var(--pc-display);
+}
+.pc-in-head p,
+.pc-in-sent {
+  margin: 0;
+  font: 500 14px / 1.45 var(--pc-ui);
+  color: var(--pc-text-2);
+}
+.pc-in-step {
+  font: 800 12px var(--pc-ui);
+  color: var(--pc-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pc-in-promise {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.pc-in-promise div {
+  background: #f3f0ea;
+  border-radius: 14px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  font: 700 11.5px / 1.25 var(--pc-ui);
+  color: var(--pc-text-2);
+}
+.pc-in-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pc-in-form label,
+.pc-in-label {
+  font: 700 13px var(--pc-ui);
+  color: var(--pc-text-2);
+}
+.pc-in-form input {
+  height: 52px;
+  border-radius: 14px;
+  border: 2px solid var(--pc-hair);
+  background: #fff;
+  padding: 0 16px;
+  font: 600 16px var(--pc-ui);
+  color: var(--pc-ink);
+}
+.pc-in-form input:focus,
+.pc-in-name:focus-within {
+  outline: none;
+  border-color: var(--pc-ink);
+}
+.pc-in-go {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 58px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--pc-accent);
+  color: #fff;
+  font: 900 18px var(--pc-display);
+  box-shadow: 0 4px 0 var(--pc-accent-deep);
+  cursor: pointer;
+  margin-top: 4px;
+}
+.pc-in-go small {
+  font: 600 12px var(--pc-ui);
+  opacity: 0.9;
+}
+.pc-in-go:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pc-in-go:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--pc-accent-deep);
+}
+.pc-in-quiet {
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: #f3f0ea;
+  font: 800 14px var(--pc-ui);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-in-small {
+  margin: 0;
+  font: 500 12.5px / 1.45 var(--pc-ui);
+  color: var(--pc-text-3);
+  text-align: center;
+}
+.pc-in-error {
+  margin: 0;
+  font: 700 13px / 1.4 var(--pc-ui);
+  color: var(--pc-accent-soft);
+  text-align: center;
+}
+.pc-in-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pc-in-preview > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pc-in-preview b {
+  font: 900 22px var(--pc-display);
+}
+.pc-in-preview span {
+  font: 600 13px var(--pc-ui);
+  color: var(--pc-text-3);
+}
+.pc-in-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 52px;
+  border-radius: 14px;
+  border: 2px solid var(--pc-hair);
+  background: #fff;
+  padding: 0 14px;
+  font: 800 18px var(--pc-display);
+}
+.pc-in-name input {
+  border: 0;
+  outline: 0;
+  font: 800 18px var(--pc-display);
+  color: var(--pc-ink);
+  width: 100%;
+  background: transparent;
+}
+.pc-in-colors {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pc-in-colors button {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 3px solid transparent;
+  box-shadow: inset 0 0 0 2px var(--pc-paper);
+  cursor: pointer;
+}
+.pc-in-colors button[aria-pressed="true"] {
+  border-color: var(--pc-ink);
+}
+.pc-in-charges {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.pc-in-charges button {
+  min-height: 56px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  background: #f3f0ea;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font: 700 11px var(--pc-ui);
+  color: var(--pc-text-2);
+  cursor: pointer;
+}
+.pc-in-charges button[aria-pressed="true"] {
+  border-color: var(--pc-ink);
+  background: var(--pc-paper);
+}
+button.pc-pl-brand {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+/* While one comes in, the board is only a backdrop: its tools wait. */
+.pc-planche:is([data-gate="signin"], [data-gate="found"], [data-gate="loading"])
+  :is(.pc-pl-top, .pc-pl-scale, .pc-pl-foot, .pc-pl-peril, .pc-planche-pins) {
+  visibility: hidden;
+}
