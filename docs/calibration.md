@@ -2938,3 +2938,117 @@ Décision du porteur du 9 novembre 2026 : la première Bataille classée du jour
 | 10 | 4006 | 255 · 255 | 6.0 % | 7.3 % | 8 % | active → active |
 
 **Lecture.** La Bataille pèse 6,0 % de la Gloire d'un régulier en médiane (rang parmi les marchands), 7,9 % s'il est premier chaque jour ; le plafond (315) fait 8,6 % de la semaine médiane d'un régulier sans Bataille, au-dessus de 10 % sur deux graines seulement (11 et 12 %, les semaines les plus maigres). La cible tient sans changer le barème. Un assidu n'en tire pas plus qu'un régulier (une seule classée par jour). Le Signore change sur 4 graines sur 10, par le canal déjà mesuré pour les escarmouches (les alliances demandées au voisin le plus glorieux), plus petit que le hasard ordinaire de la semaine. À suivre en bêta.
+
+## La Passe : l'équilibre du duel (11 novembre 2026, docs/plan-passe.md P4)
+
+*Prototype de l'étape 1 de CADRAGE-v4. Mesure : `pnpm --filter @comptoirs/simulator passe-bench 24`. L'adversaire artificiel (`packages/engine/src/passe/mind.ts`) joue contre lui-même ; chaque partie s'ouvre par une pièce au hasard de chaque camp, sans quoi deux esprits fixes rejouent la même partie. La force est le nombre de pièces qu'il voit à l'avance. Réglages : `packages/engine/src/themes/venice1450.passe.ts`.*
+
+### Les passages de Venise (24 parties par case, l'adversaire contre lui-même)
+
+| Passage | Damier | Force 2 : le fil passe | Force 3 : le fil passe | Barges posées |
+| --- | --- | --- | --- | --- |
+| Bouche du Lido | 5 × 5 | 58 % | 50 % | 7.0 |
+| Bouche de Chioggia | 7 × 7 | 54 % | 58 % | 10.3 |
+| Détroit de Segna | 7 × 7 | 50 % | 58 % | 11.1 |
+| Canal d’Otrante | 9 × 9 | 33 % | non mesuré | 12.1 |
+
+### Ce qui déplace l'équilibre (damier de 7 × 7, 24 parties par case)
+
+| Réglage | Force 2 : le fil passe | Force 3 : le fil passe |
+| --- | --- | --- |
+| Damier nu, le fil commence | 50 % | 58 % |
+| Damier nu, la chaîne commence | 50 % | 54 % |
+| Un écueil au centre, le fil commence | 29 % | 25 % |
+| Un écueil au bord, le fil commence | 58 % | 71 % |
+| Deux écueils aux bords, le fil commence | 50 % | 58 % |
+| Un écueil au centre, une barge d'avance | 46 % | 50 % |
+| Un écueil au centre, deux barges d'avance | 29 % | 46 % |
+| Un maillon d'avance, le fil commence | 54 % | 58 % |
+
+### Voir plus loin fait-il gagner ? (damier nu, chacun joue le fil puis la chaîne)
+
+| Le plus fort | Le plus faible | Parties gagnées par le plus fort |
+| --- | --- | --- |
+| 2 | 1 | 75 % |
+| 3 | 1 | 96 % |
+| 3 | 2 | 83 % |
+
+**Lecture.**
+- **Le duel est équilibré sur un damier nu** : le fil passe une fois sur deux, qu'il commence ou non.
+- **L'écueil au centre est le grand levier** : il donne la partie à la chaîne (le fil ne passe plus qu'une fois sur quatre). Une barge posée d'avance le compense. Aux bords, les écueils ne pèsent presque pas.
+- **Les trois premiers passages de Venise sont réglés entre 50 et 58 %.** Le Canal d'Otrante (33 % à la force 2) est voulu dur : c'est un détroit du Large.
+- **Voir plus loin fait gagner** : la force 3 bat la force 1 dans 96 % des parties, la force 2 dans 83 %. C'est le signe d'un jeu où la réflexion paie.
+- **Une partie dure de 7 à 12 barges** par camp : deux minutes.
+
+**Limites.** 24 parties par case : à ±20 points près. L'adversaire ne voit que trois pièces d'avance, sur les douze meilleures cases : entre bons joueurs, l'équilibre peut différer. Une première série, sans ouverture tirée au sort, donnait des chiffres faux (jusqu'à 100 %) parce que les parties se répétaient ; elle est écartée. Le damier de 9 sur 9 n'est pas mesuré à la force 3 (trop lent pour l'instant).
+
+## La planche : les fils et la demande commune (11 novembre 2026, docs/plan-planche.md L3)
+
+*Prototype de l'étape 2 de CADRAGE-v4. Mesure : `pnpm --filter @comptoirs/simulator planche-bench 5`. Huit Maisons tenues par l'ordinateur (`packages/engine/src/planche/robot.ts`) sur la planche de Venise (`venice1450.planche.ts`), six semaines, trois visites par jour. L'issue d'une Passe n'est pas jouée ici : une Maison qui tente un passage de corsaire le force quatre fois sur dix.*
+
+### La planche de Venise : une marée de 6 semaines, 5 graines, trois visites par jour
+
+| Maison | Ce qu'elle fait | Gagné (milliers de deniers, médiane) | Fils déplacés par jour | Livré par jour |
+| --- | --- | --- | --- | --- |
+| Ta Maison | verre, planches | 21 634 | 2.38 | 389 |
+| Ca’ Contarini | verre, sel | 18 970 | 2.43 | 388 |
+| Ca’ Loredan | drap, planches | 22 885 | 2.69 | 403 |
+| Ca’ Morosini | sel, drap | 17 287 | 2.50 | 377 |
+| Ca’ Dandolo | planches, verre | 21 286 | 2.36 | 395 |
+| Ca’ Foscari | drap, sel | 20 343 | 2.45 | 390 |
+| Ca’ Grimani | sel, planches | 14 458 | 2.57 | 407 |
+| Ca’ Mocenigo | verre, drap | 23 938 | 2.10 | 342 |
+
+L'écart entre la Maison la plus riche et la plus pauvre : ×1.69 (médiane).
+Chaque denier est compté dans les 5 marées : oui.
+
+### Les passages à la fin de la marée
+
+| Passage | Tenu par (une ligne par graine) |
+| --- | --- |
+| Bouche de Chioggia | contarini · contarini · contarini · contarini · contarini |
+| Détroit de Segna | loredan · dandolo · loredan · morosini · dandolo |
+| Canal d’Otrante | loredan · foscari · toi · loredan · mocenigo |
+
+### Le prix payé dans chaque ville (part du plein prix, médiane des graines)
+
+| Ville | Marchandise | Plein prix | En moyenne sur la marée | Au plus bas |
+| --- | --- | --- | --- | --- |
+| Padoue | Verre | 900 | 85 % | 31 % |
+| Padoue | Drap | 1000 | 85 % | 31 % |
+| Padoue | Sel | 700 | 59 % | 31 % |
+| Trévise | Planches | 800 | 80 % | 31 % |
+| Trévise | Sel | 750 | 52 % | 31 % |
+| Trévise | Drap | 950 | 85 % | 31 % |
+| Vicence | Drap | 1150 | 71 % | 31 % |
+| Vicence | Verre | 1050 | 74 % | 30 % |
+| Vérone | Verre | 1500 | 54 % | 30 % |
+| Vérone | Planches | 1200 | 51 % | 31 % |
+| Vérone | Sel | 1100 | 38 % | 31 % |
+| Ferrare | Verre | 2200 | 40 % | 30 % |
+| Ferrare | Drap | 2400 | 39 % | 30 % |
+| Ferrare | Planches | 1900 | 33 % | 30 % |
+| Raguse | Verre | 4200 | 63 % | 50 % |
+| Raguse | Drap | 4600 | 63 % | 50 % |
+| Raguse | Sel | 3400 | 62 % | 50 % |
+| Alexandrie | Verre | 8000 | 65 % | 50 % |
+| Alexandrie | Planches | 7000 | 65 % | 50 % |
+| Alexandrie | Drap | 8500 | 65 % | 50 % |
+
+### Venir huit fois par jour rapporte-t-il plus que trois ?
+
+| Maison | Trois visites par jour | Huit visites par jour (elle seule) | Écart |
+| --- | --- | --- | --- |
+| Ta Maison | 21 634 | 24 236 | 12.0 % |
+| Ca’ Loredan | 22 885 | 25 412 | 11.0 % |
+| Ca’ Morosini | 17 287 | 17 686 | 2.3 % |
+
+**Lecture.**
+- **Les fils bougent** : chaque Maison en déplace deux à trois par jour. La demande commune oblige à retendre.
+- **Aucune Maison n'écrase les autres** : la plus riche gagne 1,7 fois la plus pauvre. Ce qu'une île fait (le sel paie moins que le verre) explique l'écart.
+- **Les villes proches se lassent** (un tiers du plein prix au plus bas) et se reposent ; les ports du Large tiennent mieux (la moitié au plus bas).
+- **Venir huit fois par jour rapporte au plus 12 % de plus que trois fois** : l'assidu gagne des occasions, pas un multiplicateur. Cible du cadrage tenue, à surveiller.
+- **Chaque denier est compté** dans toutes les marées.
+- **Les tours changent de main** : Segna et Otrante passent des corsaires aux Maisons au fil de la marée.
+
+**Limites.** Cinq graines. La patine ne pèse presque pas : les robots retendent trop souvent pour la garder. La production des îles est fixe (l'île viendra à l'étape 3).

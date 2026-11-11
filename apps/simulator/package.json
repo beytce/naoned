@@ -12,7 +12,10 @@
     "battle-glory": "tsx src/battle-glory.ts",
     "condotta": "tsx src/condotta-cli.ts",
     "empire": "tsx src/empire-cli.ts",
-    "porta-bench": "tsx src/porta-bench.ts"
+    "porta-bench": "tsx src/porta-bench.ts",
+    "passe-bench": "tsx src/passe-bench.ts",
+    "planche-bench": "tsx src/planche-bench.ts",
+    "passe-problems": "tsx src/passe-problems.ts"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*"

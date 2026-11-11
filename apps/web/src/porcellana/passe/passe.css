@@ -1,0 +1,268 @@
+/* The laboratory of the Passe (docs/plan-passe.md P5): paper, ink and the one accent. */
+.pc-passe {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.pc-passe-top {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 0
+    max(16px, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+}
+.pc-passe-title b {
+  display: block;
+  font: 800 17px / 1.2 var(--pc-display);
+}
+.pc-passe-title span {
+  font: 700 13px var(--pc-ui);
+  color: var(--pc-ink-soft);
+}
+/* The race: the cells each side still lacks, always in sight. */
+.pc-passe-race {
+  display: flex;
+  gap: 8px;
+}
+.pc-passe-race > div {
+  background: var(--pc-paper);
+  border: 1px solid var(--pc-hair);
+  border-radius: 14px;
+  padding: 6px 12px 7px;
+  min-width: 74px;
+  text-align: center;
+  line-height: 1.1;
+}
+.pc-passe-race i {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  margin-bottom: 4px;
+  background: var(--pc-ink);
+}
+.pc-passe-race [data-side="fil"] i {
+  background: var(--pc-accent);
+}
+.pc-passe-race b {
+  display: block;
+  font: 800 24px var(--pc-display);
+  font-variant-numeric: tabular-nums;
+}
+.pc-passe-race span {
+  font: 700 10.5px var(--pc-ui);
+  letter-spacing: 0.03em;
+  color: var(--pc-ink-soft);
+}
+.pc-passe-race [data-mine="true"] {
+  box-shadow: 0 3px 0 var(--pc-hair);
+}
+.pc-passe-grid {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.pc-passe-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px))
+    calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+}
+.pc-passe-foot > * {
+  pointer-events: auto;
+}
+.pc-passe-said {
+  margin: 0;
+  background: var(--pc-ink);
+  color: #fff;
+  font: 700 13px var(--pc-ui);
+  padding: 8px 14px;
+  border-radius: 999px;
+  text-align: center;
+}
+.pc-passe-bar,
+.pc-passe-end > div {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.pc-passe-go,
+.pc-passe-quiet {
+  border: 0;
+  border-radius: 999px;
+  min-height: 48px;
+  padding: 0 20px;
+  font: 800 15px var(--pc-display);
+  cursor: pointer;
+}
+.pc-passe-go {
+  background: var(--pc-accent);
+  color: var(--pc-accent-ink);
+  box-shadow: 0 4px 0 #8e281e;
+}
+.pc-passe-go[aria-pressed="true"] {
+  background: var(--pc-ink);
+  box-shadow: 0 4px 0 #000;
+}
+.pc-passe-go:disabled {
+  background: var(--pc-hair);
+  color: var(--pc-ink-soft);
+  box-shadow: 0 4px 0 #c9c1b4;
+  cursor: default;
+}
+.pc-passe-quiet {
+  background: var(--pc-paper);
+  color: var(--pc-ink);
+  border: 1px solid var(--pc-hair);
+  box-shadow: 0 4px 0 var(--pc-hair);
+}
+.pc-passe-end {
+  background: var(--pc-paper);
+  border: 1px solid var(--pc-hair);
+  border-radius: 18px;
+  padding: 14px 18px 16px;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 14px 30px -18px rgba(23, 21, 15, 0.6);
+}
+.pc-passe-end p {
+  margin: 0 0 12px;
+  font: 800 16px / 1.35 var(--pc-display);
+  text-wrap: balance;
+}
+.pc-passe-more {
+  min-height: 40px;
+  font-size: 13px;
+}
+.pc-passe-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 78%;
+  overflow: auto;
+  background: var(--pc-paper);
+  border-top: 1px solid var(--pc-hair);
+  border-radius: 22px 22px 0 0;
+  padding: 18px max(18px, env(safe-area-inset-right, 0px))
+    calc(22px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
+  box-shadow: 0 -18px 40px -24px rgba(23, 21, 15, 0.55);
+  touch-action: pan-y;
+}
+.pc-passe-sheet h2 {
+  margin: 16px 0 8px;
+  font: 800 12px var(--pc-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pc-ink-soft);
+}
+.pc-passe-sheet h2:first-of-type {
+  margin-top: 0;
+}
+.pc-passe-sheet p {
+  margin: 0 0 8px;
+  max-width: 62ch;
+  font: 500 14px / 1.5 var(--pc-ui);
+}
+.pc-passe-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.pc-passe-opts button {
+  border: 1px solid var(--pc-hair);
+  background: transparent;
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 0 16px;
+  font: 800 14px var(--pc-display);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-passe-opts button[aria-pressed="true"] {
+  background: var(--pc-ink);
+  border-color: var(--pc-ink);
+  color: #fff;
+}
+.pc-passe-probs button {
+  min-width: 56px;
+  padding: 4px 10px;
+  line-height: 1.1;
+}
+.pc-passe-probs small {
+  display: block;
+  font: 700 10px var(--pc-ui);
+  opacity: 0.7;
+}
+.pc-passe-x {
+  position: sticky;
+  top: 0;
+  float: right;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--pc-hair);
+  border-radius: 50%;
+  background: var(--pc-paper);
+  font: 800 20px var(--pc-display);
+  cursor: pointer;
+}
+.pc-passe button:focus-visible {
+  outline: 2px solid var(--pc-ink);
+  outline-offset: 2px;
+}
+@media (min-width: 720px) {
+  .pc-passe-sheet {
+    left: auto;
+    top: 0;
+    max-height: none;
+    width: 400px;
+    border-radius: 0;
+    border-top: 0;
+    border-left: 1px solid var(--pc-hair);
+  }
+}
+
+.pc-passe-link,
+.pc-passe-code {
+  border: 1px solid var(--pc-hair);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--pc-ink);
+  min-height: 44px;
+  padding: 0 12px;
+  font: 700 14px var(--pc-ui);
+}
+.pc-passe-link {
+  width: 100%;
+  margin-bottom: 12px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.pc-passe-code {
+  width: 110px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.pc-passe-opts button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

@@ -148,3 +148,7 @@ export * from "./unlocks.js";
 export * from "./partners.js";
 export * from "./loans.js";
 export * from "./empire/index.js";
+export * from "./passe/index.js";
+export * from "./planche/index.js";
+export { venice1450Passe } from "./themes/venice1450.passe.js";
+export { venice1450Planche } from "./themes/venice1450.planche.js";
