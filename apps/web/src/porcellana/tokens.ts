@@ -169,6 +169,8 @@ export const THREAD = {
   sheenMin: 0.1,
   sheenMax: 0.42,
   other: 0.7,
+  /** One's rival of the week: the same ink, bolder and whole. */
+  rival: 1.1,
   otherDash: 1.6,
   boat: 1.6,
 } as const;

@@ -21,9 +21,11 @@ import {
   plancheRobot,
   plancheRouteOpen,
   plancheShares,
+  plancheStanding,
   plancheSupply,
   plancheThread,
   plancheToll,
+  plancheTrend,
   plancheUnthread,
   plancheUpgrade,
   venice1450Planche,
@@ -34,6 +36,7 @@ import type { OrthographicCamera } from "three";
 import { Emblem } from "../../art/logo.js";
 import { DucatCoin } from "../../art/plateau/coins.js";
 import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
+import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
 import { Bobbin, Flag, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
 
@@ -83,7 +86,16 @@ function revive(raw: PlancheState): PlancheState {
   const big = (v: unknown) => BigInt(String(v ?? 0));
   const houses: PlancheState["houses"] = {};
   for (const [id, h] of Object.entries(raw.houses))
-    houses[id] = { ...h, ducats: big(h.ducats), earned: big(h.earned) };
+    houses[id] = {
+      ...h,
+      ducats: big(h.ducats),
+      earned: big(h.earned),
+      rank: {
+        ...h.rank,
+        earned: big(h.rank?.earned),
+        week: Object.fromEntries(Object.entries(h.rank?.week ?? {}).map(([c, v]) => [c, big(v)])),
+      },
+    };
   return {
     ...raw,
     houses,
@@ -112,6 +124,8 @@ export default function LabPlanche() {
   const [news, setNews] = useState<News[]>([]);
   const [duel, setDuel] = useState<string | null>(null);
   const [inIsle, setInIsle] = useState(false);
+  /** The Doge's palace, opened from one's place in the purse. */
+  const [palace, setPalace] = useState(false);
   /** The good the card of a town is about, and the scale of the view. */
   const [focus, setFocus] = useState<string | null>(null);
   const [scale, setScale] = useState<"monde" | "lagune">("lagune");
@@ -223,6 +237,38 @@ export default function LabPlanche() {
     }
   });
 
+  // The week turns: a new rival is named, and a flag taken or lost is said.
+  const lastRival = useRef<string | undefined>(undefined);
+  const lastFlags = useRef<string>("");
+  useEffect(() => {
+    if (!ME) return;
+    const r = state.rank.rivals[ME];
+    if (r && lastRival.current && r !== lastRival.current)
+      tell(
+        `Ton rival de la semaine : ${houseName(r, view?.names)}. Ses fils sont marqués d'encre.`,
+        {
+          kind: "house",
+          id: r,
+        },
+      );
+    lastRival.current = r;
+    const flags = JSON.stringify(state.rank.flags);
+    if (lastFlags.current && flags !== lastFlags.current) {
+      for (const f of state.rank.flags[ME] ?? [])
+        tell(`Tu as pris le pavillon de ${houseName(f, view?.names)} : il est sur ta façade.`, {
+          kind: "house",
+          id: ME,
+        });
+      for (const [h, fs] of Object.entries(state.rank.flags))
+        if (fs.includes(ME))
+          tell(`${houseName(h, view?.names)} a pris ton pavillon cette semaine.`, {
+            kind: "house",
+            id: h,
+          });
+    }
+    lastFlags.current = flags;
+  });
+
   // A town where one sells has tired: said once, until it has rested.
   const tired = useRef(new Set<string>());
   useEffect(() => {
@@ -244,12 +290,16 @@ export default function LabPlanche() {
 
   const me = state.houses[ME];
   const free = plancheFreeBobbins(S, state, ME);
+  // The rank (docs/plan-classement.md): one's place at the Doge's, its trend, the marks, the rival.
   const rank = useMemo(() => {
-    const order = S.houses
-      .map((h) => ({ id: h.id, earned: state.houses[h.id]?.earned ?? 0n }))
-      .sort((a, b) => (b.earned > a.earned ? 1 : b.earned < a.earned ? -1 : 0));
-    return { place: order.findIndex((o) => o.id === ME) + 1, order };
+    const standing = plancheStanding(S, state);
+    return {
+      place: standing.find((r) => r.house === ME)?.place ?? 0,
+      trend: ME ? plancheTrend(S, state, ME) : 0,
+      marks: rankMarks(S, state),
+    };
   }, [state, ME]);
+  const rival = state.rank.rivals[ME];
   /** A gesture: on line it is the server's to play, here it is the engine's. */
   const act = (f: () => PlancheState, done?: string, remote?: [string, unknown]) => {
     if (online && remote) {
@@ -388,6 +438,7 @@ export default function LabPlanche() {
   const pick = (p: PlanchePick | null) => {
     setChosen(p);
     setFocus(null);
+    setPalace(false);
   };
   const closeX = (
     <button
@@ -756,6 +807,7 @@ export default function LabPlanche() {
           phone={phone}
           plain={plain}
           zoom={scale === "monde" ? 0.5 : 1}
+          rival={rival}
         />
       </Canvas>
       <div className="pc-vignette" />
@@ -824,10 +876,13 @@ export default function LabPlanche() {
               className="pc-planche-pin pc-planche-house"
               data-house={h.id}
               data-mine={String(h.id === ME)}
+              data-rival={String(h.id === rival)}
               onClick={() => pick({ kind: "house", id: h.id })}
             >
               {h.id === ME ? null : <Flag tone={robot ? "robot" : "player"} />}
               <b>{h.id === ME ? "Ta Maison" : short(h.id)}</b>
+              {h.id === rival ? <small className="pc-rk-tag">rival</small> : null}
+              <Marks m={rank.marks[h.id]} name={short} />
             </button>
           );
         })}
@@ -889,13 +944,23 @@ export default function LabPlanche() {
             </small>
           </span>
           <i className="pc-pl-sep" />
-          <span className="pc-pl-rank">
+          <button
+            type="button"
+            className="pc-pl-rank"
+            data-planche-rank-open
+            aria-label={`${rank.place}e sur ${S.houses.length} : le palais du Doge`}
+            onClick={() => {
+              pick(null);
+              setPalace(true);
+            }}
+          >
             <b data-planche-rank>
               {rank.place}
               <sup>e</sup>
             </b>
+            <Trend n={rank.trend} />
             <small>sur {S.houses.length}</small>
-          </span>
+          </button>
         </div>
       </header>
       <nav className="pc-pl-scale" aria-label="L'échelle">
@@ -921,7 +986,17 @@ export default function LabPlanche() {
         {cityCard}
         {passageCard}
         {houseCard}
-        {!chosen ? (
+        {palace && ME ? (
+          <Palais
+            setup={S}
+            state={state}
+            me={ME}
+            name={short}
+            close={closeX}
+            onRival={(id) => pick({ kind: "house", id })}
+          />
+        ) : null}
+        {!chosen && !palace ? (
           <div className="pc-planche-news" aria-label="Le fil des nouvelles">
             {latest ? (
               <button key={latest.id} type="button" onClick={() => pick(latest.pick)}>

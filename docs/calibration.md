@@ -3147,3 +3147,37 @@ Chaque denier est compté dans les 5 marées : oui.
 - **Venir huit fois par jour rapporte au plus 10 % de plus que trois fois.**
 
 **Limites.** Les plans des Maisons de l'ordinateur sont écrits à la main ; un joueur réel peut faire mieux, ou moins bien. La marée ne finit pas encore.
+
+## Le rang, les lauriers et le rival (11 novembre 2026, docs/plan-classement.md R2)
+
+`pnpm --filter @comptoirs/simulator planche-bench 5` : la planche de Venise sur une marée de six semaines, cinq graines, les huit Maisons comptées comme tenues par des joueurs pour que chacune ait un rival.
+
+#### Le rang à la veille de la fin de la marée (docs/plan-classement.md R2)
+
+Toutes les Maisons comptées comme tenues par des joueurs ; pas de duel de la Passe au banc (la cote reste à son départ).
+
+| Maison | Place au Négoce (médiane) | Place à la Garde | Place au Doge | Fois Doge |
+| --- | --- | --- | --- | --- |
+| Ta Maison | 4 | 4 | 3 | 0 / 5 |
+| Ca’ Contarini | 1 | 3 | 2 | 2 / 5 |
+| Ca’ Loredan | 6 | 2 | 5 | 0 / 5 |
+| Ca’ Morosini | 6 | 4 | 6 | 0 / 5 |
+| Ca’ Dandolo | 8 | 3 | 8 | 0 / 5 |
+| Ca’ Foscari | 2 | 4 | 1 | 3 / 5 |
+| Ca’ Grimani | 6 | 4 | 6 | 0 / 5 |
+| Ca’ Mocenigo | 3 | 4 | 4 | 0 / 5 |
+
+Le premier du Négoce est aussi la Maison qui a le plus gagné : 4 marée(s) sur 5.
+Le premier du Négoce a aussi la plus grande île : 1 marée(s) sur 5. Chaque Maison de l'ordinateur tient ses cinq bobines toute la marée : entre elles, le Négoce suit donc le gain.
+Un rival chaque semaine : 240 semaines-Maisons sur 240 ; le même rival deux semaines de suite : 0 fois.
+Pavillons accrochés le dernier dimanche (médiane des graines) : 7.
+
+#### Venir huit fois par jour fait-il monter au rang ?
+
+| Maison | Place au Doge, trois visites | Huit visites (elle seule) |
+| --- | --- | --- |
+| Ta Maison | 3 | 2 |
+| Ca’ Loredan | 5 | 5 |
+| Ca’ Morosini | 6 | 6 |
+
+**Lecture.** Chaque Maison a un rival chaque semaine, jamais le même deux semaines de suite (une Maison prise en cours de semaine reçoit le sien tout de suite). Le Négoce ne revient pas à la plus grande île (une marée sur cinq). Entre les Maisons de l'ordinateur, qui tiennent leurs cinq bobines sans relâche, il suit le gain : il ne départagera vraiment qu'entre joueurs, qui laissent des bobines au repos. Venir huit fois par jour fait gagner une place au Doge à ta Maison (médiane), aucune aux deux autres : à surveiller avec de vrais joueurs. Ca' Dandolo, la brique, reste dernière, comme au banc de l'île. La Passe n'est pas jouée au banc : la cote reste à 1 200.

@@ -9,7 +9,7 @@ import {
   passeThink,
 } from "@comptoirs/engine";
 import { describe, expect, it } from "vitest";
-import { PlancheHub, type PlancheHubTheme } from "../src/game/planche.js";
+import { PlancheHub, type PlancheHubTheme, mondayOf } from "../src/game/planche.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -68,6 +68,14 @@ function theme(): PlancheHubTheme {
       tollBurnBps: 3_000,
       freeAfterForceMs: DAY,
       rewindMsPerTile: 60_000,
+    },
+    rank: {
+      tideWeeks: 6,
+      weekMs: 7 * DAY,
+      negoceMinMs: DAY,
+      coteStart: 1_200,
+      coteK: 32,
+      repelledHours: 12,
     },
   };
   const strait: Pick<PasseSetup, "width" | "height" | "first"> & { cells: number[] } = {
@@ -200,5 +208,41 @@ describe("the board on line", () => {
     hub.thread("ana", "near", "verre", T0);
     const v = hub.view("ana", "Ana", T0 + 5 * DAY);
     expect(v.ok).toBe(true);
+  });
+});
+
+// The rank on line (docs/plan-classement.md R4).
+describe("the rank on line", () => {
+  it("starts the tide on the Monday at midnight before the board", () => {
+    expect(new Date(mondayOf(T0)).toISOString()).toBe("2026-11-16T00:00:00.000Z");
+    expect(new Date(mondayOf(T0 + 3 * DAY)).toISOString()).toBe("2026-11-16T00:00:00.000Z");
+    expect(new Date(mondayOf(T0 + 7 * DAY)).toISOString()).toBe("2026-11-23T00:00:00.000Z");
+    const hub = new PlancheHub(theme(), T0);
+    expect(hub.view("ana", "Ana", T0).state.rank.tideStart).toBe(mondayOf(T0));
+  });
+
+  it("makes a newcomer's house a person's, with its rival at once: a person first", () => {
+    const t = theme();
+    // A house the theme gives to a person is no one's on line until it is taken.
+    t.board.houses[2] = { ...(t.board.houses[2] as (typeof t.board.houses)[number]), robot: false };
+    const hub = new PlancheHub(t, T0);
+    const a = hub.view("ana", "Ana", T0);
+    expect(a.state.rank.humans).toEqual(["a"]);
+    expect(a.state.rank.rivals.a).toBeDefined();
+    const b = hub.view("ben", "Ben", T0 + HOUR);
+    expect(b.state.rank.humans).toEqual(["a", "b"]);
+    expect(b.state.rank.rivals.b).toBe("a");
+  });
+
+  it("turns the week on Monday at midnight, and names new rivals", () => {
+    const hub = new PlancheHub(theme(), T0);
+    hub.view("ana", "Ana", T0);
+    hub.view("ben", "Ben", T0);
+    const before = hub.view("ana", "Ana", mondayOf(T0) + 7 * DAY - HOUR).state.rank;
+    expect(before.week).toBe(0);
+    const after = hub.view("ana", "Ana", mondayOf(T0) + 7 * DAY + HOUR).state.rank;
+    expect(after.week).toBe(1);
+    expect(after.lastRivals.a).toBe(before.rivals.a);
+    expect(after.rivals.a).not.toBe(before.rivals.a);
   });
 });

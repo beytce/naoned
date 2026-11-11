@@ -11,12 +11,15 @@ import {
   type PlancheState,
   Rng,
   plancheAdvance,
+  plancheClaim,
   plancheForced,
   plancheInit,
   plancheInvariant,
   plancheIsCorsair,
+  plancheLaurel,
   planchePrice,
   plancheRobot,
+  plancheStanding,
   venice1450Planche,
 } from "@comptoirs/engine";
 
@@ -30,6 +33,8 @@ interface Run {
   moves: Record<string, number>;
   low: Record<string, number>;
   mean: Record<string, number>;
+  /** Each week's rivals, every house counted as a person's (docs/plan-classement.md R2). */
+  rivals: Record<string, string>[];
 }
 
 /**
@@ -40,6 +45,8 @@ interface Run {
 function tide(S: PlancheSetup, seed: number, every: Record<string, number> = {}, force = 0.4): Run {
   const rng = new Rng(seed);
   let s = plancheInit(S, T0);
+  for (const h of S.houses) s = plancheClaim(S, s, h.id);
+  const rivals: Record<string, string>[] = [];
   const moves: Record<string, number> = {};
   const low: Record<string, number> = {};
   const sum: Record<string, number> = {};
@@ -50,7 +57,9 @@ function tide(S: PlancheSetup, seed: number, every: Record<string, number> = {},
   }
   for (let hour = 0; hour < WEEKS * 7 * 24; hour++) {
     const now = T0 + hour * HOUR;
+    const week = s.rank.week;
     s = plancheAdvance(S, s, now);
+    if (s.rank.week !== week || hour === 0) rivals.push({ ...s.rank.rivals });
     for (const h of S.houses) {
       const gap = every[h.id] ?? 8;
       if ((hour + (offset[h.id] ?? 0)) % gap !== 0) continue;
@@ -75,7 +84,7 @@ function tide(S: PlancheSetup, seed: number, every: Record<string, number> = {},
       }
   }
   for (const k of Object.keys(sum)) sum[k] = (sum[k] ?? 0) / (WEEKS * 7 * 24);
-  return { s, moves, low, mean: sum };
+  return { s, moves, low, mean: sum, rivals };
 }
 
 const S = venice1450Planche;
@@ -175,4 +184,67 @@ for (const id of ["toi", "loredan", "morosini"]) {
   console.log(
     `| ${name} | ${ducats(BigInt(Math.round(three)))} | ${ducats(BigInt(Math.round(eight)))} | ${(((eight - three) / Math.max(1, three)) * 100).toFixed(1)} % |`,
   );
+}
+
+console.log("\n### Le rang à la veille de la fin de la marée (docs/plan-classement.md R2)\n");
+console.log(
+  "Toutes les Maisons comptées comme tenues par des joueurs ; pas de duel de la Passe au banc (la cote reste à son départ).\n",
+);
+console.log(
+  "| Maison | Place au Négoce (médiane) | Place à la Garde | Place au Doge | Fois Doge |",
+);
+console.log("| --- | --- | --- | --- | --- |");
+for (const h of S.houses) {
+  const at = (r: Run, w: "negoce" | "garde") =>
+    plancheLaurel(S, r.s, w).find((x) => x.house === h.id)?.place ?? 0;
+  const doge = (r: Run) => plancheStanding(S, r.s).find((x) => x.house === h.id)?.place ?? 0;
+  const crowned = runs.filter((r) => plancheStanding(S, r.s)[0]?.house === h.id).length;
+  console.log(
+    `| ${h.name} | ${median(runs.map((r) => at(r, "negoce")))} | ${median(runs.map((r) => at(r, "garde")))} | ${median(runs.map(doge))} | ${crowned} / ${SEEDS} |`,
+  );
+}
+const richest = (r: Run) =>
+  S.houses.reduce((a, b) =>
+    (r.s.houses[b.id]?.earned ?? 0n) > (r.s.houses[a.id]?.earned ?? 0n) ? b : a,
+  ).id;
+const sameTop = runs.filter((r) => plancheLaurel(S, r.s, "negoce")[0]?.house === richest(r)).length;
+console.log(
+  `\nLe premier du Négoce est aussi la Maison qui a le plus gagné : ${sameTop} marée(s) sur ${SEEDS}.`,
+);
+const biggest = (r: Run) =>
+  S.houses.reduce((a, b) =>
+    Object.keys(r.s.houses[b.id]?.ile?.tiles ?? {}).length >
+    Object.keys(r.s.houses[a.id]?.ile?.tiles ?? {}).length
+      ? b
+      : a,
+  ).id;
+const sameBig = runs.filter((r) => plancheLaurel(S, r.s, "negoce")[0]?.house === biggest(r)).length;
+console.log(
+  `Le premier du Négoce a aussi la plus grande île : ${sameBig} marée(s) sur ${SEEDS}. Chaque Maison de l'ordinateur tient ses cinq bobines toute la marée : entre elles, le Négoce suit donc le gain.`,
+);
+let named = 0;
+let weeks = 0;
+let repeats = 0;
+for (const r of runs)
+  r.rivals.forEach((w, i) => {
+    for (const h of S.houses) {
+      weeks += 1;
+      if (w[h.id]) named += 1;
+      if (i > 0 && w[h.id] && r.rivals[i - 1]?.[h.id] === w[h.id]) repeats += 1;
+    }
+  });
+console.log(
+  `Un rival chaque semaine : ${named} semaines-Maisons sur ${weeks} ; le même rival deux semaines de suite : ${repeats} fois.`,
+);
+const flags = runs.map((r) => Object.values(r.s.rank.flags).reduce((n, f) => n + f.length, 0));
+console.log(`Pavillons accrochés le dernier dimanche (médiane des graines) : ${median(flags)}.`);
+
+console.log("\n### Venir huit fois par jour fait-il monter au rang ?\n");
+console.log("| Maison | Place au Doge, trois visites | Huit visites (elle seule) |");
+console.log("| --- | --- | --- |");
+for (const id of ["toi", "loredan", "morosini"]) {
+  const place = (r: Run) => plancheStanding(S, r.s).find((x) => x.house === id)?.place ?? 0;
+  const eight = Array.from({ length: SEEDS }, (_, k) => tide(S, k + 1, { [id]: 3 }));
+  const name = S.houses.find((h) => h.id === id)?.name ?? id;
+  console.log(`| ${name} | ${median(runs.map(place))} | ${median(eight.map(place))} |`);
 }

@@ -80,6 +80,7 @@ export function PlancheBoard({
   phone,
   plain,
   zoom = 1,
+  rival,
 }: {
   setup: PlancheSetup;
   land: PlancheLand;
@@ -93,6 +94,8 @@ export function PlancheBoard({
   plain: boolean;
   /** The scale asked from the interface: 1 the lagoon, less the whole world. */
   zoom?: number;
+  /** One's rival of the week: its threads in a bolder ink (docs/plan-classement.md). */
+  rival?: string;
 }) {
   const { camera, gl, size } = useThree();
   const live = useMemo(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, []);
@@ -338,6 +341,7 @@ export function PlancheBoard({
       opacity: 0.85,
       depthWrite: false,
     });
+    const foe = new MeshBasicMaterial({ map: dashes, depthWrite: false });
     const shadow = new MeshStandardMaterial({ color: THREAD.shadow, roughness: 0.8 });
     const sheen = new MeshBasicMaterial({ color: THREAD.sheen, toneMapped: false });
     const seen = new Set<string>();
@@ -366,8 +370,8 @@ export function PlancheBoard({
         const clean = pts.filter((p, k) => k === 0 || p.distanceTo(pts[k - 1] as Vector3) > 0.01);
         const route = roundedPath(clean);
         const ribbon = new Mesh(
-          ribbonGeometry(route, own ? THREAD.width : THREAD.other),
-          own ? accent : other,
+          ribbonGeometry(route, own ? THREAD.width : h.id === rival ? THREAD.rival : THREAD.other),
+          own ? accent : h.id === rival ? foe : other,
         );
         ribbon.receiveShadow = own;
         root.add(ribbon);
@@ -391,7 +395,7 @@ export function PlancheBoard({
       }
     }
     return { root, mine };
-  }, [setup, threads, me, chevrons, dashes, holders]);
+  }, [setup, threads, me, chevrons, dashes, holders, rival]);
 
   const ring = useMemo(() => {
     const m = new Mesh(

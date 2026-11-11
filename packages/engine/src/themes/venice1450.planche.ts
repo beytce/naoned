@@ -266,6 +266,7 @@ export const venice1450Planche: PlancheSetup & {
       tollBps: 1_000,
       board: "chioggia",
       seals: 3,
+      peril: 1,
     },
     {
       id: "segna",
@@ -276,6 +277,7 @@ export const venice1450Planche: PlancheSetup & {
       tollBps: 1_000,
       board: "segna",
       seals: 3,
+      peril: 2,
     },
     {
       id: "otrante",
@@ -286,8 +288,18 @@ export const venice1450Planche: PlancheSetup & {
       tollBps: 1_000,
       board: "otrante",
       seals: 3,
+      peril: 3,
     },
   ],
+  // The rank (docs/plan-classement.md): six weeks a tide, a day of thread to stand in the Négoce.
+  rank: {
+    tideWeeks: 6,
+    weekMs: 7 * 24 * 3_600_000,
+    negoceMinMs: 24 * 3_600_000,
+    coteStart: 1_200,
+    coteK: 32,
+    repelledHours: 12,
+  },
   rules: {
     bobbins: 5,
     store: 240,
