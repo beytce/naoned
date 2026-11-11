@@ -4,6 +4,8 @@ import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { openDatabase } from "./db/client.js";
 import { BotRunner } from "./game/bots.js";
+import { plancheTheme } from "./game/planche.js";
+import { PlancheStore } from "./game/plancheStore.js";
 import { GameWorld } from "./game/world.js";
 import { ConsoleMailer, ResendMailer } from "./mail/mailer.js";
 import { Alerts } from "./monitor.js";
@@ -54,6 +56,8 @@ const notifier = new Notifier(database.db, world, pusher);
 notifier.start(60_000, (err) => console.error(err));
 world.onEffects((fx, now) => void notifier.fromEffects(fx, now).catch(console.error));
 world.onSeasonOpened((closed) => void notifier.seasonOpened(closed).catch(console.error));
+// The shared board, kept in the base: a deploy or a restart loses nothing (docs/plan-compte.md).
+const planche = await PlancheStore.open(database.db, plancheTheme(), clock());
 const here = dirname(fileURLToPath(import.meta.url));
 const app = await buildApp({
   db: database.db,
@@ -61,6 +65,7 @@ const app = await buildApp({
   appUrl: config.APP_URL.replace(/\/$/, ""),
   production,
   world,
+  planche: planche.hub,
   notifier,
   adminEmails: config.ADMIN_EMAILS.split(",")
     .map((e) => e.trim().toLowerCase())
@@ -78,6 +83,7 @@ const shutdown = async () => {
   await app.close();
   // The next start replays nothing (a lost world writes nothing).
   await world.snapshot().catch(console.error);
+  await planche.snapshot().catch(console.error);
   await database.close();
   process.exit(0);
 };

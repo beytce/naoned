@@ -1,12 +1,11 @@
 import { randomBytes } from "node:crypto";
-import { venice1450Passe, venice1450Planche } from "@comptoirs/engine";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
 import { accounts } from "../db/schema.js";
 import { guestId, guestName, isGuest } from "./battle.js";
-import { type PlancheAnswer, PlancheHub } from "./planche.js";
+import { type PlancheAnswer, PlancheHub, plancheTheme } from "./planche.js";
 import { toJson } from "./serialize.js";
 
 export interface PlancheRouteDeps {
@@ -42,19 +41,12 @@ const SAID_STATUS = 409;
  */
 export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDeps): PlancheHub {
   const pace = Math.max(1, deps.pace ?? 1);
-  const t0 = deps.now();
-  const now = () => t0 + (deps.now() - t0) * pace;
-  const hub =
-    deps.hub ??
-    new PlancheHub(
-      {
-        board: venice1450Planche,
-        passe: { rules: venice1450Passe.rules, boards: venice1450Passe.boards, lieutenant: 3 },
-        visitHours: 8,
-        idleHours: 7 * 24,
-      },
-      now(),
-    );
+  const hub = deps.hub ?? new PlancheHub(plancheTheme(), deps.now());
+  // The game's clock: the real one, or faster in a test; it never runs behind what the board has
+  // reached (a board loaded from the base resumes where it stopped).
+  const real0 = deps.now();
+  const game0 = Math.max(real0, hub.reached());
+  const now = () => game0 + (deps.now() - real0) * pace;
   const player = async (req: FastifyRequest, reply: FastifyReply) => {
     const account = (await deps.accountIfAny?.(req)) ?? null;
     if (account) return account.id;
@@ -80,12 +72,12 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
   };
   const show = async (reply: FastifyReply, id: string, res: PlancheAnswer = "ok") => {
     if (res !== "ok") return reply.code(STATUS[res] ?? SAID_STATUS).send({ error: res });
-    return toJson({ planche: hub.view(id, await nameOf(id), now()) });
+    return toJson({ planche: await hub.view(id, await nameOf(id), now()) });
   };
   /** The player, given a house if he has none yet (a first gesture may come before a first read). */
   const seated = async (req: FastifyRequest, reply: FastifyReply) => {
     const id = await player(req, reply);
-    hub.view(id, await nameOf(id), now());
+    await hub.view(id, await nameOf(id), now());
     return id;
   };
   const key = z.string().min(1).max(40);
@@ -97,13 +89,13 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const b = z.object({ city: key, good: key }).safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const id = await seated(req, reply);
-    return show(reply, id, hub.thread(id, b.data.city, b.data.good, now()));
+    return show(reply, id, await hub.thread(id, b.data.city, b.data.good, now()));
   });
   app.post("/api/planche/unthread", deps.perMerchant(60), async (req, reply) => {
     const b = z.object({ city: key, good: key }).safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const id = await seated(req, reply);
-    return show(reply, id, hub.unthread(id, b.data.city, b.data.good, now()));
+    return show(reply, id, await hub.unthread(id, b.data.city, b.data.good, now()));
   });
   app.post("/api/planche/toll", deps.perMerchant(30), async (req, reply) => {
     const b = z
@@ -111,7 +103,7 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
       .safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const id = await seated(req, reply);
-    return show(reply, id, hub.toll(id, b.data.passage, b.data.tollBps, now()));
+    return show(reply, id, await hub.toll(id, b.data.passage, b.data.tollBps, now()));
   });
   // The island (docs/plan-ile.md I6): its tiles are « x,y » from the Fondaco.
   const tile = z.string().regex(/^-?\d{1,2},-?\d{1,2}$/);
@@ -119,25 +111,25 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const b = z.object({ at: tile }).safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const id = await seated(req, reply);
-    return show(reply, id, hub.buyTile(id, b.data.at, now()));
+    return show(reply, id, await hub.buyTile(id, b.data.at, now()));
   });
   app.post("/api/planche/ile/build", deps.perMerchant(60), async (req, reply) => {
     const b = z.object({ type: key, at: tile }).safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const id = await seated(req, reply);
-    return show(reply, id, hub.build(id, b.data.type, b.data.at, now()));
+    return show(reply, id, await hub.build(id, b.data.type, b.data.at, now()));
   });
   app.post("/api/planche/ile/upgrade", deps.perMerchant(60), async (req, reply) => {
     const b = z.object({ at: tile }).safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const id = await seated(req, reply);
-    return show(reply, id, hub.upgrade(id, b.data.at, now()));
+    return show(reply, id, await hub.upgrade(id, b.data.at, now()));
   });
   app.post("/api/planche/ile/move", deps.perMerchant(60), async (req, reply) => {
     const b = z.object({ from: tile, to: tile }).safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const id = await seated(req, reply);
-    return show(reply, id, hub.move(id, b.data.from, b.data.to, now()));
+    return show(reply, id, await hub.move(id, b.data.from, b.data.to, now()));
   });
   app.post("/api/planche/force", deps.perMerchant(20), async (req, reply) => {
     const b = z
@@ -153,7 +145,7 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const moves = b.data.moves.map((m) =>
       m.fire ? { at: m.at, fire: true as const } : { at: m.at },
     );
-    return show(reply, id, hub.force(id, b.data.passage, moves, now()));
+    return show(reply, id, await hub.force(id, b.data.passage, moves, now()));
   });
   return hub;
 }

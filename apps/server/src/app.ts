@@ -18,6 +18,7 @@ import { AuthError, AuthService, SESSION_DAYS, langSchema, originSchema } from "
 import type { Db } from "./db/client.js";
 import { countFunnel } from "./funnel.js";
 import { CondottaHub } from "./game/condotta.js";
+import type { PlancheHub } from "./game/planche.js";
 import { PortaHub } from "./game/porta.js";
 import { registerGameRoutes } from "./game/routes.js";
 import { SkirmishHub } from "./game/skirmish.js";
@@ -44,6 +45,8 @@ export interface AppOptions {
   notifier?: Notifier;
   /** The Porta's battles, when the caller drives them (the tests); started here otherwise. */
   porta?: PortaHub;
+  /** The shared board kept in the base (docs/plan-compte.md C1); in memory when absent (tests). */
+  planche?: PlancheHub;
   /** Built web app to serve (production). */
   webDist?: string;
   now?: () => Date;
@@ -327,6 +330,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       skirmishes,
       condottas,
       porta,
+      ...(options.planche ? { planche: options.planche } : {}),
       adminEmails: options.adminEmails ?? [],
       communityUrl: options.communityUrl ?? null,
     });

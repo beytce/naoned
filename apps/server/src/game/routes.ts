@@ -88,6 +88,7 @@ import { LiveHub } from "./live.js";
 import { acceptChallenge, challenge, sfidaRival, sfidaView } from "./lustre.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { registerPasseRoutes } from "./passeRoutes.js";
+import type { PlancheHub } from "./planche.js";
 import { registerPlancheRoutes } from "./plancheRoutes.js";
 import type { PortaHub } from "./porta.js";
 import { registerPortaRoutes } from "./portaRoutes.js";
@@ -289,6 +290,8 @@ export interface GameRouteDeps {
   condottas: CondottaHub;
   /** The Porta's live battles (docs/plan-porta.md); none outside the empire. */
   porta?: PortaHub;
+  /** The shared board kept in the base (docs/plan-compte.md C1); in memory when absent. */
+  planche?: PlancheHub;
   adminEmails: string[];
   /** The players' community (null: none). */
   communityUrl?: string | null;
@@ -352,6 +355,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     perMerchant,
     secureCookies: deps.secureCookies,
     pace: Number(process.env.PLANCHE_PACE) || 1,
+    ...(deps.planche ? { hub: deps.planche } : {}),
   });
   // The duels on line of the Passe (docs/plan-passe.md P6): a prototype beside the game, open to guests.
   registerPasseRoutes(app, {

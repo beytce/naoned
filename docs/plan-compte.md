@@ -65,3 +65,16 @@ Les planches de 48 Maisons et les sestieri (étape 2), le Prestige et les niveau
 
 1. **La remise à zéro de la planche actuelle** : les Maisons jouées depuis le dernier déploiement sont en mémoire seulement. Je propose de **repartir d'une planche neuve** au lancement de cette étape : rien ne peut être repris proprement.
 2. **Le nom de la Maison** : je propose de reprendre le pseudo du compte comme nom par défaut (« Ca' » suivi du pseudo), modifiable une fois sans frais, comme dans l'ancien jeu.
+
+## 8. État
+
+*Validé par le porteur le 11 novembre 2026 (« Ok lance »), avec les deux points du § 7 : une planche neuve au lancement, et « Ca' » suivi du pseudo comme nom de Maison.*
+
+| Lot | État |
+| --- | --- |
+| C1 | fait : le hub de la planche joue des commandes (`PlancheCommand` : prendre une place, la rendre, tirer, reprendre, péage, île, passage forcé), écrites au journal avant la réponse ; `apps/server/src/game/plancheStore.ts` tient la planche dans `worlds` (statut `planche`, à part des mondes du jeu), son instantané dans `world_states`, ses commandes dans `world_commands`, la relève au déploiement ; instantané à l'arrêt ; l'horloge de la planche reprend où elle s'était arrêtée. 5 tests (rechargement par le journal seul, par instantané et journal, à l'arrêt, relève entre deux instances). Essai réel : un fil tiré survit à un redémarrage normal et à un arrêt brutal (`kill -9`). |
+| C2 | à faire |
+| C3 | à faire |
+| C4 | à faire |
+| C5 | à faire |
+| C6 | à faire |
