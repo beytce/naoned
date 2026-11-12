@@ -108,25 +108,67 @@ function Phare({ level, max }: { level: number; max: number }) {
   );
 }
 
+/**
+ * The guided first visit (decision of 8 November: each new place has its own short tutorial):
+ * founding (a name, a flag, found), or, in a company, its members, its beacon, its thread, the
+ * link. Kept as seen once its last step is done.
+ */
+const TUTO_FOUND = [
+  "Donne un nom à ta compagnie : il se verra sur la planche et à la Guerre.",
+  "Choisis la couleur et la pièce de son pavillon : il flottera sur les Maisons de tes membres.",
+  "Fonde-la : tu en seras le doge, et tu pourras inviter tes amis par un lien.",
+];
+const TUTO_MEMBER = [
+  "Tes membres : jusqu'à douze Maisons, de toutes les lagunes. Le doge nomme ses capitaines.",
+  "Le phare : chacun y porte des marchandises, un peu chaque jour. Il arme les ports de tous à la Guerre.",
+  "La discussion : courte et polie, sans liens ; un message que trois membres signalent est masqué.",
+  "Le lien d'invitation : qui arrive par lui rejoint ta compagnie, et ta lagune s'il y a de la place.",
+];
+const tutoSeen = () => {
+  try {
+    return localStorage.getItem("fondaco.compagnie.tuto") === "1";
+  } catch {
+    return false;
+  }
+};
+const tutoDone = () => {
+  try {
+    localStorage.setItem("fondaco.compagnie.tuto", "1");
+  } catch {
+    // A private window: the guide comes again.
+  }
+};
+
 /** Founding a company: a name and a flag. */
 function Fonder({
   onFound,
   onJoin,
+  guide,
 }: {
   onFound: (name: string, color: string, symbol: string) => void;
   onJoin: (code: string) => void;
+  /** Whether the guided first visit is on. */
+  guide: boolean;
 }) {
   const [name, setName] = useState("");
   const [color, setColor] = useState<string>("emerald");
   const [symbol, setSymbol] = useState("anchor");
   const [code, setCode] = useState("");
+  const [touched, setTouched] = useState(false);
+  /** The founding's guided step follows the gestures: a name, then the flag, then found. */
+  const step = !guide ? -1 : name.trim().length < 3 ? 0 : !touched ? 1 : 2;
   return (
     <div className="pc-co-found" data-compagnie-found>
       <p>
         Une compagnie, ce sont jusqu'à douze Maisons, de toutes les lagunes, qui partent en guerre
         ensemble, se parlent et nourrissent un phare commun.
       </p>
-      <div className="pc-co-flagrow">
+      {step >= 0 ? (
+        <p className="pc-co-guide" data-compagnie-guide>
+          {TUTO_FOUND[step]}
+        </p>
+      ) : null}
+      <div className="pc-co-flagrow" data-glow={String(step === 0)}>
         <HouseFlag color={color} symbol={symbol} size={64} />
         <label className="pc-co-name">
           <span>Le nom de ta compagnie</span>
@@ -139,7 +181,11 @@ function Fonder({
           />
         </label>
       </div>
-      <fieldset className="pc-in-colors pc-co-set" aria-label="La couleur du pavillon">
+      <fieldset
+        data-glow={String(step === 1)}
+        className="pc-in-colors pc-co-set"
+        aria-label="La couleur du pavillon"
+      >
         {FLAG_COLORS.map((c) => (
           <button
             key={c.id}
@@ -147,7 +193,10 @@ function Fonder({
             aria-label={c.name}
             aria-pressed={color === c.id}
             style={{ background: c.hex }}
-            onClick={() => setColor(c.id)}
+            onClick={() => {
+              setColor(c.id);
+              setTouched(true);
+            }}
           />
         ))}
       </fieldset>
@@ -158,7 +207,10 @@ function Fonder({
             type="button"
             aria-label={ch.name}
             aria-pressed={symbol === k}
-            onClick={() => setSymbol(k)}
+            onClick={() => {
+              setSymbol(k);
+              setTouched(true);
+            }}
           >
             <svg width="22" height="22" viewBox="0 0 34 34" aria-hidden="true">
               <path d={ch.d} fill="currentColor" />
@@ -169,6 +221,7 @@ function Fonder({
       <button
         type="button"
         className="pc-passe-go"
+        data-glow={String(step === 2)}
         data-compagnie-go
         disabled={name.trim().length < 3}
         onClick={() => onFound(name, color, symbol)}
@@ -220,6 +273,14 @@ export function CompagnieSheet({
   const [text, setText] = useState("");
   const [gift, setGift] = useState<Record<string, number>>({});
   const [copied, setCopied] = useState(false);
+  /** The guided first visit: the step in the company, or -1 once seen. */
+  const [guide, setGuide] = useState(() => (tutoSeen() ? -1 : 0));
+  const next = () => {
+    if (guide + 1 >= TUTO_MEMBER.length) {
+      tutoDone();
+      setGuide(-1);
+    } else setGuide(guide + 1);
+  };
   const call = useCallback(
     async (path: string, body?: unknown) => {
       const res = await fetch(`/api/planche/compagnie${path}`, {
@@ -271,6 +332,7 @@ export function CompagnieSheet({
       </div>
       {c === undefined ? null : !c ? (
         <Fonder
+          guide={guide >= 0}
           onFound={(name, color, symbol) =>
             void call("", { name, flag: { color, symbol } }).then((j) => {
               if (j.compagnie) {
@@ -290,7 +352,20 @@ export function CompagnieSheet({
         />
       ) : (
         <>
-          <div className="pc-co-top">
+          {guide >= 0 ? (
+            <div className="pc-co-guide" data-compagnie-guide>
+              <span>{TUTO_MEMBER[guide]}</span>
+              <button
+                type="button"
+                className="pc-passe-go"
+                data-compagnie-guide-next
+                onClick={next}
+              >
+                {guide + 1 >= TUTO_MEMBER.length ? "Compris" : "Suivant"}
+              </button>
+            </div>
+          ) : null}
+          <div className="pc-co-top" data-glow={String(guide === 0)}>
             <HouseFlag color={c.flag.color} symbol={c.flag.symbol} size={56} />
             <ul className="pc-co-members" aria-label="Les membres">
               {c.members.map((m) => (
@@ -316,7 +391,12 @@ export function CompagnieSheet({
               ))}
             </ul>
           </div>
-          <section className="pc-co-phare" data-phare aria-label="Le phare">
+          <section
+            className="pc-co-phare"
+            data-phare
+            data-glow={String(guide === 1)}
+            aria-label="Le phare"
+          >
             <Phare level={c.phare.level} max={c.phare.max} />
             <div>
               <b>
@@ -384,7 +464,11 @@ export function CompagnieSheet({
               </ul>
             </section>
           ) : null}
-          <section className="pc-co-thread" aria-label="La discussion">
+          <section
+            className="pc-co-thread"
+            data-glow={String(guide === 2)}
+            aria-label="La discussion"
+          >
             <h3 className="pc-mn-h3">La discussion</h3>
             <ol data-compagnie-thread>
               {messages.map((m) => (
@@ -441,7 +525,7 @@ export function CompagnieSheet({
               </button>
             </form>
           </section>
-          <div className="pc-pl-acts">
+          <div className="pc-pl-acts" data-glow={String(guide === 3)}>
             <button
               type="button"
               className="pc-passe-quiet"

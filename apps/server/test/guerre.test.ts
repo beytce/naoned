@@ -88,6 +88,13 @@ describe("the War of the week", () => {
     expect(row?.done).toBe(true);
     expect(row?.seals).toBe(end.result?.seals);
     const after = await g.view(ana, a.store, a.house, tue);
+    // Seen again by its assailant: the port, the fleet and the three rounds.
+    const id = after.made[0]?.id ?? 0;
+    const again = await g.replay(ana, v.me ?? "", id);
+    expect(again?.moves).toHaveLength(3);
+    expect(again?.fleet).toHaveLength(3);
+    // Not by a stranger.
+    expect(await g.replay(ben, "nowhere:x", id)).toBeNull();
     expect(after.today).toBe(true);
     expect(after.score.us).toBe(end.result?.seals);
     // The ships sunk come home damaged.

@@ -3422,3 +3422,14 @@ La meilleure flotte, port par port : galères (bois) 18 %, brigantins (chanvre) 
 - **La Puissance ne fait pas la victoire** : la flottille la plus puissante n'en gagne que 38 % (sur 72 guerres décidées : un peu moins que la moitié). La Puissance compte les défenses du port autant que la flotte, alors qu'à la Guerre on gagne en brisant des sceaux chez l'autre : elle surestime sans doute un peu le défenseur. À revoir avec les vraies Maisons (le poids des défenses dans `arsenal.power`).
 - **Moins de sceaux qu'au banc de l'assaut** (0,95 contre 1,3 à 1,5) : ici les flottes ont trois à cinq navires, et les ports des joueurs sont plus garnis de tours.
 - **Le Prestige** reste modéré : 100 par semaine en médiane, 180 pour les plus actifs, sous le plafond de 500 que partagent le commerce, le rang et la Passe.
+
+
+## Le membre paisible et le phare (12 novembre 2026, docs/plan-compagnie.md K4)
+
+`COMPANIES=1 PHARE=0|1 pnpm --filter @comptoirs/simulator guerre-bench 120 6` : la moitié des joueurs en compagnies de six, dont deux membres qui n'assaillent jamais ; avec `PHARE=1`, ils ont nourri le phare jusqu'au niveau 4 (deux places de port de plus par passe pour chaque membre, garnies trois fois sur quatre), avec `PHARE=0`, ils ne font rien.
+
+| | Sans phare | Phare au niveau 4 |
+| --- | --- | --- |
+| Sceaux perdus par un port de compagnie, par assaut subi | 0,93 | **0,38** |
+
+**Lecture.** Le membre paisible compte : le phare qu'il nourrit fait perdre à chaque port de sa compagnie deux fois et demie moins de sceaux. C'est sans doute **trop fort** (quatre places par passe valent presque une forteresse) : à surveiller avec les vraies compagnies ; si besoin, une place au niveau 2 et une au niveau 4 seulement pour les tours, ou un phare plus lent. (La part des victoires des compagnies contre les joueurs seuls n'est pas lisible ici : le banc les forme avec certaines sortes d'île seulement.)

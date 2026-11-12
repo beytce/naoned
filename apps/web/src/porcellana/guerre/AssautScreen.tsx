@@ -15,13 +15,17 @@ import {
   type AssautPort,
   type AssautRules,
   type AssautState,
+  type IleState,
   assautInit,
   assautIntents,
   assautPlay,
   assautResult,
 } from "@comptoirs/engine";
-import { useMemo, useState } from "react";
+import { Canvas } from "@react-three/fiber";
+import { useMemo, useRef, useState } from "react";
+import type { OrthographicCamera } from "three";
 import { ShipGlyph } from "../planche/Arsenal.js";
+import { AssautBoard } from "./AssautBoard.js";
 
 const PASS_NAMES: Record<string, string> = {
   bouche: "La bouche",
@@ -117,6 +121,18 @@ const TUTO = [
   "Dernière manche : un port garde ses ruses secrètes. Lance-la et regarde.",
 ];
 
+/** The corsairs' island of the Lido: a fortified quay, a timber yard, salt pans, a glasshouse. */
+export const LIDO_ILE: IleState = {
+  tiles: {
+    "0,0": { terrain: "rive", building: { type: "fondaco", level: 1, readyAt: 0, carry: 0 } },
+    "1,0": { terrain: "foret", building: { type: "lumber_camp", level: 2, readyAt: 0, carry: 0 } },
+    "-1,0": { terrain: "rive", building: { type: "salt_pans", level: 1, readyAt: 0, carry: 0 } },
+    "0,-1": { terrain: "sable", building: { type: "glassworks", level: 1, readyAt: 0, carry: 0 } },
+    "1,-1": { terrain: "pre" },
+    "-1,-1": { terrain: "foret" },
+  },
+};
+
 export interface AssautEnd {
   seals: number;
   damageBps: number;
@@ -133,6 +149,8 @@ export function AssautScreen({
   onEnd,
   onBack,
   remote,
+  ile,
+  replay,
 }: {
   rules: AssautRules;
   port: AssautPort;
@@ -145,6 +163,10 @@ export function AssautScreen({
    * The War's assault: played by the server, round by round (its ruses hidden until they play).
    * It starts on the state the server gave; each round is sent and the server's state shown.
    */
+  /** An assault seen again: each round's placements, played one by one, nothing to choose. */
+  replay?: Record<number, string>[];
+  /** The island attacked (its real tiles); none: the corsairs' island of the Lido. */
+  ile?: IleState;
   remote?: {
     start: AssautState;
     play: (moves: Record<number, string>) => Promise<{ state: AssautState } | { error: string }>;
@@ -152,13 +174,22 @@ export function AssautScreen({
 }) {
   const [s, setS] = useState<AssautState>(() => remote?.start ?? assautInit(R, port, fleet));
   const [busy, setBusy] = useState(false);
+  const pins = useRef(new Map<string, HTMLElement>()).current;
+  const pin = (k: string) => (el: HTMLElement | null) => {
+    if (el) pins.set(k, el);
+    else pins.delete(k);
+  };
+  const phone = typeof window !== "undefined" && window.innerWidth < 640;
+  const plain = phone || new URLSearchParams(window.location.search).has("simple");
   const [moves, setMoves] = useState<Record<number, string>[]>([]);
-  const [pending, setPending] = useState<Record<number, string>>({});
+  const [chosenPending, setPending] = useState<Record<number, string>>({});
   const [chosen, setChosen] = useState<number | null>(null);
   const [told, setTold] = useState<AssautEvent[]>([]);
   const [step, setStep] = useState(tutorial ? 0 : -1);
   const [said, setSaid] = useState("");
   const intents = useMemo(() => assautIntents(R, s), [R, s]);
+  // A replay lays each round's ships itself.
+  const pending = replay ? (replay[s.manche - 1] ?? {}) : chosenPending;
   const over = s.manche > R.manches;
   const result = assautResult(R, s);
   const name = (id: number) => {
@@ -170,7 +201,7 @@ export function AssautScreen({
   const where = (id: number) => pending[id] ?? s.ships[id]?.at ?? null;
   const movable = (id: number) => {
     const x = s.ships[id];
-    return !!x && !x.sunk && (x.at === null || x.keyword === "rapide");
+    return !replay && !!x && !x.sunk && (x.at === null || x.keyword === "rapide");
   };
   const first = Object.entries(s.ships).find(([, x]) => x.keyword === "solide")?.[0];
   const brulot = Object.entries(s.ships).find(([, x]) => x.keyword === "brule")?.[0];
@@ -278,14 +309,35 @@ export function AssautScreen({
           {hint}
         </p>
       ) : null}
-      <main className="pc-as-passes">
-        {Object.entries(s.passes).map(([id, p]) => {
-          const here = Object.entries(s.ships)
-            .filter(([k, x]) => where(Number(k)) === id && !x.sunk)
-            .map(([k]) => Number(k));
-          return (
+      <main className="pc-as-stage" data-assaut-stage>
+        <Canvas
+          orthographic
+          dpr={[1, 2]}
+          gl={{ antialias: true, powerPreference: "high-performance" }}
+          onCreated={({ camera }) => {
+            (camera as OrthographicCamera & { manual?: boolean }).manual = true;
+          }}
+        >
+          <AssautBoard
+            state={s}
+            ile={ile ?? LIDO_ILE}
+            now={Date.now()}
+            events={told}
+            pending={pending}
+            chosen={chosen}
+            pins={pins}
+            onLane={(pass) => {
+              if (chosen !== null && !over) send(pass);
+            }}
+            phone={phone}
+            plain={plain}
+          />
+        </Canvas>
+        <div className="pc-as-pins">
+          {Object.entries(s.passes).map(([id, p]) => (
             <section
               key={id}
+              ref={pin(id)}
               className="pc-as-pass"
               data-pass={id}
               data-fallen={String(p.fallen)}
@@ -293,7 +345,7 @@ export function AssautScreen({
               aria-label={PASS_NAMES[id] ?? id}
             >
               <b className="pc-as-pass-name">{PASS_NAMES[id] ?? id}</b>
-              {!over ? (
+              {!over && !p.fallen ? (
                 <ul className="pc-as-intents" aria-label="Ce que la passe annonce">
                   {(intents[id] ?? []).map((i, k) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: the intents are in their order.
@@ -302,46 +354,12 @@ export function AssautScreen({
                   {!(intents[id] ?? []).length ? <li>Rien ne défend la passe</li> : null}
                 </ul>
               ) : null}
-              <div className="pc-as-defs">
-                {p.chain ? (
-                  <span className="pc-as-def" data-def="chaine">
-                    Chaîne
-                  </span>
-                ) : null}
-                {p.towers.map((t, k) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: a tower is its place.
-                  <span key={`t${k}`} className="pc-as-def" data-def="tour">
-                    Tour <Hull hull={t.hull} max={t.max} />
-                  </span>
-                ))}
-                {p.batteries.map((t, k) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: a battery is its place.
-                  <span key={`b${k}`} className="pc-as-def" data-def="batterie">
-                    Batterie <Hull hull={t.hull} max={t.max} />
-                  </span>
-                ))}
-                {p.anchor.map((t, k) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: a boat is its place.
-                  <span key={`a${k}`} className="pc-as-def" data-def="ancre">
-                    Barque <Hull hull={t.hull} max={t.max} />
-                  </span>
-                ))}
-                {p.ruseDone && p.ruse ? (
-                  <span className="pc-as-ruse">Ruse : {RUSE_NAMES[p.ruse]}</span>
-                ) : null}
-                {p.fallen ? <span className="pc-as-fallen">Tombée · sceau brisé</span> : null}
-              </div>
-              <div className="pc-as-here">
-                {here.map((k) => (
-                  <span
-                    key={k}
-                    className="pc-as-mini"
-                    data-pending={String(pending[k] !== undefined)}
-                  >
-                    <ShipGlyph kind={s.ships[k]?.kind ?? ""} size={30} />
-                  </span>
-                ))}
-              </div>
+              {p.ruse && (p.ruseDone || remote) ? (
+                <span className="pc-as-ruse">
+                  {p.ruseDone ? "Ruse" : "Vue du phare"} : {RUSE_NAMES[p.ruse]}
+                </span>
+              ) : null}
+              {p.fallen ? <span className="pc-as-fallen">Tombée · sceau brisé</span> : null}
               {chosen !== null && !over ? (
                 <button
                   type="button"
@@ -353,8 +371,8 @@ export function AssautScreen({
                 </button>
               ) : null}
             </section>
-          );
-        })}
+          ))}
+        </div>
       </main>
       <footer className="pc-as-foot">
         {said ? <p className="pc-passe-said">{said}</p> : null}
@@ -382,7 +400,7 @@ export function AssautScreen({
                 : "Toute ta flotte rentre intacte."}
             </p>
             <div className="pc-pl-acts">
-              {remote ? null : (
+              {remote || replay ? null : (
                 <button
                   type="button"
                   className="pc-passe-quiet"
@@ -445,7 +463,7 @@ export function AssautScreen({
               disabled={busy}
               onClick={() => void go()}
             >
-              Lancer la manche {s.manche}
+              {replay ? `Voir la manche ${s.manche}` : `Lancer la manche ${s.manche}`}
               <small>
                 {Object.keys(pending).length
                   ? `${Object.keys(pending).length} navire${Object.keys(pending).length > 1 ? "s" : ""} envoyé${Object.keys(pending).length > 1 ? "s" : ""}`
