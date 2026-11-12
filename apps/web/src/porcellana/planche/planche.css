@@ -1263,3 +1263,209 @@ button.pc-pl-brand {
 .pc-pl-sestiere[data-mine="true"] {
   color: rgba(194, 59, 46, 0.6);
 }
+/* The house's growth (docs/plan-progression-maison.md M4), as on the mock-up (screens 1c, 1d). */
+.pc-mn-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.pc-mn-ring svg {
+  position: absolute;
+  inset: 0;
+}
+.pc-mn-emblem {
+  display: flex;
+}
+.pc-mn-level {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--pc-ink);
+  color: var(--pc-paper);
+  font: 900 11px / 18px var(--pc-display);
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--pc-paper);
+}
+.pc-mn-next {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pc-mn-next p {
+  margin: 0;
+}
+.pc-mn-week {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f3f0ea;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.pc-mn-week > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font: 700 13px var(--pc-ui);
+  color: var(--pc-text-2);
+}
+.pc-mn-week b {
+  font: 900 18px var(--pc-display);
+  color: var(--pc-ink);
+}
+.pc-mn-week small {
+  font: 700 12px var(--pc-ui);
+  color: var(--pc-text-3);
+}
+.pc-mn-bar {
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: #e4dfd6;
+  overflow: hidden;
+}
+.pc-mn-bar i {
+  display: block;
+  height: 100%;
+  background: var(--pc-accent);
+}
+.pc-planche-card .pc-mn-week p {
+  font-size: 12px;
+  color: var(--pc-text-3);
+}
+.pc-mn-path {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pc-mn-path li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  align-items: center;
+  font: 700 13px var(--pc-ui);
+}
+.pc-mn-path li small {
+  display: block;
+  font: 600 11.5px var(--pc-ui);
+  color: var(--pc-text-3);
+}
+.pc-mn-node {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px dashed #c9c1b4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 900 13px var(--pc-display);
+  color: var(--pc-text-3);
+}
+.pc-mn-path li:first-child .pc-mn-node {
+  border: 0;
+  background: var(--pc-accent);
+  color: #fff;
+  box-shadow: 0 0 0 4px #f6c7bf;
+}
+.pc-mn-coll {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.pc-mn-coll div {
+  background: #f3f0ea;
+  border-radius: 12px;
+  padding: 8px 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font: 600 10.5px var(--pc-ui);
+  color: var(--pc-text-3);
+}
+.pc-mn-coll b {
+  font: 900 18px var(--pc-display);
+  color: var(--pc-ink);
+}
+.pc-mn-h3 {
+  margin: 0;
+  font: 900 16px var(--pc-display);
+}
+.pc-mn-livre {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pc-mn-livre li {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid #e7e2d9;
+  font: 600 13px / 1.35 var(--pc-ui);
+  color: var(--pc-text-2);
+}
+.pc-mn-livre em {
+  font: 800 11px var(--pc-ui);
+  font-style: normal;
+  color: var(--pc-text-3);
+}
+.pc-mn-title {
+  font: 800 12px var(--pc-ui);
+  color: var(--pc-accent-soft);
+}
+.pc-mn-up {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(236, 232, 225, 0.82);
+  backdrop-filter: blur(2px);
+}
+.pc-mn-up-card {
+  width: min(340px, calc(100vw - 32px));
+  background: var(--pc-paper);
+  border-radius: 24px;
+  padding: 26px 22px 22px;
+  box-shadow: 0 4px 0 var(--pc-foot), 0 22px 50px rgba(42, 39, 37, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  animation: pc-mn-rise 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.pc-mn-up-card h2 {
+  margin: 0;
+  font: 900 30px var(--pc-display);
+}
+.pc-mn-up-card p {
+  margin: 0;
+  font: 600 14px / 1.4 var(--pc-ui);
+  color: var(--pc-text-2);
+}
+.pc-mn-up-card .pc-in-go {
+  align-self: stretch;
+}
+@keyframes pc-mn-rise {
+  from {
+    transform: translateY(24px) scale(0.92);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc-mn-up-card {
+    animation: none;
+  }
+}
