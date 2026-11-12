@@ -25,6 +25,8 @@ export interface GuerreViewData {
   today: boolean;
   running: { target: string; state: AssautState } | null;
   suffered: { by: string; seals: number; at: number }[];
+  companies?: { us: string | null; them: string | null };
+  reserved?: Record<string, string>;
 }
 
 const PHASE: Record<GuerreViewData["phase"], string> = {
@@ -49,12 +51,17 @@ export function GuerreSheet({
   close,
   armed,
   onAssault,
+  inCompany = false,
+  onReserve,
 }: {
   view: GuerreViewData;
   close: ReactNode;
   /** Whether one has a ship fit to sail. */
   armed: boolean;
   onAssault: (target: string) => void;
+  inCompany?: boolean;
+  /** A sign « I take this port » for one's company. */
+  onReserve?: (target: string) => void;
 }) {
   const can = view.phase === "assauts" && !view.today && armed;
   const why =
@@ -76,6 +83,12 @@ export function GuerreSheet({
       </div>
       {view.phase !== "aucune" ? (
         <>
+          {view.companies?.us || view.companies?.them ? (
+            <p className="pc-gu-vs" data-guerre-vs>
+              {view.companies?.us ?? "Ta flottille"} contre{" "}
+              {view.companies?.them ?? "une flottille du jeu"}
+            </p>
+          ) : null}
           <div className="pc-gu-score" data-guerre-score>
             <div>
               <b>{view.score.us}</b>
@@ -96,6 +109,18 @@ export function GuerreSheet({
                   <span>
                     {p.lagoon} · Puissance {p.power} · {p.person ? "un joueur" : "l'ordinateur"}
                   </span>
+                  {view.reserved?.[p.key] ? (
+                    <span className="pc-gu-reserved">pris par {view.reserved[p.key]}</span>
+                  ) : inCompany && onReserve && view.phase !== "dimanche" ? (
+                    <button
+                      type="button"
+                      className="pc-gu-reserve"
+                      data-reserve={p.key}
+                      onClick={() => onReserve(p.key)}
+                    >
+                      Je prends ce port
+                    </button>
+                  ) : null}
                 </div>
                 <Seals n={p.best} />
                 <button
