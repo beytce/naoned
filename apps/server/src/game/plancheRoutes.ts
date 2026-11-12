@@ -21,6 +21,7 @@ import {
 } from "./plancheCompany.js";
 import { PlancheDefis } from "./plancheDefi.js";
 import { PlancheLagoons } from "./plancheLagoons.js";
+import { companySigns, greet, greetings, laySign, liftSign } from "./plancheSigns.js";
 import type { PlancheStore } from "./plancheStore.js";
 import { toJson } from "./serialize.js";
 
@@ -130,8 +131,18 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const defi = p.defis?.view(p.id, deps.now());
     // The companies of the board's houses, for their flags (docs/plan-compagnie.md K1).
     const compagnies = await compagniesOnBoard(deps.db, p.store.worldId);
+    // The company's signs of the week, and the greetings received (docs/plan-compagnie.md K2).
+    const signs = await companySigns(deps.db, p.id, deps.now());
+    const greeted = await greetings(deps.db, p.id, deps.now());
     return toJson({
-      planche: { ...view, lagoon: p.lagoon, compagnies, ...(defi ? { defi } : {}) },
+      planche: {
+        ...view,
+        lagoon: p.lagoon,
+        compagnies,
+        signs,
+        greeted,
+        ...(defi ? { defi } : {}),
+      },
     });
   };
   const key = z.string().min(1).max(40);
@@ -508,6 +519,36 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     return company(reply, async () => {
       await reportCompanyMessage(deps.db, p.id, b.data.message, deps.now());
       return toJson(await companyThread(deps.db, p.id));
+    });
+  });
+  // The signs (docs/plan-compagnie.md K2): the company's on the board, a neighbour's greetings.
+  app.post("/api/planche/sign", deps.perMerchant(30), async (req, reply) => {
+    const b = z.object({ kind: key, target: z.string().max(100) }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return company(reply, async () => {
+      await laySign(deps.db, p.id, p.store.worldId, b.data.kind, b.data.target, deps.now());
+      return show(reply, p);
+    });
+  });
+  app.post("/api/planche/sign/lift", deps.perMerchant(30), async (req, reply) => {
+    const b = z.object({ kind: key }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    await liftSign(deps.db, p.id, b.data.kind);
+    return show(reply, p);
+  });
+  app.post("/api/planche/greet", deps.perMerchant(30), async (req, reply) => {
+    const b = z.object({ house: key, kind: key }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return company(reply, async () => {
+      const to = await greet(deps.db, p.id, p.store.worldId, b.data.house, b.data.kind, deps.now());
+      deps.notify?.([to]);
+      return show(reply, p);
     });
   });
 }

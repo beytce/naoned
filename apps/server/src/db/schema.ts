@@ -820,3 +820,31 @@ export const guerreAssaults = pgTable(
     index("guerre_assaults_week_idx").on(t.week),
   ],
 );
+
+/**
+ * The signs, without free text (docs/plan-compagnie.md K2): a company's on the board (« I take
+ * this port », « hold this tower », « need of hemp »), kept for the week; a greeting to a neighbour
+ * (« salut », « bravo »), once a day a pair.
+ */
+export const plancheSigns = pgTable(
+  "planche_signs",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** Its company's sign, or a greeting to an account. */
+    companyId: uuid("company_id").references(() => companies.id, { onDelete: "cascade" }),
+    toAccount: uuid("to_account").references(() => accounts.id, { onDelete: "cascade" }),
+    worldId: uuid("world_id").references(() => worlds.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    /** What it is laid on: `house:<id>`, `passage:<id>`, `city:<id>`, `port:<world>:<house>`, a good. */
+    target: text("target").notNull(),
+    week: timestamp("week", { withTimezone: true }).notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    index("planche_signs_company_idx").on(t.companyId, t.week),
+    index("planche_signs_to_idx").on(t.toAccount, t.at),
+  ],
+);

@@ -124,4 +124,43 @@ describe("the company on the board", () => {
       (await ben("POST", "/api/planche/compagnie/join", { code: made.code })).json().error,
     ).toBe("left_recently");
   });
+
+  it("lays its signs on the board for the week, and greets a neighbour once a day", async () => {
+    const ana = await player("ana@example.org");
+    const a = (await ana("GET", "/api/planche")).json().planche;
+    const made = (
+      await ana("POST", "/api/planche/compagnie", {
+        name: "Arsenalotti",
+        flag: { color: "gold", symbol: "ship" },
+      })
+    ).json().compagnie;
+    const ben = await player("ben@example.org");
+    const b = (await ben("POST", "/api/planche/compagnie/join", { code: made.code })).json();
+    expect(b.compagnie.members).toHaveLength(2);
+    expect(
+      (await ana("POST", "/api/planche/sign", { kind: "tour", target: "passage:canal-1" }))
+        .statusCode,
+    ).toBe(200);
+    expect(
+      (await ana("POST", "/api/planche/sign", { kind: "tour", target: "passage:canal-3" }))
+        .statusCode,
+    ).toBe(200);
+    expect(
+      (await ana("POST", "/api/planche/sign", { kind: "rien", target: "passage:canal-3" })).json()
+        .error,
+    ).toBe("invalid_sign");
+    const seen = (await ben("GET", "/api/planche")).json().planche;
+    expect(seen.signs).toEqual([
+      expect.objectContaining({ kind: "tour", target: "passage:canal-3", mine: false }),
+    ]);
+    // A greeting to Ana's house: once a day.
+    expect(
+      (await ben("POST", "/api/planche/greet", { house: a.me, kind: "salut" })).statusCode,
+    ).toBe(200);
+    expect(
+      (await ben("POST", "/api/planche/greet", { house: a.me, kind: "salut" })).json().error,
+    ).toBe("greeted_today");
+    const greeted = (await ana("GET", "/api/planche")).json().planche.greeted;
+    expect(greeted).toEqual([expect.objectContaining({ kind: "salut" })]);
+  });
 });

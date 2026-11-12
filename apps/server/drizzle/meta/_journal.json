@@ -274,6 +274,13 @@
       "when": 1794516348093,
       "tag": "0038_company_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794516706721,
+      "tag": "0039_planche_signs",
+      "breakpoints": true
     }
   ]
 }
