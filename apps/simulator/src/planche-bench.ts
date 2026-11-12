@@ -89,7 +89,27 @@ function tide(S: PlancheSetup, seed: number, every: Record<string, number> = {},
 }
 
 // `BOARD=lagune`: the lagoon of 48 houses (docs/plan-lagunes.md G3); Venice's board of 8 otherwise.
-const S = process.env.BOARD === "lagune" ? venice1450Lagune : venice1450Planche;
+const S0 = process.env.BOARD === "lagune" ? venice1450Lagune : venice1450Planche;
+// Trials at the bench: `RULES='{"rewindMsPerTile":240000}'` over the board's rules, `DEMAND=1.5` to
+// multiply what every town asks and grows back.
+const demand = Number(process.env.DEMAND) || 1;
+const S: typeof S0 = {
+  ...S0,
+  rules: { ...S0.rules, ...(JSON.parse(process.env.RULES ?? "{}") as Partial<typeof S0.rules>) },
+  cities: S0.cities.map((c) => ({
+    ...c,
+    wants: Object.fromEntries(
+      Object.entries(c.wants).map(([g, w]) => [
+        g,
+        {
+          ...w,
+          cap: Math.round(w.cap * demand),
+          regenPerHour: Math.round(w.regenPerHour * demand),
+        },
+      ]),
+    ),
+  })),
+};
 /** Three houses of different sestieri (or of the board), for the visits' test. */
 const WATCHED = [0, Math.floor(S.houses.length / 3), Math.floor((2 * S.houses.length) / 3)].map(
   (k) => S.houses[k]?.id ?? "",
