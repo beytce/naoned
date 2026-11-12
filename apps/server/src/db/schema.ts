@@ -780,3 +780,41 @@ export const maisonEvents = pgTable(
     index("maison_events_account_idx").on(t.accountId, t.at),
   ],
 );
+
+/**
+ * The War of the week (docs/plan-guerre.md W4): its flotillas and their wars, formed on Monday
+ * across every lagoon of the server (the owner's choice), and settled on Sunday. A war spans
+ * lagoons: its houses are named `<world_id>:<house>`.
+ */
+export const guerreWeeks = pgTable("guerre_weeks", {
+  week: timestamp("week", { withTimezone: true }).primaryKey(),
+  wars: jsonb("wars").notNull(),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+});
+
+/** An assault of the War: one a player a day; its port and fleet kept for its replay. */
+export const guerreAssaults = pgTable(
+  "guerre_assaults",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    week: timestamp("week", { withTimezone: true }).notNull(),
+    day: integer("day").notNull(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    worldId: uuid("world_id").references(() => worlds.id, { onDelete: "set null" }),
+    by: text("by").notNull(),
+    target: text("target").notNull(),
+    seals: integer("seals").notNull().default(0),
+    damageBps: integer("damage_bps").notNull().default(0),
+    done: boolean("done").notNull().default(false),
+    port: jsonb("port").notNull(),
+    fleet: jsonb("fleet").notNull(),
+    moves: jsonb("moves").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    uniqueIndex("guerre_assaults_day_key").on(t.accountId, t.day),
+    index("guerre_assaults_week_idx").on(t.week),
+  ],
+);

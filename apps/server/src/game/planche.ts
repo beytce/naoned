@@ -18,6 +18,7 @@ import {
   plancheDefenseRemove,
   plancheDuel,
   plancheForced,
+  plancheGrant,
   plancheGuard,
   plancheGuardBoard,
   plancheInit,
@@ -29,6 +30,7 @@ import {
   plancheRobot,
   plancheRuses,
   plancheShip,
+  plancheShipDamage,
   plancheShipRefit,
   plancheShipRepair,
   plancheThread,
@@ -133,6 +135,9 @@ export type PlancheCommand =
   | { type: "defense"; player: string; pass: string; kind: string; t: number }
   | { type: "defenseMove"; player: string; from: string; index: number; to: string; t: number }
   | { type: "defenseRemove"; player: string; pass: string; index: number; t: number }
+  /** The War (docs/plan-guerre.md W4): its Prestige given on Sunday, a ship back damaged. */
+  | { type: "grant"; player: string; amount: number; t: number }
+  | { type: "damage"; player: string; id: number; t: number }
   /** The port's secret ruses, once a day (docs/plan-guerre.md W3). */
   | {
       type: "ruses";
@@ -294,6 +299,12 @@ export function plancheDocApply(
       case "ruses":
         next = plancheRuses(S, s, h, c.ruses, c.t);
         break;
+      case "grant":
+        next = plancheGrant(S, s, h, c.amount);
+        break;
+      case "damage":
+        next = plancheShipDamage(S, s, h, c.id);
+        break;
       case "guard": {
         const def = S.passages.find((p) => p.id === c.passage);
         const board = def ? theme.passe.boards[def.board] : undefined;
@@ -325,7 +336,7 @@ export class PlancheHub {
   private readonly listeners: ((players: string[]) => void)[] = [];
 
   constructor(
-    private readonly theme: PlancheHubTheme,
+    readonly theme: PlancheHubTheme,
     now: number,
     loaded?: { doc: PlancheDoc; version: number; journal?: PlancheJournal },
     private readonly journal: PlancheJournal | undefined = loaded?.journal,
@@ -488,6 +499,15 @@ export class PlancheHub {
 
   defenseRemove(player: string, pass: string, index: number, t: number) {
     return this.act({ type: "defenseRemove", player, pass, index, t });
+  }
+
+  /** The War's Prestige of the week, and a ship back damaged from an assault. */
+  grant(player: string, amount: number, t: number) {
+    return this.act({ type: "grant", player, amount, t });
+  }
+
+  damage(player: string, id: number, t: number) {
+    return this.act({ type: "damage", player, id, t });
   }
 
   /** The port's secret ruses, one a pass, once a day. */
