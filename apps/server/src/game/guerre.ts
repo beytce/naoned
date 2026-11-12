@@ -23,7 +23,9 @@ import {
   guerreWeeks,
   plancheSeats,
 } from "../db/schema.js";
+import { companyIdOf } from "./company.js";
 import { mondayOf } from "./planche.js";
+import { beaconOf } from "./plancheBeacon.js";
 import type { PlancheLagoons } from "./plancheLagoons.js";
 import { companySigns } from "./plancheSigns.js";
 import type { PlancheStore } from "./plancheStore.js";
@@ -73,13 +75,18 @@ interface Running {
   state: AssautState;
   moves: Record<number, string>[];
   store: PlancheStore;
+  /** The pass whose ruse the company's beacon showed. */
+  scouted?: string;
 }
 
-/** What the assailant sees of the port: the ruses not yet played are hidden. */
-export function hideRuses(s: AssautState): AssautState {
+/**
+ * What the assailant sees of the port: the ruses not yet played are hidden, but the one its
+ * company's beacon showed (docs/plan-compagnie.md K4).
+ */
+export function hideRuses(s: AssautState, scouted?: string): AssautState {
   const v = structuredClone(s);
   for (const [id, p] of Object.entries(v.passes))
-    if (!p.ruseDone) {
+    if (!p.ruseDone && id !== scouted) {
       const { ruse: _secret, ...seen } = p;
       v.passes[id] = seen;
     }
@@ -273,7 +280,9 @@ export class GuerreHub {
       score: { us: side === "a" ? score.a : score.b, them: side === "a" ? score.b : score.a },
       today: !!mine,
       running:
-        run && run.week === week ? { target: run.target, state: hideRuses(run.state) } : null,
+        run && run.week === week
+          ? { target: run.target, state: hideRuses(run.state, run.scouted) }
+          : null,
       suffered: done
         .filter((d) => d.target === me)
         .map((d) => ({ by: this.portOf(d.by, {}, people).name, seals: d.seals, at: d.at })),
@@ -323,8 +332,26 @@ export class GuerreHub {
       .returning({ id: guerreAssaults.id });
     if (!inserted.length) return { error: "guerre_today" };
     const state = assautInit(R, port, fleet);
-    this.running.set(account, { week, day, target, port, fleet, state, moves: [], store });
-    return { state: hideRuses(state) };
+    // The company's beacon, at its level, shows the first ruse of the port.
+    const B = S.compagnie?.beacon;
+    const companyId = await companyIdOf(this.db, account);
+    const level = companyId ? (await beaconOf(this.db, store.hub.theme, companyId)).level : 0;
+    const scouted =
+      B && level >= B.scoutLevel
+        ? Object.entries(port.passes).find(([, p]) => p.ruse)?.[0]
+        : undefined;
+    this.running.set(account, {
+      week,
+      day,
+      target,
+      port,
+      fleet,
+      state,
+      moves: [],
+      store,
+      ...(scouted ? { scouted } : {}),
+    });
+    return { state: hideRuses(state, scouted) };
   }
 
   /** A round of the assault under way; the last one writes its result and sends the damaged home. */
@@ -343,7 +370,7 @@ export class GuerreHub {
       return { error: (e as Error).message };
     }
     run.moves.push(moves);
-    if (run.state.manche <= R.manches) return { state: hideRuses(run.state) };
+    if (run.state.manche <= R.manches) return { state: hideRuses(run.state, run.scouted) };
     const result = assautResult(R, run.state);
     this.running.delete(account);
     await this.db

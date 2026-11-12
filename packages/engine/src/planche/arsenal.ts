@@ -45,6 +45,8 @@ export interface ArsenalRules {
     /** Places of each pass from each level of the house. */
     slots: { level: number; n: number }[];
     defenses: Record<string, { name: string; goods: Record<string, number>; hull?: number }>;
+    /** Places more a pass from each level of the company's beacon (docs/plan-compagnie.md K4). */
+    beaconSlots?: { level: number; n: number }[];
   };
   /** What each thing built weighs in the Power. */
   power: { workshop: number; arsenal: number; ship: number; defense: number };
@@ -87,7 +89,10 @@ export const plancheFleetPlaces = (S: PlancheSetup, h: PlancheHouse) =>
 
 /** The places of each pass of a house's port now. */
 export const planchePortSlots = (S: PlancheSetup, h: PlancheHouse) =>
-  S.arsenal ? byLevel(S.arsenal.port.slots, h.level ?? 1) : 0;
+  S.arsenal
+    ? byLevel(S.arsenal.port.slots, h.level ?? 1) +
+      (h.beacon ? byLevel(S.arsenal.port.beaconSlots ?? [], h.beacon) : 0)
+    : 0;
 
 /** The Arsenal of a house's island: its tile, its level, whether it is ready, its cales. */
 export function plancheArsenalOf(S: PlancheSetup, h: PlancheHouse, now: number) {
@@ -326,4 +331,42 @@ export function planchePower(S: PlancheSetup, s: PlancheState, house: string): n
   }
   for (const list of Object.values(h.port ?? {})) p += A.power.defense * list.length;
   return p;
+}
+
+/** A beacon's level for its points: the last threshold reached, from 1. */
+export function beaconLevel(thresholds: number[], points: number): number {
+  let level = 0;
+  for (const [k, at] of thresholds.entries()) if (points >= at) level = k + 1;
+  return Math.max(1, level);
+}
+
+/** A house gives goods of its store to its company's beacon: they leave the store for good. */
+export function plancheGive(
+  _S: PlancheSetup,
+  s0: PlancheState,
+  house: string,
+  goods: Record<string, number>,
+): PlancheState {
+  houseIn(s0, house);
+  if (
+    !Object.keys(goods).length ||
+    Object.values(goods).some((n) => !Number.isInteger(n) || n <= 0)
+  )
+    return fail("planche_unknown");
+  const s = structuredClone(s0);
+  take(s.houses[house] as PlancheHouse, goods);
+  return s;
+}
+
+/** The level of the company's beacon, carried by a house of it (0: none). */
+export function plancheBeacon(
+  _S: PlancheSetup,
+  s0: PlancheState,
+  house: string,
+  level: number,
+): PlancheState {
+  houseIn(s0, house);
+  const s = structuredClone(s0);
+  (s.houses[house] as PlancheHouse).beacon = Math.max(0, Math.floor(level));
+  return s;
 }

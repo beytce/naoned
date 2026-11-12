@@ -8,6 +8,7 @@ import {
   passePlay,
   passeThink,
   plancheAdvance,
+  plancheBeacon,
   plancheBuild,
   plancheBuyTile,
   plancheClaim,
@@ -18,6 +19,7 @@ import {
   plancheDefenseRemove,
   plancheDuel,
   plancheForced,
+  plancheGive,
   plancheGrant,
   plancheGuard,
   plancheGuardBoard,
@@ -138,6 +140,9 @@ export type PlancheCommand =
   /** The War (docs/plan-guerre.md W4): its Prestige given on Sunday, a ship back damaged. */
   | { type: "grant"; player: string; amount: number; t: number }
   | { type: "damage"; player: string; id: number; t: number }
+  /** The company's beacon (docs/plan-compagnie.md K4): goods given to it, its level carried. */
+  | { type: "give"; player: string; goods: Record<string, number>; t: number }
+  | { type: "beacon"; player: string; level: number; t: number }
   /** The port's secret ruses, once a day (docs/plan-guerre.md W3). */
   | {
       type: "ruses";
@@ -304,6 +309,12 @@ export function plancheDocApply(
         break;
       case "damage":
         next = plancheShipDamage(S, s, h, c.id);
+        break;
+      case "give":
+        next = plancheGive(S, s, h, c.goods);
+        break;
+      case "beacon":
+        next = plancheBeacon(S, s, h, c.level);
         break;
       case "guard": {
         const def = S.passages.find((p) => p.id === c.passage);
@@ -508,6 +519,15 @@ export class PlancheHub {
 
   damage(player: string, id: number, t: number) {
     return this.act({ type: "damage", player, id, t });
+  }
+
+  /** Goods given to the company's beacon, and the beacon's level carried by a house. */
+  give(player: string, goods: Record<string, number>, t: number) {
+    return this.act({ type: "give", player, goods, t });
+  }
+
+  beacon(player: string, level: number, t: number) {
+    return this.act({ type: "beacon", player, level, t });
   }
 
   /** The port's secret ruses, one a pass, once a day. */

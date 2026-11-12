@@ -3,6 +3,8 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
+import { plancheTheme } from "../src/game/planche.js";
+import { PlancheLagoons } from "../src/game/plancheLagoons.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
@@ -162,5 +164,62 @@ describe("the company on the board", () => {
     ).toBe("greeted_today");
     const greeted = (await ana("GET", "/api/planche")).json().planche.greeted;
     expect(greeted).toEqual([expect.objectContaining({ kind: "salut" })]);
+  });
+});
+
+// The company's beacon (docs/plan-compagnie.md K4).
+describe("the beacon", () => {
+  it("takes goods from the store within a day's cap, rises, and gives the members' ports a place", async () => {
+    await app.close();
+    const theme = plancheTheme();
+    // A beacon that rises fast, for the test.
+    const quick = {
+      ...theme,
+      board: {
+        ...theme.board,
+        compagnie: { beacon: { thresholds: [0, 50, 100, 150, 200], dailyCap: 60, scoutLevel: 5 } },
+      },
+    };
+    const lagoons = await PlancheLagoons.open(database.db, quick, now);
+    const world = await GameWorld.open(database.db, () => now, { empire: true });
+    app = await buildApp({
+      db: database.db,
+      mailer,
+      appUrl: "https://comptoirs.test",
+      production: false,
+      world,
+      now: () => new Date(now),
+      planche: lagoons,
+    });
+    const ana = await player("ana@example.org");
+    const a = (await ana("GET", "/api/planche")).json().planche;
+    const made = (
+      await ana("POST", "/api/planche/compagnie", {
+        name: "Il Faro",
+        flag: { color: "lagoon", symbol: "tower" },
+      })
+    ).json().compagnie;
+    expect(made.phare).toMatchObject({ points: 0, level: 1, given: 0, cap: 60 });
+    expect(
+      (await ana("POST", "/api/planche/compagnie/phare", { goods: { wood: 10 } })).json().error,
+    ).toBe("planche_short");
+    const h = lagoons.all()[0]?.hub.current().doc.state.houses[a.me];
+    if (h) h.stock = { wood: 200, hemp: 200 };
+    expect(
+      (await ana("POST", "/api/planche/compagnie/phare", { goods: { wood: 70 } })).json().error,
+    ).toBe("beacon_cap");
+    const given = (
+      await ana("POST", "/api/planche/compagnie/phare", { goods: { wood: 40, hemp: 15 } })
+    ).json().compagnie;
+    expect(given.phare).toMatchObject({ points: 55, level: 2, given: 55 });
+    const board = (await ana("GET", "/api/planche")).json().planche;
+    expect(board.state.houses[a.me].stock).toMatchObject({ wood: 160, hemp: 185 });
+    expect(board.state.houses[a.me].beacon).toBe(2);
+    // A newcomer of the company carries its beacon too.
+    const ben = await player("ben@example.org");
+    const joined = (await ben("POST", "/api/planche/compagnie/join", { code: made.code })).json()
+      .compagnie;
+    const b = (await ben("GET", "/api/planche")).json().planche;
+    expect(b.state.houses[joined.members[1].house].beacon).toBe(2);
   });
 });

@@ -347,8 +347,18 @@ export const venice1450LaguneParams: LagoonParams = {
           chaine: { name: "Chaîne", goods: { hemp: 60 } },
           batterie: { name: "Batterie", goods: { glass: 40 } },
         },
+        // The company's beacon (docs/plan-compagnie.md K4): a place more a pass at 2, two at 4.
+        beaconSlots: [
+          { level: 2, n: 1 },
+          { level: 4, n: 2 },
+        ],
       },
       power: { workshop: 10, arsenal: 20, ship: 5, defense: 15 },
+    },
+    // The company's beacon (docs/plan-compagnie.md K4): six members giving every day reach
+    // level 5 in about four weeks; at 5, the beacon shows one ruse of each assault.
+    compagnie: {
+      beacon: { thresholds: [0, 800, 2_400, 5_000, 9_000], dailyCap: 60, scoutLevel: 5 },
     },
     // The War of the week (docs/plan-guerre.md): the assault of 01-audit-guerre.md § 4.3, and the
     // Prestige the owner chose (12 November 2026), within the week's cap.

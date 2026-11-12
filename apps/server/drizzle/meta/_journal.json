@@ -281,6 +281,13 @@
       "when": 1794516706721,
       "tag": "0039_planche_signs",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794517216188,
+      "tag": "0040_company_beacons",
+      "breakpoints": true
     }
   ]
 }

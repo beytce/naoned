@@ -10,6 +10,7 @@ import { companyThread, postCompanyMessage, reportCompanyMessage } from "./compa
 import { GuerreHub } from "./guerre.js";
 import type { PasseHub } from "./passe.js";
 import { type PlancheAnswer, type PlancheHub, plancheTheme } from "./planche.js";
+import { beaconOf, carryBeacon, giveToBeacon, givenToday } from "./plancheBeacon.js";
 import {
   compagnieOfCode,
   compagnieView,
@@ -435,8 +436,21 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
       throw e;
     }
   };
-  const compagnieOf = async (p: Player) =>
-    toJson({ compagnie: await compagnieView(deps.db, p.id) });
+  /** The company as the player sees it, with its beacon and what the player may still give today. */
+  const compagnieOf = async (p: Player) => {
+    const c = await compagnieView(deps.db, p.id);
+    if (!c) return toJson({ compagnie: null });
+    const theme = p.hub.theme;
+    return toJson({
+      compagnie: {
+        ...c,
+        phare: {
+          ...(await beaconOf(deps.db, theme, c.id)),
+          ...(await givenToday(deps.db, theme, p.id, deps.now())),
+        },
+      },
+    });
+  };
   app.get("/api/planche/compagnie", deps.perMerchant(120), async (req, reply) => {
     const p = await who(req, reply);
     return p ? compagnieOf(p) : reply;
@@ -469,7 +483,11 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const p = await who(req, reply, found?.worlds ?? []);
     if (!p) return reply;
     return company(reply, async () => {
-      await joinCompagnie(deps.db, p.id, b.data.code, deps.now());
+      const id = await joinCompagnie(deps.db, p.id, b.data.code, deps.now());
+      // The company's beacon is the newcomer's too.
+      const { lagoons } = await boards();
+      const { level } = await beaconOf(deps.db, p.hub.theme, id);
+      await carryBeacon(deps.db, lagoons, id, level, p.now(), p.id);
       return compagnieOf(p);
     });
   });
@@ -478,6 +496,8 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     if (!p) return reply;
     return company(reply, async () => {
       await leaveCompagnie(deps.db, p.id, deps.now());
+      const { lagoons } = await boards();
+      await carryBeacon(deps.db, lagoons, null, 0, p.now(), p.id);
       return compagnieOf(p);
     });
   });
@@ -549,6 +569,20 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
       const to = await greet(deps.db, p.id, p.store.worldId, b.data.house, b.data.kind, deps.now());
       deps.notify?.([to]);
       return show(reply, p);
+    });
+  });
+  // The company's beacon (docs/plan-compagnie.md K4): goods given, capped a day.
+  app.post("/api/planche/compagnie/phare", deps.perMerchant(30), async (req, reply) => {
+    const b = z
+      .object({ goods: z.record(key, z.number().int().min(1).max(1_000)) })
+      .safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return company(reply, async () => {
+      const { lagoons } = await boards();
+      await giveToBeacon(deps.db, lagoons, p.hub.theme, p.id, b.data.goods, deps.now(), p.now());
+      return compagnieOf(p);
     });
   });
 }

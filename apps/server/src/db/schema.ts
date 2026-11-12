@@ -848,3 +848,25 @@ export const plancheSigns = pgTable(
     index("planche_signs_to_idx").on(t.toAccount, t.at),
   ],
 );
+
+/** A company's beacon (docs/plan-compagnie.md K4): the goods its members gave, as points. */
+export const companyBeacons = pgTable("company_beacons", {
+  companyId: uuid("company_id")
+    .primaryKey()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  points: integer("points").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** What a member gave to its company's beacon on a day (the daily cap). */
+export const companyBeaconGifts = pgTable(
+  "company_beacon_gifts",
+  {
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    day: integer("day").notNull(),
+    units: integer("units").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.accountId, t.day] })],
+);
