@@ -172,7 +172,7 @@
   padding: 6px 16px 6px 6px;
   box-shadow: 0 3px 0 var(--pc-foot), 0 10px 24px rgba(42, 39, 37, 0.08);
 }
-.pc-pl-brand > span {
+.pc-pl-brand > span:not(.pc-mn-ring) {
   display: flex;
   flex-direction: column;
   line-height: 1.1;
@@ -562,7 +562,8 @@
   .pc-pl-brand {
     padding: 6px;
   }
-  .pc-pl-brand > span {
+  /* The name and the day hidden; the medallion and its ring stay. */
+  .pc-pl-brand > span:not(.pc-mn-ring) {
     display: none;
   }
   .pc-pl-purse {

@@ -125,7 +125,7 @@ try {
       timeout: 30_000,
     });
     await page.waitForTimeout(2500);
-    const label = await page.textContent("[data-planche-medallion] b");
+    const label = await page.textContent("[data-planche-medallion] > span:last-child > b");
     if (!label?.includes(name === "p" ? "Bembo" : "Zane"))
       fail(`the medallion reads « ${label} », not the house's name`);
     await page.screenshot({ path: join(SHOTS, `compte-${name}-4-planche.png`) });
