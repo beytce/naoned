@@ -13,6 +13,7 @@ import {
   plancheClaim,
   plancheDaily,
   plancheDailyTry,
+  plancheDuel,
   plancheForced,
   plancheGuard,
   plancheGuardBoard,
@@ -116,7 +117,9 @@ export type PlancheCommand =
   /** The problem of the day played, won or lost, in so many pieces. */
   | { type: "daily"; player: string; won: boolean; moves: number; t: number }
   /** The links laid in advance on a tower's board (docs/plan-hex-commerce.md H4). */
-  | { type: "guard"; player: string; passage: string; cells: number[]; t: number };
+  | { type: "guard"; player: string; passage: string; cells: number[]; t: number }
+  /** A Passe of a challenge won by the player against another house (docs/plan-hex-commerce.md H5). */
+  | { type: "duel"; player: string; loser: string; t: number };
 
 /** The whole of a board: what the engine holds, who sits where, and when it began. */
 export interface PlancheDoc {
@@ -246,6 +249,9 @@ export function plancheDocApply(
         break;
       case "daily":
         next = plancheDailyTry(S, s, h, c.t, c.won, c.moves);
+        break;
+      case "duel":
+        next = plancheDuel(S, s, h, c.loser);
         break;
       case "guard": {
         const def = S.passages.find((p) => p.id === c.passage);
@@ -415,6 +421,23 @@ export class PlancheHub {
 
   upgrade(player: string, at: string, t: number) {
     return this.act({ type: "upgrade", player, at, t });
+  }
+
+  /** A Passe of a challenge won: the cote of the two houses moves. */
+  duel(winner: string, loser: string, t: number): Promise<PlancheAnswer> {
+    const house = this.doc.seats[loser]?.house;
+    if (!house) return Promise.resolve("not_seated");
+    return this.act({ type: "duel", player: winner, loser: house, t });
+  }
+
+  /** When a player last read or acted on the board (game time), if it is seated here. */
+  lastSeen(player: string): number | undefined {
+    return this.seen.get(player);
+  }
+
+  /** The account seated in a house, if a person holds it. */
+  playerOf(house: string): string | undefined {
+    return Object.entries(this.doc.seats).find(([, s]) => s.house === house)?.[0];
   }
 
   /** The holder of a tower lays its guard: links in advance on its board, changed once a day. */

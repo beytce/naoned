@@ -91,6 +91,22 @@ export type PasseAnswer =
  */
 export class PasseHub {
   private readonly rooms = new Map<string, Room>();
+  private readonly ends: ((code: string, winner: string, loser: string, now: number) => void)[] =
+    [];
+
+  /** Called when a round is won: its room, the winner's and the loser's ids (the planche's challenges). */
+  onWin(listener: (code: string, winner: string, loser: string, now: number) => void): void {
+    this.ends.push(listener);
+  }
+
+  /** A round just won: told to whoever listens. */
+  private ended(room: Room, now: number): void {
+    const w = room.state?.winner;
+    if (!w) return;
+    const winner = room.seats.find((s) => this.sideOf(room, s.id) === w);
+    const loser = room.seats.find((s) => s.id !== winner?.id);
+    if (winner && loser) for (const l of this.ends) l(room.code, winner.id, loser.id, now);
+  }
 
   constructor(private readonly theme: PasseTheme) {}
 
@@ -125,6 +141,7 @@ export class PasseHub {
       if (side === 1) room.late[0] += 1;
       else room.late[1] += 1;
       room.deadline = room.state.winner ? null : room.deadline + ms;
+      if (room.state.winner) this.ended(room, room.deadline ?? now);
     }
   }
 
@@ -176,6 +193,7 @@ export class PasseHub {
     room.last = move.at;
     room.deadline = room.state.winner ? null : now + this.theme.duel.moveSeconds * 1000;
     room.touched = now;
+    if (room.state.winner) this.ended(room, now);
     return "ok";
   }
 

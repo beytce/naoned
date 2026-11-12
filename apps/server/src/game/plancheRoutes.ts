@@ -4,11 +4,18 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
 import { accounts, influenceEntries, maisonEvents } from "../db/schema.js";
+import type { PasseHub } from "./passe.js";
 import { type PlancheAnswer, type PlancheHub, plancheTheme } from "./planche.js";
+import { PlancheDefis } from "./plancheDefi.js";
 import { PlancheLagoons } from "./plancheLagoons.js";
+import type { PlancheStore } from "./plancheStore.js";
 import { toJson } from "./serialize.js";
 
 export interface PlancheRouteDeps {
+  /** The duel rooms of the Passe, where the challenges by the thread are played (H5). */
+  passe?: PasseHub;
+  /** Told when players should read the board again (the live push). */
+  notify?: (players: string[]) => void;
   db: Db;
   now: () => number;
   accountIfAny?: (req: FastifyRequest) => Promise<{ id: string } | null>;
@@ -41,7 +48,9 @@ const SAID_STATUS = 409;
  */
 export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDeps): void {
   const pace = Math.max(1, deps.pace ?? 1);
-  let opened: Promise<{ lagoons: PlancheLagoons; now: () => number }> | undefined;
+  let opened:
+    | Promise<{ lagoons: PlancheLagoons; now: () => number; defis: PlancheDefis | null }>
+    | undefined;
   /**
    * The boards, and the game's clock: the real one, or faster in a test; it never runs behind
    * what the boards have reached (boards loaded from the base resume where they stopped).
@@ -52,7 +61,12 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
         deps.lagoons ?? (await PlancheLagoons.open(deps.db, plancheTheme(), deps.now()));
       const real0 = deps.now();
       const game0 = Math.max(real0, lagoons.reached());
-      return { lagoons, now: () => game0 + (deps.now() - real0) * pace };
+      const now = () => game0 + (deps.now() - real0) * pace;
+      // The challenges by the thread (docs/plan-hex-commerce.md H5), on the duel rooms of the Passe.
+      const defis = deps.passe
+        ? new PlancheDefis(deps.passe, now, deps.notify ? { notify: deps.notify } : {})
+        : null;
+      return { lagoons, now, defis };
     })();
     return opened;
   };
@@ -64,7 +78,15 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
       .where(eq(accounts.id, id));
     return `Ca\u2019 ${row?.pseudo ?? "Bembo"}`;
   };
-  type Player = { id: string; name: string; hub: PlancheHub; lagoon: string; now: () => number };
+  type Player = {
+    id: string;
+    name: string;
+    hub: PlancheHub;
+    store: PlancheStore;
+    lagoon: string;
+    now: () => number;
+    defis: PlancheDefis | null;
+  };
   /** The player, with his board and his house (given one if he has none); none without an account. */
   const who = async (req: FastifyRequest, reply: FastifyReply): Promise<Player | null> => {
     const account = (await deps.accountIfAny?.(req)) ?? null;
@@ -72,15 +94,16 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
       void reply.code(401).send({ error: "not_signed_in" });
       return null;
     }
-    const { lagoons, now } = await boards();
+    const { lagoons, now, defis } = await boards();
     const name = await nameOf(account.id);
     const { store } = await lagoons.seatOf(account.id, name, now());
-    return { id: account.id, name, hub: store.hub, lagoon: store.name, now };
+    return { id: account.id, name, hub: store.hub, store, lagoon: store.name, now, defis };
   };
   const show = async (reply: FastifyReply, p: Player, res: PlancheAnswer = "ok") => {
     if (res !== "ok") return reply.code(STATUS[res] ?? SAID_STATUS).send({ error: res });
     const view = await p.hub.view(p.id, p.name, p.now());
-    return toJson({ planche: { ...view, lagoon: p.lagoon } });
+    const defi = p.defis?.view(p.id, deps.now());
+    return toJson({ planche: { ...view, lagoon: p.lagoon, ...(defi ? { defi } : {}) } });
   };
   const key = z.string().min(1).max(40);
 
@@ -268,5 +291,22 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const p = await who(req, reply);
     if (!p) return reply;
     return show(reply, p, await p.hub.guard(p.id, b.data.passage, b.data.cells, p.now()));
+  });
+  // The challenge by the thread (docs/plan-hex-commerce.md H5): proposed to a player who is there.
+  app.post("/api/planche/defi", deps.perMerchant(20), async (req, reply) => {
+    const b = z.object({ house: key }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    if (!p.defis) return reply.code(404).send({ error: "no_defi" });
+    return show(reply, p, p.defis.propose(p.store, p.id, p.name, b.data.house, deps.now()));
+  });
+  app.post("/api/planche/defi/answer", deps.perMerchant(20), async (req, reply) => {
+    const b = z.object({ accept: z.boolean() }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    if (!p.defis) return reply.code(404).send({ error: "no_defi" });
+    return show(reply, p, p.defis.answer(p.id, p.name, b.data.accept, deps.now()));
   });
 }

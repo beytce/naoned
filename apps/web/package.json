@@ -21,7 +21,8 @@
     "e2e:guided": "node e2e/tutorial-empire.mjs",
     "e2e:rang": "node e2e/rang.mjs",
     "e2e:compte": "node e2e/compte.mjs",
-    "e2e:commande": "node e2e/commande.mjs"
+    "e2e:commande": "node e2e/commande.mjs",
+    "e2e:defi": "node e2e/defi.mjs"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*",

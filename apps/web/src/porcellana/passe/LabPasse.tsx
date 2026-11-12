@@ -89,7 +89,13 @@ export interface PasseDuel {
   onEnd: (won: boolean, moves: PasseMove[]) => void;
 }
 
-export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
+/** A challenge by the thread (docs/plan-hex-commerce.md H5): its room, and the way back to the board. */
+export interface PasseDefi {
+  code: string;
+  onBack: () => void;
+}
+
+export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: PasseDefi } = {}) {
   const [board, setBoard] = useState<BoardKey>(
     duel && duel.board in boards ? (duel.board as BoardKey) : "segna",
   );
@@ -126,9 +132,14 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
   // The link a friend was sent: ?lab=passe&salle=CODE comes straight into the room.
   // biome-ignore lint/correctness/useExhaustiveDependencies: once, when the page opens.
   useEffect(() => {
-    const c = new URLSearchParams(window.location.search).get("salle");
+    const c = defi?.code ?? new URLSearchParams(window.location.search).get("salle");
     if (c) void net.join(c);
   }, []);
+  /** Out of the room: back to the board, for a challenge. */
+  const leave = () => {
+    net.leave();
+    defi?.onBack();
+  };
   // The clock of a duel on line is redrawn four times a second.
   const ticking = !!room?.deadline;
   useEffect(() => {
@@ -249,7 +260,9 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
   const title = duel
     ? `${boards[board].name} · ${duel.foe}`
     : room
-      ? `${room.boardName} · salle ${room.code}`
+      ? defi
+        ? `Défi par le fil · Passe ${Math.min(room.round, 2)} sur 2`
+        : `${room.boardName} · salle ${room.code}`
       : problem
         ? `Le fil passe en ${problem.moves} coups`
         : `${boards[board].name} · ${FORCES[depth - 1] ?? ""}`;
@@ -441,17 +454,29 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
                   <button
                     type="button"
                     className="pc-passe-go"
+                    hidden={!!defi && room.round >= 2}
                     disabled={room.again.you || room.you === 0}
                     onClick={() => void net.again()}
                   >
                     {room.again.you
-                      ? "Revanche demandée…"
+                      ? defi
+                        ? "En attente de l'autre…"
+                        : "Revanche demandée…"
                       : room.again.other
-                        ? `${foe} veut sa revanche`
-                        : "Revanche, camps échangés"}
+                        ? defi
+                          ? `${foe} t'attend pour la seconde Passe`
+                          : `${foe} veut sa revanche`
+                        : defi
+                          ? "La seconde Passe, camps échangés"
+                          : "Revanche, camps échangés"}
                   </button>
-                  <button type="button" className="pc-passe-quiet" onClick={net.leave}>
-                    Quitter la salle
+                  <button
+                    type="button"
+                    className={defi && room.round >= 2 ? "pc-passe-go" : "pc-passe-quiet"}
+                    data-defi-back={defi ? "" : undefined}
+                    onClick={leave}
+                  >
+                    {defi ? "Revenir à la planche" : "Quitter la salle"}
                   </button>
                 </>
               ) : duel ? (
@@ -550,7 +575,7 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
                 </button>
               ) : null}
               {room ? (
-                <button type="button" className="pc-passe-quiet" onClick={net.leave}>
+                <button type="button" className="pc-passe-quiet" onClick={leave}>
                   Quitter la salle
                 </button>
               ) : duel ? (

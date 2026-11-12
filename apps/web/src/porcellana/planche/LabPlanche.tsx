@@ -117,6 +117,11 @@ const SAID: Record<string, string> = {
   planche_no_bobbin: "Plus de bobine libre : reprends un fil, ou attends qu'une bobine revienne.",
   planche_route_shut: "La route est fermée par un corsaire : force le passage.",
   planche_twice: "Ce fil est déjà tendu.",
+  planche_defi_absent:
+    "Cette Maison n'est pas sur la planche en ce moment : défie-la quand elle y sera.",
+  planche_defi_week: "Vous vous êtes déjà affrontés à la Passe cette semaine.",
+  planche_defi_busy: "Un défi est déjà en cours, pour toi ou pour elle.",
+  planche_not_person: "On ne défie que les Maisons des joueurs.",
   planche_guard_today: "Tu as déjà posé ta garde aujourd'hui : demain de nouveau.",
   duel_lost: "Ce n'était pas la clef : la commande reste aux autres, tu ne perds rien d'autre.",
   planche_order_taken: "Une autre Maison du sestiere a livré cette commande avant toi.",
@@ -185,6 +190,8 @@ function revive(raw: PlancheState): PlancheState {
 }
 
 interface Online {
+  /** The challenges by the thread (docs/plan-hex-commerce.md H5). */
+  defi?: { incoming?: { house: string; name: string }; outgoing?: string; room?: string };
   since: number;
   lagoon?: string;
   me: string | null;
@@ -247,6 +254,14 @@ export default function LabPlanche() {
   const [said, setSaid] = useState("");
   const [news, setNews] = useState<News[]>([]);
   const [duel, setDuel] = useState<string | null>(null);
+  /** The rooms of challenges one has left (the server forgets them a little later). */
+  const leftRooms = useRef(new Set<string>());
+  /** The room of the challenge one is in. */
+  const [inRoom, setInRoom] = useState<string | null>(null);
+  const offered = view?.defi?.room;
+  useEffect(() => {
+    if (offered && !leftRooms.current.has(offered)) setInRoom(offered);
+  }, [offered]);
   /** The sealed order whose position is being played. */
   const [sealed, setSealed] = useState<PlancheOrder | null>(null);
   const [inIsle, setInIsle] = useState(false);
@@ -293,6 +308,7 @@ export default function LabPlanche() {
         me: json.planche.me,
         names: json.planche.names,
         players: json.planche.players,
+        ...((json.planche as Online).defi ? { defi: (json.planche as Online).defi } : {}),
       });
       return "ok";
     } catch {
@@ -571,6 +587,27 @@ export default function LabPlanche() {
         onGesture={gesture}
         onBack={() => setInIsle(false)}
       />
+    );
+  }
+
+  // The room of a challenge under way, kept until one leaves it (the server forgets it once both
+  // Passes are played, before the players have read the end).
+  const defiRoom = inRoom;
+  if (defiRoom) {
+    return (
+      <Suspense fallback={null}>
+        <LabPasse
+          defi={{
+            code: defiRoom,
+            onBack: () => {
+              leftRooms.current.add(defiRoom);
+              setInRoom(null);
+              setSaid("Le défi est joué : tes Passes comptent pour le laurier de la Passe.");
+              void call();
+            },
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -1144,6 +1181,28 @@ export default function LabPlanche() {
             </button>
           </div>
         ) : null}
+        {!mine && online && playing && view?.players.includes(house.id) ? (
+          <div className="pc-pl-acts">
+            <button
+              type="button"
+              className="pc-passe-quiet"
+              data-defi={house.id}
+              disabled={view?.defi?.outgoing === house.id}
+              onClick={() =>
+                void call("/defi", { house: house.id }).then((res) =>
+                  setSaid(
+                    res === "ok"
+                      ? `Défi envoyé à ${short(house.id)} : deux Passes en direct, s'il accepte dans les deux minutes.`
+                      : (SAID[res] ?? "Ce défi n'est pas possible."),
+                  ),
+                )
+              }
+            >
+              {view?.defi?.outgoing === house.id ? "Défi envoyé…" : "Défier par le fil"}
+              <small>deux Passes en direct, chacun une fois le fil</small>
+            </button>
+          </div>
+        ) : null}
       </section>
     );
   })();
@@ -1415,6 +1474,41 @@ export default function LabPlanche() {
       </nav>
       <footer className="pc-passe-foot pc-pl-foot">
         {said ? <p className="pc-passe-said">{said}</p> : null}
+        {view?.defi?.incoming ? (
+          <section className="pc-planche-card pc-pl-card pc-pl-defi" data-defi-incoming>
+            <div className="pc-pl-head">
+              <div>
+                <h2>{view.defi.incoming.name} te défie par le fil</h2>
+                <span>Deux Passes en direct : chacun une fois le fil, une fois la chaîne</span>
+              </div>
+            </div>
+            <p>
+              Chaque Passe compte pour ta cote du laurier de la Passe. Rien d'autre ne se risque.
+            </p>
+            <div className="pc-pl-acts">
+              <button
+                type="button"
+                className="pc-passe-go"
+                data-defi-accept
+                onClick={() =>
+                  void call("/defi/answer", { accept: true }).then((res) =>
+                    setSaid(res === "ok" ? "" : (SAID[res] ?? "Ce défi n'est plus ouvert.")),
+                  )
+                }
+              >
+                Accepter
+              </button>
+              <button
+                type="button"
+                className="pc-passe-quiet"
+                data-defi-refuse
+                onClick={() => void call("/defi/answer", { accept: false })}
+              >
+                Pas maintenant
+              </button>
+            </div>
+          </section>
+        ) : null}
         {cityCard}
         {passageCard}
         {houseCard}

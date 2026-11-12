@@ -1615,3 +1615,7 @@ button.pc-pl-brand {
 .pc-pl-garde-board button:disabled:not([data-reef="true"]):not([aria-pressed="true"]) {
   cursor: default;
 }
+/* The challenge by the thread (docs/plan-hex-commerce.md H5): the one challenged is told. */
+.pc-pl-defi {
+  box-shadow: inset 0 0 0 2px #c8102e, 0 10px 28px rgba(42, 39, 37, 0.22);
+}
