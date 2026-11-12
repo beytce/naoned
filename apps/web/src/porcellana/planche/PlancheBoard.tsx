@@ -81,6 +81,8 @@ export function PlancheBoard({
   plain,
   zoom = 1,
   rival,
+  whole = false,
+  marks = [],
 }: {
   setup: PlancheSetup;
   land: PlancheLand;
@@ -96,6 +98,10 @@ export function PlancheBoard({
   zoom?: number;
   /** One's rival of the week: its threads in a bolder ink (docs/plan-classement.md). */
   rival?: string;
+  /** The whole lagoon in view, centred (docs/plan-lagunes.md G5); one's own sestiere otherwise. */
+  whole?: boolean;
+  /** Labels laid on the board itself (the sestieri's names on the water), by key and tile. */
+  marks?: { key: string; x: number; y: number }[];
 }) {
   const { camera, gl, size } = useThree();
   const live = useMemo(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, []);
@@ -444,7 +450,8 @@ export function PlancheBoard({
     c.enableDamping = true;
     c.dampingFactor = CAMERA.damping;
     c.screenSpacePanning = false;
-    c.minZoom = 0.42;
+    // A lagoon of 48 is far wider than a phone: one may step back until it is all in view.
+    c.minZoom = Math.min(0.42, (110 / (W * S)) * 0.8);
     c.maxZoom = 3.2;
     c.minPolarAngle = CAMERA.minPolar;
     c.maxPolarAngle = CAMERA.maxPolar;
@@ -453,11 +460,24 @@ export function PlancheBoard({
     return c;
   }, [camera, gl]);
   useEffect(() => () => controls.dispose(), [controls]);
-  // The scale (monde, lagune): the camera's zoom eases toward it.
+  // The scale (monde, lagune): the camera's zoom eases toward it. The whole lagoon: the zoom that
+  // shows its width, and its middle; back to one's own house when one comes back.
   const zoomTo = useRef(zoom);
+  const aimTo = useRef<Vector3 | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the board's size is fixed.
   useEffect(() => {
-    zoomTo.current = zoom;
-  }, [zoom]);
+    const cam = camera as OrthographicCamera;
+    const span = cam.right - cam.left || 110;
+    zoomTo.current = whole ? Math.min(zoom, span / (W * S * 1.08)) : zoom;
+    const mineAt = setup.houses.find((h) => h.id === me);
+    aimTo.current = whole
+      ? new Vector3(0, 0, 0)
+      : new Vector3(wx(mineAt?.x ?? W / 2) - S * 2, 0, wz(mineAt?.y ?? H / 2) + S);
+  }, [zoom, whole]);
+  const markAt = useMemo(
+    () => new Map(marks.map((m) => [m.key, new Vector3(wx(m.x), 0, wz(m.y))])),
+    [marks],
+  );
 
   const clock = useRef(0);
   /** The scale last reached: once there, the reader's own zoom is left alone. */
@@ -472,6 +492,20 @@ export function PlancheBoard({
       cam.zoom += (zoomTo.current - cam.zoom) * (live ? 0.12 : 1);
       cam.updateProjectionMatrix();
     } else lastZoom.current = zoomTo.current;
+    // The aim eases toward the scale's middle, then is left to the reader.
+    const aim = aimTo.current;
+    if (aim) {
+      const d = aim.clone().sub(controls.target);
+      if (d.length() < 0.5 || !live) {
+        controls.target.add(d);
+        camera.position.add(d);
+        aimTo.current = null;
+      } else {
+        d.multiplyScalar(0.12);
+        controls.target.add(d);
+        camera.position.add(d);
+      }
+    }
     controls.update();
     // The board stays in sight: the camera's aim never leaves it.
     controls.target.x = Math.max(wx(0), Math.min(wx(W - 1), controls.target.x));
@@ -494,7 +528,7 @@ export function PlancheBoard({
     ring.visible = mat.opacity > 0.01;
     // The labels follow their places.
     for (const [key, el] of pins) {
-      const p = places.at.get(key);
+      const p = places.at.get(key) ?? markAt.get(key);
       if (!p) continue;
       tmp.set(p.x, key.startsWith("city") ? 5.2 : 4.4, p.z).project(camera);
       const x = (tmp.x * 0.5 + 0.5) * size.width;

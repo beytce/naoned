@@ -183,3 +183,33 @@ export function plancheLagoon(P: LagoonParams): PlancheSetup {
     passages,
   };
 }
+
+/**
+ * The lagoon's land and its ink, for the board's drawing (docs/plan-lagunes.md G5): the mainland
+ * along the north, the far coast along the south, an islet under each town of the lagoon; the water
+ * white in the lagoon, darkening past the mouths toward the open sea.
+ */
+export function plancheLagoonLand(S: PlancheSetup): {
+  land: (x: number, y: number) => boolean;
+  peril: (x: number, y: number) => number;
+} {
+  const islets = S.cities.filter((c) => c.ring === "lagoon");
+  const coast = Math.max(
+    FAR - 1,
+    ...S.cities.filter((c) => c.ring === "large").map((c) => c.y - 1),
+  );
+  const towers = new Set(S.passages.map((p) => `${p.x},${p.y}`));
+  return {
+    land: (x, y) =>
+      !towers.has(`${x},${y}`) &&
+      (y <= LAND + 1 ||
+        y >= coast ||
+        islets.some(
+          (c) => Math.abs(x - c.x) <= 1 && Math.abs(y - c.y) <= 1 && !(x === c.x && y === c.y + 2),
+        )),
+    peril: (_x, y) => {
+      const t = Math.min(1, Math.max(0, (y - (MOUTH - 3)) / (coast - (MOUTH - 3))));
+      return t * t * (3 - 2 * t);
+    },
+  };
+}

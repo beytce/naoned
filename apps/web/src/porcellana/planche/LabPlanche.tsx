@@ -15,8 +15,10 @@ import {
   plancheFreeBobbins,
   plancheInit,
   plancheIsCorsair,
+  plancheLagoonLand,
   plancheMove,
   planchePatina,
+  planchePlace,
   planchePrice,
   plancheRobot,
   plancheRouteOpen,
@@ -28,6 +30,8 @@ import {
   plancheTrend,
   plancheUnthread,
   plancheUpgrade,
+  venice1450Lagune,
+  venice1450LaguneParams,
   venice1450Planche,
 } from "@comptoirs/engine";
 import { Canvas } from "@react-three/fiber";
@@ -45,26 +49,50 @@ import { Bobbin, Flag, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
 
 const LabPasse = lazy(() => import("../passe/LabPasse.js"));
 
-const S = venice1450Planche;
+/**
+ * On line, the lagoon of 48 the server plays (docs/plan-lagunes.md); `&seul`, Venice's board of 8,
+ * played here.
+ */
+const ALONE = new URLSearchParams(window.location.search).has("seul");
+const S = ALONE ? venice1450Planche : venice1450Lagune;
+/** The board is a lagoon of sestieri. */
+const LAGOON = S.houses.some((h) => h.sestiere);
+const RIALTO = S.cities.find((c) => c.id === "rialto") ?? { x: 0, y: 0 };
 const HOUR = 3_600_000;
 const T0 = Date.parse("2026-11-16T06:00:00Z");
 /** Hours between two visits of a house held by the computer, and each one's own hour. */
 const VISIT = 8;
 const OFFSET: Record<string, number> = Object.fromEntries(S.houses.map((h, k) => [h.id, k]));
 
-/** Venice's land on this board: the mainland to the west and the north, the far coast to the south-east. */
-const LAND: PlancheLand = {
-  land: (x, y) =>
-    x <= 6 + Math.round(1.5 * Math.sin(y * 0.7)) ||
-    y <= 2 + Math.round(Math.sin(x * 0.5)) ||
-    (x >= 22 && y >= 10 + Math.round(Math.sin(x)) && !(x === 24 && y === 14)),
-  peril: (x, y) => {
-    const r = Math.hypot((x - S.lagoon.x) / 15, (y - S.lagoon.y) / 10);
-    const t = Math.min(1, Math.max(0, (r - 0.62) / 0.5));
-    return t * t * (3 - 2 * t);
-  },
-  rialto: S.rialto,
-};
+/** Venice's land on the board of 8: the mainland to the west and the north, the far coast to the south-east. */
+const LAND: PlancheLand = LAGOON
+  ? { ...plancheLagoonLand(S), rialto: RIALTO }
+  : {
+      land: (x, y) =>
+        x <= 6 + Math.round(1.5 * Math.sin(y * 0.7)) ||
+        y <= 2 + Math.round(Math.sin(x * 0.5)) ||
+        (x >= 22 && y >= 10 + Math.round(Math.sin(x)) && !(x === 24 && y === 14)),
+      peril: (x, y) => {
+        const r = Math.hypot(
+          (x - venice1450Planche.lagoon.x) / 15,
+          (y - venice1450Planche.lagoon.y) / 10,
+        );
+        const t = Math.min(1, Math.max(0, (r - 0.62) / 0.5));
+        return t * t * (3 - 2 * t);
+      },
+      rialto: venice1450Planche.rialto,
+    };
+
+/** The sestieri's names, laid on the water above their houses. */
+const SESTIERI = LAGOON
+  ? [...new Set(S.houses.map((h) => h.sestiere ?? ""))].map((id) => {
+      const hs = S.houses.filter((h) => h.sestiere === id);
+      const x = hs.reduce((n, h) => n + h.x, 0) / hs.length;
+      const y = Math.min(...hs.map((h) => h.y)) - 2;
+      const name = venice1450LaguneParams.sestieri.find((t) => t.id === id)?.name ?? id;
+      return { key: `sest:${id}`, id, name, x: Math.round(x), y };
+    })
+  : [];
 
 const ducats = (deniers: bigint | number) =>
   Math.round(Number(deniers) / 100).toLocaleString("fr-FR");
@@ -350,10 +378,12 @@ export default function LabPlanche() {
   const me = state.houses[ME];
   const free = plancheFreeBobbins(S, state, ME);
   // The rank (docs/plan-classement.md): one's place at the Doge's, its trend, the marks, the rival.
+  // The place among one's neighbours: one's sestiere in a lagoon (docs/plan-lagunes.md G2).
+  const mySestiere = S.houses.find((h) => h.id === ME)?.sestiere;
+  const neighbours = S.houses.filter((h) => h.sestiere === mySestiere).length;
   const rank = useMemo(() => {
-    const standing = plancheStanding(S, state);
     return {
-      place: standing.find((r) => r.house === ME)?.place ?? 0,
+      place: (ME && planchePlace(S, state, ME)) || 0,
       trend: ME ? plancheTrend(S, state, ME) : 0,
       marks: rankMarks(S, state),
     };
@@ -552,7 +582,7 @@ export default function LabPlanche() {
             <span>
               {city.via.length
                 ? `Par ${city.via.map((id) => S.passages.find((p) => p.id === id)?.name).join(", ")}`
-                : city.x === S.rialto.x && city.y === S.rialto.y
+                : city.id === "rialto"
                   ? "Le marché de Venise · il achète tout"
                   : "Terraferme"}
               {` · ${goods.length} marchandise${goods.length > 1 ? "s" : ""} demandée${goods.length > 1 ? "s" : ""}`}
@@ -872,7 +902,9 @@ export default function LabPlanche() {
           onPick={pick}
           phone={phone}
           plain={plain}
-          zoom={scale === "monde" ? 0.5 : 1}
+          zoom={!LAGOON && scale === "monde" ? 0.5 : 1}
+          whole={LAGOON && scale === "monde"}
+          marks={SESTIERI}
           rival={rival}
         />
       </Canvas>
@@ -934,24 +966,47 @@ export default function LabPlanche() {
         })}
         {S.houses.map((h) => {
           const robot = online ? !view?.players.includes(h.id) : h.robot;
+          // In a lagoon, names where they are read: one's own sestiere up close; from afar, only
+          // oneself, one's rival and the Doge. The others, a flag (docs/plan-lagunes.md G5).
+          const named =
+            !LAGOON ||
+            h.id === ME ||
+            h.id === rival ||
+            !!rank.marks[h.id]?.doge ||
+            (scale !== "monde" && h.sestiere === mySestiere);
           return (
             <button
               key={h.id}
               type="button"
               ref={pin(`house:${h.id}`)}
               className="pc-planche-pin pc-planche-house"
+              data-compact={String(!named)}
+              aria-label={named ? undefined : short(h.id)}
               data-house={h.id}
               data-mine={String(h.id === ME)}
               data-rival={String(h.id === rival)}
               onClick={() => pick({ kind: "house", id: h.id })}
             >
               {h.id === ME ? null : <Flag tone={robot ? "robot" : "player"} />}
-              <b>{h.id === ME ? "Ta Maison" : short(h.id)}</b>
+              {named ? <b>{h.id === ME ? "Ta Maison" : short(h.id)}</b> : null}
               {h.id === rival ? <small className="pc-rk-tag">rival</small> : null}
               <Marks m={rank.marks[h.id]} name={short} />
             </button>
           );
         })}
+        {LAGOON
+          ? SESTIERI.map((m) => (
+              <span
+                key={m.key}
+                ref={pin(m.key)}
+                className="pc-planche-pin pc-pl-sestiere"
+                data-mine={String(m.id === mySestiere)}
+                aria-hidden="true"
+              >
+                {m.name}
+              </span>
+            ))
+          : null}
       </div>
       <header className="pc-passe-top pc-pl-top">
         <div className="pc-pl-left">
@@ -1035,16 +1090,16 @@ export default function LabPlanche() {
               <sup>e</sup>
             </b>
             <Trend n={rank.trend} />
-            <small>sur {S.houses.length}</small>
+            <small>sur {neighbours}</small>
           </button>
         </div>
       </header>
       <nav className="pc-pl-scale" aria-label="L'échelle">
         <button type="button" aria-pressed={scale === "monde"} onClick={() => setScale("monde")}>
-          monde
+          {LAGOON ? "lagune" : "monde"}
         </button>
         <button type="button" aria-pressed={scale === "lagune"} onClick={() => setScale("lagune")}>
-          lagune
+          {LAGOON ? "sestiere" : "lagune"}
         </button>
         <button
           type="button"

@@ -5,6 +5,7 @@ import {
   plancheInit,
   plancheInvariant,
   plancheLagoon,
+  plancheLagoonLand,
   plancheRouteOpen,
   plancheThread,
 } from "../../src/index.js";
@@ -119,6 +120,21 @@ describe("the lagoon's map", () => {
 
   it("is the same map every time it is drawn", () => {
     expect(JSON.stringify(plancheLagoon(params()))).toBe(JSON.stringify(plancheLagoon(params())));
+  });
+});
+
+// The lagoon's land, for the board's drawing (docs/plan-lagunes.md G5).
+describe("the lagoon's land", () => {
+  it("bears every town, and no house nor tower; the open sea darkens toward the south", () => {
+    const S = plancheLagoon(params());
+    const L = plancheLagoonLand(S);
+    for (const c of S.cities) expect(L.land(c.x, c.y)).toBe(true);
+    for (const p of [...S.houses, ...S.passages]) expect(L.land(p.x, p.y)).toBe(false);
+    const h = S.houses[0];
+    const far = S.passages.find((p) => p.id.startsWith("detroit-"));
+    if (!h || !far) throw new Error("no house");
+    expect(L.peril(h.x, h.y)).toBe(0);
+    expect(L.peril(far.x, far.y)).toBeGreaterThan(0.5);
   });
 });
 
