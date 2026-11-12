@@ -111,9 +111,10 @@ const S: typeof S0 = {
   })),
 };
 /** Three houses of different sestieri (or of the board), for the visits' test. */
-const WATCHED = [0, Math.floor(S.houses.length / 3), Math.floor((2 * S.houses.length) / 3)].map(
-  (k) => S.houses[k]?.id ?? "",
-);
+const WATCH = Number(process.env.WATCH) || 3;
+const WATCHED = Array.from({ length: WATCH }, (_, k) =>
+  Math.floor((k * S.houses.length) / WATCH),
+).map((k) => S.houses[k]?.id ?? "");
 const days = WEEKS * 7;
 const ducats = (n: bigint) => Math.round(Number(n) / 1000).toLocaleString("fr-FR");
 
