@@ -98,7 +98,7 @@ L'Arsenal et la flotte (étape 5), le Problème du jour et le défi par le fil (
 
 | Lot | État |
 | --- | --- |
-| M1 | fait : `packages/engine/src/planche/maison.ts` (le niveau et son titre sur la courbe `25 × (n − 1)²`, ce que chaque niveau ouvre, la semaine plafonnée et son report, le Prestige du commerce du jour) ; sur la planche, chaque Maison porte son niveau, et ses bobines, les cases de son île, les étages de ses ateliers et ses tours en dépendent (`plancheSetLevel`, qui ne redescend jamais) ; les Maisons de l'ordinateur sautent les ateliers que leur niveau n'ouvre pas encore. Règles de la lagune de Venise dans `venice1450.lagune.ts` (3 bobines au départ, 5 au niveau 4, 12 au niveau 30 ; les ouvrages au niveau 3 ; une deuxième tour au niveau 6). 7 tests. |
+| M1 | fait : `packages/engine/src/planche/maison.ts` (le niveau et son titre sur la courbe `20 × (n − 1)²` (lagune de Venise), ce que chaque niveau ouvre, la semaine plafonnée et son report, le Prestige du commerce du jour) ; sur la planche, chaque Maison porte son niveau, et ses bobines, les cases de son île, les étages de ses ateliers et ses tours en dépendent (`plancheSetLevel`, qui ne redescend jamais) ; les Maisons de l'ordinateur sautent les ateliers que leur niveau n'ouvre pas encore. Règles de la lagune de Venise dans `venice1450.lagune.ts` (3 bobines au départ, 5 au niveau 4, 12 au niveau 30 ; les ouvrages au niveau 3 ; une deuxième tour au niveau 6). 7 tests. |
 | M2 | à faire |
 | M3 | à faire |
 | M4 | à faire |

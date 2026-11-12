@@ -225,7 +225,7 @@ export const venice1450LaguneParams: LagoonParams = {
     // The growth of the houses (docs/plan-progression-maison.md): 3 bobbins at first, 12 at the
     // top; the worked goods at level 3; a second tower at 6. Titles of the Republic's houses.
     maison: {
-      curve: 25,
+      curve: 20,
       maxLevel: 30,
       titles: [
         { from: 1, name: "Bottega" },
