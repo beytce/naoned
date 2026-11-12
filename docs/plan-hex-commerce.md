@@ -1,6 +1,6 @@
 # Le Hex dans le commerce : plan (étape 4 de l'audit du 11 novembre 2026)
 
-*Proposé le 12 novembre 2026, à la suite de la progression de la Maison (`docs/plan-progression-maison.md`, fusionné). Audit : `docs/audit-progression-2026-11-11/00-audit.md` § 7 ; il reprend aussi les lots R5 (le Problème du jour) et R6 (le défi par le fil) de `docs/plan-classement.md`. Maquette : écrans 2a (la planche, ses tours et ses détours) et 2b (la commande scellée). **À valider avant tout code.***
+*Proposé le 12 novembre 2026, à la suite de la progression de la Maison (`docs/plan-progression-maison.md`, fusionné). Audit : `docs/audit-progression-2026-11-11/00-audit.md` § 7 ; il reprend aussi les lots R5 (le Problème du jour) et R6 (le défi par le fil) de `docs/plan-classement.md`. Maquette : écrans 2a (la planche, ses tours et ses détours) et 2b (la commande scellée). **Validé le 12 novembre 2026** avec les quatre recommandations du § 7.*
 
 ## 1. Le problème à régler
 
@@ -75,9 +75,20 @@ Fusion sur la branche principale à la fin de H6.
 
 La Muda et les détroits noirs (étape 8), la Guerre et l'Arsenal (étapes 5 et 6), les pièces de la Passe gagnées par le niveau (plus tard).
 
-## 7. À trancher
+## 7. Tranché (12 novembre 2026, le porteur suit les quatre recommandations)
 
-1. **Les commandes scellées** : deux par sestiere et par jour, la première Maison qui la livre l'emporte ; ou deux par Maison et par jour, chacun les siennes ?
-2. **Le Problème du jour** : un peu de Prestige (20) et un nœud sur la façade ; ou seulement le nœud ?
-3. **Le défi par le fil** : en direct, les deux joueurs présents (comme le cadrage) ; ou en différé, contre la garde préparée de l'autre ?
-4. **La garde préparée** : deux maillons (trois sur un détroit) ; ou selon le niveau de la Maison ?
+1. **Les commandes scellées** : deux par sestiere et par jour ; la première Maison qui la livre l'emporte.
+2. **Le Problème du jour** : 20 de Prestige (dans le plafond de la semaine) et un nœud sur la façade.
+3. **Le défi par le fil** : en direct, les deux joueurs présents.
+4. **La garde préparée** : deux maillons, trois sur un détroit, pour tous.
+
+## 8. État
+
+| Lot | État |
+| --- | --- |
+| H1 | fait : la fiche d'une ville derrière une tour fermée propose « Forcer la tour » et « Par le détour · 60 % » ; le fil par le détour se dessine sans passer par la tour, ses barges naviguent ; le serveur accepte `detour` sur `/api/planche/thread` ; la lagune joue ses détroits sur le plateau de 9 × 9 (Otrante). 1 test du serveur. |
+| H2 | à faire |
+| H3 | à faire |
+| H4 | à faire |
+| H5 | à faire |
+| H6 | à faire |

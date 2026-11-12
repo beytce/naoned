@@ -548,11 +548,12 @@ export default function LabPlanche() {
     by.delete(ME);
     return { mine, others: [...by.values()].sort((x, y) => y - x) };
   };
-  const tie = (cityId: string, cityName: string, good: string) =>
-    act(() => plancheThread(S, state, ME, cityId, good, state.now), `Fil tendu vers ${cityName}.`, [
-      "/thread",
-      { city: cityId, good },
-    ]);
+  const tie = (cityId: string, cityName: string, good: string, detour = false) =>
+    act(
+      () => plancheThread(S, state, ME, cityId, good, state.now, detour ? { detour: true } : {}),
+      detour ? `Fil tendu vers ${cityName}, par le détour.` : `Fil tendu vers ${cityName}.`,
+      ["/thread", { city: cityId, good, ...(detour ? { detour: true } : {}) }],
+    );
   const untie = (cityId: string, good: string) =>
     act(
       () => plancheUnthread(S, state, ME, cityId, good, state.now),
@@ -635,7 +636,10 @@ export default function LabPlanche() {
               .filter((id) => plancheIsCorsair(state.passages[id]?.holder ?? ""))
               .map((id) => S.passages.find((p) => p.id === id)?.name)
               .join(", ")}{" "}
-            est aux corsaires. Force le passage.
+            est aux corsaires.{" "}
+            {city.detourBps
+              ? `Force la tour pour tout porter, ou prends le détour : ${Math.round(city.detourBps / 100)} % de la charge, sans duel ni péage.`
+              : "Force le passage."}
           </p>
         ) : null}
         {passed ? (
@@ -745,6 +749,34 @@ export default function LabPlanche() {
               >
                 Tirer un fil · {S.goods[another.good]?.toLowerCase()}
               </button>
+            ) : null}
+            {!open && city.detourBps && (at || another) && !at?.held ? (
+              <>
+                <button
+                  type="button"
+                  className="pc-passe-quiet"
+                  data-force-from-city
+                  onClick={() => {
+                    const shut = city.via.find((id) =>
+                      plancheIsCorsair(state.passages[id]?.holder ?? ""),
+                    );
+                    if (shut) pick({ kind: "passage", id: shut });
+                  }}
+                >
+                  Forcer la tour
+                </button>
+                <button
+                  type="button"
+                  className="pc-passe-quiet"
+                  data-detour={(at ?? another)?.good}
+                  onClick={() => {
+                    const g = (at ?? another)?.good;
+                    if (g) tie(city.id, city.name, g, true);
+                  }}
+                >
+                  Par le détour · {Math.round(city.detourBps / 100)} %
+                </button>
+              </>
             ) : null}
             {at?.held ? (
               <button

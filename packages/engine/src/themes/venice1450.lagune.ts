@@ -211,7 +211,8 @@ export const venice1450LaguneParams: LagoonParams = {
     seals: 3,
     bouche: "chioggia",
     canal: "lido",
-    strait: "segna",
+    // The straits on the largest board (9 × 9), the mouths 7 × 7, the canals 5 × 5.
+    strait: "otrante",
     corsairs: ["Ivo le Borgne", "Dragut", "Uluç Ali", "Kemal Reis", "Barberousse", "Turgut"],
   },
   detourBps: 6_000,

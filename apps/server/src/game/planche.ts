@@ -82,7 +82,14 @@ export type PlancheAnswer = "ok" | "not_seated" | "duel_lost" | "duel_illegal" |
 export type PlancheCommand =
   | { type: "seat"; player: string; name: string; t: number }
   | { type: "release"; players: string[]; t: number }
-  | { type: "thread" | "unthread"; player: string; city: string; good: string; t: number }
+  | {
+      type: "thread" | "unthread";
+      player: string;
+      city: string;
+      good: string;
+      t: number;
+      detour?: boolean;
+    }
   | { type: "toll"; player: string; passage: string; tollBps: number; t: number }
   | { type: "buy" | "upgrade"; player: string; at: string; t: number }
   | { type: "build"; player: string; kind: string; at: string; t: number }
@@ -190,7 +197,7 @@ export function plancheDocApply(
     let next: PlancheState;
     switch (c.type) {
       case "thread":
-        next = plancheThread(S, s, h, c.city, c.good, c.t);
+        next = plancheThread(S, s, h, c.city, c.good, c.t, c.detour ? { detour: true } : {});
         break;
       case "unthread":
         next = plancheUnthread(S, s, h, c.city, c.good, c.t);
@@ -351,8 +358,8 @@ export class PlancheHub {
     });
   }
 
-  thread(player: string, city: string, good: string, t: number) {
-    return this.act({ type: "thread", player, city, good, t });
+  thread(player: string, city: string, good: string, t: number, detour = false) {
+    return this.act({ type: "thread", player, city, good, t, ...(detour ? { detour: true } : {}) });
   }
 
   unthread(player: string, city: string, good: string, t: number) {

@@ -157,11 +157,17 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     });
   });
   app.post("/api/planche/thread", deps.perMerchant(60), async (req, reply) => {
-    const b = z.object({ city: key, good: key }).safeParse(req.body);
+    const b = z
+      .object({ city: key, good: key, detour: z.boolean().optional() })
+      .safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const p = await who(req, reply);
     if (!p) return reply;
-    return show(reply, p, await p.hub.thread(p.id, b.data.city, b.data.good, p.now()));
+    return show(
+      reply,
+      p,
+      await p.hub.thread(p.id, b.data.city, b.data.good, p.now(), b.data.detour),
+    );
   });
   app.post("/api/planche/unthread", deps.perMerchant(60), async (req, reply) => {
     const b = z.object({ city: key, good: key }).safeParse(req.body);
