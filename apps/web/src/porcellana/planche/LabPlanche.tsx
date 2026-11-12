@@ -230,7 +230,7 @@ export default function LabPlanche() {
     [send],
   );
   // A gesture of anyone on the board is heard at once (docs/plan-compte.md C5); reading now and
-  // then only shows time going by, more often while the line is down.
+  // then only shows time going by (every 20 s), more often while the line is down.
   const [heard, setHeard] = useState(false);
   useEffect(() => {
     if (!online || duel || gate !== "in") return;
@@ -242,7 +242,7 @@ export default function LabPlanche() {
         setSaid("Le serveur ne répond pas. Lance « pnpm dev », ou ajoute « &seul » à l'adresse.");
     };
     void read();
-    const timer = window.setInterval(read, heard ? 6000 : 2000);
+    const timer = window.setInterval(read, heard ? 20_000 : 2000);
     return () => {
       alive = false;
       window.clearInterval(timer);

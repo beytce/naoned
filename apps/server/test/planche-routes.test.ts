@@ -53,8 +53,11 @@ async function player(email: string) {
   const token = decodeURIComponent(mailer.sent.at(-1)?.text.match(/token=([\w%-]+)/)?.[1] ?? "");
   const res = await app.inject({ method: "POST", url: "/api/auth/verify", payload: { token } });
   const cookie = `${SESSION_COOKIE}=${res.cookies.find((c) => c.name === SESSION_COOKIE)?.value}`;
-  return (method: "GET" | "POST", url: string, payload?: unknown) =>
-    app.inject({ method, url, payload: payload as never, headers: { cookie } });
+  return Object.assign(
+    (method: "GET" | "POST", url: string, payload?: unknown) =>
+      app.inject({ method, url, payload: payload as never, headers: { cookie } }),
+    { cookie },
+  );
 }
 
 // The shared board on line (docs/plan-planche.md L5), through its routes, by two players with an account.
@@ -132,6 +135,22 @@ describe("the board on line", () => {
 
 // The account and the house kept for good (docs/plan-compte.md C3).
 describe("the board for accounts", () => {
+  it("sends the board compressed to whoever accepts it", async () => {
+    const ana = await player("ana@example.org");
+    await ana("GET", "/api/planche");
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/planche",
+      headers: {
+        cookie: ana.cookie,
+        "accept-encoding": "gzip",
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["content-encoding"]).toBe("gzip");
+    expect(res.rawPayload.length).toBeLessThan(20_000);
+  });
+
   it("refuses whoever has no account", async () => {
     const res = await app.inject({ method: "GET", url: "/api/planche" });
     expect(res.statusCode).toBe(401);

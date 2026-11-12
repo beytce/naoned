@@ -3238,3 +3238,23 @@ Un rival chaque semaine : 1440 semaines-Maisons sur 1440 ; le même rival deux s
 Pavillons accrochés le dernier dimanche (médiane des graines) : 39.
 
 **Lecture.** Les quatre sestieri gagnent autant à 6 % près. Les plans s'étagent de 6,5 à 10 millions de deniers par Maison : le verre et le blé devant, la brique, le sel et le chanvre derrière (la brique reste en surabondance, ses villes la paient au tiers de son prix). L'économie est 50 % plus riche qu'avec les règles de la planche de 8 : à surveiller quand l'Arsenal donnera de quoi dépenser. Une journée de jeu d'une lagune se calcule en 0,2 s, robots compris : cent lagunes, 20 s par jour de jeu.
+
+
+### La charge de cent lagunes (12 novembre 2026, docs/plan-lagunes.md G4)
+
+`node --expose-gc --import tsx apps/simulator/src/lagunes-charge.ts 100 1` : cent lagunes de 48 Maisons, une semaine de jeu pour les mettre en jeu, puis une journée mesurée.
+
+#### La charge de 100 lagunes de 48 Maisons
+
+| Mesure | Valeur |
+| --- | --- |
+| Une première semaine de jeu, pour les 100 | 141.6 s |
+| Une journée de jeu, pour les 100 | 14.9 s, soit 149 ms par lagune |
+| Part d'un processeur prise par le jeu | 0.017 % |
+| Mémoire tenue par les 100 lagunes | 12 450 Ko (124 Ko par lagune) |
+| La planche envoyée à chaque lecture | 77 Ko |
+| Ce qu'envoie le serveur, 4800 joueurs lisant toutes les 6 s | 61 204 Ko par seconde |
+
+[exited with code 0]
+
+**Lecture.** Le calcul et la mémoire tiennent largement : 0,15 s par lagune et par jour de jeu, 124 Ko chacune. L'envoi ne tenait pas : 74 Ko par lecture, relus toutes les 6 s par chaque joueur, soit 60 Mo/s pour 4 800 joueurs. Corrigé : les réponses du serveur sont compressées (gzip, 7 Ko la planche), et la planche ne se relit plus que toutes les 20 s quand le canal en direct est ouvert (les gestes des autres arrivent par lui). Soit environ 1,6 Mo/s pour 4 800 joueurs. Reste possible : n'envoyer en détail que son sestiere.
