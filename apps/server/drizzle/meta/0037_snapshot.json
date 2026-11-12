@@ -45,12 +45,8 @@
           "name": "account_atouts_account_id_accounts_id_fk",
           "tableFrom": "account_atouts",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -58,10 +54,7 @@
       "compositePrimaryKeys": {
         "account_atouts_account_id_code_pk": {
           "name": "account_atouts_account_id_code_pk",
-          "columns": [
-            "account_id",
-            "code"
-          ]
+          "columns": ["account_id", "code"]
         }
       },
       "uniqueConstraints": {},
@@ -329,12 +322,8 @@
           "name": "battle_ratings_world_id_worlds_id_fk",
           "tableFrom": "battle_ratings",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -342,12 +331,8 @@
           "name": "battle_ratings_account_id_accounts_id_fk",
           "tableFrom": "battle_ratings",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -355,10 +340,7 @@
       "compositePrimaryKeys": {
         "battle_ratings_world_id_account_id_pk": {
           "name": "battle_ratings_world_id_account_id_pk",
-          "columns": [
-            "world_id",
-            "account_id"
-          ]
+          "columns": ["world_id", "account_id"]
         }
       },
       "uniqueConstraints": {},
@@ -401,12 +383,8 @@
           "name": "canal_plots_account_id_accounts_id_fk",
           "tableFrom": "canal_plots",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -414,12 +392,8 @@
           "name": "canal_plots_since_world_id_worlds_id_fk",
           "tableFrom": "canal_plots",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "since_world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["since_world_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -429,9 +403,7 @@
         "canal_plots_account_id_unique": {
           "name": "canal_plots_account_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "account_id"
-          ]
+          "columns": ["account_id"]
         }
       },
       "policies": {},
@@ -523,12 +495,8 @@
           "name": "companies_created_by_accounts_id_fk",
           "tableFrom": "companies",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -536,12 +504,8 @@
           "name": "companies_call_by_accounts_id_fk",
           "tableFrom": "companies",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "call_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["call_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -603,12 +567,8 @@
           "name": "company_members_account_id_accounts_id_fk",
           "tableFrom": "company_members",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -616,12 +576,8 @@
           "name": "company_members_company_id_companies_id_fk",
           "tableFrom": "company_members",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -661,12 +617,8 @@
           "name": "company_message_reports_message_id_company_messages_id_fk",
           "tableFrom": "company_message_reports",
           "tableTo": "company_messages",
-          "columnsFrom": [
-            "message_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["message_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -674,12 +626,8 @@
           "name": "company_message_reports_reporter_id_accounts_id_fk",
           "tableFrom": "company_message_reports",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "reporter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["reporter_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -687,10 +635,7 @@
       "compositePrimaryKeys": {
         "company_message_reports_message_id_reporter_id_pk": {
           "name": "company_message_reports_message_id_reporter_id_pk",
-          "columns": [
-            "message_id",
-            "reporter_id"
-          ]
+          "columns": ["message_id", "reporter_id"]
         }
       },
       "uniqueConstraints": {},
@@ -790,12 +735,8 @@
           "name": "company_messages_company_id_companies_id_fk",
           "tableFrom": "company_messages",
           "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["company_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -803,12 +744,8 @@
           "name": "company_messages_account_id_accounts_id_fk",
           "tableFrom": "company_messages",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -872,12 +809,8 @@
           "name": "doges_account_id_accounts_id_fk",
           "tableFrom": "doges",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -885,12 +818,8 @@
           "name": "doges_world_id_worlds_id_fk",
           "tableFrom": "doges",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1005,12 +934,8 @@
           "name": "family_messages_world_id_worlds_id_fk",
           "tableFrom": "family_messages",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1018,12 +943,8 @@
           "name": "family_messages_account_id_accounts_id_fk",
           "tableFrom": "family_messages",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1070,11 +991,7 @@
       "compositePrimaryKeys": {
         "funnel_counts_day_step_source_pk": {
           "name": "funnel_counts_day_step_source_pk",
-          "columns": [
-            "day",
-            "step",
-            "source"
-          ]
+          "columns": ["day", "step", "source"]
         }
       },
       "uniqueConstraints": {},
@@ -1154,12 +1071,8 @@
           "name": "generations_account_id_accounts_id_fk",
           "tableFrom": "generations",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1167,12 +1080,8 @@
           "name": "generations_world_id_worlds_id_fk",
           "tableFrom": "generations",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1180,10 +1089,7 @@
       "compositePrimaryKeys": {
         "generations_account_id_world_id_pk": {
           "name": "generations_account_id_world_id_pk",
-          "columns": [
-            "account_id",
-            "world_id"
-          ]
+          "columns": ["account_id", "world_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1326,12 +1232,8 @@
           "name": "guerre_assaults_account_id_accounts_id_fk",
           "tableFrom": "guerre_assaults",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1339,12 +1241,8 @@
           "name": "guerre_assaults_world_id_worlds_id_fk",
           "tableFrom": "guerre_assaults",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1473,12 +1371,8 @@
           "name": "influence_entries_account_id_accounts_id_fk",
           "tableFrom": "influence_entries",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1486,12 +1380,8 @@
           "name": "influence_entries_world_id_worlds_id_fk",
           "tableFrom": "influence_entries",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1583,12 +1473,8 @@
           "name": "ledger_entries_world_id_worlds_id_fk",
           "tableFrom": "ledger_entries",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1779,12 +1665,8 @@
           "name": "maison_events_account_id_accounts_id_fk",
           "tableFrom": "maison_events",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1792,12 +1674,8 @@
           "name": "maison_events_world_id_worlds_id_fk",
           "tableFrom": "maison_events",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1837,12 +1715,8 @@
           "name": "message_reports_message_id_family_messages_id_fk",
           "tableFrom": "message_reports",
           "tableTo": "family_messages",
-          "columnsFrom": [
-            "message_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["message_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1850,12 +1724,8 @@
           "name": "message_reports_reporter_id_accounts_id_fk",
           "tableFrom": "message_reports",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "reporter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["reporter_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1863,10 +1733,7 @@
       "compositePrimaryKeys": {
         "message_reports_message_id_reporter_id_pk": {
           "name": "message_reports_message_id_reporter_id_pk",
-          "columns": [
-            "message_id",
-            "reporter_id"
-          ]
+          "columns": ["message_id", "reporter_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1956,12 +1823,8 @@
           "name": "notifications_world_id_worlds_id_fk",
           "tableFrom": "notifications",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1969,12 +1832,8 @@
           "name": "notifications_account_id_accounts_id_fk",
           "tableFrom": "notifications",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2061,12 +1920,8 @@
           "name": "pass_grants_account_id_accounts_id_fk",
           "tableFrom": "pass_grants",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2128,12 +1983,8 @@
           "name": "planche_seats_world_id_worlds_id_fk",
           "tableFrom": "planche_seats",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2141,12 +1992,8 @@
           "name": "planche_seats_account_id_accounts_id_fk",
           "tableFrom": "planche_seats",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2154,10 +2001,7 @@
       "compositePrimaryKeys": {
         "planche_seats_world_id_house_pk": {
           "name": "planche_seats_world_id_house_pk",
-          "columns": [
-            "world_id",
-            "house"
-          ]
+          "columns": ["world_id", "house"]
         }
       },
       "uniqueConstraints": {},
@@ -2225,12 +2069,8 @@
           "name": "players_world_id_worlds_id_fk",
           "tableFrom": "players",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2238,12 +2078,8 @@
           "name": "players_account_id_accounts_id_fk",
           "tableFrom": "players",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2251,10 +2087,7 @@
       "compositePrimaryKeys": {
         "players_world_id_account_id_pk": {
           "name": "players_world_id_account_id_pk",
-          "columns": [
-            "world_id",
-            "account_id"
-          ]
+          "columns": ["world_id", "account_id"]
         }
       },
       "uniqueConstraints": {},
@@ -2319,12 +2152,8 @@
           "name": "push_subscriptions_account_id_accounts_id_fk",
           "tableFrom": "push_subscriptions",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2413,12 +2242,8 @@
           "name": "season_results_world_id_worlds_id_fk",
           "tableFrom": "season_results",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2426,12 +2251,8 @@
           "name": "season_results_account_id_accounts_id_fk",
           "tableFrom": "season_results",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2439,10 +2260,7 @@
       "compositePrimaryKeys": {
         "season_results_world_id_account_id_pk": {
           "name": "season_results_world_id_account_id_pk",
-          "columns": [
-            "world_id",
-            "account_id"
-          ]
+          "columns": ["world_id", "account_id"]
         }
       },
       "uniqueConstraints": {},
@@ -2502,12 +2320,8 @@
           "name": "sessions_account_id_accounts_id_fk",
           "tableFrom": "sessions",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2687,12 +2501,8 @@
           "name": "sfide_world_id_worlds_id_fk",
           "tableFrom": "sfide",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2700,12 +2510,8 @@
           "name": "sfide_a_accounts_id_fk",
           "tableFrom": "sfide",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "a"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["a"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2713,12 +2519,8 @@
           "name": "sfide_b_accounts_id_fk",
           "tableFrom": "sfide",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "b"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["b"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2726,12 +2528,8 @@
           "name": "sfide_ghost_account_accounts_id_fk",
           "tableFrom": "sfide",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "ghost_account"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["ghost_account"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2824,12 +2622,8 @@
           "name": "skirmish_matches_world_id_worlds_id_fk",
           "tableFrom": "skirmish_matches",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2932,12 +2726,8 @@
           "name": "stock_movements_world_id_worlds_id_fk",
           "tableFrom": "stock_movements",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3091,12 +2881,8 @@
           "name": "terra_results_world_id_worlds_id_fk",
           "tableFrom": "terra_results",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3104,12 +2890,8 @@
           "name": "terra_results_account_id_accounts_id_fk",
           "tableFrom": "terra_results",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3117,11 +2899,7 @@
       "compositePrimaryKeys": {
         "terra_results_world_id_week_account_id_pk": {
           "name": "terra_results_world_id_week_account_id_pk",
-          "columns": [
-            "world_id",
-            "week",
-            "account_id"
-          ]
+          "columns": ["world_id", "week", "account_id"]
         }
       },
       "uniqueConstraints": {},
@@ -3234,12 +3012,8 @@
           "name": "trades_world_id_worlds_id_fk",
           "tableFrom": "trades",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3247,10 +3021,7 @@
       "compositePrimaryKeys": {
         "trades_world_id_id_pk": {
           "name": "trades_world_id_id_pk",
-          "columns": [
-            "world_id",
-            "id"
-          ]
+          "columns": ["world_id", "id"]
         }
       },
       "uniqueConstraints": {},
@@ -3306,12 +3077,8 @@
           "name": "week_curves_world_id_worlds_id_fk",
           "tableFrom": "week_curves",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3319,12 +3086,8 @@
           "name": "week_curves_account_id_accounts_id_fk",
           "tableFrom": "week_curves",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3332,11 +3095,7 @@
       "compositePrimaryKeys": {
         "week_curves_world_id_week_account_id_pk": {
           "name": "week_curves_world_id_week_account_id_pk",
-          "columns": [
-            "world_id",
-            "week",
-            "account_id"
-          ]
+          "columns": ["world_id", "week", "account_id"]
         }
       },
       "uniqueConstraints": {},
@@ -3391,12 +3150,8 @@
           "name": "weekly_results_world_id_worlds_id_fk",
           "tableFrom": "weekly_results",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3404,12 +3159,8 @@
           "name": "weekly_results_account_id_accounts_id_fk",
           "tableFrom": "weekly_results",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3417,11 +3168,7 @@
       "compositePrimaryKeys": {
         "weekly_results_world_id_week_account_id_pk": {
           "name": "weekly_results_world_id_week_account_id_pk",
-          "columns": [
-            "world_id",
-            "week",
-            "account_id"
-          ]
+          "columns": ["world_id", "week", "account_id"]
         }
       },
       "uniqueConstraints": {},
@@ -3464,12 +3211,8 @@
           "name": "world_commands_world_id_worlds_id_fk",
           "tableFrom": "world_commands",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3477,10 +3220,7 @@
       "compositePrimaryKeys": {
         "world_commands_world_id_version_pk": {
           "name": "world_commands_world_id_version_pk",
-          "columns": [
-            "world_id",
-            "version"
-          ]
+          "columns": ["world_id", "version"]
         }
       },
       "uniqueConstraints": {},
@@ -3530,12 +3270,8 @@
           "name": "world_states_world_id_worlds_id_fk",
           "tableFrom": "world_states",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
