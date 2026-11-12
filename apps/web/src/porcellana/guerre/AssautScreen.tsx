@@ -132,6 +132,7 @@ export function AssautScreen({
   tutorial = false,
   onEnd,
   onBack,
+  remote,
 }: {
   rules: AssautRules;
   port: AssautPort;
@@ -140,8 +141,17 @@ export function AssautScreen({
   tutorial?: boolean;
   onEnd?: (end: AssautEnd) => void;
   onBack: () => void;
+  /**
+   * The War's assault: played by the server, round by round (its ruses hidden until they play).
+   * It starts on the state the server gave; each round is sent and the server's state shown.
+   */
+  remote?: {
+    start: AssautState;
+    play: (moves: Record<number, string>) => Promise<{ state: AssautState } | { error: string }>;
+  };
 }) {
-  const [s, setS] = useState<AssautState>(() => assautInit(R, port, fleet));
+  const [s, setS] = useState<AssautState>(() => remote?.start ?? assautInit(R, port, fleet));
+  const [busy, setBusy] = useState(false);
   const [moves, setMoves] = useState<Record<number, string>[]>([]);
   const [pending, setPending] = useState<Record<number, string>>({});
   const [chosen, setChosen] = useState<number | null>(null);
@@ -181,9 +191,24 @@ export function AssautScreen({
     if (step === 1 && pass === "sud") setStep(brulot ? 2 : 3);
     if (step === 2 && x?.keyword === "brule" && pass === "bouche") setStep(3);
   };
-  const go = () => {
+  const go = async () => {
+    if (busy) return;
     try {
-      const next = assautPlay(R, s, pending);
+      let next: AssautState;
+      if (remote) {
+        setBusy(true);
+        const res = await remote.play(pending);
+        setBusy(false);
+        if ("error" in res) {
+          setSaid(
+            res.error === "assaut_fixed"
+              ? "Ce navire ne peut plus changer de passe."
+              : "Le serveur n'a pas joué la manche : réessaie.",
+          );
+          return;
+        }
+        next = res.state;
+      } else next = assautPlay(R, s, pending);
       setTold(next.log.slice(s.log.length));
       setMoves([...moves, pending]);
       setPending({});
@@ -357,20 +382,22 @@ export function AssautScreen({
                 : "Toute ta flotte rentre intacte."}
             </p>
             <div className="pc-pl-acts">
-              <button
-                type="button"
-                className="pc-passe-quiet"
-                data-assaut-again
-                onClick={() => {
-                  setS(assautInit(R, port, fleet));
-                  setMoves([]);
-                  setPending({});
-                  setTold([]);
-                  setStep(-1);
-                }}
-              >
-                Rejouer
-              </button>
+              {remote ? null : (
+                <button
+                  type="button"
+                  className="pc-passe-quiet"
+                  data-assaut-again
+                  onClick={() => {
+                    setS(assautInit(R, port, fleet));
+                    setMoves([]);
+                    setPending({});
+                    setTold([]);
+                    setStep(-1);
+                  }}
+                >
+                  Rejouer
+                </button>
+              )}
               <button type="button" className="pc-passe-go" data-assaut-back onClick={onBack}>
                 Revenir à la planche
               </button>
@@ -415,7 +442,8 @@ export function AssautScreen({
               className="pc-passe-go pc-as-go"
               data-assaut-go
               data-glow={String(glow("go"))}
-              onClick={go}
+              disabled={busy}
+              onClick={() => void go()}
             >
               Lancer la manche {s.manche}
               <small>

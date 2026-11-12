@@ -24,7 +24,8 @@
     "e2e:commande": "node e2e/commande.mjs",
     "e2e:defi": "node e2e/defi.mjs",
     "e2e:arsenal": "node e2e/arsenal.mjs",
-    "e2e:assaut": "node e2e/assaut.mjs"
+    "e2e:assaut": "node e2e/assaut.mjs",
+    "e2e:guerre": "node e2e/guerre.mjs"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*",

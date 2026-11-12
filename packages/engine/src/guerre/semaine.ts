@@ -125,3 +125,47 @@ export function guerrePrestige(
   if (winner) for (const k of war[winner]) add(k, P.victory);
   return out;
 }
+
+/**
+ * A house come after Monday joins the week's War: it takes the place of a computer's house of its
+ * band on the side of the people's flotilla nearest its Power, if one is free of any assault;
+ * else it opens a war of its own (its flotilla filled, against one of the computer's houses).
+ */
+export function guerreJoin(
+  wars: GuerreWar[],
+  house: GuerreCandidate,
+  all: GuerreCandidate[],
+  size: number,
+  /** The houses an assault has already touched (as assailant or as target). */
+  touched: Set<string>,
+): GuerreWar[] {
+  if (wars.some((w) => w.a.includes(house.key) || w.b.includes(house.key))) return wars;
+  const power = new Map(all.map((h) => [h.key, h.power]));
+  const people = new Set(all.filter((h) => h.person).map((h) => h.key));
+  let pick: { w: number; side: "a" | "b"; i: number; gap: number } | null = null;
+  wars.forEach((w, wi) => {
+    for (const side of ["a", "b"] as const) {
+      const keys = w[side];
+      // The people's side: a flotilla with a person in it.
+      if (!keys.some((k) => people.has(k))) continue;
+      keys.forEach((k, i) => {
+        if (people.has(k) || touched.has(k)) return;
+        const gap = Math.abs((power.get(k) ?? 0) - house.power);
+        if (!pick || gap < pick.gap) pick = { w: wi, side, i, gap };
+      });
+    }
+  });
+  const chosen = pick as { w: number; side: "a" | "b"; i: number; gap: number } | null;
+  if (chosen && chosen.gap <= Math.max(100, house.power * 0.3)) {
+    return wars.map((w, wi) => {
+      if (wi !== chosen.w) return w;
+      const keys = [...w[chosen.side]];
+      keys[chosen.i] = house.key;
+      return { ...w, [chosen.side]: keys };
+    });
+  }
+  const used = new Set(wars.flatMap((w) => [...w.a, ...w.b]));
+  const spare = all.filter((h) => !h.person && !used.has(h.key));
+  const { wars: own } = guerreForm([house, ...spare], size);
+  return [...wars, ...own.filter((w) => w.a.includes(house.key) || w.b.includes(house.key))];
+}

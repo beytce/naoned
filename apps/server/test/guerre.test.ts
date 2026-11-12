@@ -89,11 +89,31 @@ describe("the War of the week", () => {
     // The ships sunk come home damaged.
     const ships = a.store.hub.current().doc.state.houses[a.house]?.fleet?.ships ?? [];
     expect(ships.filter((x) => x.damaged).map((x) => x.id)).toEqual(end.result?.damaged ?? []);
+    // Carl comes on Wednesday: he joins the War in a computer's place, untouched.
+    const carl = await account("carl");
+    const c = await lagoons.seatOf(carl, "Ca’ carl", tue + DAY);
+    const cv = await g.view(carl, c.store, c.house, tue + DAY);
+    expect(cv.phase).toBe("assauts");
+    expect([...cv.ours, ...cv.theirs].some((p) => p.key === cv.me)).toBe(true);
+    expect(cv.theirs.length + cv.ours.length).toBe(12);
     // Sunday: the seals and the victory in Ana's week.
     const before = a.store.hub.current().doc.state.houses[a.house]?.maison?.week ?? 0;
     await g.settle(T0 + 6 * DAY + HOUR);
     await g.settle(T0 + 6 * DAY + 2 * HOUR);
     const week = a.store.hub.current().doc.state.houses[a.house]?.maison?.week ?? 0;
     expect(week - before).toBeGreaterThanOrEqual(20 * (end.result?.seals ?? 0));
+  });
+
+  it("lets a second player come on Thursday join the war the first one formed alone", async () => {
+    const lagoons = await PlancheLagoons.open(database.db, plancheTheme(), T0);
+    const ana = await account("ana");
+    const a = await lagoons.seatOf(ana, "Ca’ ana", T0 + 3 * DAY + 17 * HOUR);
+    const g = new GuerreHub(database.db, lagoons);
+    const thu = T0 + 3 * DAY + 17 * HOUR;
+    expect((await g.view(ana, a.store, a.house, thu)).phase).toBe("assauts");
+    const ben = await account("ben");
+    const b = await lagoons.seatOf(ben, "Ca’ ben", thu + HOUR);
+    const v = await g.view(ben, b.store, b.house, thu + HOUR);
+    expect(v.phase).toBe("assauts");
   });
 });

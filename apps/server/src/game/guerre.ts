@@ -9,6 +9,7 @@ import {
   assautPortOf,
   assautResult,
   guerreForm,
+  guerreJoin,
   guerrePrestige,
   guerreScore,
   planchePower,
@@ -102,17 +103,7 @@ export class GuerreHub {
       .where(eq(guerreWeeks.week, new Date(week)));
     if (row) return row.wars as GuerreWar[];
     if (Math.floor((now - week) / DAY) >= 6) return null;
-    const candidates = this.lagoons.all().flatMap((store) => {
-      const doc = store.hub.current().doc;
-      const S = store.hub.theme.board;
-      const people = new Set(Object.values(doc.seats).map((s) => s.house));
-      return S.houses.map((h) => ({
-        key: keyOf(store, h.id),
-        power: planchePower(S, doc.state, h.id),
-        person: people.has(h.id),
-      }));
-    });
-    const { wars } = guerreForm(candidates, FLOTILLA);
+    const { wars } = guerreForm(this.candidates(), FLOTILLA);
     await this.db
       .insert(guerreWeeks)
       .values({ week: new Date(week), wars })
@@ -122,6 +113,40 @@ export class GuerreHub {
       .from(guerreWeeks)
       .where(eq(guerreWeeks.week, new Date(week)));
     return (again?.wars as GuerreWar[]) ?? wars;
+  }
+
+  /** Every house of every lagoon, with its Power, a person's or the computer's. */
+  private candidates() {
+    return this.lagoons.all().flatMap((store) => {
+      const doc = store.hub.current().doc;
+      const S = store.hub.theme.board;
+      const people = new Set(Object.values(doc.seats).map((s) => s.house));
+      return S.houses.map((h) => ({
+        key: keyOf(store, h.id),
+        power: planchePower(S, doc.state, h.id),
+        person: people.has(h.id),
+      }));
+    });
+  }
+
+  /** A house come after the wars were formed joins one (Monday to Saturday). */
+  private async join(key: string, wars: GuerreWar[], now: number): Promise<GuerreWar[]> {
+    const week = mondayOf(now);
+    if (Math.floor((now - week) / DAY) > 5) return wars;
+    const all = this.candidates();
+    const me = all.find((c) => c.key === key);
+    if (!me) return wars;
+    const rows = await this.db
+      .select({ by: guerreAssaults.by, target: guerreAssaults.target })
+      .from(guerreAssaults)
+      .where(eq(guerreAssaults.week, new Date(week)));
+    const touched = new Set(rows.flatMap((r) => [r.by, r.target]));
+    const next = guerreJoin(wars, { ...me, person: true }, all, FLOTILLA, touched);
+    await this.db
+      .update(guerreWeeks)
+      .set({ wars: next })
+      .where(eq(guerreWeeks.week, new Date(week)));
+    return next;
   }
 
   private async assaults(week: number) {
@@ -156,7 +181,9 @@ export class GuerreHub {
     const week = mondayOf(now);
     const dow = Math.floor((now - week) / DAY);
     const me = keyOf(store, house);
-    const wars = (await this.wars(now)) ?? [];
+    let wars = (await this.wars(now)) ?? [];
+    if (!wars.some((w) => w.a.includes(me) || w.b.includes(me)))
+      wars = await this.join(me, wars, now);
     const war = wars.find((w) => w.a.includes(me) || w.b.includes(me));
     const empty: GuerreView = {
       week,

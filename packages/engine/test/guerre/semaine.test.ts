@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guerreForm, guerrePrestige, guerreScore } from "../../src/index.js";
+import { guerreForm, guerreJoin, guerrePrestige, guerreScore } from "../../src/index.js";
 
 const P = { seal: 20, damage: 7, repelled: 10, repelledCap: 40, victory: 60 };
 
@@ -66,5 +66,28 @@ describe("the Prestige of the week", () => {
     // b1: six damaging assaults (42) and a2's assault repelled (10); b2 repelled a1's (10).
     expect(p.b1).toBe(52);
     expect(p.b2).toBe(10);
+  });
+});
+
+describe("a house come during the week", () => {
+  it("takes the place of a computer's house of its band, or opens a war of its own", () => {
+    const robots = Array.from({ length: 30 }, (_, k) => ({
+      key: `r${k}`,
+      power: 1_000 - k * 30,
+      person: false,
+    }));
+    const first = { key: "p0", power: 900, person: true };
+    const { wars } = guerreForm([first, ...robots], 6);
+    const late = { key: "p1", power: 880, person: true };
+    const joined = guerreJoin(wars, late, [first, ...robots, late], 6, new Set());
+    expect(joined.flatMap((w) => [...w.a, ...w.b]).filter((k) => k === "p1")).toHaveLength(1);
+    expect(joined).toHaveLength(wars.length);
+    // A house already struck stays: the newcomer takes a slot no one has fought over.
+    const all = new Set(wars.flatMap((w) => [...w.a, ...w.b]).filter((k) => k.startsWith("r")));
+    const busy = guerreJoin(wars, late, [first, ...robots, late], 6, all);
+    expect(busy).toHaveLength(wars.length + 1);
+    expect(busy.at(-1)?.a).toContain("p1");
+    // Already at war: nothing changes.
+    expect(guerreJoin(joined, late, [first, ...robots, late], 6, new Set())).toEqual(joined);
   });
 });
