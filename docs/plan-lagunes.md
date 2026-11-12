@@ -1,0 +1,68 @@
+# Les lagunes de 48 Maisons : plan (étape 2 de l'audit du 11 novembre 2026)
+
+*Proposé le 12 novembre 2026, à la suite du compte et de la Maison qui reste (`docs/plan-compte.md`, fusionné). Décision du porteur D3 : des planches de 48 Maisons. Audit : `docs/audit-progression-2026-11-11/00-audit.md` § 5 et § 11. **À valider avant tout code.***
+
+## 1. Le problème à régler
+
+Une planche compte aujourd'hui 8 Maisons, 8 villes et 3 passages, sur 28 × 18 cases. C'est trop petit pour une vraie vie de voisinage : tout le monde est le rival de tout le monde, la Passe se joue sur trois tours seulement, et il faut une nouvelle planche tous les 8 joueurs.
+
+Après cette étape, une **lagune** compte :
+
+- **48 Maisons**, en **4 sestieri** de 12 voisins ;
+- **une vingtaine de villes**, dont certaines demandées par un seul sestiere et d'autres par toute la lagune ;
+- **une douzaine de tours** : une bouche par sestiere, des ponts et des canaux entre eux, des détroits au Large.
+
+Et un serveur tient **une centaine de lagunes**, soit près de 5 000 joueurs.
+
+## 2. Ce que voit le joueur
+
+| Échelle | Ce qu'on voit | Les étiquettes |
+| --- | --- | --- |
+| **Ton sestiere** (à l'ouverture) | Tes 11 voisins, les villes qui vous sont proches, la bouche de ton sestiere | Le nom de chaque voisin ; ta Maison en rouge, ton rival marqué |
+| **La lagune** | Les 4 sestieri et leurs noms posés sur l'eau, toutes les villes, toutes les tours | Seulement ta Maison, ton rival, le Doge et les villes ; les autres Maisons en petits pavillons |
+| **Ton île** | Comme aujourd'hui | — |
+
+- La pilule du haut dit ta place **dans ton sestiere** (« 3ᵉ sur 12 ») ; le palais du Doge donne aussi ta place dans la lagune.
+- Le Doge reste celui de la lagune entière.
+- Tes fils, ceux de ton rival et le détour sans duel se dessinent comme sur la maquette du 11 novembre (écran 2a).
+
+## 3. Les règles
+
+- **La carte** : une seule carte, la même pour toutes les lagunes, pour que les classements et les bancs se comparent. Elle est **décrite par un générateur** dans le moteur (positions, terrains, villes, tours), et non écrite case par case : on pourra en tirer d'autres plus tard.
+- **Les sestieri** : chaque Maison appartient à un sestiere ; chaque sestiere a une bouche (une tour) qui mène au Large, et des villes proches. Les quatre sont équivalents, à une rotation près.
+- **Les villes** :
+  - *de sestiere* : proches, peu de demande, sans passage ;
+  - *de lagune* : partagées par tous, plus riches, parfois derrière un pont ou un canal ;
+  - *du Large* : les plus riches, derrière un détroit.
+- **Toujours un détour** : chaque ville se rejoint sans duel, par un chemin plus long (repris de l'audit, § 7.1). Ce lot pose la règle dans le moteur ; les commandes scellées et les autres usages du Hex viendront à l'étape 4.
+- **Le rival** est désigné **dans ton sestiere** : le plus proche au-dessus de toi parmi tes 11 voisins, un joueur d'abord.
+- **Les Maisons de l'ordinateur** tiennent les places libres, avec des plans variés par sestiere (le verre, le bois, la terre, le sel…), et rendent leur place à un joueur qui arrive.
+
+## 4. La technique
+
+- **Moteur** : chaque Maison porte son sestiere ; un générateur pur `plancheLagoon` produit la carte de 48 Maisons à partir de ses paramètres (dans `worlds.settings`) ; le rang calcule la place dans le sestiere et le rival du sestiere. Tests d'abord, sur une fixture.
+- **Performance** : une planche de 48 Maisons avance par tranches de dix minutes ; le banc mesure le temps d'une journée et d'une semaine de jeu, pour une lagune et pour cent.
+- **Écran** : le sol en instances (déjà le cas), les îles voisines en petit, les étiquettes selon l'échelle ; le parcours à 390 px vérifie qu'on lit son sestiere sans chevauchement.
+
+## 5. Les lots
+
+| Lot | Contenu | Vérification |
+| --- | --- | --- |
+| G1 | **Le générateur de lagune** : 4 sestieri de 12 Maisons, une vingtaine de villes en trois cercles, une douzaine de tours, un détour sans duel vers chaque ville. Pur, tests d'abord. | tests : 48 places distinctes, 12 par sestiere, chaque ville atteignable sans duel, les 4 sestieri équivalents |
+| G2 | **Le rang par sestiere** : la place dans le sestiere et dans la lagune, le rival choisi parmi ses voisins. | tests du moteur |
+| G3 | **Au banc** : 48 Maisons sur une marée de six semaines ; demande des villes, plans des robots, péages. | aucune stratégie unique ne domine ; huit visites par jour ne rapportent pas nettement plus que trois ; `docs/calibration.md` |
+| G4 | **Le serveur** : les lagunes de 48, le placement d'un nouveau compte dans le sestiere le moins rempli, le test de charge à cent lagunes. | tests du serveur ; temps de réponse mesurés |
+| G5 | **L'écran** : les trois échelles (sestiere à l'ouverture, lagune, île), les étiquettes qui suivent l'échelle, les noms des sestieri sur l'eau. | parcours e2e à 390 px et sur ordinateur, captures |
+
+Fusion sur la branche principale à la fin de G5.
+
+## 6. Ce qui n'est pas dans cette étape
+
+La discussion du sestiere (étape 7) ; les commandes scellées, la Muda et les détroits noirs (étapes 4 et 8) ; la marée d'encre et les ligues entre lagunes (étape 9) ; une carte différente par lagune.
+
+## 7. À trancher
+
+1. **La carte** : la même pour toutes les lagunes, ou une carte tirée au sort pour chacune ?
+2. **La planche de 8 Maisons ouverte au dernier déploiement** : repartir sur une lagune de 48 neuve (les comptes restent), ou la garder telle quelle à côté des nouvelles ?
+3. **Le rival** : choisi dans le sestiere, ou dans toute la lagune ?
+4. **L'ouverture** : sur ton sestiere, ou sur la lagune entière ?
