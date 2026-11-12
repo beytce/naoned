@@ -19,7 +19,8 @@
     "lagunes-charge": "tsx src/lagunes-charge.ts",
     "maison-bench": "tsx src/maison-bench.ts",
     "hex-bench": "tsx src/hex-bench.ts",
-    "arsenal-bench": "tsx src/arsenal-bench.ts"
+    "arsenal-bench": "tsx src/arsenal-bench.ts",
+    "assaut-bench": "tsx src/assaut-bench.ts"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*"

@@ -22,6 +22,10 @@ export interface AssautRules {
   reinforcements: { n: number; force: number; hull: number };
   /** The round the chain of the ruse rises, and the reinforcements come. */
   ruseManche: { chaine: number; renforts: number };
+  /** What the hidden fireship does to the first ship in (none said: it sinks it). */
+  hiddenFire?: number;
+  /** What a fireship does to a tower when there is no chain nor ship at anchor to burn. */
+  fireshipTower?: number;
 }
 
 /** A ship of the assailant's fleet, with its force and hull (its level counted). */
@@ -71,7 +75,13 @@ export interface AssautShip {
 
 export type AssautEvent =
   | { manche: number; pass: string; kind: "ruse"; ruse: AssautRuse }
-  | { manche: number; pass: string; kind: "burn"; ship: number; what: "chaine" | "ancre" | "rien" }
+  | {
+      manche: number;
+      pass: string;
+      kind: "burn";
+      ship: number;
+      what: "chaine" | "ancre" | "tour" | "rien";
+    }
   | { manche: number; pass: string; kind: "chain"; held: boolean }
   | { manche: number; pass: string; kind: "fire"; from: string; ship: number; damage: number }
   | { manche: number; pass: string; kind: "hit"; ship: number; target: string; damage: number }
@@ -222,26 +232,34 @@ function playPass(R: AssautRules, s: AssautState, id: string, p: AssautPass, m: 
     p.ruseDone = true;
     const first = ships[0];
     if (first) {
-      first.x.hull = 0;
-      first.x.sunk = true;
+      first.x.hull -= R.hiddenFire ?? first.x.hull;
       say({ kind: "ruse", ruse: "brulot" });
-      say({ kind: "sunk", ship: first.id });
+      if (first.x.hull <= 0) {
+        first.x.sunk = true;
+        say({ kind: "sunk", ship: first.id });
+      }
     }
     ships = afloat(s, id);
   }
-  // The assailant's fireships: the chain, else a ship at anchor; then they are gone.
+  // The assailant's fireships: the chain, else a ship at anchor, else a tower; then they are gone.
   for (const b of ships.filter((y) => y.x.keyword === "brule")) {
-    let what: "chaine" | "ancre" | "rien" = "rien";
+    let what: "chaine" | "ancre" | "tour" | "rien" = "rien";
+    const tower = p.towers[0];
     if (p.chain) {
       p.chain = false;
       what = "chaine";
     } else if (p.anchor.length) {
       p.anchor.shift();
       what = "ancre";
+    } else if (tower && R.fireshipTower) {
+      tower.hull -= R.fireshipTower;
+      if (tower.hull <= 0) p.towers.shift();
+      what = "tour";
     }
     b.x.sunk = true;
     say({ kind: "burn", ship: b.id, what });
-    if (what !== "rien") say({ kind: "down", what });
+    if (what === "chaine" || what === "ancre" || (what === "tour" && tower && tower.hull <= 0))
+      say({ kind: "down", what });
   }
   ships = afloat(s, id);
   if (!ships.length) return;
