@@ -1,4 +1,5 @@
 import {
+  PASSE_CHAIN,
   PASSE_EMPTY,
   type PasseMove,
   type PasseSetup,
@@ -101,10 +102,12 @@ function theme(): PlancheHubTheme {
 const T0 = Date.parse("2026-11-16T06:00:00Z");
 
 /** The thread's pieces that beat the hub's lieutenant on the strait, found by playing against it. */
-function winningLine(t: PlancheHubTheme): PasseMove[] {
+function winningLine(t: PlancheHubTheme, guard: number[] = []): PasseMove[] {
   const b = t.passe.boards.petit;
   if (!b) throw new Error("no board");
-  const setup: PasseSetup = { ...t.passe.rules, ...b, cells: [...b.cells] };
+  const cells = [...b.cells];
+  for (const i of guard) cells[i] = PASSE_CHAIN;
+  const setup: PasseSetup = { ...t.passe.rules, ...b, cells };
   // a search over the thread's pieces, the lieutenant answering as the hub's does
   const search = (s: ReturnType<typeof passeInit>, line: PasseMove[]): PasseMove[] | null => {
     if (s.winner === 1) return line;
@@ -205,6 +208,26 @@ describe("the board on line", () => {
     expect(await hub.thread("ana", "far", "verre", T0)).toBe("ok");
     expect(await hub.toll("ana", "strait", 500, T0)).toBe("ok");
     expect(await hub.toll("ben", "strait", 500, T0)).toBe("not_seated");
+  });
+
+  it("lets the holder lay its guard, and replays the next duel from it", async () => {
+    const base = theme();
+    const t: PlancheHubTheme = {
+      ...base,
+      board: { ...base.board, passages: base.board.passages.map((p) => ({ ...p, guard: 1 })) },
+    };
+    const hub = new PlancheHub(t, T0);
+    await hub.view("ana", "Ana", T0);
+    await hub.view("ben", "Ben", T0);
+    expect(await hub.guard("ana", "strait", [0], T0)).toBe("planche_not_holder");
+    expect(await hub.force("ana", "strait", winningLine(t), T0)).toBe("ok");
+    expect(await hub.guard("ana", "strait", [0, 1], T0)).toBe("planche_guard_many");
+    expect(await hub.guard("ana", "strait", [0], T0)).toBe("ok");
+    expect(await hub.guard("ana", "strait", [2], T0 + HOUR)).toBe("planche_guard_today");
+    expect((await hub.view("ana", "Ana", T0)).state.passages.strait?.guard).toEqual([0]);
+    // Ben's duel begins on the link Ana laid: a line found on that board wins it.
+    expect(await hub.force("ben", "strait", winningLine(t, [0]), T0 + HOUR)).toBe("ok");
+    expect((await hub.view("ben", "Ben", T0 + HOUR)).state.passages.strait?.guard).toBeUndefined();
   });
 
   it("keeps every denier accounted for, whatever the players and the computer do", async () => {

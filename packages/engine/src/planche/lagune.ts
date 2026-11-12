@@ -49,6 +49,8 @@ export interface LagoonParams {
     strait: string;
     /** The corsairs who hold them at first, given in turn. */
     corsairs?: string[];
+    /** The links a holder lays in advance (docs/plan-hex-commerce.md H4): on a tower, on a strait. */
+    guard?: { links: number; strait: number };
   };
   /** What a thread carries by the detour, in points of base of what it would by the passages. */
   detourBps: number;
@@ -100,6 +102,9 @@ export function plancheLagoon(P: LagoonParams): PlancheSetup {
       tollBps: P.passages.tollBps,
       board,
       seals: P.passages.seals,
+      ...(P.passages.guard
+        ? { guard: id.startsWith("detroit-") ? P.passages.guard.strait : P.passages.guard.links }
+        : {}),
     });
 
   P.sestieri.forEach((sest, si) => {

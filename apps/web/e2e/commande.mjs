@@ -104,6 +104,7 @@ try {
     await page.waitForSelector("[data-fonder-go]:not([disabled])", { state: "attached" });
     // From now on, the board the server sends is read at 10 h, the house's warehouse full.
     let tried = null;
+    let tower = false;
     const moved = (json) => {
       const st = json?.planche?.state;
       const me = json?.planche?.me;
@@ -124,6 +125,7 @@ try {
         "flour",
       ])
         h.stock[g] = 200;
+      if (tower) st.passages["canal-1"].holder = me;
       if (tried) st.orders = { ...(st.orders ?? {}), [tried]: { tried: [me] } };
       return json;
     };
@@ -225,6 +227,18 @@ try {
       fail("the problem of the day is not said played");
     await page.waitForTimeout(1000);
     await page.screenshot({ path: join(SHOTS, `commande-${name}-8-jour-joue.png`) });
+    // The prepared guard (H4): one's tower's card, two links laid on its board.
+    tower = true;
+    for (let i = 0; i < 60 && !(await page.$('[data-passage="canal-1"][data-mine="true"]')); i++)
+      await page.waitForTimeout(250);
+    await tap('[data-passage="canal-1"]');
+    await page.waitForSelector("[data-garde]", { state: "attached", timeout: 30_000 });
+    await tap('[data-garde-cell="7"]');
+    await tap('[data-garde-cell="17"]');
+    await page.waitForTimeout(800);
+    const laid = await page.locator('[data-garde-cell][aria-pressed="true"]').count();
+    if (laid !== 2) fail(`${laid} links laid, not two`);
+    await page.screenshot({ path: join(SHOTS, `commande-${name}-9-garde.png`) });
     if (errs.length) fail(`page errors: ${errs.join(" | ")}`);
     await page.unrouteAll({ behavior: "ignoreErrors" });
     await page.close();

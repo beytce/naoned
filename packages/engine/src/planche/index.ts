@@ -5,3 +5,4 @@ export * from "./lagune.js";
 export * from "./maison.js";
 export * from "./commandes.js";
 export * from "./jour.js";
+export * from "./garde.js";

@@ -23,6 +23,7 @@ import {
   passePlay,
   passeShortestWay,
   passeThink,
+  plancheGuardBoard,
   venice1450Passe,
 } from "@comptoirs/engine";
 import { Canvas } from "@react-three/fiber";
@@ -46,7 +47,11 @@ const STYLES: { key: PasseStyle | "aucune"; name: string }[] = [
 const FORCES = ["Novice", "Marin", "Capitaine", "Amiral"];
 const COLS = "ABCDEFGHI";
 
-function setupOf(board: BoardKey, problem: PasseProblem | null): PasseSetup {
+function setupOf(
+  board: BoardKey,
+  problem: PasseProblem | null,
+  guard?: readonly number[],
+): PasseSetup {
   if (problem)
     return {
       ...rules,
@@ -57,7 +62,13 @@ function setupOf(board: BoardKey, problem: PasseProblem | null): PasseSetup {
       first: 1,
     };
   const b = boards[board];
-  return { ...rules, width: b.width, height: b.height, cells: [...b.cells], first: b.first };
+  return {
+    ...rules,
+    width: b.width,
+    height: b.height,
+    cells: plancheGuardBoard(b.cells, guard),
+    first: b.first,
+  };
 }
 
 const cellName = (s: PasseState, i: number) =>
@@ -70,6 +81,8 @@ export interface PasseDuel {
   foe: string;
   /** The seals the tower still has (shown by its captain's name). */
   seals?: number;
+  /** The links the tower's holder laid in advance (docs/plan-hex-commerce.md H4). */
+  guard?: readonly number[];
   /** A position to play rather than the board (a sealed order, docs/plan-hex-commerce.md H2). */
   problem?: string;
   /** Won or not, and the thread's own pieces, for the server to replay the duel. */
@@ -87,7 +100,9 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
     () => (duel?.problem && problems.find((p) => p.id === duel.problem)) || null,
   );
   const [open, setOpen] = useState(false);
-  const setup = useMemo(() => setupOf(board, problem), [board, problem]);
+  const guardKey = duel?.guard?.join(",") ?? "";
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the guard, by its cells.
+  const setup = useMemo(() => setupOf(board, problem, duel?.guard), [board, problem, guardKey]);
   const [state, setState] = useState<PasseState>(() => passeInit(setup));
   const [last, setLast] = useState(-1);
   const [firing, setFiring] = useState(false);

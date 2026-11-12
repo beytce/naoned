@@ -19,6 +19,7 @@ import {
   plancheDailyTry,
   plancheForced,
   plancheFreeBobbins,
+  plancheGuard,
   plancheInit,
   plancheIsCorsair,
   plancheLagoonLand,
@@ -53,6 +54,7 @@ import { DucatCoin } from "../../art/plateau/coins.js";
 import { connectLive } from "../../game/live.js";
 import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
 import { Entree, Fonder, Profil } from "./Entree.js";
+import { GardeEditor } from "./Garde.js";
 import { FacadeSheet, LevelUp, MaisonRing, MaisonSheet, type MaisonView } from "./Maison.js";
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
@@ -115,6 +117,7 @@ const SAID: Record<string, string> = {
   planche_no_bobbin: "Plus de bobine libre : reprends un fil, ou attends qu'une bobine revienne.",
   planche_route_shut: "La route est fermée par un corsaire : force le passage.",
   planche_twice: "Ce fil est déjà tendu.",
+  planche_guard_today: "Tu as déjà posé ta garde aujourd'hui : demain de nouveau.",
   duel_lost: "Ce n'était pas la clef : la commande reste aux autres, tu ne perds rien d'autre.",
   planche_order_taken: "Une autre Maison du sestiere a livré cette commande avant toi.",
   planche_order_tried: "Tu as déjà joué cette commande : un seul essai par Maison.",
@@ -632,6 +635,7 @@ export default function LabPlanche() {
           duel={{
             board: p?.board ?? "segna",
             seals: state.passages[duel]?.seals,
+            guard: state.passages[duel]?.guard,
             foe: plancheIsCorsair(holder)
               ? holder.slice(8)
               : `le lieutenant de ${nameOf(holder, view?.names)}`,
@@ -997,6 +1001,28 @@ export default function LabPlanche() {
             main
           </span>
         </div>
+        {playing && holder === ME && passage.guard
+          ? (() => {
+              const b =
+                venice1450Passe.boards[passage.board as keyof typeof venice1450Passe.boards];
+              if (!b) return null;
+              return (
+                <GardeEditor
+                  board={b}
+                  links={passage.guard}
+                  guard={p?.guard ?? []}
+                  locked={p?.guardDay === Math.floor(state.now / (24 * HOUR))}
+                  onLay={(cells) =>
+                    act(
+                      () => plancheGuard(S, state, ME, passage.id, cells, state.now, b.cells),
+                      "Garde posée : ton lieutenant défendra à partir de ces maillons.",
+                      ["/guard", { passage: passage.id, cells }],
+                    )
+                  }
+                />
+              );
+            })()
+          : null}
         {!playing ? null : holder === ME ? (
           <div className="pc-passe-opts">
             {[500, 1000, 1500].map((bps) => (

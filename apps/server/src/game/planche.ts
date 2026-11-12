@@ -14,6 +14,8 @@ import {
   plancheDaily,
   plancheDailyTry,
   plancheForced,
+  plancheGuard,
+  plancheGuardBoard,
   plancheInit,
   plancheInvariant,
   plancheMove,
@@ -112,7 +114,9 @@ export type PlancheCommand =
   /** A sealed order's position played, won or lost, as the hub replayed it. */
   | { type: "order"; player: string; order: string; won: boolean; t: number }
   /** The problem of the day played, won or lost, in so many pieces. */
-  | { type: "daily"; player: string; won: boolean; moves: number; t: number };
+  | { type: "daily"; player: string; won: boolean; moves: number; t: number }
+  /** The links laid in advance on a tower's board (docs/plan-hex-commerce.md H4). */
+  | { type: "guard"; player: string; passage: string; cells: number[]; t: number };
 
 /** The whole of a board: what the engine holds, who sits where, and when it began. */
 export interface PlancheDoc {
@@ -243,6 +247,13 @@ export function plancheDocApply(
       case "daily":
         next = plancheDailyTry(S, s, h, c.t, c.won, c.moves);
         break;
+      case "guard": {
+        const def = S.passages.find((p) => p.id === c.passage);
+        const board = def ? theme.passe.boards[def.board] : undefined;
+        if (!board) return { doc, answer: "planche_unknown" };
+        next = plancheGuard(S, s, h, c.passage, c.cells, c.t, board.cells);
+        break;
+      }
     }
     return { doc: { ...doc, state: next }, answer: "ok" };
   } catch (e) {
@@ -406,6 +417,11 @@ export class PlancheHub {
     return this.act({ type: "upgrade", player, at, t });
   }
 
+  /** The holder of a tower lays its guard: links in advance on its board, changed once a day. */
+  guard(player: string, passage: string, cells: number[], t: number) {
+    return this.act({ type: "guard", player, passage, cells, t });
+  }
+
   move(player: string, from: string, to: string, t: number) {
     return this.act({ type: "move", player, from, to, t });
   }
@@ -421,7 +437,9 @@ export class PlancheHub {
     const b = def ? this.theme.passe.boards[def.board] : undefined;
     if (!def || !b) return "planche_unknown";
     if (!this.doc.seats[player]) return "not_seated";
-    let s = passeInit({ ...this.theme.passe.rules, ...b, cells: [...b.cells], first: 1 });
+    // The duel begins on the tower's guard, the links its holder laid (docs/plan-hex-commerce.md H4).
+    const cells = plancheGuardBoard(b.cells, this.doc.state.passages[passage]?.guard);
+    let s = passeInit({ ...this.theme.passe.rules, ...b, cells, first: 1 });
     for (const m of moves) {
       if (s.winner) break;
       if (s.turn !== 1) s = passePlay(s, passeThink(s, { depth: this.theme.passe.lieutenant }));

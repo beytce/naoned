@@ -214,6 +214,8 @@ export const venice1450LaguneParams: LagoonParams = {
     canal: "lido",
     // The straits on the largest board (9 × 9), the mouths 7 × 7, the canals 5 × 5.
     strait: "otrante",
+    // The prepared guard (docs/plan-hex-commerce.md H4): two links, three on a strait.
+    guard: { links: 2, strait: 3 },
     corsairs: ["Ivo le Borgne", "Dragut", "Uluç Ali", "Kemal Reis", "Barberousse", "Turgut"],
   },
   detourBps: 6_000,

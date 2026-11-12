@@ -259,4 +259,14 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const moves = b.data.moves.map((m) => ({ at: m.at }));
     return show(reply, p, await p.hub.daily(p.id, moves, p.now()));
   });
+  // The prepared guard (docs/plan-hex-commerce.md H4): links laid in advance on one's tower.
+  app.post("/api/planche/guard", deps.perMerchant(20), async (req, reply) => {
+    const b = z
+      .object({ passage: key, cells: z.array(z.number().int().min(0).max(400)).max(5) })
+      .safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return show(reply, p, await p.hub.guard(p.id, b.data.passage, b.data.cells, p.now()));
+  });
 }
