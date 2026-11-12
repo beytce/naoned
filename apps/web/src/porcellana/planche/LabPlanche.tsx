@@ -17,6 +17,9 @@ import {
   plancheDaily,
   plancheDailyResults,
   plancheDailyTry,
+  plancheDefense,
+  plancheDefenseMove,
+  plancheDefenseRemove,
   plancheForced,
   plancheFreeBobbins,
   plancheGuard,
@@ -29,10 +32,14 @@ import {
   plancheOrders,
   planchePatina,
   planchePlace,
+  planchePower,
   planchePrice,
   plancheRobot,
   plancheRouteOpen,
   plancheShares,
+  plancheShip,
+  plancheShipRefit,
+  plancheShipRepair,
   plancheStanding,
   plancheSupply,
   plancheThread,
@@ -53,6 +60,7 @@ import { Emblem } from "../../art/logo.js";
 import { DucatCoin } from "../../art/plateau/coins.js";
 import { connectLive } from "../../game/live.js";
 import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
+import { ArsenalSheet, PortSheet, ShipGlyph } from "./Arsenal.js";
 import { Entree, Fonder, Profil } from "./Entree.js";
 import { GardeEditor } from "./Garde.js";
 import { FacadeSheet, LevelUp, MaisonRing, MaisonSheet, type MaisonView } from "./Maison.js";
@@ -122,6 +130,10 @@ const SAID: Record<string, string> = {
   planche_defi_week: "Vous vous êtes déjà affrontés à la Passe cette semaine.",
   planche_defi_busy: "Un défi est déjà en cours, pour toi ou pour elle.",
   planche_not_person: "On ne défie que les Maisons des joueurs.",
+  planche_short: "Ton entrepôt n'a pas assez de marchandises.",
+  planche_no_cale: "Toutes les cales sont prises.",
+  planche_port_full: "Cette passe n'a plus de place.",
+  planche_level: "Ton niveau ne l'ouvre pas encore.",
   planche_guard_today: "Tu as déjà posé ta garde aujourd'hui : demain de nouveau.",
   duel_lost: "Ce n'était pas la clef : la commande reste aux autres, tu ne perds rien d'autre.",
   planche_order_taken: "Une autre Maison du sestiere a livré cette commande avant toi.",
@@ -215,6 +227,16 @@ export default function LabPlanche() {
   /** The house's growth (docs/plan-progression-maison.md M4): read from the server, on line. */
   const [maison, setMaison] = useState<MaisonView | null>(null);
   const [growth, setGrowth] = useState<"maison" | "facade" | "jour" | null>(null);
+  /** The Arsenal or the port, open (docs/plan-arsenal.md A4). */
+  const [armory, setArmory] = useState<"arsenal" | "port" | null>(null);
+  /** The Arsenal opened once already (its first visit tells what it is for). */
+  const [arsenalSeen, setArsenalSeen] = useState(() => {
+    try {
+      return localStorage.getItem("fondaco.arsenal.seen") === "1";
+    } catch {
+      return false;
+    }
+  });
   /** The problem of the day, being played. */
   const [dailyPlay, setDailyPlay] = useState(false);
   const [levelUp, setLevelUp] = useState(false);
@@ -586,6 +608,11 @@ export default function LabPlanche() {
         house={ME}
         onGesture={gesture}
         onBack={() => setInIsle(false)}
+        onArsenal={() => {
+          setInIsle(false);
+          setChosen(null);
+          setArmory("arsenal");
+        }}
       />
     );
   }
@@ -741,6 +768,7 @@ export default function LabPlanche() {
     setPalace(false);
     setProfil(false);
     setGrowth(null);
+    setArmory(null);
   };
   const closeX = (
     <button
@@ -1126,6 +1154,19 @@ export default function LabPlanche() {
           </div>
           {closeX}
         </div>
+        {S.arsenal ? (
+          <div className="pc-ar-power" data-house-power>
+            <b>Puissance {planchePower(S, state, house.id)}</b>
+            <span>
+              {(state.houses[house.id]?.fleet?.ships ?? []).slice(0, 8).map((x) => (
+                <ShipGlyph key={x.id} kind={x.kind} size={26} damaged={!!x.damaged} />
+              ))}
+              {(state.houses[house.id]?.fleet?.ships.length ?? 0) === 0
+                ? "pas encore de flotte"
+                : null}
+            </span>
+          </div>
+        ) : null}
         <p>
           {mine ? "Ton île fait" : "Son île fait"} :{" "}
           {Object.entries(supply)
@@ -1178,6 +1219,22 @@ export default function LabPlanche() {
             >
               Entrer dans ton île
               <small>bâtir, améliorer, voir l'entrepôt</small>
+            </button>
+          </div>
+        ) : null}
+        {mine && S.arsenal ? (
+          <div className="pc-pl-acts">
+            <button
+              type="button"
+              className="pc-passe-quiet"
+              data-open-arsenal-house
+              onClick={() => {
+                pick(null);
+                setArmory("arsenal");
+              }}
+            >
+              L'Arsenal
+              <small>tes cales, ta flotte, ton port</small>
             </button>
           </div>
         ) : null}
@@ -1474,6 +1531,73 @@ export default function LabPlanche() {
       </nav>
       <footer className="pc-passe-foot pc-pl-foot">
         {said ? <p className="pc-passe-said">{said}</p> : null}
+        {armory === "arsenal" && ME ? (
+          <ArsenalSheet
+            setup={S}
+            state={state}
+            house={ME}
+            close={closeX}
+            first={!arsenalSeen}
+            onShip={(kind) => {
+              if (!arsenalSeen) {
+                setArsenalSeen(true);
+                try {
+                  localStorage.setItem("fondaco.arsenal.seen", "1");
+                } catch {
+                  // A private window: the first visit is told again.
+                }
+              }
+              act(
+                () => plancheShip(S, state, ME, kind, state.now),
+                `${S.arsenal?.ships[kind]?.name} en chantier.`,
+                ["/arsenal/ship", { kind }],
+              );
+            }}
+            onRepair={(id) =>
+              act(
+                () => plancheShipRepair(S, state, ME, id, state.now),
+                "Le navire est en réparation.",
+                ["/arsenal/repair", { id }],
+              )
+            }
+            onRefit={(id) =>
+              act(
+                () => plancheShipRefit(S, state, ME, id, state.now),
+                "Navire refondu : une part de ses marchandises revient à l'entrepôt.",
+                ["/arsenal/refit", { id }],
+              )
+            }
+            onPort={() => setArmory("port")}
+          />
+        ) : null}
+        {armory === "port" && ME ? (
+          <PortSheet
+            setup={S}
+            state={state}
+            house={ME}
+            close={closeX}
+            onBuild={(pass, kind) =>
+              act(
+                () => plancheDefense(S, state, ME, pass, kind),
+                `${S.arsenal?.port.defenses[kind]?.name} posée.`,
+                ["/port/build", { pass, kind }],
+              )
+            }
+            onMove={(from, index, to) =>
+              act(() => plancheDefenseMove(S, state, ME, from, index, to), "Défense déplacée.", [
+                "/port/move",
+                { from, index, to },
+              ])
+            }
+            onRemove={(pass, index) =>
+              act(
+                () => plancheDefenseRemove(S, state, ME, pass, index),
+                "Défense retirée : une part de ses marchandises revient à l'entrepôt.",
+                ["/port/remove", { pass, index }],
+              )
+            }
+          />
+        ) : null}
         {view?.defi?.incoming ? (
           <section className="pc-planche-card pc-pl-card pc-pl-defi" data-defi-incoming>
             <div className="pc-pl-head">
@@ -1605,7 +1729,7 @@ export default function LabPlanche() {
             }}
           />
         ) : null}
-        {!chosen && !palace && !profil && !growth ? (
+        {!chosen && !palace && !profil && !growth && !armory ? (
           <div className="pc-planche-news" aria-label="Le fil des nouvelles">
             {latest ? (
               <button key={latest.id} type="button" onClick={() => pick(latest.pick)}>

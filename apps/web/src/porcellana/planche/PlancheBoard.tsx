@@ -263,6 +263,29 @@ export function PlancheBoard({
     return root;
   }, [isles, setup, P]);
 
+  // Each house's fleet at anchor south of its island (docs/plan-arsenal.md): who has armed, and how
+  // much, reads from afar. Four hulls at most, the rest told in its card.
+  const fleets = setup.houses
+    .map((h) => Math.min(4, state.houses[h.id]?.fleet?.ships.length ?? 0))
+    .join(",");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the fleets' signature stands for the state.
+  const anchored = useMemo(() => {
+    const root = new Group();
+    fleets.split(",").forEach((n, k) => {
+      const h = setup.houses[k];
+      if (!h) return;
+      for (let i = 0; i < Number(n); i++) {
+        const boat = ship(P, { seed: k * 5 + i, running: false });
+        boat.group.scale.setScalar(THREAD.boat * 0.8);
+        boat.group.position.set(wx(h.x) - 1.6 + i * 1.1, 0, wz(h.y) + 3.1 + (i % 2) * 0.35);
+        boat.group.rotation.y = Math.PI / 2;
+        root.add(boat.group);
+      }
+    });
+    bake(root);
+    return root;
+  }, [fleets, setup, P]);
+
   // The towers of the passages: their flag tells who holds them.
   const holders = setup.passages.map((p) => state.passages[p.id]?.holder ?? "").join("|");
   // biome-ignore lint/correctness/useExhaustiveDependencies: rebuilt when a tower changes hands.
@@ -558,6 +581,7 @@ export function PlancheBoard({
       <primitive object={ground} />
       <primitive object={web.root} />
       <primitive object={minis} />
+      <primitive object={anchored} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: every place has its label, a button. */}
       <primitive object={places.root} onClick={pick} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: every passage has its label, a button. */}

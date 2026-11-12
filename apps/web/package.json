@@ -22,7 +22,8 @@
     "e2e:rang": "node e2e/rang.mjs",
     "e2e:compte": "node e2e/compte.mjs",
     "e2e:commande": "node e2e/commande.mjs",
-    "e2e:defi": "node e2e/defi.mjs"
+    "e2e:defi": "node e2e/defi.mjs",
+    "e2e:arsenal": "node e2e/arsenal.mjs"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*",

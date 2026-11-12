@@ -1619,3 +1619,247 @@ button.pc-pl-brand {
 .pc-pl-defi {
   box-shadow: inset 0 0 0 2px #c8102e, 0 10px 28px rgba(42, 39, 37, 0.22);
 }
+/* The Arsenal and the port (docs/plan-arsenal.md A4, screens 3a and 3d). */
+.pc-ar {
+  max-height: min(76vh, 760px);
+  overflow-y: auto;
+}
+.pc-ar-first {
+  margin: 0;
+  list-style: decimal;
+  padding: 10px 14px 10px 30px;
+  border-radius: 14px;
+  background: var(--pc-ink);
+  color: #f6f4f0;
+  font: 600 13px / 1.45 var(--pc-ui);
+}
+.pc-ar-cales {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+}
+.pc-ar-cale {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #e6e1d8;
+  font: 600 12px / 1.3 var(--pc-ui);
+  color: #6b645c;
+  text-align: center;
+  min-height: 92px;
+  justify-content: center;
+}
+.pc-ar-cale[data-busy="false"] {
+  background: repeating-linear-gradient(135deg, #f6f4f0 0 8px, #efebe4 8px 16px);
+}
+.pc-ar-cale b {
+  font: 800 13.5px var(--pc-ui);
+  color: var(--pc-ink);
+}
+/* The hull rises on its cale: the drawn ship shows from below as the work goes on. */
+.pc-ar-hull {
+  position: relative;
+  line-height: 0;
+}
+.pc-ar-hull-fill {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(calc(100% - var(--done)) 0 0 0);
+}
+.pc-ar-fleet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 6px;
+}
+.pc-ar-ship {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border-radius: 12px;
+  background: #f3f0ea;
+  font: 600 11px var(--pc-ui);
+  color: #4a443e;
+  text-align: center;
+}
+.pc-ar-ship b {
+  font: 800 12.5px var(--pc-ui);
+  color: var(--pc-ink);
+}
+.pc-ar-ship[data-damaged="true"] {
+  box-shadow: inset 0 0 0 2px #c8102e;
+}
+.pc-ar-ship button {
+  min-height: 32px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+.pc-ar-kinds {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pc-ar-kind {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #e6e1d8;
+}
+.pc-ar-kind[data-locked="true"] {
+  opacity: 0.6;
+}
+.pc-ar-kind > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pc-ar-kind b {
+  font: 800 14px var(--pc-ui);
+}
+.pc-ar-kind b small {
+  font: 700 12px var(--pc-ui);
+  color: #6b645c;
+}
+.pc-ar-kind span {
+  font: 500 12px / 1.35 var(--pc-ui);
+  color: #6b645c;
+}
+.pc-ar-kind em {
+  font-style: normal;
+}
+.pc-ar-kind em[data-short="true"] {
+  color: #a8302a;
+  font-weight: 700;
+}
+.pc-ar-kind button {
+  min-width: 96px;
+}
+.pc-ar-power {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font: 600 12.5px var(--pc-ui);
+  color: #6b645c;
+}
+.pc-ar-power b {
+  font: 800 13px var(--pc-ui);
+  color: var(--pc-ink);
+}
+.pc-ar-power span {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+.pc-ar-passes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.pc-ar-pass {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #e6e1d8;
+}
+.pc-ar-pass-name {
+  text-align: center;
+  font: 900 12.5px var(--pc-display, var(--pc-ui));
+  padding: 4px 0;
+  border-radius: 10px;
+  background: #f3f0ea;
+}
+.pc-ar-def {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border-radius: 10px;
+  background: #f3f0ea;
+  font: 800 11.5px var(--pc-ui);
+}
+.pc-ar-def > div {
+  display: flex;
+  gap: 4px;
+}
+.pc-ar-def button {
+  min-width: 36px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: #fff;
+  font: 800 14px var(--pc-ui);
+  cursor: pointer;
+}
+.pc-ar-free {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 64px;
+  border-radius: 10px;
+  border: 1.5px dashed #d3ccc0;
+  background: transparent;
+  font: 800 11.5px var(--pc-ui);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-ar-free:disabled {
+  color: #a8a094;
+  cursor: default;
+}
+.pc-ar-hand {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.pc-ar-hand button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: #f3f0ea;
+  font: 800 12.5px var(--pc-ui);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-ar-hand button[aria-pressed="true"] {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--pc-accent);
+}
+.pc-ar-hand small {
+  font: 600 10.5px / 1.3 var(--pc-ui);
+  color: #6b645c;
+  text-align: center;
+}
+.pc-ar-hand small[data-short="true"] {
+  color: #a8302a;
+}
+.pc-ar-note {
+  font: 500 12.5px / 1.4 var(--pc-ui);
+  color: #6b645c;
+}

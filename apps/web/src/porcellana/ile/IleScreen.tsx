@@ -48,6 +48,7 @@ export function IleScreen({
   house,
   onGesture,
   onBack,
+  onArsenal,
 }: {
   setup: PlancheSetup;
   state: PlancheState;
@@ -55,6 +56,8 @@ export function IleScreen({
   /** Plays a gesture; answers « ok » or the refusal's code. */
   onGesture: (g: IleGesture) => Promise<string> | string;
   onBack: () => void;
+  /** Opens the Arsenal (docs/plan-arsenal.md), when the island has one. */
+  onArsenal?: () => void;
 }) {
   const R = S.ile;
   const h = state.houses[house];
@@ -73,6 +76,34 @@ export function IleScreen({
     else pins.delete(k);
   };
   const buyable = useMemo(() => (R && ile ? ileBuyable(R, ile) : []), [R, ile]);
+  /** The level of the house a workshop waits for, if its level does not open it yet. */
+  const lockedAt = (type: string): number | null => {
+    const level = h?.level ?? 1;
+    if (S.arsenal && type === S.arsenal.workshop)
+      return level < S.arsenal.minLevel ? S.arsenal.minLevel : null;
+    const tier = R?.workshops[type]?.tier ?? 1;
+    if (!S.maison || tier <= (h?.caps?.tier ?? tier)) return null;
+    return (
+      [...S.maison.unlocks].sort((a, b) => a.level - b.level).find((u) => (u.tier ?? 0) >= tier)
+        ?.level ?? null
+    );
+  };
+  /** What a workshop does, in words. */
+  const doesOf = (
+    x: { inputs: Record<string, number>; outputs: Record<string, number> },
+    type: string,
+  ) =>
+    S.arsenal && type === S.arsenal.workshop
+      ? "Tes marchandises → tes navires"
+      : `${
+          Object.keys(x.inputs).length
+            ? `${Object.keys(x.inputs)
+                .map((g) => S.goods[g] ?? g)
+                .join(" et ")} → `
+            : ""
+        }${Object.keys(x.outputs)
+          .map((g) => S.goods[g] ?? g)
+          .join(", ")}`;
   const ground = useMemo(() => plancheGround(S, house), [S, house]);
   const rates = useMemo(() => (R && ile ? ileRates(R, ile, now) : {}), [R, ile, now]);
   if (!R || !ile || !h) return null;
@@ -412,20 +443,18 @@ export function IleScreen({
             <p>
               {b.readyAt > now
                 ? `En chantier : prêt dans ${duration(b.readyAt - now)}.`
-                : `${
-                    Object.keys(w.inputs).length
-                      ? `${Object.keys(w.inputs)
-                          .map((g) => S.goods[g] ?? g)
-                          .join(" et ")} → `
-                      : ""
-                  }${Object.keys(w.outputs)
-                    .map((g) => S.goods[g] ?? g)
-                    .join(
-                      ", ",
-                    )} · ${Math.round(rates[b.type] ?? 0)} par heure (tous les ${w.name.toLowerCase()}s de l'île).`}{" "}
+                : S.arsenal && b.type === S.arsenal.workshop
+                  ? `Tes marchandises deviennent des navires : ${S.arsenal.cales[b.level - 1] ?? 0} cales.`
+                  : `${doesOf(w, b.type)} · ${Math.round(rates[b.type] ?? 0)} par heure (tous les ${w.name.toLowerCase()}s de l'île).`}{" "}
               Sur {TERRAIN_NAMES[tile.terrain].toLowerCase()} :{" "}
               {pct(ileBonusBps(R, ile, b.type, chosen?.at ?? ""))}.
             </p>
+            {S.arsenal && b.type === S.arsenal.workshop && onArsenal ? (
+              <button type="button" className="pc-passe-go" data-open-arsenal onClick={onArsenal}>
+                Ouvrir l'Arsenal
+                <small>tes cales, ta flotte, ton port</small>
+              </button>
+            ) : null}
             <div className="pc-passe-opts">
               {b.level < w.cost.length ? (
                 <button
@@ -472,7 +501,7 @@ export function IleScreen({
                     type="button"
                     className="pc-passe-go"
                     data-build={type}
-                    disabled={BigInt(x.cost[0] ?? 0) > h.ducats}
+                    disabled={BigInt(x.cost[0] ?? 0) > h.ducats || lockedAt(type) !== null}
                     onClick={() =>
                       void play(
                         { kind: "build", type, at: chosen?.at ?? "" },
@@ -493,29 +522,23 @@ export function IleScreen({
                 <div>
                   <b>{x.name}</b>
                   <span>
-                    {Object.keys(x.inputs).length
-                      ? `${Object.keys(x.inputs)
-                          .map((g) => S.goods[g] ?? g)
-                          .join(" et ")} → `
-                      : ""}
-                    {Object.keys(x.outputs)
-                      .map((g) => S.goods[g] ?? g)
-                      .join(", ")}{" "}
-                    · aime {TERRAIN_NAMES[x.terrain].toLowerCase()} · {ducats(x.cost[0] ?? 0)}{" "}
-                    ducats
+                    {doesOf(x, type)} · aime {TERRAIN_NAMES[x.terrain].toLowerCase()} ·{" "}
+                    {ducats(x.cost[0] ?? 0)} ducats
                   </span>
                 </div>
                 <button
                   type="button"
                   className="pc-passe-go"
                   data-hand={type}
-                  disabled={!free.length || BigInt(x.cost[0] ?? 0) > h.ducats}
+                  disabled={
+                    !free.length || BigInt(x.cost[0] ?? 0) > h.ducats || lockedAt(type) !== null
+                  }
                   onClick={() => {
                     setSheet(false);
                     setHand({ type });
                   }}
                 >
-                  Prendre
+                  {lockedAt(type) !== null ? `Niveau ${lockedAt(type)}` : "Prendre"}
                 </button>
               </div>
             ))}
