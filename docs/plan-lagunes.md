@@ -1,6 +1,6 @@
 # Les lagunes de 48 Maisons : plan (étape 2 de l'audit du 11 novembre 2026)
 
-*Proposé le 12 novembre 2026, à la suite du compte et de la Maison qui reste (`docs/plan-compte.md`, fusionné). Décision du porteur D3 : des planches de 48 Maisons. Audit : `docs/audit-progression-2026-11-11/00-audit.md` § 5 et § 11. **À valider avant tout code.***
+*Proposé le 12 novembre 2026, à la suite du compte et de la Maison qui reste (`docs/plan-compte.md`, fusionné). Décision du porteur D3 : des planches de 48 Maisons. Audit : `docs/audit-progression-2026-11-11/00-audit.md` § 5 et § 11. **Validé le 12 novembre 2026** avec les quatre recommandations du § 7.*
 
 ## 1. Le problème à régler
 
@@ -60,9 +60,19 @@ Fusion sur la branche principale à la fin de G5.
 
 La discussion du sestiere (étape 7) ; les commandes scellées, la Muda et les détroits noirs (étapes 4 et 8) ; la marée d'encre et les ligues entre lagunes (étape 9) ; une carte différente par lagune.
 
-## 7. À trancher
+## 7. Tranché (12 novembre 2026, le porteur suit les quatre recommandations)
 
-1. **La carte** : la même pour toutes les lagunes, ou une carte tirée au sort pour chacune ?
-2. **La planche de 8 Maisons ouverte au dernier déploiement** : repartir sur une lagune de 48 neuve (les comptes restent), ou la garder telle quelle à côté des nouvelles ?
-3. **Le rival** : choisi dans le sestiere, ou dans toute la lagune ?
-4. **L'ouverture** : sur ton sestiere, ou sur la lagune entière ?
+1. **La carte** : la même pour toutes les lagunes.
+2. **La planche de 8 Maisons** : on repart sur une lagune de 48 neuve ; les comptes restent.
+3. **Le rival** : choisi dans le sestiere.
+4. **L'ouverture** : sur ton sestiere.
+
+## 8. État
+
+| Lot | État |
+| --- | --- |
+| G1 | fait : `packages/engine/src/planche/lagune.ts` (`plancheLagoon`), les sestieri côte à côte, le continent au nord, le Large au sud ; chaque Maison porte son sestiere, chaque ville son cercle ; le détour (`detourBps`) : un fil tiré « par le détour » ne passe aucune tour, ne paie aucun péage et porte moins. Lagune de Venise : `venice1450.lagune.ts`, 52 × 26 cases, 48 Maisons en 4 sestieri (Cannaregio, Castello, Dorsoduro, San Polo), 19 villes (12 de sestiere, Murano, le Rialto, Chioggia, 4 du Large), 10 tours (4 bouches, 4 détroits, 2 canaux). 6 tests. |
+| G2 | à faire |
+| G3 | à faire |
+| G4 | à faire |
+| G5 | à faire |
