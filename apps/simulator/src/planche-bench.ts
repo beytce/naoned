@@ -20,6 +20,7 @@ import {
   planchePrice,
   plancheRobot,
   plancheStanding,
+  venice1450Lagune,
   venice1450Planche,
 } from "@comptoirs/engine";
 
@@ -87,32 +88,64 @@ function tide(S: PlancheSetup, seed: number, every: Record<string, number> = {},
   return { s, moves, low, mean: sum, rivals };
 }
 
-const S = venice1450Planche;
+// `BOARD=lagune`: the lagoon of 48 houses (docs/plan-lagunes.md G3); Venice's board of 8 otherwise.
+const S = process.env.BOARD === "lagune" ? venice1450Lagune : venice1450Planche;
+/** Three houses of different sestieri (or of the board), for the visits' test. */
+const WATCHED = [0, Math.floor(S.houses.length / 3), Math.floor((2 * S.houses.length) / 3)].map(
+  (k) => S.houses[k]?.id ?? "",
+);
 const days = WEEKS * 7;
 const ducats = (n: bigint) => Math.round(Number(n) / 1000).toLocaleString("fr-FR");
 
 console.log(
-  `### La planche de Venise : une marée de ${WEEKS} semaines, ${SEEDS} graines, trois visites par jour\n`,
+  `### ${S.houses.length > 8 ? "La lagune de Venise" : "La planche de Venise"} (${S.houses.length} Maisons) : une marée de ${WEEKS} semaines, ${SEEDS} graines, trois visites par jour\n`,
 );
+/** What a house builds, in words: its plan's first three workshops. */
+const planOf = (h: (typeof S.houses)[number]) =>
+  (h.plan ?? Object.keys(h.makes))
+    .slice(0, 3)
+    .map((t) => S.ile?.workshops[t]?.name ?? t)
+    .join(", ");
+// A lagoon's 48 houses are read by what they build (a row per plan); a board of 8, house by house.
+const groups: { label: string; ids: string[] }[] =
+  S.houses.length > 8
+    ? [...new Set(S.houses.map(planOf))].map((label) => ({
+        label,
+        ids: S.houses.filter((h) => planOf(h) === label).map((h) => h.id),
+      }))
+    : S.houses.map((h) => ({ label: `${h.name} | ${planOf(h)}`, ids: [h.id] }));
 console.log(
-  "| Maison | Ce qu'elle fait | Gagné (milliers de deniers, médiane) | Fils déplacés par jour | Livré par jour |",
+  `| ${S.houses.length > 8 ? "Ce qu'elles font (Maisons)" : "Maison | Ce qu'elle fait"} | Gagné (milliers de deniers, médiane) | Fils déplacés par jour | Livré par jour |`,
 );
-console.log("| --- | --- | --- | --- | --- |");
+console.log(`| --- |${S.houses.length > 8 ? "" : " --- |"} --- | --- | --- |`);
+const started = performance.now();
 const runs = Array.from({ length: SEEDS }, (_, k) => tide(S, k + 1));
+const tideMs = (performance.now() - started) / SEEDS;
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
-for (const h of S.houses) {
-  const earned = median(runs.map((r) => Number(r.s.houses[h.id]?.earned ?? 0n)));
-  const moved = median(runs.map((r) => (r.moves[h.id] ?? 0) / days));
-  const sent = median(runs.map((r) => (r.s.houses[h.id]?.delivered ?? 0) / days));
+for (const g of groups) {
+  const all = (f: (r: Run, id: string) => number) =>
+    median(runs.flatMap((r) => g.ids.map((id) => f(r, id))));
+  const earned = all((r, id) => Number(r.s.houses[id]?.earned ?? 0n));
+  const moved = all((r, id) => (r.moves[id] ?? 0) / days);
+  const sent = all((r, id) => (r.s.houses[id]?.delivered ?? 0) / days);
   console.log(
-    `| ${h.name} | ${(h.plan ?? Object.keys(h.makes))
-      .slice(0, 3)
-      .map((t) => S.ile?.workshops[t]?.name ?? t)
-      .join(
-        ", ",
-      )} | ${ducats(BigInt(Math.round(earned)))} | ${moved.toFixed(2)} | ${Math.round(sent)} |`,
+    `| ${g.label}${g.ids.length > 1 ? ` (${g.ids.length})` : ""} | ${ducats(BigInt(Math.round(earned)))} | ${moved.toFixed(2)} | ${Math.round(sent)} |`,
   );
 }
+const sestieri = [...new Set(S.houses.map((h) => h.sestiere).filter(Boolean))] as string[];
+if (sestieri.length) {
+  console.log("\n| Sestiere | Gagné par Maison (milliers de deniers, médiane) |\n| --- | --- |");
+  for (const sest of sestieri) {
+    const ids = S.houses.filter((h) => h.sestiere === sest).map((h) => h.id);
+    const earned = median(
+      runs.flatMap((r) => ids.map((id) => Number(r.s.houses[id]?.earned ?? 0n))),
+    );
+    console.log(`| ${sest} | ${ducats(BigInt(Math.round(earned)))} |`);
+  }
+}
+console.log(
+  `\nCalcul : une marée de ${WEEKS} semaines en ${(tideMs / 1000).toFixed(1)} s, soit ${(tideMs / (WEEKS * 7)).toFixed(0)} ms par jour de jeu pour ${S.houses.length} Maisons (robots compris).`,
+);
 const totals = runs.map((r) => S.houses.map((h) => Number(r.s.houses[h.id]?.earned ?? 0n)));
 const spread = median(totals.map((t) => Math.max(...t) / Math.max(1, Math.min(...t))));
 console.log(
@@ -124,28 +157,24 @@ console.log(
 
 console.log("\n### Les îles à la fin de la marée (médiane des graines)\n");
 console.log(
-  "| Maison | Cases | Ateliers | Niveau moyen | Dépensé sur l'île (milliers de deniers) |",
+  `| ${S.houses.length > 8 ? "Ce qu'elles font" : "Maison | Ce qu'elle fait"} | Cases | Ateliers | Niveau moyen | Dépensé sur l'île (milliers de deniers) |`,
 );
-console.log("| --- | --- | --- | --- | --- |");
-for (const h of S.houses) {
-  const isle = (r: Run) => Object.values(r.s.houses[h.id]?.ile?.tiles ?? {});
-  const shops = (r: Run) => isle(r).filter((t) => t.building && t.building.type !== "fondaco");
-  const tiles = median(runs.map((r) => isle(r).length));
-  const count = median(runs.map((r) => shops(r).length));
-  const level = median(
-    runs.map((r) => {
-      const b = shops(r);
-      return b.length ? b.reduce((n, t) => n + (t.building?.level ?? 0), 0) / b.length : 0;
-    }),
-  );
-  const spent = median(
-    runs.map((r) => {
-      const hs = r.s.houses[h.id];
-      return hs ? Number(hs.earned - hs.ducats + BigInt(S.rules.startDucats)) : 0;
-    }),
-  );
+console.log(`| --- |${S.houses.length > 8 ? "" : " --- |"} --- | --- | --- | --- |`);
+for (const g of groups) {
+  const isle = (r: Run, id: string) => Object.values(r.s.houses[id]?.ile?.tiles ?? {});
+  const shops = (r: Run, id: string) =>
+    isle(r, id).filter((t) => t.building && t.building.type !== "fondaco");
+  const all = (f: (r: Run, id: string) => number) =>
+    median(runs.flatMap((r) => g.ids.map((id) => f(r, id))));
+  const tiles = all((r, id) => isle(r, id).length);
+  const count = all((r, id) => shops(r, id).length);
+  const level = all((r, id) => {
+    const b = shops(r, id);
+    return b.length ? b.reduce((n, t) => n + (t.building?.level ?? 0), 0) / b.length : 0;
+  });
+  const spent = all((r, id) => Number(r.s.houses[id]?.book.isle ?? 0n));
   console.log(
-    `| ${h.name} | ${tiles} | ${count} | ${level.toFixed(1)} | ${ducats(BigInt(Math.round(spent)))} |`,
+    `| ${g.label} | ${tiles} | ${count} | ${level.toFixed(1)} | ${ducats(BigInt(Math.round(spent)))} |`,
   );
 }
 
@@ -173,7 +202,7 @@ for (const c of S.cities)
 console.log("\n### Venir huit fois par jour rapporte-t-il plus que trois ?\n");
 console.log("| Maison | Trois visites par jour | Huit visites par jour (elle seule) | Écart |");
 console.log("| --- | --- | --- | --- |");
-for (const id of ["toi", "loredan", "morosini"]) {
+for (const id of WATCHED) {
   const three = median(runs.map((r) => Number(r.s.houses[id]?.earned ?? 0n)));
   const eight = median(
     Array.from({ length: SEEDS }, (_, k) =>
@@ -242,7 +271,7 @@ console.log(`Pavillons accrochés le dernier dimanche (médiane des graines) : $
 console.log("\n### Venir huit fois par jour fait-il monter au rang ?\n");
 console.log("| Maison | Place au Doge, trois visites | Huit visites (elle seule) |");
 console.log("| --- | --- | --- |");
-for (const id of ["toi", "loredan", "morosini"]) {
+for (const id of WATCHED) {
   const place = (r: Run) => plancheStanding(S, r.s).find((x) => x.house === id)?.place ?? 0;
   const eight = Array.from({ length: SEEDS }, (_, k) => tide(S, k + 1, { [id]: 3 }));
   const name = S.houses.find((h) => h.id === id)?.name ?? id;
