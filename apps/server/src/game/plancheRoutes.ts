@@ -309,4 +309,38 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     if (!p.defis) return reply.code(404).send({ error: "no_defi" });
     return show(reply, p, p.defis.answer(p.id, p.name, b.data.accept, deps.now()));
   });
+  // The Arsenal and the port (docs/plan-arsenal.md A3): goods become ships and defenses.
+  const id = z.number().int().min(1).max(1_000_000);
+  const pass = z.string().min(1).max(20);
+  const slot = z.number().int().min(0).max(10);
+  const gesture = <T extends z.ZodTypeAny>(
+    path: string,
+    schema: T,
+    f: (p: Player, b: z.infer<T>) => Promise<PlancheAnswer>,
+  ) =>
+    app.post(path, deps.perMerchant(60), async (req, reply) => {
+      const b = schema.safeParse(req.body);
+      if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+      const p = await who(req, reply);
+      if (!p) return reply;
+      return show(reply, p, await f(p, b.data));
+    });
+  gesture("/api/planche/arsenal/ship", z.object({ kind: key }), (p, b) =>
+    p.hub.ship(p.id, b.kind, p.now()),
+  );
+  gesture("/api/planche/arsenal/refit", z.object({ id }), (p, b) =>
+    p.hub.refit(p.id, b.id, p.now()),
+  );
+  gesture("/api/planche/arsenal/repair", z.object({ id }), (p, b) =>
+    p.hub.repair(p.id, b.id, p.now()),
+  );
+  gesture("/api/planche/port/build", z.object({ pass, kind: key }), (p, b) =>
+    p.hub.defense(p.id, b.pass, b.kind, p.now()),
+  );
+  gesture("/api/planche/port/move", z.object({ from: pass, index: slot, to: pass }), (p, b) =>
+    p.hub.defenseMove(p.id, b.from, b.index, b.to, p.now()),
+  );
+  gesture("/api/planche/port/remove", z.object({ pass, index: slot }), (p, b) =>
+    p.hub.defenseRemove(p.id, b.pass, b.index, p.now()),
+  );
 }
