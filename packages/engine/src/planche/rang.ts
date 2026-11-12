@@ -13,6 +13,15 @@
  */
 
 import { battleRatings } from "../skirmish.js";
+import {
+  MAISON_KEEP,
+  type MaisonEvent,
+  maisonCommerce,
+  maisonDeeds,
+  maisonLevel,
+  maisonUnlocks,
+  maisonWeek,
+} from "./maison.js";
 import type { PlancheSetup, PlancheState } from "./planche.js";
 
 const HOUR = 3_600_000;
@@ -298,16 +307,24 @@ export function plancheRankInit(S: PlancheSetup, s: PlancheState, tideStart = s.
 export function plancheRankTurn(S: PlancheSetup, s: PlancheState): void {
   const R = S.rank;
   if (!R) return;
+  growDay(S, s);
   while (s.now >= s.rank.tideStart + (s.rank.week + 1) * R.weekMs) {
     settle(s);
+    // The week's growth, with the tide's laurels when it ends (docs/plan-progression-maison.md).
+    const ending = s.rank.week + 1 >= R.tideWeeks;
+    const laurels = ending ? proclaim(S, s) : null;
+    growWeek(S, s, s.rank.tide * R.tideWeeks + s.rank.week, laurels);
     s.rank.lastRivals = { ...s.rank.rivals };
     s.rank.duels = {};
     designate(S, s);
     for (const h of Object.values(s.houses)) h.rank.week = {};
     s.rank.week += 1;
     if (s.rank.week >= R.tideWeeks) {
-      s.rank.laurels = proclaim(S, s);
-      for (const h of Object.values(s.houses)) h.rank = plancheRankHouse(S);
+      s.rank.laurels = laurels ?? proclaim(S, s);
+      for (const h of Object.values(s.houses)) {
+        h.rank = plancheRankHouse(S);
+        if (h.maison) h.maison.guardAt = 0;
+      }
       s.rank.tide += 1;
       s.rank.tideStart += R.tideWeeks * R.weekMs;
       s.rank.week = 0;
@@ -371,4 +388,82 @@ export function plancheRepelled(S: PlancheSetup, s0: PlancheState, passage: stri
   const s = structuredClone(s0);
   (s.houses[p.holder] as PlancheState["houses"][string]).rank.repelled += 1;
   return s;
+}
+
+/** Each new day: what the houses sold the day before, in Prestige (docs/plan-progression-maison.md). */
+function growDay(S: PlancheSetup, s: PlancheState): void {
+  const M = S.maison;
+  if (!M) return;
+  const today = Math.floor(s.now / DAY);
+  for (const h of Object.values(s.houses)) {
+    const m = h.maison;
+    if (!m || m.day === today) continue;
+    m.week += maisonCommerce(M, h.book.sold - m.soldAt);
+    m.soldAt = h.book.sold;
+    m.day = today;
+  }
+}
+
+const tell = (log: MaisonEvent[], e: MaisonEvent) => {
+  log.push(e);
+  if (log.length > MAISON_KEEP) log.shift();
+};
+
+/**
+ * The week's turn: each house's trade and victories, capped, in Prestige; its level reached; the
+ * computer's houses at the people's median level (never lower than they were).
+ */
+function growWeek(
+  S: PlancheSetup,
+  s: PlancheState,
+  week: number,
+  laurels: PlancheRank["laurels"],
+): void {
+  const M = S.maison;
+  if (!M) return;
+  const raise = (id: string, level: number) => {
+    const h = s.houses[id];
+    if (!h || level <= (h.level ?? 1)) return;
+    h.level = Math.min(M.maxLevel, level);
+    h.caps = maisonUnlocks(M, h.level);
+    if (h.maison) tell(h.maison.log, { at: s.now, kind: "level", data: h.level });
+  };
+  for (const [id, h] of Object.entries(s.houses)) {
+    const m = h.maison;
+    if (!m) continue;
+    const won = laurels
+      ? (["negoce", "passe", "garde"] as const).filter((k) => laurels[k] === id)
+      : [];
+    const deeds = maisonDeeds(M, {
+      rivalBeaten: (s.rank.flags[id] ?? []).length > 0,
+      place: planchePlace(S, s, id) ?? S.houses.length,
+      seals: m.seals,
+      guardHours: Math.max(0, h.rank.guardMs - m.guardAt) / HOUR,
+      laurels: won.length,
+      doge: laurels?.doge === id,
+    });
+    const { credited, carry } = maisonWeek(M, m.week + deeds, m.carry);
+    m.prestige += credited;
+    m.carry = carry;
+    m.week = 0;
+    m.seals = 0;
+    m.guardAt = h.rank.guardMs;
+    if (credited > 0) {
+      m.credits.push({ week, amount: credited });
+      if (m.credits.length > MAISON_KEEP) m.credits.shift();
+    }
+    for (const loser of s.rank.flags[id] ?? [])
+      tell(m.log, { at: s.now, kind: "flag", data: loser });
+    for (const k of won) tell(m.log, { at: s.now, kind: "laurel", data: k });
+    if (laurels?.doge === id) tell(m.log, { at: s.now, kind: "doge" });
+  }
+  // The people reach their level; the computer's houses, the people's median.
+  const people = s.rank.humans.filter((id) => s.houses[id]?.maison);
+  for (const id of people) raise(id, maisonLevel(M, s.houses[id]?.maison?.prestige ?? 0).level);
+  const levels = people.map((id) => s.houses[id]?.level ?? 1).sort((a, b) => a - b);
+  const median = levels[Math.floor(levels.length / 2)];
+  for (const [id, h] of Object.entries(s.houses)) {
+    if (people.includes(id) || !h.maison) continue;
+    raise(id, median ?? maisonLevel(M, h.maison.prestige).level);
+  }
 }

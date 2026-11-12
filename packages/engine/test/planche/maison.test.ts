@@ -7,7 +7,9 @@ import {
   maisonLevel,
   maisonUnlocks,
   maisonWeek,
+  plancheAdvance,
   plancheBuild,
+  plancheClaim,
   plancheForced,
   plancheFreeBobbins,
   plancheInit,
@@ -218,5 +220,57 @@ describe("the level on the board", () => {
     const S = setup();
     const s = plancheSetLevel(S, plancheInit(S, T0), "ana", 4);
     expect(() => plancheSetLevel(S, s, "ana", 2)).toThrow("planche_level_back");
+  });
+});
+
+// The growth told by the board itself (docs/plan-progression-maison.md M3): each day's trade, each
+// week's victories, the level reached, the computer's houses at the people's median.
+describe("the growth on the board", () => {
+  const WEEK = 7 * 24 * HOUR;
+  const ranked = (): PlancheSetup => ({
+    ...setup(),
+    rank: {
+      tideWeeks: 4,
+      weekMs: WEEK,
+      negoceMinMs: HOUR,
+      coteStart: 1_200,
+      coteK: 32,
+      repelledHours: 12,
+    },
+  });
+
+  it("counts the week's trade and victories, capped, and raises the level at the week's turn", () => {
+    const S = ranked();
+    let s = plancheBuild(S, plancheInit(S, T0), "ana", "pit", "1,0", T0);
+    s = plancheThread(S, s, "ana", "bourg", "sable", T0);
+    s = plancheAdvance(S, s, T0 + WEEK - HOUR);
+    expect(s.houses.ana?.maison?.prestige).toBe(0);
+    s = plancheAdvance(S, s, T0 + WEEK);
+    const m = s.houses.ana?.maison;
+    // Its sand sold every day, and its place first in its board (30): more than its place alone.
+    expect(m?.prestige).toBeGreaterThan(30);
+    expect(m?.prestige).toBeLessThanOrEqual(100);
+    expect(m?.credits).toEqual([{ week: 0, amount: m?.prestige }]);
+    expect(s.houses.ana?.level).toBe(maisonLevel(rules(), m?.prestige ?? 0).level);
+    expect(m?.log.some((e) => e.kind === "level")).toBe(true);
+  });
+
+  it("puts the computer's houses at the people's median level, never lower than theirs", () => {
+    const S = ranked();
+    let s = plancheClaim(S, plancheInit(S, T0), "ana");
+    s = plancheBuild(S, s, "ana", "pit", "1,0", T0);
+    s = plancheThread(S, s, "ana", "bourg", "sable", T0);
+    s = plancheAdvance(S, s, T0 + WEEK);
+    expect(s.houses.ana?.level).toBeGreaterThan(1);
+    expect(s.houses.ben?.level).toBe(s.houses.ana?.level);
+  });
+
+  it("counts the seals a house breaks in its week", () => {
+    const S = ranked();
+    let s = plancheForced(S, plancheInit(S, T0), "ana", "p1", T0);
+    expect(s.houses.ana?.maison?.seals).toBe(1);
+    expect(s.houses.ana?.maison?.log.some((e) => e.kind === "tower")).toBe(true);
+    s = plancheAdvance(S, s, T0 + WEEK);
+    expect(s.houses.ana?.maison?.seals).toBe(0);
   });
 });

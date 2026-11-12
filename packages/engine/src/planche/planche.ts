@@ -24,7 +24,14 @@ import {
   ileSlice,
   ileUpgrade,
 } from "../ile/ile.js";
-import { type MaisonCaps, type MaisonRules, maisonUnlocks } from "./maison.js";
+import {
+  MAISON_KEEP,
+  type MaisonCaps,
+  type MaisonRules,
+  type MaisonState,
+  maisonStart,
+  maisonUnlocks,
+} from "./maison.js";
 import {
   type PlancheHouseRank,
   type PlancheRank,
@@ -173,6 +180,8 @@ export interface PlancheHouse {
   /** Its level, and what it opens, when the board has the growth of the houses. */
   level?: number;
   caps?: MaisonCaps;
+  /** Its Prestige and what its Livre tells. */
+  maison?: MaisonState;
 }
 
 export interface PlancheState {
@@ -229,7 +238,13 @@ export function plancheInit(S: PlancheSetup, now: number, tideStart = now): Plan
       earned: 0n,
       rank: plancheRankHouse(S),
       book: { sold: 0n, tollPaid: 0n, tollIn: 0n, isle: 0n },
-      ...(S.maison ? { level: 1, caps: maisonUnlocks(S.maison, 1) } : {}),
+      ...(S.maison
+        ? {
+            level: 1,
+            caps: maisonUnlocks(S.maison, 1),
+            maison: maisonStart(Math.floor(now / DAY)),
+          }
+        : {}),
       ...(S.ile ? { ile: ileInit(S.ile, plancheGround(S, h.id)) } : {}),
     };
   }
@@ -527,10 +542,15 @@ export function plancheForced(
   const h = s.houses[house] as PlancheHouse;
   p.seals -= 1;
   h.free[passage] = now + S.rules.freeAfterForceMs;
+  if (h.maison) h.maison.seals += 1;
   if (p.seals <= 0) {
     // A house holds as many towers as its level allows: beyond, the seals come back, the tower stays.
     const held = Object.values(s.passages).filter((q) => q.holder === house).length;
-    if (held < (h.caps?.towers ?? Number.POSITIVE_INFINITY)) p.holder = house;
+    if (held < (h.caps?.towers ?? Number.POSITIVE_INFINITY)) {
+      p.holder = house;
+      h.maison?.log.push({ at: now, kind: "tower", data: passage });
+      if (h.maison && h.maison.log.length > MAISON_KEEP) h.maison.log.shift();
+    }
     p.seals = def.seals;
   }
   return s;

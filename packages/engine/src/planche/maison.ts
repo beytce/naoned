@@ -132,3 +132,45 @@ export function maisonCommerce(R: MaisonRules, soldDeniers: bigint): number {
   const points = soldDeniers / (BigInt(R.commerce.perDucats) * DUCAT);
   return Math.min(R.commerce.dailyCap, Number(points));
 }
+
+/** What happened to a house that its Livre tells (docs/plan-progression-maison.md § 3.4). */
+export interface MaisonEvent {
+  at: number;
+  kind: "level" | "flag" | "tower" | "laurel" | "doge";
+  /** The level reached, the house whose flag was taken, the tower, the laurel. */
+  data?: string | number;
+}
+
+/** A house's growth, as the board keeps it. */
+export interface MaisonState {
+  prestige: number;
+  /** What the last week left under the cap, carried. */
+  carry: number;
+  /** The Prestige of the week so far (its trade), before its victories and the cap. */
+  week: number;
+  /** Its sales counted up to the start of `day`. */
+  soldAt: bigint;
+  day: number;
+  seals: number;
+  /** Its towers' hours (`rank.guardMs`) counted up to the week's start. */
+  guardAt: number;
+  /** What each week credited (the week counted from the board's start), the last ones. */
+  credits: { week: number; amount: number }[];
+  /** Its last deeds, for its Livre. */
+  log: MaisonEvent[];
+}
+
+export const maisonStart = (day: number): MaisonState => ({
+  prestige: 0,
+  carry: 0,
+  week: 0,
+  soldAt: 0n,
+  day,
+  seals: 0,
+  guardAt: 0,
+  credits: [],
+  log: [],
+});
+
+/** The log and the credits a house keeps: the last ones only (the server keeps them all). */
+export const MAISON_KEEP = 40;

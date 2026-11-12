@@ -10,17 +10,12 @@
 import {
   type PlancheState,
   Rng,
-  maisonCommerce,
-  maisonDeeds,
-  maisonLevel,
-  maisonWeek,
   plancheAdvance,
+  plancheClaim,
   plancheForced,
   plancheInit,
   plancheIsCorsair,
-  planchePlace,
   plancheRobot,
-  plancheSetLevel,
   venice1450Lagune,
 } from "@comptoirs/engine";
 
@@ -44,86 +39,45 @@ const plays = (kind: Kind, hour: number, offset: number) => {
   return h % 8 === 0;
 };
 
-interface House {
-  prestige: number;
-  carry: number;
-  week: number;
-  soldAtDay: bigint;
-  seals: number;
-  guardAt: number;
-  reached10: number | null;
-}
-
 function run(seed: number) {
   const rng = new Rng(seed);
   let s: PlancheState = plancheInit(S, T0);
+  // Every house counts as a person's: each rises by its own Prestige, as the board counts it.
+  for (const h of S.houses) s = plancheClaim(S, s, h.id);
   const offset = new Map(S.houses.map((h) => [h.id, rng.int(0, 7)]));
-  const me = new Map<string, House>(
-    S.houses.map((h) => [
-      h.id,
-      { prestige: 0, carry: 0, week: 0, soldAtDay: 0n, seals: 0, guardAt: 0, reached10: null },
-    ]),
-  );
+  const reached10 = new Map<string, number>();
   const levels: Record<Kind, number[]>[] = [];
   for (let hour = 1; hour <= WEEKS * 7 * 24; hour++) {
     const now = T0 + hour * HOUR;
     s = plancheAdvance(S, s, now);
     S.houses.forEach((h, k) => {
-      const kind = kindOf(k);
-      if (!plays(kind, hour, offset.get(h.id) ?? 0)) return;
+      if (!plays(kindOf(k), hour, offset.get(h.id) ?? 0)) return;
       s = plancheRobot(S, s, h.id, now);
-      // Once a day a corsair's passage is tried; the duel is drawn (two chances in five).
+      // Once a day a corsair's passage is tried; the duel is drawn.
       if ((hour + (offset.get(h.id) ?? 0)) % 24 === 0)
         for (const p of S.passages) {
           const st = s.passages[p.id];
-          if (st && plancheIsCorsair(st.holder) && rng.chance(0.2) && rng.chance(0.4)) {
+          if (st && plancheIsCorsair(st.holder) && rng.chance(0.2) && rng.chance(0.4))
             s = plancheForced(S, s, h.id, p.id, now);
-            const m = me.get(h.id);
-            if (m) m.seals += 1;
-          }
         }
     });
-    // Each day: the day's trade, in Prestige.
-    if (hour % 24 === 0)
-      for (const h of S.houses) {
-        const m = me.get(h.id);
-        const b = s.houses[h.id]?.book.sold ?? 0n;
-        if (!m) continue;
-        m.week += maisonCommerce(M, b - m.soldAtDay);
-        m.soldAtDay = b;
-      }
-    // Each week: the victories, the cap, the level.
     if (hour % (7 * 24) === 0) {
       const week = hour / (7 * 24);
       const per: Record<Kind, number[]> = { régulier: [], assidu: [], irrégulier: [] };
       S.houses.forEach((h, k) => {
-        const m = me.get(h.id);
-        const hs = s.houses[h.id];
-        if (!m || !hs) return;
-        const guardMs = hs.rank.guardMs;
-        const raw =
-          m.week +
-          maisonDeeds(M, {
-            // The week just settled: the flags were hung at its turn.
-            rivalBeaten: (s.rank.flags[h.id] ?? []).length > 0,
-            place: planchePlace(S, s, h.id) ?? 12,
-            seals: m.seals,
-            guardHours: Math.max(0, guardMs - m.guardAt) / HOUR,
-          });
-        const { credited, carry } = maisonWeek(M, raw, m.carry);
-        m.prestige += credited;
-        m.carry = carry;
-        m.week = 0;
-        m.seals = 0;
-        m.guardAt = guardMs;
-        const level = maisonLevel(M, m.prestige).level;
-        if ((hs.level ?? 1) < level) s = plancheSetLevel(S, s, h.id, level);
-        if (level >= 10 && m.reached10 === null) m.reached10 = week;
+        const level = s.houses[h.id]?.level ?? 1;
+        if (level >= 10 && !reached10.has(h.id)) reached10.set(h.id, week);
         per[kindOf(k)].push(level);
       });
       levels.push(per);
     }
   }
+  const me = new Map(
+    S.houses.map((h) => [
+      h.id,
+      { prestige: s.houses[h.id]?.maison?.prestige ?? 0, reached10: reached10.get(h.id) ?? null },
+    ]),
+  );
   return { levels, me, s };
 }
 
