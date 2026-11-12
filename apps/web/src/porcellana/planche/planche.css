@@ -1899,3 +1899,245 @@ button.pc-pl-brand {
 .pc-ar-ruse-col button:disabled {
   cursor: default;
 }
+/* The company (docs/plan-compagnie.md K5, screen 4a). */
+.pc-co {
+  max-height: min(80vh, 780px);
+  overflow-y: auto;
+}
+.pc-co-set {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.pc-co-found,
+.pc-co-found > p {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  font: 500 13px / 1.45 var(--pc-ui);
+  color: #4a443e;
+}
+.pc-co-flagrow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.pc-co-name {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  font: 700 12px var(--pc-ui);
+  color: #6b645c;
+}
+.pc-co-name input,
+.pc-co-write input {
+  min-height: 44px;
+  border: 1.5px solid #ddd6cb;
+  border-radius: 12px;
+  padding: 0 12px;
+  font: 600 15px var(--pc-ui);
+  color: var(--pc-ink);
+  background: #fff;
+  min-width: 0;
+}
+.pc-co-joinrow {
+  display: flex;
+  gap: 6px;
+}
+.pc-co-joinrow input {
+  flex: 1;
+}
+.pc-co-charges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pc-co-charges button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: #f3f0ea;
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-co-charges button[aria-pressed="true"] {
+  background: var(--pc-ink);
+  color: #f6f4f0;
+}
+.pc-co-top {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.pc-co-members {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pc-co-members li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: #f3f0ea;
+  font: 600 13px var(--pc-ui);
+}
+.pc-co-members li[data-me="true"] {
+  box-shadow: inset 0 0 0 2px var(--pc-accent);
+}
+.pc-co-members b {
+  flex: 1;
+  font-weight: 800;
+}
+.pc-co-members i {
+  font: 800 10.5px var(--pc-ui);
+  font-style: normal;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--pc-ink);
+  color: #f6f4f0;
+}
+.pc-co-members i[data-role="capitaine"] {
+  background: #6b645c;
+}
+.pc-co-members button,
+.pc-co-thread li button {
+  border: 0;
+  background: transparent;
+  font: 700 11px var(--pc-ui);
+  color: #a8302a;
+  cursor: pointer;
+  min-height: 32px;
+}
+.pc-co-phare {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #e6e1d8;
+}
+.pc-co-phare > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.pc-co-phare b {
+  font: 800 14px var(--pc-ui);
+}
+.pc-co-phare span {
+  font: 500 12.5px / 1.4 var(--pc-ui);
+  color: #6b645c;
+}
+.pc-co-gift {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pc-co-gift button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: #f3f0ea;
+  font: 700 12px var(--pc-ui);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-co-gift button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.pc-co-signs {
+  margin: 0;
+  padding-left: 18px;
+  font: 600 12.5px / 1.5 var(--pc-ui);
+}
+.pc-co-thread ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.pc-co-thread li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: #f3f0ea;
+  font: 500 13px / 1.4 var(--pc-ui);
+}
+.pc-co-thread li[data-mine="true"] {
+  background: #fbeeec;
+}
+.pc-co-thread li b {
+  font: 800 12px var(--pc-ui);
+}
+.pc-co-thread li span {
+  flex: 1 1 100%;
+}
+.pc-co-empty {
+  color: #6b645c;
+}
+.pc-co-write {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.pc-co-write input {
+  flex: 1;
+}
+.pc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.pc-co-pin {
+  display: inline-flex;
+  line-height: 0;
+}
+.pc-co-said {
+  font: 600 12.5px var(--pc-ui);
+  color: #6b645c;
+}
+.pc-gu-vs {
+  margin: 0;
+  font: 800 14px var(--pc-ui);
+  text-align: center;
+}
+.pc-gu-reserved,
+.pc-gu-reserve {
+  font: 800 11.5px var(--pc-ui);
+  color: #a8302a;
+}
+.pc-gu-reserve {
+  align-self: flex-start;
+  border: 0;
+  background: transparent;
+  padding: 4px 0;
+  min-height: 32px;
+  cursor: pointer;
+}
+.pc-co-phare > svg {
+  flex: none;
+}

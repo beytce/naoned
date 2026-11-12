@@ -16,9 +16,18 @@ import {
 } from "@comptoirs/engine";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { guerreAssaults, guerreWeeks } from "../db/schema.js";
+import {
+  companies,
+  companyMembers,
+  guerreAssaults,
+  guerreWeeks,
+  plancheSeats,
+} from "../db/schema.js";
+import { companyIdOf } from "./company.js";
 import { mondayOf } from "./planche.js";
+import { beaconOf } from "./plancheBeacon.js";
 import type { PlancheLagoons } from "./plancheLagoons.js";
+import { companySigns } from "./plancheSigns.js";
 import type { PlancheStore } from "./plancheStore.js";
 
 const DAY = 86_400_000;
@@ -51,6 +60,10 @@ export interface GuerreView {
   running: { target: string; state: AssautState } | null;
   /** The assaults on the player's port this week. */
   suffered: { by: string; seals: number; at: number }[];
+  /** The companies of the two sides, when they are (docs/plan-compagnie.md K3). */
+  companies: { us: string | null; them: string | null };
+  /** The ports of the other side one's company has reserved with a sign: by whom. */
+  reserved: Record<string, string>;
 }
 
 interface Running {
@@ -62,13 +75,18 @@ interface Running {
   state: AssautState;
   moves: Record<number, string>[];
   store: PlancheStore;
+  /** The pass whose ruse the company's beacon showed. */
+  scouted?: string;
 }
 
-/** What the assailant sees of the port: the ruses not yet played are hidden. */
-export function hideRuses(s: AssautState): AssautState {
+/**
+ * What the assailant sees of the port: the ruses not yet played are hidden, but the one its
+ * company's beacon showed (docs/plan-compagnie.md K4).
+ */
+export function hideRuses(s: AssautState, scouted?: string): AssautState {
   const v = structuredClone(s);
   for (const [id, p] of Object.entries(v.passes))
-    if (!p.ruseDone) {
+    if (!p.ruseDone && id !== scouted) {
       const { ruse: _secret, ...seen } = p;
       v.passes[id] = seen;
     }
@@ -103,7 +121,7 @@ export class GuerreHub {
       .where(eq(guerreWeeks.week, new Date(week)));
     if (row) return row.wars as GuerreWar[];
     if (Math.floor((now - week) / DAY) >= 6) return null;
-    const { wars } = guerreForm(this.candidates(), FLOTILLA);
+    const { wars } = guerreForm(await this.candidates(), FLOTILLA);
     await this.db
       .insert(guerreWeeks)
       .values({ week: new Date(week), wars })
@@ -115,8 +133,17 @@ export class GuerreHub {
     return (again?.wars as GuerreWar[]) ?? wars;
   }
 
-  /** Every house of every lagoon, with its Power, a person's or the computer's. */
-  private candidates() {
+  /** Every house of every lagoon, with its Power, a person's or the computer's, and its company. */
+  private async candidates() {
+    const rows = await this.db
+      .select({
+        world: plancheSeats.worldId,
+        house: plancheSeats.house,
+        company: companyMembers.companyId,
+      })
+      .from(plancheSeats)
+      .innerJoin(companyMembers, eq(companyMembers.accountId, plancheSeats.accountId));
+    const company = new Map(rows.map((r) => [`${r.world}:${r.house}`, r.company]));
     return this.lagoons.all().flatMap((store) => {
       const doc = store.hub.current().doc;
       const S = store.hub.theme.board;
@@ -125,6 +152,7 @@ export class GuerreHub {
         key: keyOf(store, h.id),
         power: planchePower(S, doc.state, h.id),
         person: people.has(h.id),
+        ...(company.has(keyOf(store, h.id)) ? { group: company.get(keyOf(store, h.id)) } : {}),
       }));
     });
   }
@@ -133,7 +161,7 @@ export class GuerreHub {
   private async join(key: string, wars: GuerreWar[], now: number): Promise<GuerreWar[]> {
     const week = mondayOf(now);
     if (Math.floor((now - week) / DAY) > 5) return wars;
-    const all = this.candidates();
+    const all = await this.candidates();
     const me = all.find((c) => c.key === key);
     if (!me) return wars;
     const rows = await this.db
@@ -195,6 +223,8 @@ export class GuerreHub {
       today: false,
       running: null,
       suffered: [],
+      companies: { us: null, them: null },
+      reserved: {},
     };
     if (!war) return empty;
     const done = (await this.assaults(week)).map((r) => ({
@@ -218,7 +248,30 @@ export class GuerreHub {
         and(eq(guerreAssaults.accountId, account), eq(guerreAssaults.day, Math.floor(now / DAY))),
       );
     const run = this.running.get(account);
+    // The company of each side: the one its people share, if they share one.
+    const groups = new Map((await this.candidates()).map((c) => [c.key, c.group]));
+    const companyName = async (keys: string[]) => {
+      const gs = new Set(keys.filter((k) => people.has(k)).map((k) => groups.get(k)));
+      const [g] = [...gs];
+      if (gs.size !== 1 || !g) return null;
+      const [row] = await this.db
+        .select({ name: companies.name })
+        .from(companies)
+        .where(eq(companies.id, g));
+      return row?.name ?? null;
+    };
+    const signs = await companySigns(this.db, account, now);
+    const reserved = Object.fromEntries(
+      signs
+        .filter((x) => x.kind === "attaque" && x.target.startsWith("port:"))
+        .map((x) => [x.target.slice(5), x.by]),
+    );
     return {
+      companies: {
+        us: await companyName(war[side]),
+        them: await companyName(war[side === "a" ? "b" : "a"]),
+      },
+      reserved,
       week,
       phase: dow === 0 ? "lundi" : dow === 6 ? "dimanche" : "assauts",
       me,
@@ -227,7 +280,9 @@ export class GuerreHub {
       score: { us: side === "a" ? score.a : score.b, them: side === "a" ? score.b : score.a },
       today: !!mine,
       running:
-        run && run.week === week ? { target: run.target, state: hideRuses(run.state) } : null,
+        run && run.week === week
+          ? { target: run.target, state: hideRuses(run.state, run.scouted) }
+          : null,
       suffered: done
         .filter((d) => d.target === me)
         .map((d) => ({ by: this.portOf(d.by, {}, people).name, seals: d.seals, at: d.at })),
@@ -277,8 +332,26 @@ export class GuerreHub {
       .returning({ id: guerreAssaults.id });
     if (!inserted.length) return { error: "guerre_today" };
     const state = assautInit(R, port, fleet);
-    this.running.set(account, { week, day, target, port, fleet, state, moves: [], store });
-    return { state: hideRuses(state) };
+    // The company's beacon, at its level, shows the first ruse of the port.
+    const B = S.compagnie?.beacon;
+    const companyId = await companyIdOf(this.db, account);
+    const level = companyId ? (await beaconOf(this.db, store.hub.theme, companyId)).level : 0;
+    const scouted =
+      B && level >= B.scoutLevel
+        ? Object.entries(port.passes).find(([, p]) => p.ruse)?.[0]
+        : undefined;
+    this.running.set(account, {
+      week,
+      day,
+      target,
+      port,
+      fleet,
+      state,
+      moves: [],
+      store,
+      ...(scouted ? { scouted } : {}),
+    });
+    return { state: hideRuses(state, scouted) };
   }
 
   /** A round of the assault under way; the last one writes its result and sends the damaged home. */
@@ -297,7 +370,7 @@ export class GuerreHub {
       return { error: (e as Error).message };
     }
     run.moves.push(moves);
-    if (run.state.manche <= R.manches) return { state: hideRuses(run.state) };
+    if (run.state.manche <= R.manches) return { state: hideRuses(run.state, run.scouted) };
     const result = assautResult(R, run.state);
     this.running.delete(account);
     await this.db

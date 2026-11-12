@@ -672,6 +672,8 @@ export const companies = pgTable(
     /** The call to skirmish a member chose for the company, and who chose it. */
     callAt: timestamp("call_at", { withTimezone: true }),
     callBy: uuid("call_by").references(() => accounts.id, { onDelete: "set null" }),
+    /** Its flag on the shared board (docs/plan-compagnie.md K1): a colour and a charge. */
+    flag: jsonb("flag"),
   },
   (t) => [
     uniqueIndex("companies_code_key").on(t.code),
@@ -817,4 +819,54 @@ export const guerreAssaults = pgTable(
     uniqueIndex("guerre_assaults_day_key").on(t.accountId, t.day),
     index("guerre_assaults_week_idx").on(t.week),
   ],
+);
+
+/**
+ * The signs, without free text (docs/plan-compagnie.md K2): a company's on the board (« I take
+ * this port », « hold this tower », « need of hemp »), kept for the week; a greeting to a neighbour
+ * (« salut », « bravo »), once a day a pair.
+ */
+export const plancheSigns = pgTable(
+  "planche_signs",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** Its company's sign, or a greeting to an account. */
+    companyId: uuid("company_id").references(() => companies.id, { onDelete: "cascade" }),
+    toAccount: uuid("to_account").references(() => accounts.id, { onDelete: "cascade" }),
+    worldId: uuid("world_id").references(() => worlds.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    /** What it is laid on: `house:<id>`, `passage:<id>`, `city:<id>`, `port:<world>:<house>`, a good. */
+    target: text("target").notNull(),
+    week: timestamp("week", { withTimezone: true }).notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    index("planche_signs_company_idx").on(t.companyId, t.week),
+    index("planche_signs_to_idx").on(t.toAccount, t.at),
+  ],
+);
+
+/** A company's beacon (docs/plan-compagnie.md K4): the goods its members gave, as points. */
+export const companyBeacons = pgTable("company_beacons", {
+  companyId: uuid("company_id")
+    .primaryKey()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  points: integer("points").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
+
+/** What a member gave to its company's beacon on a day (the daily cap). */
+export const companyBeaconGifts = pgTable(
+  "company_beacon_gifts",
+  {
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    day: integer("day").notNull(),
+    units: integer("units").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.accountId, t.day] })],
 );

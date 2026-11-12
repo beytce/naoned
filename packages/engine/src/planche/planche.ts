@@ -157,6 +157,11 @@ export interface PlancheSetup {
   arsenal?: ArsenalRules;
   /** The War of the week (docs/plan-guerre.md): the assault's rules and its Prestige. */
   guerre?: GuerreRules;
+  /**
+   * The company's beacon (docs/plan-compagnie.md K4): the points (goods given) of each of its
+   * levels, the goods a member may give a day, the level that shows a ruse of each assault.
+   */
+  compagnie?: { beacon: { thresholds: number[]; dailyCap: number; scoutLevel: number } };
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -218,6 +223,8 @@ export interface PlancheHouse {
   /** Its ships and its cales, and the defenses of its port's passes. */
   fleet?: PlancheFleet;
   port?: Record<string, string[]>;
+  /** The level of its company's beacon (docs/plan-compagnie.md K4); none: no company's. */
+  beacon?: number;
   /** Its port's secret ruses, one a pass, and the day it set them (docs/plan-guerre.md). */
   ruses?: Record<string, "chaine" | "brulot" | "renforts">;
   rusesDay?: number;

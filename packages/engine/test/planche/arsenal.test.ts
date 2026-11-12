@@ -5,11 +5,14 @@ import {
   type PlancheState,
   assautFleetOf,
   assautPortOf,
+  beaconLevel,
   plancheAdvance,
+  plancheBeacon,
   plancheBuild,
   plancheDefense,
   plancheDefenseMove,
   plancheDefenseRemove,
+  plancheGive,
   plancheGrant,
   plancheInit,
   planchePower,
@@ -339,5 +342,38 @@ describe("the War's Prestige", () => {
     const s = plancheGrant(S, plancheInit(S, T0), "ana", 107);
     expect(s.houses.ana?.maison?.week).toBe(107);
     expect(() => plancheGrant(S, s, "ana", -3)).toThrow("planche_unknown");
+  });
+});
+
+// The company's beacon (docs/plan-compagnie.md K4).
+describe("the beacon", () => {
+  it("takes the goods given from the store, and its level gives the port more places", () => {
+    const S = {
+      ...setup(),
+      arsenal: {
+        ...arsenal(),
+        port: {
+          ...arsenal().port,
+          beaconSlots: [
+            { level: 2, n: 1 },
+            { level: 4, n: 2 },
+          ],
+        },
+      },
+    };
+    let s = armed(S);
+    s = plancheGive(S, s, "ana", { planches: 30, cordes: 5 });
+    expect(s.houses.ana?.stock).toMatchObject({ planches: 70, cordes: 45 });
+    expect(() => plancheGive(S, s, "ana", { briques: 500 })).toThrow("planche_short");
+    expect(() => plancheGive(S, s, "ana", { planches: -3 })).toThrow("planche_unknown");
+    // One place a pass at level 2 of the house; the beacon at 2 gives a second.
+    s = plancheDefense(S, s, "ana", "bouche", "tour");
+    expect(() => plancheDefense(S, s, "ana", "bouche", "tour")).toThrow("planche_port_full");
+    s = plancheBeacon(S, s, "ana", 2);
+    s = plancheDefense(S, s, "ana", "bouche", "tour");
+    expect(s.houses.ana?.port?.bouche).toHaveLength(2);
+    expect(beaconLevel([0, 100, 300, 700, 1500], 0)).toBe(1);
+    expect(beaconLevel([0, 100, 300, 700, 1500], 699)).toBe(3);
+    expect(beaconLevel([0, 100, 300, 700, 1500], 99_999)).toBe(5);
   });
 });

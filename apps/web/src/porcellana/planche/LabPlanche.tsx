@@ -66,7 +66,8 @@ import { AssautScreen } from "../guerre/AssautScreen.js";
 import { GuerreSheet, type GuerreViewData } from "../guerre/GuerreSheet.js";
 import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
 import { ArsenalSheet, PortSheet, ShipGlyph } from "./Arsenal.js";
-import { Entree, Fonder, Profil } from "./Entree.js";
+import { CompagnieSheet, type Sign } from "./Compagnie.js";
+import { Entree, Fonder, HouseFlag, Profil } from "./Entree.js";
 import { GardeEditor } from "./Garde.js";
 import { FacadeSheet, LevelUp, MaisonRing, MaisonSheet, type MaisonView } from "./Maison.js";
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
@@ -212,6 +213,13 @@ function revive(raw: PlancheState): PlancheState {
 }
 
 interface Online {
+  /** The companies of the board's houses, the company's signs, the greetings received (docs/plan-compagnie.md). */
+  compagnies?: Record<
+    string,
+    { id: string; name: string; flag: { color: string; symbol: string } }
+  >;
+  signs?: Sign[];
+  greeted?: { kind: string; by: string; at: number }[];
   /** The challenges by the thread (docs/plan-hex-commerce.md H5). */
   defi?: { incoming?: { house: string; name: string }; outgoing?: string; room?: string };
   since: number;
@@ -247,6 +255,28 @@ export default function LabPlanche() {
       return false;
     }
   });
+  /** The company's sheet (docs/plan-compagnie.md K5). */
+  const [compOpen, setCompOpen] = useState(false);
+  /** A sign of one's company, or a greeting to a neighbour (docs/plan-compagnie.md K2). */
+  const signal = async (path: "/sign" | "/greet", body: unknown, done: string) => {
+    const res = await fetch(`/api/planche${path}`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json = (await res.json().catch(() => ({}))) as { error?: string };
+    setSaid(
+      json.error === "greeted_today"
+        ? "Tu l'as déjà salué aujourd'hui."
+        : json.error === "not_member"
+          ? "Il faut une compagnie pour poser un signe."
+          : json.error
+            ? "Ce signe n'est pas possible."
+            : done,
+    );
+    void call();
+  };
   /** The War of the week (docs/plan-guerre.md W4): its sheet, and the assault under way. */
   const [war, setWar] = useState<GuerreViewData | null>(null);
   const [warOpen, setWarOpen] = useState(false);
@@ -278,10 +308,43 @@ export default function LabPlanche() {
   /** The problem of the day, being played. */
   const [dailyPlay, setDailyPlay] = useState(false);
   const [levelUp, setLevelUp] = useState(false);
-  const enter = useCallback((a: Account) => {
-    setAccount(a);
-    setGate(a.pseudoDefault || !a.crest ? "found" : "in");
+  /**
+   * A company's invitation (`/?co=CODE`, docs/plan-compagnie.md K1), kept through the mail's link:
+   * joined before the board is first read, so that a newcomer is seated in the company's lagoon.
+   */
+  const joinInvited = useCallback(async () => {
+    let code: string | null = null;
+    try {
+      code = localStorage.getItem("fondaco.co");
+      localStorage.removeItem("fondaco.co");
+    } catch {
+      return;
+    }
+    if (!code) return;
+    await fetch("/api/planche/compagnie/join", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code }),
+    }).catch(() => undefined);
   }, []);
+  useEffect(() => {
+    const co = new URLSearchParams(window.location.search).get("co");
+    if (!co || !/^[\w-]{4,20}$/.test(co)) return;
+    try {
+      localStorage.setItem("fondaco.co", co);
+    } catch {
+      // A private window: the invitation is lost with the page.
+    }
+  }, []);
+  const enter = useCallback(
+    (a: Account) => {
+      setAccount(a);
+      if (a.pseudoDefault || !a.crest) setGate("found");
+      else void joinInvited().finally(() => setGate("in"));
+    },
+    [joinInvited],
+  );
   useEffect(() => {
     if (!online) return;
     let alive = true;
@@ -369,6 +432,9 @@ export default function LabPlanche() {
         names: json.planche.names,
         players: json.planche.players,
         ...((json.planche as Online).defi ? { defi: (json.planche as Online).defi } : {}),
+        compagnies: (json.planche as Online).compagnies ?? {},
+        signs: (json.planche as Online).signs ?? [],
+        greeted: (json.planche as Online).greeted ?? [],
       });
       return "ok";
     } catch {
@@ -510,6 +576,19 @@ export default function LabPlanche() {
     lastFlags.current = flags;
   });
 
+  // The greetings received, told once each on the thread of news (docs/plan-compagnie.md K2).
+  const toldGreet = useRef(new Set<string>());
+  useEffect(() => {
+    for (const g of view?.greeted ?? []) {
+      const key = `${g.by}${g.kind}${g.at}`;
+      if (toldGreet.current.has(key)) continue;
+      toldGreet.current.add(key);
+      tell(g.kind === "bravo" ? `Ca’ ${g.by} te félicite.` : `Ca’ ${g.by} te salue.`, {
+        kind: "house",
+        id: ME,
+      });
+    }
+  }, [view?.greeted, tell, ME]);
   // A town where one sells has tired: said once, until it has rested.
   const tired = useRef(new Set<string>());
   useEffect(() => {
@@ -874,6 +953,7 @@ export default function LabPlanche() {
     setGrowth(null);
     setArmory(null);
     setWarOpen(false);
+    setCompOpen(false);
   };
   const closeX = (
     <button
@@ -1225,6 +1305,32 @@ export default function LabPlanche() {
             </button>
           </div>
         )}
+        {online && playing && view?.compagnies?.[ME] ? (
+          <div className="pc-pl-acts">
+            <button
+              type="button"
+              className="pc-passe-quiet"
+              data-sign-tour={passage.id}
+              onClick={() =>
+                void signal(
+                  "/sign",
+                  { kind: "tour", target: `passage:${passage.id}` },
+                  "Signe posé : ta compagnie voit qu'il faut tenir cette tour.",
+                )
+              }
+            >
+              Tenez cette tour
+              <small>un signe pour ta compagnie, cette semaine</small>
+            </button>
+          </div>
+        ) : null}
+        {(view?.signs ?? [])
+          .filter((x) => x.target === `passage:${passage.id}`)
+          .map((x) => (
+            <p key={`${x.by}${x.kind}`} className="pc-co-said">
+              {x.mine ? "Tu as" : `${x.by} a`} posé un signe : tenez cette tour.
+            </p>
+          ))}
       </section>
     );
   })();
@@ -1355,6 +1461,38 @@ export default function LabPlanche() {
                 <small>un assaut d'entraînement, sans enjeu</small>
               </button>
             ) : null}
+          </div>
+        ) : null}
+        {!mine && online && playing && view?.players.includes(house.id) ? (
+          <div className="pc-pl-acts" data-greet>
+            <button
+              type="button"
+              className="pc-passe-quiet"
+              data-greet-salut
+              onClick={() =>
+                void signal(
+                  "/greet",
+                  { house: house.id, kind: "salut" },
+                  `Tu as salué ${short(house.id)}.`,
+                )
+              }
+            >
+              Saluer
+            </button>
+            <button
+              type="button"
+              className="pc-passe-quiet"
+              data-greet-bravo
+              onClick={() =>
+                void signal(
+                  "/greet",
+                  { house: house.id, kind: "bravo" },
+                  `Tu as félicité ${short(house.id)}.`,
+                )
+              }
+            >
+              Féliciter
+            </button>
           </div>
         ) : null}
         {!mine && online && playing && view?.players.includes(house.id) ? (
@@ -1499,7 +1637,21 @@ export default function LabPlanche() {
               data-rival={String(h.id === rival)}
               onClick={() => pick({ kind: "house", id: h.id })}
             >
-              {h.id === ME ? null : <Flag tone={robot ? "robot" : "player"} />}
+              {view?.compagnies?.[h.id] ? (
+                <span
+                  className="pc-co-pin"
+                  title={view.compagnies[h.id]?.name}
+                  data-house-compagnie
+                >
+                  <HouseFlag
+                    color={view.compagnies[h.id]?.flag.color}
+                    symbol={view.compagnies[h.id]?.flag.symbol}
+                    size={16}
+                  />
+                </span>
+              ) : h.id === ME ? null : (
+                <Flag tone={robot ? "robot" : "player"} />
+              )}
               {named ? <b>{h.id === ME ? "Ta Maison" : short(h.id)}</b> : null}
               {h.id === rival ? <small className="pc-rk-tag">rival</small> : null}
               <Marks m={rank.marks[h.id]} name={short} />
@@ -1548,6 +1700,32 @@ export default function LabPlanche() {
                 ? "En ligne · tu regardes : toutes les Maisons sont prises"
                 : `En ligne · ${view?.players.length ?? 0} joueur${(view?.players.length ?? 0) > 1 ? "s" : ""}`}
             </span>
+          ) : null}
+          {online && playing && ME ? (
+            <button
+              type="button"
+              className="pc-pl-jour pc-pl-war"
+              data-compagnie-open
+              onClick={() => {
+                pick(null);
+                setCompOpen(true);
+              }}
+            >
+              {view?.compagnies?.[ME] ? (
+                <HouseFlag
+                  color={view.compagnies[ME].flag.color}
+                  symbol={view.compagnies[ME].flag.symbol}
+                  size={18}
+                />
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
+                  <circle cx="7" cy="7" r="3.2" fill="#17150f" />
+                  <circle cx="13.5" cy="7.5" r="2.6" fill="#6b645c" />
+                  <path d="M2 17 C2 12 12 12 12 17 Z M10 17 C10 13 18 13 18 17 Z" fill="#17150f" />
+                </svg>
+              )}
+              <span>{view?.compagnies?.[ME]?.name ?? "Compagnie"}</span>
+            </button>
           ) : null}
           {online && S.guerre && playing && ME ? (
             <button
@@ -1671,6 +1849,16 @@ export default function LabPlanche() {
       </nav>
       <footer className="pc-passe-foot pc-pl-foot">
         {said ? <p className="pc-passe-said">{said}</p> : null}
+        {compOpen && ME ? (
+          <CompagnieSheet
+            close={closeX}
+            goods={S.goods}
+            stock={state.houses[ME]?.stock ?? {}}
+            signs={view?.signs ?? []}
+            onSaid={setSaid}
+            onChange={() => void call()}
+          />
+        ) : null}
         {warOpen && war ? (
           <>
             {war.running ? (
@@ -1692,6 +1880,14 @@ export default function LabPlanche() {
               view={war}
               close={closeX}
               armed={assautFleetOf(S, state, ME).length > 0}
+              inCompany={!!view?.compagnies?.[ME]}
+              onReserve={(key) =>
+                void signal(
+                  "/sign",
+                  { kind: "attaque", target: `port:${key}` },
+                  "Ta compagnie voit que tu prends ce port.",
+                ).then(() => void loadWar())
+              }
               onAssault={(target) =>
                 void postWar("/start", { target }).then((res) => {
                   if (res.assaut) {
@@ -1916,7 +2112,7 @@ export default function LabPlanche() {
             }}
           />
         ) : null}
-        {!chosen && !palace && !profil && !growth && !armory && !warOpen ? (
+        {!chosen && !palace && !profil && !growth && !armory && !warOpen && !compOpen ? (
           <div className="pc-planche-news" aria-label="Le fil des nouvelles">
             {latest ? (
               <button key={latest.id} type="button" onClick={() => pick(latest.pick)}>
@@ -1961,7 +2157,7 @@ export default function LabPlanche() {
           account={account}
           onDone={(a) => {
             setAccount(a);
-            setGate("in");
+            void joinInvited().finally(() => setGate("in"));
           }}
         />
       ) : null}

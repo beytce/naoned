@@ -12,6 +12,8 @@ export interface GuerreCandidate {
   power: number;
   /** A person's house (else the computer's, which only fills). */
   person: boolean;
+  /** Its company (docs/plan-compagnie.md K3): its members make their own flotillas. */
+  group?: string;
 }
 
 export interface GuerreWar {
@@ -50,12 +52,19 @@ export function guerreForm(houses: GuerreCandidate[], size: number): { wars: Gue
     return out;
   };
   const flotillas: { keys: string[]; power: number }[] = [];
-  for (let i = 0; i < people.length; i += size) {
-    const group = people.slice(i, i + size);
-    const mean = group.reduce((n, h) => n + h.power, 0) / Math.max(1, group.length);
-    const keys = [...group.map((h) => h.key), ...nearest(mean, size - group.length)];
-    if (keys.length === size) flotillas.push({ keys, power: mean });
-  }
+  const chunk = (list: GuerreCandidate[]) => {
+    for (let i = 0; i < list.length; i += size) {
+      const group = list.slice(i, i + size);
+      const mean = group.reduce((n, h) => n + h.power, 0) / Math.max(1, group.length);
+      const keys = [...group.map((h) => h.key), ...nearest(mean, size - group.length)];
+      if (keys.length === size) flotillas.push({ keys, power: mean });
+    }
+  };
+  // Each company's members together, then the players alone.
+  const groups = [...new Set(people.map((h) => h.group).filter((g): g is string => !!g))].sort();
+  for (const g of groups) chunk(people.filter((h) => h.group === g));
+  chunk(people.filter((h) => !h.group));
+  flotillas.sort((x, y) => y.power - x.power);
   const wars: GuerreWar[] = [];
   for (let i = 0; i < flotillas.length; i++) {
     const a = flotillas[i];
@@ -142,12 +151,13 @@ export function guerreJoin(
   if (wars.some((w) => w.a.includes(house.key) || w.b.includes(house.key))) return wars;
   const power = new Map(all.map((h) => [h.key, h.power]));
   const people = new Set(all.filter((h) => h.person).map((h) => h.key));
+  const groupOf = new Map(all.map((h) => [h.key, h.group]));
   let pick: { w: number; side: "a" | "b"; i: number; gap: number } | null = null;
   wars.forEach((w, wi) => {
     for (const side of ["a", "b"] as const) {
       const keys = w[side];
-      // The people's side: a flotilla with a person in it.
-      if (!keys.some((k) => people.has(k))) continue;
+      // The people's side: a flotilla with a person of its company in it (or of none, alone).
+      if (!keys.some((k) => people.has(k) && groupOf.get(k) === house.group)) continue;
       keys.forEach((k, i) => {
         if (people.has(k) || touched.has(k)) return;
         const gap = Math.abs((power.get(k) ?? 0) - house.power);

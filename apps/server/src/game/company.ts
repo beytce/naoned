@@ -83,7 +83,7 @@ export async function companyIdOf(db: Db, accountId: string): Promise<string | n
 }
 
 /** The members of a company, oldest first. */
-async function membersOf(db: Db, companyId: string) {
+export async function membersOf(db: Db, companyId: string) {
   return db
     .select({
       id: accounts.id,
