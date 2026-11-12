@@ -3317,7 +3317,9 @@ Passage libre après un sceau ramené de 24 h à 8 h, ou péage de 10 % à 5 % :
 
 - **Le Problème du jour** ne donne que du Prestige, mais 20 par jour font monter le niveau plus tôt, donc les bobines, les cases et les ateliers : +41 % à deux semaines, +17 % à quatre, l'écart se referme quand les autres rattrapent le niveau.
 - **Les commandes scellées de 80 unités** pèsent trop : une commande livrée vaut 6 000 à 7 000 ducats, une semaine de fils 15 000 à 20 000. À 20 unités (deux heures de fil), avec le Problème du jour, on tient la cible (+25 %).
-- **Les tours** sont le plus gros levier, et il ne vient pas du péage ni du passage libre, mais du Prestige : sceaux brisés (15 chacun) et heures de tour tenue mènent le joueur de la Passe près du plafond (470 par semaine contre 320 pour le détour), donc plus haut en niveau. Elles datent de l'étape du rang, mais le Hex dans le commerce les rend quotidiennes.
+- **Les tours** sont le plus gros levier (+46 %). Ni le passage libre plus court, ni un péage plus bas, ni la suppression du Prestige des sceaux et de la tour tenue ne le réduisent : il tient au commerce de qui ouvre et tient les routes. Elles datent de l'étape du rang, mais le Hex dans le commerce les rend quotidiennes.
 - **Le détour** rapporte 75 % de plus que de ne rien faire tant que les tours sont aux corsaires ; une fois les tours tenues par des Maisons, la route s'ouvre à tous, et le détour ne rapporte plus rien de plus (−10 %).
 
-Réglages à trancher par le porteur : voir `docs/plan-hex-commerce.md` § 8, H6.
+**Tranché par le porteur (12 novembre 2026).** Les commandes scellées passent à **20 unités** (deux heures de fil, au double du prix) : avec le Problème du jour, +25 %, dans la cible. Les tours restent telles quelles : tenir une tour est la grande récompense de la Passe ; on remesure à l'étape de la Guerre, quand l'Assaut les disputera.
+
+Note : sans Prestige pour les sceaux ni pour la tour tenue, l'écart dû aux tours reste à +48 % ; il ne vient donc pas de ces deux gains, mais du commerce lui-même (pas de péage pour qui tient, routes ouvertes plus tôt).

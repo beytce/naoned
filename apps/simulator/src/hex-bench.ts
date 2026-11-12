@@ -42,12 +42,25 @@ const RIVALS = process.env.RIVALS !== "0";
 /** Hours a won seal lets one through free; the toll of every tower (bps). */
 const FREE = process.env.FREE ? Number(process.env.FREE) : null;
 const TOLL = process.env.TOLL ? Number(process.env.TOLL) : null;
+/** The Prestige of a seal broken, of the hours a tower is held (at most), of the problem of the day. */
+const SEAL = process.env.SEAL ? Number(process.env.SEAL) : null;
+const GUARD = process.env.GUARD ? Number(process.env.GUARD) : null;
+const DAILYP = process.env.DAILYP ? Number(process.env.DAILYP) : null;
 const L = venice1450Lagune;
 const S = {
   ...L,
   ...(UNITS && L.orders ? { orders: { ...L.orders, units: UNITS } } : {}),
   rules: { ...L.rules, ...(FREE !== null ? { freeAfterForceMs: FREE * 3_600_000 } : {}) },
   passages: TOLL !== null ? L.passages.map((p) => ({ ...p, tollBps: TOLL })) : L.passages,
+  ...(SEAL !== null && L.maison
+    ? {
+        maison: {
+          ...L.maison,
+          gains: { ...L.maison.gains, seal: SEAL, guardCap: GUARD ?? L.maison.gains.guardCap },
+        },
+      }
+    : {}),
+  ...(DAILYP !== null && L.daily ? { daily: { ...L.daily, prestige: DAILYP } } : {}),
 };
 const T0 = Date.parse("2026-11-16T00:00:00Z");
 

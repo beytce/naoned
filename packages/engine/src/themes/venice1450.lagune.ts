@@ -269,13 +269,14 @@ export const venice1450LaguneParams: LagoonParams = {
       },
     },
     // The sealed orders (docs/plan-hex-commerce.md H2): two a day in each sestiere, at 9 and 17
-    // (UTC), four hours each, twice the price, a third of a day of thread (10 an hour × 8 h).
+    // (UTC), four hours each, twice the price, two hours of thread (20 units: measured at the
+    // bench, docs/calibration.md § La Passe dans le commerce; the owner's choice, 12 November 2026).
     orders: {
       perSestiere: 2,
       hours: [9, 17],
       durationMs: 4 * 3_600_000,
       priceBps: 20_000,
-      units: 80,
+      units: 20,
       problems: venice1450PasseProblems.map((p) => p.id),
     },
     // The problem of the day (docs/plan-hex-commerce.md H3): the same twenty, 20 of Prestige.
