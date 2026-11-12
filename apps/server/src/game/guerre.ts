@@ -3,6 +3,7 @@ import {
   type AssautPort,
   type AssautState,
   type GuerreWar,
+  type IleState,
   assautFleetOf,
   assautInit,
   assautPlay,
@@ -57,9 +58,10 @@ export interface GuerreView {
   score: { us: number; them: number };
   /** Whether the player has made today's assault, and the one under way. */
   today: boolean;
-  running: { target: string; state: AssautState } | null;
-  /** The assaults on the player's port this week. */
-  suffered: { by: string; seals: number; at: number }[];
+  running: { target: string; state: AssautState; ile: IleState | null } | null;
+  /** The assaults on the player's port this week, and its own: each may be seen again. */
+  suffered: { id: number; by: string; seals: number; at: number }[];
+  made: { id: number; target: string; seals: number; at: number }[];
   /** The companies of the two sides, when they are (docs/plan-compagnie.md K3). */
   companies: { us: string | null; them: string | null };
   /** The ports of the other side one's company has reserved with a sign: by whom. */
@@ -77,6 +79,8 @@ interface Running {
   store: PlancheStore;
   /** The pass whose ruse the company's beacon showed. */
   scouted?: string;
+  /** The island attacked, as it stood when the assault began (for the scene). */
+  ile: IleState | null;
 }
 
 /**
@@ -223,11 +227,13 @@ export class GuerreHub {
       today: false,
       running: null,
       suffered: [],
+      made: [],
       companies: { us: null, them: null },
       reserved: {},
     };
     if (!war) return empty;
     const done = (await this.assaults(week)).map((r) => ({
+      id: r.id,
       by: r.by,
       target: r.target,
       seals: r.seals,
@@ -281,11 +287,24 @@ export class GuerreHub {
       today: !!mine,
       running:
         run && run.week === week
-          ? { target: run.target, state: hideRuses(run.state, run.scouted) }
+          ? { target: run.target, state: hideRuses(run.state, run.scouted), ile: run.ile }
           : null,
       suffered: done
         .filter((d) => d.target === me)
-        .map((d) => ({ by: this.portOf(d.by, {}, people).name, seals: d.seals, at: d.at })),
+        .map((d) => ({
+          id: d.id,
+          by: this.portOf(d.by, {}, people).name,
+          seals: d.seals,
+          at: d.at,
+        })),
+      made: done
+        .filter((d) => d.by === me)
+        .map((d) => ({
+          id: d.id,
+          target: this.portOf(d.target, {}, people).name,
+          seals: d.seals,
+          at: d.at,
+        })),
     };
   }
 
@@ -296,7 +315,7 @@ export class GuerreHub {
     house: string,
     target: string,
     now: number,
-  ): Promise<{ error: string } | { state: AssautState }> {
+  ): Promise<{ error: string } | { state: AssautState; ile: IleState | null }> {
     const week = mondayOf(now);
     const dow = Math.floor((now - week) / DAY);
     if (dow < 1 || dow > 5) return { error: "guerre_closed" };
@@ -312,6 +331,8 @@ export class GuerreHub {
     const fleet = assautFleetOf(S, store.hub.current().doc.state, house);
     if (!fleet.length) return { error: "guerre_no_fleet" };
     const port = assautPortOf(at.store.hub.theme.board, at.store.hub.current().doc.state, at.house);
+    // The island attacked: public (everyone sees it on the board), for the scene of the assault.
+    const ile = at.store.hub.current().doc.state.houses[at.house]?.ile ?? null;
     const day = Math.floor(now / DAY);
     // The day is spent as the assault begins: leaving it does not give another try.
     const inserted = await this.db
@@ -349,9 +370,10 @@ export class GuerreHub {
       state,
       moves: [],
       store,
+      ile,
       ...(scouted ? { scouted } : {}),
     });
-    return { state: hideRuses(state, scouted) };
+    return { state: hideRuses(state, scouted), ile };
   }
 
   /** A round of the assault under way; the last one writes its result and sends the damaged home. */
@@ -417,5 +439,28 @@ export class GuerreHub {
         }
       }
     }
+  }
+
+  /**
+   * An assault done, to be seen again by its assailant or by the master of the port (its replay):
+   * the port and the fleet as they were, the placements of each round, the island attacked.
+   */
+  async replay(account: string, me: string, id: number) {
+    const [row] = await this.db.select().from(guerreAssaults).where(eq(guerreAssaults.id, id));
+    if (!row || !row.done || (row.accountId !== account && row.target !== me)) return null;
+    const people = new Set(
+      this.lagoons
+        .all()
+        .flatMap((s) => Object.values(s.hub.current().doc.seats).map((x) => keyOf(s, x.house))),
+    );
+    const at = this.where(row.target);
+    return {
+      port: row.port as AssautPort,
+      fleet: row.fleet as AssautFleetShip[],
+      moves: row.moves as Record<number, string>[],
+      by: this.portOf(row.by, {}, people).name,
+      target: this.portOf(row.target, {}, people).name,
+      ile: at?.store.hub.current().doc.state.houses[at.house]?.ile ?? null,
+    };
   }
 }

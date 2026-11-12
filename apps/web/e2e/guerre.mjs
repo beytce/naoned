@@ -171,9 +171,16 @@ try {
     await until("[data-assaut-told] li");
     await page.waitForTimeout(1200);
     await page.screenshot({ path: join(SHOTS, `guerre-${name}-3-manche.png`) });
-    await tap("[data-assaut-go]");
-    await page.waitForTimeout(600);
-    await tap("[data-assaut-go]");
+    // Each round once the server has answered the last (the round's label has moved on).
+    const next = async (n) => {
+      for (let i = 0; i < 80; i++) {
+        if (((await page.textContent("[data-assaut-manche]")) ?? "").includes(`Manche ${n}`)) break;
+        await page.waitForTimeout(250);
+      }
+      await tap("[data-assaut-go]");
+    };
+    await next(2);
+    await next(3);
     await until("[data-assaut-end]");
     await page.waitForTimeout(1000);
     await page.screenshot({ path: join(SHOTS, `guerre-${name}-4-bilan.png`) });

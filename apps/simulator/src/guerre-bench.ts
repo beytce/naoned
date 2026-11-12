@@ -25,6 +25,13 @@ import {
 } from "@comptoirs/engine";
 
 const PLAYERS = Number(process.argv[2]) || 120;
+/**
+ * The peaceful member (docs/plan-compagnie.md K4): half the players in companies of six, two of
+ * whom never assault; with PHARE=1 they feed the beacon to level 4 (two places of port more a
+ * pass for every member), with PHARE=0 they do nothing. Does the peaceful member count?
+ */
+const COMPANIES = process.env.COMPANIES === "1";
+const PHARE = process.env.PHARE === "1";
 const WEEKS = Number(process.argv[3]) || 8;
 const G = venice1450Lagune.guerre;
 const A = venice1450Lagune.arsenal;
@@ -42,6 +49,8 @@ const KINDS = [
 ];
 
 interface Player {
+  group?: string;
+  peaceful?: boolean;
   key: string;
   level: number;
   fleet: AssautFleetShip[];
@@ -65,17 +74,26 @@ function player(rng: Rng, k: number): Player {
       keyword: r?.keyword ?? "",
     };
   });
-  // Two places a pass, filled 3 times in 4, with the island's defense or a tower.
+  // Two places a pass (four with the beacon at 4), filled 3 times in 4, with the island's defense or a tower.
+  const inCompany = COMPANIES && k % 2 === 0;
+  const slots = inCompany && PHARE ? [0, 1, 2, 3] : [0, 1];
   const defenses: Record<string, string[]> = {};
   for (const p of PASSES)
-    defenses[p] = [0, 1].flatMap(() =>
+    defenses[p] = slots.flatMap(() =>
       rng.chance(0.75) ? [rng.chance(0.5) ? (kind?.defense ?? "tour") : "tour"] : [],
     );
   const shipsPower = fleet.reduce((v, x) => v + 5 * (x.force + x.hull + 1), 0);
   const portPower = Object.values(defenses).flat().length * 15;
   // Its workshops weigh as a house of its level would have (A2: about 10 a level).
   const power = shipsPower + portPower + 20 + level * 12;
-  return { key: `h${k}`, level, fleet, defenses, power };
+  return {
+    key: `h${k}`,
+    level,
+    fleet,
+    defenses,
+    power,
+    ...(inCompany ? { group: `c${Math.floor(k / 12)}`, peaceful: Math.floor(k / 2) % 6 < 2 } : {}),
+  };
 }
 
 const seen = (s: AssautState): AssautState => {
@@ -121,13 +139,25 @@ function think(s: AssautState): Record<number, string> {
 const rng = new Rng(3);
 const players = Array.from({ length: PLAYERS }, (_, k) => player(rng, k));
 const byKey = new Map(players.map((p) => [p.key, p]));
-const wars: { stronger: boolean | null; gap: number; seals: number }[] = [];
+const wars: {
+  stronger: boolean | null;
+  gap: number;
+  seals: number;
+  company: "won" | "lost" | "tie" | null;
+}[] = [];
 const prestige: number[] = [];
 let assaults = 0;
+/** The seals lost by a company's ports, and the assaults they bore. */
+const companyPorts = { seals: 0, assaults: 0 };
 let seals = 0;
 for (let week = 0; week < WEEKS; week++) {
   const { wars: formed } = guerreForm(
-    players.map((p) => ({ key: p.key, power: p.power, person: true })),
+    players.map((p) => ({
+      key: p.key,
+      power: p.power,
+      person: true,
+      ...(p.group ? { group: p.group } : {}),
+    })),
     6,
   );
   for (const war of formed) {
@@ -144,7 +174,7 @@ for (let week = 0; week < WEEKS; week++) {
       for (const side of ["a", "b"] as const) {
         const foes = war[side === "a" ? "b" : "a"];
         for (const k of war[side]) {
-          if (!rng.chance(0.7)) continue;
+          if (!rng.chance(0.7) || byKey.get(k)?.peaceful) continue;
           // The port of the other flotilla that has lost the fewest seals.
           const best = guerreScore(war, done).best;
           const target = [...foes].sort(
@@ -156,6 +186,10 @@ for (let week = 0; week < WEEKS; week++) {
           while (s.manche <= R.manches) s = assautPlay(R, s, think(s));
           const r = assautResult(R, s);
           done.push({ by: k, target, seals: r.seals, damageBps: r.damageBps });
+          if (byKey.get(target)?.group) {
+            companyPorts.seals += r.seals;
+            companyPorts.assaults += 1;
+          }
           assaults += 1;
           seals += r.seals;
         }
@@ -166,7 +200,19 @@ for (let week = 0; week < WEEKS; week++) {
       ks.reduce((v, k) => v + (byKey.get(k)?.power ?? 0), 0) / ks.length;
     const pa = mean(war.a);
     const pb = mean(war.b);
+    // A company's flotilla against players alone: did the company win?
+    const ca = war.a.some((k) => byKey.get(k)?.group);
+    const cb = war.b.some((k) => byKey.get(k)?.group);
+    const company =
+      ca === cb
+        ? null
+        : score.winner === null
+          ? "tie"
+          : (score.winner === "a") === ca
+            ? "won"
+            : "lost";
     wars.push({
+      company,
       stronger: score.winner === null ? null : (score.winner === "a") === pa >= pb,
       gap: Math.abs(score.a - score.b),
       seals: score.a + score.b,
@@ -204,3 +250,12 @@ console.log(`| Sceaux par assaut | ${(seals / Math.max(1, assaults)).toFixed(2)}
 console.log(
   `| Prestige de guerre par joueur et par semaine (médiane, plus haut 10 %) | ${median(prestige)}, ${[...prestige].sort((a, b) => a - b)[Math.floor(prestige.length * 0.9)] ?? 0} |`,
 );
+if (COMPANIES) {
+  const mixed = wars.filter((w) => w.company);
+  console.log(
+    `| Compagnies (deux membres paisibles sur six${PHARE ? ", phare au niveau 4" : ", sans phare"}) contre joueurs seuls | ${pct(mixed.filter((w) => w.company === "won").length / Math.max(1, mixed.length))} de victoires sur ${mixed.length} guerres |`,
+  );
+  console.log(
+    `| Sceaux perdus par un port de compagnie, par assaut subi | ${(companyPorts.seals / Math.max(1, companyPorts.assaults)).toFixed(2)} (${companyPorts.assaults} assauts) |`,
+  );
+}

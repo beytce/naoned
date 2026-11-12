@@ -408,7 +408,7 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const g = await guerreOf();
     const res = await g.start(p.id, p.store, p.hub.houseOf(p.id) ?? "", b.data.target, p.now());
     if ("error" in res) return reply.code(409).send(res);
-    return toJson({ assaut: res.state });
+    return toJson({ assaut: res.state, ile: res.ile });
   });
   app.post("/api/guerre/round", deps.perMerchant(60), async (req, reply) => {
     const b = z
@@ -584,5 +584,17 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
       await giveToBeacon(deps.db, lagoons, p.hub.theme, p.id, b.data.goods, deps.now(), p.now());
       return compagnieOf(p);
     });
+  });
+  /** An assault of the War seen again (docs/plan-guerre.md): by its assailant or its port's master. */
+  app.get("/api/guerre/assault/:id", deps.perMerchant(60), async (req, reply) => {
+    const q = z.object({ id: z.coerce.number().int().min(1) }).safeParse(req.params);
+    if (!q.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const g = await guerreOf();
+    const me = `${p.store.worldId}:${p.hub.houseOf(p.id) ?? ""}`;
+    const replay = await g.replay(p.id, me, q.data.id);
+    if (!replay) return reply.code(404).send({ error: "unknown_assault" });
+    return toJson({ replay });
   });
 }

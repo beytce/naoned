@@ -31,7 +31,9 @@ import {
   RepeatWrapping,
   RingGeometry,
   SRGBColorSpace,
+  SphereGeometry,
   TOUCH,
+  TorusGeometry,
   Vector3,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -46,6 +48,7 @@ import { flagCloth, rocca } from "../models/terra.js";
 import { town } from "../models/towns.js";
 import { type Vehicle, ship } from "../models/vehicles.js";
 import { drawChevron, ribbonGeometry, roundedPath } from "../ribbon.js";
+import { box, cyl } from "../shapes.js";
 import { BOARD, CAMERA, COL, RIBBON, SEA, THREAD } from "../tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
@@ -276,7 +279,7 @@ export function PlancheBoard({
       if (!h) return;
       for (let i = 0; i < Number(n); i++) {
         const boat = ship(P, { seed: k * 5 + i, running: false });
-        boat.group.scale.setScalar(THREAD.boat * 0.8);
+        boat.group.scale.setScalar(THREAD.boat * 1.15);
         boat.group.position.set(wx(h.x) - 1.6 + i * 1.1, 0, wz(h.y) + 3.1 + (i % 2) * 0.35);
         boat.group.rotation.y = Math.PI / 2;
         root.add(boat.group);
@@ -285,6 +288,45 @@ export function PlancheBoard({
     bake(root);
     return root;
   }, [fleets, setup, P]);
+
+  // The beacon of each house's company (docs/plan-compagnie.md K4): a small lighthouse at its
+  // island's corner, a ring of light for each of its levels.
+  const beacons = setup.houses.map((h) => state.houses[h.id]?.beacon ?? 0).join(",");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the beacons' signature stands for the state.
+  const lighthouses = useMemo(() => {
+    const root = new Group();
+    const lamp = new MeshStandardMaterial({
+      color: "#F2C14E",
+      emissive: "#F2C14E",
+      emissiveIntensity: 0.6,
+    });
+    const ring = new MeshStandardMaterial({
+      color: P.accentColour,
+      transparent: true,
+      opacity: 0.55,
+    });
+    beacons.split(",").forEach((n, k) => {
+      const level = Number(n);
+      const h = setup.houses[k];
+      if (!h || level <= 0) return;
+      const g = new Group();
+      g.position.set(wx(h.x) + 2.4, 0, wz(h.y) - 2.4);
+      cyl(g, 0.32, 0.46, 2.6, 0, 0, 0, P.m("wall"), 12);
+      box(g, 0.98, 0.12, 0.98, 0, 0.9, 0, P.accent, 0.02);
+      const light = new Mesh(new SphereGeometry(0.34, 12, 8), lamp);
+      light.position.set(0, 2.9, 0);
+      g.add(light);
+      for (let l = 0; l < level; l++) {
+        const halo = new Mesh(new TorusGeometry(0.7 + l * 0.42, 0.05, 6, 28), ring);
+        halo.rotation.x = Math.PI / 2;
+        halo.position.set(0, 2.9, 0);
+        g.add(halo);
+      }
+      root.add(g);
+    });
+    bake(root);
+    return root;
+  }, [beacons, setup, P]);
 
   // The towers of the passages: their flag tells who holds them.
   const holders = setup.passages.map((p) => state.passages[p.id]?.holder ?? "").join("|");
@@ -582,6 +624,7 @@ export function PlancheBoard({
       <primitive object={web.root} />
       <primitive object={minis} />
       <primitive object={anchored} />
+      <primitive object={lighthouses} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: every place has its label, a button. */}
       <primitive object={places.root} onClick={pick} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: every passage has its label, a button. */}

@@ -7,7 +7,10 @@ import "../porcellana.css";
 import "../passe/passe.css";
 import "./planche.css";
 import {
+  type AssautFleetShip,
+  type AssautPort,
   type AssautState,
+  type IleState,
   type PlancheOrder,
   type PlancheState,
   assautFleetOf,
@@ -280,7 +283,20 @@ export default function LabPlanche() {
   /** The War of the week (docs/plan-guerre.md W4): its sheet, and the assault under way. */
   const [war, setWar] = useState<GuerreViewData | null>(null);
   const [warOpen, setWarOpen] = useState(false);
-  const [warAssault, setWarAssault] = useState<{ target: string; start: AssautState } | null>(null);
+  const [warAssault, setWarAssault] = useState<{
+    target: string;
+    start: AssautState;
+    ile?: IleState | null;
+  } | null>(null);
+  /** An assault seen again (docs/plan-guerre.md): its port, its fleet, its rounds. */
+  const [replayed, setReplayed] = useState<{
+    port: AssautPort;
+    fleet: AssautFleetShip[];
+    moves: Record<number, string>[];
+    by: string;
+    target: string;
+    ile: IleState | null;
+  } | null>(null);
   const loadWar = useCallback(async () => {
     try {
       const res = await fetch("/api/guerre", { credentials: "same-origin" });
@@ -300,6 +316,7 @@ export default function LabPlanche() {
     });
     return (await res.json().catch(() => ({ error: "offline" }))) as {
       assaut?: AssautState;
+      ile?: IleState | null;
       error?: string;
     };
   };
@@ -755,6 +772,23 @@ export default function LabPlanche() {
     );
   }
 
+  if (replayed && S.guerre) {
+    return (
+      <AssautScreen
+        rules={S.guerre.assaut}
+        port={replayed.port}
+        fleet={replayed.fleet}
+        replay={replayed.moves}
+        title={`Revoir · ${replayed.by} sur ${replayed.target}`}
+        {...(replayed.ile ? { ile: replayed.ile } : {})}
+        onBack={() => {
+          setReplayed(null);
+          setWarOpen(true);
+        }}
+      />
+    );
+  }
+
   if (warAssault && S.guerre) {
     const foe = war?.theirs.find((p) => p.key === warAssault.target);
     return (
@@ -763,6 +797,7 @@ export default function LabPlanche() {
         port={{ passes: {} }}
         fleet={[]}
         title={`Assaut · ${foe?.name ?? "le port adverse"}`}
+        {...(warAssault.ile ? { ile: warAssault.ile } : {})}
         remote={{
           start: warAssault.start,
           play: async (moves) => {
@@ -1869,7 +1904,11 @@ export default function LabPlanche() {
                   data-guerre-resume
                   onClick={() =>
                     war.running &&
-                    setWarAssault({ target: war.running.target, start: war.running.state })
+                    setWarAssault({
+                      target: war.running.target,
+                      start: war.running.state,
+                      ile: war.running.ile,
+                    })
                   }
                 >
                   Reprendre l'assaut
@@ -1881,6 +1920,16 @@ export default function LabPlanche() {
               close={closeX}
               armed={assautFleetOf(S, state, ME).length > 0}
               inCompany={!!view?.compagnies?.[ME]}
+              onReplay={(id) =>
+                void fetch(`/api/guerre/assault/${id}`, { credentials: "same-origin" })
+                  .then((res) => res.json())
+                  .then((j: { replay?: NonNullable<typeof replayed> }) => {
+                    if (j.replay) {
+                      setWarOpen(false);
+                      setReplayed(j.replay);
+                    } else setSaid("Cet assaut ne se revoit plus.");
+                  })
+              }
               onReserve={(key) =>
                 void signal(
                   "/sign",
@@ -1892,7 +1941,7 @@ export default function LabPlanche() {
                 void postWar("/start", { target }).then((res) => {
                   if (res.assaut) {
                     setWarOpen(false);
-                    setWarAssault({ target, start: res.assaut });
+                    setWarAssault({ target, start: res.assaut, ile: res.ile ?? null });
                   } else setSaid(SAID[res.error ?? ""] ?? "Cet assaut n'est pas possible.");
                 })
               }

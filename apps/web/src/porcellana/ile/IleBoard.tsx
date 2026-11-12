@@ -134,6 +134,28 @@ function scaffold(P: Palette): Group {
   return g;
 }
 
+/** A tile of an island as it stands: its slab, its terrain, what is built on it (also for the assault). */
+export function ileTile(
+  P: Palette,
+  tile: IleState["tiles"][string],
+  n: number,
+  now: number,
+): Group {
+  const g = new Group();
+  g.add(slab(P, false));
+  if (tile.building?.type !== ILE_FONDACO) terrainTop(g, tile.terrain);
+  const b = tile.building;
+  if (!b) g.add(terrainMark(P, tile.terrain, n * 13 + 5));
+  else if (b.type === ILE_FONDACO) g.add(fondaco(P).group);
+  else {
+    const entry = BY_KEY.get(b.type);
+    const model = entry?.make?.(P, { seed: n * 7 + 3, running: true });
+    if (model) g.add(model.group);
+    if (b.readyAt > now) g.add(scaffold(P));
+  }
+  return g;
+}
+
 export type IlePick = { kind: "tile"; at: string } | { kind: "plot"; at: string };
 
 const parse = (k: string): [number, number] => {
@@ -217,17 +239,7 @@ export function IleBoard({
         g.add(plotOf(ground(x, y)));
       } else {
         g.userData.pick = { kind: "tile", at: k } satisfies IlePick;
-        g.add(slab(P, false));
-        if (tile.building?.type !== ILE_FONDACO) terrainTop(g, tile.terrain);
-        const b = tile.building;
-        if (!b) g.add(terrainMark(P, tile.terrain, n * 13 + 5));
-        else if (b.type === ILE_FONDACO) g.add(fondaco(P).group);
-        else {
-          const entry = BY_KEY.get(b.type);
-          const model = entry?.make?.(P, { seed: n * 7 + 3, running: true });
-          if (model) g.add(model.group);
-          if (b.readyAt > now) g.add(scaffold(P));
-        }
+        g.add(ileTile(P, tile, n, now));
       }
       bake(g);
       // A plot is a pale plate: it neither casts nor takes a shadow (no grey patches on it).

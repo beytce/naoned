@@ -2141,3 +2141,23 @@ button.pc-pl-brand {
 .pc-co-phare > svg {
   flex: none;
 }
+/* The company's guided first visit: the part told, outlined; the words in ink. */
+.pc-co-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--pc-ink);
+  color: #f6f4f0;
+  font: 600 13px / 1.45 var(--pc-ui);
+}
+.pc-co-guide button {
+  align-self: flex-end;
+}
+.pc-co [data-glow="true"] {
+  outline: 3px solid var(--pc-accent);
+  outline-offset: 3px;
+  border-radius: 14px;
+}
