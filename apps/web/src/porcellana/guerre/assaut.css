@@ -349,7 +349,9 @@
   font: 600 12.5px / 1.5 var(--pc-ui);
 }
 .pc-gu-map {
+  flex: none;
   width: 100%;
   height: auto;
+  aspect-ratio: 350 / 170;
   display: block;
 }

@@ -191,6 +191,61 @@ try {
     await until("[data-guerre]");
     await page.waitForTimeout(1000);
     await page.screenshot({ path: join(SHOTS, `guerre-${name}-5-retour.png`) });
+    // The map of the War, and an assault seen again (its port, its fleet, its rounds).
+    if (!(await page.$("[data-guerre-map]"))) fail("no map of the War");
+    await page.route("**/api/guerre", async (route) => {
+      const res = await route.fetch();
+      const json = await res.json();
+      json.guerre.made = [{ id: 1, target: "Ca’ Loredan", seals: 2, at: Date.now() }];
+      await route.fulfill({ response: res, json });
+    });
+    await page.route("**/api/guerre/assault/1", (route) =>
+      route.fulfill({
+        json: {
+          replay: {
+            port: {
+              passes: {
+                bouche: { defenses: ["tour", "chaine"], ruse: "brulot" },
+                nord: { defenses: ["batterie"] },
+                sud: { defenses: ["tour"], ruse: "renforts" },
+              },
+            },
+            fleet: [1, 2, 3].map((id) => ({
+              id,
+              kind: "galere",
+              force: 2,
+              hull: 4,
+              keyword: "solide",
+            })),
+            moves: [{ 1: "nord", 2: "sud", 3: "sud" }, {}, {}],
+            by: name === "p" ? "Ca’ Mocenigo" : "Ca’ Venier",
+            target: "Ca’ Loredan",
+            ile: null,
+          },
+        },
+      }),
+    );
+    await tap("[data-planche-card] .pc-pl-x");
+    await tap("[data-guerre-open]");
+    await until("[data-replay]");
+    await tap("[data-replay]");
+    await until("[data-assaut]");
+    // The scene is drawn (slowly, without a graphics card) before the rounds are seen again.
+    await page.waitForTimeout(3000);
+    for (const n of [1, 2, 3]) {
+      for (let i = 0; i < 40; i++) {
+        if (((await page.textContent("[data-assaut-manche]")) ?? "").includes(`Manche ${n}`)) break;
+        await page.waitForTimeout(250);
+      }
+      if (n === 2) {
+        await page.waitForTimeout(1500);
+        await page.screenshot({ path: join(SHOTS, `guerre-${name}-6-replay.png`) });
+      }
+      await tap("[data-assaut-go]");
+    }
+    await until("[data-assaut-end]");
+    const replayed = await page.textContent("[data-assaut-end] h2");
+    if (!/2 sceaux/.test(replayed ?? "")) fail(`the replay ends on « ${replayed} »`);
     if (errs.length) fail(`page errors: ${errs.join(" | ")}`);
     await page.unrouteAll({ behavior: "ignoreErrors" });
     await page.close();
