@@ -32,15 +32,20 @@ function worth(
   good: string,
   patina: number,
   now: number,
+  /** By the way round its passages: no duel, this share of the load. */
+  detour = false,
 ): number {
   const hs = S.houses.find((h) => h.id === house);
   const h = s.houses[house];
-  if (!hs || !h || !plancheRouteOpen(S, s, house, city, now)) return 0;
+  const c = S.cities.find((x) => x.id === city);
+  if (!hs || !h || !c) return 0;
+  if (detour ? !(c.via.length && c.detourBps) : !plancheRouteOpen(S, s, house, city, now)) return 0;
   const sameGood = h.threads.filter((t) => t.good === good).length || 1;
   // What it can really load an hour: its output of that good, and a share of what lies in store.
   const supply =
     (plancheSupply(S, s, house, now)[good] ?? 0) / sameGood + (h.stock[good] ?? 0) / 12;
-  const flow = Math.min((S.rules.threadPerHour * (BPS + patina)) / BPS, supply);
+  const load = (S.rules.threadPerHour * (BPS + patina)) / BPS;
+  const flow = Math.min(detour ? (load * (c.detourBps ?? 0)) / BPS : load, supply);
   return Math.floor(planchePrice(S, s, city, good) * flow);
 }
 
@@ -54,6 +59,8 @@ export function plancheRobot(
   house: string,
   now: number,
   eager = 2_500,
+  /** It may take the detour to a town whose passages are shut (a player who never plays the Passe). */
+  how: { detour?: boolean } = {},
 ): PlancheState {
   let s = s0;
   const hs = S.houses.find((h) => h.id === house);
@@ -67,7 +74,7 @@ export function plancheRobot(
         .filter(([, n]) => n > 0)
         .map(([g]) => g),
     ]);
-    const out: { city: string; good: string; v: number }[] = [];
+    const out: { city: string; good: string; v: number; detour?: boolean }[] = [];
     if (!h) return out;
     for (const c of S.cities)
       for (const good of Object.keys(c.wants)) {
@@ -75,19 +82,32 @@ export function plancheRobot(
         if (h.threads.some((t) => t.to === c.id && t.good === good)) continue;
         const v = worth(S, s, house, c.id, good, 0, now);
         if (v > 0) out.push({ city: c.id, good, v });
+        else if (how.detour) {
+          const d = worth(S, s, house, c.id, good, 0, now, true);
+          if (d > 0) out.push({ city: c.id, good, v: d, detour: true });
+        }
       }
     return out.sort((a, b) => b.v - a.v || a.city.localeCompare(b.city));
   };
   for (let guard = 0; guard < S.rules.bobbins && plancheFreeBobbins(S, s, house) > 0; guard++) {
     const best = options()[0];
     if (!best) break;
-    s = plancheThread(S, s, house, best.city, best.good, now);
+    s = plancheThread(S, s, house, best.city, best.good, now, best.detour ? { detour: true } : {});
   }
   const h = s.houses[house];
   if (!h || !h.threads.length) return s;
   const held = h.threads
-    .map((t) => ({ t, v: worth(S, s, house, t.to, t.good, planchePatina(S, t, now), now) }))
+    .map((t) => ({
+      t,
+      v: worth(S, s, house, t.to, t.good, planchePatina(S, t, now), now, !!t.detour),
+    }))
     .sort((a, b) => a.v - b.v);
+  // A thread by the detour whose passages have opened is taken back, to be stretched by the route
+  // at the next visit, when the route brings a quarter more.
+  const reopened = held.find(
+    ({ t, v }) => t.detour && worth(S, s, house, t.to, t.good, 0, now) * BPS > v * (BPS + eager),
+  );
+  if (reopened) return plancheUnthread(S, s, house, reopened.t.to, reopened.t.good, now);
   const worst = held[0];
   const best = options()[0];
   // Never to stretch it again to the town it leaves: that is churn, not a choice.
