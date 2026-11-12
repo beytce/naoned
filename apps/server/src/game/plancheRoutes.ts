@@ -150,6 +150,8 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
         opens,
         flags: doc.state.rank.flags[house] ?? [],
         collection: Object.fromEntries(kept.map((k) => [k.kind, Number(k.n)])),
+        knots: m?.knots ?? 0,
+        knotToday: !!doc.state.daily?.[Math.floor(p.now() / 86_400_000)]?.[house]?.won,
         /** Every lagoon's Prestige of this account, as its journal of points keeps it. */
         kept: total?.sum ?? 0,
         livre: livre.map((e) => ({ kind: e.kind, data: e.data, at: e.at.getTime() })),
@@ -245,5 +247,16 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     if (!p) return reply;
     const moves = b.data.moves.map((m) => ({ at: m.at }));
     return show(reply, p, await p.hub.order(p.id, b.data.order, moves, p.now()));
+  });
+  // The problem of the day (docs/plan-hex-commerce.md H3): one try, replayed here.
+  app.post("/api/planche/daily", deps.perMerchant(20), async (req, reply) => {
+    const b = z
+      .object({ moves: z.array(z.object({ at: z.number().int().min(0).max(400) })).max(40) })
+      .safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const moves = b.data.moves.map((m) => ({ at: m.at }));
+    return show(reply, p, await p.hub.daily(p.id, moves, p.now()));
   });
 }

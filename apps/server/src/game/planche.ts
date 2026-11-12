@@ -11,6 +11,8 @@ import {
   plancheBuild,
   plancheBuyTile,
   plancheClaim,
+  plancheDaily,
+  plancheDailyTry,
   plancheForced,
   plancheInit,
   plancheInvariant,
@@ -108,7 +110,9 @@ export type PlancheCommand =
   /** A duel already won and checked by the hub: only its outcome is kept. */
   | { type: "forced"; player: string; passage: string; t: number }
   /** A sealed order's position played, won or lost, as the hub replayed it. */
-  | { type: "order"; player: string; order: string; won: boolean; t: number };
+  | { type: "order"; player: string; order: string; won: boolean; t: number }
+  /** The problem of the day played, won or lost, in so many pieces. */
+  | { type: "daily"; player: string; won: boolean; moves: number; t: number };
 
 /** The whole of a board: what the engine holds, who sits where, and when it began. */
 export interface PlancheDoc {
@@ -235,6 +239,9 @@ export function plancheDocApply(
         break;
       case "order":
         next = plancheOrderTry(S, s, h, c.order, c.t, c.won);
+        break;
+      case "daily":
+        next = plancheDailyTry(S, s, h, c.t, c.won, c.moves);
         break;
     }
     return { doc: { ...doc, state: next }, answer: "ok" };
@@ -444,6 +451,32 @@ export class PlancheHub {
     const why = plancheOrderRefusal(S, this.doc.state, seat.house, id, t);
     // The stock is read again once the board is brought to `t`: only its other refusals stop here.
     if (why && why !== "planche_order_short") return why;
+    const won = this.solves(pb, moves);
+    if (won === null) return "duel_illegal";
+    const answer = await this.act({ type: "order", player, order: id, won, t });
+    return answer === "ok" && !won ? "duel_lost" : answer;
+  }
+
+  /** The day's problem (docs/plan-hex-commerce.md H3): replayed here, one try, its Prestige if solved. */
+  async daily(player: string, moves: PasseMove[], t: number): Promise<PlancheAnswer> {
+    const id = plancheDaily(this.theme.board, Math.floor(t / DAY));
+    const pb = id ? this.theme.passe.problems?.find((p) => p.id === id) : undefined;
+    if (!pb) return "planche_unknown";
+    const seat = this.doc.seats[player];
+    if (!seat) return "not_seated";
+    if (this.doc.state.daily?.[Math.floor(t / DAY)]?.[seat.house]) return "planche_daily_tried";
+    const won = this.solves(pb, moves);
+    if (won === null) return "duel_illegal";
+    const laid = Math.min(moves.length, pb.moves);
+    const answer = await this.act({ type: "daily", player, won, moves: laid, t });
+    return answer === "ok" && !won ? "duel_lost" : answer;
+  }
+
+  /**
+   * A position of « the thread passes in N pieces » replayed: the player's pieces, the chain's
+   * answers as the laboratory's (depth 3), within the pieces allowed. Null: a piece was illegal.
+   */
+  private solves(pb: PasseProblem, moves: PasseMove[]): boolean | null {
     let s = passeInit({
       ...this.theme.passe.rules,
       fire: { thread: 0, chain: 0 },
@@ -459,11 +492,9 @@ export class PlancheHub {
       try {
         s = passePlay(s, { at: m.at });
       } catch {
-        return "duel_illegal";
+        return null;
       }
     }
-    const won = s.winner === 1 && s.laid[0] <= pb.moves;
-    const answer = await this.act({ type: "order", player, order: id, won, t });
-    return answer === "ok" && !won ? "duel_lost" : answer;
+    return s.winner === 1 && s.laid[0] <= pb.moves;
   }
 }

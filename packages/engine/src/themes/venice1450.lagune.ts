@@ -276,6 +276,8 @@ export const venice1450LaguneParams: LagoonParams = {
       units: 80,
       problems: venice1450PasseProblems.map((p) => p.id),
     },
+    // The problem of the day (docs/plan-hex-commerce.md H3): the same twenty, 20 of Prestige.
+    daily: { problems: venice1450PasseProblems.map((p) => p.id), prestige: 20 },
   },
 };
 

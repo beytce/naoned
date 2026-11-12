@@ -14,6 +14,9 @@ import {
   plancheAdvance,
   plancheBuild,
   plancheBuyTile,
+  plancheDaily,
+  plancheDailyResults,
+  plancheDailyTry,
   plancheForced,
   plancheFreeBobbins,
   plancheInit,
@@ -53,7 +56,7 @@ import { Entree, Fonder, Profil } from "./Entree.js";
 import { FacadeSheet, LevelUp, MaisonRing, MaisonSheet, type MaisonView } from "./Maison.js";
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
-import { Bobbin, Flag, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
+import { Bobbin, Flag, Knot, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
 
 const LabPasse = lazy(() => import("../passe/LabPasse.js"));
 
@@ -201,7 +204,9 @@ export default function LabPlanche() {
   const [profil, setProfil] = useState(false);
   /** The house's growth (docs/plan-progression-maison.md M4): read from the server, on line. */
   const [maison, setMaison] = useState<MaisonView | null>(null);
-  const [growth, setGrowth] = useState<"maison" | "facade" | null>(null);
+  const [growth, setGrowth] = useState<"maison" | "facade" | "jour" | null>(null);
+  /** The problem of the day, being played. */
+  const [dailyPlay, setDailyPlay] = useState(false);
   const [levelUp, setLevelUp] = useState(false);
   const enter = useCallback((a: Account) => {
     setAccount(a);
@@ -472,6 +477,11 @@ export default function LabPlanche() {
   );
   const orderOf = (cityId: string) =>
     orders.find((o) => o.city === cityId && !state.orders?.[o.id]?.by);
+  // The problem of the day (docs/plan-hex-commerce.md H3): one for the lagoon, one try.
+  const dailyId = plancheDaily(S, today);
+  const daily = dailyId ? venice1450Passe.problems.find((p) => p.id === dailyId) : undefined;
+  const dailyMine = state.daily?.[today]?.[ME];
+  const yesterday = plancheDailyResults(state, today - 1);
   // An order that opens is told once, on the thread of news: a touch leads to its town.
   const toldOrders = useRef(new Set<string>());
   useEffect(() => {
@@ -487,10 +497,20 @@ export default function LabPlanche() {
     }
   }, [orders, state.orders, ME, tell]);
   /** A gesture: on line it is the server's to play, here it is the engine's. */
-  const act = (f: () => PlancheState, done?: string, remote?: [string, unknown]) => {
+  const act = (
+    f: () => PlancheState,
+    done?: string,
+    remote?: [string, unknown],
+    /** The server's answers that are this gesture's own end (a position lost: the try is spent). */
+    also: string[] = [],
+  ) => {
     if (online && remote) {
       void call(...remote).then((res) =>
-        setSaid(res === "ok" ? (done ?? "") : (SAID[res] ?? "Ce geste n'est pas possible.")),
+        setSaid(
+          res === "ok" || also.includes(res)
+            ? (done ?? "")
+            : (SAID[res] ?? "Ce geste n'est pas possible."),
+        ),
       );
       return;
     }
@@ -548,6 +568,32 @@ export default function LabPlanche() {
         onGesture={gesture}
         onBack={() => setInIsle(false)}
       />
+    );
+  }
+
+  if (dailyPlay && daily) {
+    return (
+      <Suspense fallback={null}>
+        <LabPasse
+          duel={{
+            board: "segna",
+            problem: daily.id,
+            foe: "le problème du jour",
+            onEnd: (won, moves) => {
+              setDailyPlay(false);
+              const laid = Math.min(moves.length, daily.moves);
+              act(
+                () => plancheDailyTry(S, state, ME, state.now, won, laid),
+                won
+                  ? `Problème du jour réussi en ${laid} coups : un nœud sur ta façade, et du Prestige.`
+                  : "Ce n'était pas la clef. Un autre problème demain.",
+                ["/daily", { moves: moves.map((m) => ({ at: m.at })) }],
+                ["duel_lost"],
+              );
+            },
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -1241,7 +1287,30 @@ export default function LabPlanche() {
                 ? "En ligne · tu regardes : toutes les Maisons sont prises"
                 : `En ligne · ${view?.players.length ?? 0} joueur${(view?.players.length ?? 0) > 1 ? "s" : ""}`}
             </span>
-          ) : (
+          ) : null}
+          {daily && playing && ME ? (
+            <button
+              type="button"
+              className="pc-pl-jour"
+              data-daily
+              data-done={dailyMine ? (dailyMine.won ? "won" : "lost") : "no"}
+              aria-label={
+                dailyMine
+                  ? dailyMine.won
+                    ? "Problème du jour réussi"
+                    : "Problème du jour joué"
+                  : "Le problème du jour, pas encore joué"
+              }
+              onClick={() => {
+                pick(null);
+                setGrowth("jour");
+              }}
+            >
+              <Knot size={phone ? 18 : 20} />
+              <span>{dailyMine ? (dailyMine.won ? "Réussi" : "Joué") : "Problème du jour"}</span>
+            </button>
+          ) : null}
+          {online ? null : (
             <span className="pc-planche-speed">
               {(
                 [
@@ -1351,6 +1420,51 @@ export default function LabPlanche() {
             name={short}
             place={(id) => S.passages.find((p) => p.id === id)?.name ?? id}
           />
+        ) : null}
+        {growth === "jour" && daily ? (
+          <section className="pc-planche-card pc-pl-card pc-pl-daily" data-daily-card>
+            <div className="pc-pl-head">
+              <div>
+                <h2>Le problème du jour</h2>
+                <span>La même position pour toute la lagune · un seul essai</span>
+              </div>
+              {closeX}
+            </div>
+            <div className="pc-pl-order">
+              <Knot size={30} />
+              <div>
+                <b>Le fil passe en {daily.moves} coups</b>
+                <span>
+                  Trouve la clef : réussi, {S.daily?.prestige ?? 20} de Prestige et un nœud sur ta
+                  façade pour aujourd'hui. Perdu, rien n'est pris.
+                </span>
+                {dailyMine ? (
+                  <span data-daily-mine>
+                    {dailyMine.won
+                      ? `Tu l'as réussi en ${dailyMine.moves} coups. Les résultats de la lagune à minuit.`
+                      : "Tu l'as joué aujourd'hui. Un autre problème demain."}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="pc-passe-go"
+                    data-play-daily
+                    onClick={() => {
+                      setGrowth(null);
+                      setDailyPlay(true);
+                    }}
+                  >
+                    Jouer la position
+                  </button>
+                )}
+              </div>
+            </div>
+            <p data-daily-yesterday>
+              {yesterday.tried
+                ? `Hier : ${yesterday.solved} Maison${yesterday.solved > 1 ? "s" : ""} sur ${yesterday.tried} l'${yesterday.solved > 1 ? "ont" : "a"} réussi${yesterday.best ? `, en ${yesterday.best} coups au mieux` : ""}.`
+                : "Hier, personne ne l'a joué dans ta lagune."}
+            </p>
+          </section>
         ) : null}
         {profil && account ? (
           <Profil

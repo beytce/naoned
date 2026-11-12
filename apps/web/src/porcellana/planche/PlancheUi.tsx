@@ -98,3 +98,19 @@ export function NewsMark() {
 
 /** Points of base as a whole percentage. */
 export const pct = (bps: number) => `${Math.round(bps / 100)} %`;
+
+/** A red knot: the problem of the day, on the board and the façade. */
+export function Knot({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true" className="pc-pl-knot">
+      <circle cx="10" cy="10" r="9" fill="#C8102E" />
+      <path
+        d="M5 12 C5 6 11 5 12 9 C13 13 7 14 8 9 C9 5 15 6 15 12"
+        fill="none"
+        stroke="#F6F4F0"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}

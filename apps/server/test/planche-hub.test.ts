@@ -309,6 +309,7 @@ describe("the sealed orders on line", () => {
           units: 30,
           problems: ["deux-01"],
         },
+        daily: { problems: ["deux-01"], prestige: 20 },
       },
       passe: { ...t.passe, problems: venice1450Passe.problems },
     };
@@ -357,5 +358,20 @@ describe("the sealed orders on line", () => {
     expect(o.price).toBe(8_000);
     expect(v.ok).toBe(true);
     expect(await hub.order("ben", o.id, solution(), T0)).toBe("planche_order_taken");
+  });
+
+  it("replays the problem of the day: one try a house, and the lagoon's count", async () => {
+    const hub = new PlancheHub(ordered(), T0);
+    const me = (await hub.view("ana", "Ana", T0)).me ?? "";
+    const ben = (await hub.view("ben", "Ben", T0)).me ?? "";
+    expect(await hub.daily("ana", solution(), T0)).toBe("ok");
+    expect(await hub.daily("ana", solution(), T0)).toBe("planche_daily_tried");
+    const wrong = solution()[0]?.at === 0 ? 1 : 0;
+    expect(await hub.daily("ben", [{ at: wrong }], T0)).toBe("duel_lost");
+    const v = await hub.view("ana", "Ana", T0);
+    const day = Math.floor(T0 / DAY);
+    expect(v.state.daily?.[day]?.[me]).toEqual({ won: true, moves: 2 });
+    expect(v.state.daily?.[day]?.[ben]?.won).toBe(false);
+    expect(v.state.houses[me]?.maison?.knots).toBeUndefined();
   });
 });

@@ -1379,7 +1379,7 @@ button.pc-pl-brand {
 }
 .pc-mn-coll {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
 }
 .pc-mn-coll div {
@@ -1510,4 +1510,44 @@ button.pc-pl-brand {
 .pc-pl-order button:disabled {
   opacity: 0.6;
   white-space: normal;
+}
+/* The problem of the day (docs/plan-hex-commerce.md H3): a red round under the medallion. */
+.pc-pl-jour {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  border: 0;
+  background: var(--pc-paper);
+  border-radius: 999px;
+  padding: 4px 12px 4px 4px;
+  box-shadow: 0 0 0 2px #c8102e, 0 2px 0 var(--pc-foot);
+  font: 800 12.5px var(--pc-ui);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-pl-jour[data-done="no"] .pc-pl-knot {
+  animation: pc-pl-jour-beat 1.6s ease-in-out infinite;
+}
+.pc-pl-jour[data-done="won"],
+.pc-pl-jour[data-done="lost"] {
+  box-shadow: 0 2px 0 var(--pc-foot);
+  color: var(--pc-text-3);
+}
+.pc-pl-jour[data-done="lost"] .pc-pl-knot {
+  filter: grayscale(1) opacity(0.5);
+}
+@keyframes pc-pl-jour-beat {
+  50% {
+    transform: scale(1.12);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc-pl-jour[data-done="no"] .pc-pl-knot {
+    animation: none;
+  }
+}
+.pc-pl-daily > p {
+  font: 500 13px / 1.4 var(--pc-ui);
+  color: #6b645c;
 }

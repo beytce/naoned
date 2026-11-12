@@ -193,6 +193,38 @@ try {
     if (!(await page.$("[data-play-order][disabled]"))) fail("the spent try is not said");
     await page.waitForTimeout(1200);
     await page.screenshot({ path: join(SHOTS, `commande-${name}-5-essai.png`) });
+    // The problem of the day (H3), played on the real server: one try, lost, and said so.
+    await tap("[data-planche-card] .pc-pl-x");
+    await page.waitForSelector('[data-daily][data-done="no"]', {
+      state: "attached",
+      timeout: 30_000,
+    });
+    await tap("[data-daily]");
+    await page.waitForSelector("[data-play-daily]", { state: "attached", timeout: 30_000 });
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: join(SHOTS, `commande-${name}-6-jour.png`) });
+    await tap("[data-play-daily]");
+    await page.waitForSelector("[data-passe-lab]", { state: "attached", timeout: 60_000 });
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: join(SHOTS, `commande-${name}-7-jour-position.png`) });
+    for (let i = 0; i < 49; i++) {
+      if (await page.$("[data-passe-end]")) break;
+      if ((await page.textContent("[data-passe-turn]"))?.includes("réfléchit")) {
+        await page.waitForTimeout(700);
+        i--;
+        continue;
+      }
+      await page.evaluate((k) => document.querySelector(`[data-cell="${k}"]`)?.click(), i);
+      await page.waitForTimeout(250);
+    }
+    await page.waitForSelector("[data-passe-end]", { state: "attached", timeout: 30_000 });
+    await tap("[data-passe-back]");
+    for (let i = 0; i < 120 && !(await page.$('[data-daily][data-done="lost"]')); i++)
+      await page.waitForTimeout(250);
+    if (!(await page.$('[data-daily][data-done="lost"]')))
+      fail("the problem of the day is not said played");
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: join(SHOTS, `commande-${name}-8-jour-joue.png`) });
     if (errs.length) fail(`page errors: ${errs.join(" | ")}`);
     await page.unrouteAll({ behavior: "ignoreErrors" });
     await page.close();

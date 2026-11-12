@@ -25,6 +25,7 @@ import {
   ileUpgrade,
 } from "../ile/ile.js";
 import type { PlancheOrderRules, PlancheOrderState } from "./commandes.js";
+import type { PlancheDailyRules, PlancheDailyTry } from "./jour.js";
 import {
   MAISON_KEEP,
   type MaisonCaps,
@@ -127,6 +128,8 @@ export interface PlancheSetup {
   maison?: MaisonRules;
   /** The sealed orders (docs/plan-hex-commerce.md H2): without them, none. */
   orders?: PlancheOrderRules;
+  /** The problem of the day (docs/plan-hex-commerce.md H3): without it, none. */
+  daily?: PlancheDailyRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -202,6 +205,8 @@ export interface PlancheState {
   rank: PlancheRank;
   /** The sealed orders taken or tried, by id (the last two days'). */
   orders?: Record<string, PlancheOrderState>;
+  /** The tries at the problem of the day, by day then house (today's and the day before's). */
+  daily?: Record<number, Record<string, PlancheDailyTry>>;
 }
 
 const fail = (code: string): never => {

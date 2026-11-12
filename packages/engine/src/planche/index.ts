@@ -4,3 +4,4 @@ export * from "./rang.js";
 export * from "./lagune.js";
 export * from "./maison.js";
 export * from "./commandes.js";
+export * from "./jour.js";
