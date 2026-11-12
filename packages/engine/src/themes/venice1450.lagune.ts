@@ -349,6 +349,20 @@ export const venice1450LaguneParams: LagoonParams = {
       },
       power: { workshop: 10, arsenal: 20, ship: 5, defense: 15 },
     },
+    // The War of the week (docs/plan-guerre.md): the assault of 01-audit-guerre.md § 4.3, and the
+    // Prestige the owner chose (12 November 2026), within the week's cap.
+    guerre: {
+      assaut: {
+        manches: 3,
+        tower: { fire: 3 },
+        battery: { fire: 1 },
+        hulls: { tour: 6, batterie: 4, chaine: 3 },
+        chainBreakers: 2,
+        reinforcements: { n: 2, force: 2, hull: 4 },
+        ruseManche: { chaine: 2, renforts: 3 },
+      },
+      prestige: { seal: 20, damage: 7, repelled: 10, repelledCap: 40, victory: 60 },
+    },
     // The problem of the day (docs/plan-hex-commerce.md H3): the same twenty, 20 of Prestige.
     daily: { problems: venice1450PasseProblems.map((p) => p.id), prestige: 20 },
   },

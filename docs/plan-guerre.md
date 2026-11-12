@@ -83,7 +83,7 @@ Les compagnies et leur discussion (étape 7), les réservations de ports et les 
 
 | Lot | État |
 | --- | --- |
-| W1 | à faire |
+| W1 | fait : `packages/engine/src/guerre/assaut.ts` (pur et sans hasard : l'assaut est donné par le port, la flotte et les trois placements ; les intentions annoncées ; la chaîne qui retient ou que deux galères rompent en y passant leur manche ; le brûlot qui la brûle ; la tour qui vise la galère d'abord ; la batterie qui frappe tout ; la galéasse double contre la tour dès la 2ᵉ manche ; la nef qui répare ; le brigantin qui change de passe ; les navires gardés en réserve qui entrent plus tard ; les trois ruses ; une passe tombe quand rien n'y tient plus et qu'un navire y flotte encore ; le replay) ; `guerre/port.ts` (le port d'une Maison avec ses ruses, sa flotte en état de naviguer ; les ruses posées une fois par jour) ; règles et Prestige de la lagune de Venise. 8 tests. |
 | W2 | à faire |
 | W3 | à faire |
 | W4 | à faire |
