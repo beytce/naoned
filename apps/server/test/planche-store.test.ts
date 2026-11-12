@@ -218,3 +218,21 @@ describe("a board of another map", () => {
     expect(Object.keys(after.store.hub.current().doc.state.houses)).toHaveLength(48);
   });
 });
+
+describe("a lagoon opened before the growth of the houses", () => {
+  it("is retired too, and the account seated anew with its growth", async () => {
+    const [account] = await database.db
+      .insert(accounts)
+      .values({ email: "ben@example.org", emailCanonical: "ben@example.org", pseudo: "ben" })
+      .returning();
+    const id = account?.id ?? "";
+    const { maison: _none, ...older } = plancheTheme().board;
+    const before = await (
+      await PlancheLagoons.open(database.db, { ...plancheTheme(), board: older }, T0)
+    ).seatOf(id, "Ca\u2019 ben", T0);
+    const lagoons = await PlancheLagoons.open(database.db, plancheTheme(), T0 + HOUR);
+    const after = await lagoons.seatOf(id, "Ca\u2019 ben", T0 + HOUR);
+    expect(after.store.worldId).not.toBe(before.store.worldId);
+    expect(after.store.hub.current().doc.state.houses[after.house]?.level).toBe(1);
+  });
+});
