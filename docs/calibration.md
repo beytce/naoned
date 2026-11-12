@@ -3181,3 +3181,60 @@ Pavillons accrochés le dernier dimanche (médiane des graines) : 7.
 | Ca’ Morosini | 6 | 6 |
 
 **Lecture.** Chaque Maison a un rival chaque semaine, jamais le même deux semaines de suite (une Maison prise en cours de semaine reçoit le sien tout de suite). Le Négoce ne revient pas à la plus grande île (une marée sur cinq). Entre les Maisons de l'ordinateur, qui tiennent leurs cinq bobines sans relâche, il suit le gain : il ne départagera vraiment qu'entre joueurs, qui laissent des bobines au repos. Venir huit fois par jour fait gagner une place au Doge à ta Maison (médiane), aucune aux deux autres : à surveiller avec de vrais joueurs. Ca' Dandolo, la brique, reste dernière, comme au banc de l'île. La Passe n'est pas jouée au banc : la cote reste à 1 200.
+
+## Les lagunes de 48 Maisons (12 novembre 2026, docs/plan-lagunes.md G3)
+
+`BOARD=lagune WATCH=6 pnpm --filter @comptoirs/simulator planche-bench 5` : la lagune de Venise (`venice1450.lagune.ts`), 48 Maisons de l'ordinateur en 4 sestieri, une marée de six semaines, cinq graines.
+
+### Le réglage retenu, et pourquoi
+
+Sur la lagune, avec les règles de la planche de 8, venir huit fois par jour rapportait **24 à 62 %** de plus que trois fois (six Maisons suivies, cinq graines) : une ville se reconstituait de 8 à 9 unités par heure quand un fil en emporte 10, si bien qu'un fil tenu épuisait sa ville et que courir après les jauges pleines payait. Essais à une puis deux graines : retour de bobine ×4 seul (+14 à +43 %), patine ×2 seule (+23 à +56 %), demande ×1,5 seule (+17 à +25 %), retour ×8 et patine ×2 (+14 à +43 %). Retenu, pour la lagune seulement :
+
+- la demande des villes ×1,5 (une ville se refait de 12 unités par heure, plus qu'un fil n'emporte) ;
+- une bobine reprise revient en 20 min par case (5 avant) ;
+- la patine monte de 10 % par jour (5 avant).
+
+Avec lui, le gain des huit visites tombe à **10 à 19 %**, l'ordre de ce que la planche de 8 acceptait (10 à 13 %, § L'île posée sur la planche). Ce qui reste vient sans doute des chantiers de l'île, qui démarrent plus tôt quand on vient plus souvent : une règle de l'île, à reprendre à part.
+
+#### La lagune de Venise (48 Maisons) : une marée de 6 semaines, 5 graines, trois visites par jour
+
+| Ce qu'elles font (Maisons) | Gagné (milliers de deniers, médiane) | Fils déplacés par jour | Livré par jour |
+| --- | --- | --- | --- |
+| Sablière, Camp de bûcherons, Verrerie (15) | 9 100 | 0.31 | 124 |
+| Camp de bûcherons, Scierie, Carrière d'argile (7) | 7 717 | 0.26 | 154 |
+| Saline, Champ de chanvre, Corderie (8) | 6 529 | 0.60 | 134 |
+| Carrière d'argile, Camp de bûcherons, Briqueterie (7) | 6 561 | 2.24 | 339 |
+| Ferme, Moulin, Ferme (6) | 9 950 | 0.45 | 292 |
+| Champ de chanvre, Corderie, Saline (5) | 6 865 | 0.60 | 139 |
+
+| Sestiere | Gagné par Maison (milliers de deniers, médiane) |
+| --- | --- |
+| cannaregio | 8 011 |
+| castello | 7 817 |
+| dorsoduro | 7 958 |
+| sanpolo | 7 506 |
+
+Calcul : une marée de 6 semaines en 8.1 s, soit 192 ms par jour de jeu pour 48 Maisons (robots compris).
+
+L'écart entre la Maison la plus riche et la plus pauvre : ×3.12 (médiane).
+Chaque denier est compté dans les 5 marées : oui.
+
+
+#### Venir huit fois par jour rapporte-t-il plus que trois ?
+
+| Maison | Trois visites par jour | Huit visites par jour (elle seule) | Écart |
+| --- | --- | --- | --- |
+| Ca’ Bembo | 8 253 | 9 126 | 10.6 % |
+| Ca’ Mocenigo | 8 165 | 8 946 | 9.6 % |
+| Ca’ Badoer | 10 702 | 12 549 | 17.3 % |
+| Ca’ Erizzo | 7 704 | 9 162 | 18.9 % |
+| Ca’ Molin | 7 808 | 9 229 | 18.2 % |
+| Ca’ Steno | 8 250 | 9 427 | 14.3 % |
+
+
+Le premier du Négoce est aussi la Maison qui a le plus gagné : 4 marée(s) sur 5.
+Le premier du Négoce a aussi la plus grande île : 2 marée(s) sur 5. Chaque Maison de l'ordinateur tient ses cinq bobines toute la marée : entre elles, le Négoce suit donc le gain.
+Un rival chaque semaine : 1440 semaines-Maisons sur 1440 ; le même rival deux semaines de suite : 0 fois.
+Pavillons accrochés le dernier dimanche (médiane des graines) : 39.
+
+**Lecture.** Les quatre sestieri gagnent autant à 6 % près. Les plans s'étagent de 6,5 à 10 millions de deniers par Maison : le verre et le blé devant, la brique, le sel et le chanvre derrière (la brique reste en surabondance, ses villes la paient au tiers de son prix). L'économie est 50 % plus riche qu'avec les règles de la planche de 8 : à surveiller quand l'Arsenal donnera de quoi dépenser. Une journée de jeu d'une lagune se calcule en 0,2 s, robots compris : cent lagunes, 20 s par jour de jeu.
