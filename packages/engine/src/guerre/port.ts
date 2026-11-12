@@ -64,3 +64,19 @@ export function plancheRuses(
   }
   return s;
 }
+
+/** The War's Prestige of the week, given to a house: counted in its week, under its cap. */
+export function plancheGrant(
+  S: PlancheSetup,
+  s0: PlancheState,
+  house: string,
+  amount: number,
+): PlancheState {
+  const h0 = Object.hasOwn(s0.houses, house) ? s0.houses[house] : undefined;
+  if (!h0 || !S.maison || !Number.isInteger(amount) || amount < 0) return fail("planche_unknown");
+  if (!h0.maison || amount === 0) return s0;
+  const s = structuredClone(s0);
+  const m = s.houses[house]?.maison;
+  if (m) m.week += amount;
+  return s;
+}

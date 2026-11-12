@@ -10,6 +10,7 @@ import {
   plancheDefense,
   plancheDefenseMove,
   plancheDefenseRemove,
+  plancheGrant,
   plancheInit,
   planchePower,
   plancheRobotArm,
@@ -329,5 +330,14 @@ describe("a port and a fleet for the assault", () => {
     ]);
     s = plancheShipDamage(S, s, "ana", 1);
     expect(assautFleetOf(S, s, "ana")).toEqual([]);
+  });
+});
+
+describe("the War's Prestige", () => {
+  it("is counted in the house's week, under its cap", () => {
+    const S = setup();
+    const s = plancheGrant(S, plancheInit(S, T0), "ana", 107);
+    expect(s.houses.ana?.maison?.week).toBe(107);
+    expect(() => plancheGrant(S, s, "ana", -3)).toThrow("planche_unknown");
   });
 });
