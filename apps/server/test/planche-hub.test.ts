@@ -264,3 +264,27 @@ describe("the board told in real time", () => {
     expect(told).toHaveLength(1);
   });
 });
+
+// The lagoons of 48 (docs/plan-lagunes.md G4): a newcomer goes where there are fewest people.
+describe("the newcomer's sestiere", () => {
+  it("seats each newcomer in the sestiere with the fewest players", async () => {
+    const t = theme();
+    const extra = (id: string, x: number) => ({
+      ...(t.board.houses[0] as (typeof t.board.houses)[number]),
+      id,
+      name: id,
+      x,
+    });
+    t.board.houses = [
+      { ...extra("a1", 2), sestiere: "nord" },
+      { ...extra("a2", 3), sestiere: "nord" },
+      { ...extra("b1", 6), sestiere: "sud" },
+      { ...extra("b2", 7), sestiere: "sud" },
+    ];
+    const hub = new PlancheHub(t, T0);
+    expect((await hub.view("ana", "Ana", T0)).me).toBe("a1");
+    expect((await hub.view("ben", "Ben", T0)).me).toBe("b1");
+    expect((await hub.view("cid", "Cid", T0)).me).toBe("a2");
+    expect((await hub.view("dan", "Dan", T0)).me).toBe("b2");
+  });
+});

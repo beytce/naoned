@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import compress from "@fastify/compress";
 import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
@@ -131,6 +132,8 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     }
   });
 
+  // Answers compressed (gzip): a lagoon's board weighs 74 Ko, 7 Ko compressed (docs/plan-lagunes.md G4).
+  await app.register(compress, { global: true, threshold: 1_024, encodings: ["gzip"] });
   await app.register(cookie);
   await app.register(rateLimit, { global: false });
   await app.register(websocket, { options: { maxPayload: 1_024 } });

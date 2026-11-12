@@ -103,14 +103,21 @@ export const plancheRankHouse = (S: PlancheSetup): PlancheHouseRank => ({
   week: {},
 });
 
-/** One laurel, best first; equals share a place. */
+/** The houses of a sestiere, or of the whole board (docs/plan-lagunes.md G2). */
+const among = (S: PlancheSetup, sestiere?: string) =>
+  sestiere === undefined ? S.houses : S.houses.filter((h) => h.sestiere === sestiere);
+const sestiereOf = (S: PlancheSetup, house: string) =>
+  S.houses.find((h) => h.id === house)?.sestiere;
+
+/** One laurel, best first; equals share a place. Of one sestiere, when one is named. */
 export function plancheLaurel(
   S: PlancheSetup,
   s: PlancheState,
   which: PlancheLaurelId,
+  sestiere?: string,
 ): PlancheLaurelRow[] {
   const R = S.rank;
-  const rows = S.houses.map(({ id }) => {
+  const rows = among(S, sestiere).map(({ id }) => {
     const r = s.houses[id]?.rank ?? plancheRankHouse(S);
     if (which === "negoce") {
       const ranked = r.threadMs > 0 && r.threadMs >= (R?.negoceMinMs ?? 0);
@@ -134,14 +141,21 @@ export function plancheLaurel(
     .sort((a, b) => a.place - b.place || a.house.localeCompare(b.house));
 }
 
-/** The Doge's standing: the smallest sum of the three places first, the Négoce then the Passe. */
-export function plancheStanding(S: PlancheSetup, s: PlancheState): PlancheStandingRow[] {
+/**
+ * The Doge's standing: the smallest sum of the three places first, the Négoce then the Passe.
+ * Of one sestiere, its places among its own, when one is named; of the whole lagoon otherwise.
+ */
+export function plancheStanding(
+  S: PlancheSetup,
+  s: PlancheState,
+  sestiere?: string,
+): PlancheStandingRow[] {
   const at = (which: PlancheLaurelId) =>
-    new Map(plancheLaurel(S, s, which).map((r) => [r.house, r.place]));
+    new Map(plancheLaurel(S, s, which, sestiere).map((r) => [r.house, r.place]));
   const negoce = at("negoce");
   const passe = at("passe");
   const garde = at("garde");
-  const rows = S.houses.map(({ id }) => {
+  const rows = among(S, sestiere).map(({ id }) => {
     const places = {
       negoce: negoce.get(id) ?? 0,
       passe: passe.get(id) ?? 0,
@@ -156,9 +170,14 @@ export function plancheStanding(S: PlancheSetup, s: PlancheState): PlancheStandi
     .sort((a, b) => a.place - b.place || a.house.localeCompare(b.house));
 }
 
-/** Places won since the day began (negative when lost). */
+/** A house's place among its neighbours: in its sestiere, or on the whole board without sestieri. */
+export function planchePlace(S: PlancheSetup, s: PlancheState, house: string): number | undefined {
+  return plancheStanding(S, s, sestiereOf(S, house)).find((r) => r.house === house)?.place;
+}
+
+/** Places won among one's neighbours since the day began (negative when lost). */
 export function plancheTrend(S: PlancheSetup, s: PlancheState, house: string): number {
-  const now = plancheStanding(S, s).find((r) => r.house === house)?.place;
+  const now = planchePlace(S, s, house);
   const then = s.rank.mark[house];
   return now === undefined || then === undefined ? 0 : then - now;
 }
@@ -182,12 +201,18 @@ function rivalOf(s: PlancheState, order: string[], h: string): string | undefine
   );
 }
 
-/** Each person's rival for the week. */
+/** The order a house's rival is chosen in: its sestiere's standing (the board's without sestieri). */
+const orderOf = (S: PlancheSetup, s: PlancheState, house: string) =>
+  plancheStanding(S, s, sestiereOf(S, house)).map((r) => r.house);
+
+/** Each person's rival for the week, among its own sestiere. */
 function designate(S: PlancheSetup, s: PlancheState): void {
-  const order = plancheStanding(S, s).map((r) => r.house);
+  const orders = new Map<string | undefined, string[]>();
   const rivals: Record<string, string> = {};
   for (const h of s.rank.humans) {
-    const pick = rivalOf(s, order, h);
+    const sest = sestiereOf(S, h);
+    if (!orders.has(sest)) orders.set(sest, orderOf(S, s, h));
+    const pick = rivalOf(s, orders.get(sest) ?? [], h);
     if (pick) rivals[h] = pick;
   }
   s.rank.rivals = rivals;
@@ -241,7 +266,12 @@ function proclaim(S: PlancheSetup, s: PlancheState): NonNullable<PlancheRank["la
 }
 
 const markNow = (S: PlancheSetup, s: PlancheState) => {
-  s.rank.mark = Object.fromEntries(plancheStanding(S, s).map((r) => [r.house, r.place]));
+  const sestieri = new Set(S.houses.map((h) => h.sestiere));
+  s.rank.mark = Object.fromEntries(
+    [...sestieri].flatMap((sest) =>
+      plancheStanding(S, s, sest).map((r) => [r.house, r.place] as const),
+    ),
+  );
   s.rank.markDay = Math.floor(s.now / DAY);
 };
 
@@ -295,11 +325,7 @@ export function plancheClaim(S: PlancheSetup, s0: PlancheState, house: string): 
   const s = structuredClone(s0);
   s.rank.humans.push(house);
   // A rival at once, not on Monday: the first is seen in the first minutes.
-  const pick = rivalOf(
-    s,
-    plancheStanding(S, s).map((r) => r.house),
-    house,
-  );
+  const pick = rivalOf(s, orderOf(S, s, house), house);
   if (pick) s.rank.rivals[house] = pick;
   return s;
 }

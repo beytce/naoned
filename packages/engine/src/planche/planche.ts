@@ -56,6 +56,15 @@ export interface PlancheCity {
   /** The passages its route crosses, from the lagoon out. */
   via: string[];
   wants: Record<string, PlancheWant>;
+  /** Its ring in a lagoon (docs/plan-lagunes.md): near a sestiere, the lagoon's, the open sea's. */
+  ring?: "sestiere" | "lagoon" | "large";
+  /** The sestiere whose town it is (ring `sestiere`). */
+  sestiere?: string;
+  /**
+   * The way round its passages, without a duel: a thread there carries this share of what it
+   * would by the passages (points of base), and pays no toll. None: no detour.
+   */
+  detourBps?: number;
 }
 
 export interface PlanchePassage {
@@ -85,6 +94,8 @@ export interface PlancheHouseSetup {
   soil?: Partial<Record<IleTerrain, number>>;
   /** What a house of the computer builds, in order (with islands). */
   plan?: string[];
+  /** Its sestiere, in a lagoon of 48 (docs/plan-lagunes.md). */
+  sestiere?: string;
 }
 
 /** A world's board and its rules, as `worlds.settings` would give them. */
@@ -127,6 +138,8 @@ export interface PlancheThread {
   since: number;
   /** What it could carry and has not yet: unit × ms × bps, exact. */
   carry: number;
+  /** It goes the way round the passages: no duel, no toll, a smaller load. */
+  detour?: boolean;
 }
 
 export interface PlancheHouse {
@@ -347,11 +360,13 @@ function slice(S: PlancheSetup, s: PlancheState): void {
     if (!h) continue;
     const taken: Record<string, number> = {};
     for (const th of h.threads) {
-      if (!plancheRouteOpen(S, s, h.id, th.to, t)) {
+      if (!th.detour && !plancheRouteOpen(S, s, h.id, th.to, t)) {
         th.carry = 0;
         continue;
       }
-      th.carry += S.rules.threadPerHour * (BPS + planchePatina(S, th, t)) * ms;
+      const pace = BPS + planchePatina(S, th, t);
+      const way = th.detour ? Math.floor((pace * (cityOf(S, th.to)?.detourBps ?? 0)) / BPS) : pace;
+      th.carry += S.rules.threadPerHour * way * ms;
       const could = Math.floor(th.carry / unit);
       const left = (h.stock[th.good] ?? 0) - (taken[th.good] ?? 0);
       const want = Math.max(0, Math.min(could, left));
@@ -383,8 +398,8 @@ function slice(S: PlancheSetup, s: PlancheState): void {
       s.minted += paid;
       a.h.book.sold += paid;
       let kept = paid;
-      // The toll of each passage a house holds on the way, a share of it destroyed.
-      for (const id of city.via) {
+      // The toll of each passage a house holds on the way, a share of it destroyed; none by the detour.
+      for (const id of a.th.detour ? [] : city.via) {
         const p = s.passages[id];
         if (!p || plancheIsCorsair(p.holder) || p.holder === a.h.id) continue;
         const holder = own(s.houses, p.holder);
@@ -442,16 +457,19 @@ export function plancheThread(
   city: string,
   good: string,
   now: number,
+  /** The way round the passages (`detour`), where the town has one. */
+  how: { detour?: boolean } = {},
 ): PlancheState {
   const c = cityOf(S, city);
   if (!own(s0.houses, house) || !houseOf(S, house) || !c) return fail("planche_unknown");
   if (!own(c.wants, good)) return fail("planche_not_wanted");
-  if (!plancheRouteOpen(S, s0, house, city, now)) return fail("planche_route_shut");
+  if (how.detour && !(c.via.length && (c.detourBps ?? 0) > 0)) return fail("planche_no_detour");
+  if (!how.detour && !plancheRouteOpen(S, s0, house, city, now)) return fail("planche_route_shut");
   if (plancheFreeBobbins(S, s0, house) < 1) return fail("planche_no_bobbin");
   const s = clone(s0);
   const h = s.houses[house] as PlancheHouse;
   if (h.threads.some((t) => t.to === city && t.good === good)) return fail("planche_twice");
-  h.threads.push({ to: city, good, since: now, carry: 0 });
+  h.threads.push({ to: city, good, since: now, carry: 0, ...(how.detour ? { detour: true } : {}) });
   return s;
 }
 

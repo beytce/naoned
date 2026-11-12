@@ -285,3 +285,51 @@ describe("the end of a tide", () => {
     expect(plancheInvariant(s)).toBe(true);
   });
 });
+
+// The rank in a lagoon of sestieri (docs/plan-lagunes.md G2): one's place among one's neighbours.
+describe("the rank by sestiere", () => {
+  /** The fixture's board in two sestieri: Ana and Ben in the north, Cid and Dan in the south. */
+  const split = (): PlancheSetup => {
+    const S = setup();
+    return {
+      ...S,
+      houses: S.houses.map((h) => ({
+        ...h,
+        sestiere: h.id === "ana" || h.id === "ben" ? "nord" : "sud",
+      })),
+    };
+  };
+
+  it("names a rival among one's own sestiere only", () => {
+    const S = split();
+    const s = plancheInit(S, T0);
+    // Ana and Dan are people, but not neighbours: each has the computer's house of their sestiere.
+    expect(s.rank.rivals.ana).toBe("ben");
+    expect(s.rank.rivals.dan).toBe("cid");
+  });
+
+  it("ranks a sestiere apart, and the lagoon whole for the Doge", () => {
+    const S = split();
+    let s = plancheForced(S, plancheInit(S, T0), "dan", "segna", T0);
+    s = plancheForced(S, s, "ben", "lido", T0);
+    s = plancheAdvance(S, s, T0 + DAY);
+    const nord = plancheStanding(S, s, "nord");
+    expect(nord.map((r) => r.house)).toEqual(["ben", "ana"]);
+    expect(nord.map((r) => r.place)).toEqual([1, 2]);
+    const sud = plancheStanding(S, s, "sud");
+    expect(sud[0]?.house).toBe("dan");
+    // The lagoon's Doge: the perilous tower of Dan weighs more than Ben's.
+    expect(plancheStanding(S, s)[0]?.house).toBe("dan");
+    expect(plancheStanding(S, s)).toHaveLength(4);
+  });
+
+  it("tells the trend of one's place in one's sestiere", () => {
+    const S = split();
+    let s = plancheAdvance(S, plancheInit(S, T0), T0 + DAY);
+    s = plancheForced(S, s, "ana", "lido", s.now);
+    s = plancheAdvance(S, s, T0 + DAY + 5 * HOUR);
+    // Ana was level with Ben this morning (1st); she still is 1st, now alone.
+    expect(plancheTrend(S, s, "ana")).toBe(0);
+    expect(plancheTrend(S, s, "ben")).toBe(-1);
+  });
+});

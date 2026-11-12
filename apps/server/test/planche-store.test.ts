@@ -1,8 +1,10 @@
+import { venice1450Planche } from "@comptoirs/engine";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { worldCommands, worlds } from "../src/db/schema.js";
+import { accounts, worldCommands, worlds } from "../src/db/schema.js";
 import { plancheTheme } from "../src/game/planche.js";
+import { PlancheLagoons } from "../src/game/plancheLagoons.js";
 import { PLANCHE_STATUS, PlancheLost, PlancheStore } from "../src/game/plancheStore.js";
 import { encode } from "../src/game/serialize.js";
 import { testDatabase } from "./db.js";
@@ -23,7 +25,7 @@ afterAll(async () => {
 beforeEach(async () => {
   database = openDatabase(dbUrl);
   await database.migrate();
-  await database.db.execute(sql`truncate worlds cascade`);
+  await database.db.execute(sql`truncate worlds, accounts cascade`);
 });
 afterEach(async () => {
   await database.close();
@@ -191,5 +193,28 @@ describe("the ledger of the board", () => {
     const balances = await second.balances();
     for (const [id, h] of Object.entries(v.state.houses))
       expect(balances[`house:${id}`]).toBe(h.ducats);
+  });
+});
+
+// The board of 8 opened before the lagoons (docs/plan-lagunes.md, the owner's choice): retired.
+describe("a board of another map", () => {
+  it("is retired, its seats freed, and the account seated anew on a lagoon", async () => {
+    const [account] = await database.db
+      .insert(accounts)
+      .values({ email: "ana@example.org", emailCanonical: "ana@example.org", pseudo: "ana" })
+      .returning();
+    const id = account?.id ?? "";
+    const small = { ...plancheTheme(), board: venice1450Planche };
+    const old = await PlancheLagoons.open(database.db, small, T0);
+    const before = await old.seatOf(id, "Ca\u2019 ana", T0);
+    expect(before.house).toBe("toi");
+    const lagoons = await PlancheLagoons.open(database.db, plancheTheme(), T0 + HOUR);
+    const rows = await database.db.select().from(worlds);
+    expect(rows.find((r) => r.id === before.store.worldId)?.status).toBe("planche_retired");
+    expect(lagoons.all()).toHaveLength(1);
+    const after = await lagoons.seatOf(id, "Ca\u2019 ana", T0 + HOUR);
+    expect(after.store.worldId).not.toBe(before.store.worldId);
+    expect(after.store.hub.current().doc.state.houses[after.house]).toBeDefined();
+    expect(Object.keys(after.store.hub.current().doc.state.houses)).toHaveLength(48);
   });
 });

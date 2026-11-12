@@ -1245,3 +1245,21 @@ button.pc-pl-brand {
   :is(.pc-pl-top, .pc-pl-scale, .pc-pl-foot, .pc-pl-peril, .pc-planche-pins) {
   visibility: hidden;
 }
+/* A lagoon of 48 (docs/plan-lagunes.md G5): the houses not named at this scale are a flag; the
+   sestieri's names lie on the water, one's own in red. */
+.pc-planche-house[data-compact="true"] {
+  padding: 4px;
+}
+.pc-pl-sestiere {
+  pointer-events: none;
+  background: transparent;
+  box-shadow: none;
+  font: 900 14px var(--pc-display);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(23, 21, 15, 0.34);
+  white-space: nowrap;
+}
+.pc-pl-sestiere[data-mine="true"] {
+  color: rgba(194, 59, 46, 0.6);
+}
