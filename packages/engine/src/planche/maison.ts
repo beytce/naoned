@@ -30,6 +30,45 @@ export interface MaisonRules {
   catchUpBps: number;
   /** The day's trade: a point for so many ducats sold, so many at most a day. */
   commerce: { perDucats: number; dailyCap: number };
+  /**
+   * The week's victories: one's rival beaten; one's place in one's sestiere (the first `placeTop`,
+   * `placeStep` less a place below, never under nothing); a seal broken; hours a tower held (a
+   * point for so many, so many points at most); a laurel and the Doge at the end of a tide.
+   */
+  gains: {
+    rival: number;
+    placeTop: number;
+    placeStep: number;
+    seal: number;
+    guardHours: number;
+    guardCap: number;
+    laurel: number;
+    doge: number;
+  };
+}
+
+/** What happened to a house in its week. */
+export interface MaisonDeeds {
+  rivalBeaten: boolean;
+  /** Its place in its sestiere at the week's end. */
+  place: number;
+  seals: number;
+  guardHours: number;
+  laurels?: number;
+  doge?: boolean;
+}
+
+/** The week's victories in Prestige, before the week's cap. */
+export function maisonDeeds(R: MaisonRules, d: MaisonDeeds): number {
+  const G = R.gains;
+  return (
+    (d.rivalBeaten ? G.rival : 0) +
+    Math.max(0, G.placeTop - (Math.max(1, d.place) - 1) * G.placeStep) +
+    d.seals * G.seal +
+    Math.min(G.guardCap, Math.floor(d.guardHours / G.guardHours)) +
+    (d.laurels ?? 0) * G.laurel +
+    (d.doge ? G.doge : 0)
+  );
 }
 
 /** What a level opens on the board, all told. */

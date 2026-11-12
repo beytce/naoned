@@ -3,6 +3,7 @@ import {
   type MaisonRules,
   type PlancheSetup,
   maisonCommerce,
+  maisonDeeds,
   maisonLevel,
   maisonUnlocks,
   maisonWeek,
@@ -34,6 +35,16 @@ const rules = (): MaisonRules => ({
   weeklyCap: 100,
   catchUpBps: 5_000,
   commerce: { perDucats: 100, dailyCap: 10 },
+  gains: {
+    rival: 20,
+    placeTop: 30,
+    placeStep: 5,
+    seal: 4,
+    guardHours: 10,
+    guardCap: 8,
+    laurel: 50,
+    doge: 80,
+  },
 });
 
 /** The fixture's board: two houses, a town, two passages, an island with a workshop of each tier. */
@@ -147,6 +158,25 @@ describe("the week's Prestige", () => {
     expect(maisonWeek(R, 30, 0)).toEqual({ credited: 30, carry: 35 });
     // The next week may go 35 over the cap.
     expect(maisonWeek(R, 160, 35)).toEqual({ credited: 135, carry: 0 });
+  });
+
+  it("weighs the week's victories: the rival, the place, the seals, the towers held, the laurels", () => {
+    const R = rules();
+    expect(maisonDeeds(R, { rivalBeaten: true, place: 1, seals: 2, guardHours: 35 })).toBe(
+      20 + 30 + 8 + 3,
+    );
+    // The seventh of a sestiere has nothing for its place; a tower held all week, 8 at most.
+    expect(maisonDeeds(R, { rivalBeaten: false, place: 7, seals: 0, guardHours: 168 })).toBe(8);
+    expect(
+      maisonDeeds(R, {
+        rivalBeaten: false,
+        place: 2,
+        seals: 0,
+        guardHours: 0,
+        laurels: 1,
+        doge: true,
+      }),
+    ).toBe(25 + 50 + 80);
   });
 
   it("gives a little for the day's trade, capped each day", () => {

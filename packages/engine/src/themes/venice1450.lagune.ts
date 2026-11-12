@@ -253,6 +253,16 @@ export const venice1450LaguneParams: LagoonParams = {
       weeklyCap: 500,
       catchUpBps: 5_000,
       commerce: { perDucats: 50, dailyCap: 40 },
+      gains: {
+        rival: 60,
+        placeTop: 80,
+        placeStep: 6,
+        seal: 15,
+        guardHours: 2,
+        guardCap: 70,
+        laurel: 100,
+        doge: 200,
+      },
     },
   },
 };
