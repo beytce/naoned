@@ -7,8 +7,10 @@ import "../porcellana.css";
 import "../passe/passe.css";
 import "./planche.css";
 import {
+  type AssautState,
   type PlancheOrder,
   type PlancheState,
+  assautFleetOf,
   maisonLevel,
   maisonThreshold,
   plancheAdvance,
@@ -36,6 +38,7 @@ import {
   planchePrice,
   plancheRobot,
   plancheRouteOpen,
+  plancheRuses,
   plancheShares,
   plancheShip,
   plancheShipRefit,
@@ -59,6 +62,8 @@ import { type Account, api, tokenFromLocation } from "../../api.js";
 import { Emblem } from "../../art/logo.js";
 import { DucatCoin } from "../../art/plateau/coins.js";
 import { connectLive } from "../../game/live.js";
+import { AssautScreen } from "../guerre/AssautScreen.js";
+import { GuerreSheet, type GuerreViewData } from "../guerre/GuerreSheet.js";
 import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
 import { ArsenalSheet, PortSheet, ShipGlyph } from "./Arsenal.js";
 import { Entree, Fonder, Profil } from "./Entree.js";
@@ -134,6 +139,11 @@ const SAID: Record<string, string> = {
   planche_no_cale: "Toutes les cales sont prises.",
   planche_port_full: "Cette passe n'a plus de place.",
   planche_level: "Ton niveau ne l'ouvre pas encore.",
+  planche_ruses_today: "Tu as déjà posé tes ruses aujourd'hui : demain de nouveau.",
+  guerre_today: "Tu as déjà lancé ton assaut aujourd'hui : demain de nouveau.",
+  guerre_closed: "Les assauts se lancent du mardi au samedi.",
+  guerre_no_fleet: "Il te faut au moins un navire en état : l'Arsenal les arme.",
+  guerre_none: "Tu n'es dans aucune flottille cette semaine.",
   planche_guard_today: "Tu as déjà posé ta garde aujourd'hui : demain de nouveau.",
   duel_lost: "Ce n'était pas la clef : la commande reste aux autres, tu ne perds rien d'autre.",
   planche_order_taken: "Une autre Maison du sestiere a livré cette commande avant toi.",
@@ -237,6 +247,34 @@ export default function LabPlanche() {
       return false;
     }
   });
+  /** The War of the week (docs/plan-guerre.md W4): its sheet, and the assault under way. */
+  const [war, setWar] = useState<GuerreViewData | null>(null);
+  const [warOpen, setWarOpen] = useState(false);
+  const [warAssault, setWarAssault] = useState<{ target: string; start: AssautState } | null>(null);
+  const loadWar = useCallback(async () => {
+    try {
+      const res = await fetch("/api/guerre", { credentials: "same-origin" });
+      const json = (await res.json()) as { guerre?: GuerreViewData };
+      if (json.guerre) setWar(json.guerre);
+      return json.guerre ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+  const postWar = async (path: string, body: unknown) => {
+    const res = await fetch(`/api/guerre${path}`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return (await res.json().catch(() => ({ error: "offline" }))) as {
+      assaut?: AssautState;
+      error?: string;
+    };
+  };
+  /** The training port open (docs/plan-guerre.md W3). */
+  const [training, setTraining] = useState(false);
   /** The problem of the day, being played. */
   const [dailyPlay, setDailyPlay] = useState(false);
   const [levelUp, setLevelUp] = useState(false);
@@ -638,6 +676,72 @@ export default function LabPlanche() {
     );
   }
 
+  if (warAssault && S.guerre) {
+    const foe = war?.theirs.find((p) => p.key === warAssault.target);
+    return (
+      <AssautScreen
+        rules={S.guerre.assaut}
+        port={{ passes: {} }}
+        fleet={[]}
+        title={`Assaut · ${foe?.name ?? "le port adverse"}`}
+        remote={{
+          start: warAssault.start,
+          play: async (moves) => {
+            const res = await postWar("/round", { moves });
+            return res.assaut ? { state: res.assaut } : { error: res.error ?? "offline" };
+          },
+        }}
+        onBack={() => {
+          setWarAssault(null);
+          setWarOpen(true);
+          void loadWar();
+          void call();
+        }}
+      />
+    );
+  }
+
+  if (training && S.guerre?.training) {
+    const T = S.guerre.training;
+    const own = assautFleetOf(S, state, ME);
+    // Who has no fleet yet trains with one lent by the Arsenal of the Republic.
+    const fleet = own.length
+      ? own
+      : T.fleet.map((kind, k) => {
+          const r = S.arsenal?.ships[kind];
+          return {
+            id: k + 1,
+            kind,
+            force: r?.force ?? 0,
+            hull: r?.hull ?? 0,
+            keyword: r?.keyword ?? "",
+          };
+        });
+    let tutorial = false;
+    try {
+      tutorial = localStorage.getItem("fondaco.assaut.tuto") !== "1";
+    } catch {
+      tutorial = true;
+    }
+    return (
+      <AssautScreen
+        rules={S.guerre.assaut}
+        port={T.port}
+        fleet={fleet}
+        title={T.name}
+        tutorial={tutorial}
+        onEnd={() => {
+          try {
+            localStorage.setItem("fondaco.assaut.tuto", "1");
+          } catch {
+            // A private window: the guide comes again.
+          }
+        }}
+        onBack={() => setTraining(false)}
+      />
+    );
+  }
+
   if (dailyPlay && daily) {
     return (
       <Suspense fallback={null}>
@@ -769,6 +873,7 @@ export default function LabPlanche() {
     setProfil(false);
     setGrowth(null);
     setArmory(null);
+    setWarOpen(false);
   };
   const closeX = (
     <button
@@ -1236,6 +1341,20 @@ export default function LabPlanche() {
               L'Arsenal
               <small>tes cales, ta flotte, ton port</small>
             </button>
+            {S.guerre?.training ? (
+              <button
+                type="button"
+                className="pc-passe-quiet"
+                data-open-training-house
+                onClick={() => {
+                  pick(null);
+                  setTraining(true);
+                }}
+              >
+                Le Lido des corsaires
+                <small>un assaut d'entraînement, sans enjeu</small>
+              </button>
+            ) : null}
           </div>
         ) : null}
         {!mine && online && playing && view?.players.includes(house.id) ? (
@@ -1430,6 +1549,27 @@ export default function LabPlanche() {
                 : `En ligne · ${view?.players.length ?? 0} joueur${(view?.players.length ?? 0) > 1 ? "s" : ""}`}
             </span>
           ) : null}
+          {online && S.guerre && playing && ME ? (
+            <button
+              type="button"
+              className="pc-pl-jour pc-pl-war"
+              data-guerre-open
+              onClick={() => {
+                pick(null);
+                void loadWar().then(() => setWarOpen(true));
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
+                <path
+                  d="M4 18 V3 M4 3 H15 L12 7 L15 11 H4"
+                  fill="#C8102E"
+                  stroke="#17150f"
+                  strokeWidth="1.6"
+                />
+              </svg>
+              <span>La Guerre</span>
+            </button>
+          ) : null}
           {daily && playing && ME ? (
             <button
               type="button"
@@ -1531,6 +1671,38 @@ export default function LabPlanche() {
       </nav>
       <footer className="pc-passe-foot pc-pl-foot">
         {said ? <p className="pc-passe-said">{said}</p> : null}
+        {warOpen && war ? (
+          <>
+            {war.running ? (
+              <div className="pc-pl-acts">
+                <button
+                  type="button"
+                  className="pc-passe-go"
+                  data-guerre-resume
+                  onClick={() =>
+                    war.running &&
+                    setWarAssault({ target: war.running.target, start: war.running.state })
+                  }
+                >
+                  Reprendre l'assaut
+                </button>
+              </div>
+            ) : null}
+            <GuerreSheet
+              view={war}
+              close={closeX}
+              armed={assautFleetOf(S, state, ME).length > 0}
+              onAssault={(target) =>
+                void postWar("/start", { target }).then((res) => {
+                  if (res.assaut) {
+                    setWarOpen(false);
+                    setWarAssault({ target, start: res.assaut });
+                  } else setSaid(SAID[res.error ?? ""] ?? "Cet assaut n'est pas possible.");
+                })
+              }
+            />
+          </>
+        ) : null}
         {armory === "arsenal" && ME ? (
           <ArsenalSheet
             setup={S}
@@ -1568,6 +1740,14 @@ export default function LabPlanche() {
               )
             }
             onPort={() => setArmory("port")}
+            onTrain={
+              S.guerre?.training
+                ? () => {
+                    pick(null);
+                    setTraining(true);
+                  }
+                : undefined
+            }
           />
         ) : null}
         {armory === "port" && ME ? (
@@ -1588,6 +1768,13 @@ export default function LabPlanche() {
                 "/port/move",
                 { from, index, to },
               ])
+            }
+            onRuses={(ruses) =>
+              act(
+                () => plancheRuses(S, state, ME, ruses, state.now),
+                "Ruses gardées : l'assaillant ne les verra qu'en jouant.",
+                ["/port/ruses", { ruses }],
+              )
             }
             onRemove={(pass, index) =>
               act(
@@ -1729,7 +1916,7 @@ export default function LabPlanche() {
             }}
           />
         ) : null}
-        {!chosen && !palace && !profil && !growth && !armory ? (
+        {!chosen && !palace && !profil && !growth && !armory && !warOpen ? (
           <div className="pc-planche-news" aria-label="Le fil des nouvelles">
             {latest ? (
               <button key={latest.id} type="button" onClick={() => pick(latest.pick)}>

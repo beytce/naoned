@@ -1863,3 +1863,39 @@ button.pc-pl-brand {
   font: 500 12.5px / 1.4 var(--pc-ui);
   color: #6b645c;
 }
+/* The port's secret ruses (docs/plan-guerre.md W3, screen 3d). */
+.pc-ar-ruses {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 14px;
+  background: #f3f0ea;
+}
+.pc-ar-ruses > span {
+  font: 500 12.5px / 1.4 var(--pc-ui);
+  color: #6b645c;
+}
+.pc-ar-ruse-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pc-ar-ruse-col button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 9px;
+  padding: 6px;
+  text-align: left;
+  font: 800 10.5px / 1.2 var(--pc-ui);
+  background: #fff;
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-ar-ruse-col button[aria-pressed="true"] {
+  background: var(--pc-ink);
+  color: #f6f4f0;
+}
+.pc-ar-ruse-col button:disabled {
+  cursor: default;
+}

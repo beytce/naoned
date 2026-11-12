@@ -32,6 +32,11 @@ describe("the Arsenal on line", () => {
     expect(w.state.houses[me]?.port).toEqual({ bouche: [], nord: [], sud: ["chaine"] });
     expect(await hub.defenseRemove("ana", "sud", 0, T0 + 5 * HOUR)).toBe("ok");
     expect(await hub.refit("ana", 1, T0 + 5 * HOUR)).toBe("ok");
+    // The port's secret ruses, once a day (docs/plan-guerre.md W3).
+    expect(await hub.ruses("ana", { bouche: "brulot" }, T0 + 5 * HOUR)).toBe("ok");
+    expect(await hub.ruses("ana", { nord: "chaine" }, T0 + 6 * HOUR)).toBe("planche_ruses_today");
+    const r = await hub.view("ana", "Ca’ Ana", T0 + 6 * HOUR);
+    expect(r.state.houses[me]?.ruses).toEqual({ bouche: "brulot" });
     expect((await hub.view("ana", "Ca’ Ana", T0 + 5 * HOUR)).ok).toBe(true);
   });
 });

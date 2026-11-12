@@ -1,0 +1,334 @@
+{
+  "states": [
+    {
+      "manche": 1,
+      "passes": {
+        "bouche": {
+          "towers": [{ "hull": 6, "max": 6 }],
+          "batteries": [],
+          "chain": true,
+          "anchor": [],
+          "ruseDone": false,
+          "fallen": false
+        },
+        "nord": {
+          "towers": [],
+          "batteries": [{ "hull": 4, "max": 4 }],
+          "chain": false,
+          "anchor": [],
+          "ruseDone": false,
+          "fallen": false
+        },
+        "sud": {
+          "towers": [{ "hull": 6, "max": 6 }],
+          "batteries": [],
+          "chain": false,
+          "anchor": [],
+          "ruseDone": false,
+          "fallen": false
+        }
+      },
+      "ships": {
+        "1": {
+          "kind": "galere",
+          "force": 2,
+          "hull": 4,
+          "max": 4,
+          "keyword": "solide",
+          "at": null,
+          "order": 0
+        },
+        "2": {
+          "kind": "galere",
+          "force": 2,
+          "hull": 4,
+          "max": 4,
+          "keyword": "solide",
+          "at": null,
+          "order": 0
+        },
+        "3": {
+          "kind": "galere",
+          "force": 2,
+          "hull": 4,
+          "max": 4,
+          "keyword": "solide",
+          "at": null,
+          "order": 0
+        }
+      },
+      "seals": 0,
+      "total": 19,
+      "entered": 0,
+      "log": []
+    },
+    {
+      "manche": 2,
+      "passes": {
+        "bouche": {
+          "towers": [{ "hull": 6, "max": 6 }],
+          "batteries": [],
+          "chain": true,
+          "anchor": [],
+          "ruseDone": false,
+          "fallen": false
+        },
+        "nord": {
+          "towers": [],
+          "batteries": [{ "hull": 2, "max": 4 }],
+          "chain": false,
+          "anchor": [],
+          "ruseDone": false,
+          "fallen": true
+        },
+        "sud": {
+          "towers": [{ "hull": 2, "max": 6 }],
+          "batteries": [],
+          "chain": false,
+          "anchor": [],
+          "ruseDone": false,
+          "fallen": false
+        }
+      },
+      "ships": {
+        "1": {
+          "kind": "galere",
+          "force": 2,
+          "hull": 3,
+          "max": 4,
+          "keyword": "solide",
+          "at": "nord",
+          "order": 1
+        },
+        "2": {
+          "kind": "galere",
+          "force": 2,
+          "hull": 1,
+          "max": 4,
+          "keyword": "solide",
+          "at": "sud",
+          "order": 2
+        },
+        "3": {
+          "kind": "galere",
+          "force": 2,
+          "hull": 4,
+          "max": 4,
+          "keyword": "solide",
+          "at": "sud",
+          "order": 3
+        }
+      },
+      "seals": 1,
+      "total": 19,
+      "entered": 3,
+      "log": [
+        { "manche": 1, "pass": "nord", "kind": "fire", "from": "batterie", "ship": 1, "damage": 1 },
+        {
+          "manche": 1,
+          "pass": "nord",
+          "kind": "hit",
+          "ship": 1,
+          "target": "batterie",
+          "damage": 2
+        },
+        { "manche": 1, "pass": "nord", "kind": "fallen" },
+        { "manche": 1, "pass": "sud", "kind": "fire", "from": "tour", "ship": 2, "damage": 3 },
+        { "manche": 1, "pass": "sud", "kind": "hit", "ship": 2, "target": "tour", "damage": 2 },
+        { "manche": 1, "pass": "sud", "kind": "hit", "ship": 3, "target": "tour", "damage": 2 }
+      ]
+    },
+    {
+      "manche": 3,
+      "passes": {
+        "bouche": {
+          "towers": [{ "hull": 6, "max": 6 }],
+          "batteries": [],
+          "chain": true,
+          "anchor": [],
+          "ruseDone": false,
+          "fallen": false
+        },
+        "nord": {
+          "towers": [],
+          "batteries": [],
+          "chain": false,
+          "anchor": [],
+          "ruseDone": false,
+          "fallen": true
+        },
+        "sud": {
+          "towers": [],
+          "batteries": [],
+          "chain": false,
+          "anchor": [],
+          "ruseDone": false,
+          "fallen": true
+        }
+      },
+      "ships": {
+        "1": {
+          "kind": "galere",
+          "force": 2,
+          "hull": 2,
+          "max": 4,
+          "keyword": "solide",
+          "at": "nord",
+          "order": 1
+        },
+        "2": {
+          "kind": "galere",
+          "force": 2,
+          "hull": -2,
+          "max": 4,
+          "keyword": "solide",
+          "at": "sud",
+          "order": 2,
+          "sunk": true
+        },
+        "3": {
+          "kind": "galere",
+          "force": 2,
+          "hull": 4,
+          "max": 4,
+          "keyword": "solide",
+          "at": "sud",
+          "order": 3
+        }
+      },
+      "seals": 2,
+      "total": 19,
+      "entered": 3,
+      "log": [
+        { "manche": 1, "pass": "nord", "kind": "fire", "from": "batterie", "ship": 1, "damage": 1 },
+        {
+          "manche": 1,
+          "pass": "nord",
+          "kind": "hit",
+          "ship": 1,
+          "target": "batterie",
+          "damage": 2
+        },
+        { "manche": 1, "pass": "nord", "kind": "fallen" },
+        { "manche": 1, "pass": "sud", "kind": "fire", "from": "tour", "ship": 2, "damage": 3 },
+        { "manche": 1, "pass": "sud", "kind": "hit", "ship": 2, "target": "tour", "damage": 2 },
+        { "manche": 1, "pass": "sud", "kind": "hit", "ship": 3, "target": "tour", "damage": 2 },
+        { "manche": 2, "pass": "nord", "kind": "fire", "from": "batterie", "ship": 1, "damage": 1 },
+        {
+          "manche": 2,
+          "pass": "nord",
+          "kind": "hit",
+          "ship": 1,
+          "target": "batterie",
+          "damage": 2
+        },
+        { "manche": 2, "pass": "nord", "kind": "down", "what": "batterie" },
+        { "manche": 2, "pass": "sud", "kind": "fire", "from": "tour", "ship": 2, "damage": 3 },
+        { "manche": 2, "pass": "sud", "kind": "hit", "ship": 2, "target": "tour", "damage": 2 },
+        { "manche": 2, "pass": "sud", "kind": "down", "what": "tour" },
+        { "manche": 2, "pass": "sud", "kind": "sunk", "ship": 2 },
+        { "manche": 2, "pass": "sud", "kind": "fallen" }
+      ]
+    },
+    {
+      "manche": 4,
+      "passes": {
+        "bouche": {
+          "towers": [{ "hull": 6, "max": 6 }],
+          "batteries": [],
+          "chain": true,
+          "anchor": [],
+          "ruse": "brulot",
+          "ruseDone": false,
+          "fallen": false
+        },
+        "nord": {
+          "towers": [],
+          "batteries": [],
+          "chain": false,
+          "anchor": [],
+          "ruseDone": false,
+          "fallen": true
+        },
+        "sud": {
+          "towers": [],
+          "batteries": [],
+          "chain": false,
+          "anchor": [{ "force": 1, "hull": 2, "max": 2 }],
+          "ruse": "renforts",
+          "ruseDone": true,
+          "fallen": true
+        }
+      },
+      "ships": {
+        "1": {
+          "kind": "galere",
+          "force": 2,
+          "hull": 2,
+          "max": 4,
+          "keyword": "solide",
+          "at": "nord",
+          "order": 1
+        },
+        "2": {
+          "kind": "galere",
+          "force": 2,
+          "hull": -2,
+          "max": 4,
+          "keyword": "solide",
+          "at": "sud",
+          "order": 2,
+          "sunk": true
+        },
+        "3": {
+          "kind": "galere",
+          "force": 2,
+          "hull": 2,
+          "max": 4,
+          "keyword": "solide",
+          "at": "sud",
+          "order": 3
+        }
+      },
+      "seals": 2,
+      "total": 19,
+      "entered": 3,
+      "log": [
+        { "manche": 1, "pass": "nord", "kind": "fire", "from": "batterie", "ship": 1, "damage": 1 },
+        {
+          "manche": 1,
+          "pass": "nord",
+          "kind": "hit",
+          "ship": 1,
+          "target": "batterie",
+          "damage": 2
+        },
+        { "manche": 1, "pass": "nord", "kind": "fallen" },
+        { "manche": 1, "pass": "sud", "kind": "fire", "from": "tour", "ship": 2, "damage": 3 },
+        { "manche": 1, "pass": "sud", "kind": "hit", "ship": 2, "target": "tour", "damage": 2 },
+        { "manche": 1, "pass": "sud", "kind": "hit", "ship": 3, "target": "tour", "damage": 2 },
+        { "manche": 2, "pass": "nord", "kind": "fire", "from": "batterie", "ship": 1, "damage": 1 },
+        {
+          "manche": 2,
+          "pass": "nord",
+          "kind": "hit",
+          "ship": 1,
+          "target": "batterie",
+          "damage": 2
+        },
+        { "manche": 2, "pass": "nord", "kind": "down", "what": "batterie" },
+        { "manche": 2, "pass": "sud", "kind": "fire", "from": "tour", "ship": 2, "damage": 3 },
+        { "manche": 2, "pass": "sud", "kind": "hit", "ship": 2, "target": "tour", "damage": 2 },
+        { "manche": 2, "pass": "sud", "kind": "down", "what": "tour" },
+        { "manche": 2, "pass": "sud", "kind": "sunk", "ship": 2 },
+        { "manche": 2, "pass": "sud", "kind": "fallen" },
+        { "manche": 3, "pass": "sud", "kind": "ruse", "ruse": "renforts" },
+        { "manche": 3, "pass": "sud", "kind": "fire", "from": "ancre", "ship": 3, "damage": 1 },
+        { "manche": 3, "pass": "sud", "kind": "fire", "from": "ancre", "ship": 3, "damage": 1 },
+        { "manche": 3, "pass": "sud", "kind": "hit", "ship": 3, "target": "ancre", "damage": 2 },
+        { "manche": 3, "pass": "sud", "kind": "down", "what": "ancre" }
+      ]
+    }
+  ],
+  "result": { "seals": 2, "damageBps": 5263, "damaged": [2], "over": true }
+}

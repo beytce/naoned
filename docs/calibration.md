@@ -3352,3 +3352,73 @@ Deux Maisons armées de Puissance proche (5 % près) : de deux sortes d'île, 31
 
 - **Le caractère de la flotte** suit l'île : les îles du bois arment des galères, celles du chanvre des brigantins, celles du sel des brûlots ; le port prend des tours chez la brique, des batteries chez le verre, des chaînes chez le chanvre. Les 39 % de paires semblables viennent des îles du verre et de la brique, qui n'arment que des galères jusqu'à la galéasse (niveau 11) et la nef (niveau 16) : l'écart grandira avec les niveaux.
 - **Le puits** : la semaine 1 est celle où toutes les îles se bâtissent (2,25). Ensuite, le ratio des puits sur les sources tient entre 0,44 et 0,72, autour de 0,6, le bas de la cible des trois premiers mois (0,6 à 0,8) ; l'Arsenal en fait 8 à 18 points. La refonte des navires et les réparations de la Guerre (étape 6) l'élèveront ; à remesurer sur quatre marées quand la Guerre sera là.
+
+
+## L'assaut (12 novembre 2026, docs/plan-guerre.md W2)
+
+`pnpm --filter @comptoirs/simulator assaut-bench 300` (`SHIPS=5` pour une flotte de niveau 10) : 300 ports tirés comme ceux de la lagune (deux places par passe : tour, tour, chaîne, batterie ou rien ; une ruse sur chaque passe, comme le défenseur peut le faire), sept flottes selon les sortes d'île (docs/plan-arsenal.md A2). Deux assaillants : l'un pose ses navires au hasard, l'autre essaie chaque placement de la manche et garde le meilleur, sans connaître les ruses pas encore jouées (il ne voit qu'une manche à l'avance).
+
+**Le chemin.** Avec les chiffres de l'audit, l'assaut était presque impossible : 0,82 sceau par assaut, trois navires coulés sur quatre. Sans ruses, les galères écrasaient tout (83 % de victoires) et les brigantins ne servaient à rien. Ni le tir ni la coque des tours ne changeaient grand-chose ; c'étaient les ruses, une sur chaque passe. **Retenu** : le brûlot caché fait 2 de dégâts au premier navire (au lieu de le couler), les renforts sont deux barques de 1 · 2 (au lieu de deux galères), le brûlot qui n'a ni chaîne ni navire à brûler fait 4 à une tour (l'audit : « brûle une chaîne ou une tour »), le brigantin a 3 de coque (au lieu de 2). La tour garde ses chiffres de l'audit (tir 3, coque 6).
+
+#### Quatre navires (niveaux 6 à 9)
+
+Ports : deux places par passe (tour, tour, chaîne, batterie ou rien), une ruse par passe. « Gagner » : briser au moins deux sceaux.
+
+| Flotte | Gagne (réfléchi) | Sceaux (réfléchi) | Trois sceaux | Sceaux (au hasard) | Coulés par assaut |
+| --- | --- | --- | --- | --- | --- |
+| galères (bois) | 40 % | 1.21 | 2 % | 0.95 | 2.4 |
+| brigantins (chanvre) | 37 % | 1.31 | 4 % | 0.46 | 2.7 |
+| brigantins et brûlots | 37 % | 1.34 | 2 % | 0.50 | 3.9 |
+| galères et brûlots | 45 % | 1.19 | 0 % | 0.73 | 3.3 |
+| galères et galéasse | 44 % | 1.34 | 3 % | 0.92 | 2.5 |
+| mêlée | 53 % | 1.48 | 3 % | 0.72 | 3.3 |
+| galères et nef | 26 % | 0.94 | 2 % | 0.77 | 2.2 |
+
+En tout (réfléchi) : 1.26 sceau par assaut, 2 % d'assauts à trois sceaux (cibles : 1,6 et 30 %).
+
+La meilleure flotte, port par port : galères (bois) 15 %, brigantins (chanvre) 13 %, brigantins et brûlots 6 %, galères et brûlots 9 %, galères et galéasse 26 %, mêlée 29 %, galères et nef 1 %.
+
+#### Cinq navires (niveau 10)
+
+Ports : deux places par passe (tour, tour, chaîne, batterie ou rien), une ruse par passe. « Gagner » : briser au moins deux sceaux.
+
+| Flotte | Gagne (réfléchi) | Sceaux (réfléchi) | Trois sceaux | Sceaux (au hasard) | Coulés par assaut |
+| --- | --- | --- | --- | --- | --- |
+| galères (bois) | 46 % | 1.46 | 13 % | 1.18 | 2.9 |
+| brigantins (chanvre) | 42 % | 1.40 | 7 % | 0.59 | 3.0 |
+| brigantins et brûlots | 63 % | 1.67 | 9 % | 0.72 | 4.6 |
+| galères et brûlots | 44 % | 1.43 | 9 % | 1.02 | 3.8 |
+| galères et galéasse | 53 % | 1.57 | 15 % | 1.19 | 3.1 |
+| mêlée | 51 % | 1.57 | 13 % | 0.99 | 3.9 |
+| galères et nef | 55 % | 1.60 | 13 % | 0.98 | 2.3 |
+
+En tout (réfléchi) : 1.53 sceau par assaut, 11 % d'assauts à trois sceaux (cibles : 1,6 et 30 %).
+
+La meilleure flotte, port par port : galères (bois) 18 %, brigantins (chanvre) 8 %, brigantins et brûlots 16 %, galères et brûlots 6 %, galères et galéasse 27 %, mêlée 21 %, galères et nef 4 %.
+
+**Lecture.**
+
+- **Pas de flotte unique gagnante** : la meilleure flotte change d'un port à l'autre, aucune ne l'est sur plus d'un tiers des ports ; chaque sorte d'île a ses ports.
+- **Réfléchir paie** : le placement réfléchi brise nettement plus de sceaux qu'au hasard (deux à trois fois plus pour les brigantins, qui doivent choisir leur passe), sauf pour une flotte de galères, qui frappe partout pareil.
+- **Hors cible** : environ 1,3 sceau par assaut à quatre navires et 1,5 à cinq (cible 1,6), et peu d'assauts à trois sceaux (cible 30 %). Briser les trois passes demande de tenir les trois à la fois et de jouer la réserve et les brigantins sur plusieurs manches ; l'assaillant du banc ne voit qu'une manche. À remesurer avec les testeurs (W3) avant de toucher encore aux règles.
+
+
+## La Guerre de la semaine (12 novembre 2026, docs/plan-guerre.md W5)
+
+`pnpm --filter @comptoirs/simulator guerre-bench 120 8` : 120 joueurs des niveaux 6 à 15, armés selon la sorte de leur île (trois à cinq navires ; deux places par passe, garnies trois fois sur quatre), formés chaque lundi en flottilles de six par bandes de Puissance (`guerreForm`) ; chacun joue son assaut 7 jours sur 10, du mardi au samedi, avec l'assaillant réfléchi du banc de l'assaut, sur le port adverse qui a perdu le moins de sceaux ; chaque défenseur change ses ruses chaque jour. Huit semaines, 80 guerres.
+
+| Mesure | Valeur |
+| --- | --- |
+| La flottille la plus puissante gagne | 38 % des guerres décidées |
+| Guerres à égalité | 10 % |
+| Écart de sceaux (médiane) | 3 sur 20 brisés en tout |
+| Guerres jouées à 3 sceaux près ou moins | 73 % |
+| Sceaux par assaut | 0,95 |
+| Prestige de guerre par joueur et par semaine (médiane, plus haut 10 %) | 100, 180 |
+
+**Lecture.**
+
+- **Des guerres serrées** : trois sur quatre se jouent à trois sceaux près ou moins ; la cible de l'audit (« une guerre qui se joue souvent à quelques sceaux près ») est tenue.
+- **La Puissance ne fait pas la victoire** : la flottille la plus puissante n'en gagne que 38 % (sur 72 guerres décidées : un peu moins que la moitié). La Puissance compte les défenses du port autant que la flotte, alors qu'à la Guerre on gagne en brisant des sceaux chez l'autre : elle surestime sans doute un peu le défenseur. À revoir avec les vraies Maisons (le poids des défenses dans `arsenal.power`).
+- **Moins de sceaux qu'au banc de l'assaut** (0,95 contre 1,3 à 1,5) : ici les flottes ont trois à cinq navires, et les ports des joueurs sont plus garnis de tours.
+- **Le Prestige** reste modéré : 100 par semaine en médiane, 180 pour les plus actifs, sous le plafond de 500 que partagent le commerce, le rang et la Passe.

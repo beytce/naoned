@@ -260,6 +260,13 @@
       "when": 1794473580338,
       "tag": "0036_maison_events",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794505283668,
+      "tag": "0037_guerre",
+      "breakpoints": true
     }
   ]
 }

@@ -3,14 +3,18 @@ import {
   type ArsenalRules,
   type PlancheSetup,
   type PlancheState,
+  assautFleetOf,
+  assautPortOf,
   plancheAdvance,
   plancheBuild,
   plancheDefense,
   plancheDefenseMove,
   plancheDefenseRemove,
+  plancheGrant,
   plancheInit,
   planchePower,
   plancheRobotArm,
+  plancheRuses,
   plancheSetLevel,
   plancheShip,
   plancheShipDamage,
@@ -296,5 +300,44 @@ describe("a house of the computer", () => {
     for (let k = 0; k < 5; k++) s = plancheRobotArm(S, s, "ana", T0);
     expect(s.houses.ana?.fleet?.yards).toHaveLength(1);
     expect(Object.values(s.houses.ana?.port ?? {}).flat().length).toBeLessThanOrEqual(3);
+  });
+});
+
+// A house seen by the assault (docs/plan-guerre.md W1).
+describe("a port and a fleet for the assault", () => {
+  it("gives the port as laid with its ruses, and the ships fit to sail", () => {
+    const S = setup();
+    let s = armed(S);
+    s = plancheShip(S, s, "ana", "galere", T0);
+    s = plancheAdvance(S, s, T0 + 2 * HOUR);
+    s = plancheDefense(S, s, "ana", "bouche", "tour");
+    s = plancheRuses(S, s, "ana", { bouche: "brulot", sud: "renforts" }, s.now);
+    expect(() => plancheRuses(S, s, "ana", { nord: "chaine" }, s.now + HOUR)).toThrow(
+      "planche_ruses_today",
+    );
+    expect(() => plancheRuses(S, s, "ana", { large: "chaine" }, s.now + 24 * HOUR)).toThrow(
+      "planche_unknown",
+    );
+    expect(assautPortOf(S, s, "ana")).toEqual({
+      passes: {
+        bouche: { defenses: ["tour"], ruse: "brulot" },
+        nord: { defenses: [] },
+        sud: { defenses: [], ruse: "renforts" },
+      },
+    });
+    expect(assautFleetOf(S, s, "ana")).toEqual([
+      { id: 1, kind: "galere", force: 2, hull: 4, keyword: "solide" },
+    ]);
+    s = plancheShipDamage(S, s, "ana", 1);
+    expect(assautFleetOf(S, s, "ana")).toEqual([]);
+  });
+});
+
+describe("the War's Prestige", () => {
+  it("is counted in the house's week, under its cap", () => {
+    const S = setup();
+    const s = plancheGrant(S, plancheInit(S, T0), "ana", 107);
+    expect(s.houses.ana?.maison?.week).toBe(107);
+    expect(() => plancheGrant(S, s, "ana", -3)).toThrow("planche_unknown");
   });
 });

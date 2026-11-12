@@ -320,7 +320,8 @@ export const venice1450LaguneParams: LagoonParams = {
         // Each from what an island of the lagoon makes on its own (docs/plan-arsenal.md § 3.2):
         // the wood islands arm galleys, the hemp ones brigantines, the salt ones fireships.
         galere: ship("Galère", { wood: 80 }, 3, 2, 4, "solide", 6),
-        brigantin: ship("Brigantin", { hemp: 60 }, 2, 2, 2, "rapide", 6),
+        // A hull of 3, not 2: at 2 the battery and the tower left it nothing (docs/calibration.md).
+        brigantin: ship("Brigantin", { hemp: 60 }, 2, 2, 3, "rapide", 6),
         brulot: ship("Brûlot", { salt: 40 }, 1, 0, 1, "brule", 6),
         galeasse: ship("Galéasse", { wood: 40, bricks: 50 }, 5, 4, 3, "bombarde", 11),
         escorte: ship("Nef d'escorte", { glass: 40, wood: 20 }, 4, 0, 3, "repare", 16),
@@ -348,6 +349,37 @@ export const venice1450LaguneParams: LagoonParams = {
         },
       },
       power: { workshop: 10, arsenal: 20, ship: 5, defense: 15 },
+    },
+    // The War of the week (docs/plan-guerre.md): the assault of 01-audit-guerre.md § 4.3, and the
+    // Prestige the owner chose (12 November 2026), within the week's cap.
+    guerre: {
+      assaut: {
+        manches: 3,
+        tower: { fire: 3 },
+        battery: { fire: 1 },
+        hulls: { tour: 6, batterie: 4, chaine: 3 },
+        chainBreakers: 2,
+        // The ruses softened at the bench (docs/calibration.md § L'assaut): the hidden fireship
+        // hurts the first ship in by 2, the reinforcements are two boats of 1 · 2; a fireship
+        // with nothing else to burn does 4 to a tower.
+        reinforcements: { n: 2, force: 1, hull: 2 },
+        ruseManche: { chaine: 2, renforts: 3 },
+        hiddenFire: 2,
+        fireshipTower: 4,
+      },
+      prestige: { seal: 20, damage: 7, repelled: 10, repelledCap: 40, victory: 60 },
+      // The training port, without stake, at any hour (01-audit-guerre.md § 4.6).
+      training: {
+        name: "Le Lido des corsaires",
+        port: {
+          passes: {
+            bouche: { defenses: ["tour", "chaine"] },
+            nord: { defenses: ["tour"], ruse: "brulot" },
+            sud: { defenses: ["batterie"], ruse: "renforts" },
+          },
+        },
+        fleet: ["galere", "galere", "brigantin", "brulot"],
+      },
     },
     // The problem of the day (docs/plan-hex-commerce.md H3): the same twenty, 20 of Prestige.
     daily: { problems: venice1450PasseProblems.map((p) => p.id), prestige: 20 },

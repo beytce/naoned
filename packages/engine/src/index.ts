@@ -154,3 +154,4 @@ export * from "./ile/index.js";
 export { venice1450Passe } from "./themes/venice1450.passe.js";
 export { venice1450Planche } from "./themes/venice1450.planche.js";
 export { venice1450Lagune, venice1450LaguneParams } from "./themes/venice1450.lagune.js";
+export * from "./guerre/index.js";

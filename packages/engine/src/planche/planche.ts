@@ -11,6 +11,7 @@
  * exactly, never rounded away.
  */
 
+import type { AssautPort, AssautRules } from "../guerre/assaut.js";
 import {
   type IleRules,
   type IleState,
@@ -116,6 +117,20 @@ export interface PlancheHouseSetup {
   sestiere?: string;
 }
 
+/** The War of the week's rules (docs/plan-guerre.md § 3.4, the owner's choice of 12 November). */
+export interface GuerreRules {
+  assaut: AssautRules;
+  prestige: {
+    seal: number;
+    damage: number;
+    repelled: number;
+    repelledCap: number;
+    victory: number;
+  };
+  /** The training port (the Lido of the corsairs) and the fleet lent to who has none. */
+  training?: { name: string; port: AssautPort; fleet: string[] };
+}
+
 /** A world's board and its rules, as `worlds.settings` would give them. */
 export interface PlancheSetup {
   width: number;
@@ -140,6 +155,8 @@ export interface PlancheSetup {
   daily?: PlancheDailyRules;
   /** The Arsenal, the fleet and the port (docs/plan-arsenal.md): without them, none. */
   arsenal?: ArsenalRules;
+  /** The War of the week (docs/plan-guerre.md): the assault's rules and its Prestige. */
+  guerre?: GuerreRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -201,6 +218,9 @@ export interface PlancheHouse {
   /** Its ships and its cales, and the defenses of its port's passes. */
   fleet?: PlancheFleet;
   port?: Record<string, string[]>;
+  /** Its port's secret ruses, one a pass, and the day it set them (docs/plan-guerre.md). */
+  ruses?: Record<string, "chaine" | "brulot" | "renforts">;
+  rusesDay?: number;
 }
 
 export interface PlancheState {

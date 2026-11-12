@@ -4,6 +4,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
 import { accounts, influenceEntries, maisonEvents } from "../db/schema.js";
+import { GuerreHub } from "./guerre.js";
 import type { PasseHub } from "./passe.js";
 import { type PlancheAnswer, type PlancheHub, plancheTheme } from "./planche.js";
 import { PlancheDefis } from "./plancheDefi.js";
@@ -49,7 +50,12 @@ const SAID_STATUS = 409;
 export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDeps): void {
   const pace = Math.max(1, deps.pace ?? 1);
   let opened:
-    | Promise<{ lagoons: PlancheLagoons; now: () => number; defis: PlancheDefis | null }>
+    | Promise<{
+        lagoons: PlancheLagoons;
+        now: () => number;
+        defis: PlancheDefis | null;
+        guerre: GuerreHub;
+      }>
     | undefined;
   /**
    * The boards, and the game's clock: the real one, or faster in a test; it never runs behind
@@ -66,7 +72,9 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
       const defis = deps.passe
         ? new PlancheDefis(deps.passe, now, deps.notify ? { notify: deps.notify } : {})
         : null;
-      return { lagoons, now, defis };
+      // The War of the week (docs/plan-guerre.md W4), across every lagoon.
+      const guerre = new GuerreHub(deps.db, lagoons);
+      return { lagoons, now, defis, guerre };
     })();
     return opened;
   };
@@ -340,7 +348,46 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
   gesture("/api/planche/port/move", z.object({ from: pass, index: slot, to: pass }), (p, b) =>
     p.hub.defenseMove(p.id, b.from, b.index, b.to, p.now()),
   );
+  gesture(
+    "/api/planche/port/ruses",
+    z.object({ ruses: z.record(pass, z.enum(["chaine", "brulot", "renforts"])) }),
+    (p, b) => p.hub.ruses(p.id, b.ruses, p.now()),
+  );
   gesture("/api/planche/port/remove", z.object({ pass, index: slot }), (p, b) =>
     p.hub.defenseRemove(p.id, b.pass, b.index, p.now()),
   );
+  // The War of the week (docs/plan-guerre.md W4): the flotillas, today's assault, Sunday.
+  const guerreOf = async () => (await boards()).guerre;
+  app.get("/api/guerre", deps.perMerchant(120), async (req, reply) => {
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const g = await guerreOf();
+    const now = p.now();
+    await g.settle(now);
+    const house = p.hub.houseOf(p.id) ?? "";
+    return toJson({ guerre: await g.view(p.id, p.store, house, now) });
+  });
+  app.post("/api/guerre/start", deps.perMerchant(20), async (req, reply) => {
+    const b = z.object({ target: z.string().min(3).max(80) }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const g = await guerreOf();
+    const res = await g.start(p.id, p.store, p.hub.houseOf(p.id) ?? "", b.data.target, p.now());
+    if ("error" in res) return reply.code(409).send(res);
+    return toJson({ assaut: res.state });
+  });
+  app.post("/api/guerre/round", deps.perMerchant(60), async (req, reply) => {
+    const b = z
+      .object({ moves: z.record(z.string().regex(/^\d{1,7}$/), pass) })
+      .safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const g = await guerreOf();
+    const moves = Object.fromEntries(Object.entries(b.data.moves).map(([k, v]) => [Number(k), v]));
+    const res = await g.round(p.id, p.id, moves, p.now());
+    if ("error" in res) return reply.code(409).send(res);
+    return toJson({ assaut: res.state, ...(res.result ? { result: res.result } : {}) });
+  });
 }
