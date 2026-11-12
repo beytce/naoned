@@ -317,11 +317,13 @@ export const venice1450LaguneParams: LagoonParams = {
       minLevel: 6,
       cales: [2, 3, 4],
       ships: {
-        galere: ship("Galère", { planks: 60, rope: 30 }, 3, 2, 4, "solide", 6),
-        brigantin: ship("Brigantin", { planks: 40, hemp: 40 }, 2, 2, 2, "rapide", 6),
-        brulot: ship("Brûlot", { wood: 40, salt: 20 }, 1, 0, 1, "brule", 6),
-        galeasse: ship("Galéasse", { planks: 60, bricks: 60, rope: 30 }, 5, 4, 3, "bombarde", 11),
-        escorte: ship("Nef d'escorte", { planks: 40, flour: 40, glass: 30 }, 4, 0, 3, "repare", 16),
+        // Each from what an island of the lagoon makes on its own (docs/plan-arsenal.md § 3.2):
+        // the wood islands arm galleys, the hemp ones brigantines, the salt ones fireships.
+        galere: ship("Galère", { wood: 80 }, 3, 2, 4, "solide", 6),
+        brigantin: ship("Brigantin", { hemp: 60 }, 2, 2, 2, "rapide", 6),
+        brulot: ship("Brûlot", { salt: 40 }, 1, 0, 1, "brule", 6),
+        galeasse: ship("Galéasse", { wood: 40, bricks: 50 }, 5, 4, 3, "bombarde", 11),
+        escorte: ship("Nef d'escorte", { glass: 40, wood: 20 }, 4, 0, 3, "repare", 16),
       },
       places: [
         { level: 6, n: 3 },
@@ -340,7 +342,8 @@ export const venice1450LaguneParams: LagoonParams = {
         ],
         defenses: {
           tour: { name: "Tour", goods: { bricks: 60 }, hull: 6 },
-          chaine: { name: "Chaîne", goods: { rope: 40 } },
+          // Of hemp: the islands of the mill and of the rope both have it.
+          chaine: { name: "Chaîne", goods: { hemp: 60 } },
           batterie: { name: "Batterie", goods: { glass: 40 } },
         },
       },

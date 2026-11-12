@@ -39,11 +39,11 @@ Ce que l'île produit donne son caractère à la flotte (audit § 6.2) ; les chi
 
 | Navire | Fait de | Chantier | Force · coque | Mot-clé | S'ouvre au niveau |
 | --- | --- | --- | --- | --- | --- |
-| **Galère** | planches, cordages | 3 h | 2 · 4 | *Solide* | 6 |
-| **Brigantin** | planches, chanvre | 2 h | 2 · 2 | *Rapide* | 6 |
-| **Brûlot** | bois, sel | 1 h | 0 · 1 | *Brûle* | 6 |
-| **Galéasse** | planches, briques, cordages | 5 h | 4 · 3 | *Bombarde* | 11 |
-| **Nef d'escorte** | planches, farine, verre | 4 h | 0 · 3 | *Répare* | 16 |
+| **Galère** | bois | 3 h | 2 · 4 | *Solide* | 6 |
+| **Brigantin** | chanvre | 2 h | 2 · 2 | *Rapide* | 6 |
+| **Brûlot** | sel | 1 h | 0 · 1 | *Brûle* | 6 |
+| **Galéasse** | bois, briques | 5 h | 4 · 3 | *Bombarde* | 11 |
+| **Nef d'escorte** | verre, bois | 4 h | 0 · 3 | *Répare* | 16 |
 
 - Les quantités se règlent au banc (A2). Ordre de grandeur : un navire vaut une demi-journée à une journée de ce que ses marchandises rapporteraient aux villes.
 
@@ -56,7 +56,7 @@ Ce que l'île produit donne son caractère à la flotte (audit § 6.2) ; les chi
 ### 3.4 Le port
 
 - Trois passes : **la bouche, le canal du nord, le canal du sud**. Chaque passe a **deux places** de défense au niveau 6, trois au niveau 16.
-- Trois défenses, faites de marchandises : **la tour** (briques ; 6 à 10 de coque selon son niveau), **la chaîne** (cordages), **la batterie** (verre). Leur effet en combat est celui de `01-audit-guerre.md` § 4.3 ; il ne joue qu'à l'étape 6.
+- Trois défenses, faites de marchandises : **la tour** (briques ; 6 à 10 de coque selon son niveau), **la chaîne** (chanvre), **la batterie** (verre). Leur effet en combat est celui de `01-audit-guerre.md` § 4.3 ; il ne joue qu'à l'étape 6.
 - On les pose, les déplace et les retire librement à cette étape. Les ruses secrètes et la règle d'« une fois par jour » arrivent avec la Guerre.
 
 ### 3.5 La Puissance
@@ -107,6 +107,6 @@ L'assaut, les ruses, la carte de la guerre, l'appariement, les replays (étape 6
 | Lot | État |
 | --- | --- |
 | A1 | fait : `packages/engine/src/planche/arsenal.ts` (l'Arsenal, bâtiment de l'île ouvert au niveau de la Maison, un par île, ses cales par niveau ; les navires faits des marchandises de l'entrepôt, lancés au niveau de l'Arsenal, posés à quai à chaque tranche tant que la flotte a des places ; la refonte et la réparation pour un tiers des marchandises ; les défenses des trois passes ; la Puissance sans la caisse) ; les Maisons de l'ordinateur arment (`plancheRobotArm`, dans leur visite) ; règles de la lagune de Venise dans `venice1450.lagune.ts`. 9 tests. |
-| A2 | à faire |
+| A2 | fait : banc `arsenal-bench` (`docs/calibration.md` § L'Arsenal et la flotte). Recettes revues : chaque navire est fait de ce qu'une sorte d'île fait seule (galère de bois, brigantin de chanvre, brûlot de sel, galéasse de bois et de briques, nef de verre et de bois), la chaîne de chanvre ; 61 % des paires de même Puissance de deux sortes d'île n'ont pas la même flotte (l'écart grandit avec la galéasse et la nef) ; le ratio des puits sur les sources tient autour de 0,6 dès la semaine 3, l'Arsenal en fait 8 à 18 points. |
 | A3 | à faire |
 | A4 | à faire |
