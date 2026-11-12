@@ -6,6 +6,14 @@
  */
 import { ILE_FONDACO, ileBonusBps, ileBuyable, ileTileCost } from "../ile/ile.js";
 import {
+  plancheArsenalOf,
+  plancheDefense,
+  plancheFleetPlaces,
+  planchePortSlots,
+  plancheShip,
+} from "./arsenal.js";
+import {
+  type PlancheHouse,
   type PlancheSetup,
   type PlancheState,
   plancheBuild,
@@ -66,6 +74,8 @@ export function plancheRobot(
   const hs = S.houses.find((h) => h.id === house);
   if (!hs || !s.houses[house]) return s;
   s = plancheRobotBuild(S, s, house, now);
+  // It arms too, once its level opens the Arsenal (docs/plan-arsenal.md § 3.7).
+  s = plancheRobotArm(S, s, house, now);
   const options = () => {
     const h = s.houses[house];
     const sells = new Set([
@@ -191,4 +201,76 @@ export function plancheRobotBuild(
   const cost = BigInt(R.workshops[raise.b.type]?.cost[raise.b.level] ?? 0);
   if (purse < cost * 2n) return s;
   return tryIt(() => plancheUpgrade(S, s, house, raise.k, now));
+}
+
+/**
+ * A house of the computer arms (docs/plan-arsenal.md § 3.7): its Arsenal once its level opens it
+ * (on a free tile, one bought if none), then on each free cale the ship its store can make that it
+ * has least of, and in each free place of its port the defense its store can make. One of each a
+ * visit, never beyond its places.
+ */
+export function plancheRobotArm(
+  S: PlancheSetup,
+  s0: PlancheState,
+  house: string,
+  now: number,
+): PlancheState {
+  const A = S.arsenal;
+  const R = S.ile;
+  const h0 = Object.hasOwn(s0.houses, house) ? s0.houses[house] : undefined;
+  if (!A || !R || !h0?.ile || (h0.level ?? 1) < A.minLevel) return s0;
+  const attempt = (f: () => PlancheState) => {
+    try {
+      return f();
+    } catch {
+      return s0;
+    }
+  };
+  const ars = plancheArsenalOf(S, h0, now);
+  if (!ars) {
+    const w = R.workshops[A.workshop];
+    if (!w || h0.ducats < BigInt(w.cost[0] ?? 0) * 2n) return s0;
+    const free = Object.entries(h0.ile.tiles).find(([, t]) => !t.building)?.[0];
+    if (free) return attempt(() => plancheBuild(S, s0, house, A.workshop, free, now));
+    const offered = ileBuyable(R, h0.ile)[0];
+    if (!offered || h0.ducats < ileTileCost(R, h0.ile) + BigInt(w.cost[0] ?? 0) * 2n) return s0;
+    return attempt(() => plancheBuyTile(S, s0, house, offered, now));
+  }
+  let s = s0;
+  const h = () => s.houses[house] as PlancheHouse;
+  // A ship: of the kinds its level opens and its store can make, the one it has least of.
+  if (ars.ready && (h().fleet?.yards.length ?? 0) < ars.cales) {
+    const count = (k: string) =>
+      (h().fleet?.ships.filter((x) => x.kind === k).length ?? 0) +
+      (h().fleet?.yards.filter((x) => x.kind === k).length ?? 0);
+    const room = (h().fleet?.ships.length ?? 0) + (h().fleet?.yards.length ?? 0);
+    const can = Object.entries(A.ships)
+      .filter(([, r]) => (h().level ?? 1) >= r.minLevel)
+      .filter(([, r]) => Object.entries(r.goods).every(([g, n]) => (h().stock[g] ?? 0) >= n))
+      .sort(([a], [b]) => count(a) - count(b) || a.localeCompare(b));
+    const pick = can[0]?.[0];
+    if (pick && room < plancheFleetPlaces(S, h()))
+      s = attempt(() => plancheShip(S, s, house, pick, now));
+  }
+  // A defense: in the pass with fewest, the one its store can make.
+  const slots = planchePortSlots(S, h());
+  const pass = [...A.port.passes].sort(
+    (a, b) => (h().port?.[a]?.length ?? 0) - (h().port?.[b]?.length ?? 0) || a.localeCompare(b),
+  )[0];
+  if (pass && (h().port?.[pass]?.length ?? 0) < slots) {
+    const kind = Object.entries(A.port.defenses).find(([, d]) =>
+      Object.entries(d.goods).every(([g, n]) => (h().stock[g] ?? 0) >= n),
+    )?.[0];
+    if (kind) {
+      const before = s;
+      s = (() => {
+        try {
+          return plancheDefense(S, before, house, pass, kind);
+        } catch {
+          return before;
+        }
+      })();
+    }
+  }
+  return s;
 }

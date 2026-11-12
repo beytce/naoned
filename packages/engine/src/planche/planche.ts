@@ -24,6 +24,12 @@ import {
   ileSlice,
   ileUpgrade,
 } from "../ile/ile.js";
+import {
+  type ArsenalRules,
+  type PlancheFleet,
+  plancheArsenalMayBuild,
+  plancheArsenalSettle,
+} from "./arsenal.js";
 import type { PlancheOrderRules, PlancheOrderState } from "./commandes.js";
 import type { PlancheDailyRules, PlancheDailyTry } from "./jour.js";
 import {
@@ -132,6 +138,8 @@ export interface PlancheSetup {
   orders?: PlancheOrderRules;
   /** The problem of the day (docs/plan-hex-commerce.md H3): without it, none. */
   daily?: PlancheDailyRules;
+  /** The Arsenal, the fleet and the port (docs/plan-arsenal.md): without them, none. */
+  arsenal?: ArsenalRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -190,6 +198,9 @@ export interface PlancheHouse {
   caps?: MaisonCaps;
   /** Its Prestige and what its Livre tells. */
   maison?: MaisonState;
+  /** Its ships and its cales, and the defenses of its port's passes. */
+  fleet?: PlancheFleet;
+  port?: Record<string, string[]>;
 }
 
 export interface PlancheState {
@@ -388,6 +399,7 @@ function slice(S: PlancheSetup, s: PlancheState): void {
     if (!h) continue;
     if (S.ile && h.ile) {
       ileSlice(S.ile, h.ile, h.stock, S.rules.store, ms, t);
+      plancheArsenalSettle(S, h, t + ms);
       continue;
     }
     for (const [good, perHour] of Object.entries(hs.makes)) {
@@ -657,6 +669,9 @@ export const plancheBuild = (
   const caps = own(s.houses, house)?.caps;
   if (caps && Object.hasOwn(S.ile?.workshops ?? {}, type) && tier > caps.tier)
     return fail("planche_level");
+  // The Arsenal opens at its own level, one an island (docs/plan-arsenal.md).
+  const h = own(s.houses, house);
+  if (h) plancheArsenalMayBuild(S, h, type);
   return onIsle(S, s, house, (R, ile) => ileBuild(R, ile, type, at, now));
 };
 
