@@ -81,7 +81,7 @@ L'île commune dessinée sur la planche et le fil commun entre associés (plus t
 | Lot | État |
 | --- | --- |
 | K1 | fait : `apps/server/src/game/plancheCompany.ts` (les tables de l'ancien jeu reprises ; jusqu'à 12 Maisons ; le doge, trois capitaines au plus, les membres ; trois jours avant de rejoindre une autre compagnie ; le doge qui part cède la place au plus ancien capitaine ; le pavillon de la compagnie, colonne `flag`, migration 0038) ; l'invité par un lien est assis dans la lagune de la compagnie s'il y a de la place (`seatOf` et ses lagunes préférées) ; les compagnies des Maisons d'une planche dans sa réponse ; routes `/api/planche/compagnie` (fonder, invitation, rejoindre, quitter, rôle) ; la discussion de l'ancien jeu reprise telle quelle (`/api/planche/compagnie/messages`, `/report`). 1 test des routes. |
-| K2 | à faire |
-| K3 | à faire |
+| K2 | serveur fait : table `planche_signs` (migration 0039) ; les signes de la compagnie (« attaque » sur un port, « tour » sur une tour, « besoin » d'une marchandise), un par sorte et par membre, pour la semaine ; les saluts entre voisins (« salut », « bravo »), une fois par jour et par paire, poussés en direct ; dans la réponse de la planche ; routes `/api/planche/sign`, `/sign/lift`, `/greet`. 1 test des routes. L'écran vient avec K5. |
+| K3 | fait : `guerreForm` forme d'abord les flottilles de chaque compagnie avec ses seuls membres (complétées par l'ordinateur), puis celles des joueurs seuls ; le retardataire rejoint une flottille de sa compagnie ; la vue de la guerre dit le nom des compagnies des deux camps et les ports réservés par un signe « j'attaque ». 2 tests du moteur, 1 du serveur. |
 | K4 | à faire |
 | K5 | à faire |

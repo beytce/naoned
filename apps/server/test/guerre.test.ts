@@ -2,7 +2,7 @@ import { maisonUnlocks } from "@comptoirs/engine";
 import { sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { accounts, guerreAssaults } from "../src/db/schema.js";
+import { accounts, companies, companyMembers, guerreAssaults } from "../src/db/schema.js";
 import { GuerreHub } from "../src/game/guerre.js";
 import { plancheTheme } from "../src/game/planche.js";
 import { PlancheLagoons } from "../src/game/plancheLagoons.js";
@@ -25,7 +25,9 @@ afterAll(async () => {
 beforeEach(async () => {
   database = openDatabase(dbUrl);
   await database.migrate();
-  await database.db.execute(sql`truncate worlds, accounts, guerre_weeks, guerre_assaults cascade`);
+  await database.db.execute(
+    sql`truncate worlds, accounts, guerre_weeks, guerre_assaults, companies cascade`,
+  );
 });
 afterEach(async () => {
   await database.close();
@@ -65,6 +67,8 @@ describe("the War of the week", () => {
     expect(v.ours).toHaveLength(6);
     expect(v.theirs).toHaveLength(6);
     expect(v.ours.some((p) => p.key === v.me)).toBe(true);
+    expect(v.companies).toEqual({ us: null, them: null });
+    expect(v.reserved).toEqual({});
     const target = v.theirs[0]?.key ?? "";
     expect(await g.start(ana, a.store, a.house, v.ours[1]?.key ?? "", tue)).toEqual({
       error: "guerre_not_foe",
@@ -115,5 +119,29 @@ describe("the War of the week", () => {
     const b = await lagoons.seatOf(ben, "Ca’ ben", thu + HOUR);
     const v = await g.view(ben, b.store, b.house, thu + HOUR);
     expect(v.phase).toBe("assauts");
+  });
+
+  it("sends a company to the War together, under its name, its reserved ports told", async () => {
+    const lagoons = await PlancheLagoons.open(database.db, plancheTheme(), T0);
+    const ids = await Promise.all(["ana", "ben", "cyd"].map(account));
+    const seats = [];
+    for (const [k, id] of ids.entries()) seats.push(await lagoons.seatOf(id, `Ca’ ${k}`, T0));
+    const [tana] = await database.db
+      .insert(companies)
+      .values({ name: "La Tana", code: "tana-code", createdAt: new Date(T0) })
+      .returning();
+    for (const id of ids.slice(0, 2))
+      await database.db
+        .insert(companyMembers)
+        .values({ accountId: id, companyId: tana?.id ?? "", joinedAt: new Date(T0) });
+    const g = new GuerreHub(database.db, lagoons);
+    const tue = T0 + DAY + 10 * HOUR;
+    const [a, b, c] = seats;
+    if (!a || !b || !c) throw new Error("no seats");
+    const v = await g.view(ids[0] ?? "", a.store, a.house, tue);
+    expect(v.companies.us).toBe("La Tana");
+    expect(v.ours.map((p) => p.key)).toContain(`${b.store.worldId}:${b.house}`);
+    // The player alone is not in the company's flotilla.
+    expect(v.ours.map((p) => p.key)).not.toContain(`${c.store.worldId}:${c.house}`);
   });
 });

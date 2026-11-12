@@ -91,3 +91,54 @@ describe("a house come during the week", () => {
     expect(guerreJoin(joined, late, [first, ...robots, late], 6, new Set())).toEqual(joined);
   });
 });
+
+describe("the company's War", () => {
+  it("puts a company's members in its own flotillas, never mixed with strangers", () => {
+    const company = Array.from({ length: 8 }, (_, k) => ({
+      key: `c${k}`,
+      power: 500 + k,
+      person: true,
+      group: "tana",
+    }));
+    const solo = Array.from({ length: 4 }, (_, k) => ({
+      key: `s${k}`,
+      power: 505 + k,
+      person: true,
+    }));
+    const robots = Array.from({ length: 60 }, (_, k) => ({
+      key: `r${k}`,
+      power: 300 + k * 10,
+      person: false,
+    }));
+    const { wars } = guerreForm([...company, ...solo, ...robots], 6);
+    const sides = wars.flatMap((w) => [w.a, w.b]);
+    // Eight members: two flotillas of the company (six and two), each filled by the computer.
+    const withCompany = sides.filter((s) => s.some((k) => k.startsWith("c")));
+    expect(withCompany).toHaveLength(2);
+    for (const s of withCompany) expect(s.some((k) => k.startsWith("s"))).toBe(false);
+    expect(withCompany.flat().filter((k) => k.startsWith("c"))).toHaveLength(8);
+    // The solo players have their own flotilla.
+    expect(sides.filter((s) => s.some((k) => k.startsWith("s")))).toHaveLength(1);
+  });
+
+  it("seats a company's latecomer in its company's flotilla", () => {
+    const company = Array.from({ length: 2 }, (_, k) => ({
+      key: `c${k}`,
+      power: 500,
+      person: true,
+      group: "tana",
+    }));
+    const solo = [{ key: "s0", power: 500, person: true }];
+    const robots = Array.from({ length: 40 }, (_, k) => ({
+      key: `r${k}`,
+      power: 450 + k * 5,
+      person: false,
+    }));
+    const all = [...company, ...solo, ...robots];
+    const { wars } = guerreForm(all, 6);
+    const late = { key: "c9", power: 500, person: true, group: "tana" };
+    const joined = guerreJoin(wars, late, [...all, late], 6, new Set());
+    const side = joined.flatMap((w) => [w.a, w.b]).find((s) => s.includes("c9"));
+    expect(side).toEqual(expect.arrayContaining(["c0", "c1", "c9"]));
+  });
+});
