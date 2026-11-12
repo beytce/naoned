@@ -1,6 +1,6 @@
 # La progression de la Maison : plan (étape 3 de l'audit du 11 novembre 2026)
 
-*Proposé le 12 novembre 2026, à la suite des lagunes de 48 (`docs/plan-lagunes.md`, fusionné). Décision du porteur D1 : les victoires de la semaine font grandir la Maison, par un Prestige plafonné par semaine, qui ouvre de la capacité et du choix, jamais un rendement. Audit : `docs/audit-progression-2026-11-11/00-audit.md` § 8 ; maquette : écrans 1c et 1d. **À valider avant tout code.***
+*Proposé le 12 novembre 2026, à la suite des lagunes de 48 (`docs/plan-lagunes.md`, fusionné). Décision du porteur D1 : les victoires de la semaine font grandir la Maison, par un Prestige plafonné par semaine, qui ouvre de la capacité et du choix, jamais un rendement. Audit : `docs/audit-progression-2026-11-11/00-audit.md` § 8 ; maquette : écrans 1c et 1d. **Validé le 12 novembre 2026** avec les trois recommandations du § 7.*
 
 ## 1. Le problème à régler
 
@@ -88,8 +88,17 @@ Fusion sur la branche principale à la fin de M4.
 
 L'Arsenal et la flotte (étape 5), le Problème du jour et le défi par le fil (étape 4), la Guerre (étape 6), la Muda et les détroits noirs (étape 8), les ligues (étape 9) : chacun ajoutera sa source de Prestige et ses lignes à la table des niveaux.
 
-## 7. À trancher
+## 7. Tranché (12 novembre 2026, le porteur suit les trois recommandations)
 
-1. **Les bobines au départ** : 3, comme le cadrage, avec 5 atteint au niveau 4 (la première semaine) ; ou 5 dès le départ, comme aujourd'hui, en montant à 12 ?
-2. **Le commerce rapporte-t-il du Prestige** chaque jour (un peu, plafonné), pour que le joueur paisible progresse aussi ; ou seulement les victoires de la semaine ?
-3. **Les Maisons de l'ordinateur** : au niveau médian des joueurs de la lagune, ou à un niveau fixe ?
+1. **Les bobines** : 3 au départ, 4 au niveau 2, 5 au niveau 4, puis jusqu'à 12.
+2. **Le commerce** rapporte un peu de Prestige chaque jour, plafonné.
+3. **Les Maisons de l'ordinateur** jouent au niveau médian des joueurs de leur lagune.
+
+## 8. État
+
+| Lot | État |
+| --- | --- |
+| M1 | fait : `packages/engine/src/planche/maison.ts` (le niveau et son titre sur la courbe `25 × (n − 1)²`, ce que chaque niveau ouvre, la semaine plafonnée et son report, le Prestige du commerce du jour) ; sur la planche, chaque Maison porte son niveau, et ses bobines, les cases de son île, les étages de ses ateliers et ses tours en dépendent (`plancheSetLevel`, qui ne redescend jamais) ; les Maisons de l'ordinateur sautent les ateliers que leur niveau n'ouvre pas encore. Règles de la lagune de Venise dans `venice1450.lagune.ts` (3 bobines au départ, 5 au niveau 4, 12 au niveau 30 ; les ouvrages au niveau 3 ; une deuxième tour au niveau 6). 7 tests. |
+| M2 | à faire |
+| M3 | à faire |
+| M4 | à faire |

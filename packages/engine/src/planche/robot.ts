@@ -126,6 +126,8 @@ export function plancheRobotBuild(
   for (let round = 1; round <= 6 && !next; round++) {
     const want = new Map<string, number>();
     for (const type of plan) {
+      // A workshop its level does not open yet is left for later (docs/plan-progression-maison.md).
+      if ((R.workshops[type]?.tier ?? 0) > (h.caps?.tier ?? Number.POSITIVE_INFINITY)) continue;
       want.set(type, (want.get(type) ?? 0) + 1);
       if (!next && (have.get(type) ?? 0) < (want.get(type) ?? 0) * round) next = type;
     }

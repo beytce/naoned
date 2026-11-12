@@ -222,6 +222,38 @@ export const venice1450LaguneParams: LagoonParams = {
     rules: { ...base.rules, rewindMsPerTile: 20 * 60_000, patinaBpsPerDay: 1_000 },
     ...(base.ile ? { ile: base.ile } : {}),
     ...(base.rank ? { rank: base.rank } : {}),
+    // The growth of the houses (docs/plan-progression-maison.md): 3 bobbins at first, 12 at the
+    // top; the worked goods at level 3; a second tower at 6. Titles of the Republic's houses.
+    maison: {
+      curve: 25,
+      maxLevel: 30,
+      titles: [
+        { from: 1, name: "Bottega" },
+        { from: 6, name: "Casa" },
+        { from: 11, name: "Ca\u2019" },
+        { from: 16, name: "Palazzo" },
+        { from: 21, name: "Procuratie" },
+      ],
+      unlocks: [
+        { level: 1, bobbins: 3, tiles: 12, tier: 1, towers: 1 },
+        { level: 2, bobbins: 4 },
+        { level: 3, tier: 2 },
+        { level: 4, bobbins: 5, tiles: 16 },
+        { level: 6, towers: 2 },
+        { level: 8, bobbins: 6, tiles: 20 },
+        { level: 11, tiles: 28 },
+        { level: 12, bobbins: 7 },
+        { level: 15, tier: 3 },
+        { level: 16, bobbins: 8, towers: 3, tiles: 32 },
+        { level: 18, bobbins: 9 },
+        { level: 21, bobbins: 10, tiles: 36 },
+        { level: 25, bobbins: 11 },
+        { level: 30, bobbins: 12 },
+      ],
+      weeklyCap: 500,
+      catchUpBps: 5_000,
+      commerce: { perDucats: 50, dailyCap: 40 },
+    },
   },
 };
 
