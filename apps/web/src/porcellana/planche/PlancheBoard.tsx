@@ -473,7 +473,8 @@ export function PlancheBoard({
     aimTo.current = whole
       ? new Vector3(0, 0, 0)
       : new Vector3(wx(mineAt?.x ?? W / 2) - S * 2, 0, wz(mineAt?.y ?? H / 2) + S);
-  }, [zoom, whole]);
+    // On line one's house is known only once the server has answered: the view goes to it then.
+  }, [zoom, whole, me]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the board's size is fixed.
   const markAt = useMemo(
     () => new Map(marks.map((m) => [m.key, new Vector3(wx(m.x), 0, wz(m.y))])),
