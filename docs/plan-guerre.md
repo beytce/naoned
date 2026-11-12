@@ -92,4 +92,4 @@ Les compagnies et leur discussion (étape 7), les réservations de ports et les 
 - **l'écran** : la pastille « La Guerre » sous le médaillon, la fiche de la guerre (`GuerreSheet.tsx` : la phase de la semaine, le score des deux flottilles, les ports adverses et leurs sceaux pris, « Assaillir », sa flottille, les assauts subis), l'assaut joué par le serveur, « Reprendre l'assaut ».
 
 3 tests du moteur, 2 du serveur ; parcours `e2e:guerre` (la vraie formation des flottilles ; l'assaut répondu par des états du moteur joués d'avance), captures dans `docs/guerre-captures/`. **Reste** : le port en 3D, le replay d'un assaut subi, la carte de la guerre dessinée (la fiche est une liste). |
-| W5 | à faire |
+| W5 | fait : banc `guerre-bench` (`docs/calibration.md` § La Guerre de la semaine) : 73 % des guerres se jouent à trois sceaux près ou moins ; la flottille la plus puissante n'en gagne que 38 % (la Puissance surestime sans doute les défenses du port) ; 0,95 sceau par assaut ; Prestige de guerre de 100 par semaine en médiane, 180 pour les plus actifs. |

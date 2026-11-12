@@ -3401,3 +3401,24 @@ La meilleure flotte, port par port : galères (bois) 18 %, brigantins (chanvre) 
 - **Pas de flotte unique gagnante** : la meilleure flotte change d'un port à l'autre, aucune ne l'est sur plus d'un tiers des ports ; chaque sorte d'île a ses ports.
 - **Réfléchir paie** : le placement réfléchi brise nettement plus de sceaux qu'au hasard (deux à trois fois plus pour les brigantins, qui doivent choisir leur passe), sauf pour une flotte de galères, qui frappe partout pareil.
 - **Hors cible** : environ 1,3 sceau par assaut à quatre navires et 1,5 à cinq (cible 1,6), et peu d'assauts à trois sceaux (cible 30 %). Briser les trois passes demande de tenir les trois à la fois et de jouer la réserve et les brigantins sur plusieurs manches ; l'assaillant du banc ne voit qu'une manche. À remesurer avec les testeurs (W3) avant de toucher encore aux règles.
+
+
+## La Guerre de la semaine (12 novembre 2026, docs/plan-guerre.md W5)
+
+`pnpm --filter @comptoirs/simulator guerre-bench 120 8` : 120 joueurs des niveaux 6 à 15, armés selon la sorte de leur île (trois à cinq navires ; deux places par passe, garnies trois fois sur quatre), formés chaque lundi en flottilles de six par bandes de Puissance (`guerreForm`) ; chacun joue son assaut 7 jours sur 10, du mardi au samedi, avec l'assaillant réfléchi du banc de l'assaut, sur le port adverse qui a perdu le moins de sceaux ; chaque défenseur change ses ruses chaque jour. Huit semaines, 80 guerres.
+
+| Mesure | Valeur |
+| --- | --- |
+| La flottille la plus puissante gagne | 38 % des guerres décidées |
+| Guerres à égalité | 10 % |
+| Écart de sceaux (médiane) | 3 sur 20 brisés en tout |
+| Guerres jouées à 3 sceaux près ou moins | 73 % |
+| Sceaux par assaut | 0,95 |
+| Prestige de guerre par joueur et par semaine (médiane, plus haut 10 %) | 100, 180 |
+
+**Lecture.**
+
+- **Des guerres serrées** : trois sur quatre se jouent à trois sceaux près ou moins ; la cible de l'audit (« une guerre qui se joue souvent à quelques sceaux près ») est tenue.
+- **La Puissance ne fait pas la victoire** : la flottille la plus puissante n'en gagne que 38 % (sur 72 guerres décidées : un peu moins que la moitié). La Puissance compte les défenses du port autant que la flotte, alors qu'à la Guerre on gagne en brisant des sceaux chez l'autre : elle surestime sans doute un peu le défenseur. À revoir avec les vraies Maisons (le poids des défenses dans `arsenal.power`).
+- **Moins de sceaux qu'au banc de l'assaut** (0,95 contre 1,3 à 1,5) : ici les flottes ont trois à cinq navires, et les ports des joueurs sont plus garnis de tours.
+- **Le Prestige** reste modéré : 100 par semaine en médiane, 180 pour les plus actifs, sous le plafond de 500 que partagent le commerce, le rang et la Passe.
