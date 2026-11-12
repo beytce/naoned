@@ -70,6 +70,8 @@ export interface PasseDuel {
   foe: string;
   /** The seals the tower still has (shown by its captain's name). */
   seals?: number;
+  /** A position to play rather than the board (a sealed order, docs/plan-hex-commerce.md H2). */
+  problem?: string;
   /** Won or not, and the thread's own pieces, for the server to replay the duel. */
   onEnd: (won: boolean, moves: PasseMove[]) => void;
 }
@@ -81,7 +83,9 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
   const [seat, setSeat] = useState<Seat>("fil");
   const [depth, setDepth] = useState(3);
   const [style, setStyle] = useState<PasseStyle | "aucune">("aucune");
-  const [problem, setProblem] = useState<PasseProblem | null>(null);
+  const [problem, setProblem] = useState<PasseProblem | null>(
+    () => (duel?.problem && problems.find((p) => p.id === duel.problem)) || null,
+  );
   const [open, setOpen] = useState(false);
   const setup = useMemo(() => setupOf(board, problem), [board, problem]);
   const [state, setState] = useState<PasseState>(() => passeInit(setup));
@@ -299,7 +303,9 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
           <div className="pc-passe-title">
             <b>{duel ? duel.foe.replace(/^./, (x) => x.toUpperCase()) : title}</b>
             <span>
-              {duel ? `${boards[board].name} · ` : ""}
+              {duel
+                ? `${problem ? `Le fil passe en ${problem.moves} coups` : boards[board].name} · `
+                : ""}
               <span data-passe-turn>{turn}</span>
             </span>
           </div>
@@ -447,7 +453,7 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
                   {problem ? "Réessayer" : "Rejouer"}
                 </button>
               )}
-              {problem && failed ? (
+              {problem && failed && !duel ? (
                 <button
                   type="button"
                   className="pc-passe-quiet"

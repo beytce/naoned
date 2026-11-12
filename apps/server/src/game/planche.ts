@@ -1,5 +1,6 @@
 import {
   type PasseMove,
+  type PasseProblem,
   type PasseSetup,
   type PlancheSetup,
   type PlancheState,
@@ -14,6 +15,9 @@ import {
   plancheInit,
   plancheInvariant,
   plancheMove,
+  plancheOrder,
+  plancheOrderRefusal,
+  plancheOrderTry,
   plancheRobot,
   plancheThread,
   plancheToll,
@@ -44,6 +48,8 @@ export interface PlancheHubTheme {
     >;
     /** How far the lieutenant of a passage sees (it must be the laboratory's, to replay the same duel). */
     lieutenant: number;
+    /** The positions of the sealed orders (« the thread passes in N pieces »). */
+    problems?: readonly PasseProblem[];
   };
   visitHours: number;
   /** Game hours without a read or a gesture after which a player's house goes back to the computer (0: never). */
@@ -67,7 +73,12 @@ export interface PlancheView {
 /** Venice's lagoon of 48 houses, as the server plays it (docs/plan-lagunes.md G4). */
 export const plancheTheme = (): PlancheHubTheme => ({
   board: venice1450Lagune,
-  passe: { rules: venice1450Passe.rules, boards: venice1450Passe.boards, lieutenant: 3 },
+  passe: {
+    rules: venice1450Passe.rules,
+    boards: venice1450Passe.boards,
+    lieutenant: 3,
+    problems: venice1450Passe.problems,
+  },
   visitHours: 8,
   // An account keeps its house for good (docs/plan-compte.md C3).
   idleHours: 0,
@@ -95,7 +106,9 @@ export type PlancheCommand =
   | { type: "build"; player: string; kind: string; at: string; t: number }
   | { type: "move"; player: string; from: string; to: string; t: number }
   /** A duel already won and checked by the hub: only its outcome is kept. */
-  | { type: "forced"; player: string; passage: string; t: number };
+  | { type: "forced"; player: string; passage: string; t: number }
+  /** A sealed order's position played, won or lost, as the hub replayed it. */
+  | { type: "order"; player: string; order: string; won: boolean; t: number };
 
 /** The whole of a board: what the engine holds, who sits where, and when it began. */
 export interface PlancheDoc {
@@ -219,6 +232,9 @@ export function plancheDocApply(
         break;
       case "forced":
         next = plancheForced(S, s, h, c.passage, c.t);
+        break;
+      case "order":
+        next = plancheOrderTry(S, s, h, c.order, c.t, c.won);
         break;
     }
     return { doc: { ...doc, state: next }, answer: "ok" };
@@ -411,5 +427,43 @@ export class PlancheHub {
     }
     if (s.winner !== 1) return "duel_lost";
     return this.act({ type: "forced", player, passage, t });
+  }
+
+  /**
+   * A sealed order (docs/plan-hex-commerce.md H2): its position is replayed here, the player's
+   * pieces and the chain's answers, within the pieces the problem allows. Won, the order is
+   * delivered; lost, the try is spent and nothing else.
+   */
+  async order(player: string, id: string, moves: PasseMove[], t: number): Promise<PlancheAnswer> {
+    const S = this.theme.board;
+    const o = plancheOrder(S, id);
+    const pb = o && this.theme.passe.problems?.find((p) => p.id === o.problem);
+    if (!o || !pb) return "planche_unknown";
+    const seat = this.doc.seats[player];
+    if (!seat) return "not_seated";
+    const why = plancheOrderRefusal(S, this.doc.state, seat.house, id, t);
+    // The stock is read again once the board is brought to `t`: only its other refusals stop here.
+    if (why && why !== "planche_order_short") return why;
+    let s = passeInit({
+      ...this.theme.passe.rules,
+      fire: { thread: 0, chain: 0 },
+      width: pb.width,
+      height: pb.height,
+      cells: [...pb.cells],
+      first: 1,
+    });
+    for (const m of moves) {
+      if (s.winner || s.laid[0] >= pb.moves) break;
+      if (s.turn !== 1) s = passePlay(s, passeThink(s, { depth: 3 }));
+      if (s.winner) break;
+      try {
+        s = passePlay(s, { at: m.at });
+      } catch {
+        return "duel_illegal";
+      }
+    }
+    const won = s.winner === 1 && s.laid[0] <= pb.moves;
+    const answer = await this.act({ type: "order", player, order: id, won, t });
+    return answer === "ok" && !won ? "duel_lost" : answer;
   }
 }

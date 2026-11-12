@@ -7,6 +7,7 @@ import "../porcellana.css";
 import "../passe/passe.css";
 import "./planche.css";
 import {
+  type PlancheOrder,
   type PlancheState,
   maisonLevel,
   maisonThreshold,
@@ -19,6 +20,9 @@ import {
   plancheIsCorsair,
   plancheLagoonLand,
   plancheMove,
+  plancheOrderRefusal,
+  plancheOrderTry,
+  plancheOrders,
   planchePatina,
   planchePlace,
   planchePrice,
@@ -34,6 +38,7 @@ import {
   plancheUpgrade,
   venice1450Lagune,
   venice1450LaguneParams,
+  venice1450Passe,
   venice1450Planche,
 } from "@comptoirs/engine";
 import { Canvas } from "@react-three/fiber";
@@ -107,7 +112,27 @@ const SAID: Record<string, string> = {
   planche_no_bobbin: "Plus de bobine libre : reprends un fil, ou attends qu'une bobine revienne.",
   planche_route_shut: "La route est fermée par un corsaire : force le passage.",
   planche_twice: "Ce fil est déjà tendu.",
+  duel_lost: "Ce n'était pas la clef : la commande reste aux autres, tu ne perds rien d'autre.",
+  planche_order_taken: "Une autre Maison du sestiere a livré cette commande avant toi.",
+  planche_order_tried: "Tu as déjà joué cette commande : un seul essai par Maison.",
+  planche_order_closed: "Cette commande n'est plus ouverte.",
+  planche_order_short: "Ton entrepôt n'a pas assez de marchandise pour la livrer.",
 };
+
+/** The red seal of a sealed order, on a town's label and its card. */
+function Sceau({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true" className="pc-pl-sceau">
+      <path
+        d="M10 1 L12 3 L15 2.5 L15.5 5.5 L18.5 7 L17 10 L18.5 13 L15.5 14.5 L15 17.5 L12 17 L10 19 L8 17 L5 17.5 L4.5 14.5 L1.5 13 L3 10 L1.5 7 L4.5 5.5 L5 2.5 L8 3 Z"
+        fill="#C8102E"
+      />
+      <circle cx="10" cy="10" r="4.6" fill="none" stroke="#F6F4F0" strokeWidth="1.4" />
+      <path d="M10 7.2 V12.8 M7.6 10 H12.4" stroke="#F6F4F0" strokeWidth="1.4" />
+    </svg>
+  );
+}
+const hourOf = (t: number) => `${new Date(t).getUTCHours()} h`;
 
 interface News {
   id: number;
@@ -206,6 +231,8 @@ export default function LabPlanche() {
   const [said, setSaid] = useState("");
   const [news, setNews] = useState<News[]>([]);
   const [duel, setDuel] = useState<string | null>(null);
+  /** The sealed order whose position is being played. */
+  const [sealed, setSealed] = useState<PlancheOrder | null>(null);
   const [inIsle, setInIsle] = useState(false);
   /** The Doge's palace, opened from one's place in the purse. */
   const [palace, setPalace] = useState(false);
@@ -424,6 +451,19 @@ export default function LabPlanche() {
     };
   }, [state, ME]);
   const rival = state.rank.rivals[ME];
+  // The sealed orders of one's sestiere open now, not yet delivered (docs/plan-hex-commerce.md H2).
+  const today = Math.floor(state.now / (24 * HOUR));
+  const orders = useMemo(
+    () =>
+      mySestiere
+        ? plancheOrders(S, today).filter(
+            (o) => o.sestiere === mySestiere && o.from <= state.now && state.now <= o.to,
+          )
+        : [],
+    [today, mySestiere, state.now],
+  );
+  const orderOf = (cityId: string) =>
+    orders.find((o) => o.city === cityId && !state.orders?.[o.id]?.by);
   /** A gesture: on line it is the server's to play, here it is the engine's. */
   const act = (f: () => PlancheState, done?: string, remote?: [string, unknown]) => {
     if (online && remote) {
@@ -486,6 +526,32 @@ export default function LabPlanche() {
         onGesture={gesture}
         onBack={() => setInIsle(false)}
       />
+    );
+  }
+
+  if (sealed) {
+    const o = sealed;
+    const town = S.cities.find((c) => c.id === o.city)?.name ?? "";
+    return (
+      <Suspense fallback={null}>
+        <LabPasse
+          duel={{
+            board: "segna",
+            problem: o.problem,
+            foe: `la commande de ${town}`,
+            onEnd: (won, moves) => {
+              setSealed(null);
+              const said = won
+                ? `Livré : ${o.units} ${S.goods[o.good]?.toLowerCase()} à ${town}, au double du prix.`
+                : SAID.duel_lost;
+              act(() => plancheOrderTry(S, state, ME, o.id, state.now, won), said, [
+                "/order",
+                { order: o.id, moves: moves.map((m) => ({ at: m.at })) },
+              ]);
+            },
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -642,6 +708,40 @@ export default function LabPlanche() {
               : "Force le passage."}
           </p>
         ) : null}
+        {(() => {
+          const o = playing ? orderOf(city.id) : undefined;
+          if (!o) return null;
+          const pb = venice1450Passe.problems.find((p) => p.id === o.problem);
+          const why = plancheOrderRefusal(S, state, ME, o.id, state.now);
+          return (
+            <div className="pc-pl-order" data-order={o.id}>
+              <Sceau size={30} />
+              <div>
+                <b>
+                  Commande scellée · {o.units} {S.goods[o.good]?.toLowerCase()} au double du prix
+                </b>
+                <span>
+                  {ducats(o.price)} ducats l'unité, livrés par{" "}
+                  {S.passages.find((p) => p.id === city.via[0])?.name} jusqu'à {hourOf(o.to)} · la
+                  première Maison du sestiere l'emporte.
+                </span>
+                <span>
+                  Une position : le fil passe en {pb?.moves ?? 2} coups. Un seul essai ; perdu, rien
+                  n'est pris.
+                </span>
+                <button
+                  type="button"
+                  className="pc-passe-go"
+                  data-play-order={o.id}
+                  disabled={!!why}
+                  onClick={() => setSealed(o)}
+                >
+                  {why ? (SAID[why] ?? "Pas pour toi") : "Jouer la position"}
+                </button>
+              </div>
+            </div>
+          );
+        })()}
         {passed ? (
           <div className="pc-pl-alert">
             <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
@@ -1003,9 +1103,13 @@ export default function LabPlanche() {
               data-mine={String(!!served)}
               data-chosen={String(chosen?.kind === "city" && chosen.id === c.id)}
               data-shut={String(!plancheRouteOpen(S, state, ME, c.id, state.now))}
+              data-sealed={String(!!orderOf(c.id))}
               onClick={() => pick({ kind: "city", id: c.id })}
             >
-              <b>{c.name}</b>
+              <b>
+                {orderOf(c.id) ? <Sceau size={13} /> : null}
+                {c.name}
+              </b>
               <ShareBar mine={sh.mine} others={sh.others} />
             </button>
           );

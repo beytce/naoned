@@ -3,10 +3,13 @@ import {
   type PasseMove,
   type PasseSetup,
   type PlancheSetup,
+  passeForcedWin,
   passeInit,
   passeLegal,
   passePlay,
   passeThink,
+  plancheOrders,
+  venice1450Passe,
 } from "@comptoirs/engine";
 import { describe, expect, it } from "vitest";
 import { PlancheHub, type PlancheHubTheme, mondayOf } from "../src/game/planche.js";
@@ -286,5 +289,73 @@ describe("the newcomer's sestiere", () => {
     expect((await hub.view("ben", "Ben", T0)).me).toBe("b1");
     expect((await hub.view("cid", "Cid", T0)).me).toBe("a2");
     expect((await hub.view("dan", "Dan", T0)).me).toBe("b2");
+  });
+});
+
+// The sealed orders (docs/plan-hex-commerce.md H2): a position the hub replays, once per house.
+describe("the sealed orders on line", () => {
+  const ordered = (): PlancheHubTheme => {
+    const t = theme();
+    return {
+      ...t,
+      board: {
+        ...t.board,
+        houses: t.board.houses.map((h) => ({ ...h, sestiere: "s" })),
+        orders: {
+          perSestiere: 1,
+          hours: [6],
+          durationMs: 4 * HOUR,
+          priceBps: 20_000,
+          units: 30,
+          problems: ["deux-01"],
+        },
+      },
+      passe: { ...t.passe, problems: venice1450Passe.problems },
+    };
+  };
+  /** The thread's pieces that solve the problem against the hub's chain. */
+  const solution = (): PasseMove[] => {
+    const pb = venice1450Passe.problems.find((p) => p.id === "deux-01");
+    if (!pb) throw new Error("no problem");
+    let s = passeInit({
+      ...venice1450Passe.rules,
+      fire: { thread: 0, chain: 0 },
+      width: pb.width,
+      height: pb.height,
+      cells: [...pb.cells],
+      first: 1,
+    });
+    const line: PasseMove[] = [];
+    while (!s.winner) {
+      if (s.turn === 1) {
+        const m = passeForcedWin(s, pb.moves - s.laid[0]);
+        if (!m) throw new Error("no win");
+        line.push(m);
+        s = passePlay(s, m);
+      } else s = passePlay(s, passeThink(s, { depth: 3 }));
+    }
+    return line;
+  };
+
+  it("delivers the order of the house that solves its position, twice the price", async () => {
+    const t = ordered();
+    const [o] = plancheOrders(t.board, Math.floor(T0 / DAY));
+    if (!o) throw new Error("no order");
+    const hub = new PlancheHub(t, T0);
+    const me = (await hub.view("ana", "Ana", T0)).me ?? "";
+    await hub.view("ben", "Ben", T0);
+    expect(await hub.order("ana", "nowhere", [], T0)).toBe("planche_unknown");
+    // A wrong first piece: the try is spent.
+    const wrong = solution()[0]?.at === 0 ? 1 : 0;
+    expect(await hub.order("ben", o.id, [{ at: wrong }], T0)).toBe("duel_lost");
+    expect(await hub.order("ben", o.id, solution(), T0)).toBe("planche_order_tried");
+    const before = (await hub.view("ana", "Ana", T0)).state.houses[me]?.ducats ?? 0n;
+    expect(await hub.order("ana", o.id, solution(), T0)).toBe("ok");
+    const v = await hub.view("ana", "Ana", T0);
+    expect(v.state.orders?.[o.id]?.by).toBe(me);
+    expect((v.state.houses[me]?.ducats ?? 0n) - before).toBe(BigInt(o.units * o.price));
+    expect(o.price).toBe(8_000);
+    expect(v.ok).toBe(true);
+    expect(await hub.order("ben", o.id, solution(), T0)).toBe("planche_order_taken");
   });
 });

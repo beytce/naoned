@@ -8,6 +8,7 @@
 import type { LagoonParams, LagoonTown } from "../planche/lagune.js";
 import { plancheLagoon } from "../planche/lagune.js";
 import type { PlancheWant } from "../planche/planche.js";
+import { venice1450PasseProblems } from "./venice1450.passe.problems.js";
 import { venice1450Planche } from "./venice1450.planche.js";
 
 /**
@@ -264,6 +265,16 @@ export const venice1450LaguneParams: LagoonParams = {
         laurel: 100,
         doge: 200,
       },
+    },
+    // The sealed orders (docs/plan-hex-commerce.md H2): two a day in each sestiere, at 9 and 17
+    // (UTC), four hours each, twice the price, a third of a day of thread (10 an hour × 8 h).
+    orders: {
+      perSestiere: 2,
+      hours: [9, 17],
+      durationMs: 4 * 3_600_000,
+      priceBps: 20_000,
+      units: 80,
+      problems: venice1450PasseProblems.map((p) => p.id),
     },
   },
 };

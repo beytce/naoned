@@ -24,6 +24,7 @@ import {
   ileSlice,
   ileUpgrade,
 } from "../ile/ile.js";
+import type { PlancheOrderRules, PlancheOrderState } from "./commandes.js";
 import {
   MAISON_KEEP,
   type MaisonCaps,
@@ -124,6 +125,8 @@ export interface PlancheSetup {
    * and its bobbins, its island, its workshops and its towers follow it; without it, the rules'.
    */
   maison?: MaisonRules;
+  /** The sealed orders (docs/plan-hex-commerce.md H2): without them, none. */
+  orders?: PlancheOrderRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -197,6 +200,8 @@ export interface PlancheState {
   spent: bigint;
   /** The tide, the weeks, the rivals and the laurels. */
   rank: PlancheRank;
+  /** The sealed orders taken or tried, by id (the last two days'). */
+  orders?: Record<string, PlancheOrderState>;
 }
 
 const fail = (code: string): never => {

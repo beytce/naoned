@@ -232,4 +232,18 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     );
     return show(reply, p, await p.hub.force(p.id, b.data.passage, moves, p.now()));
   });
+  // A sealed order (docs/plan-hex-commerce.md H2): its position replayed, delivered if won.
+  app.post("/api/planche/order", deps.perMerchant(20), async (req, reply) => {
+    const b = z
+      .object({
+        order: key,
+        moves: z.array(z.object({ at: z.number().int().min(0).max(400) })).max(40),
+      })
+      .safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const moves = b.data.moves.map((m) => ({ at: m.at }));
+    return show(reply, p, await p.hub.order(p.id, b.data.order, moves, p.now()));
+  });
 }
