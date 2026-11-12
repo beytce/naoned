@@ -13,6 +13,9 @@ import {
   plancheClaim,
   plancheDaily,
   plancheDailyTry,
+  plancheDefense,
+  plancheDefenseMove,
+  plancheDefenseRemove,
   plancheDuel,
   plancheForced,
   plancheGuard,
@@ -24,6 +27,9 @@ import {
   plancheOrderRefusal,
   plancheOrderTry,
   plancheRobot,
+  plancheShip,
+  plancheShipRefit,
+  plancheShipRepair,
   plancheThread,
   plancheToll,
   plancheUnthread,
@@ -119,7 +125,13 @@ export type PlancheCommand =
   /** The links laid in advance on a tower's board (docs/plan-hex-commerce.md H4). */
   | { type: "guard"; player: string; passage: string; cells: number[]; t: number }
   /** A Passe of a challenge won by the player against another house (docs/plan-hex-commerce.md H5). */
-  | { type: "duel"; player: string; loser: string; t: number };
+  | { type: "duel"; player: string; loser: string; t: number }
+  /** The Arsenal and the port (docs/plan-arsenal.md A3). */
+  | { type: "ship"; player: string; kind: string; t: number }
+  | { type: "refit" | "repair"; player: string; id: number; t: number }
+  | { type: "defense"; player: string; pass: string; kind: string; t: number }
+  | { type: "defenseMove"; player: string; from: string; index: number; to: string; t: number }
+  | { type: "defenseRemove"; player: string; pass: string; index: number; t: number };
 
 /** The whole of a board: what the engine holds, who sits where, and when it began. */
 export interface PlancheDoc {
@@ -252,6 +264,24 @@ export function plancheDocApply(
         break;
       case "duel":
         next = plancheDuel(S, s, h, c.loser);
+        break;
+      case "ship":
+        next = plancheShip(S, s, h, c.kind, c.t);
+        break;
+      case "refit":
+        next = plancheShipRefit(S, s, h, c.id, c.t);
+        break;
+      case "repair":
+        next = plancheShipRepair(S, s, h, c.id, c.t);
+        break;
+      case "defense":
+        next = plancheDefense(S, s, h, c.pass, c.kind);
+        break;
+      case "defenseMove":
+        next = plancheDefenseMove(S, s, h, c.from, c.index, c.to);
+        break;
+      case "defenseRemove":
+        next = plancheDefenseRemove(S, s, h, c.pass, c.index);
         break;
       case "guard": {
         const def = S.passages.find((p) => p.id === c.passage);
@@ -421,6 +451,32 @@ export class PlancheHub {
 
   upgrade(player: string, at: string, t: number) {
     return this.act({ type: "upgrade", player, at, t });
+  }
+
+  /** The Arsenal: a ship laid on a cale, refitted, or repaired (docs/plan-arsenal.md). */
+  ship(player: string, kind: string, t: number) {
+    return this.act({ type: "ship", player, kind, t });
+  }
+
+  refit(player: string, id: number, t: number) {
+    return this.act({ type: "refit", player, id, t });
+  }
+
+  repair(player: string, id: number, t: number) {
+    return this.act({ type: "repair", player, id, t });
+  }
+
+  /** The port: a defense built on a pass, moved to another, or taken down. */
+  defense(player: string, pass: string, kind: string, t: number) {
+    return this.act({ type: "defense", player, pass, kind, t });
+  }
+
+  defenseMove(player: string, from: string, index: number, to: string, t: number) {
+    return this.act({ type: "defenseMove", player, from, index, to, t });
+  }
+
+  defenseRemove(player: string, pass: string, index: number, t: number) {
+    return this.act({ type: "defenseRemove", player, pass, index, t });
   }
 
   /** A Passe of a challenge won: the cote of the two houses moves. */

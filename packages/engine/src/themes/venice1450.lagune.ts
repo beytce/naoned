@@ -79,6 +79,18 @@ const FAMILIES = [
 
 const base = venice1450Planche;
 
+const HOUR = 3_600_000;
+/** A ship of the Arsenal: its goods, its hours on the cale, its force and hull, its word, its level. */
+const ship = (
+  name: string,
+  goods: Record<string, number>,
+  hours: number,
+  force: number,
+  hull: number,
+  keyword: string,
+  minLevel: number,
+) => ({ name, goods, buildMs: hours * HOUR, force, hull, keyword, minLevel });
+
 export const venice1450LaguneParams: LagoonParams = {
   sestieri: [
     { id: "cannaregio", name: "Cannaregio" },
@@ -224,7 +236,27 @@ export const venice1450LaguneParams: LagoonParams = {
     goods: base.goods,
     // A bobbin takes longer to come home, and a thread held gains faster (docs/calibration.md).
     rules: { ...base.rules, rewindMsPerTile: 20 * 60_000, patinaBpsPerDay: 1_000 },
-    ...(base.ile ? { ile: base.ile } : {}),
+    // The island's workshops, and the Arsenal (docs/plan-arsenal.md): one an island, from level 6.
+    ...(base.ile
+      ? {
+          ile: {
+            ...base.ile,
+            workshops: {
+              ...base.ile.workshops,
+              arsenal: {
+                name: "Arsenal",
+                tier: 1,
+                terrain: "rive",
+                inputs: {},
+                outputs: {},
+                lotsPerHour: 0,
+                cost: [600_000, 2_500_000, 6_000_000],
+                buildMs: [HOUR, 6 * HOUR, 24 * HOUR],
+              },
+            },
+          },
+        }
+      : {}),
     ...(base.rank ? { rank: base.rank } : {}),
     // The growth of the houses (docs/plan-progression-maison.md): 3 bobbins at first, 12 at the
     // top; the worked goods at level 3; a second tower at 6. Titles of the Republic's houses.
@@ -278,6 +310,44 @@ export const venice1450LaguneParams: LagoonParams = {
       priceBps: 20_000,
       units: 20,
       problems: venice1450PasseProblems.map((p) => p.id),
+    },
+    // The Arsenal, the fleet and the port (docs/plan-arsenal.md): goods become ships, never ducats.
+    arsenal: {
+      workshop: "arsenal",
+      minLevel: 6,
+      cales: [2, 3, 4],
+      ships: {
+        // Each from what an island of the lagoon makes on its own (docs/plan-arsenal.md § 3.2):
+        // the wood islands arm galleys, the hemp ones brigantines, the salt ones fireships.
+        galere: ship("Galère", { wood: 80 }, 3, 2, 4, "solide", 6),
+        brigantin: ship("Brigantin", { hemp: 60 }, 2, 2, 2, "rapide", 6),
+        brulot: ship("Brûlot", { salt: 40 }, 1, 0, 1, "brule", 6),
+        galeasse: ship("Galéasse", { wood: 40, bricks: 50 }, 5, 4, 3, "bombarde", 11),
+        escorte: ship("Nef d'escorte", { glass: 40, wood: 20 }, 4, 0, 3, "repare", 16),
+      },
+      places: [
+        { level: 6, n: 3 },
+        { level: 10, n: 5 },
+        { level: 16, n: 8 },
+        { level: 21, n: 10 },
+        { level: 30, n: 12 },
+      ],
+      refitBps: 3_333,
+      repair: { bps: 3_333, ms: 40 * 60_000 },
+      port: {
+        passes: ["bouche", "nord", "sud"],
+        slots: [
+          { level: 6, n: 2 },
+          { level: 16, n: 3 },
+        ],
+        defenses: {
+          tour: { name: "Tour", goods: { bricks: 60 }, hull: 6 },
+          // Of hemp: the islands of the mill and of the rope both have it.
+          chaine: { name: "Chaîne", goods: { hemp: 60 } },
+          batterie: { name: "Batterie", goods: { glass: 40 } },
+        },
+      },
+      power: { workshop: 10, arsenal: 20, ship: 5, defense: 15 },
     },
     // The problem of the day (docs/plan-hex-commerce.md H3): the same twenty, 20 of Prestige.
     daily: { problems: venice1450PasseProblems.map((p) => p.id), prestige: 20 },

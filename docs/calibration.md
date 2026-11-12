@@ -3323,3 +3323,32 @@ Passage libre après un sceau ramené de 24 h à 8 h, ou péage de 10 % à 5 % :
 **Tranché par le porteur (12 novembre 2026).** Les commandes scellées passent à **20 unités** (deux heures de fil, au double du prix) : avec le Problème du jour, +25 %, dans la cible. Les tours restent telles quelles : tenir une tour est la grande récompense de la Passe ; on remesure à l'étape de la Guerre, quand l'Assaut les disputera.
 
 Note : sans Prestige pour les sceaux ni pour la tour tenue, l'écart dû aux tours reste à +48 % ; il ne vient donc pas de ces deux gains, mais du commerce lui-même (pas de péage pour qui tient, routes ouvertes plus tôt).
+
+
+## L'Arsenal et la flotte (12 novembre 2026, docs/plan-arsenal.md A2)
+
+`pnpm --filter @comptoirs/simulator arsenal-bench 3 8` : la lagune de Venise sur huit semaines, toutes ses Maisons jouées en régulières (une visite toutes les 8 h) par le marchand de l'ordinateur, qui arme dès que son niveau ouvre l'Arsenal (niveau 6) : l'Arsenal sur une case, le navire que son entrepôt peut faire dont il a le moins, la défense que son entrepôt peut faire dans la passe la moins garnie.
+
+**Les recettes revues.** Avec les recettes de l'audit (galère de planches et de cordages, brigantin de planches et de chanvre…), presque aucune île n'armait : une île de la lagune ne fait presque jamais les deux marchandises d'une recette, et la planche n'a pas de marché entre Maisons. **Retenu** : chaque navire est fait de ce qu'une sorte d'île fait seule. La galère de bois (80), le brigantin de chanvre (60), le brûlot de sel (40) ; au niveau 11, la galéasse de bois et de briques ; au niveau 16, la nef d'escorte de verre et de bois. Les défenses : la tour de briques (60), la chaîne de chanvre (60 ; de cordages, les îles du moulin n'avaient aucune défense), la batterie de verre (40).
+
+| Semaine | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| niveau médian | 3 | 4 | 6 | 6 | 7 | 7 | 8 | 8 |
+| puits / sources | 2.25 | 0.56 | 0.71 | 0.72 | 0.51 | 0.44 | 0.66 | 0.59 |
+| dont l'Arsenal | 0 % | 0 % | 5 % | 18 % | 17 % | 8 % | 14 % | 10 % |
+
+| Île (ce qu'elle travaille) | Maisons | Puissance (moyenne) | Flotte (navires, toutes graines) | Port |
+| --- | --- | --- | --- | --- |
+| briqueterie | 7 | 114 | 14 galères | 26 tours |
+| briqueterie et scierie | 7 | 328 | 83 galères, 2 galéasses | 126 tours |
+| verrerie | 6 | 198 | 33 galères | 66 batteries |
+| verrerie et scierie | 9 | 247 | 47 galères, 39 brûlots | 134 batteries |
+| moulin | 6 | 298 | 52 brigantins, 34 brûlots | 108 chaînes |
+| corderie | 13 | 232 | 78 brigantins, 39 brûlots | 231 chaînes |
+
+Deux Maisons armées de Puissance proche (5 % près) : de deux sortes d'île, 315 paires, dont **61 %** n'ont pas la même flotte ; de la même sorte, 0 %.
+
+**Lecture.**
+
+- **Le caractère de la flotte** suit l'île : les îles du bois arment des galères, celles du chanvre des brigantins, celles du sel des brûlots ; le port prend des tours chez la brique, des batteries chez le verre, des chaînes chez le chanvre. Les 39 % de paires semblables viennent des îles du verre et de la brique, qui n'arment que des galères jusqu'à la galéasse (niveau 11) et la nef (niveau 16) : l'écart grandira avec les niveaux.
+- **Le puits** : la semaine 1 est celle où toutes les îles se bâtissent (2,25). Ensuite, le ratio des puits sur les sources tient entre 0,44 et 0,72, autour de 0,6, le bas de la cible des trois premiers mois (0,6 à 0,8) ; l'Arsenal en fait 8 à 18 points. La refonte des navires et les réparations de la Guerre (étape 6) l'élèveront ; à remesurer sur quatre marées quand la Guerre sera là.
