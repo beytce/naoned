@@ -672,6 +672,8 @@ export const companies = pgTable(
     /** The call to skirmish a member chose for the company, and who chose it. */
     callAt: timestamp("call_at", { withTimezone: true }),
     callBy: uuid("call_by").references(() => accounts.id, { onDelete: "set null" }),
+    /** Its flag on the shared board (docs/plan-compagnie.md K1): a colour and a charge. */
+    flag: jsonb("flag"),
   },
   (t) => [
     uniqueIndex("companies_code_key").on(t.code),

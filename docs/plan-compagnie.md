@@ -80,7 +80,7 @@ L'île commune dessinée sur la planche et le fil commun entre associés (plus t
 
 | Lot | État |
 | --- | --- |
-| K1 | à faire |
+| K1 | fait : `apps/server/src/game/plancheCompany.ts` (les tables de l'ancien jeu reprises ; jusqu'à 12 Maisons ; le doge, trois capitaines au plus, les membres ; trois jours avant de rejoindre une autre compagnie ; le doge qui part cède la place au plus ancien capitaine ; le pavillon de la compagnie, colonne `flag`, migration 0038) ; l'invité par un lien est assis dans la lagune de la compagnie s'il y a de la place (`seatOf` et ses lagunes préférées) ; les compagnies des Maisons d'une planche dans sa réponse ; routes `/api/planche/compagnie` (fonder, invitation, rejoindre, quitter, rôle) ; la discussion de l'ancien jeu reprise telle quelle (`/api/planche/compagnie/messages`, `/report`). 1 test des routes. |
 | K2 | à faire |
 | K3 | à faire |
 | K4 | à faire |

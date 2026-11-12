@@ -4,9 +4,21 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
 import { accounts, influenceEntries, maisonEvents } from "../db/schema.js";
+import { ChatError } from "./chatRules.js";
+import { CompanyError } from "./company.js";
+import { companyThread, postCompanyMessage, reportCompanyMessage } from "./company.js";
 import { GuerreHub } from "./guerre.js";
 import type { PasseHub } from "./passe.js";
 import { type PlancheAnswer, type PlancheHub, plancheTheme } from "./planche.js";
+import {
+  compagnieOfCode,
+  compagnieView,
+  compagniesOnBoard,
+  foundCompagnie,
+  joinCompagnie,
+  leaveCompagnie,
+  setCompagnieRole,
+} from "./plancheCompany.js";
 import { PlancheDefis } from "./plancheDefi.js";
 import { PlancheLagoons } from "./plancheLagoons.js";
 import type { PlancheStore } from "./plancheStore.js";
@@ -96,7 +108,12 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     defis: PlancheDefis | null;
   };
   /** The player, with his board and his house (given one if he has none); none without an account. */
-  const who = async (req: FastifyRequest, reply: FastifyReply): Promise<Player | null> => {
+  const who = async (
+    req: FastifyRequest,
+    reply: FastifyReply,
+    /** The boards a newcomer is seated on first (its company's lagoons). */
+    prefer: string[] = [],
+  ): Promise<Player | null> => {
     const account = (await deps.accountIfAny?.(req)) ?? null;
     if (!account) {
       void reply.code(401).send({ error: "not_signed_in" });
@@ -104,14 +121,18 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     }
     const { lagoons, now, defis } = await boards();
     const name = await nameOf(account.id);
-    const { store } = await lagoons.seatOf(account.id, name, now());
+    const { store } = await lagoons.seatOf(account.id, name, now(), prefer);
     return { id: account.id, name, hub: store.hub, store, lagoon: store.name, now, defis };
   };
   const show = async (reply: FastifyReply, p: Player, res: PlancheAnswer = "ok") => {
     if (res !== "ok") return reply.code(STATUS[res] ?? SAID_STATUS).send({ error: res });
     const view = await p.hub.view(p.id, p.name, p.now());
     const defi = p.defis?.view(p.id, deps.now());
-    return toJson({ planche: { ...view, lagoon: p.lagoon, ...(defi ? { defi } : {}) } });
+    // The companies of the board's houses, for their flags (docs/plan-compagnie.md K1).
+    const compagnies = await compagniesOnBoard(deps.db, p.store.worldId);
+    return toJson({
+      planche: { ...view, lagoon: p.lagoon, compagnies, ...(defi ? { defi } : {}) },
+    });
   };
   const key = z.string().min(1).max(40);
 
@@ -389,5 +410,104 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const res = await g.round(p.id, p.id, moves, p.now());
     if ("error" in res) return reply.code(409).send(res);
     return toJson({ assaut: res.state, ...(res.result ? { result: res.result } : {}) });
+  });
+  // The company on the board (docs/plan-compagnie.md K1, K2): the old game's, taken up.
+  const company = async (
+    reply: FastifyReply,
+    f: () => Promise<unknown>,
+  ): Promise<FastifyReply | unknown> => {
+    try {
+      return await f();
+    } catch (e) {
+      if (e instanceof CompanyError || e instanceof ChatError)
+        return reply.code(e.status).send({ error: e.code });
+      throw e;
+    }
+  };
+  const compagnieOf = async (p: Player) =>
+    toJson({ compagnie: await compagnieView(deps.db, p.id) });
+  app.get("/api/planche/compagnie", deps.perMerchant(120), async (req, reply) => {
+    const p = await who(req, reply);
+    return p ? compagnieOf(p) : reply;
+  });
+  app.post("/api/planche/compagnie", deps.perMerchant(10), async (req, reply) => {
+    const b = z
+      .object({ name: z.string().max(40), flag: z.object({ color: key, symbol: key }) })
+      .safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return company(reply, async () => {
+      await foundCompagnie(deps.db, p.id, b.data.name, b.data.flag, deps.now());
+      return compagnieOf(p);
+    });
+  });
+  /** The link of an invitation: the company it names, before joining. */
+  app.get("/api/planche/compagnie/invitation/:code", deps.perMerchant(60), async (req, reply) => {
+    const c = z.object({ code: z.string().regex(/^[\w-]{4,20}$/) }).safeParse(req.params);
+    if (!c.success) return reply.code(400).send({ error: "invalid_input" });
+    const found = await compagnieOfCode(deps.db, c.data.code);
+    if (!found) return reply.code(404).send({ error: "unknown_company" });
+    return toJson({ invitation: { name: found.name } });
+  });
+  app.post("/api/planche/compagnie/join", deps.perMerchant(10), async (req, reply) => {
+    const b = z.object({ code: z.string().regex(/^[\w-]{4,20}$/) }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    // A newcomer is seated in the lagoon of the company that invites it, if it has room.
+    const found = await compagnieOfCode(deps.db, b.data.code);
+    const p = await who(req, reply, found?.worlds ?? []);
+    if (!p) return reply;
+    return company(reply, async () => {
+      await joinCompagnie(deps.db, p.id, b.data.code, deps.now());
+      return compagnieOf(p);
+    });
+  });
+  app.post("/api/planche/compagnie/leave", deps.perMerchant(10), async (req, reply) => {
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return company(reply, async () => {
+      await leaveCompagnie(deps.db, p.id, deps.now());
+      return compagnieOf(p);
+    });
+  });
+  app.post("/api/planche/compagnie/role", deps.perMerchant(20), async (req, reply) => {
+    const b = z
+      .object({
+        member: z.string().uuid(),
+        role: z.enum(["doge", "capitaine"]).nullable(),
+      })
+      .safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return company(reply, async () => {
+      await setCompagnieRole(deps.db, p.id, b.data.member, b.data.role);
+      return compagnieOf(p);
+    });
+  });
+  app.get("/api/planche/compagnie/messages", deps.perMerchant(240), async (req, reply) => {
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return company(reply, async () => toJson(await companyThread(deps.db, p.id)));
+  });
+  app.post("/api/planche/compagnie/messages", deps.perMerchant(60), async (req, reply) => {
+    const b = z.object({ body: z.string().max(400) }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return company(reply, async () => {
+      await postCompanyMessage(deps.db, p.id, b.data.body, deps.now());
+      return toJson(await companyThread(deps.db, p.id));
+    });
+  });
+  app.post("/api/planche/compagnie/report", deps.perMerchant(30), async (req, reply) => {
+    const b = z.object({ message: z.string().uuid() }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return company(reply, async () => {
+      await reportCompanyMessage(deps.db, p.id, b.data.message, deps.now());
+      return toJson(await companyThread(deps.db, p.id));
+    });
   });
 }

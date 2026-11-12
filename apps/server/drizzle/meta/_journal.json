@@ -267,6 +267,13 @@
       "when": 1794505283668,
       "tag": "0037_guerre",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794516348093,
+      "tag": "0038_company_flag",
+      "breakpoints": true
     }
   ]
 }

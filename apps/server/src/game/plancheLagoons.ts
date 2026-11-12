@@ -88,6 +88,8 @@ export class PlancheLagoons {
     accountId: string,
     name: string,
     now: number,
+    /** The boards to seat a newcomer on first, if one has room (its company's, docs/plan-compagnie.md). */
+    prefer: string[] = [],
   ): Promise<{ store: PlancheStore; house: string }> {
     return this.serial(async () => {
       const [row] = await this.db
@@ -104,7 +106,9 @@ export class PlancheLagoons {
           return { store, house };
         }
       }
-      let store = this.stores.find((s) => s.hub.free() > 0);
+      let store =
+        this.stores.find((s) => prefer.includes(s.worldId) && s.hub.free() > 0) ??
+        this.stores.find((s) => s.hub.free() > 0);
       if (!store) {
         store = await PlancheStore.create(
           this.db,
