@@ -1,8 +1,9 @@
-import { eq } from "drizzle-orm";
+import { maisonLevel, maisonThreshold, maisonUnlocks } from "@comptoirs/engine";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
-import { accounts } from "../db/schema.js";
+import { accounts, influenceEntries, maisonEvents } from "../db/schema.js";
 import { type PlancheAnswer, type PlancheHub, plancheTheme } from "./planche.js";
 import { PlancheLagoons } from "./plancheLagoons.js";
 import { toJson } from "./serialize.js";
@@ -86,6 +87,74 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
   app.get("/api/planche", deps.perMerchant(240), async (req, reply) => {
     const p = await who(req, reply);
     return p ? show(reply, p) : reply;
+  });
+  /**
+   * The house's growth (docs/plan-progression-maison.md): its level and title, its Prestige and the
+   * week's, what the next levels open, its Livre and its collection.
+   */
+  app.get("/api/maison", deps.perMerchant(120), async (req, reply) => {
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const M = plancheTheme().board.maison;
+    if (!M) return reply.code(404).send({ error: "no_growth" });
+    const { doc } = p.hub.current();
+    const house = doc.seats[p.id]?.house ?? "";
+    const h = doc.state.houses[house];
+    const m = h?.maison;
+    const prestige = m?.prestige ?? 0;
+    const at = maisonLevel(M, prestige);
+    const level = h?.level ?? at.level;
+    const opens = [];
+    for (let n = level + 1; n <= M.maxLevel && opens.length < 4; n++) {
+      const before = maisonUnlocks(M, n - 1);
+      const after = maisonUnlocks(M, n);
+      const what = (Object.keys(after) as (keyof typeof after)[]).filter(
+        (k) => after[k] !== before[k],
+      );
+      if (what.length)
+        opens.push({
+          level: n,
+          at: maisonThreshold(M, n),
+          ...Object.fromEntries(what.map((k) => [k, after[k]])),
+        });
+    }
+    const livre = await deps.db
+      .select({ kind: maisonEvents.kind, data: maisonEvents.data, at: maisonEvents.at })
+      .from(maisonEvents)
+      .where(eq(maisonEvents.accountId, p.id))
+      .orderBy(desc(maisonEvents.at))
+      .limit(30);
+    const kept = await deps.db
+      .select({ kind: maisonEvents.kind, n: count() })
+      .from(maisonEvents)
+      .where(eq(maisonEvents.accountId, p.id))
+      .groupBy(maisonEvents.kind);
+    const [total] = await deps.db
+      .select({ sum: sql<number>`coalesce(sum(${influenceEntries.amount}), 0)::int` })
+      .from(influenceEntries)
+      .where(and(eq(influenceEntries.accountId, p.id), eq(influenceEntries.source, "prestige")));
+    return toJson({
+      maison: {
+        name: p.name,
+        house,
+        level,
+        title: maisonLevel(M, maisonThreshold(M, level)).title,
+        prestige,
+        from: maisonThreshold(M, level),
+        to: level < M.maxLevel ? maisonThreshold(M, level + 1) : null,
+        week: m?.week ?? 0,
+        carry: m?.carry ?? 0,
+        weeklyCap: M.weeklyCap,
+        credits: m?.credits ?? [],
+        caps: h?.caps ?? maisonUnlocks(M, level),
+        opens,
+        flags: doc.state.rank.flags[house] ?? [],
+        collection: Object.fromEntries(kept.map((k) => [k.kind, Number(k.n)])),
+        /** Every lagoon's Prestige of this account, as its journal of points keeps it. */
+        kept: total?.sum ?? 0,
+        livre: livre.map((e) => ({ kind: e.kind, data: e.data, at: e.at.getTime() })),
+      },
+    });
   });
   app.post("/api/planche/thread", deps.perMerchant(60), async (req, reply) => {
     const b = z.object({ city: key, good: key }).safeParse(req.body);

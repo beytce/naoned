@@ -25,6 +25,14 @@ import {
   ileUpgrade,
 } from "../ile/ile.js";
 import {
+  MAISON_KEEP,
+  type MaisonCaps,
+  type MaisonRules,
+  type MaisonState,
+  maisonStart,
+  maisonUnlocks,
+} from "./maison.js";
+import {
   type PlancheHouseRank,
   type PlancheRank,
   type PlancheRankRules,
@@ -111,6 +119,11 @@ export interface PlancheSetup {
   ile?: IleRules;
   /** The rank's rules: without them, the counters run but no week nor tide ever ends. */
   rank?: PlancheRankRules;
+  /**
+   * The growth of the houses (docs/plan-progression-maison.md): with it, each house has a level,
+   * and its bobbins, its island, its workshops and its towers follow it; without it, the rules'.
+   */
+  maison?: MaisonRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -164,6 +177,11 @@ export interface PlancheHouse {
    * the tolls it paid and received, what its island cost. Its purse is its start and these.
    */
   book: { sold: bigint; tollPaid: bigint; tollIn: bigint; isle: bigint };
+  /** Its level, and what it opens, when the board has the growth of the houses. */
+  level?: number;
+  caps?: MaisonCaps;
+  /** Its Prestige and what its Livre tells. */
+  maison?: MaisonState;
 }
 
 export interface PlancheState {
@@ -220,6 +238,13 @@ export function plancheInit(S: PlancheSetup, now: number, tideStart = now): Plan
       earned: 0n,
       rank: plancheRankHouse(S),
       book: { sold: 0n, tollPaid: 0n, tollIn: 0n, isle: 0n },
+      ...(S.maison
+        ? {
+            level: 1,
+            caps: maisonUnlocks(S.maison, 1),
+            maison: maisonStart(Math.floor(now / DAY)),
+          }
+        : {}),
       ...(S.ile ? { ile: ileInit(S.ile, plancheGround(S, h.id)) } : {}),
     };
   }
@@ -269,7 +294,8 @@ export function planchePrice(S: PlancheSetup, s: PlancheState, city: string, goo
 export function plancheFreeBobbins(S: PlancheSetup, s: PlancheState, house: string): number {
   const h = own(s.houses, house);
   if (!h) return 0;
-  return S.rules.bobbins - h.threads.length - h.rewinding.filter((t) => t > s.now).length;
+  const bobbins = h.caps?.bobbins ?? S.rules.bobbins;
+  return bobbins - h.threads.length - h.rewinding.filter((t) => t > s.now).length;
 }
 
 /** Whether a house's barges get through to a town now: no corsair in the way that it has not forced. */
@@ -516,8 +542,15 @@ export function plancheForced(
   const h = s.houses[house] as PlancheHouse;
   p.seals -= 1;
   h.free[passage] = now + S.rules.freeAfterForceMs;
+  if (h.maison) h.maison.seals += 1;
   if (p.seals <= 0) {
-    p.holder = house;
+    // A house holds as many towers as its level allows: beyond, the seals come back, the tower stays.
+    const held = Object.values(s.passages).filter((q) => q.holder === house).length;
+    if (held < (h.caps?.towers ?? Number.POSITIVE_INFINITY)) {
+      p.holder = house;
+      h.maison?.log.push({ at: now, kind: "tower", data: passage });
+      if (h.maison && h.maison.log.length > MAISON_KEEP) h.maison.log.shift();
+    }
     p.seals = def.seals;
   }
   return s;
@@ -568,7 +601,9 @@ function onIsle(
 ): PlancheState {
   const h0 = own(s0.houses, house);
   if (!S.ile || !h0?.ile) return fail("planche_unknown");
-  const { ile, cost } = f(S.ile, h0.ile);
+  // The island grows as far as the house's level allows (docs/plan-progression-maison.md).
+  const R = h0.caps ? { ...S.ile, maxTiles: Math.min(S.ile.maxTiles, h0.caps.tiles) } : S.ile;
+  const { ile, cost } = f(R, h0.ile);
   if (cost > h0.ducats) return fail("planche_poor");
   const s = clone(s0);
   const h = s.houses[house] as PlancheHouse;
@@ -593,7 +628,36 @@ export const plancheBuild = (
   type: string,
   at: string,
   now: number,
-) => onIsle(S, s, house, (R, ile) => ileBuild(R, ile, type, at, now));
+) => {
+  // The workshops of a tier open at their level.
+  const tier = S.ile?.workshops[type]?.tier ?? 0;
+  const caps = own(s.houses, house)?.caps;
+  if (caps && Object.hasOwn(S.ile?.workshops ?? {}, type) && tier > caps.tier)
+    return fail("planche_level");
+  return onIsle(S, s, house, (R, ile) => ileBuild(R, ile, type, at, now));
+};
+
+/**
+ * A house reaches a level (docs/plan-progression-maison.md): what the level opens is its own from
+ * then on. A level never goes back.
+ */
+export function plancheSetLevel(
+  S: PlancheSetup,
+  s0: PlancheState,
+  house: string,
+  level: number,
+): PlancheState {
+  const h0 = own(s0.houses, house);
+  if (!h0 || !S.maison) return fail("planche_unknown");
+  const to = Math.max(1, Math.min(S.maison.maxLevel, Math.floor(level)));
+  if (to < (h0.level ?? 1)) return fail("planche_level_back");
+  if (to === h0.level) return s0;
+  const s = clone(s0);
+  const h = s.houses[house] as PlancheHouse;
+  h.level = to;
+  h.caps = maisonUnlocks(S.maison, to);
+  return s;
+}
 export const plancheUpgrade = (
   S: PlancheSetup,
   s: PlancheState,

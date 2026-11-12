@@ -45,8 +45,12 @@ export class PlancheLagoons {
     for (const r of rows) {
       // A board of another map (the board of 8 before the lagoons): retired, its seats freed, its
       // players seated anew (the owner's choice, 12 November 2026). Its ledger stays.
-      const was = (r.settings as { board?: { houses?: { id: string }[] } })?.board?.houses;
-      if ((was ?? []).map((h) => h.id).join(",") !== map) {
+      const board = (r.settings as { board?: { houses?: { id: string }[]; maison?: unknown } })
+        ?.board;
+      // Another map, or a lagoon opened before the growth of the houses (docs/plan-progression-maison.md).
+      const other = (board?.houses ?? []).map((h) => h.id).join(",") !== map;
+      const older = !!theme.board.maison && !board?.maison;
+      if (other || older) {
         await db.transaction(async (tx) => {
           await tx.delete(plancheSeats).where(eq(plancheSeats.worldId, r.id));
           await tx.update(worlds).set({ status: PLANCHE_RETIRED }).where(eq(worlds.id, r.id));

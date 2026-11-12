@@ -755,3 +755,28 @@ export const plancheSeats = pgTable(
     uniqueIndex("planche_seats_account_key").on(t.accountId),
   ],
 );
+
+/**
+ * What a house's Livre tells (docs/plan-progression-maison.md): a level reached, a flag taken, a
+ * tower taken, a laurel, the Doge. Kept with the account, to follow it from one lagoon to another;
+ * copied from the board, once each (`key`).
+ */
+export const maisonEvents = pgTable(
+  "maison_events",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** The lagoon it happened in; kept when the lagoon goes. */
+    worldId: uuid("world_id").references(() => worlds.id, { onDelete: "set null" }),
+    kind: text("kind").notNull(),
+    data: text("data"),
+    key: text("key").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    uniqueIndex("maison_events_key").on(t.accountId, t.key),
+    index("maison_events_account_idx").on(t.accountId, t.at),
+  ],
+);

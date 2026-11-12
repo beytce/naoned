@@ -8,6 +8,8 @@ import "../passe/passe.css";
 import "./planche.css";
 import {
   type PlancheState,
+  maisonLevel,
+  maisonThreshold,
   plancheAdvance,
   plancheBuild,
   plancheBuyTile,
@@ -43,6 +45,7 @@ import { DucatCoin } from "../../art/plateau/coins.js";
 import { connectLive } from "../../game/live.js";
 import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
 import { Entree, Fonder, Profil } from "./Entree.js";
+import { FacadeSheet, LevelUp, MaisonRing, MaisonSheet, type MaisonView } from "./Maison.js";
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
 import { Bobbin, Flag, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
@@ -163,6 +166,10 @@ export default function LabPlanche() {
   );
   const [account, setAccount] = useState<Account | null>(null);
   const [profil, setProfil] = useState(false);
+  /** The house's growth (docs/plan-progression-maison.md M4): read from the server, on line. */
+  const [maison, setMaison] = useState<MaisonView | null>(null);
+  const [growth, setGrowth] = useState<"maison" | "facade" | null>(null);
+  const [levelUp, setLevelUp] = useState(false);
   const enter = useCallback((a: Account) => {
     setAccount(a);
     setGate(a.pseudoDefault || !a.crest ? "found" : "in");
@@ -276,12 +283,40 @@ export default function LabPlanche() {
       window.clearInterval(timer);
     };
   }, [online, duel, call, gate, heard]);
+  const readMaison = useCallback(async () => {
+    try {
+      const res = await fetch("/api/maison", { credentials: "same-origin" });
+      if (!res.ok) return;
+      const m = ((await res.json()) as { maison: MaisonView }).maison;
+      setMaison(m);
+      // A level reached since last seen, on this device: its moment.
+      const key = `fondaco.maison.level.${m.house}`;
+      try {
+        const seen = Number(localStorage.getItem(key) ?? "0");
+        if (seen && m.level > seen) setLevelUp(true);
+        if (!seen) localStorage.setItem(key, String(m.level));
+      } catch {
+        // No storage: no moment.
+      }
+    } catch {
+      // The sheet waits for the next read.
+    }
+  }, []);
+  useEffect(() => {
+    if (!online || gate !== "in") return;
+    void readMaison();
+    const timer = window.setInterval(() => void readMaison(), 60_000);
+    return () => window.clearInterval(timer);
+  }, [online, gate, readMaison]);
   useEffect(() => {
     if (!online || gate !== "in") return;
     return connectLive((m) => {
-      if (m.type === "planche") void call();
+      if (m.type === "planche") {
+        void call();
+        void readMaison();
+      }
     }, setHeard);
-  }, [online, gate, call]);
+  }, [online, gate, call, readMaison]);
 
   // Time, played here: a slice of the game a tick; the houses of the computer visit in their turn.
   useEffect(() => {
@@ -529,6 +564,7 @@ export default function LabPlanche() {
     setFocus(null);
     setPalace(false);
     setProfil(false);
+    setGrowth(null);
   };
   const closeX = (
     <button
@@ -806,6 +842,17 @@ export default function LabPlanche() {
         <div className="pc-pl-head">
           <div>
             <h2>{mine ? "Ta Maison" : short(house.id)}</h2>
+            {S.maison && state.houses[house.id]?.level ? (
+              <span className="pc-mn-title" data-house-title>
+                {
+                  maisonLevel(
+                    S.maison,
+                    maisonThreshold(S.maison, state.houses[house.id]?.level ?? 1),
+                  ).title
+                }{" "}
+                · niveau {state.houses[house.id]?.level}
+              </span>
+            ) : null}
             <span>
               {(online ? !view?.players.includes(house.id) : house.robot)
                 ? "Maison tenue par l'ordinateur"
@@ -1018,14 +1065,15 @@ export default function LabPlanche() {
             onClick={() => {
               if (!account) return;
               pick(null);
-              setProfil(true);
+              if (maison) setGrowth("maison");
+              else setProfil(true);
             }}
           >
-            <Emblem size={36} />
+            <MaisonRing m={maison} size={36} />
             <span>
               <b>{me ? (online ? short(ME) : "Ta Maison") : "Fondaco"}</b>
               <span>
-                Jour {day} · {hour} h
+                {maison ? `${maison.title} · niv. ${maison.level} · ` : ""}Jour {day} · {hour} h
               </span>
             </span>
           </button>
@@ -1127,6 +1175,25 @@ export default function LabPlanche() {
             onRival={(id) => pick({ kind: "house", id })}
           />
         ) : null}
+        {growth === "maison" && maison ? (
+          <MaisonSheet
+            m={maison}
+            close={closeX}
+            onFacade={() => setGrowth("facade")}
+            onProfil={() => {
+              setGrowth(null);
+              setProfil(true);
+            }}
+          />
+        ) : null}
+        {growth === "facade" && maison ? (
+          <FacadeSheet
+            m={maison}
+            close={closeX}
+            name={short}
+            place={(id) => S.passages.find((p) => p.id === id)?.name ?? id}
+          />
+        ) : null}
         {profil && account ? (
           <Profil
             account={account}
@@ -1146,7 +1213,7 @@ export default function LabPlanche() {
             }}
           />
         ) : null}
-        {!chosen && !palace && !profil ? (
+        {!chosen && !palace && !profil && !growth ? (
           <div className="pc-planche-news" aria-label="Le fil des nouvelles">
             {latest ? (
               <button key={latest.id} type="button" onClick={() => pick(latest.pick)}>
@@ -1172,6 +1239,20 @@ export default function LabPlanche() {
         <span>le Large · péril</span>
       </div>
       {gate === "signin" ? <Entree onIn={enter} /> : null}
+      {levelUp && maison && gate === "in" ? (
+        <LevelUp
+          m={maison}
+          onClose={() => {
+            setLevelUp(false);
+            try {
+              localStorage.setItem(`fondaco.maison.level.${maison.house}`, String(maison.level));
+            } catch {
+              // No storage.
+            }
+            setGrowth("maison");
+          }}
+        />
+      ) : null}
       {gate === "found" && account ? (
         <Fonder
           account={account}

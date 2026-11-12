@@ -16,7 +16,8 @@
     "passe-bench": "tsx src/passe-bench.ts",
     "planche-bench": "tsx src/planche-bench.ts",
     "passe-problems": "tsx src/passe-problems.ts",
-    "lagunes-charge": "tsx src/lagunes-charge.ts"
+    "lagunes-charge": "tsx src/lagunes-charge.ts",
+    "maison-bench": "tsx src/maison-bench.ts"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*"

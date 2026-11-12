@@ -253,6 +253,13 @@
       "when": 1794429368541,
       "tag": "0035_planche_seats",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794473580338,
+      "tag": "0036_maison_events",
+      "breakpoints": true
     }
   ]
 }

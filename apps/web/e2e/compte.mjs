@@ -125,7 +125,7 @@ try {
       timeout: 30_000,
     });
     await page.waitForTimeout(2500);
-    const label = await page.textContent("[data-planche-medallion] b");
+    const label = await page.textContent("[data-planche-medallion] > span:last-child > b");
     if (!label?.includes(name === "p" ? "Bembo" : "Zane"))
       fail(`the medallion reads « ${label} », not the house's name`);
     await page.screenshot({ path: join(SHOTS, `compte-${name}-4-planche.png`) });
@@ -150,7 +150,24 @@ try {
     // The profile, behind the medallion: the way out.
     await tap("[data-ile-back]");
     await page.waitForSelector("[data-planche-lab]", { state: "attached", timeout: 30_000 });
+    // The medallion: the house's sheet (its level, the week's Prestige, the path), its façade and
+    // its Livre, then the profile (docs/plan-progression-maison.md M4).
+    await page.waitForSelector("[data-maison-level]", { state: "attached", timeout: 60_000 });
     await tap("[data-planche-medallion]");
+    await page.waitForSelector("[data-maison-sheet]", { state: "attached", timeout: 30_000 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: join(SHOTS, `compte-${name}-6a-maison.png`) });
+    await tap("[data-maison-facade]");
+    await page.waitForSelector("[data-maison-livre]", { state: "attached", timeout: 30_000 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: join(SHOTS, `compte-${name}-6b-facade.png`) });
+    await tap("[data-planche-medallion]");
+    await page.waitForSelector("[data-maison-sheet]", { state: "attached", timeout: 30_000 });
+    await page.evaluate(() =>
+      [...document.querySelectorAll("[data-maison-sheet] button")]
+        .find((b) => b.textContent?.includes("Ton profil"))
+        ?.click(),
+    );
     await page.waitForSelector("[data-planche-profil]", { state: "attached", timeout: 30_000 });
     await page.waitForTimeout(500);
     await page.screenshot({ path: join(SHOTS, `compte-${name}-6-profil.png`) });
