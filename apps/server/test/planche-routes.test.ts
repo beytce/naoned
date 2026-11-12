@@ -218,3 +218,44 @@ describe("the board for accounts", () => {
     expect(v.state.houses[a.me]?.threads.map((t) => t.to)).toEqual(["rialto"]);
   });
 });
+
+// The house's growth on line (docs/plan-progression-maison.md M3).
+describe("the house's growth", () => {
+  it("gives a week's Prestige, the level it reaches, and tells it in the Livre of the account", async () => {
+    await app.close();
+    const lagoons = await PlancheLagoons.open(database.db, plancheTheme(), now);
+    app = await buildApp({
+      db: database.db,
+      mailer,
+      appUrl: "https://comptoirs.test",
+      production: false,
+      world: await GameWorld.open(database.db, () => now, { empire: true }),
+      now: () => new Date(now),
+      planche: lagoons,
+    });
+    const ana = await player("ana@example.org");
+    const a = (await ana("GET", "/api/planche")).json().planche;
+    const tiles = a.state.houses[a.me].ile.tiles;
+    const free = Object.keys(tiles).find((k) => !tiles[k].building) as string;
+    expect(
+      (await ana("POST", "/api/planche/ile/build", { type: "sand_pit", at: free })).statusCode,
+    ).toBe(200);
+    expect(
+      (await ana("POST", "/api/planche/thread", { city: "rialto", good: "sand" })).statusCode,
+    ).toBe(200);
+    const before = (await ana("GET", "/api/maison")).json().maison;
+    expect(before).toMatchObject({ level: 1, title: "Bottega", prestige: 0 });
+    expect(before.caps.bobbins).toBe(3);
+    expect(before.opens[0]).toMatchObject({ level: 2, bobbins: 4 });
+    // A week goes by: its trade and its place give Prestige; the Livre is written at the snapshot.
+    now += 8 * 86_400_000;
+    await ana("GET", "/api/planche");
+    await lagoons.snapshot();
+    const after = (await ana("GET", "/api/maison")).json().maison;
+    expect(after.prestige).toBeGreaterThan(0);
+    expect(after.level).toBeGreaterThan(1);
+    expect(after.kept).toBe(after.prestige);
+    expect(after.livre.some((e: { kind: string }) => e.kind === "level")).toBe(true);
+    expect(after.collection.level).toBeGreaterThan(0);
+  });
+});

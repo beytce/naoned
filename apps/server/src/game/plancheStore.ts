@@ -1,7 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, gt, lte, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { ledgerEntries, worldCommands, worldStates, worlds } from "../db/schema.js";
+import {
+  influenceEntries,
+  ledgerEntries,
+  maisonEvents,
+  worldCommands,
+  worldStates,
+  worlds,
+} from "../db/schema.js";
 import {
   type PlancheCommand,
   type PlancheDoc,
@@ -133,6 +140,8 @@ export class PlancheStore implements PlancheJournal {
   /** One write after the other: two at once would write the same movement twice. */
   private lock: Promise<unknown> = Promise.resolve();
   private timer: NodeJS.Timeout | undefined;
+  /** The Prestige and the Livre already copied to the accounts (docs/plan-progression-maison.md). */
+  private readonly mirrored = new Set<string>();
 
   private constructor(
     private readonly db: Db,
@@ -354,7 +363,51 @@ export class PlancheStore implements PlancheJournal {
     );
   }
 
+  /**
+   * The growth of the people's houses, copied to their accounts: each week's Prestige into the
+   * journal of points (`influence_entries`), each deed into the Livre (`maison_events`). Once each.
+   */
+  private async mirror(tx: Db, doc: PlancheDoc): Promise<void> {
+    const points: (typeof influenceEntries.$inferInsert)[] = [];
+    const events: (typeof maisonEvents.$inferInsert)[] = [];
+    for (const [player, seat] of Object.entries(doc.seats)) {
+      if (!ACCOUNT.test(player)) continue;
+      const m = doc.state.houses[seat.house]?.maison;
+      if (!m) continue;
+      for (const c of m.credits) {
+        const key = `planche:${this.worldId}:${c.week}`;
+        if (this.mirrored.has(`${player}|${key}`)) continue;
+        points.push({
+          accountId: player,
+          worldId: this.worldId,
+          source: "prestige",
+          week: c.week,
+          amount: c.amount,
+          key,
+          at: new Date(doc.state.now),
+        });
+      }
+      for (const e of m.log) {
+        const key = `${this.worldId}:${e.at}:${e.kind}:${e.data ?? ""}`;
+        if (this.mirrored.has(`${player}|${key}`)) continue;
+        events.push({
+          accountId: player,
+          worldId: this.worldId,
+          kind: e.kind,
+          data: e.data === undefined ? null : String(e.data),
+          key,
+          at: new Date(e.at),
+        });
+      }
+    }
+    if (points.length) await tx.insert(influenceEntries).values(points).onConflictDoNothing();
+    if (events.length) await tx.insert(maisonEvents).values(events).onConflictDoNothing();
+    for (const r of points) this.mirrored.add(`${r.accountId}|${r.key}`);
+    for (const r of events) this.mirrored.add(`${r.accountId}|${r.key}`);
+  }
+
   private async write(tx: Db, doc: PlancheDoc, version: number, booked: Booked): Promise<void> {
+    await this.mirror(tx, doc);
     const written = await tx
       .update(worldStates)
       .set({ state: encode({ ...doc, booked }), version, updatedAt: new Date() })
@@ -366,6 +419,9 @@ export class PlancheStore implements PlancheJournal {
       .where(and(eq(worldCommands.worldId, this.worldId), lte(worldCommands.version, version)));
   }
 }
+
+/** A player who is an account (the tests' boards seat plain names). */
+const ACCOUNT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function rowsOf<T>(result: unknown): T[] {
   return ((result as { rows?: T[] }).rows ?? []) as T[];
