@@ -99,6 +99,6 @@ L'Arsenal et la flotte (étape 5), le Problème du jour et le défi par le fil (
 | Lot | État |
 | --- | --- |
 | M1 | fait : `packages/engine/src/planche/maison.ts` (le niveau et son titre sur la courbe `20 × (n − 1)²` (lagune de Venise), ce que chaque niveau ouvre, la semaine plafonnée et son report, le Prestige du commerce du jour) ; sur la planche, chaque Maison porte son niveau, et ses bobines, les cases de son île, les étages de ses ateliers et ses tours en dépendent (`plancheSetLevel`, qui ne redescend jamais) ; les Maisons de l'ordinateur sautent les ateliers que leur niveau n'ouvre pas encore. Règles de la lagune de Venise dans `venice1450.lagune.ts` (3 bobines au départ, 5 au niveau 4, 12 au niveau 30 ; les ouvrages au niveau 3 ; une deuxième tour au niveau 6). 7 tests. |
-| M2 | à faire |
+| M2 | fait : banc `maison-bench` ; retenus : courbe `20 × (n − 1)²`, commerce 1 point par 50 ducats vendus (55 par jour au plus), victoires de la semaine (rival 60, première place du sestiere 100 puis 8 de moins par place, sceau 15, un point par 2 h de tour tenue jusqu'à 70, laurier 100, Doge 200) ; le régulier au niveau 10 en semaine 5, l'assidu 5 % plus vite ; `docs/calibration.md` § La progression des Maisons |
 | M3 | à faire |
 | M4 | à faire |

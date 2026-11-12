@@ -3258,3 +3258,30 @@ Pavillons accrochés le dernier dimanche (médiane des graines) : 39.
 [exited with code 0]
 
 **Lecture.** Le calcul et la mémoire tiennent largement : 0,15 s par lagune et par jour de jeu, 124 Ko chacune. L'envoi ne tenait pas : 74 Ko par lecture, relus toutes les 6 s par chaque joueur, soit 60 Mo/s pour 4 800 joueurs. Corrigé : les réponses du serveur sont compressées (gzip, 7 Ko la planche), et la planche ne se relit plus que toutes les 20 s quand le canal en direct est ouvert (les gestes des autres arrivent par lui). Soit environ 1,6 Mo/s pour 4 800 joueurs. Reste possible : n'envoyer en détail que son sestiere.
+
+
+## La progression des Maisons (12 novembre 2026, docs/plan-progression-maison.md M2)
+
+`pnpm --filter @comptoirs/simulator maison-bench 3 8` : la lagune de Venise sur huit semaines, ses 48 Maisons jouées par trois sortes de joueurs ; le Prestige du commerce de chaque jour et des victoires de chaque semaine, plafonné à 500 par semaine, fait monter le niveau sur la planche.
+
+**Les réglages essayés.** Courbe `25 × (n − 1)²`, commerce plafonné à 40 par jour, première place du sestiere à 80 : niveau 10 en semaine 8 (une graine). Commerce à 55 par jour, première place à 100 : semaine 7 (trois graines). **Retenu** : la courbe `20 × (n − 1)²` en plus (niveau 10 à 1 620 de Prestige, niveau 30 à 16 820, soit près d'un an pour un joueur régulier).
+
+#### La progression des Maisons : la lagune de Venise sur 8 semaines, 3 graines
+
+Un tiers des Maisons de chaque sorte : régulière (une visite toutes les 8 h), assidue (toutes les 3 h), irrégulière (trois jours par semaine).
+
+| Sorte | Sem. 1 | Sem. 2 | Sem. 3 | Sem. 4 | Sem. 5 | Sem. 6 | Sem. 7 | Sem. 8 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| régulier (niveau médian) | 3 | 6 | 7 | 9 | 10 | 11 | 12 | 13 |
+| assidu (niveau médian) | 3 | 6 | 8 | 9 | 10 | 11 | 12 | 13 |
+| irrégulier (niveau médian) | 3 | 5 | 7 | 9 | 10 | 11 | 12 | 12 |
+
+| Sorte | Niveau 10 atteint (semaine médiane) | Prestige à la fin (médiane) |
+| --- | --- | --- |
+| régulier | semaine 5 | 3053 |
+| assidu | semaine 5 | 3203 |
+| irrégulier | semaine 5 | 2826 |
+
+L'assidu gagne 5 % de Prestige de plus que le régulier (le plafond : 500 par semaine).
+
+**Lecture.** Le joueur régulier atteint le niveau 10 en semaine 5 (le plan visait 4 à 6) ; l'assidu ne va que 5 % plus vite, le plafond le retient ; l'irrégulier n'est pas distancé, ses fils vendent entre ses visites. Le Prestige vient surtout du commerce (55 par jour au plus) et de la place dans le sestiere. Les Maisons de l'ordinateur jouent ici comme des joueurs ; sur le site, elles suivront le niveau médian des joueurs de leur lagune (M3).
