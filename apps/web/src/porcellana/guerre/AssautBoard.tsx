@@ -397,7 +397,14 @@ export function AssautBoard({
       if (o.userData.seal) o.rotation.y = t * 1.4;
     });
     // The cards of the passes follow their lane's mouth.
+    // As wide as the gap between two lanes allows, so the cards never overlap.
+    tmp.set(laneX("bouche"), 0, CARD_Z).project(camera);
+    const mid = tmp.x;
+    tmp.set(laneX("sud"), 0, CARD_Z).project(camera);
+    const gap = Math.abs(tmp.x - mid) * 0.5 * size.width;
+    const width = `${Math.round(Math.min(180, gap - 8))}px`;
     for (const [pass, el] of pins) {
+      if (el.style.width !== width) el.style.width = width;
       tmp.set(laneX(pass), 0, CARD_Z).project(camera);
       const x = (tmp.x * 0.5 + 0.5) * size.width;
       const y = (-tmp.y * 0.5 + 0.5) * size.height;
