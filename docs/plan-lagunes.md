@@ -72,7 +72,7 @@ La discussion du sestiere (étape 7) ; les commandes scellées, la Muda et les d
 | Lot | État |
 | --- | --- |
 | G1 | fait : `packages/engine/src/planche/lagune.ts` (`plancheLagoon`), les sestieri côte à côte, le continent au nord, le Large au sud ; chaque Maison porte son sestiere, chaque ville son cercle ; le détour (`detourBps`) : un fil tiré « par le détour » ne passe aucune tour, ne paie aucun péage et porte moins. Lagune de Venise : `venice1450.lagune.ts`, 52 × 26 cases, 48 Maisons en 4 sestieri (Cannaregio, Castello, Dorsoduro, San Polo), 19 villes (12 de sestiere, Murano, le Rialto, Chioggia, 4 du Large), 10 tours (4 bouches, 4 détroits, 2 canaux). 6 tests. |
-| G2 | à faire |
+| G2 | fait : `plancheStanding`, `plancheLaurel` acceptent un sestiere ; `planchePlace` donne la place parmi ses voisins (celle de la pilule), la tendance la suit, le rival est choisi dans le sestiere ; le Doge reste celui de la lagune. Sans sestieri, rien ne change. 3 tests. |
 | G3 | à faire |
 | G4 | à faire |
 | G5 | à faire |
