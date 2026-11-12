@@ -10,11 +10,17 @@ import { plancheLagoon } from "../planche/lagune.js";
 import type { PlancheWant } from "../planche/planche.js";
 import { venice1450Planche } from "./venice1450.planche.js";
 
+/**
+ * A town's demand in a lagoon of 48: half as much again as on the board of 8, so that a town grows
+ * back more than one thread takes from it (12 an hour against 10): a thread held pays, chasing the
+ * full gauges pays less (docs/calibration.md, § Les lagunes).
+ */
+const DEMAND = 1.5;
 const want = (price: number, cap: number, regenPerHour: number, floorBps = 3_000): PlancheWant => ({
   price,
   floorBps,
-  cap,
-  regenPerHour,
+  cap: Math.round(cap * DEMAND),
+  regenPerHour: Math.round(regenPerHour * DEMAND),
 });
 const town = (name: string, wants: Record<string, PlancheWant>): LagoonTown => ({ name, wants });
 
@@ -212,7 +218,8 @@ export const venice1450LaguneParams: LagoonParams = {
   base: {
     sliceMs: base.sliceMs,
     goods: base.goods,
-    rules: base.rules,
+    // A bobbin takes longer to come home, and a thread held gains faster (docs/calibration.md).
+    rules: { ...base.rules, rewindMsPerTile: 20 * 60_000, patinaBpsPerDay: 1_000 },
     ...(base.ile ? { ile: base.ile } : {}),
     ...(base.rank ? { rank: base.rank } : {}),
   },
