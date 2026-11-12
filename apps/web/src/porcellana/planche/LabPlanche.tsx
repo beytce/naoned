@@ -7,18 +7,26 @@ import "../porcellana.css";
 import "../passe/passe.css";
 import "./planche.css";
 import {
+  type PlancheOrder,
   type PlancheState,
   maisonLevel,
   maisonThreshold,
   plancheAdvance,
   plancheBuild,
   plancheBuyTile,
+  plancheDaily,
+  plancheDailyResults,
+  plancheDailyTry,
   plancheForced,
   plancheFreeBobbins,
+  plancheGuard,
   plancheInit,
   plancheIsCorsair,
   plancheLagoonLand,
   plancheMove,
+  plancheOrderRefusal,
+  plancheOrderTry,
+  plancheOrders,
   planchePatina,
   planchePlace,
   planchePrice,
@@ -34,6 +42,7 @@ import {
   plancheUpgrade,
   venice1450Lagune,
   venice1450LaguneParams,
+  venice1450Passe,
   venice1450Planche,
 } from "@comptoirs/engine";
 import { Canvas } from "@react-three/fiber";
@@ -45,10 +54,11 @@ import { DucatCoin } from "../../art/plateau/coins.js";
 import { connectLive } from "../../game/live.js";
 import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
 import { Entree, Fonder, Profil } from "./Entree.js";
+import { GardeEditor } from "./Garde.js";
 import { FacadeSheet, LevelUp, MaisonRing, MaisonSheet, type MaisonView } from "./Maison.js";
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
-import { Bobbin, Flag, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
+import { Bobbin, Flag, Knot, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
 
 const LabPasse = lazy(() => import("../passe/LabPasse.js"));
 
@@ -107,7 +117,41 @@ const SAID: Record<string, string> = {
   planche_no_bobbin: "Plus de bobine libre : reprends un fil, ou attends qu'une bobine revienne.",
   planche_route_shut: "La route est fermée par un corsaire : force le passage.",
   planche_twice: "Ce fil est déjà tendu.",
+  planche_defi_absent:
+    "Cette Maison n'est pas sur la planche en ce moment : défie-la quand elle y sera.",
+  planche_defi_week: "Vous vous êtes déjà affrontés à la Passe cette semaine.",
+  planche_defi_busy: "Un défi est déjà en cours, pour toi ou pour elle.",
+  planche_not_person: "On ne défie que les Maisons des joueurs.",
+  planche_guard_today: "Tu as déjà posé ta garde aujourd'hui : demain de nouveau.",
+  duel_lost: "Ce n'était pas la clef : la commande reste aux autres, tu ne perds rien d'autre.",
+  planche_order_taken: "Une autre Maison du sestiere a livré cette commande avant toi.",
+  planche_order_tried: "Tu as déjà joué cette commande : un seul essai par Maison.",
+  planche_order_closed: "Cette commande n'est plus ouverte.",
+  planche_order_short: "Ton entrepôt n'a pas assez de marchandise pour la livrer.",
 };
+
+/** Why an order may not be played, on its button. */
+const ORDER_SHUT: Record<string, string> = {
+  planche_order_taken: "Déjà livrée",
+  planche_order_tried: "Déjà jouée",
+  planche_order_closed: "Fermée",
+  planche_order_short: "Pas assez en entrepôt",
+};
+
+/** The red seal of a sealed order, on a town's label and its card. */
+function Sceau({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true" className="pc-pl-sceau">
+      <path
+        d="M10 1 L12 3 L15 2.5 L15.5 5.5 L18.5 7 L17 10 L18.5 13 L15.5 14.5 L15 17.5 L12 17 L10 19 L8 17 L5 17.5 L4.5 14.5 L1.5 13 L3 10 L1.5 7 L4.5 5.5 L5 2.5 L8 3 Z"
+        fill="#C8102E"
+      />
+      <circle cx="10" cy="10" r="4.6" fill="none" stroke="#F6F4F0" strokeWidth="1.4" />
+      <path d="M10 7.2 V12.8 M7.6 10 H12.4" stroke="#F6F4F0" strokeWidth="1.4" />
+    </svg>
+  );
+}
+const hourOf = (t: number) => `${new Date(t).getUTCHours()}\u00a0h`;
 
 interface News {
   id: number;
@@ -146,6 +190,8 @@ function revive(raw: PlancheState): PlancheState {
 }
 
 interface Online {
+  /** The challenges by the thread (docs/plan-hex-commerce.md H5). */
+  defi?: { incoming?: { house: string; name: string }; outgoing?: string; room?: string };
   since: number;
   lagoon?: string;
   me: string | null;
@@ -168,7 +214,9 @@ export default function LabPlanche() {
   const [profil, setProfil] = useState(false);
   /** The house's growth (docs/plan-progression-maison.md M4): read from the server, on line. */
   const [maison, setMaison] = useState<MaisonView | null>(null);
-  const [growth, setGrowth] = useState<"maison" | "facade" | null>(null);
+  const [growth, setGrowth] = useState<"maison" | "facade" | "jour" | null>(null);
+  /** The problem of the day, being played. */
+  const [dailyPlay, setDailyPlay] = useState(false);
   const [levelUp, setLevelUp] = useState(false);
   const enter = useCallback((a: Account) => {
     setAccount(a);
@@ -206,6 +254,16 @@ export default function LabPlanche() {
   const [said, setSaid] = useState("");
   const [news, setNews] = useState<News[]>([]);
   const [duel, setDuel] = useState<string | null>(null);
+  /** The rooms of challenges one has left (the server forgets them a little later). */
+  const leftRooms = useRef(new Set<string>());
+  /** The room of the challenge one is in. */
+  const [inRoom, setInRoom] = useState<string | null>(null);
+  const offered = view?.defi?.room;
+  useEffect(() => {
+    if (offered && !leftRooms.current.has(offered)) setInRoom(offered);
+  }, [offered]);
+  /** The sealed order whose position is being played. */
+  const [sealed, setSealed] = useState<PlancheOrder | null>(null);
   const [inIsle, setInIsle] = useState(false);
   /** The Doge's palace, opened from one's place in the purse. */
   const [palace, setPalace] = useState(false);
@@ -250,6 +308,7 @@ export default function LabPlanche() {
         me: json.planche.me,
         names: json.planche.names,
         players: json.planche.players,
+        ...((json.planche as Online).defi ? { defi: (json.planche as Online).defi } : {}),
       });
       return "ok";
     } catch {
@@ -424,11 +483,53 @@ export default function LabPlanche() {
     };
   }, [state, ME]);
   const rival = state.rank.rivals[ME];
+  // The sealed orders of one's sestiere open now, not yet delivered (docs/plan-hex-commerce.md H2).
+  const today = Math.floor(state.now / (24 * HOUR));
+  const orders = useMemo(
+    () =>
+      mySestiere
+        ? plancheOrders(S, today).filter(
+            (o) => o.sestiere === mySestiere && o.from <= state.now && state.now <= o.to,
+          )
+        : [],
+    [today, mySestiere, state.now],
+  );
+  const orderOf = (cityId: string) =>
+    orders.find((o) => o.city === cityId && !state.orders?.[o.id]?.by);
+  // The problem of the day (docs/plan-hex-commerce.md H3): one for the lagoon, one try.
+  const dailyId = plancheDaily(S, today);
+  const daily = dailyId ? venice1450Passe.problems.find((p) => p.id === dailyId) : undefined;
+  const dailyMine = state.daily?.[today]?.[ME];
+  const yesterday = plancheDailyResults(state, today - 1);
+  // An order that opens is told once, on the thread of news: a touch leads to its town.
+  const toldOrders = useRef(new Set<string>());
+  useEffect(() => {
+    for (const o of orders) {
+      if (toldOrders.current.has(o.id) || state.orders?.[o.id]?.by) continue;
+      if (state.orders?.[o.id]?.tried.includes(ME)) continue;
+      toldOrders.current.add(o.id);
+      const town = S.cities.find((c) => c.id === o.city)?.name;
+      tell(
+        `Commande scellée à ${town} : ${o.units} ${S.goods[o.good]?.toLowerCase()} au double du prix, jusqu'à ${hourOf(o.to)}.`,
+        { kind: "city", id: o.city },
+      );
+    }
+  }, [orders, state.orders, ME, tell]);
   /** A gesture: on line it is the server's to play, here it is the engine's. */
-  const act = (f: () => PlancheState, done?: string, remote?: [string, unknown]) => {
+  const act = (
+    f: () => PlancheState,
+    done?: string,
+    remote?: [string, unknown],
+    /** The server's answers that are this gesture's own end (a position lost: the try is spent). */
+    also: string[] = [],
+  ) => {
     if (online && remote) {
       void call(...remote).then((res) =>
-        setSaid(res === "ok" ? (done ?? "") : (SAID[res] ?? "Ce geste n'est pas possible.")),
+        setSaid(
+          res === "ok" || also.includes(res)
+            ? (done ?? "")
+            : (SAID[res] ?? "Ce geste n'est pas possible."),
+        ),
       );
       return;
     }
@@ -489,6 +590,79 @@ export default function LabPlanche() {
     );
   }
 
+  // The room of a challenge under way, kept until one leaves it (the server forgets it once both
+  // Passes are played, before the players have read the end).
+  const defiRoom = inRoom;
+  if (defiRoom) {
+    return (
+      <Suspense fallback={null}>
+        <LabPasse
+          defi={{
+            code: defiRoom,
+            onBack: () => {
+              leftRooms.current.add(defiRoom);
+              setInRoom(null);
+              setSaid("Le défi est joué : tes Passes comptent pour le laurier de la Passe.");
+              void call();
+            },
+          }}
+        />
+      </Suspense>
+    );
+  }
+
+  if (dailyPlay && daily) {
+    return (
+      <Suspense fallback={null}>
+        <LabPasse
+          duel={{
+            board: "segna",
+            problem: daily.id,
+            foe: "le problème du jour",
+            onEnd: (won, moves) => {
+              setDailyPlay(false);
+              const laid = Math.min(moves.length, daily.moves);
+              act(
+                () => plancheDailyTry(S, state, ME, state.now, won, laid),
+                won
+                  ? `Problème du jour réussi en ${laid} coups : un nœud sur ta façade, et du Prestige.`
+                  : "Ce n'était pas la clef. Un autre problème demain.",
+                ["/daily", { moves: moves.map((m) => ({ at: m.at })) }],
+                ["duel_lost"],
+              );
+            },
+          }}
+        />
+      </Suspense>
+    );
+  }
+
+  if (sealed) {
+    const o = sealed;
+    const town = S.cities.find((c) => c.id === o.city)?.name ?? "";
+    return (
+      <Suspense fallback={null}>
+        <LabPasse
+          duel={{
+            board: "segna",
+            problem: o.problem,
+            foe: `la commande de ${town}`,
+            onEnd: (won, moves) => {
+              setSealed(null);
+              const said = won
+                ? `Livré : ${o.units} ${S.goods[o.good]?.toLowerCase()} à ${town}, au double du prix.`
+                : SAID.duel_lost;
+              act(() => plancheOrderTry(S, state, ME, o.id, state.now, won), said, [
+                "/order",
+                { order: o.id, moves: moves.map((m) => ({ at: m.at })) },
+              ]);
+            },
+          }}
+        />
+      </Suspense>
+    );
+  }
+
   if (duel) {
     const p = S.passages.find((q) => q.id === duel);
     const holder = state.passages[duel]?.holder ?? "";
@@ -498,6 +672,7 @@ export default function LabPlanche() {
           duel={{
             board: p?.board ?? "segna",
             seals: state.passages[duel]?.seals,
+            guard: state.passages[duel]?.guard,
             foe: plancheIsCorsair(holder)
               ? holder.slice(8)
               : `le lieutenant de ${nameOf(holder, view?.names)}`,
@@ -548,11 +723,12 @@ export default function LabPlanche() {
     by.delete(ME);
     return { mine, others: [...by.values()].sort((x, y) => y - x) };
   };
-  const tie = (cityId: string, cityName: string, good: string) =>
-    act(() => plancheThread(S, state, ME, cityId, good, state.now), `Fil tendu vers ${cityName}.`, [
-      "/thread",
-      { city: cityId, good },
-    ]);
+  const tie = (cityId: string, cityName: string, good: string, detour = false) =>
+    act(
+      () => plancheThread(S, state, ME, cityId, good, state.now, detour ? { detour: true } : {}),
+      detour ? `Fil tendu vers ${cityName}, par le détour.` : `Fil tendu vers ${cityName}.`,
+      ["/thread", { city: cityId, good, ...(detour ? { detour: true } : {}) }],
+    );
   const untie = (cityId: string, good: string) =>
     act(
       () => plancheUnthread(S, state, ME, cityId, good, state.now),
@@ -635,9 +811,46 @@ export default function LabPlanche() {
               .filter((id) => plancheIsCorsair(state.passages[id]?.holder ?? ""))
               .map((id) => S.passages.find((p) => p.id === id)?.name)
               .join(", ")}{" "}
-            est aux corsaires. Force le passage.
+            est aux corsaires.{" "}
+            {city.detourBps
+              ? `Force la tour pour tout porter, ou prends le détour : ${Math.round(city.detourBps / 100)} % de la charge, sans duel ni péage.`
+              : "Force le passage."}
           </p>
         ) : null}
+        {(() => {
+          const o = playing ? orderOf(city.id) : undefined;
+          if (!o) return null;
+          const pb = venice1450Passe.problems.find((p) => p.id === o.problem);
+          const why = plancheOrderRefusal(S, state, ME, o.id, state.now);
+          return (
+            <div className="pc-pl-order" data-order={o.id}>
+              <Sceau size={30} />
+              <div>
+                <b>
+                  Commande scellée · {o.units} {S.goods[o.good]?.toLowerCase()} au double du prix
+                </b>
+                <span>
+                  {ducats(o.price)} ducats l'unité, livrés par{" "}
+                  {S.passages.find((p) => p.id === city.via[0])?.name} jusqu'à {hourOf(o.to)} · la
+                  première Maison du sestiere l'emporte.
+                </span>
+                <span>
+                  Une position : le fil passe en {pb?.moves ?? 2} coups. Un seul essai ; perdu, rien
+                  n'est pris.
+                </span>
+                <button
+                  type="button"
+                  className="pc-passe-go"
+                  data-play-order={o.id}
+                  disabled={!!why}
+                  onClick={() => setSealed(o)}
+                >
+                  {why ? (ORDER_SHUT[why] ?? "Pas pour toi") : "Jouer la position"}
+                </button>
+              </div>
+            </div>
+          );
+        })()}
         {passed ? (
           <div className="pc-pl-alert">
             <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
@@ -746,6 +959,34 @@ export default function LabPlanche() {
                 Tirer un fil · {S.goods[another.good]?.toLowerCase()}
               </button>
             ) : null}
+            {!open && city.detourBps && (at || another) && !at?.held ? (
+              <>
+                <button
+                  type="button"
+                  className="pc-passe-quiet"
+                  data-force-from-city
+                  onClick={() => {
+                    const shut = city.via.find((id) =>
+                      plancheIsCorsair(state.passages[id]?.holder ?? ""),
+                    );
+                    if (shut) pick({ kind: "passage", id: shut });
+                  }}
+                >
+                  Forcer la tour
+                </button>
+                <button
+                  type="button"
+                  className="pc-passe-quiet"
+                  data-detour={(at ?? another)?.good}
+                  onClick={() => {
+                    const g = (at ?? another)?.good;
+                    if (g) tie(city.id, city.name, g, true);
+                  }}
+                >
+                  Par le détour · {Math.round(city.detourBps / 100)} %
+                </button>
+              </>
+            ) : null}
             {at?.held ? (
               <button
                 type="button"
@@ -797,6 +1038,28 @@ export default function LabPlanche() {
             main
           </span>
         </div>
+        {playing && holder === ME && passage.guard
+          ? (() => {
+              const b =
+                venice1450Passe.boards[passage.board as keyof typeof venice1450Passe.boards];
+              if (!b) return null;
+              return (
+                <GardeEditor
+                  board={b}
+                  links={passage.guard}
+                  guard={p?.guard ?? []}
+                  locked={p?.guardDay === Math.floor(state.now / (24 * HOUR))}
+                  onLay={(cells) =>
+                    act(
+                      () => plancheGuard(S, state, ME, passage.id, cells, state.now, b.cells),
+                      "Garde posée : ton lieutenant défendra à partir de ces maillons.",
+                      ["/guard", { passage: passage.id, cells }],
+                    )
+                  }
+                />
+              );
+            })()
+          : null}
         {!playing ? null : holder === ME ? (
           <div className="pc-passe-opts">
             {[500, 1000, 1500].map((bps) => (
@@ -918,6 +1181,28 @@ export default function LabPlanche() {
             </button>
           </div>
         ) : null}
+        {!mine && online && playing && view?.players.includes(house.id) ? (
+          <div className="pc-pl-acts">
+            <button
+              type="button"
+              className="pc-passe-quiet"
+              data-defi={house.id}
+              disabled={view?.defi?.outgoing === house.id}
+              onClick={() =>
+                void call("/defi", { house: house.id }).then((res) =>
+                  setSaid(
+                    res === "ok"
+                      ? `Défi envoyé à ${short(house.id)} : deux Passes en direct, s'il accepte dans les deux minutes.`
+                      : (SAID[res] ?? "Ce défi n'est pas possible."),
+                  ),
+                )
+              }
+            >
+              {view?.defi?.outgoing === house.id ? "Défi envoyé…" : "Défier par le fil"}
+              <small>deux Passes en direct, chacun une fois le fil</small>
+            </button>
+          </div>
+        ) : null}
       </section>
     );
   })();
@@ -971,9 +1256,13 @@ export default function LabPlanche() {
               data-mine={String(!!served)}
               data-chosen={String(chosen?.kind === "city" && chosen.id === c.id)}
               data-shut={String(!plancheRouteOpen(S, state, ME, c.id, state.now))}
+              data-sealed={String(!!orderOf(c.id))}
               onClick={() => pick({ kind: "city", id: c.id })}
             >
-              <b>{c.name}</b>
+              <b>
+                {orderOf(c.id) ? <Sceau size={13} /> : null}
+                {c.name}
+              </b>
               <ShareBar mine={sh.mine} others={sh.others} />
             </button>
           );
@@ -1083,7 +1372,30 @@ export default function LabPlanche() {
                 ? "En ligne · tu regardes : toutes les Maisons sont prises"
                 : `En ligne · ${view?.players.length ?? 0} joueur${(view?.players.length ?? 0) > 1 ? "s" : ""}`}
             </span>
-          ) : (
+          ) : null}
+          {daily && playing && ME ? (
+            <button
+              type="button"
+              className="pc-pl-jour"
+              data-daily
+              data-done={dailyMine ? (dailyMine.won ? "won" : "lost") : "no"}
+              aria-label={
+                dailyMine
+                  ? dailyMine.won
+                    ? "Problème du jour réussi"
+                    : "Problème du jour joué"
+                  : "Le problème du jour, pas encore joué"
+              }
+              onClick={() => {
+                pick(null);
+                setGrowth("jour");
+              }}
+            >
+              <Knot size={phone ? 18 : 20} />
+              <span>{dailyMine ? (dailyMine.won ? "Réussi" : "Joué") : "Problème du jour"}</span>
+            </button>
+          ) : null}
+          {online ? null : (
             <span className="pc-planche-speed">
               {(
                 [
@@ -1162,6 +1474,41 @@ export default function LabPlanche() {
       </nav>
       <footer className="pc-passe-foot pc-pl-foot">
         {said ? <p className="pc-passe-said">{said}</p> : null}
+        {view?.defi?.incoming ? (
+          <section className="pc-planche-card pc-pl-card pc-pl-defi" data-defi-incoming>
+            <div className="pc-pl-head">
+              <div>
+                <h2>{view.defi.incoming.name} te défie par le fil</h2>
+                <span>Deux Passes en direct : chacun une fois le fil, une fois la chaîne</span>
+              </div>
+            </div>
+            <p>
+              Chaque Passe compte pour ta cote du laurier de la Passe. Rien d'autre ne se risque.
+            </p>
+            <div className="pc-pl-acts">
+              <button
+                type="button"
+                className="pc-passe-go"
+                data-defi-accept
+                onClick={() =>
+                  void call("/defi/answer", { accept: true }).then((res) =>
+                    setSaid(res === "ok" ? "" : (SAID[res] ?? "Ce défi n'est plus ouvert.")),
+                  )
+                }
+              >
+                Accepter
+              </button>
+              <button
+                type="button"
+                className="pc-passe-quiet"
+                data-defi-refuse
+                onClick={() => void call("/defi/answer", { accept: false })}
+              >
+                Pas maintenant
+              </button>
+            </div>
+          </section>
+        ) : null}
         {cityCard}
         {passageCard}
         {houseCard}
@@ -1193,6 +1540,51 @@ export default function LabPlanche() {
             name={short}
             place={(id) => S.passages.find((p) => p.id === id)?.name ?? id}
           />
+        ) : null}
+        {growth === "jour" && daily ? (
+          <section className="pc-planche-card pc-pl-card pc-pl-daily" data-daily-card>
+            <div className="pc-pl-head">
+              <div>
+                <h2>Le problème du jour</h2>
+                <span>La même position pour toute la lagune · un seul essai</span>
+              </div>
+              {closeX}
+            </div>
+            <div className="pc-pl-order">
+              <Knot size={30} />
+              <div>
+                <b>Le fil passe en {daily.moves} coups</b>
+                <span>
+                  Trouve la clef : réussi, {S.daily?.prestige ?? 20} de Prestige et un nœud sur ta
+                  façade pour aujourd'hui. Perdu, rien n'est pris.
+                </span>
+                {dailyMine ? (
+                  <span data-daily-mine>
+                    {dailyMine.won
+                      ? `Tu l'as réussi en ${dailyMine.moves} coups. Les résultats de la lagune à minuit.`
+                      : "Tu l'as joué aujourd'hui. Un autre problème demain."}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="pc-passe-go"
+                    data-play-daily
+                    onClick={() => {
+                      setGrowth(null);
+                      setDailyPlay(true);
+                    }}
+                  >
+                    Jouer la position
+                  </button>
+                )}
+              </div>
+            </div>
+            <p data-daily-yesterday>
+              {yesterday.tried
+                ? `Hier : ${yesterday.solved} Maison${yesterday.solved > 1 ? "s" : ""} sur ${yesterday.tried} l'${yesterday.solved > 1 ? "ont" : "a"} réussi${yesterday.best ? `, en ${yesterday.best} coups au mieux` : ""}.`
+                : "Hier, personne ne l'a joué dans ta lagune."}
+            </p>
+          </section>
         ) : null}
         {profil && account ? (
           <Profil

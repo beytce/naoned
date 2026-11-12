@@ -12,6 +12,7 @@ import {
   supplierStandings,
   tierOf,
   traitEffects,
+  venice1450Passe,
   weekReplay,
   workLevel,
 } from "@comptoirs/engine";
@@ -87,6 +88,7 @@ import { levelsOf } from "./level.js";
 import { LiveHub } from "./live.js";
 import { acceptChallenge, challenge, sfidaRival, sfidaView } from "./lustre.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
+import { PasseHub } from "./passe.js";
 import { registerPasseRoutes } from "./passeRoutes.js";
 import type { PlancheLagoons } from "./plancheLagoons.js";
 import { registerPlancheRoutes } from "./plancheRoutes.js";
@@ -350,7 +352,11 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     secureCookies: deps.secureCookies,
   });
   // The shared board on line (docs/plan-planche.md L5): a prototype beside the game, open to guests.
+  // The duel rooms of the Passe, shared by its laboratory and the challenges of the board (H5).
+  const passeHub = new PasseHub(venice1450Passe);
   registerPlancheRoutes(app, {
+    passe: passeHub,
+    notify: (players) => live.send(players, { type: "planche", version: 0 }),
     db,
     now: () => world.now(),
     accountIfAny,
@@ -361,6 +367,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   });
   // The duels on line of the Passe (docs/plan-passe.md P6): a prototype beside the game, open to guests.
   registerPasseRoutes(app, {
+    hub: passeHub,
     db,
     now: () => world.now(),
     accountIfAny,

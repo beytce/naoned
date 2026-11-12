@@ -9,6 +9,7 @@ import {
   plancheInit,
   plancheInvariant,
   plancheLaurel,
+  plancheMayChallenge,
   plancheRepelled,
   plancheStanding,
   plancheThread,
@@ -158,6 +159,19 @@ describe("the rank and its laurels", () => {
     expect(second).toBeGreaterThan(0);
     expect(second).toBeLessThanOrEqual(Math.ceil(first / 2));
     expect(plancheLaurel(S, s, "passe")[0]?.house).toBe("ana");
+  });
+
+  it("lets two people challenge each other by the thread once a week (docs/plan-hex-commerce.md H5)", () => {
+    const S = setup();
+    let s = plancheInit(S, T0);
+    expect(plancheMayChallenge(s, "ana", "ben")).toBe("planche_not_person");
+    expect(plancheMayChallenge(s, "ana", "ana")).toBe("planche_unknown");
+    expect(plancheMayChallenge(s, "ana", "dan")).toBeUndefined();
+    s = plancheDuel(S, s, "dan", "ana");
+    expect(plancheMayChallenge(s, "ana", "dan")).toBe("planche_defi_week");
+    // A new week, a new challenge.
+    s = plancheAdvance(S, s, T0 + WEEK + HOUR);
+    expect(plancheMayChallenge(s, "dan", "ana")).toBeUndefined();
   });
 
   it("crowns as Doge the smallest sum of the three places", () => {

@@ -8,6 +8,7 @@
 import type { LagoonParams, LagoonTown } from "../planche/lagune.js";
 import { plancheLagoon } from "../planche/lagune.js";
 import type { PlancheWant } from "../planche/planche.js";
+import { venice1450PasseProblems } from "./venice1450.passe.problems.js";
 import { venice1450Planche } from "./venice1450.planche.js";
 
 /**
@@ -211,7 +212,10 @@ export const venice1450LaguneParams: LagoonParams = {
     seals: 3,
     bouche: "chioggia",
     canal: "lido",
-    strait: "segna",
+    // The straits on the largest board (9 × 9), the mouths 7 × 7, the canals 5 × 5.
+    strait: "otrante",
+    // The prepared guard (docs/plan-hex-commerce.md H4): two links, three on a strait.
+    guard: { links: 2, strait: 3 },
     corsairs: ["Ivo le Borgne", "Dragut", "Uluç Ali", "Kemal Reis", "Barberousse", "Turgut"],
   },
   detourBps: 6_000,
@@ -264,6 +268,19 @@ export const venice1450LaguneParams: LagoonParams = {
         doge: 200,
       },
     },
+    // The sealed orders (docs/plan-hex-commerce.md H2): two a day in each sestiere, at 9 and 17
+    // (UTC), four hours each, twice the price, two hours of thread (20 units: measured at the
+    // bench, docs/calibration.md § La Passe dans le commerce; the owner's choice, 12 November 2026).
+    orders: {
+      perSestiere: 2,
+      hours: [9, 17],
+      durationMs: 4 * 3_600_000,
+      priceBps: 20_000,
+      units: 20,
+      problems: venice1450PasseProblems.map((p) => p.id),
+    },
+    // The problem of the day (docs/plan-hex-commerce.md H3): the same twenty, 20 of Prestige.
+    daily: { problems: venice1450PasseProblems.map((p) => p.id), prestige: 20 },
   },
 };
 

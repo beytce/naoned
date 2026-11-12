@@ -3285,3 +3285,41 @@ Un tiers des Maisons de chaque sorte : régulière (une visite toutes les 8 h), 
 L'assidu gagne 5 % de Prestige de plus que le régulier (le plafond : 500 par semaine).
 
 **Lecture.** Le joueur régulier atteint le niveau 10 en semaine 5 (le plan visait 4 à 6) ; l'assidu ne va que 5 % plus vite, le plafond le retient ; l'irrégulier n'est pas distancé, ses fils vendent entre ses visites. Le Prestige vient surtout du commerce (55 par jour au plus) et de la place dans le sestiere. Les Maisons de l'ordinateur jouent ici comme des joueurs ; sur le site, elles suivront le niveau médian des joueurs de leur lagune (M3).
+
+
+## La Passe dans le commerce (12 novembre 2026, docs/plan-hex-commerce.md H6)
+
+`pnpm --filter @comptoirs/simulator hex-bench 6 4` : la lagune de Venise sur quatre semaines, ses 48 Maisons jouées par trois sortes de joueurs (un tiers chacune, une visite toutes les 8 h ; la sorte de chaque Maison change d'une graine à l'autre, sans quoi la place sur la carte fausse tout) :
+
+- **Passe** : chaque jour, une tour tentée (gagnée 4 fois sur 10 ; une tour des corsaires ou d'une autre Maison), chaque commande scellée de son sestiere ouverte à sa visite et le Problème du jour (réussis 6 fois sur 10), le détour là où une tour est encore fermée ;
+- **détour** : jamais de Passe, le détour ;
+- **ni l'un ni l'autre** : ni Passe ni détour (les Maisons de l'ordinateur d'avant).
+
+Cible du plan : celui qui joue la Passe gagne plus, mais pas plus de 25 % ; le détour reste rentable.
+
+**Deux défauts du banc corrigés en route.** (1) La sorte suivait la place dans la colonne (`k % 3`) : sans tour ni commande, la sorte « Passe » gagnait déjà 51 % de plus. Elle tourne maintenant d'une graine à l'autre. (2) Le robot qui prend le détour le gardait quand la route s'ouvrait : il le reprend désormais quand la route rapporte un quart de plus (`plancheRobot`, option `detour`).
+
+### Ce que chaque part de la Passe donne (gagné par les fils, moyenne, quatre semaines, six graines)
+
+| Ce que fait le joueur de la Passe | Passe | détour | ni l'un ni l'autre | Passe / détour |
+| --- | --- | --- | --- | --- |
+| le Problème du jour seul | 92 444 | 78 735 | 44 796 | **+17 %** |
+| + les commandes scellées (80 unités) | 114 554 | 77 729 | 44 971 | +47 % |
+| + les commandes scellées (40 unités) | 103 583 | 78 068 | 44 526 | +33 % |
+| + les commandes scellées (20 unités) | 98 102 | 78 243 | 44 740 | **+25 %** |
+| les tours (qui changent de main) et le Problème du jour | 72 170 | 49 521 | 55 085 | +46 % |
+| tout (tours, commandes de 80, Problème du jour) | 89 983 | 51 032 | 56 732 | +76 % |
+| tout, commandes de 20 | 75 499 | 51 283 | 57 217 | +47 % |
+
+Passage libre après un sceau ramené de 24 h à 8 h, ou péage de 10 % à 5 % : l'écart dû aux tours ne bouge presque pas (+41 à +47 %).
+
+**Lecture.**
+
+- **Le Problème du jour** ne donne que du Prestige, mais 20 par jour font monter le niveau plus tôt, donc les bobines, les cases et les ateliers : +41 % à deux semaines, +17 % à quatre, l'écart se referme quand les autres rattrapent le niveau.
+- **Les commandes scellées de 80 unités** pèsent trop : une commande livrée vaut 6 000 à 7 000 ducats, une semaine de fils 15 000 à 20 000. À 20 unités (deux heures de fil), avec le Problème du jour, on tient la cible (+25 %).
+- **Les tours** sont le plus gros levier (+46 %). Ni le passage libre plus court, ni un péage plus bas, ni la suppression du Prestige des sceaux et de la tour tenue ne le réduisent : il tient au commerce de qui ouvre et tient les routes. Elles datent de l'étape du rang, mais le Hex dans le commerce les rend quotidiennes.
+- **Le détour** rapporte 75 % de plus que de ne rien faire tant que les tours sont aux corsaires ; une fois les tours tenues par des Maisons, la route s'ouvre à tous, et le détour ne rapporte plus rien de plus (−10 %).
+
+**Tranché par le porteur (12 novembre 2026).** Les commandes scellées passent à **20 unités** (deux heures de fil, au double du prix) : avec le Problème du jour, +25 %, dans la cible. Les tours restent telles quelles : tenir une tour est la grande récompense de la Passe ; on remesure à l'étape de la Guerre, quand l'Assaut les disputera.
+
+Note : sans Prestige pour les sceaux ni pour la tour tenue, l'écart dû aux tours reste à +48 % ; il ne vient donc pas de ces deux gains, mais du commerce lui-même (pas de péage pour qui tient, routes ouvertes plus tôt).

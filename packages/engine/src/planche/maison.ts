@@ -158,6 +158,8 @@ export interface MaisonState {
   credits: { week: number; amount: number }[];
   /** Its last deeds, for its Livre. */
   log: MaisonEvent[];
+  /** The problems of the day it solved: the knots on its façade. */
+  knots?: number;
 }
 
 export const maisonStart = (day: number): MaisonState => ({

@@ -26,6 +26,9 @@ export interface MaisonView {
   >)[];
   flags: string[];
   collection: Record<string, number>;
+  /** The problems of the day solved, and whether today's is. */
+  knots?: number;
+  knotToday?: boolean;
   kept: number;
   livre: { kind: string; data: string | null; at: number }[];
 }
@@ -243,6 +246,18 @@ export function FacadeSheet({
           strokeLinecap="round"
         />
         <circle cx="160" cy="153" r="3.2" fill="#2a2725" />
+        {m.knotToday ? (
+          <g transform="translate(150 60)" data-facade-knot>
+            <circle cx="10" cy="10" r="9" fill="#C8102E" />
+            <path
+              d="M5 12 C5 6 11 5 12 9 C13 13 7 14 8 9 C9 5 15 6 15 12"
+              fill="none"
+              stroke="#F6F4F0"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </g>
+        ) : null}
         {doges ? (
           <g transform="translate(150 22)">
             <path
@@ -292,6 +307,9 @@ export function FacadeSheet({
         </div>
         <div>
           <b>{doges}</b>fois Doge
+        </div>
+        <div>
+          <b>{m.knots ?? 0}</b>nœuds
         </div>
       </div>
       <h3 className="pc-mn-h3">Le Livre de la Maison</h3>

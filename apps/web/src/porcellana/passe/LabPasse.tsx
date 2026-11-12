@@ -23,6 +23,7 @@ import {
   passePlay,
   passeShortestWay,
   passeThink,
+  plancheGuardBoard,
   venice1450Passe,
 } from "@comptoirs/engine";
 import { Canvas } from "@react-three/fiber";
@@ -46,7 +47,11 @@ const STYLES: { key: PasseStyle | "aucune"; name: string }[] = [
 const FORCES = ["Novice", "Marin", "Capitaine", "Amiral"];
 const COLS = "ABCDEFGHI";
 
-function setupOf(board: BoardKey, problem: PasseProblem | null): PasseSetup {
+function setupOf(
+  board: BoardKey,
+  problem: PasseProblem | null,
+  guard?: readonly number[],
+): PasseSetup {
   if (problem)
     return {
       ...rules,
@@ -57,7 +62,13 @@ function setupOf(board: BoardKey, problem: PasseProblem | null): PasseSetup {
       first: 1,
     };
   const b = boards[board];
-  return { ...rules, width: b.width, height: b.height, cells: [...b.cells], first: b.first };
+  return {
+    ...rules,
+    width: b.width,
+    height: b.height,
+    cells: plancheGuardBoard(b.cells, guard),
+    first: b.first,
+  };
 }
 
 const cellName = (s: PasseState, i: number) =>
@@ -70,20 +81,34 @@ export interface PasseDuel {
   foe: string;
   /** The seals the tower still has (shown by its captain's name). */
   seals?: number;
+  /** The links the tower's holder laid in advance (docs/plan-hex-commerce.md H4). */
+  guard?: readonly number[];
+  /** A position to play rather than the board (a sealed order, docs/plan-hex-commerce.md H2). */
+  problem?: string;
   /** Won or not, and the thread's own pieces, for the server to replay the duel. */
   onEnd: (won: boolean, moves: PasseMove[]) => void;
 }
 
-export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
+/** A challenge by the thread (docs/plan-hex-commerce.md H5): its room, and the way back to the board. */
+export interface PasseDefi {
+  code: string;
+  onBack: () => void;
+}
+
+export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: PasseDefi } = {}) {
   const [board, setBoard] = useState<BoardKey>(
     duel && duel.board in boards ? (duel.board as BoardKey) : "segna",
   );
   const [seat, setSeat] = useState<Seat>("fil");
   const [depth, setDepth] = useState(3);
   const [style, setStyle] = useState<PasseStyle | "aucune">("aucune");
-  const [problem, setProblem] = useState<PasseProblem | null>(null);
+  const [problem, setProblem] = useState<PasseProblem | null>(
+    () => (duel?.problem && problems.find((p) => p.id === duel.problem)) || null,
+  );
   const [open, setOpen] = useState(false);
-  const setup = useMemo(() => setupOf(board, problem), [board, problem]);
+  const guardKey = duel?.guard?.join(",") ?? "";
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the guard, by its cells.
+  const setup = useMemo(() => setupOf(board, problem, duel?.guard), [board, problem, guardKey]);
   const [state, setState] = useState<PasseState>(() => passeInit(setup));
   const [last, setLast] = useState(-1);
   const [firing, setFiring] = useState(false);
@@ -107,9 +132,14 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
   // The link a friend was sent: ?lab=passe&salle=CODE comes straight into the room.
   // biome-ignore lint/correctness/useExhaustiveDependencies: once, when the page opens.
   useEffect(() => {
-    const c = new URLSearchParams(window.location.search).get("salle");
+    const c = defi?.code ?? new URLSearchParams(window.location.search).get("salle");
     if (c) void net.join(c);
   }, []);
+  /** Out of the room: back to the board, for a challenge. */
+  const leave = () => {
+    net.leave();
+    defi?.onBack();
+  };
   // The clock of a duel on line is redrawn four times a second.
   const ticking = !!room?.deadline;
   useEffect(() => {
@@ -230,7 +260,9 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
   const title = duel
     ? `${boards[board].name} · ${duel.foe}`
     : room
-      ? `${room.boardName} · salle ${room.code}`
+      ? defi
+        ? `Défi par le fil · Passe ${Math.min(room.round, 2)} sur 2`
+        : `${room.boardName} · salle ${room.code}`
       : problem
         ? `Le fil passe en ${problem.moves} coups`
         : `${boards[board].name} · ${FORCES[depth - 1] ?? ""}`;
@@ -299,7 +331,9 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
           <div className="pc-passe-title">
             <b>{duel ? duel.foe.replace(/^./, (x) => x.toUpperCase()) : title}</b>
             <span>
-              {duel ? `${boards[board].name} · ` : ""}
+              {duel
+                ? `${problem ? `Le fil passe en ${problem.moves} coups` : boards[board].name} · `
+                : ""}
               <span data-passe-turn>{turn}</span>
             </span>
           </div>
@@ -420,17 +454,29 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
                   <button
                     type="button"
                     className="pc-passe-go"
+                    hidden={!!defi && room.round >= 2}
                     disabled={room.again.you || room.you === 0}
                     onClick={() => void net.again()}
                   >
                     {room.again.you
-                      ? "Revanche demandée…"
+                      ? defi
+                        ? "En attente de l'autre…"
+                        : "Revanche demandée…"
                       : room.again.other
-                        ? `${foe} veut sa revanche`
-                        : "Revanche, camps échangés"}
+                        ? defi
+                          ? `${foe} t'attend pour la seconde Passe`
+                          : `${foe} veut sa revanche`
+                        : defi
+                          ? "La seconde Passe, camps échangés"
+                          : "Revanche, camps échangés"}
                   </button>
-                  <button type="button" className="pc-passe-quiet" onClick={net.leave}>
-                    Quitter la salle
+                  <button
+                    type="button"
+                    className={defi && room.round >= 2 ? "pc-passe-go" : "pc-passe-quiet"}
+                    data-defi-back={defi ? "" : undefined}
+                    onClick={leave}
+                  >
+                    {defi ? "Revenir à la planche" : "Quitter la salle"}
                   </button>
                 </>
               ) : duel ? (
@@ -447,7 +493,7 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
                   {problem ? "Réessayer" : "Rejouer"}
                 </button>
               )}
-              {problem && failed ? (
+              {problem && failed && !duel ? (
                 <button
                   type="button"
                   className="pc-passe-quiet"
@@ -529,7 +575,7 @@ export default function LabPasse({ duel }: { duel?: PasseDuel } = {}) {
                 </button>
               ) : null}
               {room ? (
-                <button type="button" className="pc-passe-quiet" onClick={net.leave}>
+                <button type="button" className="pc-passe-quiet" onClick={leave}>
                   Quitter la salle
                 </button>
               ) : duel ? (

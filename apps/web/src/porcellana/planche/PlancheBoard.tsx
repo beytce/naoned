@@ -367,7 +367,8 @@ export function PlancheBoard({
           else pts.push(new Vector3(last.x, 0, wz(y)));
           pts.push(new Vector3(wx(x), 0, wz(y)));
         };
-        for (const id of city.via) {
+        // By the detour, the thread goes round the passages (docs/plan-hex-commerce.md H1).
+        for (const id of th.detour ? [] : city.via) {
           const p = setup.passages.find((q) => q.id === id);
           if (p) leg(p.x, p.y);
         }
@@ -396,7 +397,11 @@ export function PlancheBoard({
           const boat = ship(P, { seed: 1, running: true });
           boat.group.scale.setScalar(THREAD.boat);
           root.add(boat.group);
-          mine.push({ route, boat, open: plancheRouteOpen(setup, state, me, th.to, state.now) });
+          mine.push({
+            route,
+            boat,
+            open: !!th.detour || plancheRouteOpen(setup, state, me, th.to, state.now),
+          });
         }
       }
     }

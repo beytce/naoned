@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   type LagoonParams,
   plancheAdvance,
+  plancheForced,
   plancheInit,
   plancheInvariant,
   plancheLagoon,
   plancheLagoonLand,
+  plancheRobot,
   plancheRouteOpen,
   plancheThread,
 } from "../../src/index.js";
@@ -160,5 +162,23 @@ describe("the detour", () => {
     expect(() =>
       plancheThread(S, plancheInit(S, T0), h, near.id, "verre", T0, { detour: true }),
     ).toThrow("planche_no_detour");
+  });
+
+  it("is taken by a house of the computer told to, when it brings more than the open towns", () => {
+    const S = plancheLagoon(params());
+    const far = S.cities.find((c) => c.ring === "large");
+    const h = S.houses[0]?.id ?? "";
+    const s0 = plancheInit(S, T0);
+    const never = plancheRobot(S, s0, h, T0);
+    expect(never.houses[h]?.threads.some((t) => t.to === far?.id)).toBe(false);
+    const round = plancheRobot(S, s0, h, T0, 2_500, { detour: true });
+    const t = round.houses[h]?.threads.find((x) => x.to === far?.id);
+    expect(t?.detour).toBe(true);
+    // Its passages opened (forced, their seals all broken), the detour is given up for the route.
+    let s = round;
+    for (const p of far?.via ?? [])
+      for (let k = 0; k < 2; k++) s = plancheForced(S, s, S.houses[1]?.id ?? "", p, T0);
+    s = plancheRobot(S, s, h, T0 + HOUR, 2_500, { detour: true });
+    expect(s.houses[h]?.threads.some((x) => x.to === far?.id && x.detour)).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 import {
   type PasseMove,
+  type PasseProblem,
   type PasseSetup,
   type PlancheSetup,
   type PlancheState,
@@ -10,10 +11,18 @@ import {
   plancheBuild,
   plancheBuyTile,
   plancheClaim,
+  plancheDaily,
+  plancheDailyTry,
+  plancheDuel,
   plancheForced,
+  plancheGuard,
+  plancheGuardBoard,
   plancheInit,
   plancheInvariant,
   plancheMove,
+  plancheOrder,
+  plancheOrderRefusal,
+  plancheOrderTry,
   plancheRobot,
   plancheThread,
   plancheToll,
@@ -44,6 +53,8 @@ export interface PlancheHubTheme {
     >;
     /** How far the lieutenant of a passage sees (it must be the laboratory's, to replay the same duel). */
     lieutenant: number;
+    /** The positions of the sealed orders (« the thread passes in N pieces »). */
+    problems?: readonly PasseProblem[];
   };
   visitHours: number;
   /** Game hours without a read or a gesture after which a player's house goes back to the computer (0: never). */
@@ -67,7 +78,12 @@ export interface PlancheView {
 /** Venice's lagoon of 48 houses, as the server plays it (docs/plan-lagunes.md G4). */
 export const plancheTheme = (): PlancheHubTheme => ({
   board: venice1450Lagune,
-  passe: { rules: venice1450Passe.rules, boards: venice1450Passe.boards, lieutenant: 3 },
+  passe: {
+    rules: venice1450Passe.rules,
+    boards: venice1450Passe.boards,
+    lieutenant: 3,
+    problems: venice1450Passe.problems,
+  },
   visitHours: 8,
   // An account keeps its house for good (docs/plan-compte.md C3).
   idleHours: 0,
@@ -82,13 +98,28 @@ export type PlancheAnswer = "ok" | "not_seated" | "duel_lost" | "duel_illegal" |
 export type PlancheCommand =
   | { type: "seat"; player: string; name: string; t: number }
   | { type: "release"; players: string[]; t: number }
-  | { type: "thread" | "unthread"; player: string; city: string; good: string; t: number }
+  | {
+      type: "thread" | "unthread";
+      player: string;
+      city: string;
+      good: string;
+      t: number;
+      detour?: boolean;
+    }
   | { type: "toll"; player: string; passage: string; tollBps: number; t: number }
   | { type: "buy" | "upgrade"; player: string; at: string; t: number }
   | { type: "build"; player: string; kind: string; at: string; t: number }
   | { type: "move"; player: string; from: string; to: string; t: number }
   /** A duel already won and checked by the hub: only its outcome is kept. */
-  | { type: "forced"; player: string; passage: string; t: number };
+  | { type: "forced"; player: string; passage: string; t: number }
+  /** A sealed order's position played, won or lost, as the hub replayed it. */
+  | { type: "order"; player: string; order: string; won: boolean; t: number }
+  /** The problem of the day played, won or lost, in so many pieces. */
+  | { type: "daily"; player: string; won: boolean; moves: number; t: number }
+  /** The links laid in advance on a tower's board (docs/plan-hex-commerce.md H4). */
+  | { type: "guard"; player: string; passage: string; cells: number[]; t: number }
+  /** A Passe of a challenge won by the player against another house (docs/plan-hex-commerce.md H5). */
+  | { type: "duel"; player: string; loser: string; t: number };
 
 /** The whole of a board: what the engine holds, who sits where, and when it began. */
 export interface PlancheDoc {
@@ -190,7 +221,7 @@ export function plancheDocApply(
     let next: PlancheState;
     switch (c.type) {
       case "thread":
-        next = plancheThread(S, s, h, c.city, c.good, c.t);
+        next = plancheThread(S, s, h, c.city, c.good, c.t, c.detour ? { detour: true } : {});
         break;
       case "unthread":
         next = plancheUnthread(S, s, h, c.city, c.good, c.t);
@@ -213,6 +244,22 @@ export function plancheDocApply(
       case "forced":
         next = plancheForced(S, s, h, c.passage, c.t);
         break;
+      case "order":
+        next = plancheOrderTry(S, s, h, c.order, c.t, c.won);
+        break;
+      case "daily":
+        next = plancheDailyTry(S, s, h, c.t, c.won, c.moves);
+        break;
+      case "duel":
+        next = plancheDuel(S, s, h, c.loser);
+        break;
+      case "guard": {
+        const def = S.passages.find((p) => p.id === c.passage);
+        const board = def ? theme.passe.boards[def.board] : undefined;
+        if (!board) return { doc, answer: "planche_unknown" };
+        next = plancheGuard(S, s, h, c.passage, c.cells, c.t, board.cells);
+        break;
+      }
     }
     return { doc: { ...doc, state: next }, answer: "ok" };
   } catch (e) {
@@ -351,8 +398,8 @@ export class PlancheHub {
     });
   }
 
-  thread(player: string, city: string, good: string, t: number) {
-    return this.act({ type: "thread", player, city, good, t });
+  thread(player: string, city: string, good: string, t: number, detour = false) {
+    return this.act({ type: "thread", player, city, good, t, ...(detour ? { detour: true } : {}) });
   }
 
   unthread(player: string, city: string, good: string, t: number) {
@@ -376,6 +423,28 @@ export class PlancheHub {
     return this.act({ type: "upgrade", player, at, t });
   }
 
+  /** A Passe of a challenge won: the cote of the two houses moves. */
+  duel(winner: string, loser: string, t: number): Promise<PlancheAnswer> {
+    const house = this.doc.seats[loser]?.house;
+    if (!house) return Promise.resolve("not_seated");
+    return this.act({ type: "duel", player: winner, loser: house, t });
+  }
+
+  /** When a player last read or acted on the board (game time), if it is seated here. */
+  lastSeen(player: string): number | undefined {
+    return this.seen.get(player);
+  }
+
+  /** The account seated in a house, if a person holds it. */
+  playerOf(house: string): string | undefined {
+    return Object.entries(this.doc.seats).find(([, s]) => s.house === house)?.[0];
+  }
+
+  /** The holder of a tower lays its guard: links in advance on its board, changed once a day. */
+  guard(player: string, passage: string, cells: number[], t: number) {
+    return this.act({ type: "guard", player, passage, cells, t });
+  }
+
   move(player: string, from: string, to: string, t: number) {
     return this.act({ type: "move", player, from, to, t });
   }
@@ -391,7 +460,9 @@ export class PlancheHub {
     const b = def ? this.theme.passe.boards[def.board] : undefined;
     if (!def || !b) return "planche_unknown";
     if (!this.doc.seats[player]) return "not_seated";
-    let s = passeInit({ ...this.theme.passe.rules, ...b, cells: [...b.cells], first: 1 });
+    // The duel begins on the tower's guard, the links its holder laid (docs/plan-hex-commerce.md H4).
+    const cells = plancheGuardBoard(b.cells, this.doc.state.passages[passage]?.guard);
+    let s = passeInit({ ...this.theme.passe.rules, ...b, cells, first: 1 });
     for (const m of moves) {
       if (s.winner) break;
       if (s.turn !== 1) s = passePlay(s, passeThink(s, { depth: this.theme.passe.lieutenant }));
@@ -404,5 +475,67 @@ export class PlancheHub {
     }
     if (s.winner !== 1) return "duel_lost";
     return this.act({ type: "forced", player, passage, t });
+  }
+
+  /**
+   * A sealed order (docs/plan-hex-commerce.md H2): its position is replayed here, the player's
+   * pieces and the chain's answers, within the pieces the problem allows. Won, the order is
+   * delivered; lost, the try is spent and nothing else.
+   */
+  async order(player: string, id: string, moves: PasseMove[], t: number): Promise<PlancheAnswer> {
+    const S = this.theme.board;
+    const o = plancheOrder(S, id);
+    const pb = o && this.theme.passe.problems?.find((p) => p.id === o.problem);
+    if (!o || !pb) return "planche_unknown";
+    const seat = this.doc.seats[player];
+    if (!seat) return "not_seated";
+    const why = plancheOrderRefusal(S, this.doc.state, seat.house, id, t);
+    // The stock is read again once the board is brought to `t`: only its other refusals stop here.
+    if (why && why !== "planche_order_short") return why;
+    const won = this.solves(pb, moves);
+    if (won === null) return "duel_illegal";
+    const answer = await this.act({ type: "order", player, order: id, won, t });
+    return answer === "ok" && !won ? "duel_lost" : answer;
+  }
+
+  /** The day's problem (docs/plan-hex-commerce.md H3): replayed here, one try, its Prestige if solved. */
+  async daily(player: string, moves: PasseMove[], t: number): Promise<PlancheAnswer> {
+    const id = plancheDaily(this.theme.board, Math.floor(t / DAY));
+    const pb = id ? this.theme.passe.problems?.find((p) => p.id === id) : undefined;
+    if (!pb) return "planche_unknown";
+    const seat = this.doc.seats[player];
+    if (!seat) return "not_seated";
+    if (this.doc.state.daily?.[Math.floor(t / DAY)]?.[seat.house]) return "planche_daily_tried";
+    const won = this.solves(pb, moves);
+    if (won === null) return "duel_illegal";
+    const laid = Math.min(moves.length, pb.moves);
+    const answer = await this.act({ type: "daily", player, won, moves: laid, t });
+    return answer === "ok" && !won ? "duel_lost" : answer;
+  }
+
+  /**
+   * A position of « the thread passes in N pieces » replayed: the player's pieces, the chain's
+   * answers as the laboratory's (depth 3), within the pieces allowed. Null: a piece was illegal.
+   */
+  private solves(pb: PasseProblem, moves: PasseMove[]): boolean | null {
+    let s = passeInit({
+      ...this.theme.passe.rules,
+      fire: { thread: 0, chain: 0 },
+      width: pb.width,
+      height: pb.height,
+      cells: [...pb.cells],
+      first: 1,
+    });
+    for (const m of moves) {
+      if (s.winner || s.laid[0] >= pb.moves) break;
+      if (s.turn !== 1) s = passePlay(s, passeThink(s, { depth: 3 }));
+      if (s.winner) break;
+      try {
+        s = passePlay(s, { at: m.at });
+      } catch {
+        return null;
+      }
+    }
+    return s.winner === 1 && s.laid[0] <= pb.moves;
   }
 }

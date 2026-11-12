@@ -347,6 +347,17 @@ export function plancheClaim(S: PlancheSetup, s0: PlancheState, house: string): 
   return s;
 }
 
+/**
+ * Whether one person may challenge another by the thread (docs/plan-hex-commerce.md H5): two
+ * people, who have not met at the Passe this week. Nothing: they may; else why not.
+ */
+export function plancheMayChallenge(s: PlancheState, a: string, b: string): string | undefined {
+  if (a === b || !has(s.houses, a) || !has(s.houses, b)) return "planche_unknown";
+  if (!s.rank.humans.includes(a) || !s.rank.humans.includes(b)) return "planche_not_person";
+  if (s.rank.duels[pair(a, b)]) return "planche_defi_week";
+  return undefined;
+}
+
 /** A Passe won between two people: the cote moves, half as much each time the pair meets again. */
 export function plancheDuel(
   S: PlancheSetup,

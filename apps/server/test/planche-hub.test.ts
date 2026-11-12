@@ -1,12 +1,16 @@
 import {
+  PASSE_CHAIN,
   PASSE_EMPTY,
   type PasseMove,
   type PasseSetup,
   type PlancheSetup,
+  passeForcedWin,
   passeInit,
   passeLegal,
   passePlay,
   passeThink,
+  plancheOrders,
+  venice1450Passe,
 } from "@comptoirs/engine";
 import { describe, expect, it } from "vitest";
 import { PlancheHub, type PlancheHubTheme, mondayOf } from "../src/game/planche.js";
@@ -98,10 +102,12 @@ function theme(): PlancheHubTheme {
 const T0 = Date.parse("2026-11-16T06:00:00Z");
 
 /** The thread's pieces that beat the hub's lieutenant on the strait, found by playing against it. */
-function winningLine(t: PlancheHubTheme): PasseMove[] {
+function winningLine(t: PlancheHubTheme, guard: number[] = []): PasseMove[] {
   const b = t.passe.boards.petit;
   if (!b) throw new Error("no board");
-  const setup: PasseSetup = { ...t.passe.rules, ...b, cells: [...b.cells] };
+  const cells = [...b.cells];
+  for (const i of guard) cells[i] = PASSE_CHAIN;
+  const setup: PasseSetup = { ...t.passe.rules, ...b, cells };
   // a search over the thread's pieces, the lieutenant answering as the hub's does
   const search = (s: ReturnType<typeof passeInit>, line: PasseMove[]): PasseMove[] | null => {
     if (s.winner === 1) return line;
@@ -204,6 +210,26 @@ describe("the board on line", () => {
     expect(await hub.toll("ben", "strait", 500, T0)).toBe("not_seated");
   });
 
+  it("lets the holder lay its guard, and replays the next duel from it", async () => {
+    const base = theme();
+    const t: PlancheHubTheme = {
+      ...base,
+      board: { ...base.board, passages: base.board.passages.map((p) => ({ ...p, guard: 1 })) },
+    };
+    const hub = new PlancheHub(t, T0);
+    await hub.view("ana", "Ana", T0);
+    await hub.view("ben", "Ben", T0);
+    expect(await hub.guard("ana", "strait", [0], T0)).toBe("planche_not_holder");
+    expect(await hub.force("ana", "strait", winningLine(t), T0)).toBe("ok");
+    expect(await hub.guard("ana", "strait", [0, 1], T0)).toBe("planche_guard_many");
+    expect(await hub.guard("ana", "strait", [0], T0)).toBe("ok");
+    expect(await hub.guard("ana", "strait", [2], T0 + HOUR)).toBe("planche_guard_today");
+    expect((await hub.view("ana", "Ana", T0)).state.passages.strait?.guard).toEqual([0]);
+    // Ben's duel begins on the link Ana laid: a line found on that board wins it.
+    expect(await hub.force("ben", "strait", winningLine(t, [0]), T0 + HOUR)).toBe("ok");
+    expect((await hub.view("ben", "Ben", T0 + HOUR)).state.passages.strait?.guard).toBeUndefined();
+  });
+
   it("keeps every denier accounted for, whatever the players and the computer do", async () => {
     const hub = new PlancheHub(theme(), T0);
     await hub.view("ana", "Ana", T0);
@@ -286,5 +312,89 @@ describe("the newcomer's sestiere", () => {
     expect((await hub.view("ben", "Ben", T0)).me).toBe("b1");
     expect((await hub.view("cid", "Cid", T0)).me).toBe("a2");
     expect((await hub.view("dan", "Dan", T0)).me).toBe("b2");
+  });
+});
+
+// The sealed orders (docs/plan-hex-commerce.md H2): a position the hub replays, once per house.
+describe("the sealed orders on line", () => {
+  const ordered = (): PlancheHubTheme => {
+    const t = theme();
+    return {
+      ...t,
+      board: {
+        ...t.board,
+        houses: t.board.houses.map((h) => ({ ...h, sestiere: "s" })),
+        orders: {
+          perSestiere: 1,
+          hours: [6],
+          durationMs: 4 * HOUR,
+          priceBps: 20_000,
+          units: 30,
+          problems: ["deux-01"],
+        },
+        daily: { problems: ["deux-01"], prestige: 20 },
+      },
+      passe: { ...t.passe, problems: venice1450Passe.problems },
+    };
+  };
+  /** The thread's pieces that solve the problem against the hub's chain. */
+  const solution = (): PasseMove[] => {
+    const pb = venice1450Passe.problems.find((p) => p.id === "deux-01");
+    if (!pb) throw new Error("no problem");
+    let s = passeInit({
+      ...venice1450Passe.rules,
+      fire: { thread: 0, chain: 0 },
+      width: pb.width,
+      height: pb.height,
+      cells: [...pb.cells],
+      first: 1,
+    });
+    const line: PasseMove[] = [];
+    while (!s.winner) {
+      if (s.turn === 1) {
+        const m = passeForcedWin(s, pb.moves - s.laid[0]);
+        if (!m) throw new Error("no win");
+        line.push(m);
+        s = passePlay(s, m);
+      } else s = passePlay(s, passeThink(s, { depth: 3 }));
+    }
+    return line;
+  };
+
+  it("delivers the order of the house that solves its position, twice the price", async () => {
+    const t = ordered();
+    const [o] = plancheOrders(t.board, Math.floor(T0 / DAY));
+    if (!o) throw new Error("no order");
+    const hub = new PlancheHub(t, T0);
+    const me = (await hub.view("ana", "Ana", T0)).me ?? "";
+    await hub.view("ben", "Ben", T0);
+    expect(await hub.order("ana", "nowhere", [], T0)).toBe("planche_unknown");
+    // A wrong first piece: the try is spent.
+    const wrong = solution()[0]?.at === 0 ? 1 : 0;
+    expect(await hub.order("ben", o.id, [{ at: wrong }], T0)).toBe("duel_lost");
+    expect(await hub.order("ben", o.id, solution(), T0)).toBe("planche_order_tried");
+    const before = (await hub.view("ana", "Ana", T0)).state.houses[me]?.ducats ?? 0n;
+    expect(await hub.order("ana", o.id, solution(), T0)).toBe("ok");
+    const v = await hub.view("ana", "Ana", T0);
+    expect(v.state.orders?.[o.id]?.by).toBe(me);
+    expect((v.state.houses[me]?.ducats ?? 0n) - before).toBe(BigInt(o.units * o.price));
+    expect(o.price).toBe(8_000);
+    expect(v.ok).toBe(true);
+    expect(await hub.order("ben", o.id, solution(), T0)).toBe("planche_order_taken");
+  });
+
+  it("replays the problem of the day: one try a house, and the lagoon's count", async () => {
+    const hub = new PlancheHub(ordered(), T0);
+    const me = (await hub.view("ana", "Ana", T0)).me ?? "";
+    const ben = (await hub.view("ben", "Ben", T0)).me ?? "";
+    expect(await hub.daily("ana", solution(), T0)).toBe("ok");
+    expect(await hub.daily("ana", solution(), T0)).toBe("planche_daily_tried");
+    const wrong = solution()[0]?.at === 0 ? 1 : 0;
+    expect(await hub.daily("ben", [{ at: wrong }], T0)).toBe("duel_lost");
+    const v = await hub.view("ana", "Ana", T0);
+    const day = Math.floor(T0 / DAY);
+    expect(v.state.daily?.[day]?.[me]).toEqual({ won: true, moves: 2 });
+    expect(v.state.daily?.[day]?.[ben]?.won).toBe(false);
+    expect(v.state.houses[me]?.maison?.knots).toBeUndefined();
   });
 });

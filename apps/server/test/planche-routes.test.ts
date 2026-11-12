@@ -113,6 +113,25 @@ describe("the board on line", () => {
     ).toBe("ile_unknown");
   });
 
+  it("stretches a thread by the detour to a town behind a shut tower", async () => {
+    const ana = await player("ana@example.org");
+    const a = (await ana("GET", "/api/planche")).json().planche;
+    // Raguse is beyond the mouth and the strait of Cannaregio, both the corsairs'.
+    expect(
+      (await ana("POST", "/api/planche/thread", { city: "raguse", good: "glass" })).json().error,
+    ).toBe("planche_route_shut");
+    const by = await ana("POST", "/api/planche/thread", {
+      city: "raguse",
+      good: "glass",
+      detour: true,
+    });
+    expect(by.statusCode).toBe(200);
+    expect(by.json().planche.state.houses[a.me].threads[0]).toMatchObject({
+      to: "raguse",
+      detour: true,
+    });
+  });
+
   it("refuses what the board refuses, with a code", async () => {
     const ana = await player("ana@example.org");
     expect(
@@ -125,8 +144,8 @@ describe("the board on line", () => {
     expect(
       (
         await ana("POST", "/api/planche/force", {
-          passage: "detroit-cannaregio",
-          moves: [{ at: 24 }],
+          passage: "canal-1",
+          moves: [{ at: 0 }],
         })
       ).json().error,
     ).toBe("duel_lost");

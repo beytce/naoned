@@ -24,6 +24,8 @@ import {
   ileSlice,
   ileUpgrade,
 } from "../ile/ile.js";
+import type { PlancheOrderRules, PlancheOrderState } from "./commandes.js";
+import type { PlancheDailyRules, PlancheDailyTry } from "./jour.js";
 import {
   MAISON_KEEP,
   type MaisonCaps,
@@ -88,6 +90,8 @@ export interface PlanchePassage {
   seals: number;
   /** How perilous its tile is: an hour held there counts as many in the Garde (1 if unsaid). */
   peril?: number;
+  /** The links its holder may lay in advance on its board (docs/plan-hex-commerce.md H4); none: no guard. */
+  guard?: number;
 }
 
 export interface PlancheHouseSetup {
@@ -124,6 +128,10 @@ export interface PlancheSetup {
    * and its bobbins, its island, its workshops and its towers follow it; without it, the rules'.
    */
   maison?: MaisonRules;
+  /** The sealed orders (docs/plan-hex-commerce.md H2): without them, none. */
+  orders?: PlancheOrderRules;
+  /** The problem of the day (docs/plan-hex-commerce.md H3): without it, none. */
+  daily?: PlancheDailyRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -189,7 +197,17 @@ export interface PlancheState {
   houses: Record<string, PlancheHouse>;
   /** What each town still asks of each good, and the fraction growing back. */
   gauges: Record<string, Record<string, { left: number; carry: number }>>;
-  passages: Record<string, { holder: string; tollBps: number; seals: number }>;
+  passages: Record<
+    string,
+    {
+      holder: string;
+      tollBps: number;
+      seals: number;
+      /** Its guard: the cells of its board where its holder laid links, and the day it did. */
+      guard?: number[];
+      guardDay?: number;
+    }
+  >;
   /** Every denier the towns paid, and every denier a toll destroyed. */
   minted: bigint;
   burnt: bigint;
@@ -197,6 +215,10 @@ export interface PlancheState {
   spent: bigint;
   /** The tide, the weeks, the rivals and the laurels. */
   rank: PlancheRank;
+  /** The sealed orders taken or tried, by id (the last two days'). */
+  orders?: Record<string, PlancheOrderState>;
+  /** The tries at the problem of the day, by day then house (today's and the day before's). */
+  daily?: Record<number, Record<string, PlancheDailyTry>>;
 }
 
 const fail = (code: string): never => {
@@ -547,11 +569,12 @@ export function plancheForced(
     // A house holds as many towers as its level allows: beyond, the seals come back, the tower stays.
     const held = Object.values(s.passages).filter((q) => q.holder === house).length;
     if (held < (h.caps?.towers ?? Number.POSITIVE_INFINITY)) {
-      p.holder = house;
+      // The guard was the last holder's.
+      const { guard: _guard, guardDay: _day, ...kept } = p;
+      s.passages[passage] = { ...kept, holder: house, seals: def.seals };
       h.maison?.log.push({ at: now, kind: "tower", data: passage });
       if (h.maison && h.maison.log.length > MAISON_KEEP) h.maison.log.shift();
-    }
-    p.seals = def.seals;
+    } else p.seals = def.seals;
   }
   return s;
 }
