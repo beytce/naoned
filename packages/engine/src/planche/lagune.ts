@@ -117,7 +117,8 @@ export function plancheLagoon(P: LagoonParams): PlancheSetup {
         x: x0 + 1 + Math.floor(((col + 0.5) * (C - 2)) / cols),
         y: HOUSES + row * 3 + (col % 2),
         makes: { ...P.makes },
-        soil: { ...(P.soils[k % P.soils.length] ?? { pre: 1 }) },
+        // A plan and its soil come from the same model house: the glass where the sand is.
+        soil: { ...(P.soils[(k + si) % P.soils.length] ?? { pre: 1 }) },
         plan: [...(P.plans[(k + si) % P.plans.length] ?? [])],
         sestiere: sest.id,
       });
