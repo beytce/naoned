@@ -2,6 +2,9 @@ import { and, asc, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { plancheSeats, worlds } from "../db/schema.js";
 import type { PlancheHubTheme } from "./planche.js";
+/** The status of a board retired for good (another map): kept for its ledger, never played. */
+export const PLANCHE_RETIRED = "planche_retired";
+
 import {
   PLANCHE_STATUS,
   PLANCHE_THEME,
@@ -33,12 +36,25 @@ export class PlancheLagoons {
     options: PlancheStoreOptions = {},
   ): Promise<PlancheLagoons> {
     const rows = await db
-      .select({ id: worlds.id, name: worlds.name })
+      .select({ id: worlds.id, name: worlds.name, settings: worlds.settings })
       .from(worlds)
       .where(and(eq(worlds.status, PLANCHE_STATUS), eq(worlds.theme, PLANCHE_THEME)))
       .orderBy(asc(worlds.createdAt));
     const stores: PlancheStore[] = [];
-    for (const r of rows) stores.push(await PlancheStore.load(db, theme, r.id, now, options));
+    const map = theme.board.houses.map((h) => h.id).join(",");
+    for (const r of rows) {
+      // A board of another map (the board of 8 before the lagoons): retired, its seats freed, its
+      // players seated anew (the owner's choice, 12 November 2026). Its ledger stays.
+      const was = (r.settings as { board?: { houses?: { id: string }[] } })?.board?.houses;
+      if ((was ?? []).map((h) => h.id).join(",") !== map) {
+        await db.transaction(async (tx) => {
+          await tx.delete(plancheSeats).where(eq(plancheSeats.worldId, r.id));
+          await tx.update(worlds).set({ status: PLANCHE_RETIRED }).where(eq(worlds.id, r.id));
+        });
+        continue;
+      }
+      stores.push(await PlancheStore.load(db, theme, r.id, now, options));
+    }
     if (!stores.length)
       stores.push(await PlancheStore.create(db, theme, now, lagoonName(0), options));
     return new PlancheLagoons(db, theme, stores, options);

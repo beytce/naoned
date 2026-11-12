@@ -1,3 +1,4 @@
+import { venice1450Planche } from "@comptoirs/engine";
 import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -119,8 +120,12 @@ describe("the board on line", () => {
     ).toBe(404);
     expect((await ana("POST", "/api/planche/thread", { city: 3 })).statusCode).toBe(400);
     expect(
-      (await ana("POST", "/api/planche/force", { passage: "segna", moves: [{ at: 24 }] })).json()
-        .error,
+      (
+        await ana("POST", "/api/planche/force", {
+          passage: "detroit-cannaregio",
+          moves: [{ at: 24 }],
+        })
+      ).json().error,
     ).toBe("duel_lost");
   });
 });
@@ -151,6 +156,22 @@ describe("the board for accounts", () => {
   });
 
   it("opens a second lagoon when the first one is full", async () => {
+    // A board of 8 here, not to sign 49 accounts in: the rule is the same for a lagoon of 48.
+    await app.close();
+    const small = await PlancheLagoons.open(
+      database.db,
+      { ...plancheTheme(), board: venice1450Planche },
+      now,
+    );
+    app = await buildApp({
+      db: database.db,
+      mailer,
+      appUrl: "https://comptoirs.test",
+      production: false,
+      world: await GameWorld.open(database.db, () => now, { empire: true }),
+      now: () => new Date(now),
+      planche: small,
+    });
     const seen: { me: string; lagoon: string }[] = [];
     for (let k = 0; k < 9; k++) {
       const p = await player(`p${k}@example.org`);

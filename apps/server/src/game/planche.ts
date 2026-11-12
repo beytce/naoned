@@ -19,8 +19,8 @@ import {
   plancheToll,
   plancheUnthread,
   plancheUpgrade,
+  venice1450Lagune,
   venice1450Passe,
-  venice1450Planche,
 } from "@comptoirs/engine";
 
 const HOUR = 3_600_000;
@@ -64,9 +64,9 @@ export interface PlancheView {
   since: number;
 }
 
-/** Venice's board, as the server plays it. */
+/** Venice's lagoon of 48 houses, as the server plays it (docs/plan-lagunes.md G4). */
 export const plancheTheme = (): PlancheHubTheme => ({
-  board: venice1450Planche,
+  board: venice1450Lagune,
   passe: { rules: venice1450Passe.rules, boards: venice1450Passe.boards, lieutenant: 3 },
   visitHours: 8,
   // An account keeps its house for good (docs/plan-compte.md C3).
@@ -154,8 +154,18 @@ export function plancheDocApply(
         doc: { ...doc, seats: { ...doc.seats, [c.player]: { ...had, name: c.name } } },
         answer: "ok",
       };
+    // A newcomer goes to the sestiere with the fewest players (docs/plan-lagunes.md G4).
     const taken = held(doc);
-    const free = S.houses.find((h) => !taken.has(h.id));
+    const people = new Map<string | undefined, number>();
+    for (const h of S.houses)
+      if (taken.has(h.id)) people.set(h.sestiere, (people.get(h.sestiere) ?? 0) + 1);
+    const free = S.houses
+      .filter((h) => !taken.has(h.id))
+      .reduce<(typeof S.houses)[number] | undefined>(
+        (best, h) =>
+          !best || (people.get(h.sestiere) ?? 0) < (people.get(best.sestiere) ?? 0) ? h : best,
+        undefined,
+      );
     if (!free) return { doc, answer: "planche_full" };
     // A person's house from now on: it has its rival at once, and its cote (docs/plan-classement.md).
     return {
