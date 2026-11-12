@@ -11,7 +11,7 @@
  * exactly, never rounded away.
  */
 
-import type { AssautRules } from "../guerre/assaut.js";
+import type { AssautPort, AssautRules } from "../guerre/assaut.js";
 import {
   type IleRules,
   type IleState,
@@ -127,6 +127,8 @@ export interface GuerreRules {
     repelledCap: number;
     victory: number;
   };
+  /** The training port (the Lido of the corsairs) and the fleet lent to who has none. */
+  training?: { name: string; port: AssautPort; fleet: string[] };
 }
 
 /** A world's board and its rules, as `worlds.settings` would give them. */

@@ -9,6 +9,7 @@ import "./planche.css";
 import {
   type PlancheOrder,
   type PlancheState,
+  assautFleetOf,
   maisonLevel,
   maisonThreshold,
   plancheAdvance,
@@ -36,6 +37,7 @@ import {
   planchePrice,
   plancheRobot,
   plancheRouteOpen,
+  plancheRuses,
   plancheShares,
   plancheShip,
   plancheShipRefit,
@@ -59,6 +61,7 @@ import { type Account, api, tokenFromLocation } from "../../api.js";
 import { Emblem } from "../../art/logo.js";
 import { DucatCoin } from "../../art/plateau/coins.js";
 import { connectLive } from "../../game/live.js";
+import { AssautScreen } from "../guerre/AssautScreen.js";
 import { type IleGesture, IleScreen } from "../ile/IleScreen.js";
 import { ArsenalSheet, PortSheet, ShipGlyph } from "./Arsenal.js";
 import { Entree, Fonder, Profil } from "./Entree.js";
@@ -134,6 +137,7 @@ const SAID: Record<string, string> = {
   planche_no_cale: "Toutes les cales sont prises.",
   planche_port_full: "Cette passe n'a plus de place.",
   planche_level: "Ton niveau ne l'ouvre pas encore.",
+  planche_ruses_today: "Tu as déjà posé tes ruses aujourd'hui : demain de nouveau.",
   planche_guard_today: "Tu as déjà posé ta garde aujourd'hui : demain de nouveau.",
   duel_lost: "Ce n'était pas la clef : la commande reste aux autres, tu ne perds rien d'autre.",
   planche_order_taken: "Une autre Maison du sestiere a livré cette commande avant toi.",
@@ -237,6 +241,8 @@ export default function LabPlanche() {
       return false;
     }
   });
+  /** The training port open (docs/plan-guerre.md W3). */
+  const [training, setTraining] = useState(false);
   /** The problem of the day, being played. */
   const [dailyPlay, setDailyPlay] = useState(false);
   const [levelUp, setLevelUp] = useState(false);
@@ -635,6 +641,47 @@ export default function LabPlanche() {
           }}
         />
       </Suspense>
+    );
+  }
+
+  if (training && S.guerre?.training) {
+    const T = S.guerre.training;
+    const own = assautFleetOf(S, state, ME);
+    // Who has no fleet yet trains with one lent by the Arsenal of the Republic.
+    const fleet = own.length
+      ? own
+      : T.fleet.map((kind, k) => {
+          const r = S.arsenal?.ships[kind];
+          return {
+            id: k + 1,
+            kind,
+            force: r?.force ?? 0,
+            hull: r?.hull ?? 0,
+            keyword: r?.keyword ?? "",
+          };
+        });
+    let tutorial = false;
+    try {
+      tutorial = localStorage.getItem("fondaco.assaut.tuto") !== "1";
+    } catch {
+      tutorial = true;
+    }
+    return (
+      <AssautScreen
+        rules={S.guerre.assaut}
+        port={T.port}
+        fleet={fleet}
+        title={T.name}
+        tutorial={tutorial}
+        onEnd={() => {
+          try {
+            localStorage.setItem("fondaco.assaut.tuto", "1");
+          } catch {
+            // A private window: the guide comes again.
+          }
+        }}
+        onBack={() => setTraining(false)}
+      />
     );
   }
 
@@ -1236,6 +1283,20 @@ export default function LabPlanche() {
               L'Arsenal
               <small>tes cales, ta flotte, ton port</small>
             </button>
+            {S.guerre?.training ? (
+              <button
+                type="button"
+                className="pc-passe-quiet"
+                data-open-training-house
+                onClick={() => {
+                  pick(null);
+                  setTraining(true);
+                }}
+              >
+                Le Lido des corsaires
+                <small>un assaut d'entraînement, sans enjeu</small>
+              </button>
+            ) : null}
           </div>
         ) : null}
         {!mine && online && playing && view?.players.includes(house.id) ? (
@@ -1568,6 +1629,14 @@ export default function LabPlanche() {
               )
             }
             onPort={() => setArmory("port")}
+            onTrain={
+              S.guerre?.training
+                ? () => {
+                    pick(null);
+                    setTraining(true);
+                  }
+                : undefined
+            }
           />
         ) : null}
         {armory === "port" && ME ? (
@@ -1588,6 +1657,13 @@ export default function LabPlanche() {
                 "/port/move",
                 { from, index, to },
               ])
+            }
+            onRuses={(ruses) =>
+              act(
+                () => plancheRuses(S, state, ME, ruses, state.now),
+                "Ruses gardées : l'assaillant ne les verra qu'en jouant.",
+                ["/port/ruses", { ruses }],
+              )
             }
             onRemove={(pass, index) =>
               act(

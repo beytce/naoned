@@ -340,6 +340,11 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
   gesture("/api/planche/port/move", z.object({ from: pass, index: slot, to: pass }), (p, b) =>
     p.hub.defenseMove(p.id, b.from, b.index, b.to, p.now()),
   );
+  gesture(
+    "/api/planche/port/ruses",
+    z.object({ ruses: z.record(pass, z.enum(["chaine", "brulot", "renforts"])) }),
+    (p, b) => p.hub.ruses(p.id, b.ruses, p.now()),
+  );
   gesture("/api/planche/port/remove", z.object({ pass, index: slot }), (p, b) =>
     p.hub.defenseRemove(p.id, b.pass, b.index, p.now()),
   );

@@ -27,6 +27,7 @@ import {
   plancheOrderRefusal,
   plancheOrderTry,
   plancheRobot,
+  plancheRuses,
   plancheShip,
   plancheShipRefit,
   plancheShipRepair,
@@ -131,7 +132,14 @@ export type PlancheCommand =
   | { type: "refit" | "repair"; player: string; id: number; t: number }
   | { type: "defense"; player: string; pass: string; kind: string; t: number }
   | { type: "defenseMove"; player: string; from: string; index: number; to: string; t: number }
-  | { type: "defenseRemove"; player: string; pass: string; index: number; t: number };
+  | { type: "defenseRemove"; player: string; pass: string; index: number; t: number }
+  /** The port's secret ruses, once a day (docs/plan-guerre.md W3). */
+  | {
+      type: "ruses";
+      player: string;
+      ruses: Record<string, "chaine" | "brulot" | "renforts">;
+      t: number;
+    };
 
 /** The whole of a board: what the engine holds, who sits where, and when it began. */
 export interface PlancheDoc {
@@ -282,6 +290,9 @@ export function plancheDocApply(
         break;
       case "defenseRemove":
         next = plancheDefenseRemove(S, s, h, c.pass, c.index);
+        break;
+      case "ruses":
+        next = plancheRuses(S, s, h, c.ruses, c.t);
         break;
       case "guard": {
         const def = S.passages.find((p) => p.id === c.passage);
@@ -477,6 +488,11 @@ export class PlancheHub {
 
   defenseRemove(player: string, pass: string, index: number, t: number) {
     return this.act({ type: "defenseRemove", player, pass, index, t });
+  }
+
+  /** The port's secret ruses, one a pass, once a day. */
+  ruses(player: string, ruses: Record<string, "chaine" | "brulot" | "renforts">, t: number) {
+    return this.act({ type: "ruses", player, ruses, t });
   }
 
   /** A Passe of a challenge won: the cote of the two houses moves. */

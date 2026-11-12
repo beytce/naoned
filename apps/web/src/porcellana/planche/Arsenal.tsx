@@ -162,6 +162,7 @@ export function ArsenalSheet({
   onRepair,
   onRefit,
   onPort,
+  onTrain,
   first,
 }: {
   setup: PlancheSetup;
@@ -172,6 +173,8 @@ export function ArsenalSheet({
   onRepair: (id: number) => void;
   onRefit: (id: number) => void;
   onPort: () => void;
+  /** The training port (the Lido of the corsairs). */
+  onTrain?: () => void;
   /** The first visit: three lines tell what the Arsenal is for. */
   first: boolean;
 }) {
@@ -342,9 +345,16 @@ export function ArsenalSheet({
           );
         })}
       </div>
-      <button type="button" className="pc-passe-quiet" data-open-port onClick={onPort}>
-        Ton port · ses trois passes
-      </button>
+      <div className="pc-pl-acts">
+        <button type="button" className="pc-passe-quiet" data-open-port onClick={onPort}>
+          Ton port · ses trois passes
+        </button>
+        {onTrain ? (
+          <button type="button" className="pc-passe-quiet" data-open-training onClick={onTrain}>
+            S'entraîner au Lido
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -358,6 +368,7 @@ export function PortSheet({
   onBuild,
   onMove,
   onRemove,
+  onRuses,
 }: {
   setup: PlancheSetup;
   state: PlancheState;
@@ -366,6 +377,8 @@ export function PortSheet({
   onBuild: (pass: string, kind: string) => void;
   onMove: (from: string, index: number, to: string) => void;
   onRemove: (pass: string, index: number) => void;
+  /** The secret ruses kept (docs/plan-guerre.md W3), once a day. */
+  onRuses?: (ruses: Record<string, "chaine" | "brulot" | "renforts">) => void;
 }) {
   const A = S.arsenal;
   const h = state.houses[house];
@@ -378,8 +391,13 @@ export function PortSheet({
       null
     );
   });
+  const [ruses, setRuses] = useState<Record<string, "chaine" | "brulot" | "renforts">>(() => ({
+    ...(h?.ruses ?? {}),
+  }));
   if (!A || !h) return null;
   const slots = planchePortSlots(S, h);
+  const today = Math.floor(state.now / 86_400_000);
+  const rusesLocked = h.rusesDay === today;
   const passes = A.port.passes;
   /** Whether the store can make a defense. */
   const can = (kind: string) =>
@@ -464,9 +482,50 @@ export function PortSheet({
           );
         })}
       </div>
+      {onRuses ? (
+        <section className="pc-ar-ruses" data-ruses aria-label="Tes ruses secrètes">
+          <b>Tes ruses secrètes</b>
+          <span>
+            Une par passe : l'assaillant ne la voit que quand elle joue. Tu peux les changer une
+            fois par jour.
+          </span>
+          <div className="pc-ar-passes">
+            {passes.map((pass) => (
+              <div key={pass} className="pc-ar-ruse-col">
+                <b className="pc-ar-pass-name">{PASS_NAMES[pass] ?? pass}</b>
+                {(["chaine", "brulot", "renforts"] as const).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    aria-pressed={ruses[pass] === r}
+                    data-ruse={`${pass}:${r}`}
+                    disabled={rusesLocked}
+                    onClick={() => setRuses({ ...ruses, [pass]: r })}
+                  >
+                    {r === "chaine"
+                      ? "Chaîne levée à la 2ᵉ manche"
+                      : r === "brulot"
+                        ? "Brûlot caché"
+                        : "Renforts à la 3ᵉ manche"}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="pc-passe-go"
+            data-ruses-keep
+            disabled={rusesLocked}
+            onClick={() => onRuses(ruses)}
+          >
+            {rusesLocked ? "Ruses posées aujourd'hui" : "Garder ces ruses"}
+          </button>
+        </section>
+      ) : null}
       <p className="pc-ar-note">
-        La tour tire sur le premier navire, la chaîne ferme la passe, la batterie frappe toute la
-        passe. Tes ruses secrètes viendront avec la Guerre de la semaine.
+        La tour tire sur la galère d'abord, la chaîne ferme la passe, la batterie frappe toute la
+        passe.
       </p>
     </section>
   );

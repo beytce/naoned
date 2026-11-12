@@ -368,6 +368,18 @@ export const venice1450LaguneParams: LagoonParams = {
         fireshipTower: 4,
       },
       prestige: { seal: 20, damage: 7, repelled: 10, repelledCap: 40, victory: 60 },
+      // The training port, without stake, at any hour (01-audit-guerre.md § 4.6).
+      training: {
+        name: "Le Lido des corsaires",
+        port: {
+          passes: {
+            bouche: { defenses: ["tour", "chaine"] },
+            nord: { defenses: ["tour"], ruse: "brulot" },
+            sud: { defenses: ["batterie"], ruse: "renforts" },
+          },
+        },
+        fleet: ["galere", "galere", "brigantin", "brulot"],
+      },
     },
     // The problem of the day (docs/plan-hex-commerce.md H3): the same twenty, 20 of Prestige.
     daily: { problems: venice1450PasseProblems.map((p) => p.id), prestige: 20 },
