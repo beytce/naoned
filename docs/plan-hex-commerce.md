@@ -87,7 +87,7 @@ La Muda et les détroits noirs (étape 8), la Guerre et l'Arsenal (étapes 5 et 
 | Lot | État |
 | --- | --- |
 | H1 | fait : la fiche d'une ville derrière une tour fermée propose « Forcer la tour » et « Par le détour · 60 % » ; le fil par le détour se dessine sans passer par la tour, ses barges naviguent ; le serveur accepte `detour` sur `/api/planche/thread` ; la lagune joue ses détroits sur le plateau de 9 × 9 (Otrante). 1 test du serveur. |
-| H2 | à faire |
+| H2 | fait : `packages/engine/src/planche/commandes.ts` (deux commandes par sestiere et par jour, tirées par la date sur les villes derrière une tour : 80 unités, le tiers d'une journée de fil, au double du plein prix, ouvertes à 9 h et 17 h pour quatre heures, une position parmi les vingt problèmes ; un essai par Maison, la première qui gagne livre, la vente passe par le grand livre et compte au Prestige du commerce) ; le serveur rejoue la position avec les coups du joueur dans le nombre de coups permis (commande `order` au journal, route `/api/planche/order`) ; à l'écran, le sceau rouge sur l'étiquette de la ville, la commande annoncée au fil des nouvelles, son bloc dans la fiche de la ville (« Jouer la position », ou pourquoi on ne peut pas), la Passe ouverte sur la position. 4 tests du moteur, 1 du serveur ; parcours `e2e:commande` (la planche lue à 10 h, l'entrepôt plein ; la position jouée et perdue, l'essai envoyé et dépensé), captures dans `docs/hex-captures/`. |
 | H3 | à faire |
 | H4 | à faire |
 | H5 | à faire |

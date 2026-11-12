@@ -119,6 +119,14 @@ const SAID: Record<string, string> = {
   planche_order_short: "Ton entrepôt n'a pas assez de marchandise pour la livrer.",
 };
 
+/** Why an order may not be played, on its button. */
+const ORDER_SHUT: Record<string, string> = {
+  planche_order_taken: "Déjà livrée",
+  planche_order_tried: "Déjà jouée",
+  planche_order_closed: "Fermée",
+  planche_order_short: "Pas assez en entrepôt",
+};
+
 /** The red seal of a sealed order, on a town's label and its card. */
 function Sceau({ size = 16 }: { size?: number }) {
   return (
@@ -132,7 +140,7 @@ function Sceau({ size = 16 }: { size?: number }) {
     </svg>
   );
 }
-const hourOf = (t: number) => `${new Date(t).getUTCHours()} h`;
+const hourOf = (t: number) => `${new Date(t).getUTCHours()}\u00a0h`;
 
 interface News {
   id: number;
@@ -464,6 +472,20 @@ export default function LabPlanche() {
   );
   const orderOf = (cityId: string) =>
     orders.find((o) => o.city === cityId && !state.orders?.[o.id]?.by);
+  // An order that opens is told once, on the thread of news: a touch leads to its town.
+  const toldOrders = useRef(new Set<string>());
+  useEffect(() => {
+    for (const o of orders) {
+      if (toldOrders.current.has(o.id) || state.orders?.[o.id]?.by) continue;
+      if (state.orders?.[o.id]?.tried.includes(ME)) continue;
+      toldOrders.current.add(o.id);
+      const town = S.cities.find((c) => c.id === o.city)?.name;
+      tell(
+        `Commande scellée à ${town} : ${o.units} ${S.goods[o.good]?.toLowerCase()} au double du prix, jusqu'à ${hourOf(o.to)}.`,
+        { kind: "city", id: o.city },
+      );
+    }
+  }, [orders, state.orders, ME, tell]);
   /** A gesture: on line it is the server's to play, here it is the engine's. */
   const act = (f: () => PlancheState, done?: string, remote?: [string, unknown]) => {
     if (online && remote) {
@@ -736,7 +758,7 @@ export default function LabPlanche() {
                   disabled={!!why}
                   onClick={() => setSealed(o)}
                 >
-                  {why ? (SAID[why] ?? "Pas pour toi") : "Jouer la position"}
+                  {why ? (ORDER_SHUT[why] ?? "Pas pour toi") : "Jouer la position"}
                 </button>
               </div>
             </div>
