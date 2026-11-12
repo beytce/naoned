@@ -198,9 +198,10 @@ export function plancheShipDamage(
 ): PlancheState {
   if (!houseIn(s0, house).fleet?.ships.some((x) => x.id === id)) return fail("planche_unknown");
   const s = structuredClone(s0);
-  const ship = s.houses[house]?.fleet?.ships.find((x) => x.id === id) as PlancheShip;
-  ship.damaged = true;
-  delete ship.repairedAt;
+  const f = s.houses[house]?.fleet as PlancheFleet;
+  f.ships = f.ships.map((x) =>
+    x.id === id ? { id: x.id, kind: x.kind, level: x.level, damaged: true } : x,
+  );
   return s;
 }
 
@@ -293,11 +294,11 @@ export function plancheDefenseRemove(
 export function plancheArsenalSettle(S: PlancheSetup, h: PlancheHouse, now: number): void {
   const f = h.fleet;
   if (!S.arsenal || !f) return;
-  for (const ship of f.ships)
-    if (ship.repairedAt !== undefined && ship.repairedAt <= now) {
-      delete ship.damaged;
-      delete ship.repairedAt;
-    }
+  f.ships = f.ships.map((x) =>
+    x.repairedAt !== undefined && x.repairedAt <= now
+      ? { id: x.id, kind: x.kind, level: x.level }
+      : x,
+  );
   const places = plancheFleetPlaces(S, h);
   f.yards.sort((a, b) => a.readyAt - b.readyAt);
   while (f.yards[0] && f.yards[0].readyAt <= now && f.ships.length < places) {
