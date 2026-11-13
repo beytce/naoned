@@ -459,6 +459,17 @@ export const venice1450LaguneParams: LagoonParams = {
       relicsPerPlan: 3,
       plans: { arsenalLevel: 3, ships: ["escorte"], tier: 3 },
     },
+    // The ink tide (docs/plan-maree.md T1): from past the far edge, a row a week toward the
+    // lagoon, never past the houses' waters; six towers held and a few black straits forced a week
+    // hold it (docs/calibration.md § La marée d'encre).
+    encre: {
+      start: 26,
+      limit: 15,
+      rise: 100,
+      push: { tower: 15, noir: 10, beacon: 5 },
+      priceBps: 1_500,
+      lossBps: 2_500,
+    },
     // The Muda (docs/plan-muda.md N2): loaded Wednesday to Friday from the pier of San Marco,
     // sailing on Saturday from 8 to 20 (UTC) past three straits, back on Sunday at 8; × 1, then
     // half again a strait passed (docs/calibration.md § La Muda).

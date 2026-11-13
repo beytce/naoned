@@ -32,6 +32,12 @@ import {
   plancheArsenalSettle,
 } from "./arsenal.js";
 import type { PlancheOrderRules, PlancheOrderState } from "./commandes.js";
+import {
+  type EncreRules,
+  type EncreState,
+  plancheEncreKeepBps,
+  plancheEncrePriceBps,
+} from "./encre.js";
 import type { PlancheDailyRules, PlancheDailyTry } from "./jour.js";
 import {
   MAISON_KEEP,
@@ -173,6 +179,8 @@ export interface PlancheSetup {
   noir?: NoirRules;
   /** The Muda, the State's convoy of the week (docs/plan-muda.md N2): without it, none. */
   muda?: PlancheMudaRules;
+  /** The ink tide (docs/plan-maree.md T1): without it, the ink never moves. */
+  encre?: EncreRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -275,6 +283,8 @@ export interface PlancheState {
   noir?: NoirState;
   /** The Muda of the week. */
   muda?: PlancheMudaState;
+  /** The ink tide's line. */
+  encre?: EncreState;
 }
 
 const fail = (code: string): never => {
@@ -365,7 +375,9 @@ export function planchePrice(S: PlancheSetup, s: PlancheState, city: string, goo
   const g = own(s.gauges[city] ?? {}, good);
   if (!w || !g) return 0;
   const bps = w.floorBps + Math.floor(((BPS - w.floorBps) * g.left) / Math.max(1, w.cap));
-  return Math.floor((w.price * bps) / BPS);
+  // On the ink, a town pays more (docs/plan-maree.md T1).
+  const ink = plancheEncrePriceBps(S, s, cityOf(S, city)?.y ?? 0);
+  return Math.floor((Math.floor((w.price * bps) / BPS) * ink) / BPS);
 }
 
 /** The bobbins a house may stretch now. */
@@ -469,7 +481,9 @@ function slice(S: PlancheSetup, s: PlancheState): void {
         th.carry = 0;
         continue;
       }
-      const pace = BPS + planchePatina(S, th, t);
+      // On the ink, a thread loses a share of its load (docs/plan-maree.md T1).
+      const keep = plancheEncreKeepBps(S, s, cityOf(S, th.to)?.y ?? 0);
+      const pace = Math.floor(((BPS + planchePatina(S, th, t)) * keep) / BPS);
       const way = th.detour ? Math.floor((pace * (cityOf(S, th.to)?.detourBps ?? 0)) / BPS) : pace;
       th.carry += S.rules.threadPerHour * way * ms;
       const could = Math.floor(th.carry / unit);

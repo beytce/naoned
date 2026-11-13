@@ -13,6 +13,7 @@
  */
 
 import { battleRatings } from "../skirmish.js";
+import { plancheEncreEbb, plancheEncreWeek } from "./encre.js";
 import {
   MAISON_KEEP,
   type MaisonEvent,
@@ -309,6 +310,7 @@ export function plancheRankTurn(S: PlancheSetup, s: PlancheState): void {
   if (!R) return;
   growDay(S, s);
   while (s.now >= s.rank.tideStart + (s.rank.week + 1) * R.weekMs) {
+    const turn = s.rank.tideStart + (s.rank.week + 1) * R.weekMs;
     settle(s);
     // The week's growth, with the tide's laurels when it ends (docs/plan-progression-maison.md).
     const ending = s.rank.week + 1 >= R.tideWeeks;
@@ -328,7 +330,9 @@ export function plancheRankTurn(S: PlancheSetup, s: PlancheState): void {
       s.rank.tide += 1;
       s.rank.tideStart += R.tideWeeks * R.weekMs;
       s.rank.week = 0;
-    }
+      // The ink ebbs (docs/plan-maree.md T3).
+      plancheEncreEbb(S, s);
+    } else plancheEncreWeek(S, s, turn);
     markNow(S, s);
   }
   if (Math.floor(s.now / DAY) !== s.rank.markDay) markNow(S, s);

@@ -10,3 +10,4 @@ export * from "./arsenal.js";
 export * from "./noir.js";
 export * from "./muda.js";
 export * from "./gazette.js";
+export * from "./encre.js";
