@@ -226,12 +226,26 @@ function revive(raw: PlancheState): PlancheState {
         week: Object.fromEntries(Object.entries(h.rank?.week ?? {}).map(([c, v]) => [c, big(v)])),
       },
     };
+  // The Muda's worths and what it paid (docs/plan-muda.md), in deniers.
+  const bigs = (o: Record<string, unknown> | undefined) =>
+    Object.fromEntries(Object.entries(o ?? {}).map(([k, v]) => [k, big(v)]));
+  const m = raw.muda;
   return {
     ...raw,
     houses,
     minted: big(raw.minted),
     burnt: big(raw.burnt),
     spent: big(raw.spent),
+    ...(m
+      ? {
+          muda: {
+            ...m,
+            worth: bigs(m.worth),
+            ...(m.paid ? { paid: bigs(m.paid) } : {}),
+            ...(m.last ? { last: { ...m.last, paid: bigs(m.last.paid) } } : {}),
+          },
+        }
+      : {}),
   };
 }
 
