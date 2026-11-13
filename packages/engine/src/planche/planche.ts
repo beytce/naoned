@@ -41,6 +41,12 @@ import {
   maisonStart,
   maisonUnlocks,
 } from "./maison.js";
+import {
+  type PlancheMudaRules,
+  type PlancheMudaState,
+  plancheMudaThread,
+  plancheMudaTurn,
+} from "./muda.js";
 import { type NoirRules, type NoirState, plancheNeedsPlan, plancheSpendPlan } from "./noir.js";
 import {
   type PlancheHouseRank,
@@ -75,7 +81,7 @@ export interface PlancheCity {
   via: string[];
   wants: Record<string, PlancheWant>;
   /** Its ring in a lagoon (docs/plan-lagunes.md): near a sestiere, the lagoon's, the open sea's. */
-  ring?: "sestiere" | "lagoon" | "large";
+  ring?: "sestiere" | "lagoon" | "large" | "muda";
   /** The sestiere whose town it is (ring `sestiere`). */
   sestiere?: string;
   /**
@@ -165,6 +171,8 @@ export interface PlancheSetup {
   compagnie?: { beacon: { thresholds: number[]; dailyCap: number; scoutLevel: number } };
   /** The black straits, their relics and the plans (docs/plan-muda.md N1): without them, none. */
   noir?: NoirRules;
+  /** The Muda, the State's convoy of the week (docs/plan-muda.md N2): without it, none. */
+  muda?: PlancheMudaRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -265,6 +273,8 @@ export interface PlancheState {
   daily?: Record<number, Record<string, PlancheDailyTry>>;
   /** The black straits: this week's forcings, every week's, today's tries. */
   noir?: NoirState;
+  /** The Muda of the week. */
+  muda?: PlancheMudaState;
 }
 
 const fail = (code: string): never => {
@@ -463,6 +473,8 @@ function slice(S: PlancheSetup, s: PlancheState): void {
       const way = th.detour ? Math.floor((pace * (cityOf(S, th.to)?.detourBps ?? 0)) / BPS) : pace;
       th.carry += S.rules.threadPerHour * way * ms;
       const could = Math.floor(th.carry / unit);
+      // A thread to the Muda's pier loads its hold, and sells nothing (docs/plan-muda.md N2).
+      if (plancheMudaThread(S, s, h, th, could, unit)) continue;
       const left = (h.stock[th.good] ?? 0) - (taken[th.good] ?? 0);
       const want = Math.max(0, Math.min(could, left));
       // What it could not load is not banked: a thread never owes a flood.
@@ -534,6 +546,7 @@ function slice(S: PlancheSetup, s: PlancheState): void {
   s.now = t + ms;
   for (const h of Object.values(s.houses)) h.rewinding = h.rewinding.filter((at) => at > s.now);
   plancheRankTurn(S, s);
+  plancheMudaTurn(S, s);
 }
 
 /** The board at `now`: every whole slice since its last is played, in order. */

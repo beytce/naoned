@@ -9,7 +9,7 @@ import type { PasseStyle } from "../passe/mind.js";
 import type { LagoonParams, LagoonTown } from "../planche/lagune.js";
 import { plancheLagoon } from "../planche/lagune.js";
 import type { NoirStrait } from "../planche/noir.js";
-import type { PlancheWant } from "../planche/planche.js";
+import type { PlancheCity, PlancheSetup, PlancheWant } from "../planche/planche.js";
 import { venice1450PasseProblems } from "./venice1450.passe.problems.js";
 import { venice1450Planche } from "./venice1450.planche.js";
 
@@ -459,9 +459,58 @@ export const venice1450LaguneParams: LagoonParams = {
       relicsPerPlan: 3,
       plans: { arsenalLevel: 3, ships: ["escorte"], tier: 3 },
     },
+    // The Muda (docs/plan-muda.md N2): loaded Wednesday to Friday from the pier of San Marco,
+    // sailing on Saturday from 8 to 20 (UTC) past three straits, back on Sunday at 8; × 1, then
+    // half again a strait passed (docs/calibration.md § La Muda).
+    muda: {
+      pier: "mole-de-san-marco",
+      loadDays: [2, 3, 4],
+      sailDay: 5,
+      sailHours: [8, 20],
+      returnDay: 6,
+      returnHour: 8,
+      holdPerHouse: 60,
+      dailyCap: 40,
+      robotDaily: 15,
+      straits: [
+        { id: "zara", name: "Le large de Zara", board: "zara", x: 2 * COLUMN - 5, y: 19 },
+        { id: "curzola", name: "Le canal de Curzola", board: "curzola", x: 2 * COLUMN, y: 19 },
+        {
+          id: "otrante",
+          name: "Le canal d\u2019Otrante",
+          board: "otrante",
+          x: 2 * COLUMN + 5,
+          y: 19,
+        },
+      ],
+      depth: 3,
+      stepBps: 5_000,
+      prestige: { contributor: 30, minUnits: 20, volunteer: 5, winner: 25 },
+    },
     // The problem of the day (docs/plan-hex-commerce.md H3): the same twenty, 20 of Prestige.
     daily: { problems: venice1450PasseProblems.map((p) => p.id), prestige: 20 },
   },
 };
 
-export const venice1450Lagune = plancheLagoon(venice1450LaguneParams);
+/** The Muda's pier, at San Marco: what it takes, at Venice's price (its gauge is never spent). */
+const MUDA_PIER: PlancheCity = {
+  id: "mole-de-san-marco",
+  name: "Le môle de San Marco",
+  x: 2 * COLUMN,
+  y: 16,
+  via: [],
+  ring: "muda",
+  wants: Object.fromEntries(
+    Object.entries({
+      salt: 500,
+      flour: 520,
+      planks: 720,
+      bricks: 690,
+      rope: 920,
+      glass: 1_380,
+    }).map(([g, price]) => [g, { price, floorBps: 10_000, cap: 1, regenPerHour: 0 }]),
+  ),
+};
+
+const lagoon = plancheLagoon(venice1450LaguneParams);
+export const venice1450Lagune: PlancheSetup = { ...lagoon, cities: [...lagoon.cities, MUDA_PIER] };

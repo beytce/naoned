@@ -86,7 +86,8 @@ export function plancheRobot(
     ]);
     const out: { city: string; good: string; v: number; detour?: boolean }[] = [];
     if (!h) return out;
-    for (const c of S.cities)
+    // The Muda's pier is loaded by the board itself (docs/plan-muda.md N2), not by a thread.
+    for (const c of S.cities.filter((x) => x.ring !== "muda"))
       for (const good of Object.keys(c.wants)) {
         if (!sells.has(good)) continue;
         if (h.threads.some((t) => t.to === c.id && t.good === good)) continue;

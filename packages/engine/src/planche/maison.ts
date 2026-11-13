@@ -169,6 +169,8 @@ export interface MaisonState {
   knots?: number;
   /** Black straits it forced this week (docs/plan-muda.md). */
   noir?: number;
+  /** The Muda's Prestige of the week. */
+  muda?: number;
 }
 
 export const maisonStart = (day: number): MaisonState => ({
