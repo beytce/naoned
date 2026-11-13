@@ -76,7 +76,7 @@ export function plancheHouseArrive(
     },
   };
   // The beacon is its company's here: set again by the server.
-  delete h.beacon;
+  h.beacon = undefined;
   if (h.maison) h.maison = { ...h.maison, guardAt: 0 };
   s.houses[house] = h;
   s.moved = (s.moved ?? 0n) + came.ducats - h0.ducats;
