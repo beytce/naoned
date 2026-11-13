@@ -102,6 +102,7 @@ export class PlancheLagoons {
     );
     this.stores.push(store);
     if (this.timerMs) store.start(this.timerMs);
+    if (this.listeners.length) store.hub.pushEvery(1_000);
     for (const l of this.listeners) store.hub.onChange(l);
     if (league !== 1) {
       await this.db.insert(plancheLagoonLeagues).values({ worldId: store.worldId, league });
@@ -277,12 +278,16 @@ export class PlancheLagoons {
   }
 
   private timerMs = 0;
-  private readonly listeners: ((players: string[]) => void)[] = [];
+  private readonly listeners: ((players: string[], version: number) => void)[] = [];
 
   /** Called after each change saved on any board, with that board's players. */
-  onChange(listener: (players: string[]) => void): void {
+  onChange(listener: (players: string[], version: number) => void): void {
     this.listeners.push(listener);
-    for (const s of this.stores) s.hub.onChange(listener);
+    // A push at most once a second per lagoon (docs/plan-socle.md A2).
+    for (const s of this.stores) {
+      s.hub.pushEvery(1_000);
+      s.hub.onChange(listener);
+    }
   }
 
   /** Every board's ledger follows it, even when no one plays. */

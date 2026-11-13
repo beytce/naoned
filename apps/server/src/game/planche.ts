@@ -101,6 +101,8 @@ export interface PlancheView {
   ok: boolean;
   /** When the board began, for its days to be counted. */
   since: number;
+  /** The board's version: a push tells a newer one (docs/plan-socle.md A2). */
+  version: number;
 }
 
 /** Venice's lagoon of 48 houses, as the server plays it (docs/plan-lagunes.md G4). */
@@ -445,7 +447,7 @@ export class PlancheHub {
   /** When each player last read or acted: in memory only (a restart counts everyone as present). */
   private readonly seen = new Map<string, number>();
   private queue: Promise<unknown> = Promise.resolve();
-  private readonly listeners: ((players: string[]) => void)[] = [];
+  private readonly listeners: ((players: string[], version: number) => void)[] = [];
 
   constructor(
     readonly theme: PlancheHubTheme,
@@ -458,9 +460,46 @@ export class PlancheHub {
     for (const p of Object.keys(this.doc.seats)) this.seen.set(p, now);
   }
 
-  /** Called after each change saved, with the board's players (docs/plan-compte.md C5). */
-  onChange(listener: (players: string[]) => void): void {
+  /**
+   * Called after each change saved, with the board's players and its version (docs/plan-compte.md
+   * C5) ; at most once every `pushEvery` milliseconds when set (docs/plan-socle.md A2).
+   */
+  onChange(listener: (players: string[], version: number) => void): void {
     this.listeners.push(listener);
+  }
+
+  private pushMs = 0;
+  private pushTimer: NodeJS.Timeout | undefined;
+  private pending: string[] | null = null;
+
+  /** The changes told at most once every `ms` (0: each at once). */
+  pushEvery(ms: number): void {
+    this.pushMs = ms;
+  }
+
+  private tell(players: string[]): void {
+    const fire = (who: string[]) => {
+      for (const l of this.listeners) {
+        try {
+          l(who, this.version);
+        } catch {
+          // A listener's fault is not the board's.
+        }
+      }
+    };
+    if (!this.pushMs) {
+      fire(players);
+      return;
+    }
+    this.pending = players;
+    if (this.pushTimer) return;
+    this.pushTimer = setTimeout(() => {
+      this.pushTimer = undefined;
+      const who = this.pending;
+      this.pending = null;
+      if (who) fire(who);
+    }, this.pushMs);
+    this.pushTimer.unref?.();
   }
 
   /** The board as it stands, and its version: what a snapshot writes. */
@@ -499,14 +538,7 @@ export class PlancheHub {
     await this.journal?.save(c, doc, this.version + 1);
     this.doc = doc;
     this.version += 1;
-    const players = Object.keys(doc.seats);
-    for (const l of this.listeners) {
-      try {
-        l(players);
-      } catch {
-        // A listener's fault is not the board's.
-      }
-    }
+    this.tell(Object.keys(doc.seats));
     return "ok";
   }
 
@@ -550,6 +582,7 @@ export class PlancheHub {
         players: this.theme.board.houses.map((h) => h.id).filter((id) => taken.has(id)),
         ok: plancheInvariant(this.doc.state),
         since: this.doc.t0,
+        version: this.version,
       };
     });
   }

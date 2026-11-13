@@ -135,12 +135,23 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const { store } = await lagoons.seatOf(account.id, name, now(), prefer);
     return { id: account.id, name, hub: store.hub, store, lagoon: store.name, now, defis };
   };
+  const flagsOf = new Map<
+    string,
+    { at: number; value: Awaited<ReturnType<typeof compagniesOnBoard>> }
+  >();
   const show = async (reply: FastifyReply, p: Player, res: PlancheAnswer = "ok") => {
     if (res !== "ok") return reply.code(STATUS[res] ?? SAID_STATUS).send({ error: res });
     const view = await p.hub.view(p.id, p.name, p.now());
     const defi = p.defis?.view(p.id, deps.now());
-    // The companies of the board's houses, for their flags (docs/plan-compagnie.md K1).
-    const compagnies = await compagniesOnBoard(deps.db, p.store.worldId);
+    // The companies of the board's houses, for their flags (docs/plan-compagnie.md K1): read
+    // from the base at most every five seconds a lagoon (docs/plan-socle.md A2).
+    const cached = flagsOf.get(p.store.worldId);
+    const compagnies =
+      cached && deps.now() - cached.at < 5_000
+        ? cached.value
+        : await compagniesOnBoard(deps.db, p.store.worldId);
+    if (!cached || cached.value !== compagnies)
+      flagsOf.set(p.store.worldId, { at: deps.now(), value: compagnies });
     // The company's signs of the week, and the greetings received (docs/plan-compagnie.md K2).
     const signs = await companySigns(deps.db, p.id, deps.now());
     const greeted = await greetings(deps.db, p.id, deps.now());
@@ -651,6 +662,8 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     return p ? compagnieOf(p) : reply;
   });
   app.post("/api/planche/compagnie", deps.perMerchant(10), async (req, reply) => {
+    // The flags on the board change: read them again (docs/plan-socle.md A2).
+    flagsOf.clear();
     const b = z
       .object({ name: z.string().max(40), flag: z.object({ color: key, symbol: key }) })
       .safeParse(req.body);
@@ -671,6 +684,8 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     return toJson({ invitation: { name: found.name } });
   });
   app.post("/api/planche/compagnie/join", deps.perMerchant(10), async (req, reply) => {
+    // The flags on the board change: read them again (docs/plan-socle.md A2).
+    flagsOf.clear();
     const b = z.object({ code: z.string().regex(/^[\w-]{4,20}$/) }).safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     // A newcomer is seated in the lagoon of the company that invites it, if it has room.
@@ -687,6 +702,8 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     });
   });
   app.post("/api/planche/compagnie/leave", deps.perMerchant(10), async (req, reply) => {
+    // The flags on the board change: read them again (docs/plan-socle.md A2).
+    flagsOf.clear();
     const p = await who(req, reply);
     if (!p) return reply;
     return company(reply, async () => {
