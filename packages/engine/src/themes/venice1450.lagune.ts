@@ -459,14 +459,14 @@ export const venice1450LaguneParams: LagoonParams = {
       relicsPerPlan: 3,
       plans: { arsenalLevel: 3, ships: ["escorte"], tier: 3 },
     },
-    // The ink tide (docs/plan-maree.md T1): from past the far edge, a row a week toward the
-    // lagoon, never past the houses' waters; six towers held and a few black straits forced a week
-    // hold it (docs/calibration.md § La marée d'encre).
+    // The ink tide (docs/plan-maree.md T1): from the far edge, a row a week toward the lagoon,
+    // never past the houses' waters; ten towers held slow it to a fifth of a row a week, a few black
+    // straits forced hold it (docs/calibration.md § La marée d'encre).
     encre: {
-      start: 26,
+      start: 25,
       limit: 15,
       rise: 100,
-      push: { tower: 15, noir: 10, beacon: 5 },
+      push: { tower: 8, noir: 10, beacon: 5 },
       priceBps: 1_500,
       lossBps: 2_500,
     },

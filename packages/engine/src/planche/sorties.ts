@@ -1,6 +1,7 @@
 /**
  * The captains' sorties (docs/plan-maree.md § 3.2, lot T2; CADRAGE-v4 § 8). Each Monday, each
- * corsair captain who still holds a tower draws a sortie against the nearest tower a person holds:
+ * corsair captain of the lagoon (whether he still holds his tower or not: a tower taken does not
+ * end a captain) draws a sortie against the nearest tower a person holds:
  * a day of the week (Tuesday to Saturday) and an hour, told 24 hours before. At its hour, the
  * captain plays the thread against the tower's guard (its lieutenant, and the links its holder laid
  * in advance), unless the holder went before him and played the chain himself. Lost, the tower
@@ -69,8 +70,8 @@ function hash(...parts: (string | number)[]): number {
 }
 
 /**
- * The week's sorties, drawn on Monday (called by the board at each week's turn): each captain
- * holding a tower against the nearest tower a person holds, on a day from Tuesday to Saturday.
+ * The week's sorties, drawn on Monday (called by the board at each week's turn): each captain of the
+ * lagoon against the nearest tower a person holds, on a day from Tuesday to Saturday.
  */
 export function plancheSortiesWeek(S: PlancheSetup, s: PlancheState, monday: number): void {
   const R = S.sorties;
@@ -80,8 +81,9 @@ export function plancheSortiesWeek(S: PlancheSetup, s: PlancheState, monday: num
   );
   const list: PlancheSortie[] = [];
   const seen = new Set<string>();
+  // Every captain of the lagoon sallies, whether he still holds his tower or not: from his own.
   for (const p of S.passages) {
-    const holder = own(s.passages, p.id)?.holder ?? "";
+    const holder = p.holder;
     if (!holder.startsWith("corsair:") || seen.has(holder) || !held.length) continue;
     seen.add(holder);
     const target = [...held].sort(

@@ -245,7 +245,15 @@ export interface PlancheHouse {
    * Its book, since the board began (docs/plan-compte.md C2): what towns paid for its goods,
    * the tolls it paid and received, what its island cost. Its purse is its start and these.
    */
-  book: { sold: bigint; tollPaid: bigint; tollIn: bigint; isle: bigint };
+  book: {
+    sold: bigint;
+    tollPaid: bigint;
+    tollIn: bigint;
+    isle: bigint;
+    /** Purses that came onto the board in this house's place, and left it (the leagues, T5). */
+    in?: bigint;
+    out?: bigint;
+  };
   /** Its level, and what it opens, when the board has the growth of the houses. */
   level?: number;
   caps?: MaisonCaps;
@@ -287,6 +295,8 @@ export interface PlancheState {
   burnt: bigint;
   /** Every denier spent on the islands. */
   spent: bigint;
+  /** What came onto the board with houses from other lagoons, less what left with them. */
+  moved?: bigint;
   /** The tide, the weeks, the rivals and the laurels. */
   rank: PlancheRank;
   /** The sealed orders taken or tried, by id (the last two days'). */
@@ -323,37 +333,44 @@ export function plancheGround(S: PlancheSetup, house: string) {
 }
 
 /** The board at its start; its tide counts its weeks from `tideStart` (the server: a Monday). */
+/** A house as the board begins it: its start purse and stock, its first island, level 1. */
+export function plancheFreshHouse(
+  S: PlancheSetup,
+  h: PlancheHouseSetup,
+  now: number,
+): PlancheHouse {
+  const stock: Record<string, number> = {};
+  const makeCarry: Record<string, number> = {};
+  for (const good of Object.keys(h.makes)) {
+    stock[good] = Math.min(S.rules.store, S.rules.startStock);
+    makeCarry[good] = 0;
+  }
+  return {
+    id: h.id,
+    ducats: BigInt(S.rules.startDucats),
+    stock,
+    makeCarry,
+    threads: [],
+    rewinding: [],
+    free: {},
+    delivered: 0,
+    earned: 0n,
+    rank: plancheRankHouse(S),
+    book: { sold: 0n, tollPaid: 0n, tollIn: 0n, isle: 0n },
+    ...(S.maison
+      ? {
+          level: 1,
+          caps: maisonUnlocks(S.maison, 1),
+          maison: maisonStart(Math.floor(now / DAY)),
+        }
+      : {}),
+    ...(S.ile ? { ile: ileInit(S.ile, plancheGround(S, h.id)) } : {}),
+  };
+}
+
 export function plancheInit(S: PlancheSetup, now: number, tideStart = now): PlancheState {
   const houses: Record<string, PlancheHouse> = {};
-  for (const h of S.houses) {
-    const stock: Record<string, number> = {};
-    const makeCarry: Record<string, number> = {};
-    for (const good of Object.keys(h.makes)) {
-      stock[good] = Math.min(S.rules.store, S.rules.startStock);
-      makeCarry[good] = 0;
-    }
-    houses[h.id] = {
-      id: h.id,
-      ducats: BigInt(S.rules.startDucats),
-      stock,
-      makeCarry,
-      threads: [],
-      rewinding: [],
-      free: {},
-      delivered: 0,
-      earned: 0n,
-      rank: plancheRankHouse(S),
-      book: { sold: 0n, tollPaid: 0n, tollIn: 0n, isle: 0n },
-      ...(S.maison
-        ? {
-            level: 1,
-            caps: maisonUnlocks(S.maison, 1),
-            maison: maisonStart(Math.floor(now / DAY)),
-          }
-        : {}),
-      ...(S.ile ? { ile: ileInit(S.ile, plancheGround(S, h.id)) } : {}),
-    };
-  }
+  for (const h of S.houses) houses[h.id] = plancheFreshHouse(S, h, now);
   const gauges: PlancheState["gauges"] = {};
   for (const c of S.cities) {
     const g: Record<string, { left: number; carry: number }> = {};
@@ -384,7 +401,9 @@ const clone = (s: PlancheState): PlancheState => structuredClone(s);
 export function plancheInvariant(s: PlancheState): boolean {
   let held = 0n;
   for (const h of Object.values(s.houses)) held += h.ducats;
-  return held + s.burnt + s.spent === s.minted;
+  // A house that came from another lagoon, or left for one, brought or took its purse
+  // (docs/plan-maree.md T5).
+  return held + s.burnt + s.spent === s.minted + (s.moved ?? 0n);
 }
 
 /** What a town pays a unit of a good now: its full price, less as its demand is spent. */
