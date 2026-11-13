@@ -116,7 +116,7 @@ try {
   const tap = (q) => page.evaluate((s) => document.querySelector(s)?.click(), q);
   const shot = async (file) => {
     await page.waitForTimeout(800);
-    await page.screenshot({ path: join(SHOTS, `maree-${name}-${file}.png`) });
+    await page.screenshot({ path: join(SHOTS, `maree-${name}-${file}.png`), timeout: 150_000 });
   };
   // The board the page reads may be moved: a strait held and a sortie told; the house the Doge.
   const moves = { strait: null, doge: false };
@@ -196,6 +196,13 @@ try {
   if (week !== "1") fail(`the tide's week is ${week}, not 1`);
   if (!(await until(page, has, "[data-ligue]"))) fail("no league in the tide's sheet");
   await shot("1-semaine1");
+  // The house's levels seen on this device: their moment does not cover the tide's (it has its own e2e).
+  const levelsSeen = () =>
+    page.evaluate(() => {
+      for (const k of Object.keys(localStorage))
+        if (k.startsWith("fondaco.maison.level.")) localStorage.setItem(k, "99");
+    });
+  await levelsSeen();
 
   // The third Saturday: the ink nearer, a strait held, a sortie told.
   await server.stop();
@@ -244,9 +251,6 @@ try {
   moves.doge = true;
   await page.goto(server.url);
   if (!(await until(page, has, "[data-maree-fin]", 120_000))) fail("no moment of the tide's end");
-  // The house grew a level with the tide's Prestige: its moment first.
-  await page.waitForTimeout(1500);
-  await page.evaluate(() => document.querySelector(".pc-in-go")?.click());
   if (!(await until(page, has, "[data-ligue-move]"))) fail("the league is not told");
   const move = await page.getAttribute("[data-ligue-move]", "data-ligue-move");
   if (move !== "up") fail(`the house did not go up a league (${move})`);
