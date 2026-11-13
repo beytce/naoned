@@ -148,7 +148,10 @@ describe("the ink tide", () => {
     s = plancheAdvance(S, s, T0 + 2 * WEEK);
     expect(plancheEncreLine(S, s)).toBe(880);
     s.noir = {
-      ...s.noir,
+      forced: {},
+      total: {},
+      day: 0,
+      tries: {},
       monday: T0 + 2 * WEEK,
       feats: Array.from({ length: 6 }, (_, k) => ({
         house: "ana",
