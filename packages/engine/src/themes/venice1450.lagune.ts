@@ -473,6 +473,9 @@ export const venice1450LaguneParams: LagoonParams = {
     // The captains' sorties (docs/plan-maree.md T2): at 18 h (UTC), told a day before; the
     // captain sees three pieces ahead, as the tower's lieutenant does.
     sorties: { hour: 18, announceMs: 24 * HOUR, depth: 3, guardDepth: 3 },
+    // The Doge's decrees (docs/plan-maree.md T3): a town pays 10 % more for a good, the tolls
+    // capped at 5 %, the ink rises half a row less a week, the black straits lay a link less.
+    decrets: { priceBps: 1_000, tollBps: 500, inkLess: 50, noirLess: 1, chooseMs: 3 * 24 * HOUR },
     // The Muda (docs/plan-muda.md N2): loaded Wednesday to Friday from the pier of San Marco,
     // sailing on Saturday from 8 to 20 (UTC) past three straits, back on Sunday at 8; × 1, then
     // half again a strait passed (docs/calibration.md § La Muda).

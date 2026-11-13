@@ -12,3 +12,4 @@ export * from "./muda.js";
 export * from "./gazette.js";
 export * from "./encre.js";
 export * from "./sorties.js";
+export * from "./maree.js";

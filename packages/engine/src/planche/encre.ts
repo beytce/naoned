@@ -9,6 +9,7 @@
  */
 
 import { MAISON_KEEP } from "./maison.js";
+import { plancheDecretInkLess } from "./maree.js";
 import { plancheMonday } from "./noir.js";
 import type { PlancheSetup, PlancheState } from "./planche.js";
 
@@ -95,7 +96,9 @@ export function plancheEncreWeek(S: PlancheSetup, s: PlancheState, now: number):
   if (!E) return;
   const push = plancheEncrePush(S, s, now);
   const before = plancheEncreLine(S, s);
-  const line = Math.min(E.start * ROW, Math.max(E.limit * ROW, before - E.rise + push));
+  // The Doge's decree may hold it (docs/plan-maree.md T3).
+  const rise = Math.max(0, E.rise - plancheDecretInkLess(s, now));
+  const line = Math.min(E.start * ROW, Math.max(E.limit * ROW, before - rise + push));
   const retaken: string[] = [];
   for (const p of S.passages) {
     const st = own(s.passages, p.id);
@@ -108,7 +111,7 @@ export function plancheEncreWeek(S: PlancheSetup, s: PlancheState, now: number):
       if (holder.maison.log.length > MAISON_KEEP) holder.maison.log.shift();
     }
   }
-  s.encre = { line, last: { rise: E.rise, push, retaken } };
+  s.encre = { line, last: { rise, push, retaken } };
 }
 
 /** The ink ebbs at the tide's end: back to where it began. */

@@ -48,6 +48,13 @@ import {
   maisonUnlocks,
 } from "./maison.js";
 import {
+  type DecretsRules,
+  type PlancheDecretState,
+  type PlancheStone,
+  plancheDecretPriceBps,
+  plancheDecretTollCap,
+} from "./maree.js";
+import {
   type PlancheMudaRules,
   type PlancheMudaState,
   plancheMudaThread,
@@ -184,6 +191,8 @@ export interface PlancheSetup {
   encre?: EncreRules;
   /** The captains' sorties (docs/plan-maree.md T2): without them, none. */
   sorties?: SortiesRules;
+  /** The Doge's decrees (docs/plan-maree.md T3): without them, none. */
+  decrets?: DecretsRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -253,6 +262,8 @@ export interface PlancheHouse {
   /** The relics the black straits gave it, by power, and its plans not yet spent. */
   relics?: Record<string, number>;
   plans?: number;
+  /** The stones engraved on its island: a tower held to the end of a tide (docs/plan-maree.md). */
+  stones?: PlancheStone[];
 }
 
 export interface PlancheState {
@@ -290,6 +301,8 @@ export interface PlancheState {
   encre?: EncreState;
   /** The week's sorties and how they went. */
   sorties?: PlancheSortiesState;
+  /** The decree of the tide, offered to the Doge. */
+  decret?: PlancheDecretState;
 }
 
 const fail = (code: string): never => {
@@ -382,7 +395,10 @@ export function planchePrice(S: PlancheSetup, s: PlancheState, city: string, goo
   const bps = w.floorBps + Math.floor(((BPS - w.floorBps) * g.left) / Math.max(1, w.cap));
   // On the ink, a town pays more (docs/plan-maree.md T1).
   const ink = plancheEncrePriceBps(S, s, cityOf(S, city)?.y ?? 0);
-  return Math.floor((Math.floor((w.price * bps) / BPS) * ink) / BPS);
+  // And the Doge's decree, if it is about this town and this good.
+  const decree = plancheDecretPriceBps(s, city, good, s.now);
+  const price = Math.floor((Math.floor((w.price * bps) / BPS) * ink) / BPS);
+  return Math.floor((price * decree) / BPS);
 }
 
 /** The bobbins a house may stretch now. */
@@ -530,7 +546,8 @@ function slice(S: PlancheSetup, s: PlancheState): void {
         if (!p || plancheIsCorsair(p.holder) || p.holder === a.h.id) continue;
         const holder = own(s.houses, p.holder);
         if (!holder) continue;
-        const toll = (paid * BigInt(Math.min(p.tollBps, S.rules.tollMaxBps))) / BigInt(BPS);
+        const cap = plancheDecretTollCap(s, S.rules.tollMaxBps, t);
+        const toll = (paid * BigInt(Math.min(p.tollBps, cap))) / BigInt(BPS);
         const burnt = (toll * BigInt(S.rules.tollBurnBps)) / BigInt(BPS);
         kept -= toll;
         a.h.book.tollPaid += toll;

@@ -13,6 +13,7 @@
 import { PASSE_CHAIN, PASSE_EMPTY } from "../passe/board.js";
 import type { PasseStyle } from "../passe/mind.js";
 import { MAISON_KEEP } from "./maison.js";
+import { plancheDecretNoirLess } from "./maree.js";
 import type { PlancheHouse, PlancheSetup, PlancheState } from "./planche.js";
 
 const HOUR = 3_600_000;
@@ -122,7 +123,9 @@ export function plancheNoirBoard(
   now: number,
   board: readonly number[],
 ): number[] {
-  const { phase, links } = plancheNoirPhase(S, s, strait, now);
+  const { phase, links: drawn } = plancheNoirPhase(S, s, strait, now);
+  // The Doge's decree may lighten the guard (docs/plan-maree.md T3).
+  const links = Math.max(0, drawn - plancheDecretNoirLess(s, now));
   const cells = [...board];
   const empty = cells.flatMap((c, i) => (c === PASSE_EMPTY ? [i] : []));
   const day = Math.floor(now / DAY);

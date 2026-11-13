@@ -13,7 +13,7 @@
  */
 
 import { battleRatings } from "../skirmish.js";
-import { plancheEncreEbb, plancheEncreWeek } from "./encre.js";
+import { plancheEncreWeek } from "./encre.js";
 import {
   MAISON_KEEP,
   type MaisonEvent,
@@ -23,6 +23,7 @@ import {
   maisonUnlocks,
   maisonWeek,
 } from "./maison.js";
+import { plancheTideEnd } from "./maree.js";
 import type { PlancheSetup, PlancheState } from "./planche.js";
 import { plancheSortiesWeek } from "./sorties.js";
 
@@ -328,11 +329,11 @@ export function plancheRankTurn(S: PlancheSetup, s: PlancheState): void {
         h.rank = plancheRankHouse(S);
         if (h.maison) h.maison.guardAt = 0;
       }
+      // The stones, the open sea given back, the ink's ebb, the decrees (docs/plan-maree.md T3).
+      plancheTideEnd(S, s, turn, s.rank.laurels.doge);
       s.rank.tide += 1;
       s.rank.tideStart += R.tideWeeks * R.weekMs;
       s.rank.week = 0;
-      // The ink ebbs (docs/plan-maree.md T3).
-      plancheEncreEbb(S, s);
     } else plancheEncreWeek(S, s, turn);
     // The week's sorties, once the ink has taken what it reached (docs/plan-maree.md T2).
     plancheSortiesWeek(S, s, turn);
