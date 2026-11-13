@@ -6,6 +6,7 @@
  */
 import type { ReactNode } from "react";
 import { Emblem } from "../../art/logo.js";
+import { POWER_NAME } from "./Muda.js";
 
 /** What `/api/maison` gives. */
 export interface MaisonView {
@@ -31,6 +32,9 @@ export interface MaisonView {
   knotToday?: boolean;
   kept: number;
   livre: { kind: string; data: string | null; at: number }[];
+  /** The black straits' relics, by power, and the plans not yet spent (docs/plan-muda.md). */
+  relics?: Record<string, number>;
+  plans?: number;
 }
 
 const TIERS = ["", "les matières", "les ouvrages", "le bel ouvrage"];
@@ -184,6 +188,12 @@ function said(
   if (e.kind === "laurel")
     return `Laurier ${e.data === "negoce" ? "du Négoce" : e.data === "passe" ? "de la Passe" : "de la Garde"}.`;
   if (e.kind === "doge") return "Doge de la lagune.";
+  // The black straits and the Muda (docs/plan-muda.md).
+  if (e.kind === "relic")
+    return `Une relique de ${POWER_NAME[e.data ?? ""] ?? e.data}, prise à son détroit noir.`;
+  if (e.kind === "plan")
+    return `Un plan assemblé, de trois reliques de ${POWER_NAME[e.data ?? ""] ?? e.data}.`;
+  if (e.kind === "muda") return "Le pavillon de la Muda : le convoi a passé ses trois détroits.";
   return "";
 }
 
@@ -193,11 +203,14 @@ export function FacadeSheet({
   close,
   name,
   place,
+  extra,
 }: {
   m: MaisonView;
   close: ReactNode;
   name: (id: string) => string;
   place: (id: string) => string;
+  /** What the Livre shows besides: the relics and the plans (docs/plan-muda.md N5). */
+  extra?: ReactNode;
 }) {
   const flags = m.collection.flag ?? 0;
   const laurels = m.collection.laurel ?? 0;
@@ -313,6 +326,7 @@ export function FacadeSheet({
         </div>
       </div>
       <h3 className="pc-mn-h3">Le Livre de la Maison</h3>
+      {extra}
       {m.livre.length ? (
         <ul className="pc-mn-livre">
           {m.livre.map((e) => (
