@@ -144,11 +144,18 @@ try {
         done: {},
       };
     }
-    if (st && me && moves.doge && st.decret) {
-      st.decret.doge = me;
-      st.decret.chosen = undefined;
-      st.decret.until = st.now + 2 * DAY;
-    }
+    // A lagoon opened for the league has no decree of its own yet: one is offered, the house Doge.
+    if (st && me && moves.doge)
+      st.decret = {
+        tide: st.rank.tide,
+        doge: me,
+        until: st.now + 2 * DAY,
+        offered: [
+          { kind: "peage", bps: 500 },
+          { kind: "encre", less: 50 },
+          { kind: "noir", less: 1 },
+        ],
+      };
     await route.fulfill({ response: res, json });
   });
   let sortieSent = null;
@@ -237,6 +244,9 @@ try {
   moves.doge = true;
   await page.goto(server.url);
   if (!(await until(page, has, "[data-maree-fin]", 120_000))) fail("no moment of the tide's end");
+  // The house grew a level with the tide's Prestige: its moment first.
+  await page.waitForTimeout(1500);
+  await page.evaluate(() => document.querySelector(".pc-in-go")?.click());
   if (!(await until(page, has, "[data-ligue-move]"))) fail("the league is not told");
   const move = await page.getAttribute("[data-ligue-move]", "data-ligue-move");
   if (move !== "up") fail(`the house did not go up a league (${move})`);

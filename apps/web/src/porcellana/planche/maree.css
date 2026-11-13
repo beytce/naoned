@@ -21,8 +21,10 @@
 
 .pc-mr-gauge {
   display: block;
+  flex: none;
   width: 100%;
   height: auto;
+  aspect-ratio: 300 / 160;
 }
 .pc-mr-said,
 .pc-mr-threat,
