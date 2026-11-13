@@ -4,7 +4,7 @@
 
 *Révisé le même jour après la revue de cinq experts, demandée par le porteur (« une vraie rivalité entre les joueurs », « donc il n'y a plus de PvE ? ») : constats et arbitrages dans `docs/refonte-totale-2026-11-10/01-revue-experts.md`. Les ajouts de cette révision sont marqués **(revue)**.*
 
-*Ce cadrage est **à valider par le porteur** avant de faire foi. Validé, il remplacera la partie conception de CADRAGE-v3 ; les parties techniques restent. Tous les chiffres sont des **ordres de grandeur, à calibrer au simulateur** (§ 17). Les questions ouvertes sont au § 19.*
+*Ce cadrage **fait foi depuis le 13 novembre 2026** (validé avec l'audit d'ensemble, `docs/audit-2026-11-13/00-synthese.md`, décision D8). Il était à valider par le porteur avant de faire foi. Validé, il remplacera la partie conception de CADRAGE-v3 ; les parties techniques restent. Tous les chiffres sont des **ordres de grandeur, à calibrer au simulateur** (§ 17). Les questions ouvertes sont au § 19.*
 
 ## 1. Vision
 
