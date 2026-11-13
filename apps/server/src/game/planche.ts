@@ -48,9 +48,8 @@ import {
   plancheShipRepair,
   plancheSortieBoard,
   plancheSortieEnd,
-  plancheSortieMeet,
   plancheSortieRefusal,
-  plancheSortiesSettle,
+  plancheSortiesDue,
   plancheThread,
   plancheToll,
   plancheUnthread,
@@ -59,6 +58,7 @@ import {
   venice1450Lagune,
   venice1450Passe,
 } from "@comptoirs/engine";
+import { type Duels, inlineDuels } from "./duelPool.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -178,6 +178,8 @@ export type PlancheCommand =
     }
   /** Three relics of a power made a plan. */
   | { type: "assemble"; player: string; power: string; t: number }
+  /** A sortie played at its hour against the tower's guard, its end written (docs/plan-socle.md A3). */
+  | { type: "sortieGarde"; id: string; won: boolean; at: number; t: number }
   /** A sortie met before its hour by the tower's holder (docs/plan-maree.md T5). */
   | { type: "sortie"; player: string; id: string; won: boolean; t: number }
   /** The Doge's decree of the tide. */
@@ -250,8 +252,6 @@ export function plancheDocAdvance(
     const nextHour = doc.t0 + (Math.floor((s.now - doc.t0) / HOUR) + 1) * HOUR;
     if (nextHour > now) break;
     s = plancheAdvance(S, s, nextHour);
-    // The captains' sorties whose hour has come (docs/plan-maree.md T5).
-    s = plancheSortiesSettle(S, s, nextHour, (p) => sortieBoard(theme, p));
     const hour = Math.round((nextHour - doc.t0) / HOUR);
     S.houses.forEach((h, k) => {
       if (mine.has(h.id) || (hour + k) % theme.visitHours !== 0) return;
@@ -259,7 +259,8 @@ export function plancheDocAdvance(
     });
   }
   s = plancheAdvance(S, s, now);
-  s = plancheSortiesSettle(S, s, now, (p) => sortieBoard(theme, p));
+  // The captains' sorties are not played here: a timer plays them and writes their end to the
+  // journal (docs/plan-socle.md A3), never during a read.
   return s === doc.state ? doc : { ...doc, state: s };
 }
 
@@ -292,6 +293,16 @@ export function plancheDocApply(
       },
       answer: "ok",
     };
+  }
+  if (c.type === "sortieGarde") {
+    try {
+      return {
+        doc: { ...doc, state: plancheSortieEnd(S, doc.state, c.id, c.won, "garde", c.at) },
+        answer: "ok",
+      };
+    } catch (e) {
+      return { doc, answer: (e as Error).message };
+    }
   }
   if (c.type === "leave") {
     const seat = doc.seats[c.player];
@@ -447,6 +458,42 @@ export class PlancheHub {
   /** When each player last read or acted: in memory only (a restart counts everyone as present). */
   private readonly seen = new Map<string, number>();
   private queue: Promise<unknown> = Promise.resolve();
+  /** Where the duels are played: at once, or in the pool of workers (docs/plan-socle.md A3). */
+  private duels: Duels = inlineDuels;
+
+  /** The duels played by this pool from now on. */
+  useDuels(duels: Duels): void {
+    this.duels = duels;
+  }
+
+  /**
+   * The sorties whose hour has come, played against their towers' guard in the pool, their ends
+   * written to the journal (docs/plan-socle.md A3). Called by a timer, never by a read.
+   */
+  async settleSorties(now: number): Promise<number> {
+    const due = plancheSortiesDue(this.doc.state, now).sort((a, b) => a.at - b.at);
+    const S = this.theme.board;
+    let n = 0;
+    for (const x of due) {
+      const b = sortieBoard(this.theme, x.target);
+      const holder = this.doc.state.passages[x.target]?.holder ?? "";
+      // A tower that changed hands since Monday: the sortie finds no one.
+      const won =
+        b && this.doc.state.rank.humans.includes(holder)
+          ? await this.duels.run({
+              kind: "sortie",
+              setup: { ...b, cells: plancheSortieBoard(this.doc.state, x, b) },
+              captain: { depth: S.sorties?.depth ?? 3, style: x.style },
+              guard: { depth: S.sorties?.guardDepth ?? 3 },
+            })
+          : false;
+      const res = await this.serial(() =>
+        this.run({ type: "sortieGarde", id: x.id, won: !!won, at: x.at, t: now }),
+      );
+      if (res === "ok") n++;
+    }
+    return n;
+  }
   private readonly listeners: ((players: string[], version: number) => void)[] = [];
 
   constructor(
@@ -686,11 +733,12 @@ export class PlancheHub {
     const why = plancheNoirRefusal(S, at, seat.house, strait, cargo, t);
     if (why) return why;
     const cells = plancheNoirBoard(S, at, strait, t, b.cells);
-    const won = this.replays(
-      { ...this.theme.passe.rules, ...b, cells, first: 1 },
-      plancheNoirMind(S, strait),
+    const won = await this.duels.run({
+      kind: "replay",
+      setup: { ...this.theme.passe.rules, ...b, cells, first: 1 },
+      mind: plancheNoirMind(S, strait),
       moves,
-    );
+    });
     if (won === null) return "duel_illegal";
     const answer = await this.act({ type: "noir", player, strait, ...cargo, won, t });
     return answer === "ok" && !won ? "duel_lost" : answer;
@@ -710,7 +758,12 @@ export class PlancheHub {
     const x = at.sorties?.list.find((y) => y.id === id);
     const b = x ? sortieBoard(this.theme, x.target) : undefined;
     if (!x || !b) return "planche_unknown";
-    const won = plancheSortieMeet(S, x, { ...b, cells: plancheSortieBoard(at, x, b) }, moves);
+    const won = await this.duels.run({
+      kind: "meet",
+      setup: { ...b, cells: plancheSortieBoard(at, x, b) },
+      captain: { depth: S.sorties?.depth ?? 3, style: x.style },
+      moves,
+    });
     if (won === null) return "duel_illegal";
     const answer = await this.act({ type: "sortie", player, id, won, t });
     return answer === "ok" && won ? "duel_lost" : answer;
@@ -772,34 +825,15 @@ export class PlancheHub {
       t,
     );
     if (why) return why;
-    const won = this.replays(
-      { ...this.theme.passe.rules, ...b, cells: [...b.cells], first: 1 },
-      { depth: S.muda.depth },
+    const won = await this.duels.run({
+      kind: "replay",
+      setup: { ...this.theme.passe.rules, ...b, cells: [...b.cells], first: 1 },
+      mind: { depth: S.muda.depth },
       moves,
-    );
+    });
     if (won === null) return "duel_illegal";
     const answer = await this.act({ type: "muda", player, strait, won, t });
     return answer === "ok" && !won ? "duel_lost" : answer;
-  }
-
-  /** A duel replayed: the player's pieces, the mind's answers. Null: a piece was illegal. */
-  private replays(
-    setup: PasseSetup,
-    mind: { depth: number; style?: "mur" | "rives" | "meute" },
-    moves: PasseMove[],
-  ): boolean | null {
-    let s = passeInit(setup);
-    for (const m of moves) {
-      if (s.winner) break;
-      if (s.turn !== 1) s = passePlay(s, passeThink(s, mind));
-      if (s.winner) break;
-      try {
-        s = passePlay(s, m.fire ? { at: m.at, fire: true } : { at: m.at });
-      } catch {
-        return null;
-      }
-    }
-    return s.winner === 1;
   }
 
   /** The port's secret ruses, one a pass, once a day. */
@@ -846,18 +880,14 @@ export class PlancheHub {
     if (!this.doc.seats[player]) return "not_seated";
     // The duel begins on the tower's guard, the links its holder laid (docs/plan-hex-commerce.md H4).
     const cells = plancheGuardBoard(b.cells, this.doc.state.passages[passage]?.guard);
-    let s = passeInit({ ...this.theme.passe.rules, ...b, cells, first: 1 });
-    for (const m of moves) {
-      if (s.winner) break;
-      if (s.turn !== 1) s = passePlay(s, passeThink(s, { depth: this.theme.passe.lieutenant }));
-      if (s.winner) break;
-      try {
-        s = passePlay(s, m.fire ? { at: m.at, fire: true } : { at: m.at });
-      } catch {
-        return "duel_illegal";
-      }
-    }
-    if (s.winner !== 1) return "duel_lost";
+    const won = await this.duels.run({
+      kind: "replay",
+      setup: { ...this.theme.passe.rules, ...b, cells, first: 1 },
+      mind: { depth: this.theme.passe.lieutenant },
+      moves,
+    });
+    if (won === null) return "duel_illegal";
+    if (!won) return "duel_lost";
     return this.act({ type: "forced", player, passage, t });
   }
 
@@ -876,7 +906,7 @@ export class PlancheHub {
     const why = plancheOrderRefusal(S, this.doc.state, seat.house, id, t);
     // The stock is read again once the board is brought to `t`: only its other refusals stop here.
     if (why && why !== "planche_order_short") return why;
-    const won = this.solves(pb, moves);
+    const won = await this.solves(pb, moves);
     if (won === null) return "duel_illegal";
     const answer = await this.act({ type: "order", player, order: id, won, t });
     return answer === "ok" && !won ? "duel_lost" : answer;
@@ -890,7 +920,7 @@ export class PlancheHub {
     const seat = this.doc.seats[player];
     if (!seat) return "not_seated";
     if (this.doc.state.daily?.[Math.floor(t / DAY)]?.[seat.house]) return "planche_daily_tried";
-    const won = this.solves(pb, moves);
+    const won = await this.solves(pb, moves);
     if (won === null) return "duel_illegal";
     const laid = Math.min(moves.length, pb.moves);
     const answer = await this.act({ type: "daily", player, won, moves: laid, t });
@@ -901,25 +931,20 @@ export class PlancheHub {
    * A position of « the thread passes in N pieces » replayed: the player's pieces, the chain's
    * answers as the laboratory's (depth 3), within the pieces allowed. Null: a piece was illegal.
    */
-  private solves(pb: PasseProblem, moves: PasseMove[]): boolean | null {
-    let s = passeInit({
-      ...this.theme.passe.rules,
-      fire: { thread: 0, chain: 0 },
-      width: pb.width,
-      height: pb.height,
-      cells: [...pb.cells],
-      first: 1,
+  private solves(pb: PasseProblem, moves: PasseMove[]): Promise<boolean | null> {
+    return this.duels.run({
+      kind: "solve",
+      setup: {
+        ...this.theme.passe.rules,
+        fire: { thread: 0, chain: 0 },
+        width: pb.width,
+        height: pb.height,
+        cells: [...pb.cells],
+        first: 1,
+      },
+      depth: 3,
+      pieces: pb.moves,
+      moves,
     });
-    for (const m of moves) {
-      if (s.winner || s.laid[0] >= pb.moves) break;
-      if (s.turn !== 1) s = passePlay(s, passeThink(s, { depth: 3 }));
-      if (s.winner) break;
-      try {
-        s = passePlay(s, { at: m.at });
-      } catch {
-        return null;
-      }
-    }
-    return s.winner === 1 && s.laid[0] <= pb.moves;
   }
 }

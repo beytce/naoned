@@ -7,6 +7,7 @@ import {
   plancheTides,
   worlds,
 } from "../db/schema.js";
+import type { Duels } from "./duelPool.js";
 import type { PlancheHubTheme } from "./planche.js";
 /** The status of a board retired for good (another map): kept for its ledger, never played. */
 export const PLANCHE_RETIRED = "planche_retired";
@@ -79,6 +80,24 @@ export class PlancheLagoons {
     return lagoons;
   }
 
+  private duels: Duels | null = null;
+  private sortiesTimer: NodeJS.Timeout | undefined;
+
+  /** The duels of every lagoon played in this pool (docs/plan-socle.md A3). */
+  useDuels(duels: Duels): void {
+    this.duels = duels;
+    for (const s of this.stores) s.hub.useDuels(duels);
+  }
+
+  /** The captains' sorties played by a timer, at most `everyMs` after their hour (A3). */
+  playSorties(now: () => number, everyMs = 30_000): void {
+    clearInterval(this.sortiesTimer);
+    this.sortiesTimer = setInterval(() => {
+      for (const s of this.stores) void s.hub.settleSorties(now()).catch(console.error);
+    }, everyMs);
+    this.sortiesTimer.unref?.();
+  }
+
   /** The league of a lagoon: 1 the first, the last the Sérénissime. */
   leagueOf(store: PlancheStore): number {
     return this.leagues.get(store.worldId) ?? 1;
@@ -102,6 +121,7 @@ export class PlancheLagoons {
     );
     this.stores.push(store);
     if (this.timerMs) store.start(this.timerMs);
+    if (this.duels) store.hub.useDuels(this.duels);
     if (this.listeners.length) store.hub.pushEvery(1_000);
     for (const l of this.listeners) store.hub.onChange(l);
     if (league !== 1) {
@@ -297,6 +317,7 @@ export class PlancheLagoons {
   }
 
   stop(): void {
+    clearInterval(this.sortiesTimer);
     this.timerMs = 0;
     for (const s of this.stores) s.stop();
   }

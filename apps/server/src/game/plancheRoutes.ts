@@ -13,6 +13,7 @@ import {
 import { ChatError } from "./chatRules.js";
 import { CompanyError } from "./company.js";
 import { companyThread, postCompanyMessage, reportCompanyMessage } from "./company.js";
+import { duelPool } from "./duelPool.js";
 import { GuerreHub } from "./guerre.js";
 import type { PasseHub } from "./passe.js";
 import { type PlancheAnswer, type PlancheHub, plancheTheme } from "./planche.js";
@@ -89,6 +90,12 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
       const real0 = deps.now();
       const game0 = Math.max(real0, lagoons.reached());
       const now = () => game0 + (deps.now() - real0) * pace;
+      // The duels in a pool of workers, the sorties by a timer (docs/plan-socle.md A3); the tests
+      // play them at once.
+      if (!process.env.VITEST) {
+        lagoons.useDuels(duelPool());
+        lagoons.playSorties(now);
+      }
       // The challenges by the thread (docs/plan-hex-commerce.md H5), on the duel rooms of the Passe.
       const defis = deps.passe
         ? new PlancheDefis(deps.passe, now, deps.notify ? { notify: deps.notify } : {})
