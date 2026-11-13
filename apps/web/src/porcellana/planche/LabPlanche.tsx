@@ -2294,6 +2294,7 @@ export default function LabPlanche() {
             me={ME}
             close={closeX}
             goods={S.goods}
+            sells={[...sells]}
             onThread={(good) => S.muda && tie(S.muda.pier, "le môle de San Marco", good)}
             onStrait={(strait) => {
               setMudaOpen(false);

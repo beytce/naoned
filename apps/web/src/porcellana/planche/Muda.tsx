@@ -127,6 +127,7 @@ export function MudaSheet({
   me,
   close,
   goods,
+  sells,
   onThread,
   onStrait,
 }: {
@@ -135,6 +136,8 @@ export function MudaSheet({
   me: string;
   close: ReactNode;
   goods: Record<string, string>;
+  /** What one's island makes or has in store: what a thread may carry. */
+  sells: string[];
   onThread: (good: string) => void;
   onStrait: (strait: string) => void;
 }) {
@@ -150,9 +153,11 @@ export function MudaSheet({
   const passed = plancheMudaPassed(setup, state, now);
   const h = state.houses[me];
   const threaded = h?.threads.find((t) => t.to === M.pier);
-  const offered = Object.entries(h?.stock ?? {})
-    .filter(([g, n]) => n > 0 && plancheMudaPrice(setup, g) > 0)
-    .sort((a, b) => b[1] - a[1]);
+  // What a thread may carry: what is in store, and what the island makes.
+  const offered = [...new Set([...sells, ...Object.keys(h?.stock ?? {})])]
+    .map((g) => [g, h?.stock[g] ?? 0] as const)
+    .filter(([g, n]) => (n > 0 || sells.includes(g)) && plancheMudaPrice(setup, g) > 0)
+    .sort((a, b) => b[1] - a[1] || plancheMudaPrice(setup, b[0]) - plancheMudaPrice(setup, a[0]));
   const stepPct = Math.round(M.stepBps / 100);
   const back = (worth * BigInt(10_000 + passed * M.stepBps)) / 10_000n;
   const today = ours && ours.day === Math.floor(now / DAY) ? (ours.today[me] ?? 0) : 0;
@@ -231,7 +236,8 @@ export function MudaSheet({
                 data-muda-thread={g}
                 onClick={() => onThread(g)}
               >
-                {goods[g] ?? g} · {n}
+                {goods[g] ?? g}
+                {n ? ` · ${n}` : ""}
               </button>
             ))
           ) : (

@@ -122,7 +122,9 @@ try {
     // The board the page reads may be moved (the black strait at level 11, relics in store).
     const moves = { level: 0, relics: null };
     await page.route("**/api/planche", async (route) => {
-      const res = await route.fetch();
+      // The server is started again between two days: a read then finds no one.
+      const res = await route.fetch().catch(() => null);
+      if (!res) return route.abort().catch(() => {});
       const json = await res.json();
       const st = json?.planche?.state;
       const me = json?.planche?.me;
