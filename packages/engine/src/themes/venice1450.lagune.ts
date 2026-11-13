@@ -411,8 +411,8 @@ export const venice1450LaguneParams: LagoonParams = {
       },
     },
     // The black straits (docs/plan-muda.md N1): three powers between the open sea's towns, at
-    // the edge where the ink is darkest; level 11, two tries a day, a cargo by level, twice the
-    // board's best price for it (docs/calibration.md § Les détroits noirs).
+    // the edge where the ink is darkest; level 11, two tries a day, a cargo by level, half again
+    // the board's best price for it (docs/calibration.md § Les détroits noirs).
     noir: {
       minLevel: 11,
       straits: [
@@ -455,7 +455,7 @@ export const venice1450LaguneParams: LagoonParams = {
         { level: 16, n: 45 },
         { level: 21, n: 60 },
       ],
-      priceBps: 20_000,
+      priceBps: 15_000,
       relicsPerPlan: 3,
       plans: { arsenalLevel: 3, ships: ["escorte"], tier: 3 },
     },
@@ -470,8 +470,8 @@ export const venice1450LaguneParams: LagoonParams = {
       returnDay: 6,
       returnHour: 8,
       holdPerHouse: 60,
-      dailyCap: 40,
-      robotDaily: 15,
+      dailyCap: 20,
+      robotDaily: 10,
       straits: [
         { id: "zara", name: "Le large de Zara", board: "zara", x: 2 * COLUMN - 5, y: 19 },
         { id: "curzola", name: "Le canal de Curzola", board: "curzola", x: 2 * COLUMN, y: 19 },

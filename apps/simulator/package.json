@@ -21,7 +21,8 @@
     "hex-bench": "tsx src/hex-bench.ts",
     "arsenal-bench": "tsx src/arsenal-bench.ts",
     "assaut-bench": "tsx src/assaut-bench.ts",
-    "guerre-bench": "tsx src/guerre-bench.ts"
+    "guerre-bench": "tsx src/guerre-bench.ts",
+    "muda-bench": "tsx src/muda-bench.ts"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*"

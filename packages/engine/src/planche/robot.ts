@@ -108,6 +108,8 @@ export function plancheRobot(
   const h = s.houses[house];
   if (!h || !h.threads.length) return s;
   const held = h.threads
+    // A thread to the Muda's pier is its player's choice: the computer leaves it.
+    .filter((t) => t.to !== S.muda?.pier)
     .map((t) => ({
       t,
       v: worth(S, s, house, t.to, t.good, planchePatina(S, t, now), now, !!t.detour),
