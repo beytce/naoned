@@ -55,6 +55,7 @@ import {
   plancheToll,
   plancheUnthread,
   plancheUpgrade,
+  plancheVue,
   venice1450Lagune,
   venice1450Passe,
 } from "@comptoirs/engine";
@@ -542,7 +543,8 @@ export class PlancheHub {
       for (const s of Object.values(this.doc.seats)) names[s.house] = s.name;
       const taken = held(this.doc);
       return {
-        state: this.doc.state,
+        // What the player may see: never the others' secrets (docs/plan-socle.md A1).
+        state: plancheVue(this.doc.state, me ?? ""),
         me,
         names,
         players: this.theme.board.houses.map((h) => h.id).filter((id) => taken.has(id)),

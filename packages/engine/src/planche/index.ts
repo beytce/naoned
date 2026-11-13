@@ -14,3 +14,4 @@ export * from "./encre.js";
 export * from "./sorties.js";
 export * from "./maree.js";
 export * from "./ligue.js";
+export * from "./vue.js";
