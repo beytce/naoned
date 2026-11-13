@@ -170,6 +170,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     if ((err as { statusCode?: number }).statusCode === 429) {
       return reply.code(429).send({ error: "too_many_requests" });
     }
+    // Fastify's own refusals (a JSON that does not parse, a body too large…) stay what they are:
+    // the player's mistake, not the server's (docs/plan-socle.md A4).
+    const code = (err as { statusCode?: number }).statusCode ?? 0;
+    if (code >= 400 && code < 500) return reply.code(code).send({ error: "invalid_input" });
     app.log.error(err);
     void options.alerts?.alert("Erreur serveur", String((err as Error).stack ?? err));
     return reply.code(500).send({ error: "internal" });

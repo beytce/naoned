@@ -149,6 +149,21 @@ describe("the board on line", () => {
         })
       ).json().error,
     ).toBe("duel_lost");
+    // The edges (docs/plan-socle.md A4): an inherited key as a good, a JSON that does not parse.
+    expect(
+      (await ana("POST", "/api/planche/thread", { city: "rialto", good: "toString" })).statusCode,
+    ).toBe(400);
+    expect(
+      (await ana("POST", "/api/planche/compagnie/phare", { goods: { constructor: 30 } }))
+        .statusCode,
+    ).toBe(400);
+    const broken = await app.inject({
+      method: "POST",
+      url: "/api/planche/thread",
+      payload: "{broken",
+      headers: { cookie: ana.cookie, "content-type": "application/json" },
+    });
+    expect(broken.statusCode).toBe(400);
   });
 });
 

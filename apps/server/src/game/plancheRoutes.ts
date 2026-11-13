@@ -174,6 +174,9 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     });
   };
   const key = z.string().min(1).max(40);
+  // Only the board's goods, never an inherited key (docs/plan-socle.md A4).
+  const GOODS = plancheTheme().board.goods;
+  const aGood = key.refine((g) => Object.hasOwn(GOODS, g), { message: "unknown_good" });
 
   app.get("/api/planche", deps.perMerchant(240), async (req, reply) => {
     const p = await who(req, reply);
@@ -254,7 +257,7 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
   });
   app.post("/api/planche/thread", deps.perMerchant(60), async (req, reply) => {
     const b = z
-      .object({ city: key, good: key, detour: z.boolean().optional() })
+      .object({ city: key, good: aGood, detour: z.boolean().optional() })
       .safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const p = await who(req, reply);
@@ -266,7 +269,7 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     );
   });
   app.post("/api/planche/unthread", deps.perMerchant(60), async (req, reply) => {
-    const b = z.object({ city: key, good: key }).safeParse(req.body);
+    const b = z.object({ city: key, good: aGood }).safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const p = await who(req, reply);
     if (!p) return reply;
@@ -363,7 +366,7 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const b = z
       .object({
         strait: key,
-        good: key,
+        good: aGood,
         n: z.number().int().min(1).max(1_000),
         moves: duelMoves,
       })
@@ -793,7 +796,7 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
   // The company's beacon (docs/plan-compagnie.md K4): goods given, capped a day.
   app.post("/api/planche/compagnie/phare", deps.perMerchant(30), async (req, reply) => {
     const b = z
-      .object({ goods: z.record(key, z.number().int().min(1).max(1_000)) })
+      .object({ goods: z.record(aGood, z.number().int().min(1).max(1_000)) })
       .safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const p = await who(req, reply);
