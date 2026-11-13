@@ -183,6 +183,26 @@ try {
     await tap("[data-fonder-go]");
     if (!(await until(page, has, "[data-muda-open]")))
       fail(`${name}: no Muda on the board on Monday`);
+    // A first workshop on the island (a new house starts without one), for goods to load on
+    // Wednesday: the real server's build, on the first free tile that takes one.
+    const built = await page.evaluate(async () => {
+      const post = (path, body) =>
+        fetch(`/api/planche${path}`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      const v = (await (await fetch("/api/planche", { credentials: "same-origin" })).json())
+        .planche;
+      const tiles = Object.entries(v.state.houses[v.me]?.ile?.tiles ?? {})
+        .filter(([, t]) => !t.building)
+        .map(([k]) => k);
+      for (const type of ["salt_pans", "farm", "lumber_camp", "sand_pit", "clay_pit", "hemp_field"])
+        for (const at of tiles) if ((await post("/ile/build", { type, at })).ok) return type;
+      return null;
+    });
+    if (!built) fail(`${name}: no workshop could be built`);
     // The whole lagoon: the black straits at the edge of the open sea, the convoy at its pier.
     await page.evaluate(() =>
       [...document.querySelectorAll(".pc-pl-scale button")]
