@@ -27,7 +27,8 @@
     "e2e:assaut": "node e2e/assaut.mjs",
     "e2e:guerre": "node e2e/guerre.mjs",
     "e2e:compagnie": "node e2e/compagnie.mjs",
-    "e2e:semaine": "ONLY=p node e2e/semaine.mjs && ONLY=d node e2e/semaine.mjs"
+    "e2e:semaine": "ONLY=p node e2e/semaine.mjs && ONLY=d node e2e/semaine.mjs",
+    "e2e:maree": "ONLY=p node e2e/maree.mjs && ONLY=d node e2e/maree.mjs"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*",

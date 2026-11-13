@@ -766,21 +766,23 @@ export default function LabPlanche() {
       );
     }
   }, [orders, state.orders, ME, tell]);
-  // A tide closed since this device last saw one: its moment (docs/plan-maree.md T7).
+  // A tide closed since this device last saw one: its moment (docs/plan-maree.md T7). The server
+  // tells which (the house may have moved to another lagoon with its league).
   const tide = state.rank.tide;
   useEffect(() => {
-    if (!online || !ME || tide < 1) return;
-    let seen = 0;
-    try {
-      seen = Number(localStorage.getItem("fondaco.maree.vue") ?? "0");
-    } catch {
-      seen = 0;
-    }
-    if (tide > seen) {
-      setTideEnd(true);
-      void loadMaree();
-    }
+    if (online && ME && tide >= 0) void loadMaree();
   }, [online, ME, tide, loadMaree]);
+  const closedKey = mareeView?.last?.key;
+  useEffect(() => {
+    if (!closedKey) return;
+    let seen = "";
+    try {
+      seen = localStorage.getItem("fondaco.maree.vue") ?? "";
+    } catch {
+      seen = "";
+    }
+    if (closedKey !== seen) setTideEnd(true);
+  }, [closedKey]);
   /** A gesture: on line it is the server's to play, here it is the engine's. */
   const act = (
     f: () => PlancheState,
@@ -2488,7 +2490,7 @@ export default function LabPlanche() {
                 onClick={() => {
                   setTideEnd(false);
                   try {
-                    localStorage.setItem("fondaco.maree.vue", String(state.rank.tide));
+                    localStorage.setItem("fondaco.maree.vue", mareeView?.last?.key ?? "");
                   } catch {
                     // A private window: the moment comes again.
                   }

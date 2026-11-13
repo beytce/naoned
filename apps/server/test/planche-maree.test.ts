@@ -201,9 +201,10 @@ describe("the leagues", () => {
     const [best] = await database.db.select().from(plancheAccountLeagues);
     expect(best).toEqual({ accountId: ana.id, best: 2 });
     const tides = await database.db.select().from(plancheTides);
-    expect(tides.find((x) => x.worldId === store.worldId)?.moves).toEqual({
+    expect(tides.find((x) => x.worldId === store.worldId)?.moves).toMatchObject({
       up: [ana.id],
       down: [],
+      lagoon: store.name,
     });
     // Once a tide: settled again, nothing moves.
     await lagoons.turnLeagues(T0 + 2 * WEEK + 2 * HOUR);

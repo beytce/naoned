@@ -147,7 +147,27 @@ export class PlancheLagoons {
             .where(eq(plancheAccountLeagues.accountId, p));
           if (league - 1 >= (best?.best ?? league) - 1) down.push(p);
         }
-        const moved = { up: [] as string[], down: [] as string[] };
+        // What the tide's end tells, kept with its moves: the lagoon, its laurels, by name.
+        const named = (house: string | null | undefined) =>
+          house
+            ? (Object.values(doc.seats).find((x) => x.house === house)?.name ??
+              this.theme.board.houses.find((x) => x.id === house)?.name ??
+              house)
+            : null;
+        const L0 = doc.state.rank.laurels;
+        const moved = {
+          up: [] as string[],
+          down: [] as string[],
+          lagoon: store.name,
+          laurels: L0
+            ? {
+                doge: named(L0.doge),
+                negoce: named(L0.negoce),
+                passe: named(L0.passe),
+                garde: named(L0.garde),
+              }
+            : null,
+        };
         for (const p of down) if (await this.move(p, store, league - 1, now)) moved.down.push(p);
         for (const p of up) if (await this.move(p, store, league + 1, now)) moved.up.push(p);
         await this.db

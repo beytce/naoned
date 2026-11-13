@@ -30,7 +30,21 @@ export interface MareeView {
   count: number;
   best: number;
   lagoons: { name: string; league: number; players: number; mine: boolean }[];
-  last: { tide: number; up: string[]; down: string[]; me: "up" | "down" | null } | null;
+  /** The last tide's end that concerns the player: its lagoon, laurels, moves (by name). */
+  last: {
+    key: string;
+    tide: number;
+    lagoon: string;
+    laurels: {
+      doge: string | null;
+      negoce: string | null;
+      passe: string | null;
+      garde: string | null;
+    } | null;
+    up: string[];
+    down: string[];
+    me: "up" | "down" | null;
+  } | null;
   serenissime: { name: string } | null;
 }
 
@@ -292,9 +306,24 @@ export function TideEndSheet({
   name: (house: string) => string;
   onDecret: (choice: number) => void;
 }) {
-  const L = state.rank.laurels;
-  const ended = state.rank.tide - 1;
-  const stones = (state.houses[me]?.stones ?? []).filter((x) => x.tide === ended);
+  // The tide that closed: as the server tells it (the lagoon one may have left), or the board's.
+  const last = view?.last;
+  const own = state.rank.laurels;
+  const L = last?.laurels
+    ? last.laurels
+    : own
+      ? {
+          doge: name(own.doge),
+          negoce: own.negoce ? name(own.negoce) : null,
+          passe: own.passe ? name(own.passe) : null,
+          garde: own.garde ? name(own.garde) : null,
+        }
+      : null;
+  const ended = last ? last.tide : state.rank.tide - 1;
+  // The stones of the last engraving (a house that moved keeps its tides' numbers).
+  const all = state.houses[me]?.stones ?? [];
+  const latest = Math.max(-1, ...all.map((x) => x.tide));
+  const stones = all.filter((x) => x.tide === latest && latest >= 0);
   const d = state.decret;
   const choosing =
     d && d.doge === me && d.chosen === undefined && plancheDecretLeft(state, state.now) > 0;
@@ -304,19 +333,22 @@ export function TideEndSheet({
       <div className="pc-pl-head">
         <div>
           <h2>La marée {ended + 1} est close</h2>
-          <span>L'encre reflue, le Large retourne aux corsaires, les rangs repartent de zéro.</span>
+          <span>
+            {last?.lagoon ? `${last.lagoon} : l` : "L"}'encre reflue, le Large retourne aux
+            corsaires, les rangs repartent de zéro.
+          </span>
         </div>
         {close}
       </div>
       {L ? (
         <div className="pc-mr-laurels">
           <div data-doge>
-            <b>{name(L.doge)}</b>
+            <b>{L.doge ?? "personne"}</b>
             <span>Doge de la lagune</span>
           </div>
           {(["negoce", "passe", "garde"] as const).map((k) => (
             <div key={k}>
-              <b>{L[k] ? name(L[k] as string) : "personne"}</b>
+              <b>{L[k] ?? "personne"}</b>
               <span>
                 Laurier{" "}
                 {k === "negoce" ? "du Négoce" : k === "passe" ? "de la Passe" : "de la Garde"}

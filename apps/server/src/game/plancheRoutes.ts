@@ -464,13 +464,16 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
       .select()
       .from(plancheAccountLeagues)
       .where(eq(plancheAccountLeagues.accountId, p.id));
+    // The last tide's end that concerns the player: its own lagoon's, or the one it moved from.
     const tides = await deps.db
       .select()
       .from(plancheTides)
-      .where(eq(plancheTides.worldId, p.store.worldId))
-      .orderBy(desc(plancheTides.tide))
-      .limit(1);
-    const last = tides[0];
+      .orderBy(desc(plancheTides.doneAt))
+      .limit(200);
+    const last = tides.find((r) => {
+      const m = r.moves as { up?: string[]; down?: string[] };
+      return r.worldId === p.store.worldId || m.up?.includes(p.id) || m.down?.includes(p.id);
+    });
     const names = async (ids: string[]) =>
       ids.length
         ? (
@@ -480,7 +483,12 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
               .where(inArray(accounts.id, ids))
           ).map((a) => `Ca\u2019 ${a.pseudo ?? "Bembo"}`)
         : [];
-    const moves = (last?.moves ?? {}) as { up?: string[]; down?: string[] };
+    const moves = (last?.moves ?? {}) as {
+      up?: string[];
+      down?: string[];
+      lagoon?: string;
+      laurels?: Record<string, string | null> | null;
+    };
     const serenissime = lagoons
       .all()
       .find((s) => lagoons.leagueOf(s) >= lagoons.leagueCount() && lagoons.leagueCount() > 1);
@@ -497,7 +505,10 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
         })),
         last: last
           ? {
+              key: `${last.worldId}:${last.tide}`,
               tide: last.tide,
+              lagoon: moves.lagoon ?? "",
+              laurels: moves.laurels ?? null,
               up: await names(moves.up ?? []),
               down: await names(moves.down ?? []),
               me: moves.up?.includes(p.id) ? "up" : moves.down?.includes(p.id) ? "down" : null,
