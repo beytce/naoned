@@ -41,6 +41,7 @@ import {
   maisonStart,
   maisonUnlocks,
 } from "./maison.js";
+import { type NoirRules, type NoirState, plancheNeedsPlan, plancheSpendPlan } from "./noir.js";
 import {
   type PlancheHouseRank,
   type PlancheRank,
@@ -162,6 +163,8 @@ export interface PlancheSetup {
    * levels, the goods a member may give a day, the level that shows a ruse of each assault.
    */
   compagnie?: { beacon: { thresholds: number[]; dailyCap: number; scoutLevel: number } };
+  /** The black straits, their relics and the plans (docs/plan-muda.md N1): without them, none. */
+  noir?: NoirRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -228,6 +231,9 @@ export interface PlancheHouse {
   /** Its port's secret ruses, one a pass, and the day it set them (docs/plan-guerre.md). */
   ruses?: Record<string, "chaine" | "brulot" | "renforts">;
   rusesDay?: number;
+  /** The relics the black straits gave it, by power, and its plans not yet spent. */
+  relics?: Record<string, number>;
+  plans?: number;
 }
 
 export interface PlancheState {
@@ -257,6 +263,8 @@ export interface PlancheState {
   orders?: Record<string, PlancheOrderState>;
   /** The tries at the problem of the day, by day then house (today's and the day before's). */
   daily?: Record<number, Record<string, PlancheDailyTry>>;
+  /** The black straits: this week's forcings, every week's, today's tries. */
+  noir?: NoirState;
 }
 
 const fail = (code: string): never => {
@@ -699,7 +707,12 @@ export const plancheBuild = (
   // The Arsenal opens at its own level, one an island (docs/plan-arsenal.md).
   const h = own(s.houses, house);
   if (h) plancheArsenalMayBuild(S, h, type);
-  return onIsle(S, s, house, (R, ile) => ileBuild(R, ile, type, at, now));
+  // The workshops of the high tier ask a plan (docs/plan-muda.md § 3.2).
+  const plan = Object.hasOwn(S.ile?.workshops ?? {}, type) && plancheNeedsPlan(S, { tier });
+  if (plan && (h?.plans ?? 0) < 1) return fail("planche_no_plan");
+  const out = onIsle(S, s, house, (R, ile) => ileBuild(R, ile, type, at, now));
+  if (plan) plancheSpendPlan(out.houses[house] as PlancheHouse);
+  return out;
 };
 
 /**
@@ -723,13 +736,23 @@ export function plancheSetLevel(
   h.caps = maisonUnlocks(S.maison, to);
   return s;
 }
-export const plancheUpgrade = (
+export function plancheUpgrade(
   S: PlancheSetup,
   s: PlancheState,
   house: string,
   at: string,
   now: number,
-) => onIsle(S, s, house, (R, ile) => ileUpgrade(R, ile, at, now));
+): PlancheState {
+  // The Arsenal raised high asks a plan (docs/plan-muda.md § 3.2).
+  const h = own(s.houses, house);
+  const b = h?.ile?.tiles[at]?.building;
+  const plan =
+    !!b && b.type === S.arsenal?.workshop && plancheNeedsPlan(S, { arsenalTo: b.level + 1 });
+  if (plan && (h?.plans ?? 0) < 1) return fail("planche_no_plan");
+  const out = onIsle(S, s, house, (R, ile) => ileUpgrade(R, ile, at, now));
+  if (plan) plancheSpendPlan(out.houses[house] as PlancheHouse);
+  return out;
+}
 export const plancheMove = (
   S: PlancheSetup,
   s: PlancheState,

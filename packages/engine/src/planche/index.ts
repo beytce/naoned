@@ -7,3 +7,4 @@ export * from "./commandes.js";
 export * from "./jour.js";
 export * from "./garde.js";
 export * from "./arsenal.js";
+export * from "./noir.js";

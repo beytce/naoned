@@ -11,6 +11,7 @@
  */
 
 import { ILE_FONDACO } from "../ile/ile.js";
+import { plancheNeedsPlan, plancheSpendPlan } from "./noir.js";
 import type { PlancheHouse, PlancheSetup, PlancheState } from "./planche.js";
 
 const BPS = 10_000;
@@ -167,9 +168,13 @@ export function plancheShip(
   if (!ars) return fail("planche_no_arsenal");
   if (!ars.ready) return fail("planche_arsenal_busy");
   if ((h0.fleet?.yards.length ?? 0) >= ars.cales) return fail("planche_no_cale");
+  // The high ships ask a plan (docs/plan-muda.md § 3.2).
+  const plan = plancheNeedsPlan(S, { ship: kind });
+  if (plan && (h0.plans ?? 0) < 1) return fail("planche_no_plan");
   const s = structuredClone(s0);
   const h = s.houses[house] as PlancheHouse;
   take(h, r.goods);
+  if (plan) plancheSpendPlan(h);
   fleetOf(h).yards.push({ kind, level: ars.level, readyAt: now + r.buildMs });
   return s;
 }
