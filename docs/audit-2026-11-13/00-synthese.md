@@ -1,5 +1,7 @@
 # Synthèse du chef de projet : audit d'ensemble du 13 novembre 2026
 
+**Validé par le porteur le 13 novembre 2026 : les décisions D1 à D8 du § 5 et l'ordre des lots du § 6 (« Je valide tout »).**
+
 *Neuf auditeurs ont joué le vrai jeu (le web construit, un serveur local par auditeur, l'horloge avancée par relances sur la même base) et lu le code, après la fin du chemin de l'audit du 11 novembre (étapes 1 à 9, fusionnées). Rapports : `01` débutant sur téléphone, `02` stratège, `03` compétitif, `04` social, `05` game design F2P, `06` UX et direction artistique, `07` économiste, `08` QA et sécurité, `09` architecte ; captures dans `captures/`. Références : `R1` à `R9` = rapports 01 à 09, suivies de l'identifiant du constat (ex. `R8 Q1`). Aucun code n'a été modifié par l'audit.*
 
 ---
