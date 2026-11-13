@@ -288,6 +288,13 @@
       "when": 1794517216188,
       "tag": "0040_company_beacons",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794550067216,
+      "tag": "0041_gazettes",
+      "breakpoints": true
     }
   ]
 }

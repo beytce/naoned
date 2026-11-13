@@ -21,6 +21,7 @@ import {
   setCompagnieRole,
 } from "./plancheCompany.js";
 import { PlancheDefis } from "./plancheDefi.js";
+import { gazetteAt, gazetteOf } from "./plancheGazette.js";
 import { PlancheLagoons } from "./plancheLagoons.js";
 import { companySigns, greet, greetings, laySign, liftSign } from "./plancheSigns.js";
 import type { PlancheStore } from "./plancheStore.js";
@@ -215,6 +216,9 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
         flags: doc.state.rank.flags[house] ?? [],
         collection: Object.fromEntries(kept.map((k) => [k.kind, Number(k.n)])),
         knots: m?.knots ?? 0,
+        // The black straits' relics and the plans not yet spent (docs/plan-muda.md N1).
+        relics: h?.relics ?? {},
+        plans: h?.plans ?? 0,
         knotToday: !!doc.state.daily?.[Math.floor(p.now() / 86_400_000)]?.[house]?.won,
         /** Every lagoon's Prestige of this account, as its journal of points keeps it. */
         kept: total?.sum ?? 0,
@@ -323,6 +327,43 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const moves = b.data.moves.map((m) => ({ at: m.at }));
     return show(reply, p, await p.hub.daily(p.id, moves, p.now()));
   });
+  const duelMoves = z
+    .array(z.object({ at: z.number().int().min(0).max(400), fire: z.boolean().optional() }))
+    .max(200);
+  const asMoves = (ms: z.infer<typeof duelMoves>) =>
+    ms.map((m) => (m.fire ? { at: m.at, fire: true as const } : { at: m.at }));
+  // A black strait (docs/plan-muda.md N1): a cargo risked, the duel replayed on the day's board.
+  app.post("/api/planche/noir", deps.perMerchant(20), async (req, reply) => {
+    const b = z
+      .object({
+        strait: key,
+        good: key,
+        n: z.number().int().min(1).max(1_000),
+        moves: duelMoves,
+      })
+      .safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const { strait, good, n, moves } = b.data;
+    return show(reply, p, await p.hub.noir(p.id, strait, { good, n }, asMoves(moves), p.now()));
+  });
+  // Three relics of a power make a plan.
+  app.post("/api/planche/assemble", deps.perMerchant(20), async (req, reply) => {
+    const b = z.object({ power: key }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return show(reply, p, await p.hub.assemble(p.id, b.data.power, p.now()));
+  });
+  // A strait of the Muda (docs/plan-muda.md N2), on Saturday.
+  app.post("/api/planche/muda", deps.perMerchant(20), async (req, reply) => {
+    const b = z.object({ strait: key, moves: duelMoves }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return show(reply, p, await p.hub.muda(p.id, b.data.strait, asMoves(b.data.moves), p.now()));
+  });
   // The prepared guard (docs/plan-hex-commerce.md H4): links laid in advance on one's tower.
   app.post("/api/planche/guard", deps.perMerchant(20), async (req, reply) => {
     const b = z
@@ -389,6 +430,26 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
   gesture("/api/planche/port/remove", z.object({ pass, index: slot }), (p, b) =>
     p.hub.defenseRemove(p.id, b.pass, b.index, p.now()),
   );
+  // The Gazette of Sunday (docs/plan-muda.md N4): this week's issue, or the last; a past one.
+  app.get("/api/gazette", deps.perMerchant(60), async (req, reply) => {
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const g = await gazetteOf(deps.db, p.store, (await boards()).guerre, p.now());
+    return toJson({ gazette: { ...g, lagoon: p.lagoon } });
+  });
+  app.get("/api/gazette/:week", deps.perMerchant(60), async (req, reply) => {
+    const w = z.coerce
+      .number()
+      .int()
+      .min(0)
+      .safeParse((req.params as { week?: string }).week);
+    if (!w.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const issue = await gazetteAt(deps.db, p.store, w.data);
+    if (!issue) return reply.code(404).send({ error: "no_gazette" });
+    return toJson({ gazette: { issue, lagoon: p.lagoon } });
+  });
   // The War of the week (docs/plan-guerre.md W4): the flotillas, today's assault, Sunday.
   const guerreOf = async () => (await boards()).guerre;
   app.get("/api/guerre", deps.perMerchant(120), async (req, reply) => {

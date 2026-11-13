@@ -794,6 +794,23 @@ export const guerreWeeks = pgTable("guerre_weeks", {
   settledAt: timestamp("settled_at", { withTimezone: true }),
 });
 
+/**
+ * The Gazette of Sunday (docs/plan-muda.md N4): one issue a lagoon and a week, written by the game
+ * on Sunday from its week; kept, for its past issues to be read again.
+ */
+export const gazettes = pgTable(
+  "gazettes",
+  {
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    week: timestamp("week", { withTimezone: true }).notNull(),
+    issue: jsonb("issue").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.week] })],
+);
+
 /** An assault of the War: one a player a day; its port and fleet kept for its replay. */
 export const guerreAssaults = pgTable(
   "guerre_assaults",

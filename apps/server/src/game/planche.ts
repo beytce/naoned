@@ -8,6 +8,7 @@ import {
   passePlay,
   passeThink,
   plancheAdvance,
+  plancheAssemble,
   plancheBeacon,
   plancheBuild,
   plancheBuyTile,
@@ -26,6 +27,12 @@ import {
   plancheInit,
   plancheInvariant,
   plancheMove,
+  plancheMudaForce,
+  plancheMudaRefusal,
+  plancheNoirBoard,
+  plancheNoirMind,
+  plancheNoirRefusal,
+  plancheNoirTry,
   plancheOrder,
   plancheOrderRefusal,
   plancheOrderTry,
@@ -143,6 +150,20 @@ export type PlancheCommand =
   /** The company's beacon (docs/plan-compagnie.md K4): goods given to it, its level carried. */
   | { type: "give"; player: string; goods: Record<string, number>; t: number }
   | { type: "beacon"; player: string; level: number; t: number }
+  /** A black strait played with a cargo (docs/plan-muda.md N1): replayed by the hub, won or lost. */
+  | {
+      type: "noir";
+      player: string;
+      strait: string;
+      good: string;
+      n: number;
+      won: boolean;
+      t: number;
+    }
+  /** Three relics of a power made a plan. */
+  | { type: "assemble"; player: string; power: string; t: number }
+  /** A strait of the Muda played on Saturday (docs/plan-muda.md N2). */
+  | { type: "muda"; player: string; strait: string; won: boolean; t: number }
   /** The port's secret ruses, once a day (docs/plan-guerre.md W3). */
   | {
       type: "ruses";
@@ -315,6 +336,15 @@ export function plancheDocApply(
         break;
       case "beacon":
         next = plancheBeacon(S, s, h, c.level);
+        break;
+      case "noir":
+        next = plancheNoirTry(S, s, h, c.strait, { good: c.good, n: c.n }, c.won, c.t);
+        break;
+      case "assemble":
+        next = plancheAssemble(S, s, h, c.power, c.t);
+        break;
+      case "muda":
+        next = plancheMudaForce(S, s, h, c.strait, c.won, c.t);
         break;
       case "guard": {
         const def = S.passages.find((p) => p.id === c.passage);
@@ -528,6 +558,93 @@ export class PlancheHub {
 
   beacon(player: string, level: number, t: number) {
     return this.act({ type: "beacon", player, level, t });
+  }
+
+  /**
+   * A black strait (docs/plan-muda.md N1): the duel is replayed here on the day's board, against
+   * its captain. Lost, the cargo sinks all the same: the answer is then "duel_lost".
+   */
+  async noir(
+    player: string,
+    strait: string,
+    cargo: { good: string; n: number },
+    moves: PasseMove[],
+    t: number,
+  ): Promise<PlancheAnswer> {
+    const S = this.theme.board;
+    const def = S.noir?.straits.find((x) => x.id === strait);
+    const b = def ? this.theme.passe.boards[def.board] : undefined;
+    const seat = this.doc.seats[player];
+    if (!def || !b) return "planche_unknown";
+    if (!seat) return "not_seated";
+    const at = plancheDocAdvance(this.theme, this.doc, t).state;
+    const why = plancheNoirRefusal(S, at, seat.house, strait, cargo, t);
+    if (why) return why;
+    const cells = plancheNoirBoard(S, at, strait, t, b.cells);
+    const won = this.replays(
+      { ...this.theme.passe.rules, ...b, cells, first: 1 },
+      plancheNoirMind(S, strait),
+      moves,
+    );
+    if (won === null) return "duel_illegal";
+    const answer = await this.act({ type: "noir", player, strait, ...cargo, won, t });
+    return answer === "ok" && !won ? "duel_lost" : answer;
+  }
+
+  /** Three relics of a power make a plan. */
+  assemble(player: string, power: string, t: number) {
+    return this.act({ type: "assemble", player, power, t });
+  }
+
+  /** A strait of the Muda (docs/plan-muda.md N2): replayed here against the corsairs' fleet. */
+  async muda(
+    player: string,
+    strait: string,
+    moves: PasseMove[],
+    t: number,
+  ): Promise<PlancheAnswer> {
+    const S = this.theme.board;
+    const def = S.muda?.straits.find((x) => x.id === strait);
+    const b = def ? this.theme.passe.boards[def.board] : undefined;
+    const seat = this.doc.seats[player];
+    if (!def || !b || !S.muda) return "planche_unknown";
+    if (!seat) return "not_seated";
+    const why = plancheMudaRefusal(
+      S,
+      plancheDocAdvance(this.theme, this.doc, t).state,
+      seat.house,
+      strait,
+      t,
+    );
+    if (why) return why;
+    const won = this.replays(
+      { ...this.theme.passe.rules, ...b, cells: [...b.cells], first: 1 },
+      { depth: S.muda.depth },
+      moves,
+    );
+    if (won === null) return "duel_illegal";
+    const answer = await this.act({ type: "muda", player, strait, won, t });
+    return answer === "ok" && !won ? "duel_lost" : answer;
+  }
+
+  /** A duel replayed: the player's pieces, the mind's answers. Null: a piece was illegal. */
+  private replays(
+    setup: PasseSetup,
+    mind: { depth: number; style?: "mur" | "rives" | "meute" },
+    moves: PasseMove[],
+  ): boolean | null {
+    let s = passeInit(setup);
+    for (const m of moves) {
+      if (s.winner) break;
+      if (s.turn !== 1) s = passePlay(s, passeThink(s, mind));
+      if (s.winner) break;
+      try {
+        s = passePlay(s, m.fire ? { at: m.at, fire: true } : { at: m.at });
+      } catch {
+        return null;
+      }
+    }
+    return s.winner === 1;
   }
 
   /** The port's secret ruses, one a pass, once a day. */

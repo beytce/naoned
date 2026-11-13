@@ -2,6 +2,7 @@ import {
   type AssautFleetShip,
   type AssautPort,
   type AssautState,
+  type GazetteWar,
   type GuerreWar,
   type IleState,
   assautFleetOf,
@@ -439,6 +440,31 @@ export class GuerreHub {
         }
       }
     }
+  }
+
+  /**
+   * The War's week of a lagoon, for its Gazette (docs/plan-muda.md N4): the seals its houses broke,
+   * those that broke the most, and its finest assault.
+   */
+  async gazette(store: PlancheStore, now: number): Promise<GazetteWar | null> {
+    const week = mondayOf(now);
+    const mine = (await this.assaults(week)).filter((r) => r.by.startsWith(`${store.worldId}:`));
+    if (!mine.length) return null;
+    const by = new Map<string, number>();
+    for (const r of mine) by.set(r.by, (by.get(r.by) ?? 0) + r.seals);
+    const name = (key: string) => this.portOf(key, {}, new Set()).name;
+    const best = [...mine].sort((a, b) => b.seals - a.seals || a.id - b.id)[0];
+    return {
+      seals: mine.reduce((n, r) => n + r.seals, 0),
+      top: [...by]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([key, seals]) => ({ name: name(key), seals })),
+      best:
+        best && best.seals > 0
+          ? { id: best.id, by: name(best.by), target: name(best.target), seals: best.seals }
+          : null,
+    };
   }
 
   /**
