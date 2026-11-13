@@ -452,12 +452,16 @@ function growWeek(
       guardHours: Math.max(0, h.rank.guardMs - m.guardAt) / HOUR,
       laurels: won.length,
       doge: laurels?.doge === id,
+      noir: m.noir ?? 0,
+      muda: m.muda ?? 0,
     });
     const { credited, carry } = maisonWeek(M, m.week + deeds, m.carry);
     m.prestige += credited;
     m.carry = carry;
     m.week = 0;
     m.seals = 0;
+    m.noir = 0;
+    m.muda = 0;
     m.guardAt = h.rank.guardMs;
     if (credited > 0) {
       m.credits.push({ week, amount: credited });

@@ -465,3 +465,16 @@
     box-shadow: 0 -16px 40px rgba(42, 39, 37, 0.14);
   }
 }
+
+/* A black strait's cargo, at stake (docs/plan-muda.md N5). */
+.pc-passe-title .pc-px-stake {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #c7372f;
+  color: #f6f4f0;
+  font-weight: 700;
+  font-size: 11px;
+  width: fit-content;
+}

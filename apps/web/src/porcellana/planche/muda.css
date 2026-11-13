@@ -1,0 +1,397 @@
+/* The Muda, the black straits and the Gazette (docs/plan-muda.md N5 to N7). */
+
+/* A black strait's label: the ink of the powers, a red hairline. */
+.pc-pl-tower[data-black="true"] {
+  background: #111111;
+  color: #f6f4f0;
+  box-shadow: 0 0 0 1.5px #c7372f, 0 3px 0 #000;
+}
+
+/* The week of the Muda: seven days, the convoy's days marked. */
+.pc-mu-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-mu-week li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 0;
+  border-radius: 10px;
+  background: #efebe4;
+  font: 600 11px var(--pc-ui);
+  color: var(--pc-ink-soft, #6b645c);
+}
+.pc-mu-week li b {
+  font: 800 12px var(--pc-ui);
+  color: var(--pc-ink);
+  text-transform: capitalize;
+}
+.pc-mu-week li[data-what="charge"] {
+  background: #e7e0d5;
+}
+.pc-mu-week li[data-what="sort"] {
+  background: var(--pc-ink);
+  color: #f6f4f0;
+}
+.pc-mu-week li[data-what="sort"] b {
+  color: #f6f4f0;
+}
+.pc-mu-week li[data-what="rentre"] {
+  background: var(--pc-accent);
+  color: #f6f4f0;
+}
+.pc-mu-week li[data-what="rentre"] b {
+  color: #f6f4f0;
+}
+.pc-mu-week li[data-today="true"] {
+  box-shadow: 0 0 0 2px var(--pc-accent);
+}
+
+/* The hold: a galley that fills, one's own share in the accent. */
+.pc-mu-cale {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pc-mu-hold {
+  flex: none;
+  width: min(44%, 170px);
+  height: auto;
+}
+.pc-mu-cale p {
+  margin: 0;
+  font: 500 13px / 1.4 var(--pc-ui);
+}
+
+/* The straits on the way to Alexandria. */
+.pc-mu-straits {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-mu-straits li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #f6f4f0;
+  box-shadow: 0 0 0 1px var(--pc-hair, #e4ddd2);
+}
+.pc-mu-straits li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pc-mu-straits li b {
+  font: 800 14px var(--pc-ui);
+}
+.pc-mu-straits li span {
+  font: 500 12px var(--pc-ui);
+  color: var(--pc-ink-soft, #6b645c);
+}
+.pc-mu-straits li .pc-passe-go {
+  flex: none;
+  width: auto;
+  padding: 8px 16px;
+}
+.pc-mu-buoy {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #8a8279;
+  color: #f6f4f0 !important;
+  font: 800 13px var(--pc-ui) !important;
+}
+.pc-mu-straits li[data-passed="true"] .pc-mu-buoy {
+  background: var(--pc-accent);
+}
+.pc-mu-back,
+.pc-mu-threaded {
+  margin: 0;
+  font: 600 13px / 1.4 var(--pc-ui);
+}
+.pc-mu-load {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font: 600 13px var(--pc-ui);
+}
+.pc-mu-load .pc-passe-quiet {
+  width: auto;
+  padding: 8px 12px;
+}
+
+/* A black strait's sheet. */
+.pc-nr-captain {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: #2a2725;
+  color: #f6f4f0;
+}
+.pc-nr-captain > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pc-nr-captain b {
+  font: 800 15px var(--pc-display, var(--pc-ui));
+}
+.pc-nr-captain span {
+  font: 500 12px / 1.35 var(--pc-ui);
+  color: #d9d2c6;
+}
+.pc-nr-links {
+  display: inline-flex;
+  gap: 4px;
+}
+.pc-nr-links i {
+  width: 18px;
+  height: 11px;
+  border-radius: 6px;
+  border: 3px solid #6b645c;
+}
+.pc-nr-links i[data-on="true"] {
+  border-color: #f6f4f0;
+  background: #111111;
+}
+.pc-nr-shut {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #efebe4;
+  font: 600 13px / 1.4 var(--pc-ui);
+}
+.pc-nr-goods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pc-nr-goods button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: #f6f4f0;
+  box-shadow: 0 0 0 1px var(--pc-hair, #e4ddd2);
+  font: 500 12px var(--pc-ui);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-nr-goods button b {
+  font: 800 14px var(--pc-ui);
+}
+.pc-nr-goods button[aria-pressed="true"] {
+  background: var(--pc-ink);
+  color: #f6f4f0;
+  box-shadow: 0 3px 0 #000;
+}
+.pc-nr-n {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 600 13px var(--pc-ui);
+}
+.pc-nr-n input {
+  width: 100%;
+  accent-color: var(--pc-accent);
+}
+.pc-nr-stakes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.pc-nr-stakes > div {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  border-radius: 14px;
+  font: 500 11.5px / 1.35 var(--pc-ui);
+}
+.pc-nr-stakes b {
+  font: 900 16px var(--pc-display, var(--pc-ui));
+}
+.pc-nr-stakes [data-won] {
+  background: var(--pc-accent);
+  color: #f6f4f0;
+}
+.pc-nr-stakes [data-lost] {
+  background: #2a2725;
+  color: #f6f4f0;
+}
+.pc-nr-relics {
+  margin: 0;
+  font: 500 12.5px var(--pc-ui);
+}
+.pc-nr-book ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+.pc-nr-book li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 13px var(--pc-ui);
+}
+.pc-nr-book li .pc-passe-quiet {
+  width: auto;
+  margin-left: auto;
+  padding: 6px 12px;
+}
+.pc-nr-book li em {
+  margin-left: auto;
+  font: 500 12px var(--pc-ui);
+  color: var(--pc-ink-soft, #6b645c);
+}
+.pc-nr-book p {
+  margin: 0;
+  font: 500 12.5px / 1.4 var(--pc-ui);
+}
+.pc-nr-seal {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: -2px;
+  box-shadow: 0 0 0 2px #111111;
+}
+.pc-nr-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.pc-nr-dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e4ddd2;
+}
+.pc-nr-dots i[data-on="true"] {
+  background: #111111;
+}
+
+/* The Gazette: a page of a journal, in porcelain. */
+.pc-gz-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #fbf9f5;
+  box-shadow: 0 0 0 1px #e4ddd2, 0 4px 0 #d9d2c6;
+}
+.pc-gz-mast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 3px double var(--pc-ink);
+}
+.pc-gz-mast > div {
+  display: flex;
+  flex-direction: column;
+}
+.pc-gz-mast b {
+  font: 900 20px / 1.1 var(--pc-display, var(--pc-ui));
+  letter-spacing: 0.01em;
+}
+.pc-gz-mast span {
+  font: 500 12px var(--pc-ui);
+  color: var(--pc-ink-soft, #6b645c);
+}
+.pc-gz-une h3 {
+  margin: 0;
+  font: 900 22px / 1.15 var(--pc-display, var(--pc-ui));
+}
+.pc-gz-une p {
+  margin: 4px 0 0;
+  font: italic 500 13.5px / 1.4 var(--pc-ui);
+}
+.pc-gz-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+.pc-gz-cols section {
+  padding-top: 8px;
+  border-top: 1px solid var(--pc-ink);
+}
+.pc-gz-cols h4 {
+  margin: 0 0 4px;
+  font: 800 12px var(--pc-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pc-gz-cols p,
+.pc-gz-cols li {
+  margin: 0;
+  font: 500 12.5px / 1.45 var(--pc-ui);
+}
+.pc-gz-cols ul {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-gz-cols .pc-passe-quiet {
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.pc-gz-route {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 2px 0 6px;
+}
+.pc-gz-route span {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  margin-right: 4px;
+  background: #d9d2c6;
+}
+.pc-gz-route span[data-passed="true"] {
+  background: var(--pc-accent);
+}
+.pc-gz-weeks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pc-gz-weeks button {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: #efebe4;
+  font: 600 12px var(--pc-ui);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-gz-weeks button[aria-pressed="true"] {
+  background: var(--pc-ink);
+  color: #f6f4f0;
+}

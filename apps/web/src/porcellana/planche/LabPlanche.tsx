@@ -6,17 +6,21 @@
 import "../porcellana.css";
 import "../passe/passe.css";
 import "./planche.css";
+import "./muda.css";
 import {
   type AssautFleetShip,
   type AssautPort,
   type AssautState,
   type IleState,
+  PASSE_CHAIN,
+  type PlancheGazette,
   type PlancheOrder,
   type PlancheState,
   assautFleetOf,
   maisonLevel,
   maisonThreshold,
   plancheAdvance,
+  plancheAssemble,
   plancheBuild,
   plancheBuyTile,
   plancheDaily,
@@ -32,6 +36,11 @@ import {
   plancheIsCorsair,
   plancheLagoonLand,
   plancheMove,
+  plancheMudaForce,
+  plancheMudaPhase,
+  plancheNoirBoard,
+  plancheNoirMind,
+  plancheNoirTry,
   plancheOrderRefusal,
   plancheOrderTry,
   plancheOrders,
@@ -73,6 +82,7 @@ import { CompagnieSheet, type Sign } from "./Compagnie.js";
 import { Entree, Fonder, HouseFlag, Profil } from "./Entree.js";
 import { GardeEditor } from "./Garde.js";
 import { FacadeSheet, LevelUp, MaisonRing, MaisonSheet, type MaisonView } from "./Maison.js";
+import { GazetteSheet, MudaSheet, NoirSheet, POWER_OF, Reliques } from "./Muda.js";
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
 import { Bobbin, Flag, Knot, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
@@ -154,6 +164,16 @@ const SAID: Record<string, string> = {
   planche_order_tried: "Tu as déjà joué cette commande : un seul essai par Maison.",
   planche_order_closed: "Cette commande n'est plus ouverte.",
   planche_order_short: "Ton entrepôt n'a pas assez de marchandise pour la livrer.",
+  // The black straits and the Muda (docs/plan-muda.md).
+  planche_noir_tried: "Tu as joué tes deux détroits noirs aujourd'hui : demain de nouveau.",
+  planche_noir_cargo: "Cette cargaison n'est pas possible : vois ton entrepôt et ton niveau.",
+  planche_few_relics: "Il faut trois reliques d'une même puissance pour un plan.",
+  planche_no_plan: "Ce haut ouvrage demande un plan : il vient des reliques des détroits noirs.",
+  planche_muda_closed: "Les détroits de la Muda se forcent le samedi, de 8 h à 20 h.",
+  planche_muda_empty: "Le convoi n'a rien dans sa cale : il ne sort pas.",
+  planche_muda_passed: "Ce détroit est déjà passé.",
+  planche_muda_ahead: "Le convoi n'en est pas là : force d'abord le détroit qu'il attend.",
+  planche_muda_tried: "Tu as déjà tenté ce détroit : à un autre de le forcer.",
 };
 
 /** Why an order may not be played, on its button. */
@@ -206,12 +226,26 @@ function revive(raw: PlancheState): PlancheState {
         week: Object.fromEntries(Object.entries(h.rank?.week ?? {}).map(([c, v]) => [c, big(v)])),
       },
     };
+  // The Muda's worths and what it paid (docs/plan-muda.md), in deniers.
+  const bigs = (o: Record<string, unknown> | undefined) =>
+    Object.fromEntries(Object.entries(o ?? {}).map(([k, v]) => [k, big(v)]));
+  const m = raw.muda;
   return {
     ...raw,
     houses,
     minted: big(raw.minted),
     burnt: big(raw.burnt),
     spent: big(raw.spent),
+    ...(m
+      ? {
+          muda: {
+            ...m,
+            worth: bigs(m.worth),
+            ...(m.paid ? { paid: bigs(m.paid) } : {}),
+            ...(m.last ? { last: { ...m.last, paid: bigs(m.last.paid) } } : {}),
+          },
+        }
+      : {}),
   };
 }
 
@@ -260,6 +294,38 @@ export default function LabPlanche() {
   });
   /** The company's sheet (docs/plan-compagnie.md K5). */
   const [compOpen, setCompOpen] = useState(false);
+  /** The Muda's sheet, a black strait's duel and its cargo, a strait of the Muda's (docs/plan-muda.md). */
+  const [mudaOpen, setMudaOpen] = useState(false);
+  const [noirDuel, setNoirDuel] = useState<{ strait: string; good: string; n: number } | null>(
+    null,
+  );
+  const [mudaDuel, setMudaDuel] = useState<string | null>(null);
+  /** The Gazette of Sunday (docs/plan-muda.md N7): the issue read, the weeks kept. */
+  const [gazette, setGazette] = useState<{
+    issue: PlancheGazette | null;
+    weeks: number[];
+    lagoon: string;
+  } | null>(null);
+  const loadGazette = useCallback(async (week?: number) => {
+    try {
+      const res = await fetch(week ? `/api/gazette/${week}` : "/api/gazette", {
+        credentials: "same-origin",
+      });
+      const j = (await res.json()) as {
+        gazette?: { issue: PlancheGazette | null; weeks?: number[]; lagoon: string };
+      };
+      if (j.gazette) {
+        const g = j.gazette;
+        setGazette((was) => ({
+          issue: g.issue,
+          weeks: g.weeks ?? was?.weeks ?? [],
+          lagoon: g.lagoon,
+        }));
+      }
+    } catch {
+      setSaid("La Gazette ne répond pas.");
+    }
+  }, []);
   /** A sign of one's company, or a greeting to a neighbour (docs/plan-compagnie.md K2). */
   const signal = async (path: "/sign" | "/greet", body: unknown, done: string) => {
     const res = await fetch(`/api/planche${path}`, {
@@ -908,6 +974,71 @@ export default function LabPlanche() {
     );
   }
 
+  // A black strait (docs/plan-muda.md N5): the day's board, its captain's mind, the cargo at stake.
+  if (noirDuel && S.noir) {
+    const x = S.noir.straits.find((y) => y.id === noirDuel.strait);
+    const base = x ? venice1450Passe.boards[x.board as keyof typeof venice1450Passe.boards] : null;
+    const cells = base ? plancheNoirBoard(S, state, noirDuel.strait, state.now, base.cells) : [];
+    const guard = cells.flatMap((c, i) => (c === PASSE_CHAIN && base?.cells[i] !== c ? [i] : []));
+    const { good, n, strait } = noirDuel;
+    const what = `${n} ${(S.goods[good] ?? good).toLowerCase()}`;
+    return (
+      <Suspense fallback={null}>
+        <LabPasse
+          duel={{
+            board: x?.board ?? "otrante",
+            guard,
+            mind: plancheNoirMind(S, strait),
+            foe: x?.captain ?? "le capitaine",
+            flag: "puissance",
+            stake: `En jeu : ${what}`,
+            onEnd: (won, moves) => {
+              setNoirDuel(null);
+              act(
+                () => plancheNoirTry(S, state, ME, strait, { good, n }, won, state.now),
+                won
+                  ? `Forcé ! ${what} vendus à ${x?.port}, et une relique ${POWER_OF[x?.power ?? ""] ?? x?.power}.`
+                  : `La chaîne a tenu : ${what} ont coulé.`,
+                ["/noir", { strait, good, n, moves }],
+                ["duel_lost"],
+              );
+            },
+          }}
+        />
+      </Suspense>
+    );
+  }
+
+  // A strait of the Muda (docs/plan-muda.md N6): the corsairs' fleet before the convoy.
+  if (mudaDuel && S.muda) {
+    const x = S.muda.straits.find((y) => y.id === mudaDuel);
+    const strait = mudaDuel;
+    return (
+      <Suspense fallback={null}>
+        <LabPasse
+          duel={{
+            board: x?.board ?? "zara",
+            mind: { depth: S.muda.depth },
+            foe: `les corsaires de ${x?.name.replace(/^L[ea]s? /, "") ?? "la route"}`,
+            stake: "La Muda attend derrière toi",
+            onEnd: (won, moves) => {
+              setMudaDuel(null);
+              act(
+                () => plancheMudaForce(S, state, ME, strait, won, state.now),
+                won
+                  ? `${x?.name} est passé : la Muda continue, et toute la lagune y gagne la moitié en plus.`
+                  : "Les corsaires ont tenu : à un autre de forcer ce détroit.",
+                ["/muda", { strait, moves }],
+                ["duel_lost"],
+              );
+              setMudaOpen(true);
+            },
+          }}
+        />
+      </Suspense>
+    );
+  }
+
   if (duel) {
     const p = S.passages.find((q) => q.id === duel);
     const holder = state.passages[duel]?.holder ?? "";
@@ -989,6 +1120,13 @@ export default function LabPlanche() {
     setArmory(null);
     setWarOpen(false);
     setCompOpen(false);
+    setMudaOpen(false);
+    setGazette(null);
+    // The Muda's pier and its straits open the convoy's sheet (docs/plan-muda.md N6).
+    if (p?.kind === "muda" || (p?.kind === "city" && p.id === S.muda?.pier)) {
+      setChosen(null);
+      setMudaOpen(true);
+    }
   };
   const closeX = (
     <button
@@ -1649,6 +1787,38 @@ export default function LabPlanche() {
             </button>
           );
         })}
+        {(S.noir?.straits ?? []).map((x) => (
+          <button
+            key={x.id}
+            type="button"
+            ref={pin(`noir:${x.id}`)}
+            className="pc-planche-pin pc-pl-tower"
+            data-noir-pin={x.id}
+            data-dark="true"
+            data-black="true"
+            onClick={() => pick({ kind: "noir", id: x.id })}
+          >
+            <b>
+              {x.name.replace(/^Le détroit d[eu] ?/, "")} · {x.captain}
+            </b>
+          </button>
+        ))}
+        {(S.muda?.straits ?? []).map((x) => (
+          <button
+            key={x.id}
+            type="button"
+            ref={pin(`muda:${x.id}`)}
+            className="pc-planche-pin pc-pl-tower"
+            data-muda-pin={x.id}
+            data-dark={String(!state.muda?.straits[x.id]?.by)}
+            onClick={() => {
+              pick(null);
+              setMudaOpen(true);
+            }}
+          >
+            <b>{x.name}</b>
+          </button>
+        ))}
         {S.houses.map((h) => {
           const robot = online ? !view?.players.includes(h.id) : h.robot;
           // In a lagoon, names where they are read: one's own sestiere up close; from afar, only
@@ -1781,6 +1951,55 @@ export default function LabPlanche() {
                 />
               </svg>
               <span>La Guerre</span>
+            </button>
+          ) : null}
+          {S.muda && playing && ME ? (
+            <button
+              type="button"
+              className="pc-pl-jour pc-pl-war"
+              data-muda-open
+              data-phase={plancheMudaPhase(S, state.now)}
+              onClick={() => {
+                pick(null);
+                setMudaOpen(true);
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M2 12 H18 L15.5 17 H4.5 Z" fill="#17150f" />
+                <path
+                  d="M10 2 V12 M10 3 Q15 6 10 10"
+                  stroke="#17150f"
+                  strokeWidth="1.6"
+                  fill="#C8102E"
+                />
+              </svg>
+              <span>La Muda</span>
+            </button>
+          ) : null}
+          {online && S.muda && playing && ME ? (
+            <button
+              type="button"
+              className="pc-pl-jour pc-pl-war"
+              data-gazette-open
+              onClick={() => {
+                pick(null);
+                void loadGazette();
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
+                <rect
+                  x="3"
+                  y="3"
+                  width="14"
+                  height="14"
+                  rx="1.5"
+                  fill="#F6F4F0"
+                  stroke="#17150f"
+                  strokeWidth="1.6"
+                />
+                <path d="M6 7 H14 M6 10 H14 M6 13 H11" stroke="#17150f" strokeWidth="1.4" />
+              </svg>
+              <span>La Gazette</span>
             </button>
           ) : null}
           {daily && playing && ME ? (
@@ -2065,8 +2284,57 @@ export default function LabPlanche() {
             </div>
           </section>
         ) : null}
-        {cityCard}
+        {city?.ring === "muda" ? null : cityCard}
         {passageCard}
+        {chosen?.kind === "noir" && ME ? (
+          <NoirSheet
+            key={chosen.id}
+            setup={S}
+            state={state}
+            me={ME}
+            strait={chosen.id}
+            close={closeX}
+            goods={S.goods}
+            onForce={(good, n) => {
+              setChosen(null);
+              setNoirDuel({ strait: chosen.id, good, n });
+            }}
+          />
+        ) : null}
+        {mudaOpen && ME ? (
+          <MudaSheet
+            setup={S}
+            state={state}
+            me={ME}
+            close={closeX}
+            goods={S.goods}
+            sells={[...sells]}
+            onThread={(good) => S.muda && tie(S.muda.pier, "le môle de San Marco", good)}
+            onStrait={(strait) => {
+              setMudaOpen(false);
+              setMudaDuel(strait);
+            }}
+          />
+        ) : null}
+        {gazette ? (
+          <GazetteSheet
+            gazette={gazette.issue}
+            lagoon={gazette.lagoon}
+            weeks={gazette.weeks}
+            close={closeX}
+            onWeek={(w) => void loadGazette(w)}
+            onReplay={(id) =>
+              void fetch(`/api/guerre/assault/${id}`, { credentials: "same-origin" })
+                .then((res) => res.json())
+                .then((j: { replay?: NonNullable<typeof replayed> }) => {
+                  if (j.replay) {
+                    setGazette(null);
+                    setReplayed(j.replay);
+                  } else setSaid("Seuls l'assaillant et le port assailli revoient cet assaut.");
+                })
+            }
+          />
+        ) : null}
         {houseCard}
         {palace && ME ? (
           <Palais
@@ -2095,6 +2363,20 @@ export default function LabPlanche() {
             close={closeX}
             name={short}
             place={(id) => S.passages.find((p) => p.id === id)?.name ?? id}
+            extra={
+              <Reliques
+                setup={S}
+                relics={me?.relics ?? maison.relics ?? {}}
+                plans={me?.plans ?? maison.plans ?? 0}
+                onAssemble={(power) =>
+                  act(
+                    () => plancheAssemble(S, state, ME, power, state.now),
+                    "Un plan est assemblé : il ouvre un haut ouvrage.",
+                    ["/assemble", { power }],
+                  )
+                }
+              />
+            }
           />
         ) : null}
         {growth === "jour" && daily ? (

@@ -44,6 +44,8 @@ export interface MaisonRules {
     guardCap: number;
     laurel: number;
     doge: number;
+    /** A black strait forced (docs/plan-muda.md). */
+    noir?: number;
   };
 }
 
@@ -56,6 +58,9 @@ export interface MaisonDeeds {
   guardHours: number;
   laurels?: number;
   doge?: boolean;
+  /** Black straits forced; the Muda's Prestige, already counted by its own rules. */
+  noir?: number;
+  muda?: number;
 }
 
 /** The week's victories in Prestige, before the week's cap. */
@@ -67,7 +72,9 @@ export function maisonDeeds(R: MaisonRules, d: MaisonDeeds): number {
     d.seals * G.seal +
     Math.min(G.guardCap, Math.floor(d.guardHours / G.guardHours)) +
     (d.laurels ?? 0) * G.laurel +
-    (d.doge ? G.doge : 0)
+    (d.doge ? G.doge : 0) +
+    (d.noir ?? 0) * (G.noir ?? 0) +
+    (d.muda ?? 0)
   );
 }
 
@@ -136,7 +143,7 @@ export function maisonCommerce(R: MaisonRules, soldDeniers: bigint): number {
 /** What happened to a house that its Livre tells (docs/plan-progression-maison.md § 3.4). */
 export interface MaisonEvent {
   at: number;
-  kind: "level" | "flag" | "tower" | "laurel" | "doge";
+  kind: "level" | "flag" | "tower" | "laurel" | "doge" | "relic" | "plan" | "muda";
   /** The level reached, the house whose flag was taken, the tower, the laurel. */
   data?: string | number;
 }
@@ -160,6 +167,10 @@ export interface MaisonState {
   log: MaisonEvent[];
   /** The problems of the day it solved: the knots on its façade. */
   knots?: number;
+  /** Black straits it forced this week (docs/plan-muda.md). */
+  noir?: number;
+  /** The Muda's Prestige of the week. */
+  muda?: number;
 }
 
 export const maisonStart = (day: number): MaisonState => ({

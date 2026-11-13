@@ -9,6 +9,11 @@ import {
   type PlancheSetup,
   type PlancheState,
   plancheIsCorsair,
+  plancheMudaHold,
+  plancheMudaLoaded,
+  plancheMudaPassed,
+  plancheMudaPhase,
+  plancheNoirPhase,
   planchePatina,
   plancheRouteOpen,
 } from "@comptoirs/engine";
@@ -21,6 +26,7 @@ import {
   Group,
   InstancedMesh,
   MOUSE,
+  type Material,
   Matrix4,
   Mesh,
   MeshBasicMaterial,
@@ -48,7 +54,7 @@ import { flagCloth, rocca } from "../models/terra.js";
 import { town } from "../models/towns.js";
 import { type Vehicle, ship } from "../models/vehicles.js";
 import { drawChevron, ribbonGeometry, roundedPath } from "../ribbon.js";
-import { box, cyl } from "../shapes.js";
+import { box, crate, cyl } from "../shapes.js";
 import { BOARD, CAMERA, COL, RIBBON, SEA, THREAD } from "../tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
@@ -63,8 +69,28 @@ export interface PlancheLand {
 }
 
 export interface PlanchePick {
-  kind: "house" | "city" | "passage";
+  /** A house, a town, a passage; a black strait; a strait of the Muda (docs/plan-muda.md). */
+  kind: "house" | "city" | "passage" | "noir" | "muda";
   id: string;
+}
+
+/** The flags of the powers that keep the black straits. */
+const POWER_FLAG: Record<string, string> = {
+  turc: "#2F5D50",
+  genes: "#3A4A6B",
+  milan: "#6B5A3A",
+};
+/** The ink of the black straits' towers. */
+const INK_TOWER = new MeshStandardMaterial({ color: "#2A2725", roughness: 0.85 });
+/** A link of a phase not reached: pale, waiting. */
+const INK_GHOST = new MeshStandardMaterial({ color: "#B9B1A6", roughness: 0.85 });
+
+/** A model inked: every surface but its flag in the black of the open sea's powers. */
+function inked(g: Object3D, keep: Material): void {
+  g.traverse((o) => {
+    const m = o as Mesh;
+    if (m.isMesh && m.material !== keep) m.material = INK_TOWER;
+  });
 }
 
 function pickOf(o: Object3D | null): PlanchePick | null {
@@ -216,6 +242,21 @@ export function PlancheBoard({
       const rialto = c.x === land.rialto.x && c.y === land.rialto.y;
       put(`city:${c.id}`, { kind: "city", id: c.id }, c.x, c.y, () => {
         if (rialto) return market(P).group;
+        // The Muda's pier (docs/plan-muda.md N6): the mole of San Marco and its two columns.
+        if (c.ring === "muda") {
+          const g = new Group();
+          box(g, 5.2, 0.42, 2.0, 0, 0, -0.6, P.m("wall2"), 0.06);
+          box(g, 5.4, 0.08, 2.2, 0, 0.42, -0.6, P.m("trim"), 0.02);
+          for (const x of [-1.6, 1.6]) {
+            cyl(g, 0.5, 0.56, 0.4, x, 0.5, -0.9, P.m("trim"), 12);
+            cyl(g, 0.26, 0.3, 3.1, x, 0.9, -0.9, P.m("wall"), 12);
+            box(g, 0.7, 0.26, 0.7, x, 4.0, -0.9, P.m("trim"), 0.03);
+          }
+          // The lion on one, the saint on the other: in the accent, the Republic's.
+          box(g, 0.7, 0.42, 0.34, -1.6, 4.26, -0.9, P.accent, 0.06);
+          cyl(g, 0.16, 0.2, 0.62, 1.6, 4.26, -0.9, P.m("wall"), 10);
+          return g;
+        }
         const size = c.via.length ? 3 : 2;
         return town(P, { seed: k * 7 + 3, running: false, size }).group;
       });
@@ -327,6 +368,106 @@ export function PlancheBoard({
     bake(root);
     return root;
   }, [beacons, setup, P]);
+
+  // The black straits (docs/plan-muda.md N5): towers in the ink of the powers, never held; at
+  // their foot, three links of chain that blacken as the week's guard hardens.
+  const phases = (setup.noir?.straits ?? [])
+    .map((x) => plancheNoirPhase(setup, state, x.id, state.now).phase)
+    .join(",");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rebuilt when a guard hardens.
+  const darks = useMemo(() => {
+    const root = new Group();
+    const ticks: ((t: number, dt: number) => void)[] = [];
+    const n = setup.noir?.phases.length ?? 3;
+    phases.split(",").forEach((ph, k) => {
+      const x = setup.noir?.straits[k];
+      if (!x) return;
+      const cloth = flagCloth(POWER_FLAG[x.power] ?? COL.ink);
+      const g = new Group();
+      g.position.set(wx(x.x), 0, wz(x.y));
+      g.userData.pick = { kind: "noir", id: x.id } satisfies PlanchePick;
+      const b = rocca(P, cloth);
+      inked(b.group, cloth);
+      b.group.scale.setScalar(0.95);
+      g.add(b.group);
+      if (b.tick) ticks.push(b.tick);
+      for (let l = 0; l < n; l++) {
+        const link = new Mesh(
+          new TorusGeometry(0.34, 0.1, 8, 18),
+          l <= Number(ph) ? INK_TOWER : INK_GHOST,
+        );
+        link.scale.set(1, 0.62, 1);
+        link.rotation.set(Math.PI / 2, 0, l % 2 ? Math.PI / 2 : 0);
+        link.position.set(-0.9 + l * 0.62, 0.2, 2.6);
+        g.add(link);
+      }
+      root.add(g);
+      places.at.set(`noir:${x.id}`, g.position.clone());
+    });
+    return { root, ticks };
+  }, [setup, phases]);
+
+  // The Muda (docs/plan-muda.md N6): its straits on the way to Alexandria, a corsair's tower until
+  // the convoy has passed; the convoy, by the pier while it loads, its crates rising with its hold,
+  // then before the first strait it has not passed, then home.
+  const M = setup.muda;
+  const mudaPhase = M ? plancheMudaPhase(setup, state.now) : "before";
+  const passed = M ? plancheMudaPassed(setup, state, state.now) : 0;
+  const fill = M
+    ? Math.min(4, Math.ceil((plancheMudaLoaded(state, state.now) / plancheMudaHold(setup)) * 4))
+    : 0;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rebuilt when the convoy moves or loads.
+  const convoy = useMemo(() => {
+    const root = new Group();
+    const ticks: ((t: number, dt: number) => void)[] = [];
+    if (!M) return { root, ticks };
+    const pier = setup.cities.find((c) => c.id === M.pier);
+    M.straits.forEach((x, k) => {
+      const through = k < passed;
+      const cloth = flagCloth(through ? `#${P.accentColour.getHexString()}` : "#8A8279");
+      const g = new Group();
+      g.position.set(wx(x.x), 0, wz(x.y));
+      g.userData.pick = { kind: "muda", id: x.id } satisfies PlanchePick;
+      const b = rocca(P, cloth);
+      b.group.scale.setScalar(0.6);
+      g.add(b.group);
+      if (b.tick) ticks.push(b.tick);
+      root.add(g);
+      places.at.set(`muda:${x.id}`, g.position.clone());
+    });
+    if (!pier) return { root, ticks };
+    const atSea = mudaPhase === "sailing" || (mudaPhase === "waiting" && passed > 0);
+    const next = M.straits[passed];
+    const last = M.straits[M.straits.length - 1];
+    const [cx, cz] = !atSea
+      ? [wx(pier.x), wz(pier.y) + 2.2]
+      : next
+        ? [wx(next.x), wz(next.y) - 3.2]
+        : [wx(last?.x ?? pier.x) + 4, wz(last?.y ?? pier.y) + 2];
+    const g = new Group();
+    g.position.set(cx, 0, cz);
+    for (let i = 0; i < 3; i++) {
+      const boat = ship(P, { seed: 31 + i, running: false });
+      boat.group.scale.setScalar(THREAD.boat * 1.5);
+      boat.group.position.set(-2.2 + i * 2.2, 0, (i % 2) * 0.5);
+      boat.group.rotation.y = atSea ? -Math.PI / 2 : Math.PI / 2;
+      g.add(boat.group);
+      // Its share of the hold, in crates on the deck.
+      for (let c = 0; c < Math.min(fill, 2 + (i === 1 ? 1 : 0)); c++)
+        crate(
+          g,
+          -2.4 + i * 2.2 + (c % 2) * 0.36,
+          0.55 + Math.floor(c / 2) * 0.3,
+          (i % 2) * 0.5,
+          c % 2 ? P.m("wood") : P.accent,
+          0.3,
+        );
+    }
+    root.add(g);
+    places.at.set("convoy", g.position.clone());
+    bake(g);
+    return { root, ticks };
+  }, [setup, mudaPhase, passed, fill]);
 
   // The towers of the passages: their flag tells who holds them.
   const holders = setup.passages.map((p) => state.passages[p.id]?.holder ?? "").join("|");
@@ -584,6 +725,8 @@ export function PlancheBoard({
     controls.target.z = Math.max(wz(0), Math.min(wz(H - 1), controls.target.z));
     if (live) chevrons.offset.x -= dt * RIBBON.speed;
     for (const tick of towers.ticks) tick(t, dt);
+    for (const tick of darks.ticks) tick(t, dt);
+    for (const tick of convoy.ticks) tick(t, dt);
     web.mine.forEach((m, k) => {
       const len = m.route.getLength();
       const u = m.open && live ? (t * (7 / len) + k * 0.37) % 1 : 0.02;
@@ -629,6 +772,10 @@ export function PlancheBoard({
       <primitive object={places.root} onClick={pick} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: every passage has its label, a button. */}
       <primitive object={towers.root} onClick={pick} />
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: every black strait has its label, a button. */}
+      <primitive object={darks.root} onClick={pick} />
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: the Muda's straits have their labels. */}
+      <primitive object={convoy.root} onClick={pick} />
       <primitive object={ring} />
     </>
   );

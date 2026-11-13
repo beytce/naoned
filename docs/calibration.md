@@ -3433,3 +3433,29 @@ La meilleure flotte, port par port : galères (bois) 18 %, brigantins (chanvre) 
 | Sceaux perdus par un port de compagnie, par assaut subi | 0,93 | **0,38** |
 
 **Lecture.** Le membre paisible compte : le phare qu'il nourrit fait perdre à chaque port de sa compagnie deux fois et demie moins de sceaux. C'est sans doute **trop fort** (quatre places par passe valent presque une forteresse) : à surveiller avec les vraies compagnies ; si besoin, une place au niveau 2 et une au niveau 4 seulement pour les tours, ou un phare plus lent. (La part des victoires des compagnies contre les joueurs seuls n'est pas lisible ici : le banc les forme avec certaines sortes d'île seulement.)
+
+## La Muda et les détroits noirs (13 novembre 2026, docs/plan-muda.md N3)
+
+`pnpm --filter @comptoirs/simulator muda-bench 4 4` : la lagune de Venise sur 4 semaines, 4 graines, toutes les Maisons jouées, une visite toutes les 8 h. 20 % chargent la Muda (un fil vers le môle du mercredi au vendredi, chaque détroit du convoi tenté le samedi, gagné une fois sur deux) ; 10 % sont au niveau 11 et risquent deux cargaisons par jour aux détroits noirs (gagnées 3,5 fois sur 10) ; le reste fait seulement du commerce. Réglages essayés : `STEP` (le pas du retour par détroit), `CAP` (le chargement par jour), `PRICE` (le prix du port lointain).
+
+| Réglage essayé | La Muda contre le commerce seul (2 semaines) |
+| --- | --- |
+| 40 par jour, + 50 % par détroit | + 60 % |
+| 40 par jour, + 33 % | + 48 % |
+| 40 par jour, sans pas | + 23 % |
+| **20 par jour, + 50 % par détroit (retenu)** | + 32 % sur 2 semaines, **+ 18 %** sur 4 |
+
+| Mesure, sur 4 semaines (retenu) | Valeur |
+| --- | --- |
+| Gagné par un joueur de la Muda (moyenne) | 17 592 ducats, contre 14 955 au commerce seul |
+| La cale (2 880 unités), avec un joueur sur cinq | remplie à 16 % ; les trois détroits passés chaque semaine |
+| Détroits noirs, par Maison de niveau 11 | 19 forcés, 37 perdus ; 27 852 ducats vendus au port lointain, 7 382 coulés (au prix de Venise) |
+| Reliques | 19, soit 6 plans en 4 semaines |
+
+**Lecture.**
+
+- **Le chargement est retenu à 20 par jour** (et 10 pour les Maisons de l'ordinateur) : à 40, la Muda rapportait 60 % de plus que le commerce seul à une petite Maison, et tout le monde aurait dû la charger. La règle du porteur (× 1, puis + 50 % par détroit) est gardée : c'est le plafond du chargement qui tient l'équilibre. Le gain relatif baisse quand la Maison grandit, puisque le plafond ne bouge pas.
+- **Le môle prend aussi les marchandises brutes** (blé, argile, sable, bois, chanvre), un peu moins cher : la Maison d'un nouveau joueur ne fait guère autre chose, et le parcours de la semaine l'a montré (rien à charger). Le banc a été mesuré avant ; l'écart est faible, les Maisons de l'ordinateur chargeant déjà ce qu'elles ont le plus.
+- **La cale est grande exprès** : 60 unités par Maison, pleine seulement si toute la lagune charge tout ce qu'elle peut. Avec un joueur sur cinq, elle se remplit au sixième ; les Maisons de l'ordinateur y ajoutent leur part.
+- **Les détroits noirs paient une fois et demie le meilleur prix de la lagune** (et non deux fois) : pour une Maison de niveau 11, le gain net après les cargaisons coulées et la valeur des cargaisons vendues est d'environ **+ 18 %** sur son commerce, au lieu de + 28 % à deux fois. C'est la vente la plus chère du jeu, avec un vrai risque.
+- **Les plans sont peut-être trop nombreux** : un joueur qui force deux détroits par jour gagne un plan et demi par semaine. À revoir au banc quand les hauts ouvrages (le bel ouvrage, les navires de haut rang) seront plus nombreux ; en attendant, la garde par phases et la profondeur 4 des capitaines rendront sans doute le taux de victoire plus bas que les 35 % supposés ici.

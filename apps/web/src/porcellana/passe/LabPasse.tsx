@@ -85,6 +85,12 @@ export interface PasseDuel {
   guard?: readonly number[];
   /** A position to play rather than the board (a sealed order, docs/plan-hex-commerce.md H2). */
   problem?: string;
+  /** How its captain plays, when not the lieutenant's way (a black strait, docs/plan-muda.md). */
+  mind?: { depth: number; style?: PasseStyle };
+  /** What is risked, shown under its name (a black strait's cargo). */
+  stake?: string;
+  /** Its flag: dark grey for a corsair, ink for a power. */
+  flag?: "corsaire" | "puissance";
   /** Won or not, and the thread's own pieces, for the server to replay the duel. */
   onEnd: (won: boolean, moves: PasseMove[]) => void;
 }
@@ -100,8 +106,8 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
     duel && duel.board in boards ? (duel.board as BoardKey) : "segna",
   );
   const [seat, setSeat] = useState<Seat>("fil");
-  const [depth, setDepth] = useState(3);
-  const [style, setStyle] = useState<PasseStyle | "aucune">("aucune");
+  const [depth, setDepth] = useState(duel?.mind?.depth ?? 3);
+  const [style, setStyle] = useState<PasseStyle | "aucune">(duel?.mind?.style ?? "aucune");
   const [problem, setProblem] = useState<PasseProblem | null>(
     () => (duel?.problem && problems.find((p) => p.id === duel.problem)) || null,
   );
@@ -322,7 +328,14 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
         <div className="pc-px-foe" data-duel={String(!!duel)}>
           {duel ? (
             <svg width="52" height="52" viewBox="0 0 52 52" role="img" aria-label="Son pavillon">
-              <circle cx="26" cy="26" r="25" fill="#3A3633" stroke="#6B645C" strokeWidth="2" />
+              <circle
+                cx="26"
+                cy="26"
+                r="25"
+                fill={duel.flag === "puissance" ? "#111111" : "#3A3633"}
+                stroke={duel.flag === "puissance" ? "#C7372F" : "#6B645C"}
+                strokeWidth="2"
+              />
               <path d="M17 12 V42" stroke="#D9D2C6" strokeWidth="2" />
               <path d="M18 13 H38 L33 20 L38 27 H18 Z" fill="#111111" />
               <circle cx="25" cy="19.5" r="3" fill="#F6F4F0" />
@@ -336,6 +349,11 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
                 : ""}
               <span data-passe-turn>{turn}</span>
             </span>
+            {duel?.stake ? (
+              <span className="pc-px-stake" data-passe-stake>
+                {duel.stake}
+              </span>
+            ) : null}
           </div>
           {duel?.seals !== undefined ? <Seals left={duel.seals} light /> : null}
           {left && room ? (

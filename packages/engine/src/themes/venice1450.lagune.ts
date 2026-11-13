@@ -1,3 +1,4 @@
+import type { PasseStyle } from "../passe/mind.js";
 /**
  * Venice's lagoon of 48 houses (docs/plan-lagunes.md): four sestieri of twelve, the towns of the
  * mainland above each, Murano, the Rialto and Chioggia between them, four towns of the open sea
@@ -7,7 +8,8 @@
  */
 import type { LagoonParams, LagoonTown } from "../planche/lagune.js";
 import { plancheLagoon } from "../planche/lagune.js";
-import type { PlancheWant } from "../planche/planche.js";
+import type { NoirStrait } from "../planche/noir.js";
+import type { PlancheCity, PlancheSetup, PlancheWant } from "../planche/planche.js";
 import { venice1450PasseProblems } from "./venice1450.passe.problems.js";
 import { venice1450Planche } from "./venice1450.planche.js";
 
@@ -91,6 +93,21 @@ const ship = (
   minLevel: number,
 ) => ({ name, goods, buildMs: hours * HOUR, force, hull, keyword, minLevel });
 
+/** The width of a sestiere's column on the map. */
+const COLUMN = 13;
+
+/** A black strait between two sestieri' columns, on the last row of open water. */
+const noirStrait = (
+  id: string,
+  name: string,
+  power: string,
+  captain: string,
+  style: PasseStyle,
+  b: number,
+  board: string,
+  port: string,
+): NoirStrait => ({ id, name, power, captain, style, x: b * COLUMN, y: 22, board, port });
+
 export const venice1450LaguneParams: LagoonParams = {
   sestieri: [
     { id: "cannaregio", name: "Cannaregio" },
@@ -99,7 +116,7 @@ export const venice1450LaguneParams: LagoonParams = {
     { id: "sanpolo", name: "San Polo" },
   ],
   housesPerSestiere: 12,
-  column: 13,
+  column: COLUMN,
   houseNames: FAMILIES.map((f) => `Ca’ ${f}`),
   plans: base.houses.map((h) => h.plan ?? []).filter((p) => p.length),
   soils: base.houses.map((h) => h.soil ?? { pre: 1 }),
@@ -298,6 +315,8 @@ export const venice1450LaguneParams: LagoonParams = {
         guardCap: 70,
         laurel: 100,
         doge: 200,
+        // A black strait forced: as a seal of the War and a little more (docs/plan-muda.md).
+        noir: 25,
       },
     },
     // The sealed orders (docs/plan-hex-commerce.md H2): two a day in each sestiere, at 9 and 17
@@ -391,9 +410,113 @@ export const venice1450LaguneParams: LagoonParams = {
         fleet: ["galere", "galere", "brigantin", "brulot"],
       },
     },
+    // The black straits (docs/plan-muda.md N1): three powers between the open sea's towns, at
+    // the edge where the ink is darkest; level 11, two tries a day, a cargo by level, half again
+    // the board's best price for it (docs/calibration.md § Les détroits noirs).
+    noir: {
+      minLevel: 11,
+      straits: [
+        noirStrait(
+          "turc",
+          "Le détroit du Turc",
+          "turc",
+          "Le Kapudan Pacha",
+          "meute",
+          1,
+          "dardanelles",
+          "Constantinople",
+        ),
+        noirStrait(
+          "genes",
+          "Le détroit de Gênes",
+          "genes",
+          "L'amiral Doria",
+          "mur",
+          2,
+          "portofino",
+          "Gênes",
+        ),
+        noirStrait(
+          "milan",
+          "Le détroit de Milan",
+          "milan",
+          "Le capitaine Sforza",
+          "rives",
+          3,
+          "po",
+          "Pavie",
+        ),
+      ],
+      depth: 4,
+      phases: [2, 3, 4],
+      triesPerDay: 2,
+      cargo: [
+        { level: 11, n: 30 },
+        { level: 16, n: 45 },
+        { level: 21, n: 60 },
+      ],
+      priceBps: 15_000,
+      relicsPerPlan: 3,
+      plans: { arsenalLevel: 3, ships: ["escorte"], tier: 3 },
+    },
+    // The Muda (docs/plan-muda.md N2): loaded Wednesday to Friday from the pier of San Marco,
+    // sailing on Saturday from 8 to 20 (UTC) past three straits, back on Sunday at 8; × 1, then
+    // half again a strait passed (docs/calibration.md § La Muda).
+    muda: {
+      pier: "mole-de-san-marco",
+      loadDays: [2, 3, 4],
+      sailDay: 5,
+      sailHours: [8, 20],
+      returnDay: 6,
+      returnHour: 8,
+      holdPerHouse: 60,
+      dailyCap: 20,
+      robotDaily: 10,
+      straits: [
+        { id: "zara", name: "Le large de Zara", board: "zara", x: 2 * COLUMN - 5, y: 19 },
+        { id: "curzola", name: "Le canal de Curzola", board: "curzola", x: 2 * COLUMN, y: 19 },
+        {
+          id: "otrante",
+          name: "Le canal d\u2019Otrante",
+          board: "otrante",
+          x: 2 * COLUMN + 5,
+          y: 19,
+        },
+      ],
+      depth: 3,
+      stepBps: 5_000,
+      prestige: { contributor: 30, minUnits: 20, volunteer: 5, winner: 25 },
+    },
     // The problem of the day (docs/plan-hex-commerce.md H3): the same twenty, 20 of Prestige.
     daily: { problems: venice1450PasseProblems.map((p) => p.id), prestige: 20 },
   },
 };
 
-export const venice1450Lagune = plancheLagoon(venice1450LaguneParams);
+/** The Muda's pier, at San Marco: what it takes, at Venice's price (its gauge is never spent). */
+const MUDA_PIER: PlancheCity = {
+  id: "mole-de-san-marco",
+  name: "Le môle de San Marco",
+  x: 2 * COLUMN,
+  y: 16,
+  via: [],
+  ring: "muda",
+  wants: Object.fromEntries(
+    // Raw goods too, at a little less: a new house's island makes little else.
+    Object.entries({
+      wheat: 260,
+      clay: 260,
+      sand: 240,
+      wood: 300,
+      hemp: 300,
+      salt: 500,
+      flour: 520,
+      planks: 720,
+      bricks: 690,
+      rope: 920,
+      glass: 1_380,
+    }).map(([g, price]) => [g, { price, floorBps: 10_000, cap: 1, regenPerHour: 0 }]),
+  ),
+};
+
+const lagoon = plancheLagoon(venice1450LaguneParams);
+export const venice1450Lagune: PlancheSetup = { ...lagoon, cities: [...lagoon.cities, MUDA_PIER] };

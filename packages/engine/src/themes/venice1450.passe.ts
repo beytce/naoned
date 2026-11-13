@@ -65,6 +65,64 @@ export const venice1450Passe = {
       ".........",
       ".........",
     ]),
+    // The black straits (docs/plan-muda.md N1): the powers' own, never held; reefs and narrows.
+    /** The Turk's: the narrows of the Dardanelles, reefs pressing from both banks. */
+    dardanelles: board("Les Dardanelles", 1, [
+      ".........",
+      "#........",
+      ".........",
+      ".......#.",
+      ".........",
+      ".#.......",
+      ".........",
+      "........#",
+      ".........",
+    ]),
+    /** Genoa's: a wall of reefs across the middle, a gap on each side. */
+    portofino: board("Le cap de Portofino", 1, [
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+      "..#.#.#..",
+      ".........",
+      ".........",
+      ".........",
+      ".........",
+    ]),
+    /** Milan's: the mouths of the Po, islets scattered in the delta. */
+    po: board("Les bouches du Pô", 1, [
+      ".........",
+      "...#.....",
+      ".........",
+      "......#..",
+      ".........",
+      "..#......",
+      ".........",
+      ".....#...",
+      ".........",
+    ]),
+    // The straits of the Muda (docs/plan-muda.md N2), on the way to Alexandria.
+    /** Off Zara: a reef near each bank. */
+    zara: board("Le large de Zara", 1, [
+      ".......",
+      "#......",
+      ".......",
+      ".......",
+      ".......",
+      "......#",
+      ".......",
+    ]),
+    /** The channel of Curzola: two reefs in the middle. */
+    curzola: board("Le canal de Curzola", 1, [
+      ".......",
+      ".......",
+      "..#....",
+      ".......",
+      "....#..",
+      ".......",
+      ".......",
+    ]),
   },
   problems: venice1450PasseProblems,
 } as const;
