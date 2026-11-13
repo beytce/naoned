@@ -3459,3 +3459,30 @@ La meilleure flotte, port par port : galères (bois) 18 %, brigantins (chanvre) 
 - **La cale est grande exprès** : 60 unités par Maison, pleine seulement si toute la lagune charge tout ce qu'elle peut. Avec un joueur sur cinq, elle se remplit au sixième ; les Maisons de l'ordinateur y ajoutent leur part.
 - **Les détroits noirs paient une fois et demie le meilleur prix de la lagune** (et non deux fois) : pour une Maison de niveau 11, le gain net après les cargaisons coulées et la valeur des cargaisons vendues est d'environ **+ 18 %** sur son commerce, au lieu de + 28 % à deux fois. C'est la vente la plus chère du jeu, avec un vrai risque.
 - **Les plans sont peut-être trop nombreux** : un joueur qui force deux détroits par jour gagne un plan et demi par semaine. À revoir au banc quand les hauts ouvrages (le bel ouvrage, les navires de haut rang) seront plus nombreux ; en attendant, la garde par phases et la profondeur 4 des capitaines rendront sans doute le taux de victoire plus bas que les 35 % supposés ici.
+
+## La marée d'encre, les sorties et les ligues (13 novembre 2026, docs/plan-maree.md T4)
+
+`pnpm --filter @comptoirs/simulator maree-bench 3` : une marée (six semaines) de la lagune de Venise, toutes les Maisons jouées, une visite toutes les 8 h ; une part des joueurs (« tenants ») tente une tour par jour, gagnée 4 fois sur 10. Les sorties sont jouées à leur heure contre la garde des tours.
+
+| Tenants | Ligne d'encre, semaine par semaine | Tours reprises | Sorties jouées, sceaux perdus | Pierres gravées |
+| --- | --- | --- | --- | --- |
+| 0 % | 24 → 23 → 22 → 21 → 20 | 0 | 0, 0 | 0 |
+| 33 % | 24,7 → 24,5 → 24,3 → 24,1 → 23,9 | 0 | 30, 10,7 | 10 |
+| 67 % | 24,8 → 24,6 → 24,4 → 24,2 → 24,0 | 0 | 30, 10 | 10 |
+
+**Lecture.**
+
+- **L'encre part de la rangée 25** (le bord du Large) et monte d'une rangée par semaine ; une tour tenue la repousse de 0,08 rangée, un détroit noir forcé de 0,1, chaque niveau du phare le plus haut de 0,05. Une lagune qui ne joue pas la voit couvrir les villes du Large, puis les détroits (rangée 21) à la cinquième semaine ; une lagune qui tient ses dix tours la ralentit au cinquième. À 0,15 par tour, essayé d'abord, dix tours l'arrêtaient net : l'encre ne menaçait plus personne.
+- **Les sorties** : chaque capitaine de la lagune sort une fois par semaine, qu'il tienne encore sa tour ou non (sinon, une fois les dix tours prises dès la première semaine, plus aucune sortie : la tour redevenait une rente). Le capitaine voit trois pièces d'avance, le lieutenant seul deux : sur les damiers de la lagune, il passe 6 fois sur 10 contre une tour sans garde (2 sur 10 contre un lieutenant à trois, 9 sur 10 s'il voyait quatre pièces). Au banc, un tiers des sorties coûtent un sceau ; la garde posée d'avance et l'au-devant les font tenir.
+- **Les pierres** : chaque tour tenue à la fin de la marée en grave une ; ici, les dix.
+
+**Les ligues**, au même banc (modèle abstrait : 1 200 joueurs de forces diverses, lagunes de 48, quatre ligues dont la Sérénissime unique, le sixième du haut monte, celui du bas descend sans tomber plus d'un rang sous son meilleur) :
+
+| Marée | Ligue 1 | Ligue 2 | Ligue 3 | Sérénissime |
+| --- | --- | --- | --- | --- |
+| 1 | 1 000 (21 lagunes) | 200 (5) | 0 | 0 |
+| 4 | 701 (15) | 375 (8) | 107 (3) | 17 (1) |
+| 8 | 536 (12) | 384 (8) | 232 (5) | 48 (1) |
+
+- La Sérénissime se remplit à la sixième marée, puis reste à 48. La moitié des plus forts (le dixième du haut) l'atteint en huit marées, au bout de cinq en moyenne : un but de près d'un an, comme le voulait l'audit pour le haut de la progression.
+- Les ligues du milieu grossissent lentement ; le sixième est gardé (proposition du cadrage), à revoir quand il y aura des joueurs réels.

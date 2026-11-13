@@ -143,7 +143,19 @@ export function maisonCommerce(R: MaisonRules, soldDeniers: bigint): number {
 /** What happened to a house that its Livre tells (docs/plan-progression-maison.md § 3.4). */
 export interface MaisonEvent {
   at: number;
-  kind: "level" | "flag" | "tower" | "laurel" | "doge" | "relic" | "plan" | "muda";
+  kind:
+    | "level"
+    | "flag"
+    | "tower"
+    | "laurel"
+    | "doge"
+    | "relic"
+    | "plan"
+    | "muda"
+    | "ink"
+    | "stone"
+    | "sortie"
+    | "decret";
   /** The level reached, the house whose flag was taken, the tower, the laurel. */
   data?: string | number;
 }

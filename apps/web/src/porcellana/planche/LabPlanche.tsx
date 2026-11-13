@@ -7,6 +7,7 @@ import "../porcellana.css";
 import "../passe/passe.css";
 import "./planche.css";
 import "./muda.css";
+import "./maree.css";
 import {
   type AssautFleetShip,
   type AssautPort,
@@ -26,15 +27,18 @@ import {
   plancheDaily,
   plancheDailyResults,
   plancheDailyTry,
+  plancheDecretChoose,
   plancheDefense,
   plancheDefenseMove,
   plancheDefenseRemove,
+  plancheEncreThreat,
   plancheForced,
   plancheFreeBobbins,
   plancheGuard,
   plancheInit,
   plancheIsCorsair,
   plancheLagoonLand,
+  plancheMonday,
   plancheMove,
   plancheMudaForce,
   plancheMudaPhase,
@@ -55,6 +59,8 @@ import {
   plancheShip,
   plancheShipRefit,
   plancheShipRepair,
+  plancheSortieEnd,
+  plancheSortieTold,
   plancheStanding,
   plancheSupply,
   plancheThread,
@@ -82,6 +88,13 @@ import { CompagnieSheet, type Sign } from "./Compagnie.js";
 import { Entree, Fonder, HouseFlag, Profil } from "./Entree.js";
 import { GardeEditor } from "./Garde.js";
 import { FacadeSheet, LevelUp, MaisonRing, MaisonSheet, type MaisonView } from "./Maison.js";
+import {
+  MareeSheet,
+  type MareeView,
+  SerenissimeSheet,
+  type SerenissimeView,
+  TideEndSheet,
+} from "./Maree.js";
 import { GazetteSheet, MudaSheet, NoirSheet, POWER_OF, Reliques } from "./Muda.js";
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
@@ -236,6 +249,7 @@ function revive(raw: PlancheState): PlancheState {
     minted: big(raw.minted),
     burnt: big(raw.burnt),
     spent: big(raw.spent),
+    ...(raw.moved !== undefined ? { moved: big(raw.moved) } : {}),
     ...(m
       ? {
           muda: {
@@ -300,6 +314,21 @@ export default function LabPlanche() {
     null,
   );
   const [mudaDuel, setMudaDuel] = useState<string | null>(null);
+  /** The tide (docs/plan-maree.md T6, T7): its sheet, its end, a sortie met, the Sérénissime. */
+  const [mareeOpen, setMareeOpen] = useState(false);
+  const [mareeView, setMareeView] = useState<MareeView | null>(null);
+  const [tideEnd, setTideEnd] = useState(false);
+  const [sortieDuel, setSortieDuel] = useState<string | null>(null);
+  const [serenissime, setSerenissime] = useState<SerenissimeView | null | "open">(null);
+  const loadMaree = useCallback(async () => {
+    try {
+      const res = await fetch("/api/maree", { credentials: "same-origin" });
+      const j = (await res.json()) as { maree?: MareeView };
+      if (j.maree) setMareeView(j.maree);
+    } catch {
+      // The tide's sheet shows what the board knows.
+    }
+  }, []);
   /** The Gazette of Sunday (docs/plan-muda.md N7): the issue read, the weeks kept. */
   const [gazette, setGazette] = useState<{
     issue: PlancheGazette | null;
@@ -737,6 +766,23 @@ export default function LabPlanche() {
       );
     }
   }, [orders, state.orders, ME, tell]);
+  // A tide closed since this device last saw one: its moment (docs/plan-maree.md T7). The server
+  // tells which (the house may have moved to another lagoon with its league).
+  const tide = state.rank.tide;
+  useEffect(() => {
+    if (online && ME && tide >= 0) void loadMaree();
+  }, [online, ME, tide, loadMaree]);
+  const closedKey = mareeView?.last?.key;
+  useEffect(() => {
+    if (!closedKey) return;
+    let seen = "";
+    try {
+      seen = localStorage.getItem("fondaco.maree.vue") ?? "";
+    } catch {
+      seen = "";
+    }
+    if (closedKey !== seen) setTideEnd(true);
+  }, [closedKey]);
   /** A gesture: on line it is the server's to play, here it is the engine's. */
   const act = (
     f: () => PlancheState,
@@ -974,6 +1020,41 @@ export default function LabPlanche() {
     );
   }
 
+  // A sortie met before its hour (docs/plan-maree.md T6): the player holds the chain of its tower.
+  if (sortieDuel && S.sorties) {
+    const x = state.sorties?.list.find((y) => y.id === sortieDuel);
+    const p = S.passages.find((q) => q.id === x?.target);
+    const id = sortieDuel;
+    if (x && p)
+      return (
+        <Suspense fallback={null}>
+          <LabPasse
+            duel={{
+              board: p.board,
+              guard: state.passages[p.id]?.guard,
+              seals: state.passages[p.id]?.seals,
+              mind: { depth: S.sorties.depth, style: x.style },
+              foe: x.captain,
+              side: 2,
+              stake: `${p.name} : un sceau en jeu`,
+              onEnd: (held, moves) => {
+                setSortieDuel(null);
+                act(
+                  () => plancheSortieEnd(S, state, id, !held, "tenant", state.now),
+                  held
+                    ? `${x.captain} est repoussé : ${p.name} tient, et ta Garde compte un assaut repoussé.`
+                    : `${x.captain} est passé : ${p.name} perd un sceau.`,
+                  ["/sortie", { id, moves }],
+                  ["duel_lost"],
+                );
+                setMareeOpen(true);
+              },
+            }}
+          />
+        </Suspense>
+      );
+  }
+
   // A black strait (docs/plan-muda.md N5): the day's board, its captain's mind, the cargo at stake.
   if (noirDuel && S.noir) {
     const x = S.noir.straits.find((y) => y.id === noirDuel.strait);
@@ -1075,6 +1156,16 @@ export default function LabPlanche() {
     );
   }
 
+  // The towers the ink takes on Monday, told from Saturday; the sorties told against one's towers.
+  const threatened = new Set(
+    state.now - plancheMonday(state.now) >= 5 * 24 * HOUR ? plancheEncreThreat(S, state) : [],
+  );
+  const toldSorties = (state.sorties?.list ?? []).filter(
+    (x) =>
+      !state.sorties?.done[x.id] &&
+      state.passages[x.target]?.holder === ME &&
+      plancheSortieTold(S, x, state.now),
+  );
   const city = chosen?.kind === "city" ? S.cities.find((c) => c.id === chosen.id) : undefined;
   const passage =
     chosen?.kind === "passage" ? S.passages.find((p) => p.id === chosen.id) : undefined;
@@ -1122,6 +1213,8 @@ export default function LabPlanche() {
     setCompOpen(false);
     setMudaOpen(false);
     setGazette(null);
+    setMareeOpen(false);
+    setSerenissime(null);
     // The Muda's pier and its straits open the convoy's sheet (docs/plan-muda.md N6).
     if (p?.kind === "muda" || (p?.kind === "city" && p.id === S.muda?.pier)) {
       setChosen(null);
@@ -1766,6 +1859,7 @@ export default function LabPlanche() {
               data-passage={p.id}
               data-mine={String(holder === ME)}
               data-dark={String(corsair)}
+              data-menace={String(!corsair && threatened.has(p.id))}
               onClick={() => pick({ kind: "passage", id: p.id })}
             >
               {corsair ? (
@@ -1787,6 +1881,25 @@ export default function LabPlanche() {
             </button>
           );
         })}
+        {toldSorties.map((x) => (
+          <button
+            key={x.id}
+            type="button"
+            ref={pin(`sortie:${x.id}`)}
+            className="pc-planche-pin pc-pl-tower"
+            data-sortie-pin={x.id}
+            data-dark="true"
+            onClick={() => {
+              pick(null);
+              setMareeOpen(true);
+              if (online) void loadMaree();
+            }}
+          >
+            <b>
+              {x.captain} sort · {new Date(x.at).getUTCHours()} h
+            </b>
+          </button>
+        ))}
         {(S.noir?.straits ?? []).map((x) => (
           <button
             key={x.id}
@@ -1951,6 +2064,24 @@ export default function LabPlanche() {
                 />
               </svg>
               <span>La Guerre</span>
+            </button>
+          ) : null}
+          {S.encre && playing && ME ? (
+            <button
+              type="button"
+              className="pc-pl-jour pc-pl-war"
+              data-maree-open
+              onClick={() => {
+                pick(null);
+                setMareeOpen(true);
+                if (online) void loadMaree();
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M2 8 Q6 4 10 8 T18 8" stroke="#17150f" strokeWidth="1.8" fill="none" />
+                <path d="M2 14 Q6 10 10 14 T18 14 V18 H2 Z" fill="#17150f" />
+              </svg>
+              <span>Marée · sem. {state.rank.week + 1}</span>
             </button>
           ) : null}
           {S.muda && playing && ME ? (
@@ -2314,6 +2445,67 @@ export default function LabPlanche() {
               setMudaOpen(false);
               setMudaDuel(strait);
             }}
+          />
+        ) : null}
+        {mareeOpen && ME ? (
+          <MareeSheet
+            setup={S}
+            state={state}
+            me={ME}
+            view={mareeView}
+            close={closeX}
+            name={short}
+            onSortie={(id) => {
+              setMareeOpen(false);
+              setSortieDuel(id);
+            }}
+            onSerenissime={() => {
+              setMareeOpen(false);
+              setSerenissime("open");
+              void fetch("/api/serenissime", { credentials: "same-origin" })
+                .then((res) => res.json())
+                .then((j: { serenissime?: SerenissimeView }) =>
+                  setSerenissime(j.serenissime ?? "open"),
+                )
+                .catch(() => setSaid("La Sérénissime ne répond pas."));
+            }}
+          />
+        ) : null}
+        {serenissime ? (
+          <SerenissimeSheet view={serenissime === "open" ? null : serenissime} close={closeX} />
+        ) : null}
+        {tideEnd && ME ? (
+          <TideEndSheet
+            setup={S}
+            state={state}
+            me={ME}
+            view={mareeView}
+            name={short}
+            close={
+              <button
+                type="button"
+                className="pc-pl-x"
+                aria-label="Fermer"
+                data-maree-fin-close
+                onClick={() => {
+                  setTideEnd(false);
+                  try {
+                    localStorage.setItem("fondaco.maree.vue", mareeView?.last?.key ?? "");
+                  } catch {
+                    // A private window: the moment comes again.
+                  }
+                }}
+              >
+                ×
+              </button>
+            }
+            onDecret={(choice) =>
+              act(
+                () => plancheDecretChoose(state, ME, choice, state.now),
+                "Ton décret est proclamé : il vaut pour toute la marée.",
+                ["/decret", { choice }],
+              )
+            }
           />
         ) : null}
         {gazette ? (

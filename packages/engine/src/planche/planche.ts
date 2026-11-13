@@ -32,6 +32,12 @@ import {
   plancheArsenalSettle,
 } from "./arsenal.js";
 import type { PlancheOrderRules, PlancheOrderState } from "./commandes.js";
+import {
+  type EncreRules,
+  type EncreState,
+  plancheEncreKeepBps,
+  plancheEncrePriceBps,
+} from "./encre.js";
 import type { PlancheDailyRules, PlancheDailyTry } from "./jour.js";
 import {
   MAISON_KEEP,
@@ -41,6 +47,13 @@ import {
   maisonStart,
   maisonUnlocks,
 } from "./maison.js";
+import {
+  type DecretsRules,
+  type PlancheDecretState,
+  type PlancheStone,
+  plancheDecretPriceBps,
+  plancheDecretTollCap,
+} from "./maree.js";
 import {
   type PlancheMudaRules,
   type PlancheMudaState,
@@ -56,6 +69,7 @@ import {
   plancheRankInit,
   plancheRankTurn,
 } from "./rang.js";
+import type { PlancheSortiesState, SortiesRules } from "./sorties.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -173,6 +187,14 @@ export interface PlancheSetup {
   noir?: NoirRules;
   /** The Muda, the State's convoy of the week (docs/plan-muda.md N2): without it, none. */
   muda?: PlancheMudaRules;
+  /** The ink tide (docs/plan-maree.md T1): without it, the ink never moves. */
+  encre?: EncreRules;
+  /** The captains' sorties (docs/plan-maree.md T2): without them, none. */
+  sorties?: SortiesRules;
+  /** The Doge's decrees (docs/plan-maree.md T3): without them, none. */
+  decrets?: DecretsRules;
+  /** The leagues (docs/plan-maree.md T5): how many (the last, the Sérénissime), what share goes up. */
+  ligues?: { count: number; shareBps: number };
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -225,7 +247,15 @@ export interface PlancheHouse {
    * Its book, since the board began (docs/plan-compte.md C2): what towns paid for its goods,
    * the tolls it paid and received, what its island cost. Its purse is its start and these.
    */
-  book: { sold: bigint; tollPaid: bigint; tollIn: bigint; isle: bigint };
+  book: {
+    sold: bigint;
+    tollPaid: bigint;
+    tollIn: bigint;
+    isle: bigint;
+    /** Purses that came onto the board in this house's place, and left it (the leagues, T5). */
+    in?: bigint;
+    out?: bigint;
+  };
   /** Its level, and what it opens, when the board has the growth of the houses. */
   level?: number;
   caps?: MaisonCaps;
@@ -242,6 +272,8 @@ export interface PlancheHouse {
   /** The relics the black straits gave it, by power, and its plans not yet spent. */
   relics?: Record<string, number>;
   plans?: number;
+  /** The stones engraved on its island: a tower held to the end of a tide (docs/plan-maree.md). */
+  stones?: PlancheStone[];
 }
 
 export interface PlancheState {
@@ -265,6 +297,8 @@ export interface PlancheState {
   burnt: bigint;
   /** Every denier spent on the islands. */
   spent: bigint;
+  /** What came onto the board with houses from other lagoons, less what left with them. */
+  moved?: bigint;
   /** The tide, the weeks, the rivals and the laurels. */
   rank: PlancheRank;
   /** The sealed orders taken or tried, by id (the last two days'). */
@@ -275,6 +309,12 @@ export interface PlancheState {
   noir?: NoirState;
   /** The Muda of the week. */
   muda?: PlancheMudaState;
+  /** The ink tide's line. */
+  encre?: EncreState;
+  /** The week's sorties and how they went. */
+  sorties?: PlancheSortiesState;
+  /** The decree of the tide, offered to the Doge. */
+  decret?: PlancheDecretState;
 }
 
 const fail = (code: string): never => {
@@ -295,37 +335,44 @@ export function plancheGround(S: PlancheSetup, house: string) {
 }
 
 /** The board at its start; its tide counts its weeks from `tideStart` (the server: a Monday). */
+/** A house as the board begins it: its start purse and stock, its first island, level 1. */
+export function plancheFreshHouse(
+  S: PlancheSetup,
+  h: PlancheHouseSetup,
+  now: number,
+): PlancheHouse {
+  const stock: Record<string, number> = {};
+  const makeCarry: Record<string, number> = {};
+  for (const good of Object.keys(h.makes)) {
+    stock[good] = Math.min(S.rules.store, S.rules.startStock);
+    makeCarry[good] = 0;
+  }
+  return {
+    id: h.id,
+    ducats: BigInt(S.rules.startDucats),
+    stock,
+    makeCarry,
+    threads: [],
+    rewinding: [],
+    free: {},
+    delivered: 0,
+    earned: 0n,
+    rank: plancheRankHouse(S),
+    book: { sold: 0n, tollPaid: 0n, tollIn: 0n, isle: 0n },
+    ...(S.maison
+      ? {
+          level: 1,
+          caps: maisonUnlocks(S.maison, 1),
+          maison: maisonStart(Math.floor(now / DAY)),
+        }
+      : {}),
+    ...(S.ile ? { ile: ileInit(S.ile, plancheGround(S, h.id)) } : {}),
+  };
+}
+
 export function plancheInit(S: PlancheSetup, now: number, tideStart = now): PlancheState {
   const houses: Record<string, PlancheHouse> = {};
-  for (const h of S.houses) {
-    const stock: Record<string, number> = {};
-    const makeCarry: Record<string, number> = {};
-    for (const good of Object.keys(h.makes)) {
-      stock[good] = Math.min(S.rules.store, S.rules.startStock);
-      makeCarry[good] = 0;
-    }
-    houses[h.id] = {
-      id: h.id,
-      ducats: BigInt(S.rules.startDucats),
-      stock,
-      makeCarry,
-      threads: [],
-      rewinding: [],
-      free: {},
-      delivered: 0,
-      earned: 0n,
-      rank: plancheRankHouse(S),
-      book: { sold: 0n, tollPaid: 0n, tollIn: 0n, isle: 0n },
-      ...(S.maison
-        ? {
-            level: 1,
-            caps: maisonUnlocks(S.maison, 1),
-            maison: maisonStart(Math.floor(now / DAY)),
-          }
-        : {}),
-      ...(S.ile ? { ile: ileInit(S.ile, plancheGround(S, h.id)) } : {}),
-    };
-  }
+  for (const h of S.houses) houses[h.id] = plancheFreshHouse(S, h, now);
   const gauges: PlancheState["gauges"] = {};
   for (const c of S.cities) {
     const g: Record<string, { left: number; carry: number }> = {};
@@ -356,7 +403,9 @@ const clone = (s: PlancheState): PlancheState => structuredClone(s);
 export function plancheInvariant(s: PlancheState): boolean {
   let held = 0n;
   for (const h of Object.values(s.houses)) held += h.ducats;
-  return held + s.burnt + s.spent === s.minted;
+  // A house that came from another lagoon, or left for one, brought or took its purse
+  // (docs/plan-maree.md T5).
+  return held + s.burnt + s.spent === s.minted + (s.moved ?? 0n);
 }
 
 /** What a town pays a unit of a good now: its full price, less as its demand is spent. */
@@ -365,7 +414,12 @@ export function planchePrice(S: PlancheSetup, s: PlancheState, city: string, goo
   const g = own(s.gauges[city] ?? {}, good);
   if (!w || !g) return 0;
   const bps = w.floorBps + Math.floor(((BPS - w.floorBps) * g.left) / Math.max(1, w.cap));
-  return Math.floor((w.price * bps) / BPS);
+  // On the ink, a town pays more (docs/plan-maree.md T1).
+  const ink = plancheEncrePriceBps(S, s, cityOf(S, city)?.y ?? 0);
+  // And the Doge's decree, if it is about this town and this good.
+  const decree = plancheDecretPriceBps(s, city, good, s.now);
+  const price = Math.floor((Math.floor((w.price * bps) / BPS) * ink) / BPS);
+  return Math.floor((price * decree) / BPS);
 }
 
 /** The bobbins a house may stretch now. */
@@ -469,7 +523,9 @@ function slice(S: PlancheSetup, s: PlancheState): void {
         th.carry = 0;
         continue;
       }
-      const pace = BPS + planchePatina(S, th, t);
+      // On the ink, a thread loses a share of its load (docs/plan-maree.md T1).
+      const keep = plancheEncreKeepBps(S, s, cityOf(S, th.to)?.y ?? 0);
+      const pace = Math.floor(((BPS + planchePatina(S, th, t)) * keep) / BPS);
       const way = th.detour ? Math.floor((pace * (cityOf(S, th.to)?.detourBps ?? 0)) / BPS) : pace;
       th.carry += S.rules.threadPerHour * way * ms;
       const could = Math.floor(th.carry / unit);
@@ -511,7 +567,8 @@ function slice(S: PlancheSetup, s: PlancheState): void {
         if (!p || plancheIsCorsair(p.holder) || p.holder === a.h.id) continue;
         const holder = own(s.houses, p.holder);
         if (!holder) continue;
-        const toll = (paid * BigInt(Math.min(p.tollBps, S.rules.tollMaxBps))) / BigInt(BPS);
+        const cap = plancheDecretTollCap(s, S.rules.tollMaxBps, t);
+        const toll = (paid * BigInt(Math.min(p.tollBps, cap))) / BigInt(BPS);
         const burnt = (toll * BigInt(S.rules.tollBurnBps)) / BigInt(BPS);
         kept -= toll;
         a.h.book.tollPaid += toll;

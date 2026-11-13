@@ -1,0 +1,186 @@
+/* The tide (docs/plan-maree.md T6, T7). */
+
+/* A tower the ink takes on Monday: ringed in gold, « menacée ». */
+.pc-pl-tower[data-menace="true"] {
+  box-shadow: 0 0 0 2.5px #f2c14e, 0 3px 0 #000;
+}
+.pc-pl-tower[data-menace="true"]::after {
+  content: "menacée";
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f2c14e;
+  color: #17150f;
+  font: 800 10px var(--pc-ui);
+}
+.pc-planche-pin[data-sortie-pin] {
+  background: #111111;
+  color: #f6f4f0;
+  box-shadow: 0 0 0 1.5px #f2c14e, 0 3px 0 #000;
+}
+
+.pc-mr-gauge {
+  display: block;
+  flex: none;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 300 / 160;
+}
+.pc-mr-said,
+.pc-mr-threat,
+.pc-mr-decret,
+.pc-mr-stones,
+.pc-mr-move {
+  margin: 0;
+  font: 500 13px / 1.45 var(--pc-ui);
+}
+.pc-mr-threat {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #fbf0d0;
+  font-weight: 700;
+}
+.pc-mr-decret {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #efebe4;
+}
+.pc-mr-decret b {
+  display: block;
+  font: 800 11px var(--pc-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pc-mr-sorties,
+.pc-mr-houses,
+.pc-mr-towers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-mr-sorties li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #f6f4f0;
+  box-shadow: 0 0 0 1px var(--pc-hair, #e4ddd2);
+  font: 500 12.5px var(--pc-ui);
+}
+.pc-mr-sorties li[data-mine="true"] {
+  box-shadow: 0 0 0 1.5px var(--pc-accent);
+}
+.pc-mr-sorties li b {
+  font: 800 14px var(--pc-ui);
+}
+.pc-mr-sorties li span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pc-mr-sorties li .pc-passe-go {
+  flex: none;
+  width: auto;
+  padding: 8px 14px;
+}
+.pc-mr-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-mr-ladder li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #efebe4;
+  font: 500 12.5px var(--pc-ui);
+}
+.pc-mr-ladder li b {
+  font: 800 14px var(--pc-ui);
+}
+.pc-mr-ladder li[data-top="true"] {
+  background: #17150f;
+  color: #f6f4f0;
+}
+.pc-mr-ladder li[data-here="true"] {
+  box-shadow: 0 0 0 2px var(--pc-accent);
+}
+.pc-mr-laurels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.pc-mr-laurels > div {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #efebe4;
+  font: 500 11.5px var(--pc-ui);
+}
+.pc-mr-laurels > div b {
+  font: 800 14px var(--pc-ui);
+}
+.pc-mr-laurels > div[data-doge] {
+  grid-column: 1 / -1;
+  background: var(--pc-accent);
+  color: #f6f4f0;
+}
+.pc-mr-stone {
+  display: inline-block;
+  width: 12px;
+  height: 18px;
+  margin-right: 6px;
+  vertical-align: -3px;
+  border-radius: 2px;
+  background: linear-gradient(#c7372f 0 22%, #d9d2c6 22%);
+  box-shadow: 0 0 0 1px #17150f;
+}
+.pc-mr-decrets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pc-mr-decrets button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: #f6f4f0;
+  box-shadow: 0 0 0 1.5px #17150f, 0 3px 0 #17150f;
+  color: var(--pc-ink);
+  font: 500 12px var(--pc-ui);
+  text-align: left;
+  cursor: pointer;
+}
+.pc-mr-decrets button b {
+  font: 800 14px var(--pc-ui);
+}
+.pc-mr-houses li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 500 13px var(--pc-ui);
+}
+.pc-mr-houses li i {
+  width: 22px;
+  font: 800 13px var(--pc-ui);
+  font-style: normal;
+  text-align: right;
+}
+.pc-mr-houses li b {
+  flex: 1 1 auto;
+}
+.pc-mr-towers li {
+  font: 500 12.5px var(--pc-ui);
+}

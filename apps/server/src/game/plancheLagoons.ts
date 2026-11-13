@@ -1,6 +1,12 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { plancheSeats, worlds } from "../db/schema.js";
+import {
+  plancheAccountLeagues,
+  plancheLagoonLeagues,
+  plancheSeats,
+  plancheTides,
+  worlds,
+} from "../db/schema.js";
 import type { PlancheHubTheme } from "./planche.js";
 /** The status of a board retired for good (another map): kept for its ledger, never played. */
 export const PLANCHE_RETIRED = "planche_retired";
@@ -20,6 +26,10 @@ import {
  */
 export class PlancheLagoons {
   private lock: Promise<unknown> = Promise.resolve();
+
+  /** The league of each lagoon (docs/plan-maree.md T5), and the tides already settled. */
+  private readonly leagues = new Map<string, number>();
+  private readonly settled = new Set<string>();
 
   private constructor(
     private readonly db: Db,
@@ -61,7 +71,147 @@ export class PlancheLagoons {
     }
     if (!stores.length)
       stores.push(await PlancheStore.create(db, theme, now, lagoonName(0), options));
-    return new PlancheLagoons(db, theme, stores, options);
+    const lagoons = new PlancheLagoons(db, theme, stores, options);
+    for (const r of await db.select().from(plancheLagoonLeagues))
+      lagoons.leagues.set(r.worldId, r.league);
+    for (const r of await db.select().from(plancheTides))
+      lagoons.settled.add(`${r.worldId}:${r.tide}`);
+    return lagoons;
+  }
+
+  /** The league of a lagoon: 1 the first, the last the Sérénissime. */
+  leagueOf(store: PlancheStore): number {
+    return this.leagues.get(store.worldId) ?? 1;
+  }
+
+  /** How many leagues there are (the last one is the Sérénissime). */
+  leagueCount(): number {
+    return this.theme.board.ligues?.count ?? 1;
+  }
+
+  /** A new lagoon of a league, saved at once. */
+  private async openLagoon(league: number, now: number): Promise<PlancheStore> {
+    const store = await PlancheStore.create(
+      this.db,
+      this.theme,
+      now,
+      league >= this.leagueCount() && this.leagueCount() > 1
+        ? "La Sérénissime"
+        : lagoonName(this.stores.length),
+      this.options,
+    );
+    this.stores.push(store);
+    if (this.timerMs) store.start(this.timerMs);
+    for (const l of this.listeners) store.hub.onChange(l);
+    if (league !== 1) {
+      await this.db.insert(plancheLagoonLeagues).values({ worldId: store.worldId, league });
+      this.leagues.set(store.worldId, league);
+    }
+    return store;
+  }
+
+  /**
+   * The leagues at the end of a tide (docs/plan-maree.md T5): in each lagoon whose tide has ended,
+   * the top sixth of its players go up a league, the bottom sixth down one (never more than one
+   * below the best they reached); each house moves whole. Once a tide and a lagoon.
+   */
+  turnLeagues(now: number): Promise<void> {
+    const L = this.theme.board.ligues;
+    if (!L || L.count < 2) return Promise.resolve();
+    return this.serial(async () => {
+      for (const store of [...this.stores]) {
+        const final = store.hub.current().doc.state.rank.final;
+        if (!final || this.settled.has(`${store.worldId}:${final.tide}`)) continue;
+        const claimed = await this.db
+          .insert(plancheTides)
+          .values({ worldId: store.worldId, tide: final.tide, moves: {}, doneAt: new Date(now) })
+          .onConflictDoNothing()
+          .returning({ tide: plancheTides.tide });
+        this.settled.add(`${store.worldId}:${final.tide}`);
+        if (!claimed.length) continue;
+        const league = this.leagueOf(store);
+        const { doc } = store.hub.current();
+        const players = final.order
+          .map((house) => Object.entries(doc.seats).find(([, s]) => s.house === house)?.[0])
+          .filter((p): p is string => !!p);
+        if (!players.length) continue;
+        const share = L.shareBps / 10_000;
+        const up = league < L.count ? players.slice(0, Math.ceil(players.length * share)) : [];
+        const bottom = players.slice(players.length - Math.floor(players.length * share));
+        const down: string[] = [];
+        for (const p of bottom) {
+          if (up.includes(p) || league <= 1) continue;
+          const [best] = await this.db
+            .select()
+            .from(plancheAccountLeagues)
+            .where(eq(plancheAccountLeagues.accountId, p));
+          if (league - 1 >= (best?.best ?? league) - 1) down.push(p);
+        }
+        // What the tide's end tells, kept with its moves: the lagoon, its laurels, by name.
+        const named = (house: string | null | undefined) =>
+          house
+            ? (Object.values(doc.seats).find((x) => x.house === house)?.name ??
+              this.theme.board.houses.find((x) => x.id === house)?.name ??
+              house)
+            : null;
+        const L0 = doc.state.rank.laurels;
+        const moved = {
+          up: [] as string[],
+          down: [] as string[],
+          lagoon: store.name,
+          laurels: L0
+            ? {
+                doge: named(L0.doge),
+                negoce: named(L0.negoce),
+                passe: named(L0.passe),
+                garde: named(L0.garde),
+              }
+            : null,
+        };
+        for (const p of down) if (await this.move(p, store, league - 1, now)) moved.down.push(p);
+        for (const p of up) if (await this.move(p, store, league + 1, now)) moved.up.push(p);
+        await this.db
+          .update(plancheTides)
+          .set({ moves: moved })
+          .where(and(eq(plancheTides.worldId, store.worldId), eq(plancheTides.tide, final.tide)));
+      }
+    });
+  }
+
+  /** A player's house carried, whole, to a lagoon of another league. False: no seat for it. */
+  private async move(
+    player: string,
+    from: PlancheStore,
+    league: number,
+    now: number,
+  ): Promise<boolean> {
+    const top = league >= this.leagueCount();
+    let to = this.stores.find((s) => s !== from && this.leagueOf(s) === league && s.hub.free() > 0);
+    if (!to) {
+      // The Sérénissime is one lagoon: when it is full, who would go up waits a tide.
+      if (top && this.stores.some((s) => this.leagueOf(s) === league)) return false;
+      to = await this.openLagoon(league, now);
+    }
+    const name = from.hub.current().doc.seats[player]?.name ?? "";
+    const gone = await from.hub.leave(player, now);
+    if (!gone) return false;
+    if ((await to.hub.arrive(player, name, gone, now)) !== "ok") {
+      // No room after all: the house goes back where it was.
+      await from.hub.arrive(player, name, gone, now);
+      return false;
+    }
+    const house = to.hub.houseOf(player) ?? "";
+    await this.db.delete(plancheSeats).where(eq(plancheSeats.accountId, player));
+    await this.record(to, house, player, now);
+    await this.db
+      .insert(plancheAccountLeagues)
+      .values({ accountId: player, best: league })
+      .onConflictDoUpdate({
+        target: plancheAccountLeagues.accountId,
+        set: { best: league },
+        setWhere: sql`${plancheAccountLeagues.best} < ${league}`,
+      });
+    return true;
   }
 
   /** The boards, in the order they opened. */
@@ -106,21 +256,11 @@ export class PlancheLagoons {
           return { store, house };
         }
       }
-      let store =
+      // A newcomer begins in the first league (docs/plan-maree.md T5), or in its company's lagoon.
+      const store =
         this.stores.find((s) => prefer.includes(s.worldId) && s.hub.free() > 0) ??
-        this.stores.find((s) => s.hub.free() > 0);
-      if (!store) {
-        store = await PlancheStore.create(
-          this.db,
-          this.theme,
-          now,
-          lagoonName(this.stores.length),
-          this.options,
-        );
-        this.stores.push(store);
-        if (this.timerMs) store.start(this.timerMs);
-        for (const l of this.listeners) store.hub.onChange(l);
-      }
+        this.stores.find((s) => this.leagueOf(s) === 1 && s.hub.free() > 0) ??
+        (await this.openLagoon(1, now));
       await store.hub.view(accountId, name, now);
       const house = store.hub.houseOf(accountId);
       if (!house) throw new Error("planche_full");

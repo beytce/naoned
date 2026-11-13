@@ -2,6 +2,7 @@ import {
   type PasseMove,
   type PasseProblem,
   type PasseSetup,
+  type PlancheHouse,
   type PlancheSetup,
   type PlancheState,
   passeInit,
@@ -15,6 +16,7 @@ import {
   plancheClaim,
   plancheDaily,
   plancheDailyTry,
+  plancheDecretChoose,
   plancheDefense,
   plancheDefenseMove,
   plancheDefenseRemove,
@@ -24,6 +26,8 @@ import {
   plancheGrant,
   plancheGuard,
   plancheGuardBoard,
+  plancheHouseArrive,
+  plancheHouseLeave,
   plancheInit,
   plancheInvariant,
   plancheMove,
@@ -42,6 +46,11 @@ import {
   plancheShipDamage,
   plancheShipRefit,
   plancheShipRepair,
+  plancheSortieBoard,
+  plancheSortieEnd,
+  plancheSortieMeet,
+  plancheSortieRefusal,
+  plancheSortiesSettle,
   plancheThread,
   plancheToll,
   plancheUnthread,
@@ -116,6 +125,10 @@ export type PlancheAnswer = "ok" | "not_seated" | "duel_lost" | "duel_illegal" |
 export type PlancheCommand =
   | { type: "seat"; player: string; name: string; t: number }
   | { type: "release"; players: string[]; t: number }
+  /** A house leaving the lagoon for another league, whole (docs/plan-maree.md T5). */
+  | { type: "leave"; player: string; t: number }
+  /** A house coming from another lagoon, in the place of a house of the computer. */
+  | { type: "arrive"; player: string; name: string; came: PlancheHouse; t: number }
   | {
       type: "thread" | "unthread";
       player: string;
@@ -162,6 +175,10 @@ export type PlancheCommand =
     }
   /** Three relics of a power made a plan. */
   | { type: "assemble"; player: string; power: string; t: number }
+  /** A sortie met before its hour by the tower's holder (docs/plan-maree.md T5). */
+  | { type: "sortie"; player: string; id: string; won: boolean; t: number }
+  /** The Doge's decree of the tide. */
+  | { type: "decret"; player: string; choice: number; t: number }
   /** A strait of the Muda played on Saturday (docs/plan-muda.md N2). */
   | { type: "muda"; player: string; strait: string; won: boolean; t: number }
   /** The port's secret ruses, once a day (docs/plan-guerre.md W3). */
@@ -195,6 +212,28 @@ export function plancheDocInit(theme: PlancheHubTheme, now: number): PlancheDoc 
 
 const held = (doc: PlancheDoc) => new Set(Object.values(doc.seats).map((s) => s.house));
 
+/** The house a newcomer takes: in the sestiere with the fewest players (docs/plan-lagunes.md G4). */
+function freeHouse(S: PlancheSetup, doc: PlancheDoc) {
+  const taken = held(doc);
+  const people = new Map<string | undefined, number>();
+  for (const h of S.houses)
+    if (taken.has(h.id)) people.set(h.sestiere, (people.get(h.sestiere) ?? 0) + 1);
+  return S.houses
+    .filter((h) => !taken.has(h.id))
+    .reduce<(typeof S.houses)[number] | undefined>(
+      (best, h) =>
+        !best || (people.get(h.sestiere) ?? 0) < (people.get(best.sestiere) ?? 0) ? h : best,
+      undefined,
+    );
+}
+
+/** A passage's board of the Passe, with the duel's rules: for a sortie against its tower. */
+function sortieBoard(theme: PlancheHubTheme, passage: string): PasseSetup | undefined {
+  const def = theme.board.passages.find((p) => p.id === passage);
+  const b = def ? theme.passe.boards[def.board] : undefined;
+  return b ? { ...theme.passe.rules, ...b, cells: [...b.cells] } : undefined;
+}
+
 /** The board up to `now`: every whole hour played, the computer's houses at theirs. */
 export function plancheDocAdvance(
   theme: PlancheHubTheme,
@@ -208,6 +247,8 @@ export function plancheDocAdvance(
     const nextHour = doc.t0 + (Math.floor((s.now - doc.t0) / HOUR) + 1) * HOUR;
     if (nextHour > now) break;
     s = plancheAdvance(S, s, nextHour);
+    // The captains' sorties whose hour has come (docs/plan-maree.md T5).
+    s = plancheSortiesSettle(S, s, nextHour, (p) => sortieBoard(theme, p));
     const hour = Math.round((nextHour - doc.t0) / HOUR);
     S.houses.forEach((h, k) => {
       if (mine.has(h.id) || (hour + k) % theme.visitHours !== 0) return;
@@ -215,6 +256,7 @@ export function plancheDocAdvance(
     });
   }
   s = plancheAdvance(S, s, now);
+  s = plancheSortiesSettle(S, s, now, (p) => sortieBoard(theme, p));
   return s === doc.state ? doc : { ...doc, state: s };
 }
 
@@ -236,18 +278,7 @@ export function plancheDocApply(
         doc: { ...doc, seats: { ...doc.seats, [c.player]: { ...had, name: c.name } } },
         answer: "ok",
       };
-    // A newcomer goes to the sestiere with the fewest players (docs/plan-lagunes.md G4).
-    const taken = held(doc);
-    const people = new Map<string | undefined, number>();
-    for (const h of S.houses)
-      if (taken.has(h.id)) people.set(h.sestiere, (people.get(h.sestiere) ?? 0) + 1);
-    const free = S.houses
-      .filter((h) => !taken.has(h.id))
-      .reduce<(typeof S.houses)[number] | undefined>(
-        (best, h) =>
-          !best || (people.get(h.sestiere) ?? 0) < (people.get(best.sestiere) ?? 0) ? h : best,
-        undefined,
-      );
+    const free = freeHouse(S, doc);
     if (!free) return { doc, answer: "planche_full" };
     // A person's house from now on: it has its rival at once, and its cote (docs/plan-classement.md).
     return {
@@ -258,6 +289,36 @@ export function plancheDocApply(
       },
       answer: "ok",
     };
+  }
+  if (c.type === "leave") {
+    const seat = doc.seats[c.player];
+    if (!seat) return { doc, answer: "not_seated" };
+    try {
+      const { state } = plancheHouseLeave(S, doc.state, seat.house, c.t);
+      const seats = { ...doc.seats };
+      delete seats[c.player];
+      return { doc: { ...doc, seats, state }, answer: "ok" };
+    } catch (e) {
+      return { doc, answer: (e as Error).message };
+    }
+  }
+  if (c.type === "arrive") {
+    if (doc.seats[c.player]) return { doc, answer: "planche_seated" };
+    const free = freeHouse(S, doc);
+    if (!free) return { doc, answer: "planche_full" };
+    try {
+      const arrived = plancheHouseArrive(S, doc.state, free.id, c.came);
+      return {
+        doc: {
+          ...doc,
+          seats: { ...doc.seats, [c.player]: { house: free.id, name: c.name } },
+          state: plancheClaim(S, arrived, free.id),
+        },
+        answer: "ok",
+      };
+    } catch (e) {
+      return { doc, answer: (e as Error).message };
+    }
   }
   if (c.type === "release") {
     const seats = { ...doc.seats };
@@ -345,6 +406,15 @@ export function plancheDocApply(
         break;
       case "muda":
         next = plancheMudaForce(S, s, h, c.strait, c.won, c.t);
+        break;
+      case "sortie": {
+        const why = plancheSortieRefusal(s, h, c.id, c.t);
+        if (why) return { doc, answer: why };
+        next = plancheSortieEnd(S, s, c.id, c.won, "tenant", c.t);
+        break;
+      }
+      case "decret":
+        next = plancheDecretChoose(s, h, c.choice, c.t);
         break;
       case "guard": {
         const def = S.passages.find((p) => p.id === c.passage);
@@ -589,6 +659,56 @@ export class PlancheHub {
     if (won === null) return "duel_illegal";
     const answer = await this.act({ type: "noir", player, strait, ...cargo, won, t });
     return answer === "ok" && !won ? "duel_lost" : answer;
+  }
+
+  /**
+   * A sortie met before its hour (docs/plan-maree.md T5): the holder's own links of the chain,
+   * replayed here against the captain. The captain passed: "duel_lost" (a seal lost all the same).
+   */
+  async sortie(player: string, id: string, moves: PasseMove[], t: number): Promise<PlancheAnswer> {
+    const S = this.theme.board;
+    const seat = this.doc.seats[player];
+    if (!seat) return "not_seated";
+    const at = plancheDocAdvance(this.theme, this.doc, t).state;
+    const why = plancheSortieRefusal(at, seat.house, id, t);
+    if (why) return why;
+    const x = at.sorties?.list.find((y) => y.id === id);
+    const b = x ? sortieBoard(this.theme, x.target) : undefined;
+    if (!x || !b) return "planche_unknown";
+    const won = plancheSortieMeet(S, x, { ...b, cells: plancheSortieBoard(at, x, b) }, moves);
+    if (won === null) return "duel_illegal";
+    const answer = await this.act({ type: "sortie", player, id, won, t });
+    return answer === "ok" && won ? "duel_lost" : answer;
+  }
+
+  /**
+   * A house leaves this lagoon for another league (docs/plan-maree.md T5): what it takes, or null
+   * if it is not seated here. Its place goes back to the computer.
+   */
+  leave(player: string, t: number): Promise<PlancheHouse | null> {
+    return this.serial(async () => {
+      this.doc = plancheDocAdvance(this.theme, this.doc, t);
+      const seat = this.doc.seats[player];
+      const gone = seat ? this.doc.state.houses[seat.house] : undefined;
+      if (!gone) return null;
+      const taken = structuredClone(gone);
+      return (await this.run({ type: "leave", player, t })) === "ok" ? taken : null;
+    });
+  }
+
+  /** A house comes from another lagoon, in the place of a house of the computer. */
+  arrive(player: string, name: string, came: PlancheHouse, t: number): Promise<PlancheAnswer> {
+    return this.serial(async () => {
+      this.doc = plancheDocAdvance(this.theme, this.doc, t);
+      const res = await this.run({ type: "arrive", player, name, came, t });
+      if (res === "ok") this.seen.set(player, t);
+      return res;
+    });
+  }
+
+  /** The Doge chooses the decree of the tide. */
+  decret(player: string, choice: number, t: number) {
+    return this.act({ type: "decret", player, choice, t });
   }
 
   /** Three relics of a power make a plan. */

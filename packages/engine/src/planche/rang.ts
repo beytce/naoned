@@ -13,6 +13,7 @@
  */
 
 import { battleRatings } from "../skirmish.js";
+import { plancheEncreWeek } from "./encre.js";
 import {
   MAISON_KEEP,
   type MaisonEvent,
@@ -22,7 +23,9 @@ import {
   maisonUnlocks,
   maisonWeek,
 } from "./maison.js";
+import { plancheTideEnd } from "./maree.js";
 import type { PlancheSetup, PlancheState } from "./planche.js";
+import { plancheSortiesWeek } from "./sorties.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -72,6 +75,8 @@ export interface PlancheRank {
   /** Each house's place when the day began, and that day. */
   mark: Record<string, number>;
   markDay: number;
+  /** The last tide's final standing, the best first (docs/plan-maree.md T5: who goes up a league). */
+  final?: { tide: number; order: string[] };
   /** The last tide's laurels and Doge. */
   laurels: {
     tide: number;
@@ -309,6 +314,7 @@ export function plancheRankTurn(S: PlancheSetup, s: PlancheState): void {
   if (!R) return;
   growDay(S, s);
   while (s.now >= s.rank.tideStart + (s.rank.week + 1) * R.weekMs) {
+    const turn = s.rank.tideStart + (s.rank.week + 1) * R.weekMs;
     settle(s);
     // The week's growth, with the tide's laurels when it ends (docs/plan-progression-maison.md).
     const ending = s.rank.week + 1 >= R.tideWeeks;
@@ -321,14 +327,19 @@ export function plancheRankTurn(S: PlancheSetup, s: PlancheState): void {
     s.rank.week += 1;
     if (s.rank.week >= R.tideWeeks) {
       s.rank.laurels = laurels ?? proclaim(S, s);
+      s.rank.final = { tide: s.rank.tide, order: plancheStanding(S, s).map((r) => r.house) };
       for (const h of Object.values(s.houses)) {
         h.rank = plancheRankHouse(S);
         if (h.maison) h.maison.guardAt = 0;
       }
+      // The stones, the open sea given back, the ink's ebb, the decrees (docs/plan-maree.md T3).
+      plancheTideEnd(S, s, turn, s.rank.laurels.doge);
       s.rank.tide += 1;
       s.rank.tideStart += R.tideWeeks * R.weekMs;
       s.rank.week = 0;
-    }
+    } else plancheEncreWeek(S, s, turn);
+    // The week's sorties, once the ink has taken what it reached (docs/plan-maree.md T2).
+    plancheSortiesWeek(S, s, turn);
     markNow(S, s);
   }
   if (Math.floor(s.now / DAY) !== s.rank.markDay) markNow(S, s);

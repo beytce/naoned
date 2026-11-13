@@ -33,7 +33,10 @@ export class PlancheLost extends Error {
 
 /** What the ledger already holds, house by house: the books as they were at the last write. */
 interface Booked {
-  houses: Record<string, { sold: bigint; tollPaid: bigint; tollIn: bigint; isle: bigint }>;
+  houses: Record<
+    string,
+    { sold: bigint; tollPaid: bigint; tollIn: bigint; isle: bigint; in?: bigint; out?: bigint }
+  >;
   burnt: bigint;
 }
 
@@ -47,6 +50,8 @@ export const PLANCHE_ACCOUNTS = {
   burnt: "planche:burnt",
   isle: "planche:isle",
   mint: "planche:mint",
+  /** Purses carried from one lagoon to another by the leagues (docs/plan-maree.md T5). */
+  ligue: "planche:ligue",
 } as const;
 const houseAccount = (id: string) => `house:${id}`;
 
@@ -71,7 +76,7 @@ function ledgerSince(
     if (!was && startDucats > 0n)
       rows.push({ from: A.mint, to: me, amount: startDucats, reason: "planche_start" });
     const b = was ?? { sold: 0n, tollPaid: 0n, tollIn: 0n, isle: 0n };
-    const d = (k: keyof typeof b) => h.book[k] - b[k];
+    const d = (k: keyof typeof b) => (h.book[k] ?? 0n) - (b[k] ?? 0n);
     if (d("sold") > 0n)
       rows.push({ from: A.towns, to: me, amount: d("sold"), reason: "planche_sale" });
     if (d("tollPaid") > 0n)
@@ -80,6 +85,11 @@ function ledgerSince(
       rows.push({ from: A.tolls, to: me, amount: d("tollIn"), reason: "planche_toll" });
     if (d("isle") > 0n)
       rows.push({ from: me, to: A.isle, amount: d("isle"), reason: "planche_isle" });
+    // A purse that left with its house for another lagoon, and one that came (the leagues).
+    if (d("out") > 0n)
+      rows.push({ from: me, to: A.ligue, amount: d("out"), reason: "planche_ligue" });
+    if (d("in") > 0n)
+      rows.push({ from: A.ligue, to: me, amount: d("in"), reason: "planche_ligue" });
     next.houses[id] = { ...h.book };
   }
   const burnt = doc.state.burnt - booked.burnt;

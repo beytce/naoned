@@ -292,10 +292,13 @@ describe("the end of a tide", () => {
     expect(s.houses.ana?.rank.cote).toBe(1_200);
     expect(s.houses.dan?.rank.guardMs).toBe(0);
     expect(s.houses.ben?.rank.earned).toBe(0n);
-    // What does not move: the purse, the threads, the tower.
+    // What does not move: the purse, the threads. The open sea is given back to the corsairs
+    // (docs/plan-maree.md T3); a tower held to the end is a stone on its holder's island.
     expect(s.houses.ben?.ducats).toBeGreaterThan(0n);
     expect(s.houses.ben?.threads).toHaveLength(1);
-    expect(s.passages.segna?.holder).toBe("dan");
+    expect(s.passages.segna?.holder).toBe("corsair:ivo");
+    if (s.rank.humans.includes("dan"))
+      expect(s.houses.dan?.stones).toEqual([{ tide: 0, passage: "segna" }]);
     expect(plancheInvariant(s)).toBe(true);
   });
 });

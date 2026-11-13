@@ -1,9 +1,15 @@
-import { maisonLevel, maisonThreshold, maisonUnlocks } from "@comptoirs/engine";
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { maisonLevel, maisonThreshold, maisonUnlocks, plancheStanding } from "@comptoirs/engine";
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
-import { accounts, influenceEntries, maisonEvents } from "../db/schema.js";
+import {
+  accounts,
+  influenceEntries,
+  maisonEvents,
+  plancheAccountLeagues,
+  plancheTides,
+} from "../db/schema.js";
 import { ChatError } from "./chatRules.js";
 import { CompanyError } from "./company.js";
 import { companyThread, postCompanyMessage, reportCompanyMessage } from "./company.js";
@@ -124,6 +130,8 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     }
     const { lagoons, now, defis } = await boards();
     const name = await nameOf(account.id);
+    // The leagues of the tides that ended, before the player is seated (docs/plan-maree.md T5).
+    await lagoons.turnLeagues(now());
     const { store } = await lagoons.seatOf(account.id, name, now(), prefer);
     return { id: account.id, name, hub: store.hub, store, lagoon: store.name, now, defis };
   };
@@ -356,6 +364,22 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     if (!p) return reply;
     return show(reply, p, await p.hub.assemble(p.id, b.data.power, p.now()));
   });
+  // A sortie met before its hour by the tower's holder (docs/plan-maree.md T5).
+  app.post("/api/planche/sortie", deps.perMerchant(20), async (req, reply) => {
+    const b = z.object({ id: z.string().min(1).max(80), moves: duelMoves }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return show(reply, p, await p.hub.sortie(p.id, b.data.id, asMoves(b.data.moves), p.now()));
+  });
+  // The Doge's decree of the tide (docs/plan-maree.md T5).
+  app.post("/api/planche/decret", deps.perMerchant(20), async (req, reply) => {
+    const b = z.object({ choice: z.number().int().min(0).max(5) }).safeParse(req.body);
+    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+    const p = await who(req, reply);
+    if (!p) return reply;
+    return show(reply, p, await p.hub.decret(p.id, b.data.choice, p.now()));
+  });
   // A strait of the Muda (docs/plan-muda.md N2), on Saturday.
   app.post("/api/planche/muda", deps.perMerchant(20), async (req, reply) => {
     const b = z.object({ strait: key, moves: duelMoves }).safeParse(req.body);
@@ -430,6 +454,116 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
   gesture("/api/planche/port/remove", z.object({ pass, index: slot }), (p, b) =>
     p.hub.defenseRemove(p.id, b.pass, b.index, p.now()),
   );
+  // The tide and the leagues (docs/plan-maree.md T5): one's league, every lagoon's, the last
+  // tide's moves of one's lagoon, the Sérénissime.
+  app.get("/api/maree", deps.perMerchant(60), async (req, reply) => {
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const { lagoons } = await boards();
+    const [best] = await deps.db
+      .select()
+      .from(plancheAccountLeagues)
+      .where(eq(plancheAccountLeagues.accountId, p.id));
+    // The last tide's end that concerns the player: its own lagoon's, or the one it moved from.
+    const tides = await deps.db
+      .select()
+      .from(plancheTides)
+      .orderBy(desc(plancheTides.doneAt))
+      .limit(200);
+    const last = tides.find((r) => {
+      const m = r.moves as { up?: string[]; down?: string[] };
+      return r.worldId === p.store.worldId || m.up?.includes(p.id) || m.down?.includes(p.id);
+    });
+    const names = async (ids: string[]) =>
+      ids.length
+        ? (
+            await deps.db
+              .select({ id: accounts.id, pseudo: accounts.pseudo })
+              .from(accounts)
+              .where(inArray(accounts.id, ids))
+          ).map((a) => `Ca\u2019 ${a.pseudo ?? "Bembo"}`)
+        : [];
+    const moves = (last?.moves ?? {}) as {
+      up?: string[];
+      down?: string[];
+      lagoon?: string;
+      laurels?: Record<string, string | null> | null;
+    };
+    const serenissime = lagoons
+      .all()
+      .find((s) => lagoons.leagueOf(s) >= lagoons.leagueCount() && lagoons.leagueCount() > 1);
+    return toJson({
+      maree: {
+        league: lagoons.leagueOf(p.store),
+        count: lagoons.leagueCount(),
+        best: best?.best ?? lagoons.leagueOf(p.store),
+        lagoons: lagoons.all().map((s) => ({
+          name: s.name,
+          league: lagoons.leagueOf(s),
+          players: Object.keys(s.hub.current().doc.seats).length,
+          mine: s === p.store,
+        })),
+        last: last
+          ? {
+              key: `${last.worldId}:${last.tide}`,
+              tide: last.tide,
+              lagoon: moves.lagoon ?? "",
+              laurels: moves.laurels ?? null,
+              up: await names(moves.up ?? []),
+              down: await names(moves.down ?? []),
+              me: moves.up?.includes(p.id) ? "up" : moves.down?.includes(p.id) ? "down" : null,
+            }
+          : null,
+        serenissime: serenissime ? { name: serenissime.name } : null,
+      },
+    });
+  });
+  // The Sérénissime, as all may watch it (docs/plan-maree.md T5): its houses, its laurels, its ink.
+  app.get("/api/serenissime", deps.perMerchant(60), async (req, reply) => {
+    const p = await who(req, reply);
+    if (!p) return reply;
+    const { lagoons } = await boards();
+    const top = lagoons
+      .all()
+      .find((s) => lagoons.leagueOf(s) >= lagoons.leagueCount() && lagoons.leagueCount() > 1);
+    if (!top) return reply.code(404).send({ error: "no_serenissime" });
+    const S = top.hub.theme.board;
+    const { doc } = top.hub.current();
+    const st = doc.state;
+    const named = (house: string) =>
+      Object.values(doc.seats).find((x) => x.house === house)?.name ??
+      S.houses.find((h) => h.id === house)?.name ??
+      house;
+    return toJson({
+      serenissime: {
+        name: top.name,
+        houses: plancheStanding(S, st)
+          .slice(0, 12)
+          .map((r) => ({
+            name: named(r.house),
+            person: st.rank.humans.includes(r.house),
+            level: st.houses[r.house]?.level ?? 1,
+            place: r.place,
+          })),
+        laurels: st.rank.laurels
+          ? {
+              doge: named(st.rank.laurels.doge),
+              negoce: st.rank.laurels.negoce ? named(st.rank.laurels.negoce) : null,
+              passe: st.rank.laurels.passe ? named(st.rank.laurels.passe) : null,
+              garde: st.rank.laurels.garde ? named(st.rank.laurels.garde) : null,
+            }
+          : null,
+        towers: S.passages.map((x) => ({
+          name: x.name,
+          holder: st.passages[x.id]?.holder.startsWith("corsair:")
+            ? null
+            : named(st.passages[x.id]?.holder ?? ""),
+        })),
+        ink: st.encre?.line ?? null,
+        players: Object.keys(doc.seats).length,
+      },
+    });
+  });
   // The Gazette of Sunday (docs/plan-muda.md N4): this week's issue, or the last; a past one.
   app.get("/api/gazette", deps.perMerchant(60), async (req, reply) => {
     const p = await who(req, reply);
