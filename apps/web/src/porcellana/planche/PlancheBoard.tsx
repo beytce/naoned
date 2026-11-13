@@ -8,6 +8,7 @@ import {
   ILE_FONDACO,
   type PlancheSetup,
   type PlancheState,
+  plancheEncreLine,
   plancheIsCorsair,
   plancheMudaHold,
   plancheMudaLoaded,
@@ -469,6 +470,128 @@ export function PlancheBoard({
     return { root, ticks };
   }, [setup, mudaPhase, passed, fill]);
 
+  // The ink tide (docs/plan-maree.md T6): the open sea's ink over the rows it covers, a wash of
+  // grey over the three rows before it, and the tide's line drawn on the water in the accent.
+  const inkLine = setup.encre ? plancheEncreLine(setup, state) : null;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rebuilt when the line moves.
+  const ink = useMemo(() => {
+    const root = new Group();
+    if (inkLine === null) return root;
+    const row = inkLine / 100;
+    const top = wz(row) - S / 2;
+    const bottom = wz(H - 1) + S / 2;
+    const left = wx(0) - S / 2;
+    const span = W * S;
+    if (bottom > top) {
+      const deep = new Mesh(
+        new PlaneGeometry(span, bottom - top),
+        new MeshBasicMaterial({
+          color: "#1D1B19",
+          transparent: true,
+          opacity: 0.5,
+          depthWrite: false,
+        }),
+      );
+      deep.rotation.x = -Math.PI / 2;
+      deep.position.set(left + span / 2, 0.08, (top + bottom) / 2);
+      deep.renderOrder = 2;
+      root.add(deep);
+    }
+    // The wash before it, darker as it nears the line.
+    const canvas = document.createElement("canvas");
+    canvas.width = 2;
+    canvas.height = 64;
+    const g = canvas.getContext("2d");
+    if (g) {
+      const grad = g.createLinearGradient(0, 0, 0, 64);
+      grad.addColorStop(0, "rgba(29,27,25,0)");
+      grad.addColorStop(1, "rgba(29,27,25,0.5)");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, 2, 64);
+    }
+    const wash = new Mesh(
+      new PlaneGeometry(span, 3 * S),
+      new MeshBasicMaterial({
+        map: new CanvasTexture(canvas),
+        transparent: true,
+        depthWrite: false,
+      }),
+    );
+    wash.rotation.x = -Math.PI / 2;
+    wash.position.set(left + span / 2, 0.08, top - 1.5 * S);
+    wash.renderOrder = 2;
+    root.add(wash);
+    // The line itself, dashed in the accent.
+    const dash = new MeshBasicMaterial({ color: P.accentColour, transparent: true, opacity: 0.85 });
+    for (let x = 0; x < span; x += S * 0.8) {
+      const d = new Mesh(new PlaneGeometry(S * 0.45, 0.22), dash);
+      d.rotation.x = -Math.PI / 2;
+      d.position.set(left + x + S * 0.25, 0.1, top);
+      d.renderOrder = 3;
+      root.add(d);
+    }
+    places.at.set("encre", new Vector3(wx(W / 2), 0, top));
+    return root;
+  }, [inkLine, setup, P]);
+
+  // The captains' sorties told against one's own towers (docs/plan-maree.md T6): the captain's
+  // ship on the water, between his tower and the tower he comes for.
+  const told = (state.sorties?.list ?? [])
+    .filter(
+      (x) =>
+        !state.sorties?.done[x.id] &&
+        state.passages[x.target]?.holder === me &&
+        x.at > state.now &&
+        x.at - state.now <= (setup.sorties?.announceMs ?? 0),
+    )
+    .map((x) => `${x.id}>${x.target}`)
+    .join("|");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rebuilt when a sortie is told or played.
+  const corsairs = useMemo(() => {
+    const root = new Group();
+    for (const key of told ? told.split("|") : []) {
+      const [id = "", target = ""] = key.split(">");
+      const x = state.sorties?.list.find((y) => y.id === id);
+      const from = setup.passages.find((p) => p.id === x?.from);
+      const to = setup.passages.find((p) => p.id === target);
+      if (!x || !from || !to) continue;
+      const boat = ship(P, { seed: id.length * 7, running: false });
+      boat.group.scale.setScalar(THREAD.boat * 1.6);
+      // Two thirds of the way, coming.
+      const px = wx(from.x) + ((wx(to.x) - wx(from.x)) * 2) / 3;
+      const pz = wz(from.y) + ((wz(to.y) - wz(from.y)) * 2) / 3;
+      boat.group.position.set(px, 0.05, pz);
+      boat.group.rotation.y = Math.atan2(-(wz(to.y) - wz(from.y)), wx(to.x) - wx(from.x));
+      boat.group.traverse((o) => {
+        const m = o as Mesh;
+        if (m.isMesh) m.material = INK_TOWER;
+      });
+      root.add(boat.group);
+      places.at.set(`sortie:${id}`, new Vector3(px, 0, pz));
+    }
+    return root;
+  }, [told, setup, P]);
+
+  // The stones engraved on each island (docs/plan-maree.md T7): a slab with its red top a tide.
+  const stones = setup.houses.map((h) => state.houses[h.id]?.stones?.length ?? 0).join(",");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the stones' signature stands for the state.
+  const engraved = useMemo(() => {
+    const root = new Group();
+    stones.split(",").forEach((n, k) => {
+      const h = setup.houses[k];
+      if (!h) return;
+      for (let i = 0; i < Math.min(5, Number(n)); i++) {
+        const g = new Group();
+        g.position.set(wx(h.x) - 2.5 + i * 0.7, 0, wz(h.y) - 2.6);
+        box(g, 0.5, 0.9, 0.22, 0, 0, 0, P.m("wall2"), 0.04);
+        box(g, 0.52, 0.14, 0.24, 0, 0.9, 0, P.accent, 0.03);
+        root.add(g);
+      }
+    });
+    bake(root);
+    return root;
+  }, [stones, setup, P]);
+
   // The towers of the passages: their flag tells who holds them.
   const holders = setup.passages.map((p) => state.passages[p.id]?.holder ?? "").join("|");
   // biome-ignore lint/correctness/useExhaustiveDependencies: rebuilt when a tower changes hands.
@@ -768,6 +891,9 @@ export function PlancheBoard({
       <primitive object={minis} />
       <primitive object={anchored} />
       <primitive object={lighthouses} />
+      <primitive object={ink} />
+      <primitive object={corsairs} />
+      <primitive object={engraved} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: every place has its label, a button. */}
       <primitive object={places.root} onClick={pick} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: every passage has its label, a button. */}

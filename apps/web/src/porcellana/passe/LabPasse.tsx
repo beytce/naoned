@@ -91,6 +91,8 @@ export interface PasseDuel {
   stake?: string;
   /** Its flag: dark grey for a corsair, ink for a power. */
   flag?: "corsaire" | "puissance";
+  /** The side the player holds: the thread (by default), or the chain (meeting a sortie). */
+  side?: 1 | 2;
   /** Won or not, and the thread's own pieces, for the server to replay the duel. */
   onEnd: (won: boolean, moves: PasseMove[]) => void;
 }
@@ -105,7 +107,7 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
   const [board, setBoard] = useState<BoardKey>(
     duel && duel.board in boards ? (duel.board as BoardKey) : "segna",
   );
-  const [seat, setSeat] = useState<Seat>("fil");
+  const [seat, setSeat] = useState<Seat>(duel?.side === 2 ? "chaine" : "fil");
   const [depth, setDepth] = useState(duel?.mind?.depth ?? 3);
   const [style, setStyle] = useState<PasseStyle | "aucune">(duel?.mind?.style ?? "aucune");
   const [problem, setProblem] = useState<PasseProblem | null>(
@@ -502,7 +504,7 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
                   type="button"
                   className="pc-passe-go"
                   data-passe-back
-                  onClick={() => duel.onEnd(state.winner === 1, laid.current)}
+                  onClick={() => duel.onEnd(state.winner === (duel.side ?? 1), laid.current)}
                 >
                   Revenir à la planche
                 </button>
