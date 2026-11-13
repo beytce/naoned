@@ -62,6 +62,7 @@ import {
   plancheRankInit,
   plancheRankTurn,
 } from "./rang.js";
+import type { PlancheSortiesState, SortiesRules } from "./sorties.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -181,6 +182,8 @@ export interface PlancheSetup {
   muda?: PlancheMudaRules;
   /** The ink tide (docs/plan-maree.md T1): without it, the ink never moves. */
   encre?: EncreRules;
+  /** The captains' sorties (docs/plan-maree.md T2): without them, none. */
+  sorties?: SortiesRules;
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */
@@ -285,6 +288,8 @@ export interface PlancheState {
   muda?: PlancheMudaState;
   /** The ink tide's line. */
   encre?: EncreState;
+  /** The week's sorties and how they went. */
+  sorties?: PlancheSortiesState;
 }
 
 const fail = (code: string): never => {

@@ -24,6 +24,7 @@ import {
   maisonWeek,
 } from "./maison.js";
 import type { PlancheSetup, PlancheState } from "./planche.js";
+import { plancheSortiesWeek } from "./sorties.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -333,6 +334,8 @@ export function plancheRankTurn(S: PlancheSetup, s: PlancheState): void {
       // The ink ebbs (docs/plan-maree.md T3).
       plancheEncreEbb(S, s);
     } else plancheEncreWeek(S, s, turn);
+    // The week's sorties, once the ink has taken what it reached (docs/plan-maree.md T2).
+    plancheSortiesWeek(S, s, turn);
     markNow(S, s);
   }
   if (Math.floor(s.now / DAY) !== s.rank.markDay) markNow(S, s);

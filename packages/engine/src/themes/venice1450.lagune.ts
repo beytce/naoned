@@ -470,6 +470,9 @@ export const venice1450LaguneParams: LagoonParams = {
       priceBps: 1_500,
       lossBps: 2_500,
     },
+    // The captains' sorties (docs/plan-maree.md T2): at 18 h (UTC), told a day before; the
+    // captain sees three pieces ahead, as the tower's lieutenant does.
+    sorties: { hour: 18, announceMs: 24 * HOUR, depth: 3, guardDepth: 3 },
     // The Muda (docs/plan-muda.md N2): loaded Wednesday to Friday from the pier of San Marco,
     // sailing on Saturday from 8 to 20 (UTC) past three straits, back on Sunday at 8; × 1, then
     // half again a strait passed (docs/calibration.md § La Muda).
