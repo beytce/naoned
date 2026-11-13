@@ -794,6 +794,36 @@ export const guerreWeeks = pgTable("guerre_weeks", {
   settledAt: timestamp("settled_at", { withTimezone: true }),
 });
 
+/** The league of each lagoon (docs/plan-maree.md T5): 1 the first, the last the Sérénissime. */
+export const plancheLagoonLeagues = pgTable("planche_lagoon_leagues", {
+  worldId: uuid("world_id")
+    .primaryKey()
+    .references(() => worlds.id, { onDelete: "cascade" }),
+  league: integer("league").notNull(),
+});
+
+/** The best league an account has reached: it never goes down more than one below it. */
+export const plancheAccountLeagues = pgTable("planche_account_leagues", {
+  accountId: uuid("account_id")
+    .primaryKey()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  best: integer("best").notNull(),
+});
+
+/** The tides whose leagues have been settled, lagoon by lagoon: once each. */
+export const plancheTides = pgTable(
+  "planche_tides",
+  {
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    tide: integer("tide").notNull(),
+    moves: jsonb("moves").notNull(),
+    doneAt: timestamp("done_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.tide] })],
+);
+
 /**
  * The Gazette of Sunday (docs/plan-muda.md N4): one issue a lagoon and a week, written by the game
  * on Sunday from its week; kept, for its past issues to be read again.

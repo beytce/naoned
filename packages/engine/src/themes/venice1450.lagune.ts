@@ -470,9 +470,12 @@ export const venice1450LaguneParams: LagoonParams = {
       priceBps: 1_500,
       lossBps: 2_500,
     },
-    // The captains' sorties (docs/plan-maree.md T2): at 18 h (UTC), told a day before; the
-    // captain sees three pieces ahead, as the tower's lieutenant does.
-    sorties: { hour: 18, announceMs: 24 * HOUR, depth: 3, guardDepth: 3 },
+    // The captains' sorties (docs/plan-maree.md T2): at 18 h (UTC), told a day before. The
+    // captain sees three pieces ahead, the lieutenant alone two: a tower left to itself falls six
+    // times in ten; its guard laid in advance, or its holder meeting the sortie, hold it.
+    sorties: { hour: 18, announceMs: 24 * HOUR, depth: 3, guardDepth: 2 },
+    // The leagues (docs/plan-maree.md T5): three, then the Sérénissime; the top sixth goes up.
+    ligues: { count: 4, shareBps: 1_667 },
     // The Doge's decrees (docs/plan-maree.md T3): a town pays 10 % more for a good, the tolls
     // capped at 5 %, the ink rises half a row less a week, the black straits lay a link less.
     decrets: { priceBps: 1_000, tollBps: 500, inkLess: 50, noirLess: 1, chooseMs: 3 * 24 * HOUR },

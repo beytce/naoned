@@ -193,6 +193,8 @@ export interface PlancheSetup {
   sorties?: SortiesRules;
   /** The Doge's decrees (docs/plan-maree.md T3): without them, none. */
   decrets?: DecretsRules;
+  /** The leagues (docs/plan-maree.md T5): how many (the last, the Sérénissime), what share goes up. */
+  ligues?: { count: number; shareBps: number };
   rules: {
     bobbins: number;
     /** Units of each good a warehouse holds. */

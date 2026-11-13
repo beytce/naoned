@@ -75,6 +75,8 @@ export interface PlancheRank {
   /** Each house's place when the day began, and that day. */
   mark: Record<string, number>;
   markDay: number;
+  /** The last tide's final standing, the best first (docs/plan-maree.md T5: who goes up a league). */
+  final?: { tide: number; order: string[] };
   /** The last tide's laurels and Doge. */
   laurels: {
     tide: number;
@@ -325,6 +327,7 @@ export function plancheRankTurn(S: PlancheSetup, s: PlancheState): void {
     s.rank.week += 1;
     if (s.rank.week >= R.tideWeeks) {
       s.rank.laurels = laurels ?? proclaim(S, s);
+      s.rank.final = { tide: s.rank.tide, order: plancheStanding(S, s).map((r) => r.house) };
       for (const h of Object.values(s.houses)) {
         h.rank = plancheRankHouse(S);
         if (h.maison) h.maison.guardAt = 0;
