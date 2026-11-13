@@ -166,6 +166,7 @@ try {
   // Monday: a house founded; the board with the black straits; the Muda's sheet.
   for (const p of pages) {
     const { page, name, tap } = p;
+    await page.bringToFront();
     await page.goto(server.url);
     await page.waitForSelector("[data-planche-entree]", { state: "attached", timeout: 60_000 });
     const email = `muda_${name}@example.org`;
@@ -203,6 +204,7 @@ try {
   server = await startServer(DAYS.mercredi);
   for (const p of pages) {
     const { page, name, tap } = p;
+    await page.bringToFront();
     await page.goto(server.url);
     if (!(await until(page, has, "[data-muda-open]"))) fail(`${name}: no board on Wednesday`);
     await tap("[data-muda-open]");
@@ -221,6 +223,7 @@ try {
   server = await startServer(DAYS.samedi);
   for (const p of pages) {
     const { page, name, tap } = p;
+    await page.bringToFront();
     await page.goto(server.url);
     if (!(await until(page, has, "[data-muda-open]"))) fail(`${name}: no board on Saturday`);
     await tap("[data-muda-open]");
@@ -294,6 +297,7 @@ try {
   server = await startServer(DAYS.dimanche);
   for (const p of pages) {
     const { page, name, tap } = p;
+    await page.bringToFront();
     await page.goto(server.url);
     if (!(await until(page, has, "[data-gazette-open]"))) fail(`${name}: no Gazette button`);
     await tap("[data-gazette-open]");
@@ -312,6 +316,11 @@ try {
   }
 } catch (e) {
   fail(e.stack ?? String(e));
+  for (const ctx of browser.contexts())
+    for (const pg of ctx.pages())
+      await pg
+        .screenshot({ path: join(SHOTS, `semaine-echec-${pg.viewportSize()?.width}.png`) })
+        .catch(() => {});
 } finally {
   await browser.close();
   await server.stop();

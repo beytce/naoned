@@ -39,6 +39,12 @@ export const POWER_NAME: Record<string, string> = {
   genes: "Gênes",
   milan: "Milan",
 };
+/** « of » a power, in French: du Turc, de Gênes, de Milan. */
+export const POWER_OF: Record<string, string> = {
+  turc: "du Turc",
+  genes: "de Gênes",
+  milan: "de Milan",
+};
 const POWER_COLOUR: Record<string, string> = {
   turc: "#2F5D50",
   genes: "#3A4A6B",
@@ -361,7 +367,7 @@ export function NoirSheet({
                 <div data-won>
                   <b>{ducats(price * k)}</b>
                   <span>
-                    forcé : vendu à {x.port}, et une relique de {POWER_NAME[x.power] ?? x.power}
+                    forcé : vendu à {x.port}, et une relique {POWER_OF[x.power] ?? x.power}
                   </span>
                 </div>
                 <div data-lost>
@@ -387,7 +393,7 @@ export function NoirSheet({
         </>
       )}
       <p className="pc-nr-relics">
-        Reliques de {POWER_NAME[x.power] ?? x.power} : <b data-noir-relics>{relics}</b> sur{" "}
+        Reliques {POWER_OF[x.power] ?? x.power} : <b data-noir-relics>{relics}</b> sur{" "}
         {N.relicsPerPlan} pour un plan.
       </p>
     </section>

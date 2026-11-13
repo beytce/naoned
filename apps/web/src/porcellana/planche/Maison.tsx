@@ -6,7 +6,7 @@
  */
 import type { ReactNode } from "react";
 import { Emblem } from "../../art/logo.js";
-import { POWER_NAME } from "./Muda.js";
+import { POWER_OF } from "./Muda.js";
 
 /** What `/api/maison` gives. */
 export interface MaisonView {
@@ -190,9 +190,9 @@ function said(
   if (e.kind === "doge") return "Doge de la lagune.";
   // The black straits and the Muda (docs/plan-muda.md).
   if (e.kind === "relic")
-    return `Une relique de ${POWER_NAME[e.data ?? ""] ?? e.data}, prise à son détroit noir.`;
+    return `Une relique ${POWER_OF[e.data ?? ""] ?? e.data}, prise à son détroit noir.`;
   if (e.kind === "plan")
-    return `Un plan assemblé, de trois reliques de ${POWER_NAME[e.data ?? ""] ?? e.data}.`;
+    return `Un plan assemblé, de trois reliques ${POWER_OF[e.data ?? ""] ?? e.data}.`;
   if (e.kind === "muda") return "Le pavillon de la Muda : le convoi a passé ses trois détroits.";
   return "";
 }

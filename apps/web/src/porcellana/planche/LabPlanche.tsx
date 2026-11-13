@@ -82,7 +82,7 @@ import { CompagnieSheet, type Sign } from "./Compagnie.js";
 import { Entree, Fonder, HouseFlag, Profil } from "./Entree.js";
 import { GardeEditor } from "./Garde.js";
 import { FacadeSheet, LevelUp, MaisonRing, MaisonSheet, type MaisonView } from "./Maison.js";
-import { GazetteSheet, MudaSheet, NoirSheet, POWER_NAME, Reliques } from "./Muda.js";
+import { GazetteSheet, MudaSheet, NoirSheet, POWER_OF, Reliques } from "./Muda.js";
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
 import { Bobbin, Flag, Knot, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
@@ -983,7 +983,7 @@ export default function LabPlanche() {
               act(
                 () => plancheNoirTry(S, state, ME, strait, { good, n }, won, state.now),
                 won
-                  ? `Forcé ! ${what} vendus à ${x?.port}, et une relique de ${POWER_NAME[x?.power ?? ""] ?? x?.power}.`
+                  ? `Forcé ! ${what} vendus à ${x?.port}, et une relique ${POWER_OF[x?.power ?? ""] ?? x?.power}.`
                   : `La chaîne a tenu : ${what} ont coulé.`,
                 ["/noir", { strait, good, n, moves }],
                 ["duel_lost"],

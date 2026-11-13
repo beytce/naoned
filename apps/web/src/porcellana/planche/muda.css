@@ -42,7 +42,11 @@
   color: #f6f4f0;
 }
 .pc-mu-week li[data-what="rentre"] {
-  background: var(--pc-accent-soft, #f3d9d5);
+  background: var(--pc-accent);
+  color: #f6f4f0;
+}
+.pc-mu-week li[data-what="rentre"] b {
+  color: #f6f4f0;
 }
 .pc-mu-week li[data-today="true"] {
   box-shadow: 0 0 0 2px var(--pc-accent);
