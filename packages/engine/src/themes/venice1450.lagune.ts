@@ -501,7 +501,13 @@ const MUDA_PIER: PlancheCity = {
   via: [],
   ring: "muda",
   wants: Object.fromEntries(
+    // Raw goods too, at a little less: a new house's island makes little else.
     Object.entries({
+      wheat: 260,
+      clay: 260,
+      sand: 240,
+      wood: 300,
+      hemp: 300,
       salt: 500,
       flour: 520,
       planks: 720,

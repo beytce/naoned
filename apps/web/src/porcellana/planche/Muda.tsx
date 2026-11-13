@@ -472,7 +472,9 @@ function headline(g: PlancheGazette): { title: string; lead: string } {
           h.passed === (g.muda?.straits.length ?? 3)
             ? "La Muda est passée !"
             : `La Muda rentre, ${h.passed} détroit${h.passed > 1 ? "s" : ""} passé${h.passed > 1 ? "s" : ""}`,
-        lead: `${h.units.toLocaleString("fr-FR")} marchandises chargées par la lagune sont revenues d'Alexandrie.`,
+        lead: h.passed
+          ? `${h.units.toLocaleString("fr-FR")} marchandises chargées par la lagune sont revenues d'Alexandrie.`
+          : `Les corsaires ont tenu : les ${h.units.toLocaleString("fr-FR")} marchandises de la cale reviennent à ceux qui les ont chargées.`,
       };
     case "guerre":
       return {

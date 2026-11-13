@@ -8,7 +8,7 @@
 //    and the relics and the plans in the Livre;
 //  - Sunday: the Gazette, written by the server from the week.
 // Needs the web built (pnpm --filter @comptoirs/web build): node e2e/semaine.mjs
-// Env: CHROMIUM, SHOTS, ONLY (p or d).
+// Env: CHROMIUM, SHOTS, ONLY (p or d; the script runs each alone, one lagoon each).
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
