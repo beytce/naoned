@@ -125,7 +125,11 @@ describe("the tide on line", () => {
     expect(after.state.sorties?.done[first.id]).toMatchObject({ won: true, by: "tenant" });
     expect(after.state.passages.bouche?.seals).toBe(1);
     expect(await hub.sortie("ana", first.id, [], first.at - HOUR)).toBe("planche_sortie_done");
-    // The other is played at its hour against the guard, without the holder.
+    // The other is played at its hour against the guard, without the holder: by the timer that
+    // settles the sorties, never by a read (docs/plan-socle.md A3).
+    const still = await hub.view("ana", "Ana", second.at + HOUR);
+    expect(still.state.sorties?.done[second.id]).toBeUndefined();
+    expect(await hub.settleSorties(second.at + HOUR)).toBe(1);
     const later = await hub.view("ana", "Ana", second.at + HOUR);
     expect(later.state.sorties?.done[second.id]?.by).toBe("garde");
     expect(later.ok).toBe(true);

@@ -43,17 +43,20 @@ const world = await GameWorld.open(database.db, clock, {
   ...(config.EMPIRE_FROM !== undefined ? { empireFrom: config.EMPIRE_FROM } : {}),
   ...(config.WORLD_SETTINGS_OVERRIDE ? { settingsOverride: config.WORLD_SETTINGS_OVERRIDE } : {}),
 });
-world.startTicking();
+// The old game sleeps unless asked (docs/plan-socle.md A5): its world answers, nothing runs.
+const ancien =
+  config.ANCIEN_JEU === "on" || (config.ANCIEN_JEU === undefined && config.NODE_ENV === "test");
+if (ancien) world.startTicking();
 const bots = new BotRunner(database.db, world);
 await bots.load();
 world.onSeasonOpened((closed) => void bots.newSeason(closed).catch(console.error));
-bots.start(60_000, (err) => console.error(err));
+if (ancien) bots.start(60_000, (err) => console.error(err));
 const pusher =
   config.VAPID_PUBLIC_KEY && config.VAPID_PRIVATE_KEY
     ? new WebPusher(config.VAPID_PUBLIC_KEY, config.VAPID_PRIVATE_KEY, config.VAPID_SUBJECT)
     : new NoPusher();
 const notifier = new Notifier(database.db, world, pusher);
-notifier.start(60_000, (err) => console.error(err));
+if (ancien) notifier.start(60_000, (err) => console.error(err));
 world.onEffects((fx, now) => void notifier.fromEffects(fx, now).catch(console.error));
 world.onSeasonOpened((closed) => void notifier.seasonOpened(closed).catch(console.error));
 // The shared board, kept in the base: a deploy or a restart loses nothing (docs/plan-compte.md).
@@ -107,7 +110,22 @@ await app.listen({ port: config.PORT, host: config.HOST });
 
 // Six invariants against the journals in the database: at startup, then every hour.
 const audit = async () => {
-  const violations = await world.checkInvariants();
+  const violations: unknown[] = ancien ? await world.checkInvariants() : [];
+  // The board's ledger against its purses, lagoon by lagoon (docs/plan-socle.md A4).
+  for (const store of planche.all()) {
+    await store.snapshot();
+    const balances = await store.balances();
+    for (const [id, h] of Object.entries(store.hub.current().doc.state.houses)) {
+      const booked = balances[`house:${id}`] ?? 0n;
+      if (booked !== h.ducats)
+        violations.push({
+          lagoon: store.name,
+          house: id,
+          ledger: String(booked),
+          purse: String(h.ducats),
+        });
+    }
+  }
   if (violations.length > 0) {
     app.log.error({ violations }, "invariant violations");
     void alerts.alert("Écart du grand livre", JSON.stringify(violations));

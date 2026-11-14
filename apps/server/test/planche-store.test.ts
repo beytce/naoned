@@ -149,8 +149,9 @@ describe("the ledger of the board", () => {
     for (let d = 1; d <= 7; d++) await hub.view("ben", "Ben", T0 + d * 24 * HOUR);
     await store.snapshot();
     const v = await hub.view("ana", "Ana", T0 + 7 * 24 * HOUR);
+    // The raw board: the view hides the other houses' purses (docs/plan-socle.md A1).
     const balances = await store.balances();
-    for (const [id, h] of Object.entries(v.state.houses))
+    for (const [id, h] of Object.entries(hub.current().doc.state.houses))
       expect(balances[`house:${id}`]).toBe(h.ducats);
     // Sales were written (the computer's houses trade too), and the island's cost.
     expect(v.state.houses[me]?.book.isle).toBeGreaterThan(0n);
@@ -173,7 +174,7 @@ describe("the ledger of the board", () => {
     await store.snapshot();
     const v = await hub.view("ana", "Ana", T0 + 30 * HOUR);
     const balances = await store.balances();
-    for (const [id, h] of Object.entries(v.state.houses))
+    for (const [id, h] of Object.entries(hub.current().doc.state.houses))
       expect(balances[`house:${id}`]).toBe(h.ducats);
   });
 
@@ -191,7 +192,7 @@ describe("the ledger of the board", () => {
     await second.snapshot();
     const v = await second.hub.view("ana", "Ana", T0 + 41 * HOUR);
     const balances = await second.balances();
-    for (const [id, h] of Object.entries(v.state.houses))
+    for (const [id, h] of Object.entries(second.hub.current().doc.state.houses))
       expect(balances[`house:${id}`]).toBe(h.ducats);
   });
 });

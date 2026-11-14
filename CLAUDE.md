@@ -1,61 +1,53 @@
 # Fondaco (ex-Comptoirs)
 
-Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage qui fait foi : docs/CADRAGE-v3.md (un empire marchand persistant, sans remise à zéro) ; docs/CADRAGE.md (v2) ne vaut plus que pour ses parties techniques. Nom de code du dépôt : naoned.
+Jeu de commerce multijoueur de niche, web/PWA (PC + mobile) : **la planche**, une lagune partagée où chaque Maison tend des fils de son île vers les villes et force les passages par la Passe. Cadrage qui fait foi : **docs/CADRAGE-v4.md** (le fil rouge, validé par le porteur le 13 novembre 2026 avec l'audit d'ensemble). CADRAGE-v3 et v2 ne valent plus que pour l'ancien jeu et leurs parties techniques. Nom de code du dépôt : naoned.
 
 ## Stack
-- Monorepo pnpm : apps/web (React + Vite + Tailwind, PWA), apps/server (Node + Fastify), apps/simulator (bots en mémoire, sortie CSV), packages/engine (logique pure en TypeScript).
-- PostgreSQL via Drizzle ORM, migrations versionnées.
+- Monorepo pnpm : apps/web (React + Vite + Tailwind + React Three Fiber, PWA), apps/server (Node + Fastify), apps/simulator (bancs en mémoire), packages/engine (logique pure en TypeScript).
+- PostgreSQL via Drizzle ORM, migrations versionnées. Base locale : PGlite (`DATABASE_URL=pglite:…`) en dev et en test. Nouvelle table → apps/server/src/db/schema.ts puis `pnpm --filter @comptoirs/server db:generate --name <nom>`.
 - Tests : Vitest. Temps réel : WebSocket.
-- Commandes : `pnpm dev` (`WORLD_KIND=empire pnpm dev` pour le monde persistant), `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm sim` (saisons mensuelles, rapport dans apps/simulator/out/report.md), `pnpm --filter @comptoirs/simulator empire` (simulateur de 24 mois par cohortes, rapport dans apps/simulator/out/empire.md), `pnpm --filter @comptoirs/web e2e:empire` (parcours de l'empire, après le build du web).
-- Base locale : PGlite (`DATABASE_URL=pglite:…`) en dev et en test ; PostgreSQL en production. Nouvelle table → modifier apps/server/src/db/schema.ts puis `pnpm --filter @comptoirs/server db:generate --name <nom>`.
+- Commandes : `pnpm dev`, `pnpm test`, `pnpm typecheck`, `pnpm lint` ; bancs de la planche `pnpm --filter @comptoirs/simulator <nom>-bench` (planche, maison, hex, arsenal, assaut, guerre, muda, maree, passe) ; parcours `pnpm --filter @comptoirs/web e2e:<nom>` après le build du web (`semaine` et `maree` relancent le serveur à des heures choisies avec `CLOCK_START`).
 - Déploiement : un seul service Railway (Dockerfile), voir docs/deploiement.md.
 
-## Règles non négociables
+## Règles techniques (la planche, telles qu'elles sont)
 - Montants en entiers (bigint, en deniers), taux en points de base. Jamais de float.
-- Tout mouvement de monnaie passe par ledger_entries (partie double) ; tout mouvement de stock passe par stock_movements.
-- Toute table de la couche monde porte world_id ; le référentiel (resources, recipes) porte theme_id.
-- La logique de jeu (production, marché, PNJ, villes, invariants) vit dans packages/engine, sans accès base : fonctions pures testées, utilisées à l'identique par le serveur et le simulateur.
-- Production calculée paresseusement à la lecture, pas par le tick.
-- Toute opération de marché = une transaction SQL unique, sérialisée par un verrou transactionnel par (world_id, resource).
-- Paramètres d'équilibrage dans worlds.settings (JSON), jamais en dur.
-- Le commerce est persistant, sans remise à zéro : seule la Terraferme a des saisons courtes, d'une semaine ; `worlds.ends_at` ne borne plus le commerce.
+- **La logique de jeu vit dans packages/engine** (`src/planche/`, `src/passe/`, `src/guerre/`, `src/ile/`), sans accès base : fonctions pures testées, utilisées à l'identique par le serveur, le simulateur et le client hors ligne. Lire une clé saisie toujours par `Object.hasOwn` (jamais `obj[saisie]` nu).
+- **Chaque lagune est un document** : un instantané (`world_states`) et le journal de ses commandes (`world_commands`), rejoué au chargement ; la planche est déterministe. Une commande à la fois par lagune (la file du PlancheHub), écrite au journal avant d'être répondue.
+- **Le grand livre** (`ledger_entries`, partie double) est écrit à partir des livres des Maisons (`book` : ventes, péages, île, bourses venues ou parties) à chaque écriture ; l'invariant de la planche (tout denier est dans une bourse, brûlé, dépensé, ou venu et parti avec une Maison) est testé.
+- La production se calcule par tranches à la lecture, jamais par un tick ; aucun duel ne se joue pendant une lecture (lot A du socle).
+- Paramètres d'équilibrage dans le thème (`packages/engine/src/themes/venice1450.lagune.ts`), recopiés dans `worlds.settings` au chargement ; jamais en dur ailleurs.
+- Toute table de la couche monde porte world_id.
+- Un joueur ne reçoit que ce qui se voit sur la planche : jamais les secrets des autres (ruses, garde, entrepôt, reliques, bourse au denier près).
 
-## Règles d'or (CADRAGE-v3 § 2, version Hades' Star du 1er novembre 2026)
-Elles font foi pour toute mécanique, toute fonctionnalité et tout mode de jeu ; en cas de conflit, elles priment.
-1. **Ton empire t'appartient.** Personne ne peut piller ni prendre ce que tu as bâti.
-2. **Le risque vient des terres de Rome, jamais d'un autre joueur.** Un véhicule détruit au combat de la Porta rentre abîmé ; un véhicule encore à la Porta à sa fermeture est perdu ; la perte définitive à chaque combat n'existe qu'à la Porta noire, que le joueur choisit.
-3. **Rien ne s'accumule sans fin, et rien ne tourne sans toi.** Stocks, production et commandes ont un plafond : une fois plein, ça s'arrête, sans rien perdre. Un atelier aux lots prêts s'arrête et attend la récolte : rien de perdu, mais on ne gagne pas sans jouer (7 novembre 2026, docs/plan-publication.md D4).
-4. **Le temps s'achète, la puissance jamais.** Les perle (monnaie précieuse, achetée ou gagnée en jouant) accélèrent les chantiers et les recherches. On ne vend jamais ni ducats, ni marchandises, ni modules, ni plans, ni reliques, ni Sceaux, ni chantier ou place en plus ; la Terraferme et la Contesa restent à armes égales.
-5. **Les hauts niveaux se gagnent en jouant.** Au-delà d'un certain niveau, les modules demandent des plans, qui viennent des reliques de la Porta.
-6. **On affronte des joueurs de son niveau.** Combats, classements et appariements se font par bande de Puissance, calculée sur ce qui est bâti, jamais sur la caisse.
-7. **Le jeu se joue en quelques minutes, plusieurs fois par jour, et la compagnie aide sans obliger.** Les modes en direct sont courts (une dizaine de minutes) ; aucun mode n'exige d'être présent pendant des jours.
-8. **Tout se voit.** Toute fonctionnalité, tout mode de jeu est d'abord visuel : sur la carte, par des objets qu'on touche, des mouvements et des animations. Ni tableur ni jeu de texte : un chiffre ou une liste accompagnent l'image, jamais ne la remplacent.
+## Règles d'or (CADRAGE-v4 § 2)
+Elles font foi pour toute mécanique et toute fonctionnalité ; en cas de conflit, elles priment.
+1. **Une seule planche, aucun mode.** Rien ne se joue ailleurs que sur la planche.
+2. **Un seul geste : le fil.** Le rouge est réservé à ce que le joueur a tracé et à la seule action mise en avant.
+3. **Ton île t'appartient.** Personne ne prend ni ne détruit ce qui s'y trouve.
+4. **On te devance, on ne te vole pas.** Ce qui se dispute, ce sont les places de la planche commune et le rang. On ne risque que ce qu'on engage.
+5. **Tout est visible.** La Passe est un duel sans hasard ni pièce cachée ; sur la planche (une sortie de corsaires, la marée), rien ne tombe sans avoir été annoncé.
+6. **À armes égales.** La force engagée dans un passage est fixée par le passage. Ni la caisse, ni le rang, ni l'ancienneté, ni l'argent réel ne donnent de puissance.
+7. **Chacun peut être le meilleur.** Le rang repart de zéro à chaque marée ; les classements mesurent l'adresse.
+8. **Rien ne s'accumule sans fin, et on ne perd rien en dormant.** Tout a un plafond ; aucune série de connexion, aucune récompense qui expire.
+9. **Court si tu veux, profond si tu restes.** Cinq minutes font une bonne visite, avec au moins une vraie décision.
+10. **Les graphismes sont ceux de Porcellana**, et **tout se voit** : sur la planche, par des objets, des mouvements ; un chiffre ou une liste accompagnent l'image, jamais ne la remplacent.
 
 ## Façon de travailler
-- **La refonte totale « le fil rouge »** (10 novembre 2026, principe validé par le porteur sur maquette, à condition que les tuiles et les bâtiments de Porcellana restent tels quels) : une seule planche sans modes ni onglets, un seul geste (tirer un fil), le PvE et le PvP fondus dans les passages et la Passe (un duel : le fil contre la chaîne), la marée d'encre. Cadrage en cours de validation : docs/CADRAGE-v4.md ; critique et maquette : docs/refonte-totale-2026-11-10/. Prototypes de l'étape 1 et 2 : la Passe (docs/plan-passe.md, `?lab=passe`) et la planche et ses fils (docs/plan-planche.md, `?lab=planche`), et l'île posée sur la planche (docs/plan-ile.md, « Entrer dans ton île » depuis sa Maison), validés par le porteur. Tant que le porteur n'a pas validé ce cadrage, CADRAGE-v3 et les règles ci-dessus restent la référence du code existant ; aucun lot nouveau des plans antérieurs ne se lance sans lui demander.
-- **La planche par défaut** (11 novembre 2026, décision du porteur : « que les nouveaux ajouts soient le mode par défaut sans modifier l'URL ») : la racine du site ouvre la planche partagée (fils, île, Passe, rang et rival) ; l'ancien jeu (empire, connexion, Bataille) vit à `/ancien` (`apps/web/src/home.ts`), ses autres pages gardent leur adresse (`/connexion`, `/admin`, pages légales, salles de la Bataille). `?lab=planche` reste valable.
-- **L'audit visuel et sa maquette** (11 novembre 2026, validés par le porteur : « applique la maquette et le logo au jeu, tout doit ressembler exactement à ce que tu as fait ») : le fil en héros, l'eau qui vire à l'encre, une seule bourse, les parts d'une ville, l'île et la Passe lisibles, et le logo à l'arche (`apps/web/brand/`, `src/art/logo.tsx`). Audit, toile, état et écarts : docs/audit-visuel-2026-11-11/00-audit.md ; tout nouvel écran de la planche suit la toile.
-- **Le plan de publication** (7 novembre 2026, validé par le porteur, issu de l'audit des joueurs `docs/audit-joueurs-2026-11-07/`) : décisions D1 à D12 (glossaire et « tu », règle 3 réécrite, bêta sans perle, Porcellana seule…) et lots 0 à 7 dans docs/plan-publication.md ; il prime sur les plans antérieurs en cas de conflit.
-- **Les tutoriels guidés** (8 novembre 2026, décision du porteur) : jusqu'au Fondaco niveau 2, le jeu guide geste par geste sous un projecteur (le reste voilé, rien d'autre à toucher, aucun « Passer » sauf au profil) ; un tutoriel court à la première ouverture de chaque nouveau lieu (Porta, Remise, intérieur des ateliers, Terraferme). Tout nouveau lieu ou geste du début reçoit le sien. Plan et état : docs/plan-tutoriels.md ; code : `apps/web/src/empire/tutor/`.
-- Chaque système absorbe les anciens au lieu de s'y ajouter : une douzaine de systèmes visibles, pas trente.
-- Commencer chaque tâche en mode plan, attendre validation avant de coder.
-- Écrire les tests avant le code pour packages/engine. Les tests du moteur utilisent la fixture figée test/fixture.ts, jamais les paramètres de Venise.
-- Tout changement d'équilibrage se valide au simulateur de 24 mois (toutes les graines) et se documente dans docs/calibration.md.
-- Le socle de l'empire (CADRAGE-v3 § 13, étape 3) vit à côté du monde mensuel : moteur `packages/engine/src/empire/` (commandes `empire*`), routes `/api/empire`, écran `apps/web/src/empire/`. La bascule (`EMPIRE_FROM`) ne s'active en production que sur décision du porteur.
-- **Porcellana** (5 novembre 2026, validée par le porteur, prime sur Jour et le verre, le Plateau de nuit et la Lagune pour tout ce qui est en 3D et pour les surfaces) : un monde blanc porcelaine, un seul accent rouge de Venise, des bâtiments biseautés explicites, la fiche au clic, le Marché en bâtiment (San Marco), et la carte en cases carrées achetées une à une. Plan, grammaire et état : docs/plan-porcellana.md ; référence : docs/direction-artistique-2026-11/porcellana/prototype.html ; kit : `apps/web/src/porcellana/` ; grille : `packages/engine/src/empire/grid.ts`.
-- La refonte claire (5 novembre 2026, validée par le porteur) : quatre lieux (Carte, Fondaco, Porta, Compagnie) dans une barre d'onglets, le Marché dans Venise, la Remise au quai, le profil derrière le médaillon ; plan, lots et état dans docs/plan-refonte-claire.md. Elle prime sur la Lagune, le Plateau et le dock pour la navigation.
-- **Les ateliers de l'intérieur** (6 novembre 2026, décision du porteur : chaque atelier a son intérieur propre, machines, ouvriers, flux, usure et fatigue, optimisation poussée) : plan complet, lots et critères dans docs/plan-ateliers.md ; il remplace les modules d'atelier de la Scuola et le maître global. Moteur : `packages/engine/src/empire/interior/` (commandes `empireInterior*`) ; thème : `packages/engine/src/themes/venice1450.interior.ts` (non allumé).
-- **Les premiers pas** (6 novembre 2026, retours du porteur) : départ sans atelier, guide jusqu'à la première commande, Fondaco qui élève stock et zone, repères parlants, catalogue complet sur une case libre, Porta au niveau 4 ; plan, lots et état dans docs/plan-premiers-pas.md.
-- **La Terraferme en Porcellana** (lot 9 de Porcellana, lots T1 à T5 fusionnés le 8 novembre 2026) : plan dans docs/plan-terraferme-porcellana.md ; audit et décisions du porteur du 8 novembre 2026 (trésor de guerre égal au lieu de l'achat de troupes, la Bataille en direct de 12 à 15 min ouverte à tous, le territoire qui fait l'armée, lot 8 de la bêta, transition où les tuiles se retournent) dans docs/audit-terraferme-2026-11-08/00-synthese.md ; écran `apps/web/src/empire/TerraPlay.tsx`, plateau `apps/web/src/porcellana/terra/`.
-- **La Porta qui se joue** (10 novembre 2026, validée par le porteur) : le convoi, les ordres qui disent ce qu'ils font, Rome qui annonce ses coups, le mouvement continu et les effets de la bataille ; plan, lots A et B faits, lot C abandonné par le porteur, état dans docs/plan-porta-jeu.md ; logique des ordres `apps/web/src/empire/porta/orders.ts`.
-- La Porta (le PvE des terres de Rome, CADRAGE-v3 § 12 quater) : détail dans docs/plan-porta.md ; moteur dans `packages/engine/src/empire/porta/`, serveur `apps/server/src/game/porta.ts`, écran `apps/web/src/empire/porta/`.
-- (Remplacée par Porcellana pour la carte et les surfaces.) Direction Jour et le verre (4 novembre 2026, remplace le « Plateau de nuit » pour la carte) : palette Jour par défaut, plateau pastel, cases « + », HUD en barre, surfaces en verre (`.glass*`) ; docs/design.md § Direction Jour et le verre.
-- Le dock (« une scène, un dock, une décision », 4 novembre 2026) : tout menu de choix (ateliers, Porta, livraisons, Remise) en suit les pièces (`apps/web/src/dock.tsx`) ; détail et état dans docs/plan-dock.md.
-- (Remplacé par Porcellana.) Le « Plateau de nuit » (direction de la carte, 2 novembre 2026) : état, architecture et suite dans docs/plateau-reprise.md ; moteur dans `apps/web/src/art/plateau/`, plan docs/plan-plateau.md.
-- Petits commits, un par fonctionnalité.
-- Hors périmètre MVP : noter dans IDEAS.md, ne pas coder.
-- Refonte totale du 29 octobre 2026 (docs/refonte-2026-10-29/ : synthèse, arbitrages du porteur, notes d'expert) : toute mécanique suit CADRAGE-v3 et son chemin (§ 13), une étape à la fois, chacune avec son plan validé. Les gels et chantiers antérieurs (recommandations du 20 octobre, plan de rupture du 27 octobre) sont clos ; une idée hors du chemin va dans IDEAS.md.
-- Règles stables dès qu'il y a des joueurs : à la Terraferme, un changement prend effet le lundi suivant ; au commerce, il s'annonce dans les notes du chapitre (le mois) avant de s'appliquer.
-- Langue du code : anglais. Langue de l'interface : français (i18n prévu).
-- Refonte UX du 28 octobre 2026 : lots 1 à 8 faits (docs/plan-refonte-ux.md), leurs acquis restent (barre à 5 onglets, feuilles, un seul or) ; le lot 9 est suspendu, ses écrans seront repensés pour CADRAGE-v3.
-- (Remplacée par Porcellana pour les couleurs, les matières et la typographie.) Direction artistique « Lagune » (décision du porteur, 25 octobre 2026) : tout nouvel écran ou élément la suit (docs/design.md, § Direction Lagune ; maquettes de chaque page : docs/propositions-design-2026-10-25.md). Un lieu est un astre qu'on approche ; trois profondeurs (carte, lieu en orbite, feuille du bas) ; une seule action en or ; les marchandises par leur marque (`GoodsMark`).
+- **Commencer chaque tâche en mode plan, attendre validation avant de coder.** Les questions se posent avec des options et une recommandation.
+- Écrire les tests avant le code pour packages/engine ; les tests du moteur utilisent des fixtures, jamais les paramètres de Venise.
+- Tout changement d'équilibrage se mesure au banc et se documente dans docs/calibration.md.
+- Petits commits, un par fonctionnalité ; chaque étape fusionnée dans la branche principale par une PR.
+- Chaque système absorbe les anciens au lieu de s'y ajouter : **une douzaine de systèmes visibles, trois le premier jour**, les autres ouverts par étape (décision D1 du 13 novembre).
+- Hors périmètre : noter dans IDEAS.md, ne pas coder.
+- Langue du code : anglais. Langue de l'interface : français (i18n prévu), tutoiement.
+- Règles stables dès qu'il y a des joueurs : un changement s'annonce avant de s'appliquer.
+
+## Où en est le jeu
+- **L'audit d'ensemble du 13 novembre 2026** (`docs/audit-2026-11-13/`, neuf rapports et la synthèse `00-synthese.md`, décisions D1 à D8 validées) : il fixe la suite, lots **A le socle** (`docs/plan-socle.md`), **B les duels honnêtes**, **C l'économie**, **D douze systèmes et la semaine**, **E le premier quart d'heure et le retour**, **F la compagnie sûre**, dans cet ordre ; une bêta fermée après A, B, C et E. Décisions : ligues gelées et décrets retirés pour la bêta (D2) ; la pile de lieux remplacée par le ruban de la semaine (D3) ; le Large réglé (D4) ; un puits de ducats (D5) ; les duels contre l'ordinateur joués par le serveur coup à coup (D6) ; pas d'accélération payante (D7).
+- **Le chemin de l'audit du 11 novembre** (`docs/audit-progression-2026-11-11/`), fait en neuf étapes, chacune avec son plan : `plan-compte`, `plan-lagunes`, `plan-progression-maison`, `plan-hex-commerce`, `plan-arsenal`, `plan-guerre`, `plan-compagnie`, `plan-muda`, `plan-maree` (dans docs/).
+- **La planche** : la racine du site l'ouvre (`apps/web/src/porcellana/planche/LabPlanche.tsx`) ; la Passe `apps/web/src/porcellana/passe/` ; l'île `apps/web/src/porcellana/ile/` ; l'assaut `apps/web/src/porcellana/guerre/`. Serveur : `apps/server/src/game/planche*.ts`, `guerre.ts`.
+- **La direction visuelle** : Porcellana (docs/plan-porcellana.md, kit `apps/web/src/porcellana/`), et la toile de l'audit visuel du 11 novembre (docs/audit-visuel-2026-11-11/00-audit.md, logo `apps/web/brand/`) : tout nouvel écran la suit.
+- **Les tutoriels guidés** (décision du 8 novembre) : le début se guide geste par geste, chaque nouveau lieu a son tutoriel court à la première ouverture (lot E pour la planche).
+
+## L'ancien jeu (endormi)
+L'empire, la Porta, la Terraferme et le monde mensuel (CADRAGE-v3) vivent à `/ancien` et dans `packages/engine/src/empire/`, `apps/web/src/empire/`, `apps/server/src/game/` (hors planche). Ils sont **endormis** depuis le lot A : chargés à la demande, leurs tâches de fond arrêtées sauf `ANCIEN_JEU=on`. Aucun lot nouveau n'y est lancé ; leur suppression se décidera à part. Leurs plans et décisions restent dans docs/ (`plan-publication`, `plan-porcellana`, `plan-refonte-claire`, `plan-ateliers`, `plan-premiers-pas`, `plan-terraferme-porcellana`, `plan-porta*`, `plan-dock`, `plan-tutoriels`) ; leurs règles d'or (CADRAGE-v3 § 2) ne valent que pour eux.

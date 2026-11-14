@@ -1,0 +1,64 @@
+/**
+ * The pool of duels (docs/plan-socle.md A3): a few worker threads that play the duels the server
+ * replays, so that one never stops the loop that answers the players. Without workers (tests, or
+ * when they cannot start) a duel is played at once, as before.
+ */
+import { cpus } from "node:os";
+import { Worker } from "node:worker_threads";
+import { type DuelJob, playDuel } from "./duels.js";
+
+export interface Duels {
+  run(job: DuelJob): Promise<boolean | null>;
+  stop(): Promise<void>;
+}
+
+/** Duels played at once, in the caller's loop. */
+export const inlineDuels: Duels = {
+  run: (job) => Promise.resolve(playDuel(job)),
+  stop: () => Promise.resolve(),
+};
+
+/** A pool of `size` workers (by default, the cores less one, two at most). */
+export function duelPool(size = Math.max(1, Math.min(2, cpus().length - 1))): Duels {
+  type Pending = { resolve: (r: boolean | null) => void; reject: (e: Error) => void };
+  const workers: { w: Worker; busy: number }[] = [];
+  const pending = new Map<number, Pending>();
+  let next = 1;
+  try {
+    for (let k = 0; k < size; k++) {
+      const w = new Worker(new URL("./duelWorker.ts", import.meta.url), {
+        execArgv: process.execArgv,
+      });
+      const slot = { w, busy: 0 };
+      w.on("message", (m: { id: number; result: boolean | null | "error" }) => {
+        slot.busy -= 1;
+        const p = pending.get(m.id);
+        pending.delete(m.id);
+        if (!p) return;
+        if (m.result === "error") p.reject(new Error("duel_failed"));
+        else p.resolve(m.result);
+      });
+      w.on("error", (e) => console.error("[duels]", e));
+      w.unref();
+      workers.push(slot);
+    }
+  } catch (e) {
+    console.error("[duels] no workers, the duels are played at once:", e);
+    return inlineDuels;
+  }
+  return {
+    run(job) {
+      const slot = workers.reduce((a, b) => (b.busy < a.busy ? b : a));
+      if (!slot) return Promise.resolve(playDuel(job));
+      const id = next++;
+      slot.busy += 1;
+      return new Promise((resolve, reject) => {
+        pending.set(id, { resolve, reject });
+        slot.w.postMessage({ id, job });
+      });
+    },
+    async stop() {
+      await Promise.all(workers.map((s) => s.w.terminate()));
+    },
+  };
+}

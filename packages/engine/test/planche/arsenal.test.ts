@@ -366,6 +366,11 @@ describe("the beacon", () => {
     expect(s.houses.ana?.stock).toMatchObject({ planches: 70, cordes: 45 });
     expect(() => plancheGive(S, s, "ana", { briques: 500 })).toThrow("planche_short");
     expect(() => plancheGive(S, s, "ana", { planches: -3 })).toThrow("planche_unknown");
+    // An inherited key gives nothing (docs/plan-socle.md A4, the audit's R8).
+    expect(() => plancheGive(S, s, "ana", { toString: 30, constructor: 30 })).toThrow(
+      "planche_unknown",
+    );
+    expect(() => plancheShip(S, s, "ana", "toString", T0)).toThrow("planche_unknown");
     // One place a pass at level 2 of the house; the beacon at 2 gives a second.
     s = plancheDefense(S, s, "ana", "bouche", "tour");
     expect(() => plancheDefense(S, s, "ana", "bouche", "tour")).toThrow("planche_port_full");

@@ -131,18 +131,24 @@ const fleetOf = (h: PlancheHouse): PlancheFleet => {
   return h.fleet;
 };
 
+/** A key read only if the object has it as its own (never an inherited one: docs/plan-socle.md A4). */
+const own = <T>(o: Record<string, T> | undefined, k: string): T | undefined =>
+  o && Object.hasOwn(o, k) ? o[k] : undefined;
+
 /** Takes goods from the store, or refuses. */
 function take(h: PlancheHouse, goods: Record<string, number>, bps = BPS): void {
   const need = Object.entries(goods).map(([g, n]) => [g, Math.floor((n * bps) / BPS)] as const);
-  if (need.some(([g, n]) => (h.stock[g] ?? 0) < n)) fail("planche_short");
-  for (const [g, n] of need) h.stock[g] = (h.stock[g] ?? 0) - n;
+  if (need.some(([g, n]) => !Number.isInteger(n) || (own(h.stock, g) ?? 0) < n))
+    fail("planche_short");
+  for (const [g, n] of need) h.stock[g] = (own(h.stock, g) ?? 0) - n;
 }
 
 /** Gives goods back to the store, up to its cap. */
 function give(S: PlancheSetup, h: PlancheHouse, goods: Record<string, number>, bps: number) {
   for (const [g, n] of Object.entries(goods)) {
     const back = Math.floor((n * bps) / BPS);
-    h.stock[g] = Math.min(Math.max(S.rules.store, h.stock[g] ?? 0), (h.stock[g] ?? 0) + back);
+    const had = own(h.stock, g) ?? 0;
+    h.stock[g] = Math.min(Math.max(S.rules.store, had), had + back);
   }
 }
 
@@ -160,7 +166,7 @@ export function plancheShip(
   now: number,
 ): PlancheState {
   const A = S.arsenal;
-  const r = A?.ships[kind];
+  const r = own(A?.ships, kind);
   if (!A || !r) return fail("planche_unknown");
   const h0 = houseIn(s0, house);
   if ((h0.level ?? 1) < r.minLevel) return fail("planche_level");
@@ -195,7 +201,7 @@ export function plancheShipRefit(
   const h = s.houses[house] as PlancheHouse;
   const f = fleetOf(h);
   f.ships = f.ships.filter((x) => x.id !== id);
-  give(S, h, A.ships[ship.kind]?.goods ?? {}, A.refitBps);
+  give(S, h, own(A.ships, ship.kind)?.goods ?? {}, A.refitBps);
   return s;
 }
 
@@ -229,7 +235,7 @@ export function plancheShipRepair(
   if (!ship0.damaged || ship0.repairedAt !== undefined) return fail("planche_not_damaged");
   const s = structuredClone(s0);
   const h = s.houses[house] as PlancheHouse;
-  take(h, A.ships[ship0.kind]?.goods ?? {}, A.repair.bps);
+  take(h, own(A.ships, ship0.kind)?.goods ?? {}, A.repair.bps);
   const ship = fleetOf(h).ships.find((x) => x.id === id) as PlancheShip;
   ship.repairedAt = now + A.repair.ms;
   return s;
@@ -249,7 +255,7 @@ export function plancheDefense(
   kind: string,
 ): PlancheState {
   const A = S.arsenal;
-  const d = A?.port.defenses[kind];
+  const d = own(A?.port.defenses, kind);
   if (!A || !d || !A.port.passes.includes(pass)) return fail("planche_unknown");
   const h0 = houseIn(s0, house);
   if ((h0.port?.[pass]?.length ?? 0) >= planchePortSlots(S, h0)) return fail("planche_port_full");
@@ -296,7 +302,7 @@ export function plancheDefenseRemove(
   const s = structuredClone(s0);
   const h = s.houses[house] as PlancheHouse;
   portOf(S, h)[pass]?.splice(index, 1);
-  give(S, h, A.port.defenses[kind]?.goods ?? {}, A.refitBps);
+  give(S, h, own(A.port.defenses, kind)?.goods ?? {}, A.refitBps);
   return s;
 }
 
@@ -331,7 +337,7 @@ export function planchePower(S: PlancheSetup, s: PlancheState, house: string): n
   }
   // A ship: its force, its hull and its level.
   for (const ship of h.fleet?.ships ?? []) {
-    const r = A.ships[ship.kind];
+    const r = own(A.ships, ship.kind);
     p += A.power.ship * ((r?.force ?? 0) + (r?.hull ?? 0) + ship.level);
   }
   for (const list of Object.values(h.port ?? {})) p += A.power.defense * list.length;
@@ -347,15 +353,18 @@ export function beaconLevel(thresholds: number[], points: number): number {
 
 /** A house gives goods of its store to its company's beacon: they leave the store for good. */
 export function plancheGive(
-  _S: PlancheSetup,
+  S: PlancheSetup,
   s0: PlancheState,
   house: string,
   goods: Record<string, number>,
 ): PlancheState {
   houseIn(s0, house);
+  // Only goods of the board, each a whole number: « toString » gives nothing (docs/plan-socle.md A4).
   if (
     !Object.keys(goods).length ||
-    Object.values(goods).some((n) => !Number.isInteger(n) || n <= 0)
+    Object.entries(goods).some(
+      ([g, n]) => !Object.hasOwn(S.goods, g) || !Number.isInteger(n) || n <= 0,
+    )
   )
     return fail("planche_unknown");
   const s = structuredClone(s0);

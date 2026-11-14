@@ -474,11 +474,9 @@ export const venice1450LaguneParams: LagoonParams = {
     // captain sees three pieces ahead, the lieutenant alone two: a tower left to itself falls six
     // times in ten; its guard laid in advance, or its holder meeting the sortie, hold it.
     sorties: { hour: 18, announceMs: 24 * HOUR, depth: 3, guardDepth: 2 },
-    // The leagues (docs/plan-maree.md T5): three, then the Sérénissime; the top sixth goes up.
-    ligues: { count: 4, shareBps: 1_667 },
-    // The Doge's decrees (docs/plan-maree.md T3): a town pays 10 % more for a good, the tolls
-    // capped at 5 %, the ink rises half a row less a week, the black straits lay a link less.
-    decrets: { priceBps: 1_000, tollBps: 500, inkLess: 50, noirLess: 1, chooseMs: 3 * 24 * HOUR },
+    // The leagues (docs/plan-maree.md T5) are frozen for the beta (decision D2 of the audit of
+    // 13 November 2026): one league, no house moves; `ligues` comes back with full lagoons.
+    // The Doge's decrees (docs/plan-maree.md T3) are withdrawn for the beta (D2) as well.
     // The Muda (docs/plan-muda.md N2): loaded Wednesday to Friday from the pier of San Marco,
     // sailing on Saturday from 8 to 20 (UTC) past three straits, back on Sunday at 8; × 1, then
     // half again a strait passed (docs/calibration.md § La Muda).

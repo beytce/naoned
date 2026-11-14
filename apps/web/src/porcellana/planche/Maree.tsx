@@ -244,7 +244,7 @@ export function MareeSheet({
           <b>Décret de la marée</b> {name(state.decret.doge)}, Doge, le choisit.
         </p>
       ) : null}
-      {view ? (
+      {view && view.count > 1 ? (
         <>
           <h3 className="pc-mn-h3">Les ligues</h3>
           <ol className="pc-mr-ladder" data-ligue={view.league}>
@@ -364,7 +364,7 @@ export function TideEndSheet({
           : {stones.map((x) => passName(x.passage)).join(", ")}, tenue jusqu'au bout.
         </p>
       ) : null}
-      {view?.last ? (
+      {view?.last && view.count > 1 ? (
         <p className="pc-mr-move" data-ligue-move={view.last.me ?? "reste"}>
           {view.last.me === "up"
             ? `Tu montes : ta Maison est maintenant dans ${leagueName(view.league, view.count)}.`

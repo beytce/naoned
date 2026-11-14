@@ -7,6 +7,7 @@ import {
   plancheTides,
   worlds,
 } from "../db/schema.js";
+import type { Duels } from "./duelPool.js";
 import type { PlancheHubTheme } from "./planche.js";
 /** The status of a board retired for good (another map): kept for its ledger, never played. */
 export const PLANCHE_RETIRED = "planche_retired";
@@ -79,6 +80,24 @@ export class PlancheLagoons {
     return lagoons;
   }
 
+  private duels: Duels | null = null;
+  private sortiesTimer: NodeJS.Timeout | undefined;
+
+  /** The duels of every lagoon played in this pool (docs/plan-socle.md A3). */
+  useDuels(duels: Duels): void {
+    this.duels = duels;
+    for (const s of this.stores) s.hub.useDuels(duels);
+  }
+
+  /** The captains' sorties played by a timer, at most `everyMs` after their hour (A3). */
+  playSorties(now: () => number, everyMs = 30_000): void {
+    clearInterval(this.sortiesTimer);
+    this.sortiesTimer = setInterval(() => {
+      for (const s of this.stores) void s.hub.settleSorties(now()).catch(console.error);
+    }, everyMs);
+    this.sortiesTimer.unref?.();
+  }
+
   /** The league of a lagoon: 1 the first, the last the Sérénissime. */
   leagueOf(store: PlancheStore): number {
     return this.leagues.get(store.worldId) ?? 1;
@@ -102,6 +121,8 @@ export class PlancheLagoons {
     );
     this.stores.push(store);
     if (this.timerMs) store.start(this.timerMs);
+    if (this.duels) store.hub.useDuels(this.duels);
+    if (this.listeners.length) store.hub.pushEvery(1_000);
     for (const l of this.listeners) store.hub.onChange(l);
     if (league !== 1) {
       await this.db.insert(plancheLagoonLeagues).values({ worldId: store.worldId, league });
@@ -202,6 +223,7 @@ export class PlancheLagoons {
     }
     const house = to.hub.houseOf(player) ?? "";
     await this.db.delete(plancheSeats).where(eq(plancheSeats.accountId, player));
+    this.seats.delete(player);
     await this.record(to, house, player, now);
     await this.db
       .insert(plancheAccountLeagues)
@@ -241,13 +263,23 @@ export class PlancheLagoons {
     /** The boards to seat a newcomer on first, if one has room (its company's, docs/plan-compagnie.md). */
     prefer: string[] = [],
   ): Promise<{ store: PlancheStore; house: string }> {
+    // A seat already known: no round trip to the base, no wait in the queue (docs/plan-socle.md A2).
+    const seen = this.seats.get(accountId);
+    if (seen) {
+      const store = this.stores.find((s) => s.worldId === seen.worldId);
+      if (store && store.hub.houseOf(accountId) === seen.house)
+        return Promise.resolve({ store, house: seen.house });
+    }
     return this.serial(async () => {
       const [row] = await this.db
         .select()
         .from(plancheSeats)
         .where(eq(plancheSeats.accountId, accountId));
       const known = row && this.stores.find((s) => s.worldId === row.worldId);
-      if (row && known) return { store: known, house: row.house };
+      if (row && known) {
+        this.seats.set(accountId, { worldId: known.worldId, house: row.house });
+        return { store: known, house: row.house };
+      }
       // Seated on a board whose seat was not written (a write cut short): written now.
       for (const store of this.stores) {
         const house = store.hub.houseOf(accountId);
@@ -269,7 +301,11 @@ export class PlancheLagoons {
     });
   }
 
+  /** The seats known in memory, by account. */
+  private readonly seats = new Map<string, { worldId: string; house: string }>();
+
   private async record(store: PlancheStore, house: string, accountId: string, now: number) {
+    this.seats.set(accountId, { worldId: store.worldId, house });
     await this.db
       .insert(plancheSeats)
       .values({ worldId: store.worldId, house, accountId, joinedAt: new Date(now) })
@@ -277,12 +313,16 @@ export class PlancheLagoons {
   }
 
   private timerMs = 0;
-  private readonly listeners: ((players: string[]) => void)[] = [];
+  private readonly listeners: ((players: string[], version: number) => void)[] = [];
 
   /** Called after each change saved on any board, with that board's players. */
-  onChange(listener: (players: string[]) => void): void {
+  onChange(listener: (players: string[], version: number) => void): void {
     this.listeners.push(listener);
-    for (const s of this.stores) s.hub.onChange(listener);
+    // A push at most once a second per lagoon (docs/plan-socle.md A2).
+    for (const s of this.stores) {
+      s.hub.pushEvery(1_000);
+      s.hub.onChange(listener);
+    }
   }
 
   /** Every board's ledger follows it, even when no one plays. */
@@ -292,6 +332,7 @@ export class PlancheLagoons {
   }
 
   stop(): void {
+    clearInterval(this.sortiesTimer);
     this.timerMs = 0;
     for (const s of this.stores) s.stop();
   }

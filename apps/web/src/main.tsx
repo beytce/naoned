@@ -1,6 +1,5 @@
 import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
-import { App } from "./App.js";
 // Porcellana's type (docs/plan-porcellana.md D4), embedded.
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/500.css";
@@ -60,6 +59,9 @@ const PorcellanaLab = lazy(() => import("./porcellana/Lab.js"));
 const PasseLab = lazy(() => import("./porcellana/passe/LabPasse.js"));
 // The shared board and its threads (?lab=planche, docs/plan-planche.md).
 const PlancheLab = lazy(() => import("./porcellana/planche/LabPlanche.js"));
+// The old game (the empire, the Porta, the Terraferme), asleep since the base (docs/plan-socle.md
+// A5): loaded only when one goes there, never by the board's home.
+const App = lazy(() => import("./App.js").then((m) => ({ default: m.App })));
 const labName = new URLSearchParams(window.location.search).get("lab");
 // The shared board is the home (docs/plan-classement.md, decision of 11 November 2026).
 const board =
@@ -80,7 +82,9 @@ createRoot(root).render(
         <PlancheLab />
       </Suspense>
     ) : (
-      <App />
+      <Suspense fallback={null}>
+        <App />
+      </Suspense>
     )}
   </StrictMode>,
 );
