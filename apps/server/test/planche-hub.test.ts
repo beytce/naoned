@@ -430,9 +430,9 @@ describe("the duel rooms", () => {
     const v = await hub.duelStart("ana", { kind: "force", passage: "strait" }, T0);
     if (typeof v === "string") throw new Error(v);
     expect(v).toMatchObject({ side: 1, over: false, won: null, last: -1 });
-    expect(await hub.duelStart("ana", { kind: "force", passage: "strait" }, T0)).toBe(
-      "duel_running",
-    );
+    // Asked again (a screen reloaded), the same duel goes on; another is refused.
+    expect(await hub.duelStart("ana", { kind: "force", passage: "strait" }, T0)).toEqual(v);
+    expect(await hub.duelStart("ana", { kind: "daily" }, T0)).toBe("duel_running");
     expect(await hub.duelPlay("ben", { at: 0 }, T0)).toBe("duel_none");
     expect(await hub.duelPlay("ana", { at: 99 }, T0)).toBe("duel_illegal");
     // A piece of the player's, and the computer's answer, at once.

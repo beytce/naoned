@@ -44,6 +44,10 @@ function youOf(
     );
     return `Toi : encore ${left} h de fil tendu pour y figurer.`;
   }
+  const defis = s.houses[me]?.rank.defis ?? 0;
+  const need = S.rank?.defisMin ?? 0;
+  if (which === "passe" && defis < need)
+    return `Toi : cote ${s.houses[me]?.rank.cote ?? 0}. Encore ${need - defis} défi${need - defis > 1 ? "s" : ""} joué${need - defis > 1 ? "s" : ""} pour y figurer.`;
   if (which === "passe" && r.score <= BigInt(S.rank?.coteStart ?? 0))
     return `Toi : cote ${r.score.toString()}. Défie un joueur pour la faire monter.`;
   if (which === "garde" && r.score === 0n) return "Toi : force un passage, et tiens sa tour.";
@@ -55,7 +59,7 @@ const ducats = (deniers: bigint) => Math.round(Number(deniers) / 100).toLocaleSt
 
 /** What a laurel's score reads as. */
 function scoreOf(which: PlancheLaurelId, score: bigint, ranked: boolean): string {
-  if (!ranked) return "moins d'un jour de fil";
+  if (!ranked) return which === "passe" ? "moins de trois défis" : "moins d'un jour de fil";
   if (which === "negoce") return `${ducats(score)} d. par bobine-heure`;
   if (which === "passe") return `cote ${score.toString()}`;
   return `${score.toString()} h tenues`;

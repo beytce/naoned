@@ -149,8 +149,8 @@ describe("the board on line", () => {
     expect((await ana("GET", "/api/planche/duel")).json().duel.target).toBe("canal-1");
     expect(
       (await ana("POST", "/api/planche/duel/start", { kind: "force", passage: "canal-1" })).json()
-        .error,
-    ).toBe("duel_running");
+        .duel.target,
+    ).toBe("canal-1");
     expect((await ana("POST", "/api/planche/duel/play", { at: 9_999 })).statusCode).toBe(400);
     expect((await ana("POST", "/api/planche/duel/quit", {})).json().duel).toMatchObject({
       over: true,

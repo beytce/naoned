@@ -86,4 +86,11 @@ L'économie (lot C), la refonte des écrans de la planche (lot D), le premier qu
 
 ## 8. État
 
-Validé ; lots à venir.
+Validé le 14 novembre 2026 ; fait :
+
+- **B1** : les duels contre l'ordinateur sont des parties du serveur (`PlancheHub.duelStart`, `duelPlay`, `duelQuit`, une par joueur, oubliée après dix minutes sans pièce et alors perdue) ; l'essai est écrit au journal dès le début (`forceTry`, et les essais perdus des détroits noirs, de la Muda, des commandes et du problème du jour), la victoire par une commande `duelWon` ou `forced` ; la pièce du capitaine vient du pool de workers, avec une graine tirée par le serveur (aucune pour un problème : sa clef est unique). Une partie redemandée (un écran rechargé) reprend où elle était. Les anciennes routes qui rejouaient une liste de coups sont retirées.
+- **B2** : un essai par tour et par jour, des sceaux à chaque Maison, des sorties réparties (deux capitaines au plus contre une tour).
+- **B3** : chaque capitaine a sa manière, à sa tour comme dans ses sorties (`plancheCaptainStyle`) ; les rives longent les rangs du haut et du bas (docs/calibration.md).
+- **B4** : le défi est un match (`plancheMatch`, commande `match`) ; la pendule attend les deux écrans (`/api/passe/room/:code/ready`, 30 s au plus) ; le laurier de la Passe demande trois défis (`defisMin`) ; la cote des deux Maisons avant, la tienne et son écart après.
+- **B5** : `pnpm --filter @comptoirs/simulator passe-jour` (en trois tranches parallèles, puis fusionnées) écrit une année de problèmes du jour, chacun vérifié par le solveur (une seule clef, aucune victoire plus courte).
+- **B6** : la Passe en mode distant (« Ton essai est engagé », la manière nommée, tes sceaux sur la fiche du duel), la cote sur l'écran du défi.

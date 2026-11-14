@@ -141,8 +141,12 @@ export type DuelAsk =
   | { kind: "daily" }
   | { kind: "sortie"; sortie: string };
 
+/** What a duel is asked against, to know it again. */
+const duelKey = (a: DuelAsk) => JSON.stringify(a);
+
 interface DuelRoom {
   player: string;
+  ask: string;
   kind: DuelAsk["kind"];
   target: string;
   state: PasseState;
@@ -592,7 +596,8 @@ export class PlancheHub {
   async duelStart(player: string, ask: DuelAsk, t: number): Promise<DuelView | PlancheAnswer> {
     await this.sweepDuels(t);
     const had = this.rooms.get(player);
-    if (had && !had.over) return "duel_running";
+    // The same duel asked again (a screen reloaded): it goes on where it was.
+    if (had && !had.over) return had.ask === duelKey(ask) ? this.roomView(had) : "duel_running";
     const seat = this.doc.seats[player];
     if (!seat) return "not_seated";
     const S = this.theme.board;
@@ -683,6 +688,7 @@ export class PlancheHub {
     }
     const room: DuelRoom = {
       player,
+      ask: duelKey(ask),
       kind: ask.kind,
       target,
       state: passeInit(setup),

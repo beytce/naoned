@@ -15,6 +15,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
+import { stubDuel } from "./duel-stub.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SHOTS = resolve(process.env.SHOTS ?? join(here, "..", "e2e-shots", "maree"));
@@ -159,10 +160,9 @@ try {
     await route.fulfill({ response: res, json });
   });
   let sortieSent = null;
-  await page.route("**/api/planche/sortie", async (route) => {
-    sortieSent = route.request().postDataJSON();
-    // The real house holds no strait: the answer a sortie lost gets is given.
-    await route.fulfill({ status: 409, json: { error: "duel_lost" } });
+  // The real house holds no strait: a sortie lost is given.
+  await stubDuel(page, (ask) => {
+    sortieSent = ask;
   });
   let decretSent = null;
   await page.route("**/api/planche/decret", async (route) => {
@@ -241,7 +241,7 @@ try {
   if (!(await until(page, has, "[data-passe-end]", 60_000))) fail("no end to the sortie");
   await tap("[data-passe-back]");
   for (let i = 0; i < 40 && !sortieSent; i++) await page.waitForTimeout(250);
-  if (sortieSent?.id !== "e2e:1" || !Array.isArray(sortieSent.moves))
+  if (sortieSent?.kind !== "sortie" || sortieSent.sortie !== "e2e:1")
     fail(`the sortie sent is ${JSON.stringify(sortieSent)}`);
   moves.strait = null;
 

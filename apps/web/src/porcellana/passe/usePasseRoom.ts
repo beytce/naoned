@@ -21,6 +21,8 @@ export interface PasseRoom {
   late: { thread: number; chain: number };
   cargo: number;
   again: { you: boolean; other: boolean };
+  /** Whose screen is ready: the clock runs once both are (docs/plan-duels.md B4). */
+  ready?: { you: boolean; other: boolean };
   now: number;
 }
 
@@ -84,6 +86,13 @@ export function usePasseRoom() {
     const timer = window.setInterval(() => void call("GET", `/${code}`), 1000);
     return () => window.clearInterval(timer);
   }, [code, call]);
+
+  // The screen is ready as soon as it shows a game begun: the clock waits for both (B4).
+  const toReady =
+    !!code && !!room?.state && !room.waiting && room.you !== 0 && room.ready?.you === false;
+  useEffect(() => {
+    if (toReady && code) void call("POST", `/${code}/ready`);
+  }, [toReady, code, call]);
 
   return {
     room,

@@ -24,6 +24,7 @@ import {
   plancheAssemble,
   plancheBuild,
   plancheBuyTile,
+  plancheCaptainStyle,
   plancheDaily,
   plancheDailyResults,
   plancheDailyTry,
@@ -55,6 +56,7 @@ import {
   plancheRobot,
   plancheRouteOpen,
   plancheRuses,
+  plancheSealsLeft,
   plancheShares,
   plancheShip,
   plancheShipRefit,
@@ -99,6 +101,8 @@ import { GazetteSheet, MudaSheet, NoirSheet, POWER_OF, Reliques } from "./Muda.j
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
 import { Bobbin, Flag, Knot, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
+
+import type { PasseRemote, PasseRemoteView } from "../passe/LabPasse.js";
 
 const LabPasse = lazy(() => import("../passe/LabPasse.js"));
 
@@ -491,6 +495,8 @@ export default function LabPlanche() {
   const [duel, setDuel] = useState<string | null>(null);
   /** The rooms of challenges one has left (the server forgets them a little later). */
   const leftRooms = useRef(new Set<string>());
+  /** My cote and challenges before a challenge, to tell how it moved once written. */
+  const coteWas = useRef<{ cote: number; defis: number } | null>(null);
   /** The room of the challenge one is in. */
   const [inRoom, setInRoom] = useState<string | null>(null);
   const offered = view?.defi?.room;
@@ -825,6 +831,44 @@ export default function LabPlanche() {
     }
   };
 
+  /**
+   * A duel against the computer (docs/plan-duels.md B1): on line, the server plays it piece by
+   * piece and writes its end; the board is read again after. Without the server, it is played here.
+   */
+  const duelLine = (ask: Record<string, unknown>): PasseRemote | undefined => {
+    if (!online) return undefined;
+    const post = async (path: string, body: unknown) => {
+      try {
+        const res = await fetch(`/api/planche/duel${path}`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        return (await res.json().catch(() => ({ error: "offline" }))) as {
+          duel?: PasseRemoteView;
+          error?: string;
+        };
+      } catch {
+        return { error: "offline" };
+      }
+    };
+    return {
+      start: () => post("/start", ask),
+      play: (m) => post("/play", m),
+      quit: () => post("/quit", {}),
+    };
+  };
+  /** A duel's end: told, and the board read again on line; played here without the server. */
+  const duelDone = (f: () => PlancheState, done: string) => {
+    if (online) {
+      setSaid(done);
+      void call().then(() => readMaison());
+      return;
+    }
+    act(f, done);
+  };
+
   const day =
     Math.floor((state.now - (online ? (view?.since ?? state.now) : T0)) / (24 * HOUR)) + 1;
   const hour = new Date(state.now).getUTCHours();
@@ -838,6 +882,18 @@ export default function LabPlanche() {
       .filter(([, n]) => n > 0)
       .map(([g]) => g),
   ]);
+
+  // The cote after a challenge, once the board has it (docs/plan-duels.md B4).
+  const myRank = state.houses[ME]?.rank;
+  useEffect(() => {
+    const was = coteWas.current;
+    if (!was || !myRank || (myRank.defis ?? 0) <= was.defis) return;
+    coteWas.current = null;
+    const d = myRank.cote - was.cote;
+    setSaid(
+      `Le défi est joué. Ta cote : ${myRank.cote.toLocaleString("fr-FR")} (${d >= 0 ? "+" : "−"}${Math.abs(d)}).`,
+    );
+  }, [myRank]);
 
   if (inIsle && ME && me?.ile) {
     const gesture = (g: IleGesture): Promise<string> | string => {
@@ -891,7 +947,9 @@ export default function LabPlanche() {
             onBack: () => {
               leftRooms.current.add(defiRoom);
               setInRoom(null);
-              setSaid("Le défi est joué : tes Passes comptent pour le laurier de la Passe.");
+              setSaid("Le défi est joué : ta cote bouge une fois, après les deux Passes.");
+              const me0 = state.houses[ME]?.rank;
+              coteWas.current = { cote: me0?.cote ?? 0, defis: me0?.defis ?? 0 };
               void call();
             },
           }}
@@ -992,16 +1050,15 @@ export default function LabPlanche() {
             board: "segna",
             problem: daily.id,
             foe: "le problème du jour",
+            remote: duelLine({ kind: "daily" }),
             onEnd: (won, moves) => {
               setDailyPlay(false);
               const laid = Math.min(moves.length, daily.moves);
-              act(
+              duelDone(
                 () => plancheDailyTry(S, state, ME, state.now, won, laid),
                 won
-                  ? `Problème du jour réussi en ${laid} coups : un nœud sur ta façade, et du Prestige.`
+                  ? "Problème du jour réussi : un nœud sur ta façade, et du Prestige."
                   : "Ce n'était pas la clef. Un autre problème demain.",
-                ["/daily", { moves: moves.map((m) => ({ at: m.at })) }],
-                ["duel_lost"],
               );
             },
           }}
@@ -1020,15 +1077,13 @@ export default function LabPlanche() {
             board: "segna",
             problem: o.problem,
             foe: `la commande de ${town}`,
-            onEnd: (won, moves) => {
+            remote: duelLine({ kind: "order", order: o.id }),
+            onEnd: (won) => {
               setSealed(null);
               const said = won
                 ? `Livré : ${o.units} ${S.goods[o.good]?.toLowerCase()} à ${town}, au double du prix.`
-                : SAID.duel_lost;
-              act(() => plancheOrderTry(S, state, ME, o.id, state.now, won), said, [
-                "/order",
-                { order: o.id, moves: moves.map((m) => ({ at: m.at })) },
-              ]);
+                : (SAID.duel_lost ?? "");
+              duelDone(() => plancheOrderTry(S, state, ME, o.id, state.now, won), said);
             },
           }}
         />
@@ -1053,15 +1108,14 @@ export default function LabPlanche() {
               foe: x.captain,
               side: 2,
               stake: `${p.name} : un sceau en jeu`,
-              onEnd: (held, moves) => {
+              remote: duelLine({ kind: "sortie", sortie: id }),
+              onEnd: (held) => {
                 setSortieDuel(null);
-                act(
+                duelDone(
                   () => plancheSortieEnd(S, state, id, !held, "tenant", state.now),
                   held
                     ? `${x.captain} est repoussé : ${p.name} tient, et ta Garde compte un assaut repoussé.`
                     : `${x.captain} est passé : ${p.name} perd un sceau.`,
-                  ["/sortie", { id, moves }],
-                  ["duel_lost"],
                 );
                 setMareeOpen(true);
               },
@@ -1089,15 +1143,14 @@ export default function LabPlanche() {
             foe: x?.captain ?? "le capitaine",
             flag: "puissance",
             stake: `En jeu : ${what}`,
-            onEnd: (won, moves) => {
+            remote: duelLine({ kind: "noir", strait, good, n }),
+            onEnd: (won) => {
               setNoirDuel(null);
-              act(
+              duelDone(
                 () => plancheNoirTry(S, state, ME, strait, { good, n }, won, state.now),
                 won
                   ? `Forcé ! ${what} vendus à ${x?.port}, et une relique ${POWER_OF[x?.power ?? ""] ?? x?.power}.`
                   : `La chaîne a tenu : ${what} ont coulé.`,
-                ["/noir", { strait, good, n, moves }],
-                ["duel_lost"],
               );
             },
           }}
@@ -1118,15 +1171,14 @@ export default function LabPlanche() {
             mind: { depth: S.muda.depth },
             foe: `les corsaires de ${x?.name.replace(/^L[ea]s? /, "") ?? "la route"}`,
             stake: "La Muda attend derrière toi",
-            onEnd: (won, moves) => {
+            remote: duelLine({ kind: "muda", strait }),
+            onEnd: (won) => {
               setMudaDuel(null);
-              act(
+              duelDone(
                 () => plancheMudaForce(S, state, ME, strait, won, state.now),
                 won
                   ? `${x?.name} est passé : la Muda continue, et toute la lagune y gagne la moitié en plus.`
                   : "Les corsaires ont tenu : à un autre de forcer ce détroit.",
-                ["/muda", { strait, moves }],
-                ["duel_lost"],
               );
               setMudaOpen(true);
             },
@@ -1139,30 +1191,37 @@ export default function LabPlanche() {
   if (duel) {
     const p = S.passages.find((q) => q.id === duel);
     const holder = state.passages[duel]?.holder ?? "";
+    const mySeals = plancheSealsLeft(S, state, duel, ME);
     return (
       <Suspense fallback={null}>
         <LabPasse
           duel={{
             board: p?.board ?? "segna",
-            seals: state.passages[duel]?.seals,
+            // The seals left to the player's own house (docs/plan-duels.md B2).
+            seals: mySeals,
             guard: state.passages[duel]?.guard,
             foe: plancheIsCorsair(holder)
               ? holder.slice(8)
               : `le lieutenant de ${nameOf(holder, view?.names)}`,
-            onEnd: (won, moves) => {
+            ...(plancheIsCorsair(holder)
+              ? { mind: { depth: 3, style: plancheCaptainStyle(holder) } }
+              : {}),
+            stake: "Un essai par jour sur cette tour",
+            remote: duelLine({ kind: "force", passage: duel }),
+            onEnd: (won) => {
               setDuel(null);
               if (!won) {
-                setSaid("La chaîne a tenu : tu perds la cargaison engagée, rien d'autre.");
+                duelDone(
+                  () => state,
+                  "La chaîne a tenu : ton essai du jour est passé. Demain, un autre.",
+                );
                 return;
               }
-              act(() => plancheForced(S, state, ME, duel, state.now), undefined, [
-                "/force",
-                { passage: duel, moves },
-              ]);
-              const left = (state.passages[duel]?.seals ?? 1) - 1;
-              setSaid(
+              const left = mySeals - 1;
+              duelDone(
+                () => plancheForced(S, state, ME, duel, state.now),
                 left > 0
-                  ? `Passé. Un sceau brisé : il en reste ${left}. Tes fils traversent librement pendant un jour.`
+                  ? `Passé. Un de tes sceaux brisé : il t'en reste ${left}. Tes fils traversent librement pendant un jour.`
                   : `${p?.name} porte ton pavillon : la route est ouverte, et les autres te paient le péage.`,
               );
             },
@@ -1795,7 +1854,10 @@ export default function LabPlanche() {
               }
             >
               {view?.defi?.outgoing === house.id ? "Défi envoyé…" : "Défier par le fil"}
-              <small>deux Passes en direct, chacun une fois le fil</small>
+              <small data-defi-cote>
+                sa cote {state.houses[house.id]?.rank.cote ?? 0}, la tienne{" "}
+                {state.houses[ME]?.rank.cote ?? 0} · un match de deux Passes
+              </small>
             </button>
           </div>
         ) : null}
@@ -2404,8 +2466,10 @@ export default function LabPlanche() {
                 <span>Deux Passes en direct : chacun une fois le fil, une fois la chaîne</span>
               </div>
             </div>
-            <p>
-              Chaque Passe compte pour ta cote du laurier de la Passe. Rien d'autre ne se risque.
+            <p data-defi-cote>
+              Sa cote : <b>{state.houses[view.defi.incoming.house]?.rank.cote ?? 0}</b> · la tienne
+              : <b>{state.houses[ME]?.rank.cote ?? 0}</b>. Le défi est un seul match : ta cote bouge
+              une fois, après les deux Passes. Rien d'autre ne se risque.
             </p>
             <div className="pc-pl-acts">
               <button
