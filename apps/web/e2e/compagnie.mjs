@@ -91,13 +91,15 @@ async function enter(browser, name, viewport, path = "/") {
     await page.screenshot({ path: join(SHOTS, `compagnie-${name}-echec.png`) });
     throw new Error(`${name}: no ${q} after ${ms} ms`);
   };
-  // The company opens at level 3 (docs/plan-semaine.md D1): the house read at that level.
+  // The company opens at level 3 (docs/plan-semaine.md D1): the house read at that level until
+  // it is in a company (its tab then stays).
+  const read = { level: 3 };
   await page.route("**/api/planche", async (route) => {
     const res = await route.fetch().catch(() => null);
     if (!res) return route.abort().catch(() => {});
     const json = await res.json().catch(() => null);
     const h = json?.planche?.state?.houses?.[json?.planche?.me];
-    if (h) h.level = Math.max(h.level ?? 1, 3);
+    if (h) h.level = Math.max(h.level ?? 1, read.level);
     await route.fulfill({ response: res, json });
   });
   await page.goto(`${server.url}${path}`);
@@ -119,7 +121,7 @@ async function enter(browser, name, viewport, path = "/") {
     await until("[data-compagnie-open]");
     await tap("[data-compagnie-open]");
   };
-  return { page, errs, tap, until, name, company };
+  return { page, errs, tap, until, name, company, read };
 }
 
 async function shot(p, path) {
@@ -168,6 +170,8 @@ try {
   await ana.tap("[data-compagnie-send]");
   await ana.until('[data-compagnie-thread] li[data-mine="true"]');
   const code = (await api(ana, "/api/planche/compagnie")).compagnie.code;
+  // In a company now: Ana is read at her own level again (the orders would hide the greeting).
+  ana.read.level = 1;
   await shot(ana, join(SHOTS, "compagnie-2-fondee.png"));
   // Ben, by the link: a member as soon as his house is founded, in Ana's lagoon.
   const ben = await enter(browser, "Ben", { width: 1280, height: 800 }, `/?co=${code}`);
