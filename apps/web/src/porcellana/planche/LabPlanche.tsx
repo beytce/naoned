@@ -1484,6 +1484,12 @@ export default function LabPlanche() {
                       patine +{Math.round(planchePatina(S, g.held, state.now) / 100)} %
                     </span>
                   ) : null}
+                  {g.held?.yield ? (
+                    // What the thread brought of late (docs/plan-economie.md C5).
+                    <span className="pc-pl-yield" data-yield={g.good}>
+                      ≈ {ducats(g.held.yield)} d. à l'heure
+                    </span>
+                  ) : null}
                 </>
               ) : (
                 <>Personne ne la sert · libre {pct(g.sh.freeBps)}</>

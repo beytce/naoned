@@ -224,6 +224,8 @@ export interface PlancheThread {
   carry: number;
   /** It goes the way round the passages: no duel, no toll, a smaller load. */
   detour?: boolean;
+  /** What it brought of late, in deniers an hour, smoothed over about an hour (C5). */
+  yield?: number;
 }
 
 export interface PlancheHouse {
@@ -475,13 +477,17 @@ export function plancheShares(
   if (!w || !g) return { freeBps: 0, houses: [] };
   const freeBps = Math.floor((Math.max(0, g.left) * BPS) / Math.max(1, w.cap));
   const rates: { house: string; rate: number }[] = [];
+  const open = (id: string) => plancheRouteOpen(S, s, id, city, now);
   for (const [id, h] of Object.entries(s.houses)) {
-    if (!plancheRouteOpen(S, s, id, city, now)) continue;
     const has = (h.stock[good] ?? 0) > 0 || (plancheSupply(S, s, id, now)[good] ?? 0) > 0;
     if (!has) continue;
+    // A thread by the detour counts too, at its share of the load (docs/plan-economie.md C5).
     const rate = h.threads
-      .filter((t) => t.to === city && t.good === good)
-      .reduce((n, t) => n + BPS + planchePatina(S, t, now), 0);
+      .filter((t) => t.to === city && t.good === good && (t.detour || open(id)))
+      .reduce((n, t) => {
+        const pace = BPS + planchePatina(S, t, now);
+        return n + (t.detour ? Math.floor((pace * (cityOf(S, city)?.detourBps ?? 0)) / BPS) : pace);
+      }, 0);
     if (rate > 0) rates.push({ house: id, rate });
   }
   const total = rates.reduce((n, r) => n + r.rate, 0);
@@ -490,6 +496,16 @@ export function plancheShares(
     .map((r) => ({ house: r.house, bps: Math.floor((spent * r.rate) / total) }))
     .sort((a, b) => b.bps - a.bps || a.house.localeCompare(b.house));
   return { freeBps, houses };
+}
+
+/** What a house's thread to a town brought of late, in deniers an hour (0 without one). */
+export function plancheThreadYield(
+  s: PlancheState,
+  house: string,
+  city: string,
+  good: string,
+): number {
+  return own(s.houses, house)?.threads.find((t) => t.to === city && t.good === good)?.yield ?? 0;
 }
 
 /** One slice of time: the islands make, the threads carry, the towns pay and tire, then rest. */
@@ -518,6 +534,8 @@ function slice(S: PlancheSetup, s: PlancheState): void {
   // 2. What each thread would carry this slice, by the town and the good it serves.
   const unit = HOUR * BPS;
   const asks = new Map<string, { h: PlancheHouse; th: PlancheThread; want: number }[]>();
+  /** What each thread brought this slice, its tolls paid (docs/plan-economie.md C5). */
+  const brought = new Map<PlancheThread, bigint>();
   for (const hs of S.houses) {
     const h = s.houses[hs.id];
     if (!h) continue;
@@ -581,12 +599,22 @@ function slice(S: PlancheSetup, s: PlancheState): void {
         s.burnt += burnt;
       }
       a.h.ducats += kept;
+      brought.set(a.th, (brought.get(a.th) ?? 0n) + kept);
       a.h.earned += kept;
       a.h.rank.earned += kept;
       a.h.rank.week[cityId] = (a.h.rank.week[cityId] ?? 0n) + kept;
       g.left -= sold;
     }
   }
+  // What each thread brings an hour, smoothed: a sixth of the way to this slice's pace each slice.
+  const SMOOTH = Math.max(1, Math.round(HOUR / ms));
+  for (const h of Object.values(s.houses))
+    for (const th of h.threads) {
+      const pace = Number(((brought.get(th) ?? 0n) * BigInt(HOUR)) / BigInt(ms));
+      const y = th.yield ?? 0;
+      const next = y + Math.trunc((pace - y) / SMOOTH);
+      th.yield = next || undefined;
+    }
   // 4. The towns' demand grows back.
   for (const c of S.cities)
     for (const [good, w] of Object.entries(c.wants)) {
