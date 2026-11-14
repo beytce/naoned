@@ -1,6 +1,6 @@
 # La lagune ronde : plan (refonte de la carte de la planche)
 
-*Proposé le 14 novembre 2026. Demande du porteur : « la carte du jeu est devenue illisible et très laide », une nouvelle disposition des villes et des joueurs. Disposition choisie le 14 novembre parmi trois (la lagune ronde, le croissant, les colonnes redessinées) : **la lagune ronde**, l'axe ouest **en eau claire**, le placement des nouveaux joueurs **comme aujourd'hui**. Remplace la carte de `docs/plan-lagunes.md` G1 et G5 ; tout le reste de ce plan-là tient. **En attente de validation** avec les recommandations du § 7.*
+*Proposé le 14 novembre 2026. Demande du porteur : « la carte du jeu est devenue illisible et très laide », une nouvelle disposition des villes et des joueurs. Disposition choisie le 14 novembre parmi trois (la lagune ronde, le croissant, les colonnes redessinées) : **la lagune ronde**, l'axe ouest **en eau claire**, le placement des nouveaux joueurs **comme aujourd'hui**. Remplace la carte de `docs/plan-lagunes.md` G1 et G5 ; tout le reste de ce plan-là tient. **Validé le 14 novembre 2026** avec les quatre recommandations du § 7. État des lots : § 8.*
 
 ## 1. Le problème à régler
 
@@ -43,10 +43,10 @@ Aucune règle de jeu nouvelle : mêmes villes, mêmes demandes, mêmes passages,
 | Arc du centre (3 îles) | (2,−6) (4,−4) (6,−2) |
 | Arc du milieu (4 îles) | (3,−9) (6,−8) (8,−6) (9,−3) |
 | Arc du rivage (5 îles) | (3,−12) (6,−11) (9,−9) (11,−6) (12,−3) |
-| Ses trois villes | (4,−15) (9,−12) (15,−4) |
+| Ses trois villes | (6,−14) (9,−12) (14,−6) |
 | Sa bouche, son détroit, sa ville du Large | (12,−12) (15,−15) (17,−17) |
 
-- **Les axes**, donnés une fois : Murano (0,−14) et son canal (0,−11) ; Chioggia (0,14) et son canal (0,11) ; le môle (0,2) ; la Muda (8,0) (13,0) (17,0) ; les détroits noirs (0,−19) (0,19) (−19,0).
+- **Les axes**, donnés une fois : Murano (0,−14) et son canal (0,−11) ; Chioggia (0,14) et son canal (0,11) ; le môle (0,3) ; la Muda (8,0) (13,0) (17,0) ; les détroits noirs (0,−19) (0,19) (−19,0).
 - **Les identifiants ne changent pas** (`castello-3`, `bouche-castello`, `murano`…) ni l'ordre des Maisons : une lagune en cours se recharge telle quelle, ses Maisons simplement ailleurs. À prouver par un test de rejeu (lot L1).
 - **Le placement d'un joueur** ne change pas : la première Maison libre.
 
@@ -62,7 +62,7 @@ Aucune règle de jeu nouvelle : mêmes villes, mêmes demandes, mêmes passages,
 
 | Depuis une Maison | Aujourd'hui | Lagune ronde |
 | --- | --- | --- |
-| Sa ville la plus proche | 6 à 13 | 3 à 11 |
+| Sa ville la plus proche | 6 à 13 | 3 à 12 |
 | Le Rialto | 2 à 30 selon la colonne | 8 à 18 pour tous |
 | Sa bouche | 5 à 15 | 6 à 16 |
 
@@ -104,3 +104,17 @@ L1 à L3 peuvent être fusionnés seuls : la carte est jouable avec l'ancien des
 2. **Les fils en courbe (L5).** Dans cette étape **(recommandé)** : les coudes à angle droit sont une bonne part du désordre. Ou plus tard, pour livrer la carte plus tôt.
 3. **Un campanile par sestiere (L6).** Dans cette étape **(recommandé)**, en dernier, comme simple décor. Ou noté dans `IDEAS.md`.
 4. **Les lagunes en cours.** Elles passent à la nouvelle carte au déploiement **(recommandé)** : pas de joueurs avant la bêta, les identifiants et l'encre tiennent. Ou une annonce dans les notes de chapitre avant de l'appliquer.
+
+## 8. État des lots (14 novembre 2026)
+
+| Lot | État |
+| --- | --- |
+| L1 | fait : `plancheLagoon` prend `half`, `quarter` et `axes` (plus de `column`) et tourne le quart ; refuse plus de quatre sestieri, un quart trop court, une case hors planche. Venise : 41 × 41, mêmes 48 Maisons, 20 villes et 10 tours, mêmes identifiants. Les villes du rivage ont été écartées des axes (de (4,−15) à (6,−14)) pour laisser de l'eau autour de Murano et de Chioggia. Test de reprise : un état joué sur un autre dessin des mêmes lieux se relit à l'identique. |
+| L2 | fait : `plancheDepth` (centièmes de case depuis le milieu, racine entière) ; `encre.ts` et les deux lectures de `planche.ts` prennent la case au lieu de la rangée ; `plancheLagoonLand` rend les croissants de rivage coupés par le chenal de la bouche, les îlots et un péril radial. |
+| L3 | fait : `docs/calibration.md` § La lagune ronde. Aucun réglage retouché. |
+| L4 | fait : la vue « lagune » cadre toute la planche (largeur et hauteur) ; la vue « sestiere » vise entre sa Maison et le milieu de son quart ; l'encre est un lavis radial et sa ligne un cercle de tirets ; l'eau du Large reste grise, l'encre ne noircit que les coins ; les noms des sestieri entre le premier et le deuxième arc. |
+| L5 | fait : sur la lagune, un fil tourne autour du Rialto en changeant de distance ; il va droit près du centre et coupe à travers la lagune quand il va loin (pas d'anneau) ; les fils des autres sestieri sont estompés, ceux de ses voisins restent nets. La planche de 8 garde ses coudes. |
+| L6 | fait : de loin, une tour n'est nommée que si elle est à soi, menacée par l'encre ou choisie ; de près, celles de son sestiere et les canaux ; les détroits noirs et ceux de la Muda sont une marque de loin ; au téléphone, de loin, les villes des autres sestieri sont une marque ; le môle n'a pas d'étiquette de loin. Un campanile par sestiere sur son rivage, quatre silhouettes. |
+| L7 | parcours `semaine` et `maree` relancés (voir le compte rendu de la PR) ; captures de la nouvelle carte dans `docs/lagune-ronde-captures/`. |
+
+Les détroits noirs : le Turc au sud, Gênes à l'ouest, Milan au nord. Écart avec le plan : aucun réglage du thème n'a changé hors des cases.

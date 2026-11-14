@@ -3524,7 +3524,7 @@ La carte d'une lagune change de forme (un carré de 41 cases, le Rialto au centr
 
 | Vers | Avant (colonnes) | Lagune ronde |
 | --- | --- | --- |
-| Sa ville la plus proche | 6 à 13 | 3 à 11 |
+| Sa ville la plus proche | 6 à 13 | 3 à 12 |
 | Le Rialto | 2 à 30 selon la colonne | 8 à 18, les mêmes pour les quatre sestieri |
 | Sa bouche | 5 à 15 | 6 à 16 |
 
@@ -3547,5 +3547,5 @@ La carte d'une lagune change de forme (un carré de 41 cases, le Rialto au centr
 - **Rien à retoucher** : `rewindMsPerTile` reste à 20 min. Les gains bougent de 1 à 6 % selon le plan, dans le bruit de cinq graines ; l'encre et les sorties sont inchangées.
 - **Les sestieri sont plus égaux** : l'écart entre le sestiere le plus riche et le plus pauvre passe de 16 à 12 %. Ce qui reste vient des plans et des sols, donnés en tour aux Maisons, plus de la carte : les quatre quarts sont identiques à la case près (testé).
 - **La Passe contre le détour** était déjà au-dessus de sa cible (+ 25 % au plus) avant ce changement ; la carte n'y est pour rien, c'est une affaire du lot C.
-- **La Muda** gagne un peu (+ 28 à + 35 %, quatre graines) : le môle est maintenant au centre, à 11 à 21 cases de tous, quand il était à 4 à 40 selon la colonne. À revoir au lot C avec le reste de l'économie ; le plafond du chargement n'est pas touché.
+- **La Muda** gagne un peu (+ 28 à + 35 %, quatre graines) : le môle est maintenant au centre, à 11 à 21 cases de tous, quand il était à 6 à 34 selon la colonne. À revoir au lot C avec le reste de l'économie ; le plafond du chargement n'est pas touché.
 - La comparaison « huit visites contre trois » du banc de la planche porte sur trois Maisons et varie trop d'une graine à l'autre pour être lue ici (Ca' Bembo : + 100 % avant, + 46 % après).
