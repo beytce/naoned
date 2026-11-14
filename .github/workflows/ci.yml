@@ -22,6 +22,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # The load of a lagoon (docs/plan-socle.md A7): a short run, under 10 % of a core.
+      - run: pnpm --filter @comptoirs/server charge 24 30 30
       - run: pnpm --filter @comptoirs/web build
 
   # The first session on two phones (apps/web/e2e/layout.mjs): fails on anything written over

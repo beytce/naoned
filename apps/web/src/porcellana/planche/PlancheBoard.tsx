@@ -55,7 +55,7 @@ import { flagCloth, rocca } from "../models/terra.js";
 import { town } from "../models/towns.js";
 import { type Vehicle, ship } from "../models/vehicles.js";
 import { drawChevron, ribbonGeometry, roundedPath } from "../ribbon.js";
-import { box, crate, cyl } from "../shapes.js";
+import { box, crate, cyl, disposeBuilt } from "../shapes.js";
 import { BOARD, CAMERA, COL, RIBBON, SEA, THREAD } from "../tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
@@ -874,6 +874,18 @@ export function PlancheBoard({
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
     }
   });
+
+  // What a rebuild leaves behind is freed, not kept in the GPU (docs/plan-socle.md A6).
+  useEffect(() => () => disposeBuilt(web.root), [web.root]);
+  useEffect(() => () => disposeBuilt(minis), [minis]);
+  useEffect(() => () => disposeBuilt(anchored), [anchored]);
+  useEffect(() => () => disposeBuilt(lighthouses), [lighthouses]);
+  useEffect(() => () => disposeBuilt(ink), [ink]);
+  useEffect(() => () => disposeBuilt(corsairs), [corsairs]);
+  useEffect(() => () => disposeBuilt(engraved), [engraved]);
+  useEffect(() => () => disposeBuilt(towers.root), [towers.root]);
+  useEffect(() => () => disposeBuilt(darks.root), [darks.root]);
+  useEffect(() => () => disposeBuilt(convoy.root), [convoy.root]);
 
   const pick = (e: ThreeEvent<MouseEvent>) => {
     if (e.delta > 8) return;

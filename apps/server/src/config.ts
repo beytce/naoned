@@ -49,6 +49,12 @@ const schema = z
      */
     WORLD_KIND: z.enum(["season", "empire"]).default("season"),
     /**
+     * The old game (the empire, the Porta, the Terraferme, the monthly world), asleep since the
+     * base (docs/plan-socle.md A5): its world, its robots and its notifications run only with
+     * « on » (by default in the tests, whose parcours of the old game need it).
+     */
+    ANCIEN_JEU: z.enum(["on", "off"]).optional(),
+    /**
      * The empire's map (docs/plan-porcellana.md M4): « square », the tiles bought one at a time
      * (the switch decided by the owner on 6 November 2026; each house taken up once, nothing
      * lost), or « hex », the sectors of before (the engine still reads them; the web draws only

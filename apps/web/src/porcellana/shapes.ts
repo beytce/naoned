@@ -21,13 +21,26 @@ import type { Palette } from "./materials.js";
 import { BOARD } from "./tokens.js";
 
 const geos = new Map<string, BufferGeometry>();
+const shared = new WeakSet<BufferGeometry>();
 export function cached<G extends BufferGeometry>(key: string, make: () => G): G {
   let g = geos.get(key);
   if (!g) {
     g = make();
     geos.set(key, g);
+    shared.add(g);
   }
   return g as G;
+}
+
+/**
+ * Frees the GPU buffers of what a scene built and no longer draws (docs/plan-socle.md A6): every
+ * geometry of its meshes but the shared ones of the kit's cache, which others still draw.
+ */
+export function disposeBuilt(root: Object3D): void {
+  root.traverse((o) => {
+    const g = (o as Mesh).geometry as BufferGeometry | undefined;
+    if (g && !shared.has(g)) g.dispose();
+  });
 }
 
 /** A mesh put in its parent, casting and taking shadows. */

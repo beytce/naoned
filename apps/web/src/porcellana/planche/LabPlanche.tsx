@@ -557,7 +557,7 @@ export default function LabPlanche() {
   }, []);
   /**
    * A push from the server says the board's version (docs/plan-socle.md A2): read again only if it
-   * is newer than ours, and at most every two seconds; one's own Maison is read after one's own
+   * is newer than ours, and at most every three seconds; one's own Maison is read after one's own
    * gestures and on its timer, never on another's.
    */
   const known = useRef(0);
@@ -619,7 +619,8 @@ export default function LabPlanche() {
     if (!online || gate !== "in") return;
     return connectLive((m) => {
       if (m.type !== "planche" || m.version <= known.current || readSoon.current) return;
-      const wait = Math.max(0, lastRead.current + 2_000 - Date.now());
+      // Spread over a second and a half: the lagoon's players do not all read at the same instant.
+      const wait = Math.max(0, lastRead.current + 3_000 - Date.now()) + Math.random() * 1_500;
       readSoon.current = setTimeout(() => {
         readSoon.current = undefined;
         lastRead.current = Date.now();

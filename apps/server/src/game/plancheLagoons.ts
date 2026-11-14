@@ -223,6 +223,7 @@ export class PlancheLagoons {
     }
     const house = to.hub.houseOf(player) ?? "";
     await this.db.delete(plancheSeats).where(eq(plancheSeats.accountId, player));
+    this.seats.delete(player);
     await this.record(to, house, player, now);
     await this.db
       .insert(plancheAccountLeagues)
@@ -262,13 +263,23 @@ export class PlancheLagoons {
     /** The boards to seat a newcomer on first, if one has room (its company's, docs/plan-compagnie.md). */
     prefer: string[] = [],
   ): Promise<{ store: PlancheStore; house: string }> {
+    // A seat already known: no round trip to the base, no wait in the queue (docs/plan-socle.md A2).
+    const seen = this.seats.get(accountId);
+    if (seen) {
+      const store = this.stores.find((s) => s.worldId === seen.worldId);
+      if (store && store.hub.houseOf(accountId) === seen.house)
+        return Promise.resolve({ store, house: seen.house });
+    }
     return this.serial(async () => {
       const [row] = await this.db
         .select()
         .from(plancheSeats)
         .where(eq(plancheSeats.accountId, accountId));
       const known = row && this.stores.find((s) => s.worldId === row.worldId);
-      if (row && known) return { store: known, house: row.house };
+      if (row && known) {
+        this.seats.set(accountId, { worldId: known.worldId, house: row.house });
+        return { store: known, house: row.house };
+      }
       // Seated on a board whose seat was not written (a write cut short): written now.
       for (const store of this.stores) {
         const house = store.hub.houseOf(accountId);
@@ -290,7 +301,11 @@ export class PlancheLagoons {
     });
   }
 
+  /** The seats known in memory, by account. */
+  private readonly seats = new Map<string, { worldId: string; house: string }>();
+
   private async record(store: PlancheStore, house: string, accountId: string, now: number) {
+    this.seats.set(accountId, { worldId: store.worldId, house });
     await this.db
       .insert(plancheSeats)
       .values({ worldId: store.worldId, house, accountId, joinedAt: new Date(now) })

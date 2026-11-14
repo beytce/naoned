@@ -107,12 +107,30 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     return opened;
   };
   /** A house is named after its player: Ca' and the account's name. */
+  /**
+   * What each read would ask the base again and again, kept a short while in memory (docs/
+   * plan-socle.md A2): the account's name (a minute), its company's signs and its greetings
+   * (five seconds, forgotten at once when one is laid).
+   */
+  const names = new Map<string, { at: number; name: string }>();
+  const social = new Map<
+    string,
+    {
+      at: number;
+      signs: Awaited<ReturnType<typeof companySigns>>;
+      greeted: Awaited<ReturnType<typeof greetings>>;
+    }
+  >();
   const nameOf = async (id: string) => {
+    const had = names.get(id);
+    if (had && deps.now() - had.at < 60_000) return had.name;
     const [row] = await deps.db
       .select({ pseudo: accounts.pseudo })
       .from(accounts)
       .where(eq(accounts.id, id));
-    return `Ca\u2019 ${row?.pseudo ?? "Bembo"}`;
+    const name = `Ca\u2019 ${row?.pseudo ?? "Bembo"}`;
+    names.set(id, { at: deps.now(), name });
+    return name;
   };
   type Player = {
     id: string;
@@ -123,6 +141,7 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     now: () => number;
     defis: PlancheDefis | null;
   };
+  const readers = new Map<string, { at: number; id: string }>();
   /** The player, with his board and his house (given one if he has none); none without an account. */
   const who = async (
     req: FastifyRequest,
@@ -130,11 +149,22 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     /** The boards a newcomer is seated on first (its company's lagoons). */
     prefer: string[] = [],
   ): Promise<Player | null> => {
-    const account = (await deps.accountIfAny?.(req)) ?? null;
+    // A read asks its account at most every ten seconds (docs/plan-socle.md A2); a gesture always.
+    const cookie = req.headers.cookie ?? "";
+    const known = req.method === "GET" && cookie ? readers.get(cookie) : undefined;
+    const account =
+      known && deps.now() - known.at < 10_000
+        ? { id: known.id }
+        : ((await deps.accountIfAny?.(req)) ?? null);
     if (!account) {
       void reply.code(401).send({ error: "not_signed_in" });
       return null;
     }
+    if (cookie && !known) {
+      if (readers.size > 10_000) readers.clear();
+      readers.set(cookie, { at: deps.now(), id: account.id });
+    } else if (known && deps.now() - known.at >= 10_000)
+      readers.set(cookie, { at: deps.now(), id: account.id });
     const { lagoons, now, defis } = await boards();
     const name = await nameOf(account.id);
     // The leagues of the tides that ended, before the player is seated (docs/plan-maree.md T5).
@@ -160,8 +190,16 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     if (!cached || cached.value !== compagnies)
       flagsOf.set(p.store.worldId, { at: deps.now(), value: compagnies });
     // The company's signs of the week, and the greetings received (docs/plan-compagnie.md K2).
-    const signs = await companySigns(deps.db, p.id, deps.now());
-    const greeted = await greetings(deps.db, p.id, deps.now());
+    let mine = social.get(p.id);
+    if (!mine || deps.now() - mine.at >= 5_000) {
+      mine = {
+        at: deps.now(),
+        signs: await companySigns(deps.db, p.id, deps.now()),
+        greeted: await greetings(deps.db, p.id, deps.now()),
+      };
+      social.set(p.id, mine);
+    }
+    const { signs, greeted } = mine;
     return toJson({
       planche: {
         ...view,
@@ -765,6 +803,8 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
   });
   // The signs (docs/plan-compagnie.md K2): the company's on the board, a neighbour's greetings.
   app.post("/api/planche/sign", deps.perMerchant(30), async (req, reply) => {
+    // Signs and greetings seen at once by all (docs/plan-socle.md A2).
+    social.clear();
     const b = z.object({ kind: key, target: z.string().max(100) }).safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const p = await who(req, reply);
@@ -775,6 +815,8 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     });
   });
   app.post("/api/planche/sign/lift", deps.perMerchant(30), async (req, reply) => {
+    // Signs and greetings seen at once by all (docs/plan-socle.md A2).
+    social.clear();
     const b = z.object({ kind: key }).safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const p = await who(req, reply);
@@ -783,6 +825,8 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     return show(reply, p);
   });
   app.post("/api/planche/greet", deps.perMerchant(30), async (req, reply) => {
+    // Signs and greetings seen at once by all (docs/plan-socle.md A2).
+    social.clear();
     const b = z.object({ house: key, kind: key }).safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const p = await who(req, reply);

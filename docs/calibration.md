@@ -3486,3 +3486,17 @@ La meilleure flotte, port par port : galères (bois) 18 %, brigantins (chanvre) 
 
 - La Sérénissime se remplit à la sixième marée, puis reste à 48. La moitié des plus forts (le dixième du haut) l'atteint en huit marées, au bout de cinq en moyenne : un but de près d'un an, comme le voulait l'audit pour le haut de la progression.
 - Les ligues du milieu grossissent lentement ; le sixième est gardé (proposition du cadrage), à revoir quand il y aura des joueurs réels.
+
+## La charge d'une lagune (14 novembre 2026, docs/plan-socle.md A7)
+
+`pnpm --filter @comptoirs/server charge 48 60 60` : un serveur à lui (base PGlite neuve), 48 comptes assis dans une lagune, chacun à l'écoute de la poussée comme le client (il ne relit que pour une version plus récente, au plus toutes les trois secondes, étalé sur une seconde et demie), une lecture d'office toutes les 20 s, un geste par minute, puis une rafale de 48 gestes d'un coup. Cibles : sous 10 % d'un cœur en moyenne, lectures sous 200 ms au 95ᵉ centile.
+
+| Mesure | Avant le socle (rapport 09 de l'audit) | Après le socle |
+| --- | --- | --- |
+| Processeur du serveur | 62 % d'un cœur | **10 %** |
+| Lecture de la planche (médiane, 95ᵉ centile) | ~500 ms, jusqu'à plusieurs secondes | **5 ms, 12 ms** |
+| Geste (médiane, 95ᵉ centile) | 507 ms, 4,5 s au pire | **12 ms, 21 ms** |
+| Rafale de 48 gestes (95ᵉ centile) | 67 s au pire | **123 ms** |
+| `/api/health` (95ᵉ centile) | jusqu'à 19 s | **5 ms** |
+
+**Ce qui a compté**, mesuré pas à pas : la poussée par version regroupée (une par seconde et par lagune) et la relecture de la seule planche (20 % d'un cœur au lieu de 62) ; des caches courts en mémoire pour le siège, le nom, les signes, les saluts et la session d'une lecture (les lectures passent de 335 ms à 6 ms de médiane : PGlite tourne dans le processus du serveur, chaque requête en base y coûtait du temps de la boucle) ; l'étalement des relectures et leur intervalle de trois secondes (13 % → 10 %). En production, PostgreSQL tourne hors du processus : le serveur y dépense moins. Les duels joués dans le pool de workers laissent la boucle libre (deux sorties de 9 × 9 jouées en 5,3 s, la boucle tournant toutes les 10 ms pendant ce temps).
