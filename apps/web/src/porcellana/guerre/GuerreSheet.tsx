@@ -176,7 +176,7 @@ export function GuerreSheet({
                 <div>
                   <b>{p.name}</b>
                   <span>
-                    {p.lagoon} · Puissance {p.power} · {p.person ? "un joueur" : "l'ordinateur"}
+                    {p.lagoon} · {p.person ? "un joueur" : "l'ordinateur"}
                   </span>
                   {view.reserved?.[p.key] ? (
                     <span className="pc-gu-reserved">pris par {view.reserved[p.key]}</span>
@@ -214,9 +214,7 @@ export function GuerreSheet({
               <li key={p.key} data-me={String(p.key === view.me)}>
                 <div>
                   <b>{p.key === view.me ? `${p.name} (toi)` : p.name}</b>
-                  <span>
-                    {p.lagoon} · Puissance {p.power}
-                  </span>
+                  <span>{p.lagoon}</span>
                 </div>
                 <Seals n={p.best} />
               </li>

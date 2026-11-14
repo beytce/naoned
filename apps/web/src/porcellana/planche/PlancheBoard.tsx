@@ -71,7 +71,7 @@ export interface PlancheLand {
 
 export interface PlanchePick {
   /** A house, a town, a passage; a black strait; a strait of the Muda (docs/plan-muda.md). */
-  kind: "house" | "city" | "passage" | "noir" | "muda";
+  kind: "house" | "city" | "passage" | "noir" | "muda" | "encre" | "phare";
   id: string;
 }
 
@@ -352,6 +352,8 @@ export function PlancheBoard({
       const h = setup.houses[k];
       if (!h || level <= 0) return;
       const g = new Group();
+      // A company's beacon opens its sheet (docs/plan-semaine.md D3).
+      g.userData.pick = { kind: "phare", id: h.id } satisfies PlanchePick;
       g.position.set(wx(h.x) + 2.4, 0, wz(h.y) - 2.4);
       cyl(g, 0.32, 0.46, 2.6, 0, 0, 0, P.m("wall"), 12);
       box(g, 0.98, 0.12, 0.98, 0, 0.9, 0, P.accent, 0.02);
@@ -495,6 +497,8 @@ export function PlancheBoard({
       deep.rotation.x = -Math.PI / 2;
       deep.position.set(left + span / 2, 0.08, (top + bottom) / 2);
       deep.renderOrder = 2;
+      // The ink opens the tide's sheet (docs/plan-semaine.md D3).
+      deep.userData.pick = { kind: "encre", id: "encre" } satisfies PlanchePick;
       root.add(deep);
     }
     // The wash before it, darker as it nears the line.

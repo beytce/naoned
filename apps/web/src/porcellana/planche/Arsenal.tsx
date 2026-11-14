@@ -9,7 +9,6 @@ import {
   plancheArsenalOf,
   plancheFleetPlaces,
   planchePortSlots,
-  planchePower,
   plancheShipStats,
 } from "@comptoirs/engine";
 import { type ReactNode, useState } from "react";
@@ -194,7 +193,7 @@ export function ArsenalSheet({
       <div className="pc-pl-head">
         <div>
           <h2>L'Arsenal{ars ? ` · niveau ${ars.level}` : ""}</h2>
-          <span>Puissance {planchePower(S, state, house)} · tes marchandises, pas tes ducats</span>
+          <span>Tes navires naissent de tes marchandises, pas de tes ducats</span>
         </div>
         {close}
       </div>

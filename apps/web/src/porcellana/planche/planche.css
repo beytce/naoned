@@ -2313,3 +2313,37 @@ span.pc-semaine-title {
     min-height: 58px;
   }
 }
+/* The Port's four tabs (docs/plan-semaine.md D4), above its sheet. */
+.pc-port-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--pc-paper);
+  border-radius: 14px;
+  padding: 4px;
+  box-shadow: 0 3px 0 var(--pc-foot);
+  pointer-events: auto;
+}
+.pc-port-tabs button {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  padding: 0 10px;
+  font: 800 13px var(--pc-ui);
+  color: var(--pc-text-2);
+  cursor: pointer;
+}
+.pc-port-tabs button[aria-selected="true"] {
+  background: var(--pc-ink);
+  color: var(--pc-paper);
+}
+@media (min-width: 900px) {
+  .pc-port-tabs {
+    position: fixed;
+    right: 20px;
+    top: 40px;
+    width: 380px;
+    z-index: 3;
+  }
+}

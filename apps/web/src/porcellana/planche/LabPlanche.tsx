@@ -53,7 +53,6 @@ import {
   plancheOrders,
   planchePatina,
   planchePlace,
-  planchePower,
   planchePrice,
   plancheRobot,
   plancheRouteOpen,
@@ -885,6 +884,8 @@ export default function LabPlanche() {
     act(f, done);
   };
 
+  /** The places open to the house, by its level (docs/plan-semaine.md D1). */
+  const opens: Set<string> = ME ? plancheOpens(S, state, ME) : new Set<string>();
   const day =
     Math.floor((state.now - (online ? (view?.since ?? state.now) : T0)) / (24 * HOUR)) + 1;
   const hour = new Date(state.now).getUTCHours();
@@ -1320,6 +1321,17 @@ export default function LabPlanche() {
       setChosen(null);
       setMudaOpen(true);
     }
+    // The places of the board are objects of it (docs/plan-semaine.md D3): the ink opens the
+    // tide, one's own beacon one's company.
+    if (p?.kind === "encre") {
+      setChosen(null);
+      setMareeOpen(true);
+      if (online) void loadMaree();
+    }
+    if (p?.kind === "phare") {
+      setChosen(null);
+      if (p.id === ME && online) setCompOpen(true);
+    }
   };
   const closeX = (
     <button
@@ -1739,9 +1751,10 @@ export default function LabPlanche() {
           </div>
           {closeX}
         </div>
-        {S.arsenal ? (
+        {S.arsenal && opens.has("port") ? (
+          // Its fleet at anchor; the Power is not shown (docs/plan-semaine.md: it only pairs).
           <div className="pc-ar-power" data-house-power>
-            <b>Puissance {planchePower(S, state, house.id)}</b>
+            <b>Sa flotte</b>
             <span>
               {(state.houses[house.id]?.fleet?.ships ?? []).slice(0, 8).map((x) => (
                 <ShipGlyph key={x.id} kind={x.kind} size={26} damaged={!!x.damaged} />
@@ -1807,7 +1820,7 @@ export default function LabPlanche() {
             </button>
           </div>
         ) : null}
-        {mine && S.arsenal ? (
+        {mine && S.arsenal && opens.has("port") ? (
           <div className="pc-pl-acts">
             <button
               type="button"
@@ -1818,23 +1831,9 @@ export default function LabPlanche() {
                 setArmory("arsenal");
               }}
             >
-              L'Arsenal
-              <small>tes cales, ta flotte, ton port</small>
+              Le Port
+              <small>ta flotte, tes défenses, la Guerre</small>
             </button>
-            {S.guerre?.training ? (
-              <button
-                type="button"
-                className="pc-passe-quiet"
-                data-open-training-house
-                onClick={() => {
-                  pick(null);
-                  setTraining(true);
-                }}
-              >
-                Le Lido des corsaires
-                <small>un assaut d'entraînement, sans enjeu</small>
-              </button>
-            ) : null}
           </div>
         ) : null}
         {!mine && online && playing && view?.players.includes(house.id) ? (
@@ -1899,7 +1898,6 @@ export default function LabPlanche() {
   })();
   const latest = news.at(-1);
   // The week at the foot of the board (docs/plan-semaine.md D2): the places open to the house.
-  const opens = ME ? plancheOpens(S, state, ME) : new Set<string>();
   const weekday = Math.min(6, Math.floor((state.now - plancheMonday(state.now)) / (24 * HOUR)));
   const weekDays: SemaineDay[] = Array.from({ length: 7 }, (_, d) => ({
     object:
@@ -2258,6 +2256,36 @@ export default function LabPlanche() {
             onSaid={setSaid}
             onChange={() => void call()}
           />
+        ) : null}
+        {(armory || warOpen) && opens.has("port") ? (
+          // The Port (docs/plan-semaine.md D4): the Arsenal, the defenses, the War and the Lido,
+          // one place in four tabs.
+          <div className="pc-port-tabs" role="tablist" aria-label="Le Port" data-port-tabs>
+            {(
+              [
+                ["arsenal", "Ta flotte"],
+                ["port", "Tes défenses"],
+                ...(online && S.guerre ? [["guerre", "La Guerre"]] : []),
+                ...(S.guerre?.training ? [["lido", "Le Lido"]] : []),
+              ] as [string, string][]
+            ).map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                data-port-tab={tab}
+                aria-selected={tab === "guerre" ? warOpen : armory === tab}
+                onClick={() => {
+                  pick(null);
+                  if (tab === "arsenal" || tab === "port") setArmory(tab);
+                  else if (tab === "guerre") void loadWar().then(() => setWarOpen(true));
+                  else setTraining(true);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         ) : null}
         {warOpen && war ? (
           <>
