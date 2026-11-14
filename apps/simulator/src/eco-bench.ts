@@ -12,7 +12,12 @@ import {
   type PlancheSetup,
   type PlancheState,
   Rng,
+  ileBuyable,
+  ileOuvrages,
+  ileTileCost,
   plancheAdvance,
+  plancheBuild,
+  plancheBuyTile,
   plancheClaim,
   plancheDailyTry,
   plancheForceTry,
@@ -60,9 +65,43 @@ function plays(kind: Kind, hour: number): boolean {
   return h >= 7 && h <= 23 && h % 2 === 1;
 }
 
+/**
+ * A player builds a work of prestige once its purse holds twice the next one's price (the cheapest
+ * its level opens), on a free tile, or on one bought (docs/plan-economie.md C3).
+ */
+function buildWork(s: PlancheState, house: string, now: number): PlancheState {
+  const R = S.ile;
+  const h = s.houses[house];
+  if (BEFORE || !R || !h?.ile) return s;
+  const level = h.level ?? 1;
+  const n = ileOuvrages(R, h.ile).length;
+  const open = Object.entries(R.workshops)
+    .filter(([, w]) => w.ouvrage && (w.level ?? 0) <= level && w.tier <= (h.caps?.tier ?? 1))
+    .map(([id, w]) => {
+      let cost = BigInt(w.cost[0] ?? 0);
+      for (let k = 0; k < n; k++)
+        cost = (cost * BigInt(10_000 + (w.ouvrage?.growthBps ?? 0))) / 10_000n;
+      return { id, cost };
+    })
+    .sort((a, b) => (a.cost < b.cost ? -1 : 1))[0];
+  if (!open || h.ducats < open.cost * 2n) return s;
+  const free = Object.entries(h.ile.tiles).find(([, t]) => !t.building)?.[0];
+  try {
+    if (free) return plancheBuild(S, s, house, open.id, free, now);
+    const at = ileBuyable(R, h.ile)[0];
+    if (at && h.ducats >= ileTileCost(R, h.ile) + open.cost * 2n)
+      return plancheBuyTile(S, s, house, at, now);
+  } catch {
+    // Not open, or the plan is missing (the grand works).
+  }
+  return s;
+}
+
 interface Week {
   created: bigint;
   isle: bigint;
+  /** What went into the works this week. */
+  works: bigint;
   held: bigint;
   /** The open sea's share of each kind's sales this week (points of base). */
   large: Record<Kind, number>;
@@ -81,6 +120,7 @@ function run(seed: number): Week[] {
   const large = new Set(S.cities.filter((c) => c.ring === "large").map((c) => c.id));
   const weeks: Week[] = [];
   let soldBefore = 0n;
+  let worksWeek = 0n;
   let isleBefore = 0n;
   for (let hour = 1; hour <= WEEKS * 7 * 24; hour++) {
     const now = T0 + hour * HOUR;
@@ -108,11 +148,13 @@ function run(seed: number): Week[] {
       weeks.push({
         created: sold - soldBefore,
         isle: isle - isleBefore,
+        works: worksWeek,
         held: sum(houses.map((h) => h.ducats)),
         large: share,
         level,
       });
       soldBefore = sold;
+      worksWeek = 0n;
       isleBefore = isle;
     }
     s = plancheAdvance(S, s, now);
@@ -122,6 +164,11 @@ function run(seed: number): Week[] {
       // A player takes the detour where its level opens it; the computer never does.
       s = plancheRobot(S, s, h.id, now, 2_500, { detour: kind !== "ordinateur" });
       if (kind === "ordinateur") continue;
+      const spentBefore = s.spent;
+      const isleBefore0 = s.houses[h.id]?.book.isle ?? 0n;
+      s = buildWork(s, h.id, now);
+      const built = (s.houses[h.id]?.book.isle ?? 0n) - isleBefore0;
+      if (built > 0n && s.spent > spentBefore) worksWeek += built;
       const day = Math.floor(now / DAY);
       // The problem of the day, at the first visit of the day: solved six times in ten.
       if (S.daily && !s.daily?.[day]?.[h.id])
@@ -157,7 +204,7 @@ console.log(
   "Quatre sortes de Maisons, 12 de chaque : l'ordinateur (toutes les 8 h, sans détour), l'occasionnel (4 soirs par semaine), le régulier (8 h, 13 h, 20 h ; une tour un jour sur deux), l'assidu (toutes les 2 h de 7 h à 23 h ; une tour par jour). Problème du jour réussi 6 fois sur 10, tours gagnées 4 fois sur 10. Médianes des graines.\n",
 );
 console.log(
-  "| Semaine | Ducats créés | Dépensés sur l'île | Détenus | Part du Large : occasionnel · régulier · assidu | Niveau : occasionnel · régulier · assidu |",
+  "| Semaine | Ducats créés | Dépensés sur l'île (dont ouvrages) | Détenus | Part du Large : occasionnel · régulier · assidu | Niveau : occasionnel · régulier · assidu |",
 );
 console.log("| --- | --- | --- | --- | --- | --- |");
 for (let w = 0; w < WEEKS; w++) {
@@ -170,6 +217,6 @@ for (let w = 0; w < WEEKS; w++) {
     .map((k) => at(w, (x) => x.level[k]))
     .join(" · ");
   console.log(
-    `| ${w + 1} | ${pick((x) => x.created)} | ${pick((x) => x.isle)} | ${pick((x) => x.held)} | ${share} | ${level} |`,
+    `| ${w + 1} | ${pick((x) => x.created)} | ${pick((x) => x.isle)} (${pick((x) => x.works)}) | ${pick((x) => x.held)} | ${share} | ${level} |`,
   );
 }

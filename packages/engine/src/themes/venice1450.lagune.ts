@@ -274,6 +274,34 @@ export const venice1450LaguneParams: LagoonParams = {
                 cost: [600_000, 2_500_000, 6_000_000],
                 buildMs: [HOUR, 6 * HOUR, 24 * HOUR],
               },
+              // The works of prestige (docs/plan-economie.md C3): the ducats' sink. They make
+              // nothing, are seen by all, and each one makes the next a quarter dearer. The
+              // common ones at the Casa; the grand ones (the third tier) at level 15, with a plan.
+              ...Object.fromEntries(
+                (
+                  [
+                    ["fontaine", "Fontaine", 1, 6, 1_500_000, 2 * HOUR],
+                    ["loggia", "Loggia", 1, 6, 2_500_000, 4 * HOUR],
+                    ["campanile", "Campanile", 1, 6, 4_000_000, 8 * HOUR],
+                    ["scuola", "Scuola Grande", 3, 15, 12_000_000, 24 * HOUR],
+                    ["basilique", "Basilique", 3, 15, 25_000_000, 48 * HOUR],
+                  ] as const
+                ).map(([id, name, tier, level, cost, ms]) => [
+                  id,
+                  {
+                    name,
+                    tier,
+                    level,
+                    terrain: "pre" as const,
+                    inputs: {},
+                    outputs: {},
+                    lotsPerHour: 0,
+                    cost: [cost],
+                    buildMs: [ms],
+                    ouvrage: { growthBps: 2_500 },
+                  },
+                ]),
+              ),
             },
           },
         }

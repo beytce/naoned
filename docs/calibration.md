@@ -3546,3 +3546,16 @@ Banc ad hoc : sur chaque damier de la lagune, quatre parties à graine fixe, le 
 - Le commerce donne son Prestige sans le Large (`perDucats` 15) : l'occasionnel, qui n'atteint le Large qu'à la Casa, suit le régulier à un ou deux niveaux.
 - La courbe 28 étire le haut : à 500 par semaine, le niveau 30 vers la semaine 47 (calcul de l'économiste).
 - À relever pour la mesure d'ensemble (C7) : à la marée suivante (semaine 7), la part du Large remonte vers 70 à 80 % des ventes.
+
+### C3 : les ouvrages, le puits de ducats
+
+Trois ouvrages ordinaires dès la Casa (Fontaine 15 000 ducats, Loggia 25 000, Campanile 40 000), deux grands au niveau 15 avec un plan (Scuola Grande 120 000, Basilique 250 000) ; chacun déjà bâti rend le suivant 25 % plus cher. Au banc, un joueur bâtit le moins cher que son niveau ouvre dès que sa bourse vaut deux fois son prix.
+
+| Semaine | Ducats créés | Dépensés sur l'île (dont ouvrages) | Détenus : sans puits → avec |
+| --- | --- | --- | --- |
+| 4 | 751 579 | 569 578 (168 974) | 1 109 183 → 760 114 |
+| 6 | 689 260 | 548 858 (127 812) | 1 640 330 → 954 664 |
+| 8 | 723 659 | 724 902 (103 847) | 2 509 568 → **997 743** |
+
+- La masse détenue se stabilise vers un million de ducats pour la lagune (environ 28 000 par Maison de joueur) au lieu de grossir de 400 000 par semaine : l'île absorbe désormais autant que les villes créent.
+- Les ouvrages ne rendent rien : la règle 6 (à armes égales) tient ; ils se voient sur l'île de chacun (règle 10).

@@ -819,6 +819,9 @@ export const plancheBuild = (
   const caps = own(s.houses, house)?.caps;
   if (caps && Object.hasOwn(S.ile?.workshops ?? {}, type) && tier > caps.tier)
     return fail("planche_level");
+  // A work of prestige opens at its own level of the house (docs/plan-economie.md C3).
+  const opens = Object.hasOwn(S.ile?.workshops ?? {}, type) ? S.ile?.workshops[type]?.level : 0;
+  if (opens && (own(s.houses, house)?.level ?? 1) < opens) return fail("planche_level");
   // The Arsenal opens at its own level, one an island (docs/plan-arsenal.md).
   const h = own(s.houses, house);
   if (h) plancheArsenalMayBuild(S, h, type);
