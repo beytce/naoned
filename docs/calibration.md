@@ -3515,3 +3515,37 @@ Banc ad hoc : sur chaque damier de la lagune, quatre parties à graine fixe, le 
 - Avec le poids 1, un tiers des pièces (35 %) diffèrent de celles d'un capitaine sans manière : la manière se voit sans faire perdre.
 - Les rives prenaient les bords dans les deux sens et perdaient à tout poids ; tenues le long d'un seul axe, elles gagnent autant que les autres. Le poids reste 1 (`PASSE_MANNER`, variable d'environnement du même nom pour le banc).
 - Un capitaine a désormais **une seule manière**, la sienne (tirée de son nom), dans ses sorties comme à sa tour quand on la force ; elle est nommée sur la fiche.
+
+## La lagune ronde (14 novembre 2026, docs/plan-lagune-ronde.md L3)
+
+La carte d'une lagune change de forme (un carré de 41 cases, le Rialto au centre, un quart tourné par sestiere) sans qu'aucune règle ni aucun réglage ne bouge. Seules deux choses dépendent des cases : le **rembobinage** d'un fil (cases × `rewindMsPerTile`, 20 min) et la **tour voisine** que vise une sortie. L'encre se mesure à la distance au Rialto au lieu de la rangée ; ses seuils tombent aux mêmes valeurs (bouches 16,97, détroits 21,21, villes du Large 24,04, contre les rangées 17, 21 et 24).
+
+**Les distances**, en cases, d'une Maison :
+
+| Vers | Avant (colonnes) | Lagune ronde |
+| --- | --- | --- |
+| Sa ville la plus proche | 6 à 13 | 3 à 11 |
+| Le Rialto | 2 à 30 selon la colonne | 8 à 18, les mêmes pour les quatre sestieri |
+| Sa bouche | 5 à 15 | 6 à 16 |
+
+**Les bancs**, mêmes commandes sur le code d'avant et d'après, mêmes graines :
+
+| Banc | Mesure | Avant | Après |
+| --- | --- | --- | --- |
+| `BOARD=lagune planche-bench` | Gagné par Maison, par sestiere (milliers de deniers, médiane) | 9 374 à 10 919 (écart 16 %) | 9 981 à 11 190 (écart 12 %) |
+| | Gagné par plan (six plans) | 4 843 à 12 172 | 4 735 à 12 875 |
+| | Écart entre la plus riche et la plus pauvre (médiane) | × 5,57 | × 6,20 |
+| | Chaque denier compté | oui | oui |
+| `maree-bench` | Ligne d'encre, 33 % de tenants | 24,0 → 23,2 → 22,7 → 22,5 → 22,3 | la même |
+| | Sorties jouées, sceaux perdus (67 % de tenants) | 24,7 et 9,3 | 24,7 et 9,0 |
+| `hex-bench` | La Passe contre le détour | + 45 % | + 50 % |
+| `muda-bench 4 4` | La Muda contre le commerce seul | + 28 % | + 35 % |
+| | Détroits noirs forcés par Maison | 19,1 | 18,4 |
+
+**Lecture.**
+
+- **Rien à retoucher** : `rewindMsPerTile` reste à 20 min. Les gains bougent de 1 à 6 % selon le plan, dans le bruit de cinq graines ; l'encre et les sorties sont inchangées.
+- **Les sestieri sont plus égaux** : l'écart entre le sestiere le plus riche et le plus pauvre passe de 16 à 12 %. Ce qui reste vient des plans et des sols, donnés en tour aux Maisons, plus de la carte : les quatre quarts sont identiques à la case près (testé).
+- **La Passe contre le détour** était déjà au-dessus de sa cible (+ 25 % au plus) avant ce changement ; la carte n'y est pour rien, c'est une affaire du lot C.
+- **La Muda** gagne un peu (+ 28 à + 35 %, quatre graines) : le môle est maintenant au centre, à 11 à 21 cases de tous, quand il était à 4 à 40 selon la colonne. À revoir au lot C avec le reste de l'économie ; le plafond du chargement n'est pas touché.
+- La comparaison « huit visites contre trois » du banc de la planche porte sur trois Maisons et varie trop d'une graine à l'autre pour être lue ici (Ca' Bembo : + 100 % avant, + 46 % après).

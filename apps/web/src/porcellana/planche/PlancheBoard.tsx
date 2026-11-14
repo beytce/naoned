@@ -273,6 +273,58 @@ export function PlancheBoard({
     return { root, at };
   }, [setup, land, me]);
 
+  // A campanile on each sestiere's shore, each its own (docs/plan-lagune-ronde.md L6): one knows
+  // one's quarter by its tower, without reading. On the shore between its last town and the
+  // channel to its mouth; a decoration, never picked.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: built once for a board.
+  const campaniles = useMemo(() => {
+    const root = new Group();
+    const cx = (W - 1) / 2;
+    const cy = (H - 1) / 2;
+    const ids = [...new Set(setup.houses.map((h) => h.sestiere ?? ""))].filter(Boolean);
+    ids.forEach((id, k) => {
+      const town = setup.cities.filter((c) => c.sestiere === id).pop();
+      const mouth = setup.passages.find((p) => p.id === `bouche-${id}`);
+      if (!town || !mouth) return;
+      const r = Math.hypot(town.x - cx, town.y - cy);
+      const m = Math.hypot(mouth.x - cx, mouth.y - cy);
+      const x = Math.round((town.x + cx + ((mouth.x - cx) / m) * r) / 2);
+      const y = Math.round((town.y + cy + ((mouth.y - cy) / m) * r) / 2);
+      if (!land.land(x, y) || setup.cities.some((c) => c.x === x && c.y === y)) return;
+      const g = new Group();
+      g.position.set(wx(x), 0, wz(y));
+      const wall = P.m("wall");
+      const trim = P.m("trim");
+      if (k % 4 === 0) {
+        // A square shaft, its belfry and its spire.
+        box(g, 1.3, 5.6, 1.3, 0, 0, 0, wall, 0.05);
+        box(g, 1.5, 0.9, 1.5, 0, 5.6, 0, trim, 0.05);
+        cyl(g, 0.05, 0.95, 1.8, 0, 6.5, 0, P.m("wall2"), 4);
+      } else if (k % 4 === 1) {
+        // A round tower under a dome.
+        cyl(g, 0.7, 0.8, 5.0, 0, 0, 0, wall, 20);
+        cyl(g, 0.9, 0.9, 0.3, 0, 5.0, 0, trim, 20);
+        cyl(g, 0.25, 0.8, 1.0, 0, 5.3, 0, P.m("wall2"), 20);
+      } else if (k % 4 === 2) {
+        // Two slender towers and the bridge between them.
+        for (const dx of [-0.9, 0.9]) {
+          box(g, 0.9, 4.6, 0.9, dx, 0, 0, wall, 0.05);
+          cyl(g, 0.05, 0.65, 1.2, dx, 4.6, 0, P.m("wall2"), 4);
+        }
+        box(g, 1.2, 0.5, 0.6, 0, 2.9, 0, trim, 0.05);
+      } else {
+        // A stepped tower, each storey narrower.
+        box(g, 1.8, 2.2, 1.8, 0, 0, 0, wall, 0.05);
+        box(g, 1.3, 2.0, 1.3, 0, 2.2, 0, trim, 0.05);
+        box(g, 0.8, 1.8, 0.8, 0, 4.2, 0, wall, 0.05);
+        box(g, 1.0, 0.2, 1.0, 0, 6.0, 0, P.m("wall2"), 0.03);
+      }
+      bake(g);
+      root.add(g);
+    });
+    return root;
+  }, [setup, land]);
+
   // Each island in small round its house: its four highest workshops at the tile's corners, so
   // that a rival's trade reads from afar (docs/plan-ile.md I5).
   const isles = setup.houses
@@ -936,6 +988,7 @@ export function PlancheBoard({
   // What a rebuild leaves behind is freed, not kept in the GPU (docs/plan-socle.md A6).
   useEffect(() => () => disposeBuilt(web.root), [web.root]);
   useEffect(() => () => disposeBuilt(minis), [minis]);
+  useEffect(() => () => disposeBuilt(campaniles), [campaniles]);
   useEffect(() => () => disposeBuilt(anchored), [anchored]);
   useEffect(() => () => disposeBuilt(lighthouses), [lighthouses]);
   useEffect(() => () => disposeBuilt(ink), [ink]);
@@ -959,6 +1012,7 @@ export function PlancheBoard({
       <primitive object={ground} />
       <primitive object={web.root} />
       <primitive object={minis} />
+      <primitive object={campaniles} />
       <primitive object={anchored} />
       <primitive object={lighthouses} />
       <primitive object={ink} />
