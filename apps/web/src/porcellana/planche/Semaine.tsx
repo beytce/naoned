@@ -79,7 +79,8 @@ export function Semaine({
   knot: "no" | "won" | "lost" | null;
   /** A gesture waits today: the one red dot. */
   waiting: boolean;
-  onDay: (day: number) => void;
+  /** A day's object touched: the day's problem, or the day's place. */
+  onDay: (day: number, what: "jour" | NonNullable<DayObject>) => void;
   /** The title opens the tide's sheet, when there is one. */
   onTitle?: () => void;
 }) {
@@ -103,39 +104,38 @@ export function Semaine({
           const day = days[d];
           const isToday = d === today;
           const object = day?.object ?? null;
-          const can = isToday ? !!object || !!knot : !!object;
-          const what = [
-            isToday && knot ? "le Problème du jour" : null,
-            object ? NAMES[object] : null,
-          ].filter(Boolean);
+          const showKnot = isToday && !!knot;
+          // Today may bear two things, the knot and the day's object: each its own touch.
           return (
-            <li key={label}>
-              <button
-                type="button"
-                data-semaine-day={d}
-                data-today={String(isToday)}
-                // The places' marks, as the stack of pills had them (the e2e follow them).
-                data-daily={isToday && knot ? "" : undefined}
-                data-done={isToday && knot ? knot : undefined}
-                data-guerre-open={object === "guerre" ? "" : undefined}
-                data-muda-open={object === "muda" ? "" : undefined}
-                data-gazette-open={object === "gazette" ? "" : undefined}
-                disabled={!can}
-                aria-current={isToday ? "date" : undefined}
-                aria-label={`${label}${what.length ? ` : ${what.join(", ")}` : ""}${isToday && waiting ? ", un geste t'attend" : ""}`}
-                onClick={() => onDay(d)}
-              >
-                <span className="pc-semaine-label">{label}</span>
-                <span className="pc-semaine-objects">
-                  {isToday && knot ? (
-                    <span className="pc-semaine-knot" data-done={knot}>
-                      <Knot size={18} />
-                    </span>
-                  ) : null}
-                  {object ? <Icon object={object} /> : null}
-                </span>
-                {isToday && waiting ? <i className="pc-semaine-dot" data-semaine-waiting /> : null}
-              </button>
+            <li key={label} data-semaine-day={d} data-today={String(isToday)}>
+              <span className="pc-semaine-label">{label}</span>
+              <span className="pc-semaine-objects">
+                {showKnot ? (
+                  <button
+                    type="button"
+                    className="pc-semaine-knot"
+                    data-daily=""
+                    data-done={knot}
+                    aria-label={`Le Problème du jour${knot === "no" ? ", pas encore joué" : knot === "won" ? ", réussi" : ", joué"}`}
+                    onClick={() => onDay(d, "jour")}
+                  >
+                    <Knot size={18} />
+                  </button>
+                ) : null}
+                {object ? (
+                  <button
+                    type="button"
+                    aria-label={`${label} : ${NAMES[object]}`}
+                    data-guerre-open={object === "guerre" ? "" : undefined}
+                    data-muda-open={object === "muda" ? "" : undefined}
+                    data-gazette-open={object === "gazette" ? "" : undefined}
+                    onClick={() => onDay(d, object)}
+                  >
+                    <Icon object={object} />
+                  </button>
+                ) : null}
+              </span>
+              {isToday && waiting ? <i className="pc-semaine-dot" data-semaine-waiting /> : null}
             </li>
           );
         })}

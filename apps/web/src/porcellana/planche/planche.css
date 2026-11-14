@@ -2199,34 +2199,40 @@ span.pc-semaine-title {
   padding: 0;
   list-style: none;
 }
-.pc-semaine button[data-semaine-day] {
+.pc-semaine li[data-semaine-day] {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  width: 52px;
+  gap: 4px;
+  min-width: 52px;
   min-height: 62px;
-  border: 0;
   border-radius: 12px;
   background: var(--pc-ground, #efebe4);
   padding: 6px 2px;
   font: 700 12px var(--pc-ui);
   color: var(--pc-ink);
-  cursor: pointer;
 }
-.pc-semaine button[data-semaine-day]:disabled {
-  cursor: default;
-  color: var(--pc-text-2);
-  background: transparent;
-}
-.pc-semaine button[data-semaine-day][data-today="true"] {
+.pc-semaine li[data-semaine-day][data-today="true"] {
   background: var(--pc-ink);
   color: var(--pc-paper);
 }
-.pc-semaine button[data-today="true"] svg path,
-.pc-semaine button[data-today="true"] svg rect {
+.pc-semaine li[data-today="true"] svg path,
+.pc-semaine li[data-today="true"] svg rect {
   stroke: var(--pc-paper);
+}
+.pc-semaine-objects button {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+}
+.pc-semaine li[data-today="true"] .pc-semaine-objects button {
+  min-width: 40px;
 }
 .pc-semaine-objects {
   display: flex;
@@ -2306,9 +2312,17 @@ span.pc-semaine-title {
   .pc-semaine ol {
     justify-content: space-between;
   }
-  .pc-semaine button[data-semaine-day] {
-    width: 44px;
+  .pc-semaine ol {
+    gap: 4px;
+  }
+  .pc-semaine li[data-semaine-day] {
+    min-width: 40px;
     min-height: 58px;
+  }
+  .pc-semaine-objects button,
+  .pc-semaine li[data-today="true"] .pc-semaine-objects button {
+    min-width: 38px;
+    min-height: 40px;
   }
 }
 /* The Port's four tabs (docs/plan-semaine.md D4), above its sheet. */

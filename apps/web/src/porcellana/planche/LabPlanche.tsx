@@ -1918,16 +1918,12 @@ export default function LabPlanche() {
   const waitingToday =
     (!!daily && opens.has("jour") && !dailyMine) ||
     (weekDays[weekday]?.object === "muda" && plancheMudaPhase(S, state.now) === "sailing");
-  const openDay = (d: number) => {
+  const openDay = (_d: number, what: "jour" | "guerre" | "muda" | "gazette") => {
     pick(null);
-    const object = weekDays[d]?.object;
-    if (d === weekday && daily && opens.has("jour") && (!dailyMine || !object)) {
-      setGrowth("jour");
-      return;
-    }
-    if (object === "guerre") void loadWar().then(() => setWarOpen(true));
-    else if (object === "muda") setMudaOpen(true);
-    else if (object === "gazette") void loadGazette();
+    if (what === "jour") setGrowth("jour");
+    else if (what === "guerre") void loadWar().then(() => setWarOpen(true));
+    else if (what === "muda") setMudaOpen(true);
+    else void loadGazette();
   };
   /** A sheet is open: the week folds, the news and the scale are quiet (one sheet at a time). */
   const sheetOpen =
