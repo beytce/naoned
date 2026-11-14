@@ -127,6 +127,8 @@ try {
     const json = await res.json();
     const st = json?.planche?.state;
     const me = json?.planche?.me;
+    // The tide and the Port open at levels 5 and 6 (docs/plan-semaine.md D1).
+    if (st?.houses?.[me]) st.houses[me].level = Math.max(st.houses[me].level ?? 1, 6);
     if (st && me && moves.strait) {
       st.passages[moves.strait] = { holder: me, tollBps: 1000, seals: 3 };
       const monday = Math.floor((st.now + 3 * DAY) / (7 * DAY)) * 7 * DAY - 3 * DAY;

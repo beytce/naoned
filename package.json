@@ -11,7 +11,7 @@
     "start": "pnpm --filter @comptoirs/server start",
     "test": "vitest run",
     "typecheck": "pnpm -r typecheck",
-    "lint": "biome check .",
+    "lint": "biome check . && node apps/web/scripts/check-reds.mjs",
     "format": "biome format --write .",
     "sim": "pnpm --filter @comptoirs/simulator sim"
   },

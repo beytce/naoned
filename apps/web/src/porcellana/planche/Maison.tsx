@@ -99,16 +99,35 @@ export function MaisonSheet({
   close,
   onFacade,
   onProfil,
+  onCompagnie,
 }: {
   m: MaisonView;
   close: ReactNode;
   onFacade: () => void;
   onProfil: () => void;
+  /** The company, the sheet's other tab (docs/plan-semaine.md D2), once it is open. */
+  onCompagnie?: () => void;
 }) {
   const week = Math.min(m.week, m.weeklyCap + m.carry);
   const toNext = m.to === null ? 0 : m.to - m.prestige;
   return (
     <section className="pc-planche-card pc-pl-card pc-mn-sheet" data-maison-sheet>
+      {onCompagnie ? (
+        <div className="pc-mn-tabs" role="tablist" aria-label="Ta Maison et les tiens">
+          <button type="button" role="tab" aria-selected="true">
+            Ta Maison
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected="false"
+            onClick={onCompagnie}
+            data-compagnie-open
+          >
+            Les tiens
+          </button>
+        </div>
+      ) : null}
       <div className="pc-pl-head">
         <div>
           <h2>{m.name}</h2>
@@ -146,8 +165,8 @@ export function MaisonSheet({
           />
         </span>
         <p>
-          Ce que tes fils vendent chaque jour, puis dimanche ce que la semaine t'a donné : ton rival
-          battu, ta place dans ton sestiere, tes sceaux brisés, tes tours tenues.
+          Ce que tu gagnes compte aussitôt, sous le plafond de la semaine ; dimanche s'y ajoutent
+          ton rival battu, ta place dans ton sestiere et tes tours tenues.
           {m.carry ? ` ${m.carry} reportés de la semaine passée.` : ""}
         </p>
       </div>
@@ -194,8 +213,26 @@ function said(
   if (e.kind === "plan")
     return `Un plan assemblé, des reliques ${POWER_OF[e.data ?? ""] ?? e.data}.`;
   if (e.kind === "muda") return "Le pavillon de la Muda : le convoi a passé ses trois détroits.";
+  // A place of the board opened by the level (docs/plan-semaine.md D1).
+  if (e.kind === "open") return OPENS[e.data ?? ""] ?? "";
   return "";
 }
+
+/** What each place says the day it opens. */
+export const OPENS: Record<string, string> = {
+  jour: "Le Problème du jour s'ouvre : une position chaque jour, un seul essai.",
+  commandes:
+    "Les commandes des villes s'ouvrent : une ville scelle une commande au double du prix.",
+  rival: "Ton rival de la semaine t'attend : passe-le au rang, prends son pavillon.",
+  compagnie: "La compagnie s'ouvre : fonde la tienne, ou rejoins des amis.",
+  duel: "Le duel s'ouvre : défie un joueur présent, deux Passes en direct.",
+  muda: "La Muda s'ouvre : le convoi du samedi part du môle.",
+  rang: "Le palais du Doge s'ouvre : tes lauriers et ta place dans la lagune.",
+  maree: "La marée s'ouvre : l'encre monte du Large, semaine après semaine.",
+  port: "Le Port s'ouvre : ta première galère t'attend.",
+  ouvrages: "Les ouvrages s'ouvrent : une fontaine, une loggia, un campanile pour ta Maison.",
+  noirs: "Les tours noires du Large s'ouvrent : leurs reliques font des plans.",
+};
 
 /** The house's façade and its Livre. */
 export function FacadeSheet({
@@ -261,7 +298,7 @@ export function FacadeSheet({
         <circle cx="160" cy="153" r="3.2" fill="#2a2725" />
         {m.knotToday ? (
           <g transform="translate(150 60)" data-facade-knot>
-            <circle cx="10" cy="10" r="9" fill="#C8102E" />
+            <circle cx="10" cy="10" r="9" fill="var(--pc-accent)" />
             <path
               d="M5 12 C5 6 11 5 12 9 C13 13 7 14 8 9 C9 5 15 6 15 12"
               fill="none"

@@ -156,7 +156,7 @@ try {
     await tap('[data-house][data-mine="true"]');
     await page.waitForSelector("[data-house-power]", { state: "attached", timeout: 30_000 });
     const power = await page.textContent("[data-house-power] b");
-    if (!/Puissance \d+/.test(power ?? "")) fail(`the house's card reads « ${power} »`);
+    if (!/flotte/.test(power ?? "")) fail(`the house's card reads « ${power} »`);
     await page.waitForTimeout(1200);
     await page.screenshot({ path: join(SHOTS, `arsenal-${name}-2-maison.png`) });
     await tap("[data-open-arsenal-house]");

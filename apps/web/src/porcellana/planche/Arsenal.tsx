@@ -9,7 +9,6 @@ import {
   plancheArsenalOf,
   plancheFleetPlaces,
   planchePortSlots,
-  planchePower,
   plancheShipStats,
 } from "@comptoirs/engine";
 import { type ReactNode, useState } from "react";
@@ -84,7 +83,9 @@ export function ShipGlyph({
             strokeWidth="1.5"
             strokeDasharray={dash}
           />
-          {ghost ? null : <path d="M16 14 c0 -6 4 -6 4 -11 c2 4 5 5 5 11" fill="#c23b2e" />}
+          {ghost ? null : (
+            <path d="M16 14 c0 -6 4 -6 4 -11 c2 4 5 5 5 11" fill="var(--pc-accent)" />
+          )}
         </>
       ) : (
         <>
@@ -116,7 +117,7 @@ export function ShipGlyph({
         </>
       )}
       {damaged ? (
-        <path d="M18 15 l3 3 l-2 2 l3 2" stroke="#c23b2e" strokeWidth="1.6" fill="none" />
+        <path d="M18 15 l3 3 l-2 2 l3 2" stroke="var(--pc-accent)" strokeWidth="1.6" fill="none" />
       ) : null}
     </svg>
   );
@@ -194,7 +195,7 @@ export function ArsenalSheet({
       <div className="pc-pl-head">
         <div>
           <h2>L'Arsenal{ars ? ` · niveau ${ars.level}` : ""}</h2>
-          <span>Puissance {planchePower(S, state, house)} · tes marchandises, pas tes ducats</span>
+          <span>Tes navires naissent de tes marchandises, pas de tes ducats</span>
         </div>
         {close}
       </div>

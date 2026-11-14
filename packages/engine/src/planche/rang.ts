@@ -20,6 +20,7 @@ import {
   maisonCommerce,
   maisonDeeds,
   maisonLevel,
+  maisonOpened,
   maisonUnlocks,
   maisonWeek,
 } from "./maison.js";
@@ -482,6 +483,8 @@ function growFlow(S: PlancheSetup, s: PlancheState): void {
     if (!s.rank.humans.includes(id)) continue;
     const level = Math.min(M.maxLevel, maisonLevel(M, m.prestige).level);
     if (level > (h.level ?? 1)) {
+      for (const p of maisonOpened(M, h.level ?? 1, level))
+        tell(m.log, { at: s.now, kind: "open", data: p });
       h.level = level;
       h.caps = maisonUnlocks(M, level);
       tell(m.log, { at: s.now, kind: "level", data: level });
@@ -523,7 +526,11 @@ function growWeek(
   const raise = (id: string, level: number) => {
     const h = s.houses[id];
     if (!h || level <= (h.level ?? 1)) return;
-    h.level = Math.min(M.maxLevel, level);
+    const to = Math.min(M.maxLevel, level);
+    if (h.maison)
+      for (const p of maisonOpened(M, h.level ?? 1, to))
+        tell(h.maison.log, { at: s.now, kind: "open", data: p });
+    h.level = to;
     h.caps = maisonUnlocks(M, h.level);
     if (h.maison) tell(h.maison.log, { at: s.now, kind: "level", data: h.level });
   };

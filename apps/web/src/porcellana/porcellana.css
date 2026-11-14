@@ -4,10 +4,17 @@
   --pc-porcelain: #e9e6e0;
   --pc-paper: #fbfaf7;
   --pc-ink: #17150f;
-  --pc-ink-soft: #7a736a;
+  --pc-ink-soft: #6b645c;
   --pc-hair: #ddd7cd;
   --pc-accent: #c23b2e;
+  /* The one red and its shades (docs/plan-semaine.md D5, UX-2 and UX-3): never a red in hex. */
+  --pc-accent-deep: #8a2a20;
+  --pc-accent-soft: #a8302a;
+  --pc-accent-light: #e0614f;
   --pc-accent-ink: #ffffff;
+  /* Gold: danger and what is told ahead (a sortie, a black strait), never the player's. */
+  --pc-gold: #d49a16;
+  /* The soft ink, a shade darker for its contrast on the paper (UX-16: 5.3:1). */
   --pc-display: Nunito, "Segoe UI", system-ui, sans-serif;
   --pc-ui: Manrope, "Segoe UI", system-ui, -apple-system, sans-serif;
   background: var(--pc-porcelain);

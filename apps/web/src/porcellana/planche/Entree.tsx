@@ -16,7 +16,8 @@ export const FLAG_COLORS = [
   { id: "ink", name: "Encre", hex: "#2a2725" },
 ] as const;
 export const flagHex = (color?: string) =>
-  FLAG_COLORS.find((c) => c.id === color)?.hex ?? (color === "vermilion" ? "#c23b2e" : "#2a2725");
+  FLAG_COLORS.find((c) => c.id === color)?.hex ??
+  (color === "vermilion" ? "var(--pc-accent)" : "#2a2725");
 
 /** The charges of a flag, drawn in a box of 34. */
 export const CHARGES: Record<string, { name: string; d: string }> = {
@@ -159,7 +160,7 @@ export function Entree({ onIn }: { onIn: (a: Account) => void }) {
                     strokeWidth="1.6"
                     strokeLinejoin="round"
                   />
-                  <rect x="11" y="14" width="4" height="8" fill="#c23b2e" />
+                  <rect x="11" y="14" width="4" height="8" fill="var(--pc-accent)" />
                 </svg>
                 Ta Maison, pour toujours
               </div>
@@ -168,7 +169,7 @@ export function Entree({ onIn }: { onIn: (a: Account) => void }) {
                   <path
                     d="M3 20 C8 20 8 7 13 7 C18 7 18 20 23 20"
                     fill="none"
-                    stroke="#c23b2e"
+                    stroke="var(--pc-accent)"
                     strokeWidth="3.2"
                     strokeLinecap="round"
                   />

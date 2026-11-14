@@ -103,7 +103,7 @@ export const pct = (bps: number) => `${Math.round(bps / 100)} %`;
 export function Knot({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true" className="pc-pl-knot">
-      <circle cx="10" cy="10" r="9" fill="#C8102E" />
+      <circle cx="10" cy="10" r="9" fill="var(--pc-accent)" />
       <path
         d="M5 12 C5 6 11 5 12 9 C13 13 7 14 8 9 C9 5 15 6 15 12"
         fill="none"

@@ -13,6 +13,7 @@ import {
   plancheForced,
   plancheFreeBobbins,
   plancheInit,
+  plancheOpens,
   plancheSetLevel,
   plancheThread,
 } from "../../src/index.js";
@@ -319,5 +320,53 @@ describe("the growth on the board", () => {
     expect(s.houses.ana?.maison?.log.some((e) => e.kind === "tower")).toBe(true);
     s = plancheAdvance(S, s, T0 + WEEK);
     expect(s.houses.ana?.maison?.seals).toBe(0);
+  });
+});
+
+// The places opened by step, by the house's level (docs/plan-semaine.md D1).
+describe("the places a house sees", () => {
+  const WEEK = 7 * 24 * HOUR;
+  it("are all open on a board without steps, and open by level where the growth names them", () => {
+    const S = setup();
+    const s = plancheInit(S, T0);
+    expect(plancheOpens(S, s, "ana").has("port")).toBe(true);
+    const M = S.maison as MaisonRules;
+    M.places = { jour: 2, port: 4 };
+    const first = plancheOpens(S, s, "ana");
+    expect(first.has("fils")).toBe(true);
+    expect(first.has("jour")).toBe(false);
+    expect(first.has("port")).toBe(false);
+    const t = plancheSetLevel(S, s, "ana", 4);
+    expect(plancheOpens(S, t, "ana").has("jour")).toBe(true);
+    expect(plancheOpens(S, t, "ana").has("port")).toBe(true);
+    // The Livre tells each place the day it opens.
+    const opened = (t.houses.ana?.maison?.log ?? [])
+      .filter((e) => e.kind === "open")
+      .map((e) => e.data);
+    expect(opened.sort()).toEqual(["jour", "port"]);
+  });
+
+  it("tells a place opened by the Prestige earned, once", () => {
+    const S = setup();
+    const M = S.maison as MaisonRules;
+    M.places = { jour: 2 };
+    M.commerce = { perDucats: 1, dailyCap: 1_000 };
+    const ranked: PlancheSetup = {
+      ...S,
+      rank: {
+        tideWeeks: 4,
+        weekMs: WEEK,
+        negoceMinMs: HOUR,
+        coteStart: 1_200,
+        coteK: 32,
+        repelledHours: 12,
+      },
+    };
+    let s = plancheClaim(ranked, plancheInit(ranked, T0), "ana");
+    s = plancheBuild(ranked, s, "ana", "pit", "1,0", T0);
+    s = plancheThread(ranked, s, "ana", "bourg", "sable", T0);
+    s = plancheAdvance(ranked, s, T0 + 2 * 24 * HOUR);
+    expect(s.houses.ana?.level).toBeGreaterThanOrEqual(2);
+    expect((s.houses.ana?.maison?.log ?? []).filter((e) => e.kind === "open")).toHaveLength(1);
   });
 });

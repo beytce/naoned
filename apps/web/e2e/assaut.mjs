@@ -91,6 +91,15 @@ try {
     const errs = [];
     page.on("pageerror", (e) => errs.push(e.message));
     const tap = (q) => page.evaluate((s) => document.querySelector(s)?.click(), q);
+    // The Port opens at level 6 (docs/plan-semaine.md D1): one's house read at that level.
+    await page.route("**/api/planche", async (route) => {
+      const res = await route.fetch().catch(() => null);
+      if (!res) return route.abort().catch(() => {});
+      const json = await res.json().catch(() => null);
+      const hs = json?.planche?.state?.houses?.[json?.planche?.me];
+      if (hs) hs.level = Math.max(hs.level ?? 1, 6);
+      await route.fulfill({ response: res, json });
+    });
     await page.goto(server.url);
     await page.waitForSelector("[data-planche-entree]", { state: "attached", timeout: 60_000 });
     const email = `assaut_${name}@example.org`;
@@ -113,11 +122,14 @@ try {
     await page.waitForTimeout(2000);
     // The Lido of the corsairs, from one's house.
     await tap('[data-house][data-mine="true"]');
-    await page.waitForSelector("[data-open-training-house]", {
+    await page.waitForSelector("[data-open-arsenal-house]", {
       state: "attached",
       timeout: 30_000,
     });
-    await tap("[data-open-training-house]");
+    // The Lido is a tab of the Port (docs/plan-semaine.md D4).
+    await tap("[data-open-arsenal-house]");
+    await page.waitForSelector('[data-port-tab="lido"]', { state: "attached", timeout: 30_000 });
+    await tap('[data-port-tab="lido"]');
     await page.waitForSelector("[data-assaut]", { state: "attached", timeout: 30_000 });
     const hint = async () => (await page.textContent("[data-assaut-hint]").catch(() => "")) ?? "";
     if (!(await hint()).includes("galère")) fail(`the guide begins with « ${await hint()} »`);

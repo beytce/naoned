@@ -44,6 +44,9 @@ import {
   type MaisonCaps,
   type MaisonRules,
   type MaisonState,
+  PLANCHE_PLACES,
+  type PlanchePlace,
+  maisonOpened,
   maisonStart,
   maisonUnlocks,
 } from "./maison.js";
@@ -880,9 +883,24 @@ export function plancheSetLevel(
   if (to === h0.level) return s0;
   const s = clone(s0);
   const h = s.houses[house] as PlancheHouse;
+  // Each place it opens is told in its Livre (docs/plan-semaine.md D1).
+  if (h.maison)
+    for (const p of maisonOpened(S.maison, h0.level ?? 1, to)) {
+      h.maison.log.push({ at: s.now, kind: "open", data: p });
+      if (h.maison.log.length > MAISON_KEEP) h.maison.log.shift();
+    }
   h.level = to;
   h.caps = maisonUnlocks(S.maison, to);
   return s;
+}
+
+/**
+ * The places of the board a house sees (docs/plan-semaine.md D1): by its level, where the growth
+ * opens them by step; every place otherwise. What is not open is not shown.
+ */
+export function plancheOpens(S: PlancheSetup, s: PlancheState, house: string): Set<PlanchePlace> {
+  const level = own(s.houses, house)?.level ?? 1;
+  return new Set(PLANCHE_PLACES.filter((p) => (S.maison?.places?.[p] ?? 1) <= level));
 }
 export function plancheUpgrade(
   S: PlancheSetup,

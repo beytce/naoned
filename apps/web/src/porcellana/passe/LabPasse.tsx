@@ -431,7 +431,7 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
                 cy="26"
                 r="25"
                 fill={duel.flag === "puissance" ? "#111111" : "#3A3633"}
-                stroke={duel.flag === "puissance" ? "#C7372F" : "#6B645C"}
+                stroke={duel.flag === "puissance" ? "var(--pc-accent)" : "#6B645C"}
                 strokeWidth="2"
               />
               <path d="M17 12 V42" stroke="#D9D2C6" strokeWidth="2" />
@@ -473,7 +473,7 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
                   cy="15"
                   r="12"
                   fill="none"
-                  stroke="#E0614F"
+                  stroke="var(--pc-accent-light)"
                   strokeWidth="4"
                   strokeLinecap="round"
                   strokeDasharray={`${Math.min(1, left / 15) * 75.4} 75.4`}

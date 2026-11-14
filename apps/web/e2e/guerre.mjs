@@ -225,7 +225,9 @@ try {
         },
       }),
     );
-    await tap("[data-planche-card] .pc-pl-x");
+    // The War's sheet closed, the week comes back with its flag (docs/plan-semaine.md D2).
+    await tap("[data-guerre] .pc-pl-x");
+    await until("[data-guerre-open]");
     await tap("[data-guerre-open]");
     await until("[data-replay]");
     await tap("[data-replay]");

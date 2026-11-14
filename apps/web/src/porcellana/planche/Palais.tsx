@@ -54,6 +54,83 @@ function youOf(
   return `Toi : ${r.place}e, ${scoreOf(which, r.score, r.ranked)}.`;
 }
 
+/**
+ * The podium of the lagoon (docs/plan-semaine.md D6): the three first houses on their steps, the
+ * Doge's cap on the highest; thine in red if it stands there.
+ */
+function Podium({
+  top,
+  me,
+  who,
+  doge,
+}: {
+  top: { id: string; place: number }[];
+  me: string;
+  who: (id: string) => string;
+  doge: string | null;
+}) {
+  // Second on the left, first in the middle, third on the right.
+  const steps = [
+    { r: top[1], x: 20, h: 34 },
+    { r: top[0], x: 115, h: 52 },
+    { r: top[2], x: 210, h: 22 },
+  ];
+  return (
+    <svg
+      className="pc-rk-podium"
+      viewBox="0 0 300 120"
+      role="img"
+      aria-label="Le podium de la lagune"
+      data-palace-podium
+    >
+      {steps.map(({ r, x, h }) =>
+        r ? (
+          <g key={r.id}>
+            <rect
+              x={x}
+              y={110 - h}
+              width="70"
+              height={h}
+              rx="4"
+              fill={r.id === me ? "var(--pc-accent)" : "var(--pc-paper)"}
+              stroke="var(--pc-ink)"
+              strokeWidth="2"
+            />
+            <text
+              x={x + 35}
+              y={110 - h / 2 + 5}
+              textAnchor="middle"
+              fontSize="16"
+              fontWeight="900"
+              fill={r.id === me ? "var(--pc-accent-ink)" : "var(--pc-ink)"}
+            >
+              {r.place}
+            </text>
+            <text
+              x={x + 35}
+              y={110 - h - 8}
+              textAnchor="middle"
+              fontSize="11"
+              fontWeight="700"
+              fill="var(--pc-ink)"
+            >
+              {who(r.id).slice(0, 14)}
+            </text>
+            {doge === r.id ? (
+              <path
+                d={`M${x + 25} ${110 - h - 22} l4 -9 l6 6 l6 -6 l4 9 Z`}
+                fill="var(--pc-gold)"
+                stroke="var(--pc-ink)"
+                strokeWidth="1.2"
+              />
+            ) : null}
+          </g>
+        ) : null,
+      )}
+    </svg>
+  );
+}
+
 /** A whole sum of deniers in ducats, French style. */
 const ducats = (deniers: bigint) => Math.round(Number(deniers) / 100).toLocaleString("fr-FR");
 
@@ -118,7 +195,7 @@ export function Laurel({ of, size = 16 }: { of: PlancheLaurelId; size?: number }
         strokeWidth="1.2"
         strokeLinecap="round"
       />
-      <text x="8" y="11" textAnchor="middle" fontSize="7" fontWeight="900" fill="var(--pc-ink)">
+      <text x="8" y="11" textAnchor="middle" fontSize="9" fontWeight="900" fill="var(--pc-ink)">
         {letter}
       </text>
     </svg>
@@ -212,6 +289,12 @@ export function Palais({
         </div>
         {close}
       </div>
+      <Podium
+        top={standing.slice(0, 3).map((r) => ({ id: r.house, place: r.place }))}
+        me={me}
+        who={who}
+        doge={doge}
+      />
       <p className="pc-rk-place">
         <b data-palace-place>
           {mine?.place ?? "–"}
