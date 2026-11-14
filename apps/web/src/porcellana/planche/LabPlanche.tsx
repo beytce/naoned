@@ -766,12 +766,13 @@ export default function LabPlanche() {
   const today = Math.floor(state.now / (24 * HOUR));
   const orders = useMemo(
     () =>
-      mySestiere
+      // The orders open with their level (docs/plan-semaine.md D1): the towns bear them then.
+      mySestiere && ME && plancheOpens(S, state, ME).has("commandes")
         ? plancheOrders(S, today).filter(
             (o) => o.sestiere === mySestiere && o.from <= state.now && state.now <= o.to,
           )
         : [],
-    [today, mySestiere, state.now],
+    [today, mySestiere, state.now, ME, state],
   );
   const orderOf = (cityId: string) =>
     orders.find((o) => o.city === cityId && !state.orders?.[o.id]?.by);
@@ -2049,7 +2050,7 @@ export default function LabPlanche() {
             </b>
           </button>
         ))}
-        {(S.noir?.straits ?? []).map((x) => (
+        {(opens.has("noirs") ? (S.noir?.straits ?? []) : []).map((x) => (
           <button
             key={x.id}
             type="button"
