@@ -129,6 +129,8 @@ try {
       const json = await res.json();
       const st = json?.planche?.state;
       const me = json?.planche?.me;
+      // The places the week needs open at once (docs/plan-semaine.md D1: the Muda at level 5).
+      if (st?.houses?.[me]) st.houses[me].level = Math.max(st.houses[me].level ?? 1, 6);
       if (st && me && moves.level) {
         const hh = st.houses[me];
         hh.level = moves.level;

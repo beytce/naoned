@@ -99,16 +99,35 @@ export function MaisonSheet({
   close,
   onFacade,
   onProfil,
+  onCompagnie,
 }: {
   m: MaisonView;
   close: ReactNode;
   onFacade: () => void;
   onProfil: () => void;
+  /** The company, the sheet's other tab (docs/plan-semaine.md D2), once it is open. */
+  onCompagnie?: () => void;
 }) {
   const week = Math.min(m.week, m.weeklyCap + m.carry);
   const toNext = m.to === null ? 0 : m.to - m.prestige;
   return (
     <section className="pc-planche-card pc-pl-card pc-mn-sheet" data-maison-sheet>
+      {onCompagnie ? (
+        <div className="pc-mn-tabs" role="tablist" aria-label="Ta Maison et les tiens">
+          <button type="button" role="tab" aria-selected="true">
+            Ta Maison
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected="false"
+            onClick={onCompagnie}
+            data-compagnie-open
+          >
+            Les tiens
+          </button>
+        </div>
+      ) : null}
       <div className="pc-pl-head">
         <div>
           <h2>{m.name}</h2>
@@ -146,8 +165,8 @@ export function MaisonSheet({
           />
         </span>
         <p>
-          Ce que tes fils vendent chaque jour, puis dimanche ce que la semaine t'a donné : ton rival
-          battu, ta place dans ton sestiere, tes sceaux brisés, tes tours tenues.
+          Ce que tu gagnes compte aussitôt, sous le plafond de la semaine ; dimanche s'y ajoutent
+          ton rival battu, ta place dans ton sestiere et tes tours tenues.
           {m.carry ? ` ${m.carry} reportés de la semaine passée.` : ""}
         </p>
       </div>

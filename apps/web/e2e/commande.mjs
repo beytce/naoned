@@ -126,6 +126,8 @@ try {
         "flour",
       ])
         h.stock[g] = 200;
+      // The orders and the day's problem open at levels 2 and 3 (docs/plan-semaine.md D1).
+      h.level = Math.max(h.level ?? 1, 3);
       if (tower) st.passages["canal-1"].holder = me;
       if (tried) st.orders = { ...(st.orders ?? {}), [tried]: { tried: [me] } };
       return json;

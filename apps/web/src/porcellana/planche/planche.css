@@ -2168,3 +2168,148 @@ button.pc-pl-brand {
   outline-offset: 3px;
   border-radius: 14px;
 }
+/* The week at the foot of the board (docs/plan-semaine.md D2): seven days, today in ink. */
+.pc-semaine {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--pc-paper);
+  border-radius: 18px;
+  padding: 8px 10px 10px;
+  box-shadow: 0 3px 0 var(--pc-foot), 0 10px 24px rgba(42, 39, 37, 0.08);
+  pointer-events: auto;
+}
+.pc-semaine-title {
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  padding: 0 4px;
+  font: 800 11px var(--pc-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pc-text-2);
+  cursor: pointer;
+}
+span.pc-semaine-title {
+  cursor: default;
+}
+.pc-semaine ol {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-semaine button[data-semaine-day] {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 52px;
+  min-height: 62px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--pc-ground, #efebe4);
+  padding: 6px 2px;
+  font: 700 12px var(--pc-ui);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.pc-semaine button[data-semaine-day]:disabled {
+  cursor: default;
+  color: var(--pc-text-2);
+  background: transparent;
+}
+.pc-semaine button[data-semaine-day][data-today="true"] {
+  background: var(--pc-ink);
+  color: var(--pc-paper);
+}
+.pc-semaine button[data-today="true"] svg path,
+.pc-semaine button[data-today="true"] svg rect {
+  stroke: var(--pc-paper);
+}
+.pc-semaine-objects {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  min-height: 22px;
+}
+.pc-semaine-knot[data-done="won"],
+.pc-semaine-knot[data-done="lost"] {
+  opacity: 0.55;
+}
+/* The one red: a gesture waits today. */
+.pc-semaine-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--pc-accent);
+  box-shadow: 0 0 0 2px var(--pc-paper);
+}
+/* The Maison's sheet and the company's: two tabs of one sheet. */
+.pc-mn-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.pc-mn-tabs button {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  font: 800 13px var(--pc-ui);
+  color: var(--pc-text-2);
+  cursor: pointer;
+}
+.pc-mn-tabs button[aria-selected="true"] {
+  background: var(--pc-ink);
+  color: var(--pc-paper);
+}
+/* One sheet at a time: the scale and the peril's legend are quiet under it (UX-8, UX-9). */
+[data-sheet="true"] .pc-pl-scale,
+[data-sheet="true"] .pc-pl-peril {
+  display: none;
+}
+/* On a computer, the scale goes down to the bottom left, in a row (UX-6). */
+@media (min-width: 900px) {
+  .pc-pl-scale {
+    top: auto;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: none;
+    flex-direction: row;
+  }
+}
+/* On a phone, the scale comes back as a compact segment above the week (UX-7). */
+@media (max-width: 899px) {
+  .pc-pl-scale {
+    display: flex;
+    flex-direction: row;
+    left: auto;
+    right: 12px;
+    top: calc(72px + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    transform: none;
+    padding: 4px;
+    border-radius: 14px;
+  }
+  .pc-pl-scale button {
+    min-height: 44px;
+  }
+  .pc-semaine {
+    align-self: stretch;
+    margin: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+  .pc-semaine ol {
+    justify-content: space-between;
+  }
+  .pc-semaine button[data-semaine-day] {
+    width: 44px;
+    min-height: 58px;
+  }
+}

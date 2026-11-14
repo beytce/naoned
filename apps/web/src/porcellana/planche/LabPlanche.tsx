@@ -47,6 +47,7 @@ import {
   plancheNoirBoard,
   plancheNoirMind,
   plancheNoirTry,
+  plancheOpens,
   plancheOrderRefusal,
   plancheOrderTry,
   plancheOrders,
@@ -102,6 +103,7 @@ import { GazetteSheet, MudaSheet, NoirSheet, POWER_OF, Reliques } from "./Muda.j
 import { Marks, Palais, Trend, rankMarks } from "./Palais.js";
 import { PlancheBoard, type PlancheLand, type PlanchePick } from "./PlancheBoard.js";
 import { Bobbin, Flag, Knot, NewsMark, Seals, ShareBar, pct } from "./PlancheUi.js";
+import { Semaine, type SemaineDay } from "./Semaine.js";
 
 import type { PasseRemote, PasseRemoteView } from "../passe/LabPasse.js";
 
@@ -1896,10 +1898,50 @@ export default function LabPlanche() {
     );
   })();
   const latest = news.at(-1);
+  // The week at the foot of the board (docs/plan-semaine.md D2): the places open to the house.
+  const opens = ME ? plancheOpens(S, state, ME) : new Set<string>();
+  const weekday = Math.min(6, Math.floor((state.now - plancheMonday(state.now)) / (24 * HOUR)));
+  const weekDays: SemaineDay[] = Array.from({ length: 7 }, (_, d) => ({
+    object:
+      d >= 1 && d <= 4 && online && S.guerre && opens.has("port")
+        ? "guerre"
+        : d === 5 && S.muda && opens.has("muda")
+          ? "muda"
+          : d === 6 && online && S.muda
+            ? "gazette"
+            : null,
+  }));
+  const waitingToday =
+    (!!daily && opens.has("jour") && !dailyMine) ||
+    (weekDays[weekday]?.object === "muda" && plancheMudaPhase(S, state.now) === "sailing");
+  const openDay = (d: number) => {
+    pick(null);
+    const object = weekDays[d]?.object;
+    if (d === weekday && daily && opens.has("jour") && (!dailyMine || !object)) {
+      setGrowth("jour");
+      return;
+    }
+    if (object === "guerre") void loadWar().then(() => setWarOpen(true));
+    else if (object === "muda") setMudaOpen(true);
+    else if (object === "gazette") void loadGazette();
+  };
+  /** A sheet is open: the week folds, the news and the scale are quiet (one sheet at a time). */
+  const sheetOpen =
+    !!chosen ||
+    palace ||
+    profil ||
+    !!growth ||
+    !!armory ||
+    warOpen ||
+    compOpen ||
+    mudaOpen ||
+    mareeOpen ||
+    !!gazette;
   return (
     <div
       className="porcellana fixed inset-0 pc-passe pc-planche"
       data-planche-lab
+      data-sheet={String(sheetOpen)}
       data-gate={gate}
       data-threads={Object.values(state.houses).reduce((n, h) => n + h.threads.length, 0)}
       data-live={String(heard)}
@@ -2127,142 +2169,6 @@ export default function LabPlanche() {
                 ? "En ligne · tu regardes : toutes les Maisons sont prises"
                 : `En ligne · ${view?.players.length ?? 0} joueur${(view?.players.length ?? 0) > 1 ? "s" : ""}`}
             </span>
-          ) : null}
-          {online && playing && ME ? (
-            <button
-              type="button"
-              className="pc-pl-jour pc-pl-war"
-              data-compagnie-open
-              onClick={() => {
-                pick(null);
-                setCompOpen(true);
-              }}
-            >
-              {view?.compagnies?.[ME] ? (
-                <HouseFlag
-                  color={view.compagnies[ME].flag.color}
-                  symbol={view.compagnies[ME].flag.symbol}
-                  size={18}
-                />
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
-                  <circle cx="7" cy="7" r="3.2" fill="#17150f" />
-                  <circle cx="13.5" cy="7.5" r="2.6" fill="#6b645c" />
-                  <path d="M2 17 C2 12 12 12 12 17 Z M10 17 C10 13 18 13 18 17 Z" fill="#17150f" />
-                </svg>
-              )}
-              <span>{view?.compagnies?.[ME]?.name ?? "Compagnie"}</span>
-            </button>
-          ) : null}
-          {online && S.guerre && playing && ME ? (
-            <button
-              type="button"
-              className="pc-pl-jour pc-pl-war"
-              data-guerre-open
-              onClick={() => {
-                pick(null);
-                void loadWar().then(() => setWarOpen(true));
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
-                <path
-                  d="M4 18 V3 M4 3 H15 L12 7 L15 11 H4"
-                  fill="#C8102E"
-                  stroke="#17150f"
-                  strokeWidth="1.6"
-                />
-              </svg>
-              <span>La Guerre</span>
-            </button>
-          ) : null}
-          {S.encre && playing && ME ? (
-            <button
-              type="button"
-              className="pc-pl-jour pc-pl-war"
-              data-maree-open
-              onClick={() => {
-                pick(null);
-                setMareeOpen(true);
-                if (online) void loadMaree();
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M2 8 Q6 4 10 8 T18 8" stroke="#17150f" strokeWidth="1.8" fill="none" />
-                <path d="M2 14 Q6 10 10 14 T18 14 V18 H2 Z" fill="#17150f" />
-              </svg>
-              <span>Marée · sem. {state.rank.week + 1}</span>
-            </button>
-          ) : null}
-          {S.muda && playing && ME ? (
-            <button
-              type="button"
-              className="pc-pl-jour pc-pl-war"
-              data-muda-open
-              data-phase={plancheMudaPhase(S, state.now)}
-              onClick={() => {
-                pick(null);
-                setMudaOpen(true);
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M2 12 H18 L15.5 17 H4.5 Z" fill="#17150f" />
-                <path
-                  d="M10 2 V12 M10 3 Q15 6 10 10"
-                  stroke="#17150f"
-                  strokeWidth="1.6"
-                  fill="#C8102E"
-                />
-              </svg>
-              <span>La Muda</span>
-            </button>
-          ) : null}
-          {online && S.muda && playing && ME ? (
-            <button
-              type="button"
-              className="pc-pl-jour pc-pl-war"
-              data-gazette-open
-              onClick={() => {
-                pick(null);
-                void loadGazette();
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
-                <rect
-                  x="3"
-                  y="3"
-                  width="14"
-                  height="14"
-                  rx="1.5"
-                  fill="#F6F4F0"
-                  stroke="#17150f"
-                  strokeWidth="1.6"
-                />
-                <path d="M6 7 H14 M6 10 H14 M6 13 H11" stroke="#17150f" strokeWidth="1.4" />
-              </svg>
-              <span>La Gazette</span>
-            </button>
-          ) : null}
-          {daily && playing && ME ? (
-            <button
-              type="button"
-              className="pc-pl-jour"
-              data-daily
-              data-done={dailyMine ? (dailyMine.won ? "won" : "lost") : "no"}
-              aria-label={
-                dailyMine
-                  ? dailyMine.won
-                    ? "Problème du jour réussi"
-                    : "Problème du jour joué"
-                  : "Le problème du jour, pas encore joué"
-              }
-              onClick={() => {
-                pick(null);
-                setGrowth("jour");
-              }}
-            >
-              <Knot size={phone ? 18 : 20} />
-              <span>{dailyMine ? (dailyMine.won ? "Réussi" : "Joué") : "Problème du jour"}</span>
-            </button>
           ) : null}
           {online ? null : (
             <span className="pc-planche-speed">
@@ -2658,6 +2564,14 @@ export default function LabPlanche() {
               setGrowth(null);
               setProfil(true);
             }}
+            {...(online && (opens.has("compagnie") || view?.compagnies?.[ME])
+              ? {
+                  onCompagnie: () => {
+                    setGrowth(null);
+                    setCompOpen(true);
+                  },
+                }
+              : {})}
           />
         ) : null}
         {growth === "facade" && maison ? (
@@ -2746,7 +2660,7 @@ export default function LabPlanche() {
             }}
           />
         ) : null}
-        {!chosen && !palace && !profil && !growth && !armory && !warOpen && !compOpen ? (
+        {!sheetOpen ? (
           <div className="pc-planche-news" aria-label="Le fil des nouvelles">
             {latest ? (
               <button key={latest.id} type="button" onClick={() => pick(latest.pick)}>
@@ -2764,6 +2678,37 @@ export default function LabPlanche() {
               </button>
             )}
           </div>
+        ) : null}
+        {!sheetOpen && playing && ME ? (
+          <Semaine
+            title={
+              opens.has("maree") && S.encre
+                ? `Marée ${state.rank.tide + 1} · semaine ${state.rank.week + 1} sur ${S.rank?.tideWeeks ?? 6}`
+                : "La semaine"
+            }
+            today={weekday}
+            days={weekDays}
+            knot={
+              daily && opens.has("jour")
+                ? dailyMine
+                  ? dailyMine.won
+                    ? "won"
+                    : "lost"
+                  : "no"
+                : null
+            }
+            waiting={waitingToday}
+            onDay={openDay}
+            {...(opens.has("maree") && S.encre
+              ? {
+                  onTitle: () => {
+                    pick(null);
+                    setMareeOpen(true);
+                    if (online) void loadMaree();
+                  },
+                }
+              : {})}
+          />
         ) : null}
       </footer>
       <div className="pc-pl-peril" aria-hidden="true">
