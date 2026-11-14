@@ -28,11 +28,14 @@ const args = process.argv.slice(2);
 const shard = /^(\d+)\/(\d+)$/.exec(args[0] ?? "");
 const [part, parts] = shard ? [Number(shard[1]), Number(shard[2])] : [1, 1];
 const merging = !shard && args.length > 0;
-/** A year: most in two and three pieces, a fifth in four (the Sundays and a few more). */
-const YEAR: Record<number, number> = { 2: 150, 3: 140, 4: 75 };
+/** A year: in two and three pieces, a few in four (they are rare: a Sunday now and then). */
+const DAYS = 365;
+const YEAR: Record<number, number> = { 2: 200, 3: 200, 4: 40 };
 const WANT: Record<number, number> = Object.fromEntries(
   Object.entries(YEAR).map(([m, n]) => [m, Math.ceil(n / parts)]),
 );
+/** How long a run looks, at most (minutes): what it found by then is kept. */
+const MINUTES = Number(process.env.MINUTES ?? 30);
 const found: PasseProblem[] = [];
 const seen = new Set<string>();
 const count = (moves: number) => found.filter((p) => p.moves === moves).length;
@@ -69,15 +72,18 @@ const started = Date.now();
 if (merging) {
   const all = args.flatMap((f) => JSON.parse(readFileSync(f, "utf8")) as PasseProblem[]);
   const sigs = new Set<string>();
-  for (const p of all) {
-    const sig = `${p.width}:${p.cells.join("")}`;
-    if (sigs.has(sig) || found.filter((q) => q.moves === p.moves).length >= (YEAR[p.moves] ?? 0))
-      continue;
-    sigs.add(sig);
-    found.push(p);
-  }
+  // The four-piece ones first (all of them, up to their part), then three and two in turn.
+  const quota = { 4: YEAR[4] ?? 0, 3: Math.ceil(DAYS / 2), 2: DAYS };
+  for (const m of [4, 3, 2] as const)
+    for (const p of all.filter((q) => q.moves === m)) {
+      const sig = `${p.width}:${p.cells.join("")}`;
+      if (found.length >= DAYS || count(m) >= quota[m] || sigs.has(sig)) continue;
+      sigs.add(sig);
+      found.push(p);
+    }
 }
-for (let seed = part; !merging && !full() && seed < 40_000; seed += parts) {
+const stop = started + MINUTES * 60_000;
+for (let seed = part; !merging && !full() && Date.now() < stop && seed < 400_000; seed += parts) {
   const rng = new Rng(90_000 + seed);
   const size = rng.pick([6, 6, 7, 7, 7]);
   const cells = new Array(size * size).fill(PASSE_EMPTY);
