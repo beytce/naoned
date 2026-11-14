@@ -1,8 +1,9 @@
 import type { PasseStyle } from "../passe/mind.js";
 /**
- * Venice's lagoon of 48 houses (docs/plan-lagunes.md): four sestieri of twelve, the towns of the
- * mainland above each, Murano, the Rialto and Chioggia between them, four towns of the open sea
- * beyond the mouths. The same map for every lagoon (the owner's choice, 12 November 2026). Its
+ * Venice's lagoon of 48 houses (docs/plan-lagunes.md, its map docs/plan-lagune-ronde.md): the
+ * Rialto in the middle, four sestieri of twelve round it, each with its three towns on its shore
+ * and its town of the open sea in its corner; Murano to the north and Chioggia to the south, the
+ * Muda's way out to the east. The same map for every lagoon (the owner's choice, 12 November 2026). Its
  * islands, its time, its rules and its rank are those of Venice's board; its orders of magnitude
  * are measured at the bench (docs/calibration.md, § Les lagunes).
  */
@@ -94,20 +95,20 @@ const ship = (
   minLevel: number,
 ) => ({ name, goods, buildMs: hours * HOUR, force, hull, keyword, minLevel });
 
-/** The width of a sestiere's column on the map. */
-const COLUMN = 13;
+/** Tiles from the Rialto to the board's edge: 41 tiles a side. */
+const HALF = 20;
 
-/** A black strait between two sestieri' columns, on the last row of open water. */
+/** A black strait on one of the open sea's axes, given from the Rialto. */
 const noirStrait = (
   id: string,
   name: string,
   power: string,
   captain: string,
   style: PasseStyle,
-  b: number,
+  [x, y]: [number, number],
   board: string,
   port: string,
-): NoirStrait => ({ id, name, power, captain, style, x: b * COLUMN, y: 22, board, port });
+): NoirStrait => ({ id, name, power, captain, style, x: HALF + x, y: HALF + y, board, port });
 
 export const venice1450LaguneParams: LagoonParams = {
   sestieri: [
@@ -117,7 +118,35 @@ export const venice1450LaguneParams: LagoonParams = {
     { id: "sanpolo", name: "San Polo" },
   ],
   housesPerSestiere: 12,
-  column: COLUMN,
+  half: HALF,
+  // Cannaregio's quarter, to the north-west; Castello, Dorsoduro and San Polo are it turned. Three
+  // arcs of islands (3, 4, 5) from the Rialto to the shore, the diagonal left to the mouth.
+  quarter: {
+    houses: [
+      [-6, -2],
+      [-4, -4],
+      [-2, -6],
+      [-9, -3],
+      [-8, -6],
+      [-6, -8],
+      [-3, -9],
+      [-12, -3],
+      [-11, -6],
+      [-9, -9],
+      [-6, -11],
+      [-3, -12],
+    ],
+    towns: [
+      [-14, -6],
+      [-12, -9],
+      [-6, -14],
+    ],
+    mouth: [-12, -12],
+    strait: [-15, -15],
+    far: [-17, -17],
+  },
+  // Murano to the north and Chioggia to the south, each behind its canal; the Rialto in the middle.
+  axes: [{ at: [0, -14], canal: [0, -11] }, { at: [0, 0] }, { at: [0, 14], canal: [0, 11] }],
   houseNames: FAMILIES.map((f) => `Ca’ ${f}`),
   plans: base.houses.map((h) => h.plan ?? []).filter((p) => p.length),
   soils: base.houses.map((h) => h.soil ?? { pre: 1 }),
@@ -187,7 +216,7 @@ export const venice1450LaguneParams: LagoonParams = {
         flour: want(530, 130, 8),
       }),
     ],
-    // The lagoon's, between two sestieri: Murano and Chioggia behind a canal, the Rialto free.
+    // The lagoon's, on its axes: Murano and Chioggia behind a canal, the Rialto free.
     lagoon: [
       town("Murano", {
         sand: want(240, 300, 20, 4_000),
@@ -444,8 +473,8 @@ export const venice1450LaguneParams: LagoonParams = {
         fleet: ["galere", "galere", "brigantin", "brulot"],
       },
     },
-    // The black straits (docs/plan-muda.md N1): three powers between the open sea's towns, at
-    // the edge where the ink is darkest; level 11, two tries a day, a cargo by level, half again
+    // The black straits (docs/plan-muda.md N1): three powers on the open sea's axes (south, west,
+    // north; the east is the Muda's), where the ink is darkest; level 11, two tries a day, a cargo by level, half again
     // the board's best price for it (docs/calibration.md § Les détroits noirs).
     noir: {
       minLevel: 11,
@@ -456,7 +485,7 @@ export const venice1450LaguneParams: LagoonParams = {
           "turc",
           "Le Kapudan Pacha",
           "meute",
-          1,
+          [0, 19],
           "dardanelles",
           "Constantinople",
         ),
@@ -466,7 +495,7 @@ export const venice1450LaguneParams: LagoonParams = {
           "genes",
           "L'amiral Doria",
           "mur",
-          2,
+          [-19, 0],
           "portofino",
           "Gênes",
         ),
@@ -476,7 +505,7 @@ export const venice1450LaguneParams: LagoonParams = {
           "milan",
           "Le capitaine Sforza",
           "rives",
-          3,
+          [0, -19],
           "po",
           "Pavie",
         ),
@@ -525,14 +554,14 @@ export const venice1450LaguneParams: LagoonParams = {
       dailyCap: 20,
       robotDaily: 10,
       straits: [
-        { id: "zara", name: "Le large de Zara", board: "zara", x: 2 * COLUMN - 5, y: 19 },
-        { id: "curzola", name: "Le canal de Curzola", board: "curzola", x: 2 * COLUMN, y: 19 },
+        { id: "zara", name: "Le large de Zara", board: "zara", x: HALF + 8, y: HALF },
+        { id: "curzola", name: "Le canal de Curzola", board: "curzola", x: HALF + 13, y: HALF },
         {
           id: "otrante",
           name: "Le canal d\u2019Otrante",
           board: "otrante",
-          x: 2 * COLUMN + 5,
-          y: 19,
+          x: HALF + 17,
+          y: HALF,
         },
       ],
       depth: 3,
@@ -548,8 +577,8 @@ export const venice1450LaguneParams: LagoonParams = {
 const MUDA_PIER: PlancheCity = {
   id: "mole-de-san-marco",
   name: "Le môle de San Marco",
-  x: 2 * COLUMN,
-  y: 16,
+  x: HALF,
+  y: HALF + 3,
   via: [],
   ring: "muda",
   wants: Object.fromEntries(

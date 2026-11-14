@@ -1,11 +1,13 @@
 /**
- * The ink tide (docs/plan-maree.md § 3.1, lot T1; CADRAGE-v4 § 11). The ink of the open sea rises
- * a row each Monday toward the lagoon; what the lagoon did in the week pushes it back: the towers
+ * The ink tide (docs/plan-maree.md § 3.1, lot T1; CADRAGE-v4 § 11). The ink of the open sea closes
+ * in a tile each Monday, from the board's edges toward its middle (docs/plan-lagune-ronde.md L2:
+ * a crown round the lagoon); what the lagoon did in the week pushes it back: the towers
  * its players hold, the black straits they forced, the beacons of their companies. A tower the ink
  * reaches goes back to its corsair on Monday (told from Saturday); on the ink, towns pay more and a
  * thread loses a share of what it carries. At the tide's end the ink ebbs to where it began.
  *
- * Pure: the line is kept on the board, in hundredths of a row (the ink covers the rows at or past it).
+ * Pure: the line is kept on the board, in hundredths of a tile from the board's middle (the ink
+ * covers the tiles at or past it).
  */
 
 import { MAISON_KEEP } from "./maison.js";
@@ -16,15 +18,28 @@ import type { PlancheSetup, PlancheState } from "./planche.js";
 const BPS = 10_000;
 const ROW = 100;
 
+/** A tile of the board. */
+type At = { x: number; y: number };
+
+/**
+ * How far a tile is from the board's middle, in hundredths of a tile: a whole number, the same on
+ * every machine (the square root of a whole number, floored).
+ */
+export function plancheDepth(S: Pick<PlancheSetup, "width" | "height">, x: number, y: number) {
+  const dx = 2 * x - (S.width - 1);
+  const dy = 2 * y - (S.height - 1);
+  return Math.floor(Math.sqrt((dx * dx + dy * dy) * 2_500));
+}
+
 /** The ink's rules, as `worlds.settings` would give them. */
 export interface EncreRules {
-  /** The row where the ink begins each tide (all rows from it to the far edge are ink). */
+  /** How far from the middle the ink begins each tide, in tiles (all tiles from there out are ink). */
   start: number;
-  /** The row it never passes, toward the lagoon. */
+  /** How near the middle it never comes, in tiles. */
   limit: number;
-  /** Rows it rises each Monday, in hundredths. */
+  /** What it closes in each Monday, in hundredths of a tile. */
   rise: number;
-  /** What pushes it back, in hundredths of a row: each tower a person holds at the week's end,
+  /** What pushes it back, in hundredths of a tile: each tower a person holds at the week's end,
    * each black strait forced in the week, each level of the highest beacon of the lagoon. */
   push: { tower: number; noir: number; beacon: number };
   /** On the ink, what towns pay more, and what a thread to them loses of its load. */
@@ -42,27 +57,27 @@ export interface EncreState {
 const own = <T>(o: Record<string, T> | undefined, k: string): T | undefined =>
   o && Object.hasOwn(o, k) ? o[k] : undefined;
 
-/** The line of the ink now, in hundredths of a row (the start's when the board has none yet). */
+/** The line of the ink now, in hundredths of a tile (the start's when the board has none yet). */
 export function plancheEncreLine(S: PlancheSetup, s: PlancheState): number {
   return s.encre?.line ?? (S.encre?.start ?? Number.POSITIVE_INFINITY) * ROW;
 }
 
-/** Whether a row is in the ink. */
-export const plancheInInk = (S: PlancheSetup, s: PlancheState, y: number) =>
-  !!S.encre && y * ROW >= plancheEncreLine(S, s);
+/** Whether a tile is in the ink. */
+export const plancheInInk = (S: PlancheSetup, s: PlancheState, at: At) =>
+  !!S.encre && plancheDepth(S, at.x, at.y) >= plancheEncreLine(S, s);
 
 /**
- * How dark a row is, from 0 (the lagoon's white) to 1 (the ink): darkening over the three rows
+ * How dark a tile is, from 0 (the lagoon's white) to 1 (the ink): darkening over the three tiles
  * before the line; for the board's drawing and the Garde's peril.
  */
-export function plancheEncrePeril(S: PlancheSetup, s: PlancheState, y: number): number {
+export function plancheEncrePeril(S: PlancheSetup, s: PlancheState, at: At): number {
   if (!S.encre) return 0;
-  const d = (plancheEncreLine(S, s) - y * ROW) / ROW;
+  const d = (plancheEncreLine(S, s) - plancheDepth(S, at.x, at.y)) / ROW;
   if (d <= 0) return 1;
   return Math.max(0, 1 - d / 3);
 }
 
-/** What the week has done to push the ink back, in hundredths of a row. */
+/** What the week has done to push the ink back, in hundredths of a tile. */
 export function plancheEncrePush(S: PlancheSetup, s: PlancheState, now: number): number {
   const E = S.encre;
   if (!E) return 0;
@@ -82,7 +97,10 @@ export function plancheEncreThreat(S: PlancheSetup, s: PlancheState): string[] {
   if (!E) return [];
   const next = Math.max(E.limit * ROW, plancheEncreLine(S, s) - E.rise);
   return S.passages
-    .filter((p) => p.y * ROW >= next && !own(s.passages, p.id)?.holder.startsWith("corsair:"))
+    .filter(
+      (p) =>
+        plancheDepth(S, p.x, p.y) >= next && !own(s.passages, p.id)?.holder.startsWith("corsair:"),
+    )
     .map((p) => p.id);
 }
 
@@ -102,7 +120,7 @@ export function plancheEncreWeek(S: PlancheSetup, s: PlancheState, now: number):
   const retaken: string[] = [];
   for (const p of S.passages) {
     const st = own(s.passages, p.id);
-    if (!st || st.holder.startsWith("corsair:") || p.y * ROW < line) continue;
+    if (!st || st.holder.startsWith("corsair:") || plancheDepth(S, p.x, p.y) < line) continue;
     const holder = own(s.houses, st.holder);
     s.passages[p.id] = { holder: p.holder, tollBps: p.tollBps, seals: p.seals };
     retaken.push(p.id);
@@ -121,9 +139,9 @@ export function plancheEncreEbb(S: PlancheSetup, s: PlancheState): void {
 }
 
 /** What a town pays on the ink, in points of its price (10 000 off the ink). */
-export const plancheEncrePriceBps = (S: PlancheSetup, s: PlancheState, y: number) =>
-  S.encre && plancheInInk(S, s, y) ? BPS + S.encre.priceBps : BPS;
+export const plancheEncrePriceBps = (S: PlancheSetup, s: PlancheState, at: At) =>
+  S.encre && plancheInInk(S, s, at) ? BPS + S.encre.priceBps : BPS;
 
 /** What a thread to a town keeps of its load, in points (10 000 off the ink). */
-export const plancheEncreKeepBps = (S: PlancheSetup, s: PlancheState, y: number) =>
-  S.encre && plancheInInk(S, s, y) ? BPS - S.encre.lossBps : BPS;
+export const plancheEncreKeepBps = (S: PlancheSetup, s: PlancheState, at: At) =>
+  S.encre && plancheInInk(S, s, at) ? BPS - S.encre.lossBps : BPS;
