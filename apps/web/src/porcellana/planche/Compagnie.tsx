@@ -86,13 +86,17 @@ function Phare({ level, max }: { level: number; max: number }) {
           cy="22"
           r={8 + k * 5}
           fill="none"
-          stroke={k < level ? "#C8102E" : "#e6e1d8"}
+          stroke={k < level ? "var(--pc-accent)" : "#e6e1d8"}
           strokeOpacity={k < level ? 0.75 - k * 0.12 : 1}
           strokeWidth="2"
         />
       ))}
       <path d="M24 92 L27 34 H37 L40 92 Z" fill="#fbfaf7" stroke="#17150f" strokeWidth="1.6" />
-      <path d="M25.5 60 H38.5 M26.5 46 H37.5 M25 76 H39" stroke="#C8102E" strokeWidth="3" />
+      <path
+        d="M25.5 60 H38.5 M26.5 46 H37.5 M25 76 H39"
+        stroke="var(--pc-accent)"
+        strokeWidth="3"
+      />
       <rect
         x="25"
         y="24"

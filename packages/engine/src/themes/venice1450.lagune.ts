@@ -341,6 +341,21 @@ export const venice1450LaguneParams: LagoonParams = {
     maison: {
       // The thirtieth level near the 47th week (docs/plan-economie.md C2).
       curve: 28,
+      // Twelve systems, three the first day, the others opened by level and told the day they
+      // open (docs/plan-semaine.md D1).
+      places: {
+        jour: 2,
+        commandes: 3,
+        rival: 3,
+        compagnie: 3,
+        duel: 4,
+        muda: 5,
+        rang: 5,
+        maree: 5,
+        port: 6,
+        ouvrages: 6,
+        noirs: 11,
+      },
       maxLevel: 30,
       titles: [
         { from: 1, name: "Bottega" },

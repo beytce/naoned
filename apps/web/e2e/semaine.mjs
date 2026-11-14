@@ -129,6 +129,8 @@ try {
       const json = await res.json();
       const st = json?.planche?.state;
       const me = json?.planche?.me;
+      // The places the week needs open at once (docs/plan-semaine.md D1: the Muda at level 5).
+      if (st?.houses?.[me]) st.houses[me].level = Math.max(st.houses[me].level ?? 1, 6);
       if (st && me && moves.level) {
         const hh = st.houses[me];
         hh.level = moves.level;
@@ -215,10 +217,9 @@ try {
     if (!(await until(page, has, '[data-muda-phase="before"]')))
       fail(`${name}: the Muda is not « before » on Monday`);
     await p.shot("2-lundi-muda");
-    await tap('[data-noir-pin="turc"]');
-    if (!(await until(page, has, "[data-noir-shut]")))
-      fail(`${name}: the black strait is not shut below level 11`);
-    await p.shot("3-lundi-noir");
+    // Below level 11 the black straits are not shown at all (docs/plan-semaine.md D1).
+    if (await page.$('[data-noir-pin="turc"]'))
+      fail(`${name}: a black strait is shown below level 11`);
   }
 
   // Wednesday: the hold is loaded by a thread to the pier.

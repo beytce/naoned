@@ -93,7 +93,7 @@ function Seal({ broken }: { broken: boolean }) {
     <svg width="26" height="26" viewBox="0 0 20 20" aria-hidden="true" data-broken={String(broken)}>
       <path
         d="M10 1 L12 3 L15 2.5 L15.5 5.5 L18.5 7 L17 10 L18.5 13 L15.5 14.5 L15 17.5 L12 17 L10 19 L8 17 L5 17.5 L4.5 14.5 L1.5 13 L3 10 L1.5 7 L4.5 5.5 L5 2.5 L8 3 Z"
-        fill={broken ? "#C8102E" : "#ddd6cb"}
+        fill={broken ? "var(--pc-accent)" : "#ddd6cb"}
       />
       {broken ? <path d="M6 6 L14 14" stroke="#F6F4F0" strokeWidth="2" /> : null}
     </svg>

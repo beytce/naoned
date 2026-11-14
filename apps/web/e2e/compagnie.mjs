@@ -91,6 +91,17 @@ async function enter(browser, name, viewport, path = "/") {
     await page.screenshot({ path: join(SHOTS, `compagnie-${name}-echec.png`) });
     throw new Error(`${name}: no ${q} after ${ms} ms`);
   };
+  // The company opens at level 3 (docs/plan-semaine.md D1): the house read at that level until
+  // it is in a company (its tab then stays).
+  const read = { level: 3 };
+  await page.route("**/api/planche", async (route) => {
+    const res = await route.fetch().catch(() => null);
+    if (!res) return route.abort().catch(() => {});
+    const json = await res.json().catch(() => null);
+    const h = json?.planche?.state?.houses?.[json?.planche?.me];
+    if (h) h.level = Math.max(h.level ?? 1, read.level);
+    await route.fulfill({ response: res, json });
+  });
   await page.goto(`${server.url}${path}`);
   await until("[data-planche-entree]");
   const email = `${name.toLowerCase()}@example.org`;
@@ -104,7 +115,13 @@ async function enter(browser, name, viewport, path = "/") {
   await until("[data-fonder-go]:not([disabled])");
   await tap("[data-fonder-go]");
   await until('[data-house][data-mine="true"]');
-  return { page, errs, tap, until, name };
+  /** The company, the second tab of the Maison's sheet (docs/plan-semaine.md D2). */
+  const company = async () => {
+    await tap("[data-planche-medallion]");
+    await until("[data-compagnie-open]");
+    await tap("[data-compagnie-open]");
+  };
+  return { page, errs, tap, until, name, company, read };
 }
 
 async function shot(p, path) {
@@ -138,7 +155,7 @@ const browser = await chromium.launch({
 try {
   const ana = await enter(browser, "Ana", { width: 390, height: 844 });
   // Ana founds the company: a name, a colour, a charge.
-  await ana.tap("[data-compagnie-open]");
+  await ana.company();
   await ana.until("[data-compagnie-found]");
   await ana.page.fill("[data-compagnie-name]", "La Tana", { force: true });
   await ana.tap('.pc-co-found .pc-in-colors button[aria-label="Ocre"]');
@@ -153,13 +170,15 @@ try {
   await ana.tap("[data-compagnie-send]");
   await ana.until('[data-compagnie-thread] li[data-mine="true"]');
   const code = (await api(ana, "/api/planche/compagnie")).compagnie.code;
+  // In a company now: Ana is read at her own level again (the orders would hide the greeting).
+  ana.read.level = 1;
   await shot(ana, join(SHOTS, "compagnie-2-fondee.png"));
   // Ben, by the link: a member as soon as his house is founded, in Ana's lagoon.
   const ben = await enter(browser, "Ben", { width: 1280, height: 800 }, `/?co=${code}`);
   const bc = (await api(ben, "/api/planche/compagnie")).compagnie;
   if (bc?.name !== "La Tana") fail(`Ben's company is ${JSON.stringify(bc?.name)}`);
   if (bc && bc.members[0]?.world !== bc.members[1]?.world) fail("Ben is not in Ana's lagoon");
-  await ben.tap("[data-compagnie-open]");
+  await ben.company();
   await ben.until("[data-compagnie-thread] li");
   await ben.page.fill("[data-compagnie-input]", "Merci, je prends la bouche demain.", {
     force: true,

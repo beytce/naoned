@@ -1,10 +1,11 @@
 /* The Muda, the black straits and the Gazette (docs/plan-muda.md N5 to N7). */
 
-/* A black strait's label: the ink of the powers, a red hairline. */
+/* A black strait's label: the ink of the powers, a gold hairline (danger in ink and gold; the
+   red is for the player alone, docs/plan-semaine.md D5). */
 .pc-pl-tower[data-black="true"] {
   background: #111111;
   color: #f6f4f0;
-  box-shadow: 0 0 0 1.5px #c7372f, 0 3px 0 #000;
+  box-shadow: 0 0 0 1.5px var(--pc-gold), 0 3px 0 #000;
 }
 
 /* The week of the Muda: seven days, the convoy's days marked. */
@@ -394,4 +395,23 @@
 .pc-gz-weeks button[aria-pressed="true"] {
   background: var(--pc-ink);
   color: #f6f4f0;
+}
+/* The road to Alexandria, drawn (docs/plan-semaine.md D6). */
+.pc-mu-route {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 4px 0 8px;
+}
+/* The Gazette before its first number: its columns waiting, ruled (docs/plan-semaine.md D6). */
+.pc-gz-blank {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+.pc-gz-blank i {
+  height: 54px;
+  background: repeating-linear-gradient(var(--pc-hair) 0 2px, transparent 2px 9px);
+  border-radius: 2px;
 }

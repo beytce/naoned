@@ -73,7 +73,7 @@ export interface PlancheLand {
 
 export interface PlanchePick {
   /** A house, a town, a passage; a black strait; a strait of the Muda (docs/plan-muda.md). */
-  kind: "house" | "city" | "passage" | "noir" | "muda";
+  kind: "house" | "city" | "passage" | "noir" | "muda" | "encre" | "phare";
   id: string;
 }
 
@@ -94,6 +94,55 @@ function inked(g: Object3D, keep: Material): void {
     const m = o as Mesh;
     if (m.isMesh && m.material !== keep) m.material = INK_TOWER;
   });
+}
+
+/**
+ * The labels of the board, sorted out (docs/plan-semaine.md D5, audit UX-4): by priority (thine,
+ * the one chosen, thy rival, the towns, the towers, the other houses), a label that touches one
+ * placed before it is hidden, and the one that stays tells how many it hides (« +3 »). The
+ * sestieri's names lie under everything and are left alone.
+ */
+function rank(key: string, el: HTMLElement, chosen: string): number {
+  if (key === chosen || el.dataset.mine === "true") return 0;
+  if (el.querySelector(".pc-rk-tag")) return 1;
+  if (key.startsWith("city")) return 2;
+  if (key.startsWith("passage") || key.startsWith("noir") || key.startsWith("sortie")) return 3;
+  return 4;
+}
+function declutter(
+  labels: { key: string; el: HTMLElement; x: number; y: number }[],
+  chosen: string,
+): void {
+  const boxes: { el: HTMLElement; l: number; r: number; t: number; b: number; more: number }[] = [];
+  const sorted = labels
+    .filter((a) => !a.el.classList.contains("pc-pl-sestiere"))
+    .map((a) => ({ ...a, p: rank(a.key, a.el, chosen) }))
+    .sort((a, b) => a.p - b.p || a.y - b.y);
+  for (const a of sorted) {
+    const w = a.el.offsetWidth;
+    const h = a.el.offsetHeight;
+    const box = { el: a.el, l: a.x - w / 2, r: a.x + w / 2, t: a.y - h, b: a.y, more: 0 };
+    const under =
+      a.p === 0
+        ? undefined
+        : boxes.find(
+            (o) => box.l < o.r + 2 && box.r > o.l - 2 && box.t < o.b + 2 && box.b > o.t - 2,
+          );
+    if (under) {
+      under.more += 1;
+      if (a.el.dataset.hidden !== "true") a.el.dataset.hidden = "true";
+      continue;
+    }
+    if (a.el.dataset.hidden) delete a.el.dataset.hidden;
+    boxes.push(box);
+  }
+  for (const o of boxes) {
+    const more = o.more ? String(o.more) : "";
+    if ((o.el.dataset.more ?? "") !== more) {
+      if (more) o.el.dataset.more = more;
+      else delete o.el.dataset.more;
+    }
+  }
 }
 
 function pickOf(o: Object3D | null): PlanchePick | null {
@@ -410,6 +459,8 @@ export function PlancheBoard({
       const h = setup.houses[k];
       if (!h || level <= 0) return;
       const g = new Group();
+      // A company's beacon opens its sheet (docs/plan-semaine.md D3).
+      g.userData.pick = { kind: "phare", id: h.id } satisfies PlanchePick;
       g.position.set(wx(h.x) + 2.4, 0, wz(h.y) - 2.4);
       cyl(g, 0.32, 0.46, 2.6, 0, 0, 0, P.m("wall"), 12);
       box(g, 0.98, 0.12, 0.98, 0, 0.9, 0, P.accent, 0.02);
@@ -580,6 +631,8 @@ export function PlancheBoard({
       d.rotation.set(-Math.PI / 2, 0, Math.PI / 2 - a);
       d.position.set(x, 0.1, z);
       d.renderOrder = 3;
+      // The ink's line opens the tide's sheet (docs/plan-semaine.md D3).
+      d.userData.pick = { kind: "encre", id: "encre" } satisfies PlanchePick;
       root.add(d);
     }
     // Its label: on the line toward the camera, kept on the board.
@@ -929,6 +982,7 @@ export function PlancheBoard({
   /** The scale last reached: once there, the reader's own zoom is left alone. */
   const lastZoom = useRef(1);
   const tmp = useMemo(() => new Vector3(), []);
+  const frame = useRef(0);
   useFrame((_, rawDt) => {
     const dt = Math.min(0.05, rawDt);
     clock.current += dt;
@@ -975,6 +1029,7 @@ export function PlancheBoard({
     mat.opacity += ((at ? 0.9 : 0) - mat.opacity) * 0.15;
     ring.visible = mat.opacity > 0.01;
     // The labels follow their places.
+    const placed: { key: string; el: HTMLElement; x: number; y: number }[] = [];
     for (const [key, el] of pins) {
       const p = places.at.get(key) ?? markAt.get(key);
       if (!p) continue;
@@ -982,7 +1037,11 @@ export function PlancheBoard({
       const x = (tmp.x * 0.5 + 0.5) * size.width;
       const y = (-tmp.y * 0.5 + 0.5) * size.height;
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+      placed.push({ key, el, x, y });
     }
+    // Every few frames, the labels that touch are sorted out (docs/plan-semaine.md D5).
+    frame.current += 1;
+    if (frame.current % 10 === 0) declutter(placed, chosen ? `${chosen.kind}:${chosen.id}` : "");
   });
 
   // What a rebuild leaves behind is freed, not kept in the GPU (docs/plan-socle.md A6).
