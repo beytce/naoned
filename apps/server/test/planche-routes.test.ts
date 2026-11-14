@@ -141,14 +141,28 @@ describe("the board on line", () => {
       (await ana("POST", "/api/planche/thread", { city: "__proto__", good: "glass" })).statusCode,
     ).toBe(404);
     expect((await ana("POST", "/api/planche/thread", { city: 3 })).statusCode).toBe(400);
+    // A duel against the computer, played piece by piece by the server (docs/plan-duels.md B1).
+    const begun = (
+      await ana("POST", "/api/planche/duel/start", { kind: "force", passage: "canal-1" })
+    ).json().duel;
+    expect(begun).toMatchObject({ kind: "force", target: "canal-1", side: 1, over: false });
+    expect((await ana("GET", "/api/planche/duel")).json().duel.target).toBe("canal-1");
     expect(
-      (
-        await ana("POST", "/api/planche/force", {
-          passage: "canal-1",
-          moves: [{ at: 0 }],
-        })
-      ).json().error,
-    ).toBe("duel_lost");
+      (await ana("POST", "/api/planche/duel/start", { kind: "force", passage: "canal-1" })).json()
+        .error,
+    ).toBe("duel_running");
+    expect((await ana("POST", "/api/planche/duel/play", { at: 9_999 })).statusCode).toBe(400);
+    expect((await ana("POST", "/api/planche/duel/quit", {})).json().duel).toMatchObject({
+      over: true,
+      won: false,
+    });
+    expect((await ana("GET", "/api/planche/duel")).json().duel).toBeNull();
+    // The try was spent when the duel began.
+    expect(
+      (await ana("POST", "/api/planche/duel/start", { kind: "force", passage: "canal-1" })).json()
+        .error,
+    ).toBe("planche_force_tried");
+    expect((await ana("POST", "/api/planche/duel/start", { kind: "nope" })).statusCode).toBe(400);
     // The edges (docs/plan-socle.md A4): an inherited key as a good, a JSON that does not parse.
     expect(
       (await ana("POST", "/api/planche/thread", { city: "rialto", good: "toString" })).statusCode,

@@ -69,6 +69,10 @@ function hash(...parts: (string | number)[]): number {
   return h;
 }
 
+/** A captain's own manner, the same in its sorties and at its tower (docs/plan-duels.md B3). */
+export const plancheCaptainStyle = (holder: string): PasseStyle =>
+  STYLES[hash(holder.replace(/^corsair:/, ""), "manner") % STYLES.length] ?? "mur";
+
 /**
  * The week's sorties, drawn on Monday (called by the board at each week's turn): each captain of the
  * lagoon against the nearest tower a person holds, on a day from Tuesday to Saturday.
@@ -107,7 +111,7 @@ export function plancheSortiesWeek(S: PlancheSetup, s: PlancheState, monday: num
       from: p.id,
       target: target.id,
       at: monday + day * DAY + R.hour * HOUR,
-      style: STYLES[hash(monday, captain, "style") % STYLES.length] ?? "mur",
+      style: plancheCaptainStyle(captain),
     });
   }
   s.sorties = { monday, list, done: {} };

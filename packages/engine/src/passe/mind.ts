@@ -94,7 +94,9 @@ function leaning(s: PasseState, move: PasseMove, style: PasseStyle | undefined):
   const middle = -Math.round((cx + cy) * 2);
   const w = PASSE_MANNER.weight;
   if (style === "mur") return Math.round(middle * 6 * w);
-  if (style === "rives") return Math.round(-middle * 6 * w);
+  // The banks: along the strait's top and bottom rows, away from its middle columns (measured on
+  // passe-bench, docs/calibration.md: the edges both ways were the weakest manner).
+  if (style === "rives") return Math.round((Math.round(cy * 2) - Math.round(cx * 2)) * 4 * w);
   if (style === "meute") {
     const foe = s.turn === 1 ? [PASSE_CHAIN, PASSE_REEF] : [PASSE_THREAD];
     let near = 0;
