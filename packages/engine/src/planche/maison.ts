@@ -27,6 +27,11 @@ export interface MaisonRules {
     /** The detour opened (docs/plan-economie.md C1). */
     detour?: boolean;
   }[];
+  /**
+   * The places of the board that open by level (docs/plan-semaine.md D1); a place not named is
+   * open from the first level. None: every place open.
+   */
+  places?: Partial<Record<PlanchePlace, number>>;
   /** Prestige a week at most; what was not earned under it carried to the next, in part. */
   weeklyCap: number;
   catchUpBps: number;
@@ -78,6 +83,34 @@ export function maisonDeeds(R: MaisonRules, d: MaisonDeeds): number {
     (d.noir ?? 0) * (G.noir ?? 0) +
     (d.muda ?? 0)
   );
+}
+
+/** The twelve systems of the board, and their parts that open apart (docs/plan-semaine.md). */
+export const PLANCHE_PLACES = [
+  "fils",
+  "ile",
+  "villes",
+  "tours",
+  "jour",
+  "commandes",
+  "rival",
+  "compagnie",
+  "duel",
+  "muda",
+  "rang",
+  "maree",
+  "port",
+  "ouvrages",
+  "noirs",
+] as const;
+export type PlanchePlace = (typeof PLANCHE_PLACES)[number];
+
+/** The places a level opens beyond the one before it (from excluded, to included). */
+export function maisonOpened(R: MaisonRules, from: number, to: number): PlanchePlace[] {
+  return PLANCHE_PLACES.filter((p) => {
+    const at = R.places?.[p];
+    return at !== undefined && at > from && at <= to;
+  });
 }
 
 /** What a level opens on the board, all told. */
@@ -166,7 +199,8 @@ export interface MaisonEvent {
     | "ink"
     | "stone"
     | "sortie"
-    | "decret";
+    | "decret"
+    | "open";
   /** The level reached, the house whose flag was taken, the tower, the laurel. */
   data?: string | number;
 }

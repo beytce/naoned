@@ -194,8 +194,26 @@ function said(
   if (e.kind === "plan")
     return `Un plan assemblé, des reliques ${POWER_OF[e.data ?? ""] ?? e.data}.`;
   if (e.kind === "muda") return "Le pavillon de la Muda : le convoi a passé ses trois détroits.";
+  // A place of the board opened by the level (docs/plan-semaine.md D1).
+  if (e.kind === "open") return OPENS[e.data ?? ""] ?? "";
   return "";
 }
+
+/** What each place says the day it opens. */
+export const OPENS: Record<string, string> = {
+  jour: "Le Problème du jour s'ouvre : une position chaque jour, un seul essai.",
+  commandes:
+    "Les commandes des villes s'ouvrent : une ville scelle une commande au double du prix.",
+  rival: "Ton rival de la semaine t'attend : passe-le au rang, prends son pavillon.",
+  compagnie: "La compagnie s'ouvre : fonde la tienne, ou rejoins des amis.",
+  duel: "Le duel s'ouvre : défie un joueur présent, deux Passes en direct.",
+  muda: "La Muda s'ouvre : le convoi du samedi part du môle.",
+  rang: "Le palais du Doge s'ouvre : tes lauriers et ta place dans la lagune.",
+  maree: "La marée s'ouvre : l'encre monte du Large, semaine après semaine.",
+  port: "Le Port s'ouvre : ta première galère t'attend.",
+  ouvrages: "Les ouvrages s'ouvrent : une fontaine, une loggia, un campanile pour ta Maison.",
+  noirs: "Les tours noires du Large s'ouvrent : leurs reliques font des plans.",
+};
 
 /** The house's façade and its Livre. */
 export function FacadeSheet({
