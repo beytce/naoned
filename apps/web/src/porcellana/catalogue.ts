@@ -10,6 +10,7 @@ import { grove, plot } from "./models/ground.js";
 import { hempField, muranoFurnace, ropeWalk, saltPans, zattera } from "./models/lot7.js";
 import { market } from "./models/market.js";
 import type { Built, ModelOpts } from "./models/model.js";
+import { basilique, campanile, fontaine, loggia, scuola } from "./models/ouvrages.js";
 import { arsenal, campo, depot, porta, post } from "./models/places.js";
 import {
   bombarda,
@@ -172,6 +173,23 @@ export const CATALOGUE: Entry[] = [
     sign: "La polifora s'éclaire.",
     make: palazzo,
   },
+  // The works of prestige (docs/plan-economie.md C3).
+  ...(
+    [
+      ["fontaine", "Fontaine", "Un ouvrage de la Casa", fontaine],
+      ["loggia", "Loggia", "Un ouvrage de la Casa", loggia],
+      ["campanile", "Campanile", "Un ouvrage de la Casa", campanile],
+      ["scuola", "Scuola Grande", "Un grand ouvrage", scuola],
+      ["basilique", "Basilique", "Un grand ouvrage", basilique],
+    ] as const
+  ).map(([key, name, sub, make]) => ({
+    key,
+    family: "lieux" as const,
+    name,
+    sub,
+    sign: "",
+    make,
+  })),
   {
     key: "field",
     family: "ateliers",

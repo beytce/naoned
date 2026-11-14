@@ -24,7 +24,16 @@ const growth = (): MaisonRules => ({
   weeklyCap: 100,
   catchUpBps: 0,
   commerce: { perDucats: 100, dailyCap: 10 },
-  gains: { rival: 0, placeTop: 0, placeStep: 0, seal: 0, guardHours: 10, guardCap: 0, laurel: 0, doge: 0 },
+  gains: {
+    rival: 0,
+    placeTop: 0,
+    placeStep: 0,
+    seal: 0,
+    guardHours: 10,
+    guardCap: 0,
+    laurel: 0,
+    doge: 0,
+  },
 });
 
 function setup(): PlancheSetup {
