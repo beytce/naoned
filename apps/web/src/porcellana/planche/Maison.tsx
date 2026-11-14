@@ -192,7 +192,7 @@ function said(
   if (e.kind === "relic")
     return `Une relique ${POWER_OF[e.data ?? ""] ?? e.data}, prise à son détroit noir.`;
   if (e.kind === "plan")
-    return `Un plan assemblé, de trois reliques ${POWER_OF[e.data ?? ""] ?? e.data}.`;
+    return `Un plan assemblé, des reliques ${POWER_OF[e.data ?? ""] ?? e.data}.`;
   if (e.kind === "muda") return "Le pavillon de la Muda : le convoi a passé ses trois détroits.";
   return "";
 }

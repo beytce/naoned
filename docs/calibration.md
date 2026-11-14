@@ -3515,3 +3515,71 @@ Banc ad hoc : sur chaque damier de la lagune, quatre parties à graine fixe, le 
 - Avec le poids 1, un tiers des pièces (35 %) diffèrent de celles d'un capitaine sans manière : la manière se voit sans faire perdre.
 - Les rives prenaient les bords dans les deux sens et perdaient à tout poids ; tenues le long d'un seul axe, elles gagnent autant que les autres. Le poids reste 1 (`PASSE_MANNER`, variable d'environnement du même nom pour le banc).
 - Un capitaine a désormais **une seule manière**, la sienne (tirée de son nom), dans ses sorties comme à sa tour quand on la force ; elle est nommée sur la fiche.
+
+## L'économie : le lot C (14 novembre 2026, docs/plan-economie.md)
+
+`pnpm --filter @comptoirs/simulator eco-bench [graines] [semaines] [avant]` : la lagune de Venise, 48 Maisons de quatre sortes (12 chacune) : l'ordinateur (toutes les 8 h, sans détour), l'occasionnel (4 soirs par semaine), le régulier (8 h, 13 h, 20 h ; une tour un jour sur deux), l'assidu (toutes les 2 h de 7 h à 23 h ; une tour par jour). Les joueurs prennent le détour là où leur niveau l'ouvre. Problème du jour réussi 6 fois sur 10, tours gagnées 4 fois sur 10. `avant` rejoue la lagune d'avant le lot. Médianes de trois graines.
+
+### C1 : le Large (prix × 0,6, plancher 30 %, détour à 20 % et au niveau 6)
+
+| Semaine | Ducats créés, avant → après | Détenus, avant → après | Part du Large (occasionnel · régulier · assidu), avant → après |
+| --- | --- | --- | --- |
+| 2 | 1 189 069 → 485 811 | 540 954 → 278 806 | 54 · 85 · 86 % → 3 · 32 · 44 % |
+| 4 | 1 223 995 → 783 108 | 1 588 679 → 1 064 998 | 82 · 58 · 61 % → 40 · 46 · 42 % |
+| 6 | 1 230 285 → 717 854 | 3 178 115 → 1 464 704 | 78 · 47 · 54 % → 41 · 41 · 38 % |
+
+- La monnaie créée baisse de 40 % en régime établi, comme l'économiste l'avait mesuré ; le Large tombe vers 40 % des ventes : il reste la meilleure route, sans écraser les autres.
+- L'occasionnel ne vit plus du seul détour (78 % de ses ventes avant) ; avant le niveau 6, il vend en sestiere et dans la lagune.
+- La masse détenue grossit encore de 200 000 à 400 000 ducats par semaine : c'est ce que le puits (C3) doit absorber.
+
+### C2 : le Prestige au fil de l'eau, `perDucats` 15, courbe 28
+
+| Semaine | Niveau médian (occasionnel · régulier · assidu), C1 seul → C1 et C2 |
+| --- | --- |
+| 1 | 1 · 1 · 1 → **2 · 3 · 4** |
+| 2 | 3 · 4 · 4 → 4 · 6 · 6 |
+| 4 | 6 · 8 · 9 → 8 · 9 · 9 |
+| 6 | 8 · 11 · 11 → 10 · 11 · 11 |
+| 8 | — → 11 · 12 · 12 |
+
+- Le Prestige est crédité à chaque tranche (dix minutes), sous le plafond de la semaine : le niveau 2 tombe le premier jour, et la première semaine monte enfin.
+- Le commerce donne son Prestige sans le Large (`perDucats` 15) : l'occasionnel, qui n'atteint le Large qu'à la Casa, suit le régulier à un ou deux niveaux.
+- La courbe 28 étire le haut : à 500 par semaine, le niveau 30 vers la semaine 47 (calcul de l'économiste).
+- À relever pour la mesure d'ensemble (C7) : à la marée suivante (semaine 7), la part du Large remonte vers 70 à 80 % des ventes.
+
+### C3 : les ouvrages, le puits de ducats
+
+Trois ouvrages ordinaires dès la Casa (Fontaine 15 000 ducats, Loggia 25 000, Campanile 40 000), deux grands au niveau 15 avec un plan (Scuola Grande 120 000, Basilique 250 000) ; chacun déjà bâti rend le suivant 25 % plus cher. Au banc, un joueur bâtit le moins cher que son niveau ouvre dès que sa bourse vaut deux fois son prix.
+
+| Semaine | Ducats créés | Dépensés sur l'île (dont ouvrages) | Détenus : sans puits → avec |
+| --- | --- | --- | --- |
+| 4 | 751 579 | 569 578 (168 974) | 1 109 183 → 760 114 |
+| 6 | 689 260 | 548 858 (127 812) | 1 640 330 → 954 664 |
+| 8 | 723 659 | 724 902 (103 847) | 2 509 568 → **997 743** |
+
+- La masse détenue se stabilise vers un million de ducats pour la lagune (environ 28 000 par Maison de joueur) au lieu de grossir de 400 000 par semaine : l'île absorbe désormais autant que les villes créent.
+- Les ouvrages ne rendent rien : la règle 6 (à armes égales) tient ; ils se voient sur l'île de chacun (règle 10).
+
+### C4 : les sources récentes ralenties
+
+- Détroits noirs : un essai par jour (au lieu de deux), cinq reliques un plan (au lieu de trois). `muda-bench` (2 semaines, 4 graines) : 4,9 reliques par Maison qui les tente, soit **1,0 plan en deux semaines** (0,5 par semaine, la cible de l'économiste ; 1,6 avant).
+- Le phare des compagnies : seuils `[0, 2 400, 7 200, 15 000, 27 000]` (au lieu de `[0, 800, 2 400, 5 000, 9 000]`) : pour six membres actifs, le niveau 2 en une semaine, le niveau 4 en six (calcul de l'économiste).
+
+### C6 : l'ordinateur débloqué
+
+L'ordinateur ne laisse plus son Arsenal (ni les ouvrages) bloquer son plan. `arsenal-bench` : le rapport puits / sources monte à **0,75 à 0,82** dès la semaine 3 (0,6 dans le rapport de l'économiste) ; `maison-bench` : le niveau 10 en semaine 5 ou 6 pour toutes les sortes, l'assidu à 6 % de Prestige du régulier.
+
+### C7 : la lagune sur 26 semaines, tout le lot appliqué (`eco-bench 2 26`)
+
+| Semaine | Ducats créés | Dépensés sur l'île (dont ouvrages) | Détenus | Niveau (occasionnel · régulier · assidu) |
+| --- | --- | --- | --- | --- |
+| 4 | 822 632 | 616 599 (168 974) | 760 114 | 8 · 9 · 9 |
+| 8 | 740 809 | 738 246 (122 021) | 1 122 058 | 11 · 12 · 12 |
+| 13 | 824 637 | 936 791 (59 912) | 1 091 312 | 15 · 16 · 16 |
+| 20 | 747 011 | 835 273 (19 970) | 877 592 | 18 · 19 · 19 |
+| 26 | 761 289 | 833 358 (0) | 948 149 | 21 · 22 · 22 |
+
+- **La monnaie tient** : la lagune détient entre 0,85 et 1,1 million de ducats de la semaine 5 à la semaine 26, sans dérive (avant le lot : 3,2 millions dès la semaine 6, et une hausse continue).
+- **La progression couvre l'année** : le niveau 22 en semaine 26, le niveau 30 attendu vers la semaine 40 à 45 ; l'occasionnel reste à un niveau des autres.
+- **Les ouvrages** absorbent jusqu'à 230 000 ducats par semaine les deux premiers mois, puis moins : passé la semaine 16, les joueurs du banc n'en bâtissent plus (les ordinaires sont chers, les grands demandent un plan que ces profils n'assemblent pas) ; les ateliers et les cases prennent le relais.
+- **À suivre (lot D)** : la première semaine de chaque marée, la part du Large remonte à 75 à 85 % pour le régulier et l'assidu, puis redescend vers 45 à 55 %.

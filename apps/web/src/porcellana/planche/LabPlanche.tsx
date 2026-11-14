@@ -20,6 +20,7 @@ import {
   assautFleetOf,
   maisonLevel,
   maisonThreshold,
+  maisonUnlocks,
   plancheAdvance,
   plancheAssemble,
   plancheBuild,
@@ -158,6 +159,7 @@ const houseName = (id: string, names?: Record<string, string>) =>
 const nameOf = (id: string, names?: Record<string, string>) =>
   plancheIsCorsair(id) ? `le corsaire ${id.slice(8)}` : houseName(id, names);
 const SAID: Record<string, string> = {
+  planche_detour_level: "Le détour s'ouvre à la Casa : monte ta Maison pour le prendre.",
   // The duels against the computer (docs/plan-duels.md B1, B2).
   planche_force_tried: "Tu as déjà tenté cette tour aujourd'hui : demain, un autre essai.",
   planche_own_passage: "Cette tour est déjà la tienne.",
@@ -189,7 +191,7 @@ const SAID: Record<string, string> = {
   // The black straits and the Muda (docs/plan-muda.md).
   planche_noir_tried: "Tu as joué tes deux détroits noirs aujourd'hui : demain de nouveau.",
   planche_noir_cargo: "Cette cargaison n'est pas possible : vois ton entrepôt et ton niveau.",
-  planche_few_relics: "Il faut trois reliques d'une même puissance pour un plan.",
+  planche_few_relics: "Il te manque des reliques d'une même puissance pour assembler un plan.",
   planche_no_plan: "Ce haut ouvrage demande un plan : il vient des reliques des détroits noirs.",
   planche_muda_closed: "Les détroits de la Muda se forcent le samedi, de 8 h à 20 h.",
   planche_muda_empty: "Le convoi n'a rien dans sa cale : il ne sort pas.",
@@ -1283,6 +1285,9 @@ export default function LabPlanche() {
     by.delete(ME);
     return { mine, others: [...by.values()].sort((x, y) => y - x) };
   };
+  // The detour opens at its level of the house (docs/plan-economie.md C1).
+  const detourOpen = !S.maison || maisonUnlocks(S.maison, me?.level ?? 1).detour;
+  const detourLevel = S.maison?.unlocks.find((u) => u.detour)?.level ?? 1;
   const tie = (cityId: string, cityName: string, good: string, detour = false) =>
     act(
       () => plancheThread(S, state, ME, cityId, good, state.now, detour ? { detour: true } : {}),
@@ -1479,6 +1484,12 @@ export default function LabPlanche() {
                       patine +{Math.round(planchePatina(S, g.held, state.now) / 100)} %
                     </span>
                   ) : null}
+                  {g.held?.yield ? (
+                    // What the thread brought of late (docs/plan-economie.md C5).
+                    <span className="pc-pl-yield" data-yield={g.good}>
+                      ≈ {ducats(g.held.yield)} d. à l'heure
+                    </span>
+                  ) : null}
                 </>
               ) : (
                 <>Personne ne la sert · libre {pct(g.sh.freeBps)}</>
@@ -1550,12 +1561,14 @@ export default function LabPlanche() {
                   type="button"
                   className="pc-passe-quiet"
                   data-detour={(at ?? another)?.good}
+                  disabled={!detourOpen}
                   onClick={() => {
                     const g = (at ?? another)?.good;
                     if (g) tie(city.id, city.name, g, true);
                   }}
                 >
                   Par le détour · {Math.round(city.detourBps / 100)} %
+                  {detourOpen ? null : <small>à la Casa, niveau {detourLevel}</small>}
                 </button>
               </>
             ) : null}

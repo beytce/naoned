@@ -146,9 +146,9 @@ describe("the house's level", () => {
 
   it("opens what each level opens, keeping what the earlier ones opened", () => {
     const R = rules();
-    expect(maisonUnlocks(R, 1)).toEqual({ bobbins: 1, tiles: 5, tier: 1, towers: 1 });
-    expect(maisonUnlocks(R, 3)).toEqual({ bobbins: 2, tiles: 5, tier: 1, towers: 1 });
-    expect(maisonUnlocks(R, 6)).toEqual({ bobbins: 2, tiles: 6, tier: 2, towers: 2 });
+    expect(maisonUnlocks(R, 1)).toEqual({ bobbins: 1, tiles: 5, tier: 1, towers: 1, detour: true });
+    expect(maisonUnlocks(R, 3)).toEqual({ bobbins: 2, tiles: 5, tier: 1, towers: 1, detour: true });
+    expect(maisonUnlocks(R, 6)).toEqual({ bobbins: 2, tiles: 6, tier: 2, towers: 2, detour: true });
   });
 });
 
@@ -216,6 +216,31 @@ describe("the level on the board", () => {
     expect(s.passages.p2?.holder).toBe("ana");
   });
 
+  it("opens the detour at its level, where the growth says so (docs/plan-economie.md C1)", () => {
+    const S = setup();
+    const loin = S.cities.find((c) => c.id === "loin");
+    if (!loin) throw new Error("no town");
+    loin.via = ["p1"];
+    loin.detourBps = 2_000;
+    // The fixture's growth names no detour: it is open from the first level.
+    expect(maisonUnlocks(rules(), 1).detour).toBe(true);
+    expect(() =>
+      plancheThread(S, plancheInit(S, T0), "ana", "loin", "verre", T0, { detour: true }),
+    ).not.toThrow();
+    // Opened at level 4: refused before, taken after.
+    const M = S.maison as MaisonRules;
+    M.unlocks = [...M.unlocks, { level: 4, detour: true }];
+    expect(maisonUnlocks(M, 3).detour).toBe(false);
+    const s = plancheInit(S, T0);
+    expect(() => plancheThread(S, s, "ana", "loin", "verre", T0, { detour: true })).toThrow(
+      "planche_detour_level",
+    );
+    const t = plancheSetLevel(S, s, "ana", 4);
+    expect(
+      plancheThread(S, t, "ana", "loin", "verre", T0, { detour: true }).houses.ana?.threads,
+    ).toHaveLength(1);
+  });
+
   it("never takes away what a level gave: a lower level asked is refused", () => {
     const S = setup();
     const s = plancheSetLevel(S, plancheInit(S, T0), "ana", 4);
@@ -239,20 +264,42 @@ describe("the growth on the board", () => {
     },
   });
 
-  it("counts the week's trade and victories, capped, and raises the level at the week's turn", () => {
+  it("credits the Prestige as it is earned, capped by the week; the week's turn adds its victories", () => {
     const S = ranked();
+    // A point of trade for each ducat sold, ten a day at most.
+    (S.maison as MaisonRules).commerce = { perDucats: 1, dailyCap: 10 };
     let s = plancheBuild(S, plancheInit(S, T0), "ana", "pit", "1,0", T0);
     s = plancheThread(S, s, "ana", "bourg", "sable", T0);
+    // The first evening: the day's trade is already Prestige (docs/plan-economie.md C2).
+    s = plancheAdvance(S, s, T0 + 20 * HOUR);
+    const evening = s.houses.ana?.maison?.prestige ?? 0;
+    expect(evening).toBeGreaterThan(0);
+    expect(s.houses.ana?.level).toBe(maisonLevel(rules(), evening).level);
     s = plancheAdvance(S, s, T0 + WEEK - HOUR);
-    expect(s.houses.ana?.maison?.prestige).toBe(0);
+    const before = s.houses.ana?.maison?.prestige ?? 0;
+    expect(before).toBeGreaterThan(evening);
+    expect(before).toBeLessThanOrEqual(100);
     s = plancheAdvance(S, s, T0 + WEEK);
     const m = s.houses.ana?.maison;
-    // Its sand sold every day, and its place first in its board (30): more than its place alone.
+    // Its sand sold every day, and its place first in its board (30) at the week's turn.
+    expect(m?.prestige).toBeGreaterThan(before);
     expect(m?.prestige).toBeGreaterThan(30);
     expect(m?.prestige).toBeLessThanOrEqual(100);
     expect(m?.credits).toEqual([{ week: 0, amount: m?.prestige }]);
     expect(s.houses.ana?.level).toBe(maisonLevel(rules(), m?.prestige ?? 0).level);
     expect(m?.log.some((e) => e.kind === "level")).toBe(true);
+  });
+
+  it("never credits more than the week's cap, however much is sold", () => {
+    const S = ranked();
+    const M = S.maison as MaisonRules;
+    M.commerce = { perDucats: 1, dailyCap: 1_000 };
+    let s = plancheBuild(S, plancheInit(S, T0), "ana", "pit", "1,0", T0);
+    s = plancheThread(S, s, "ana", "bourg", "sable", T0);
+    s = plancheAdvance(S, s, T0 + 6 * 24 * HOUR);
+    expect(s.houses.ana?.maison?.prestige).toBe(100);
+    s = plancheAdvance(S, s, T0 + WEEK);
+    expect(s.houses.ana?.maison?.prestige).toBe(100);
   });
 
   it("puts the computer's houses at the people's median level, never lower than theirs", () => {

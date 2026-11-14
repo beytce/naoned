@@ -17,6 +17,7 @@ import {
   plancheInit,
   planchePower,
   plancheRobotArm,
+  plancheRobotBuild,
   plancheRuses,
   plancheSetLevel,
   plancheShip,
@@ -303,6 +304,29 @@ describe("a house of the computer", () => {
     for (let k = 0; k < 5; k++) s = plancheRobotArm(S, s, "ana", T0);
     expect(s.houses.ana?.fleet?.yards).toHaveLength(1);
     expect(Object.values(s.houses.ana?.port ?? {}).flat().length).toBeLessThanOrEqual(3);
+  });
+});
+
+// The computer's island past its Arsenal (docs/plan-economie.md C6, audit E7).
+describe("a house of the computer with its Arsenal", () => {
+  it("goes on with its plan: the Arsenal low does not hold the next round back", () => {
+    const S = setup();
+    const hs = S.houses[0];
+    if (hs) hs.plan = ["pit"];
+    let s = plancheSetLevel(S, plancheInit(S, T0), "ana", 2);
+    s = plancheRobotArm(S, s, "ana", T0);
+    // The Arsenal at level 1, the plan's pit built and raised to its top.
+    for (let k = 0; k < 4; k++) s = plancheRobotBuild(S, s, "ana", T0 + HOUR);
+    const types = () =>
+      Object.values(s.houses.ana?.ile?.tiles ?? {}).flatMap((t) =>
+        t.building ? [t.building.type] : [],
+      );
+    // The next round: a second pit, though the Arsenal is not at its top.
+    expect(types().filter((t) => t === "pit").length).toBeGreaterThanOrEqual(2);
+    expect(
+      Object.values(s.houses.ana?.ile?.tiles ?? {}).find((t) => t.building?.type === "arsenal")
+        ?.building?.level,
+    ).toBe(1);
   });
 });
 

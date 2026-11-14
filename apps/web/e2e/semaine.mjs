@@ -284,7 +284,7 @@ try {
     await p.shot("8-samedi-convoi");
     // A black strait, the house moved to level 11: the cargo, the duel, the cargo sunk.
     p.moves.level = 11;
-    p.moves.relics = { turc: 3, genes: 1 };
+    p.moves.relics = { turc: 5, genes: 1 };
     await page.goto(server.url);
     if (!(await until(page, has, '[data-noir-pin="genes"]'))) fail(`${name}: no black strait`);
     await page.waitForTimeout(2500);
@@ -307,7 +307,7 @@ try {
     if (!(await until(page, has, "[data-maison-facade]"))) fail(`${name}: no Maison sheet`);
     await tap("[data-maison-facade]");
     if (!(await until(page, has, '[data-assemble="turc"]')))
-      fail(`${name}: three relics of the Turk make no plan`);
+      fail(`${name}: five relics of the Turk make no plan`);
     await page.evaluate(() => document.querySelector("[data-reliques]")?.scrollIntoView());
     await p.shot("11-samedi-reliques");
     p.moves.level = 0;

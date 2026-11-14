@@ -19,6 +19,7 @@
     "passe-jour": "tsx src/passe-jour.ts",
     "lagunes-charge": "tsx src/lagunes-charge.ts",
     "maison-bench": "tsx src/maison-bench.ts",
+    "eco-bench": "tsx src/eco-bench.ts",
     "hex-bench": "tsx src/hex-bench.ts",
     "arsenal-bench": "tsx src/arsenal-bench.ts",
     "assaut-bench": "tsx src/assaut-bench.ts",

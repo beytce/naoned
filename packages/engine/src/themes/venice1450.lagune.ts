@@ -209,31 +209,32 @@ export const venice1450LaguneParams: LagoonParams = {
         bricks: want(1_100, 180, 9),
       }),
     ],
-    // The open sea's, beyond a mouth and a strait: the richest.
+    // The open sea's, beyond a mouth and a strait: the richest, but no longer by far (docs/plan-economie.md
+    // C1: prices × 0.6, floor 30 %, measured in docs/calibration.md).
     large: [
       town("Raguse", {
-        glass: want(3_800, 200, 9, 5_000),
-        rope: want(3_400, 200, 9, 5_000),
-        bricks: want(3_000, 180, 8, 5_000),
-        planks: want(3_200, 180, 8, 5_000),
+        glass: want(2_280, 200, 9, 3_000),
+        rope: want(2_040, 200, 9, 3_000),
+        bricks: want(1_800, 180, 8, 3_000),
+        planks: want(1_920, 180, 8, 3_000),
       }),
       town("Alexandrie", {
-        glass: want(6_500, 220, 8, 5_000),
-        planks: want(5_500, 220, 8, 5_000),
-        rope: want(6_000, 220, 8, 5_000),
-        flour: want(4_500, 220, 8, 5_000),
+        glass: want(3_900, 220, 8, 3_000),
+        planks: want(3_300, 220, 8, 3_000),
+        rope: want(3_600, 220, 8, 3_000),
+        flour: want(2_700, 220, 8, 3_000),
       }),
       town("Constantinople", {
-        glass: want(5_800, 220, 8, 5_000),
-        bricks: want(4_200, 200, 8, 5_000),
-        salt: want(3_000, 200, 8, 5_000),
-        flour: want(4_000, 220, 8, 5_000),
+        glass: want(3_480, 220, 8, 3_000),
+        bricks: want(2_520, 200, 8, 3_000),
+        salt: want(1_800, 200, 8, 3_000),
+        flour: want(2_400, 220, 8, 3_000),
       }),
       town("Candie", {
-        rope: want(4_200, 200, 8, 5_000),
-        planks: want(4_400, 200, 8, 5_000),
-        salt: want(2_800, 200, 8, 5_000),
-        glass: want(4_800, 200, 8, 5_000),
+        rope: want(2_520, 200, 8, 3_000),
+        planks: want(2_640, 200, 8, 3_000),
+        salt: want(1_680, 200, 8, 3_000),
+        glass: want(2_880, 200, 8, 3_000),
       }),
     ],
   },
@@ -249,6 +250,8 @@ export const venice1450LaguneParams: LagoonParams = {
     corsairs: ["Ivo le Borgne", "Dragut", "Uluç Ali", "Kemal Reis", "Barberousse", "Turgut"],
   },
   detourBps: 6_000,
+  // The open sea by the detour: a fifth of the way by the passages (docs/plan-economie.md C1).
+  largeDetourBps: 2_000,
   base: {
     sliceMs: base.sliceMs,
     goods: base.goods,
@@ -271,6 +274,34 @@ export const venice1450LaguneParams: LagoonParams = {
                 cost: [600_000, 2_500_000, 6_000_000],
                 buildMs: [HOUR, 6 * HOUR, 24 * HOUR],
               },
+              // The works of prestige (docs/plan-economie.md C3): the ducats' sink. They make
+              // nothing, are seen by all, and each one makes the next a quarter dearer. The
+              // common ones at the Casa; the grand ones (the third tier) at level 15, with a plan.
+              ...Object.fromEntries(
+                (
+                  [
+                    ["fontaine", "Fontaine", 1, 6, 1_500_000, 2 * HOUR],
+                    ["loggia", "Loggia", 1, 6, 2_500_000, 4 * HOUR],
+                    ["campanile", "Campanile", 1, 6, 4_000_000, 8 * HOUR],
+                    ["scuola", "Scuola Grande", 3, 15, 12_000_000, 24 * HOUR],
+                    ["basilique", "Basilique", 3, 15, 25_000_000, 48 * HOUR],
+                  ] as const
+                ).map(([id, name, tier, level, cost, ms]) => [
+                  id,
+                  {
+                    name,
+                    tier,
+                    level,
+                    terrain: "pre" as const,
+                    inputs: {},
+                    outputs: {},
+                    lotsPerHour: 0,
+                    cost: [cost],
+                    buildMs: [ms],
+                    ouvrage: { growthBps: 2_500 },
+                  },
+                ]),
+              ),
             },
           },
         }
@@ -279,7 +310,8 @@ export const venice1450LaguneParams: LagoonParams = {
     // The growth of the houses (docs/plan-progression-maison.md): 3 bobbins at first, 12 at the
     // top; the worked goods at level 3; a second tower at 6. Titles of the Republic's houses.
     maison: {
-      curve: 20,
+      // The thirtieth level near the 47th week (docs/plan-economie.md C2).
+      curve: 28,
       maxLevel: 30,
       titles: [
         { from: 1, name: "Bottega" },
@@ -293,7 +325,8 @@ export const venice1450LaguneParams: LagoonParams = {
         { level: 2, bobbins: 4 },
         { level: 3, tier: 2 },
         { level: 4, bobbins: 5, tiles: 16 },
-        { level: 6, towers: 2 },
+        // The Casa reaches the open sea by the detour (docs/plan-economie.md C1).
+        { level: 6, towers: 2, detour: true },
         { level: 8, bobbins: 6, tiles: 20 },
         { level: 11, tiles: 28 },
         { level: 12, bobbins: 7 },
@@ -306,7 +339,7 @@ export const venice1450LaguneParams: LagoonParams = {
       ],
       weeklyCap: 500,
       catchUpBps: 5_000,
-      commerce: { perDucats: 50, dailyCap: 55 },
+      commerce: { perDucats: 15, dailyCap: 55 },
       gains: {
         rival: 60,
         placeTop: 100,
@@ -378,7 +411,7 @@ export const venice1450LaguneParams: LagoonParams = {
     // The company's beacon (docs/plan-compagnie.md K4): six members giving every day reach
     // level 5 in about four weeks; at 5, the beacon shows one ruse of each assault.
     compagnie: {
-      beacon: { thresholds: [0, 800, 2_400, 5_000, 9_000], dailyCap: 60, scoutLevel: 5 },
+      beacon: { thresholds: [0, 2_400, 7_200, 15_000, 27_000], dailyCap: 60, scoutLevel: 5 },
     },
     // The War of the week (docs/plan-guerre.md): the assault of 01-audit-guerre.md § 4.3, and the
     // Prestige the owner chose (12 November 2026), within the week's cap.
@@ -450,14 +483,14 @@ export const venice1450LaguneParams: LagoonParams = {
       ],
       depth: 4,
       phases: [2, 3, 4],
-      triesPerDay: 2,
+      triesPerDay: 1,
       cargo: [
         { level: 11, n: 30 },
         { level: 16, n: 45 },
         { level: 21, n: 60 },
       ],
       priceBps: 15_000,
-      relicsPerPlan: 3,
+      relicsPerPlan: 5,
       plans: { arsenalLevel: 3, ships: ["escorte"], tier: 3 },
     },
     // The ink tide (docs/plan-maree.md T1): from the far edge, a row a week toward the lagoon,
