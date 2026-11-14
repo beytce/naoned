@@ -81,17 +81,24 @@ export function plancheSortiesWeek(S: PlancheSetup, s: PlancheState, monday: num
   );
   const list: PlancheSortie[] = [];
   const seen = new Set<string>();
+  const sought = new Map<string, number>();
   // Every captain of the lagoon sallies, whether he still holds his tower or not: from his own.
   for (const p of S.passages) {
     const holder = p.holder;
     if (!holder.startsWith("corsair:") || seen.has(holder) || !held.length) continue;
     seen.add(holder);
-    const target = [...held].sort(
-      (a, b) =>
-        Math.abs(a.x - p.x) + Math.abs(a.y - p.y) - (Math.abs(b.x - p.x) + Math.abs(b.y - p.y)) ||
-        (a.id < b.id ? -1 : 1),
-    )[0];
+    // The nearest tower held by a person that is the least sought this week; two at most against
+    // one tower (docs/plan-duels.md B2).
+    const target = [...held]
+      .filter((t) => (sought.get(t.id) ?? 0) < 2)
+      .sort(
+        (a, b) =>
+          (sought.get(a.id) ?? 0) - (sought.get(b.id) ?? 0) ||
+          Math.abs(a.x - p.x) + Math.abs(a.y - p.y) - (Math.abs(b.x - p.x) + Math.abs(b.y - p.y)) ||
+          (a.id < b.id ? -1 : 1),
+      )[0];
     if (!target) continue;
+    sought.set(target.id, (sought.get(target.id) ?? 0) + 1);
     const captain = holder.slice(8);
     const day = 1 + (hash(monday, captain, "day") % 5);
     list.push({

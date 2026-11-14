@@ -290,6 +290,8 @@ export interface PlancheState {
       /** Its guard: the cells of its board where its holder laid links, and the day it did. */
       guard?: number[];
       guardDay?: number;
+      /** The seals each house has broken of its own (docs/plan-duels.md B2). */
+      broken?: Record<string, number>;
     }
   >;
   /** Every denier the towns paid, and every denier a toll destroyed. */
@@ -305,6 +307,8 @@ export interface PlancheState {
   orders?: Record<string, PlancheOrderState>;
   /** The tries at the problem of the day, by day then house (today's and the day before's). */
   daily?: Record<number, Record<string, PlancheDailyTry>>;
+  /** The tries at the towers today, by `house|passage` (docs/plan-duels.md B2). */
+  forceTries?: { day: number; tried: string[] };
   /** The black straits: this week's forcings, every week's, today's tries. */
   noir?: NoirState;
   /** The Muda of the week. */
@@ -661,9 +665,46 @@ export function plancheUnthread(
   return s;
 }
 
+/** The seals a house has still to break on a tower (its own, docs/plan-duels.md B2). */
+export function plancheSealsLeft(
+  S: PlancheSetup,
+  s: PlancheState,
+  passage: string,
+  house: string,
+): number {
+  const def = S.passages.find((p) => p.id === passage);
+  const broken = own(own(s.passages, passage)?.broken ?? {}, house) ?? 0;
+  return Math.max(0, (def?.seals ?? 0) - broken);
+}
+
 /**
- * A house has won the Passe of a passage: a seal breaks and it goes through free for a while; the
- * last seal broken, the tower is its own.
+ * A house tries a tower: once a tower and a day (docs/plan-duels.md B2), written as soon as the duel
+ * begins, so that a duel lost or left counts.
+ */
+export function plancheForceTry(
+  S: PlancheSetup,
+  s0: PlancheState,
+  house: string,
+  passage: string,
+  now: number,
+): PlancheState {
+  const p0 = own(s0.passages, passage);
+  if (!own(s0.houses, house) || !p0 || !S.passages.some((p) => p.id === passage))
+    return fail("planche_unknown");
+  if (p0.holder === house) return fail("planche_own_passage");
+  const day = Math.floor(now / DAY);
+  const key = `${house}|${passage}`;
+  const tried = s0.forceTries?.day === day ? s0.forceTries.tried : [];
+  if (tried.includes(key)) return fail("planche_force_tried");
+  const s = clone(s0);
+  s.forceTries = { day, tried: [...tried, key] };
+  return s;
+}
+
+/**
+ * A house has won the Passe of a passage: one of its own seals breaks and it goes through free for
+ * a while; the last of its seals broken, the tower is its own, and everyone's count starts again
+ * (docs/plan-duels.md B2: no « last seal » taken from another's work).
  */
 export function plancheForced(
   S: PlancheSetup,
@@ -679,19 +720,20 @@ export function plancheForced(
   const s = clone(s0);
   const p = s.passages[passage] as PlancheState["passages"][string];
   const h = s.houses[house] as PlancheHouse;
-  p.seals -= 1;
+  const broken = (own(p.broken ?? {}, house) ?? 0) + 1;
+  p.broken = { ...(p.broken ?? {}), [house]: broken };
   h.free[passage] = now + S.rules.freeAfterForceMs;
   if (h.maison) h.maison.seals += 1;
-  if (p.seals <= 0) {
-    // A house holds as many towers as its level allows: beyond, the seals come back, the tower stays.
+  if (broken >= def.seals) {
+    // A house holds as many towers as its level allows: beyond, its seals come back, the tower stays.
     const held = Object.values(s.passages).filter((q) => q.holder === house).length;
     if (held < (h.caps?.towers ?? Number.POSITIVE_INFINITY)) {
-      // The guard was the last holder's.
-      const { guard: _guard, guardDay: _day, ...kept } = p;
+      // The guard was the last holder's; everyone's seals start again.
+      const { guard: _guard, guardDay: _day, broken: _broken, ...kept } = p;
       s.passages[passage] = { ...kept, holder: house, seals: def.seals };
       h.maison?.log.push({ at: now, kind: "tower", data: passage });
       if (h.maison && h.maison.log.length > MAISON_KEEP) h.maison.log.shift();
-    } else p.seals = def.seals;
+    } else p.broken = { ...p.broken, [house]: 0 };
   }
   return s;
 }
