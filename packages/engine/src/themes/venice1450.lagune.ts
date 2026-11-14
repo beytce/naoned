@@ -411,7 +411,7 @@ export const venice1450LaguneParams: LagoonParams = {
     // The company's beacon (docs/plan-compagnie.md K4): six members giving every day reach
     // level 5 in about four weeks; at 5, the beacon shows one ruse of each assault.
     compagnie: {
-      beacon: { thresholds: [0, 800, 2_400, 5_000, 9_000], dailyCap: 60, scoutLevel: 5 },
+      beacon: { thresholds: [0, 2_400, 7_200, 15_000, 27_000], dailyCap: 60, scoutLevel: 5 },
     },
     // The War of the week (docs/plan-guerre.md): the assault of 01-audit-guerre.md § 4.3, and the
     // Prestige the owner chose (12 November 2026), within the week's cap.
@@ -483,14 +483,14 @@ export const venice1450LaguneParams: LagoonParams = {
       ],
       depth: 4,
       phases: [2, 3, 4],
-      triesPerDay: 2,
+      triesPerDay: 1,
       cargo: [
         { level: 11, n: 30 },
         { level: 16, n: 45 },
         { level: 21, n: 60 },
       ],
       priceBps: 15_000,
-      relicsPerPlan: 3,
+      relicsPerPlan: 5,
       plans: { arsenalLevel: 3, ships: ["escorte"], tier: 3 },
     },
     // The ink tide (docs/plan-maree.md T1): from the far edge, a row a week toward the lagoon,

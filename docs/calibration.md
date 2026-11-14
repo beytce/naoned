@@ -3559,3 +3559,8 @@ Trois ouvrages ordinaires dès la Casa (Fontaine 15 000 ducats, Loggia 25 000, C
 
 - La masse détenue se stabilise vers un million de ducats pour la lagune (environ 28 000 par Maison de joueur) au lieu de grossir de 400 000 par semaine : l'île absorbe désormais autant que les villes créent.
 - Les ouvrages ne rendent rien : la règle 6 (à armes égales) tient ; ils se voient sur l'île de chacun (règle 10).
+
+### C4 : les sources récentes ralenties
+
+- Détroits noirs : un essai par jour (au lieu de deux), cinq reliques un plan (au lieu de trois). `muda-bench` (2 semaines, 4 graines) : 4,9 reliques par Maison qui les tente, soit **1,0 plan en deux semaines** (0,5 par semaine, la cible de l'économiste ; 1,6 avant).
+- Le phare des compagnies : seuils `[0, 2 400, 7 200, 15 000, 27 000]` (au lieu de `[0, 800, 2 400, 5 000, 9 000]`) : pour six membres actifs, le niveau 2 en une semaine, le niveau 4 en six (calcul de l'économiste).

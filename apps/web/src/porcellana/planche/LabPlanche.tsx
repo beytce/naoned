@@ -191,7 +191,7 @@ const SAID: Record<string, string> = {
   // The black straits and the Muda (docs/plan-muda.md).
   planche_noir_tried: "Tu as joué tes deux détroits noirs aujourd'hui : demain de nouveau.",
   planche_noir_cargo: "Cette cargaison n'est pas possible : vois ton entrepôt et ton niveau.",
-  planche_few_relics: "Il faut trois reliques d'une même puissance pour un plan.",
+  planche_few_relics: "Il te manque des reliques d'une même puissance pour assembler un plan.",
   planche_no_plan: "Ce haut ouvrage demande un plan : il vient des reliques des détroits noirs.",
   planche_muda_closed: "Les détroits de la Muda se forcent le samedi, de 8 h à 20 h.",
   planche_muda_empty: "Le convoi n'a rien dans sa cale : il ne sort pas.",
