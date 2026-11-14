@@ -202,16 +202,6 @@ export function plancheLagoon(P: LagoonParams): PlancheSetup {
 }
 
 /**
- * How far a tile is from the board's middle, in hundredths of a tile: a whole number, the same on
- * every machine (the square root of a whole number, floored).
- */
-export function plancheDepth(S: Pick<PlancheSetup, "width" | "height">, x: number, y: number) {
-  const dx = 2 * x - (S.width - 1);
-  const dy = 2 * y - (S.height - 1);
-  return Math.floor(Math.sqrt((dx * dx + dy * dy) * 2_500));
-}
-
-/**
  * The lagoon's land and its ink, for the board's drawing (docs/plan-lagune-ronde.md L1): a shore
  * under each sestiere's towns, cut by the channel to its mouth; an islet under each town of the
  * lagoon and of the open sea; the water white in the lagoon, darkening past the mouths toward the

@@ -3,6 +3,7 @@ import {
   type PlancheSetup,
   type PlancheState,
   plancheAdvance,
+  plancheDepth,
   plancheEncreLine,
   plancheEncrePeril,
   plancheEncrePush,
@@ -21,28 +22,29 @@ const T0 = Date.parse("2026-11-16T00:00:00Z");
 
 function setup(): PlancheSetup {
   return {
-    width: 6,
-    height: 10,
+    // Everything on the middle's column (x 2, the middle at y 9): a tile's depth is its rows from it.
+    width: 5,
+    height: 19,
     sliceMs: 6 * HOUR,
     goods: { sel: "Sel" },
     houses: [
-      { id: "ana", name: "Ana", robot: false, x: 2, y: 2, makes: { sel: 30 } },
-      { id: "bot", name: "Bot", robot: true, x: 4, y: 2, makes: { sel: 30 } },
+      { id: "ana", name: "Ana", robot: false, x: 2, y: 11, makes: { sel: 30 } },
+      { id: "bot", name: "Bot", robot: true, x: 2, y: 7, makes: { sel: 30 } },
     ],
     cities: [
       {
         id: "pres",
         name: "Près",
-        x: 1,
-        y: 3,
+        x: 2,
+        y: 6,
         via: [],
         wants: { sel: { price: 100, floorBps: 10_000, cap: 10_000, regenPerHour: 1_000 } },
       },
       {
         id: "loin",
         name: "Loin",
-        x: 3,
-        y: 8,
+        x: 2,
+        y: 17,
         via: [],
         wants: { sel: { price: 100, floorBps: 10_000, cap: 10_000, regenPerHour: 1_000 } },
       },
@@ -52,7 +54,7 @@ function setup(): PlancheSetup {
         id: "pont",
         name: "Le pont",
         x: 2,
-        y: 7,
+        y: 16,
         holder: "corsair:Ivo",
         tollBps: 1_000,
         board: "petit",
@@ -61,8 +63,8 @@ function setup(): PlancheSetup {
       {
         id: "bouche",
         name: "La bouche",
-        x: 4,
-        y: 4,
+        x: 2,
+        y: 5,
         holder: "corsair:Dragut",
         tollBps: 1_000,
         board: "petit",
@@ -110,20 +112,36 @@ function holding(S: PlancheSetup): PlancheState {
 
 // The ink tide (docs/plan-maree.md T1).
 describe("the ink tide", () => {
-  it("rises a row each Monday when nothing pushes it back, and covers the far rows", () => {
+  it("measures a tile from the board's middle, in whole hundredths, the same all round", () => {
+    const B = { width: 41, height: 41 };
+    expect(plancheDepth(B, 20, 20)).toBe(0);
+    expect(plancheDepth(B, 20, 3)).toBe(1_700);
+    expect(plancheDepth(B, 8, 8)).toBe(1_697);
+    expect(plancheDepth(B, 32, 8)).toBe(1_697);
+    expect(plancheDepth(B, 5, 5)).toBe(2_121);
+    expect(plancheDepth(B, 3, 3)).toBe(2_404);
+    // A board of even side has its middle between four tiles.
+    expect(plancheDepth({ width: 2, height: 2 }, 0, 0)).toBe(70);
+  });
+
+  it("rises a tile each Monday toward the middle when nothing pushes it back, all round", () => {
     const S = setup();
     let s = plancheInit(S, T0);
     expect(plancheEncreLine(S, s)).toBe(900);
-    expect(plancheInInk(S, s, 8)).toBe(false);
+    expect(plancheInInk(S, s, { x: 2, y: 17 })).toBe(false);
     s = plancheAdvance(S, s, T0 + WEEK);
     expect(plancheEncreLine(S, s)).toBe(800);
-    expect(plancheInInk(S, s, 8)).toBe(true);
-    expect(plancheInInk(S, s, 7)).toBe(false);
+    expect(plancheInInk(S, s, { x: 2, y: 17 })).toBe(true);
+    expect(plancheInInk(S, s, { x: 2, y: 16 })).toBe(false);
+    // As far on the other side of the middle, the same ink.
+    expect(plancheInInk(S, s, { x: 2, y: 1 })).toBe(true);
+    expect(plancheInInk(S, s, { x: 2, y: 2 })).toBe(false);
     s = plancheAdvance(S, s, T0 + 3 * WEEK);
     expect(plancheEncreLine(S, s)).toBe(600);
-    expect(plancheEncrePeril(S, s, 6)).toBe(1);
-    expect(plancheEncrePeril(S, s, 4)).toBeCloseTo(1 / 3, 5);
-    expect(plancheEncrePeril(S, s, 2)).toBe(0);
+    expect(plancheEncrePeril(S, s, { x: 2, y: 15 })).toBe(1);
+    expect(plancheEncrePeril(S, s, { x: 2, y: 13 })).toBeCloseTo(1 / 3, 5);
+    expect(plancheEncrePeril(S, s, { x: 2, y: 11 })).toBe(0);
+    expect(plancheEncrePeril(S, s, { x: 2, y: 5 })).toBeCloseTo(1 / 3, 5);
   });
 
   it("is pushed back by the towers people hold and the black straits forced", () => {
