@@ -11,7 +11,7 @@
   border-radius: 999px;
   background: #f2c14e;
   color: #17150f;
-  font: 800 10px var(--pc-ui);
+  font: 800 11px var(--pc-ui);
 }
 .pc-planche-pin[data-sortie-pin] {
   background: #111111;
@@ -141,7 +141,7 @@
   margin-right: 6px;
   vertical-align: -3px;
   border-radius: 2px;
-  background: linear-gradient(#c7372f 0 22%, #d9d2c6 22%);
+  background: linear-gradient(var(--pc-accent) 0 22%, #d9d2c6 22%);
   box-shadow: 0 0 0 1px #17150f;
 }
 .pc-mr-decrets {

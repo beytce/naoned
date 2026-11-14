@@ -215,7 +215,7 @@ function Sceau({ size = 16 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true" className="pc-pl-sceau">
       <path
         d="M10 1 L12 3 L15 2.5 L15.5 5.5 L18.5 7 L17 10 L18.5 13 L15.5 14.5 L15 17.5 L12 17 L10 19 L8 17 L5 17.5 L4.5 14.5 L1.5 13 L3 10 L1.5 7 L4.5 5.5 L5 2.5 L8 3 Z"
-        fill="#C8102E"
+        fill="var(--pc-accent)"
       />
       <circle cx="10" cy="10" r="4.6" fill="none" stroke="#F6F4F0" strokeWidth="1.4" />
       <path d="M10 7.2 V12.8 M7.6 10 H12.4" stroke="#F6F4F0" strokeWidth="1.4" />
@@ -1448,7 +1448,7 @@ export default function LabPlanche() {
             <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
               <path
                 d="M3 14 L8 9 L11 12 L17 6 M13 6 H17 V10"
-                stroke="#E0614F"
+                stroke="var(--pc-accent-light)"
                 strokeWidth="2.4"
                 fill="none"
                 strokeLinecap="round"

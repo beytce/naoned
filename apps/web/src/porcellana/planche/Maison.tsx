@@ -298,7 +298,7 @@ export function FacadeSheet({
         <circle cx="160" cy="153" r="3.2" fill="#2a2725" />
         {m.knotToday ? (
           <g transform="translate(150 60)" data-facade-knot>
-            <circle cx="10" cy="10" r="9" fill="#C8102E" />
+            <circle cx="10" cy="10" r="9" fill="var(--pc-accent)" />
             <path
               d="M5 12 C5 6 11 5 12 9 C13 13 7 14 8 9 C9 5 15 6 15 12"
               fill="none"

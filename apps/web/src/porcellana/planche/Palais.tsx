@@ -118,7 +118,7 @@ export function Laurel({ of, size = 16 }: { of: PlancheLaurelId; size?: number }
         strokeWidth="1.2"
         strokeLinecap="round"
       />
-      <text x="8" y="11" textAnchor="middle" fontSize="7" fontWeight="900" fill="var(--pc-ink)">
+      <text x="8" y="11" textAnchor="middle" fontSize="9" fontWeight="900" fill="var(--pc-ink)">
         {letter}
       </text>
     </svg>

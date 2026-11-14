@@ -62,14 +62,14 @@ function Carte({ view }: { view: GuerreViewData }) {
           <path
             d="M-20 4 L0 -6 L20 4 L0 14 Z"
             fill={p.person ? "#fbfaf7" : "#efebe4"}
-            stroke={me ? "#C8102E" : "#d3ccc0"}
+            stroke={me ? "var(--pc-accent)" : "#d3ccc0"}
             strokeWidth={me ? 2.4 : 1.2}
           />
           <path d="M-7 2 V-10 L0 -15 L7 -10 V2 Z" fill="#fbfaf7" stroke="#17150f" strokeWidth="1" />
           {view.reserved?.[p.key] ? (
             <path
               d="M8 -16 V-4 M8 -16 H16 L13 -13 L16 -10 H8"
-              fill="#C8102E"
+              fill="var(--pc-accent)"
               stroke="#17150f"
               strokeWidth="0.8"
             />
@@ -80,13 +80,13 @@ function Carte({ view }: { view: GuerreViewData }) {
               cx={-8 + s * 8}
               cy={theirs ? 22 : -24}
               r="3"
-              fill={s < p.best ? "#C8102E" : "#ddd6cb"}
+              fill={s < p.best ? "var(--pc-accent)" : "#ddd6cb"}
             />
           ))}
           <text
             y={theirs ? -22 : 30}
             textAnchor="middle"
-            fontSize="8"
+            fontSize="10"
             fontWeight="700"
             fill="#4a443e"
           >

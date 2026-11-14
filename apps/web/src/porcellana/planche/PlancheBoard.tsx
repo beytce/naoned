@@ -94,6 +94,55 @@ function inked(g: Object3D, keep: Material): void {
   });
 }
 
+/**
+ * The labels of the board, sorted out (docs/plan-semaine.md D5, audit UX-4): by priority (thine,
+ * the one chosen, thy rival, the towns, the towers, the other houses), a label that touches one
+ * placed before it is hidden, and the one that stays tells how many it hides (« +3 »). The
+ * sestieri's names lie under everything and are left alone.
+ */
+function rank(key: string, el: HTMLElement, chosen: string): number {
+  if (key === chosen || el.dataset.mine === "true") return 0;
+  if (el.querySelector(".pc-rk-tag")) return 1;
+  if (key.startsWith("city")) return 2;
+  if (key.startsWith("passage") || key.startsWith("noir") || key.startsWith("sortie")) return 3;
+  return 4;
+}
+function declutter(
+  labels: { key: string; el: HTMLElement; x: number; y: number }[],
+  chosen: string,
+): void {
+  const boxes: { el: HTMLElement; l: number; r: number; t: number; b: number; more: number }[] = [];
+  const sorted = labels
+    .filter((a) => !a.el.classList.contains("pc-pl-sestiere"))
+    .map((a) => ({ ...a, p: rank(a.key, a.el, chosen) }))
+    .sort((a, b) => a.p - b.p || a.y - b.y);
+  for (const a of sorted) {
+    const w = a.el.offsetWidth;
+    const h = a.el.offsetHeight;
+    const box = { el: a.el, l: a.x - w / 2, r: a.x + w / 2, t: a.y - h, b: a.y, more: 0 };
+    const under =
+      a.p === 0
+        ? undefined
+        : boxes.find(
+            (o) => box.l < o.r + 2 && box.r > o.l - 2 && box.t < o.b + 2 && box.b > o.t - 2,
+          );
+    if (under) {
+      under.more += 1;
+      if (a.el.dataset.hidden !== "true") a.el.dataset.hidden = "true";
+      continue;
+    }
+    if (a.el.dataset.hidden) delete a.el.dataset.hidden;
+    boxes.push(box);
+  }
+  for (const o of boxes) {
+    const more = o.more ? String(o.more) : "";
+    if ((o.el.dataset.more ?? "") !== more) {
+      if (more) o.el.dataset.more = more;
+      else delete o.el.dataset.more;
+    }
+  }
+}
+
 function pickOf(o: Object3D | null): PlanchePick | null {
   for (let n = o; n; n = n.parent) if (n.userData.pick) return n.userData.pick as PlanchePick;
   return null;
@@ -823,6 +872,7 @@ export function PlancheBoard({
   /** The scale last reached: once there, the reader's own zoom is left alone. */
   const lastZoom = useRef(1);
   const tmp = useMemo(() => new Vector3(), []);
+  const frame = useRef(0);
   useFrame((_, rawDt) => {
     const dt = Math.min(0.05, rawDt);
     clock.current += dt;
@@ -869,6 +919,7 @@ export function PlancheBoard({
     mat.opacity += ((at ? 0.9 : 0) - mat.opacity) * 0.15;
     ring.visible = mat.opacity > 0.01;
     // The labels follow their places.
+    const placed: { key: string; el: HTMLElement; x: number; y: number }[] = [];
     for (const [key, el] of pins) {
       const p = places.at.get(key) ?? markAt.get(key);
       if (!p) continue;
@@ -876,7 +927,11 @@ export function PlancheBoard({
       const x = (tmp.x * 0.5 + 0.5) * size.width;
       const y = (-tmp.y * 0.5 + 0.5) * size.height;
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+      placed.push({ key, el, x, y });
     }
+    // Every few frames, the labels that touch are sorted out (docs/plan-semaine.md D5).
+    frame.current += 1;
+    if (frame.current % 10 === 0) declutter(placed, chosen ? `${chosen.kind}:${chosen.id}` : "");
   });
 
   // What a rebuild leaves behind is freed, not kept in the GPU (docs/plan-socle.md A6).

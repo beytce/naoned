@@ -108,7 +108,12 @@ function InkGauge({ setup, state }: { setup: PlancheSetup; state: PlancheState }
           <stop offset="1" stopColor="#2A2725" stopOpacity="0.45" />
         </linearGradient>
       </defs>
-      <path d={`M0 ${y(line)} H300`} stroke="#C7372F" strokeWidth="3" strokeDasharray="10 7" />
+      <path
+        d={`M0 ${y(line)} H300`}
+        stroke="var(--pc-accent)"
+        strokeWidth="3"
+        strokeDasharray="10 7"
+      />
       {towers.map((p) => {
         const cx = 20 + ((p.x + 0.5) / setup.width) * 260;
         const cy = y(p.y + 0.5);
@@ -120,17 +125,17 @@ function InkGauge({ setup, state }: { setup: PlancheSetup; state: PlancheState }
               width="14"
               height="16"
               rx="2"
-              fill={held(p.id) ? "#C7372F" : "#8A8279"}
+              fill={held(p.id) ? "var(--pc-accent)" : "#8A8279"}
               stroke={threat.has(p.id) ? "#F2C14E" : "#17150f"}
               strokeWidth={threat.has(p.id) ? 3 : 1.5}
             />
           </g>
         );
       })}
-      <text x="8" y={h + 8} fontSize="9" fill="#6B645C">
+      <text x="8" y={h + 8} fontSize="11" fill="#6B645C">
         la lagune ↑
       </text>
-      <text x="292" y={h + 8} fontSize="9" fill="#6B645C" textAnchor="end">
+      <text x="292" y={h + 8} fontSize="11" fill="#6B645C" textAnchor="end">
         le Large ↓
       </text>
     </svg>

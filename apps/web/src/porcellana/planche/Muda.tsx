@@ -79,7 +79,7 @@ function Hold({ loaded, hold, mine }: { loaded: number; hold: number; mine: numb
       <path d={hull} fill="#F6F4F0" stroke="#17150f" strokeWidth="2" />
       <g clipPath="url(#pc-mu-hull)">
         <rect x="0" y={66 - 36 * f} width="160" height={36 * f} fill="#D9D2C6" />
-        <rect x="0" y={66 - 36 * m} width="160" height={36 * m} fill="#C7372F" />
+        <rect x="0" y={66 - 36 * m} width="160" height={36 * m} fill="var(--pc-accent)" />
       </g>
       <path d={hull} fill="none" stroke="#17150f" strokeWidth="2" />
     </svg>
@@ -313,7 +313,7 @@ export function NoirSheet({
       </div>
       <div className="pc-nr-captain">
         <svg width="54" height="54" viewBox="0 0 52 52" aria-hidden="true">
-          <circle cx="26" cy="26" r="25" fill="#111111" stroke="#C7372F" strokeWidth="2" />
+          <circle cx="26" cy="26" r="25" fill="#111111" stroke="var(--pc-accent)" strokeWidth="2" />
           <path d="M17 12 V42" stroke="#D9D2C6" strokeWidth="2" />
           <path d="M18 13 H38 L33 20 L38 27 H18 Z" fill={POWER_COLOUR[x.power] ?? "#3A3633"} />
         </svg>
