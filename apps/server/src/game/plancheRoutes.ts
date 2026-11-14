@@ -16,7 +16,7 @@ import { companyThread, postCompanyMessage, reportCompanyMessage } from "./compa
 import { duelPool } from "./duelPool.js";
 import { GuerreHub } from "./guerre.js";
 import type { PasseHub } from "./passe.js";
-import { type PlancheAnswer, type PlancheHub, plancheTheme } from "./planche.js";
+import { type DuelView, type PlancheAnswer, type PlancheHub, plancheTheme } from "./planche.js";
 import { beaconOf, carryBeacon, giveToBeacon, givenToday } from "./plancheBeacon.js";
 import {
   compagnieOfCode,
@@ -61,6 +61,7 @@ const STATUS: Record<string, number> = {
   planche_no_thread: 404,
   duel_lost: 409,
   duel_illegal: 422,
+  duel_none: 404,
 };
 const SAID_STATUS = 409;
 
@@ -352,68 +353,51 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     if (!p) return reply;
     return show(reply, p, await p.hub.move(p.id, b.data.from, b.data.to, p.now()));
   });
-  app.post("/api/planche/force", deps.perMerchant(20), async (req, reply) => {
-    const b = z
-      .object({
-        passage: key,
-        moves: z
-          .array(z.object({ at: z.number().int().min(0).max(400), fire: z.boolean().optional() }))
-          .max(200),
-      })
-      .safeParse(req.body);
-    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+  // The duels against the computer, played by the server piece by piece (docs/plan-duels.md B1):
+  // the try is written when the duel begins; a duel left or abandoned is lost.
+  const duelAsk = z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("force"), passage: key }),
+    z.object({
+      kind: z.literal("noir"),
+      strait: key,
+      good: aGood,
+      n: z.number().int().min(1).max(1_000),
+    }),
+    z.object({ kind: z.literal("muda"), strait: key }),
+    z.object({ kind: z.literal("order"), order: key }),
+    z.object({ kind: z.literal("daily") }),
+    z.object({ kind: z.literal("sortie"), sortie: z.string().min(1).max(80) }),
+  ]);
+  const duelAnswer = async (reply: FastifyReply, p: Player, res: DuelView | PlancheAnswer) => {
+    if (typeof res === "string") return show(reply, p, res);
+    return reply.send({ duel: res });
+  };
+  app.get("/api/planche/duel", deps.perMerchant(120), async (req, reply) => {
     const p = await who(req, reply);
     if (!p) return reply;
-    const moves = b.data.moves.map((m) =>
-      m.fire ? { at: m.at, fire: true as const } : { at: m.at },
-    );
-    return show(reply, p, await p.hub.force(p.id, b.data.passage, moves, p.now()));
+    return reply.send({ duel: p.hub.duelOf(p.id) });
   });
-  // A sealed order (docs/plan-hex-commerce.md H2): its position replayed, delivered if won.
-  app.post("/api/planche/order", deps.perMerchant(20), async (req, reply) => {
-    const b = z
-      .object({
-        order: key,
-        moves: z.array(z.object({ at: z.number().int().min(0).max(400) })).max(40),
-      })
-      .safeParse(req.body);
+  app.post("/api/planche/duel/start", deps.perMerchant(20), async (req, reply) => {
+    const b = duelAsk.safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const p = await who(req, reply);
     if (!p) return reply;
-    const moves = b.data.moves.map((m) => ({ at: m.at }));
-    return show(reply, p, await p.hub.order(p.id, b.data.order, moves, p.now()));
+    return duelAnswer(reply, p, await p.hub.duelStart(p.id, b.data, p.now()));
   });
-  // The problem of the day (docs/plan-hex-commerce.md H3): one try, replayed here.
-  app.post("/api/planche/daily", deps.perMerchant(20), async (req, reply) => {
+  app.post("/api/planche/duel/play", deps.perMerchant(120), async (req, reply) => {
     const b = z
-      .object({ moves: z.array(z.object({ at: z.number().int().min(0).max(400) })).max(40) })
+      .object({ at: z.number().int().min(0).max(400), fire: z.boolean().optional() })
       .safeParse(req.body);
     if (!b.success) return reply.code(400).send({ error: "invalid_input" });
     const p = await who(req, reply);
     if (!p) return reply;
-    const moves = b.data.moves.map((m) => ({ at: m.at }));
-    return show(reply, p, await p.hub.daily(p.id, moves, p.now()));
+    const move = b.data.fire ? { at: b.data.at, fire: true as const } : { at: b.data.at };
+    return duelAnswer(reply, p, await p.hub.duelPlay(p.id, move, p.now()));
   });
-  const duelMoves = z
-    .array(z.object({ at: z.number().int().min(0).max(400), fire: z.boolean().optional() }))
-    .max(200);
-  const asMoves = (ms: z.infer<typeof duelMoves>) =>
-    ms.map((m) => (m.fire ? { at: m.at, fire: true as const } : { at: m.at }));
-  // A black strait (docs/plan-muda.md N1): a cargo risked, the duel replayed on the day's board.
-  app.post("/api/planche/noir", deps.perMerchant(20), async (req, reply) => {
-    const b = z
-      .object({
-        strait: key,
-        good: aGood,
-        n: z.number().int().min(1).max(1_000),
-        moves: duelMoves,
-      })
-      .safeParse(req.body);
-    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
+  app.post("/api/planche/duel/quit", deps.perMerchant(20), async (req, reply) => {
     const p = await who(req, reply);
     if (!p) return reply;
-    const { strait, good, n, moves } = b.data;
-    return show(reply, p, await p.hub.noir(p.id, strait, { good, n }, asMoves(moves), p.now()));
+    return duelAnswer(reply, p, await p.hub.duelQuit(p.id, p.now()));
   });
   // Three relics of a power make a plan.
   app.post("/api/planche/assemble", deps.perMerchant(20), async (req, reply) => {
@@ -423,14 +407,6 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     if (!p) return reply;
     return show(reply, p, await p.hub.assemble(p.id, b.data.power, p.now()));
   });
-  // A sortie met before its hour by the tower's holder (docs/plan-maree.md T5).
-  app.post("/api/planche/sortie", deps.perMerchant(20), async (req, reply) => {
-    const b = z.object({ id: z.string().min(1).max(80), moves: duelMoves }).safeParse(req.body);
-    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
-    const p = await who(req, reply);
-    if (!p) return reply;
-    return show(reply, p, await p.hub.sortie(p.id, b.data.id, asMoves(b.data.moves), p.now()));
-  });
   // The Doge's decree of the tide (docs/plan-maree.md T5).
   app.post("/api/planche/decret", deps.perMerchant(20), async (req, reply) => {
     const b = z.object({ choice: z.number().int().min(0).max(5) }).safeParse(req.body);
@@ -438,14 +414,6 @@ export function registerPlancheRoutes(app: FastifyInstance, deps: PlancheRouteDe
     const p = await who(req, reply);
     if (!p) return reply;
     return show(reply, p, await p.hub.decret(p.id, b.data.choice, p.now()));
-  });
-  // A strait of the Muda (docs/plan-muda.md N2), on Saturday.
-  app.post("/api/planche/muda", deps.perMerchant(20), async (req, reply) => {
-    const b = z.object({ strait: key, moves: duelMoves }).safeParse(req.body);
-    if (!b.success) return reply.code(400).send({ error: "invalid_input" });
-    const p = await who(req, reply);
-    if (!p) return reply;
-    return show(reply, p, await p.hub.muda(p.id, b.data.strait, asMoves(b.data.moves), p.now()));
   });
   // The prepared guard (docs/plan-hex-commerce.md H4): links laid in advance on one's tower.
   app.post("/api/planche/guard", deps.perMerchant(20), async (req, reply) => {

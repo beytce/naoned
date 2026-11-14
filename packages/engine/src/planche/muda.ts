@@ -291,3 +291,27 @@ export function plancheMudaForce(
   if (h.maison) h.maison.muda = (h.maison.muda ?? 0) + M.prestige.winner;
   return s;
 }
+
+/**
+ * A strait of the Muda won, its try written when the duel began (docs/plan-duels.md B1): the
+ * convoy passes it, unless another passed it meanwhile.
+ */
+export function plancheMudaWin(
+  S: PlancheSetup,
+  s0: PlancheState,
+  house: string,
+  strait: string,
+  now: number,
+): PlancheState {
+  const M = S.muda;
+  const st0 = s0.muda?.monday === plancheMonday(now) ? own(s0.muda.straits, strait) : undefined;
+  if (!M || !st0?.tried.includes(house) || !own(s0.houses, house)) return fail("planche_unknown");
+  if (st0.by) return s0;
+  const s = structuredClone(s0);
+  const st = (s.muda as PlancheMudaState).straits[strait] as PlancheMudaStraitState;
+  st.by = house;
+  st.at = now;
+  const h = s.houses[house] as PlancheHouse;
+  if (h.maison) h.maison.muda = (h.maison.muda ?? 0) + M.prestige.winner;
+  return s;
+}

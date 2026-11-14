@@ -49,8 +49,13 @@ interface Room {
   /** Pieces the lieutenant laid for the thread, for the chain, this round. */
   late: [number, number];
   again: Set<string>;
+  /** Who said its screen is ready: the clock starts when both have, or after `READY_MS`. */
+  ready: Set<string>;
   touched: number;
 }
+
+/** The longest the clock waits for both screens (docs/plan-duels.md B4). */
+const READY_MS = 30_000;
 
 export interface PasseRoomView {
   code: string;
@@ -69,6 +74,8 @@ export interface PasseRoomView {
   /** The holds the thread saved, once it is through. */
   cargo: number;
   again: { you: boolean; other: boolean };
+  /** Whose screen is ready: the clock runs once both are (docs/plan-duels.md B4). */
+  ready: { you: boolean; other: boolean };
   now: number;
 }
 
@@ -123,10 +130,12 @@ export class PasseHub {
     if (!b) return;
     room.setup = { ...this.theme.rules, ...b, cells: [...b.cells] };
     room.state = passeInit(room.setup);
-    room.deadline = now + this.theme.duel.moveSeconds * 1000;
+    // The clock waits for both screens, thirty seconds at most.
+    room.deadline = now + READY_MS + this.theme.duel.moveSeconds * 1000;
     room.last = -1;
     room.late = [0, 0];
     room.again.clear();
+    room.ready.clear();
     room.touched = now;
   }
 
@@ -163,6 +172,7 @@ export class PasseHub {
       last: -1,
       late: [0, 0],
       again: new Set(),
+      ready: new Set(),
       touched: now,
     });
     return { code };
@@ -191,9 +201,25 @@ export class PasseHub {
       return "illegal";
     }
     room.last = move.at;
+    room.ready.add(id);
     room.deadline = room.state.winner ? null : now + this.theme.duel.moveSeconds * 1000;
     room.touched = now;
     if (room.state.winner) this.ended(room, now);
+    return "ok";
+  }
+
+  /** A player's screen is ready: once both are, the clock starts for the first piece. */
+  ready(id: string, code: string, now: number): PasseAnswer {
+    const room = this.rooms.get(code);
+    if (!room) return "no_room";
+    this.tick(room, now);
+    if (!room.seats.some((s) => s.id === id)) return "not_seated";
+    if (!room.state) return "not_started";
+    const first = room.ready.size < 2;
+    room.ready.add(id);
+    room.touched = now;
+    if (first && room.ready.size === 2 && room.last === -1 && !room.state.winner)
+      room.deadline = now + this.theme.duel.moveSeconds * 1000;
     return "ok";
   }
 
@@ -242,6 +268,7 @@ export class PasseHub {
       late: { thread: room.late[0], chain: room.late[1] },
       cargo: room.state && room.setup ? passeCargo(room.setup, room.state) : 0,
       again: { you: room.again.has(id), other: !!other && room.again.has(other.id) },
+      ready: { you: room.ready.has(id), other: !!other && room.ready.has(other.id) },
       now,
     };
   }

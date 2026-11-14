@@ -14,6 +14,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
+import { stubDuel } from "./duel-stub.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SHOTS = resolve(process.env.SHOTS ?? join(here, "..", "e2e-shots", "semaine"));
@@ -141,10 +142,9 @@ try {
       await route.fulfill({ response: res, json });
     });
     let noirSent = null;
-    await page.route("**/api/planche/noir", async (route) => {
-      noirSent = route.request().postDataJSON();
-      // The real house is not of level 11: the answer a lost duel gets is given.
-      await route.fulfill({ status: 409, json: { error: "duel_lost" } });
+    // The real house is not of level 11: a duel lost is given.
+    await stubDuel(page, (ask) => {
+      noirSent = ask;
     });
     pages.push({ name, page, tap, shot, errs, moves, noir: () => noirSent });
   }
@@ -300,7 +300,7 @@ try {
     await tap("[data-passe-back]");
     for (let i = 0; i < 40 && !p.noir(); i++) await page.waitForTimeout(250);
     const sent = p.noir();
-    if (!sent?.strait || !sent.good || !(sent.n > 0) || !Array.isArray(sent.moves))
+    if (sent?.kind !== "noir" || !sent.strait || !sent.good || !(sent.n > 0))
       fail(`${name}: the black strait sent ${JSON.stringify(sent)}`);
     // The relics and the plans in the Livre.
     await tap("[data-planche-medallion]");

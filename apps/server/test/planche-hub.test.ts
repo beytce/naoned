@@ -14,6 +14,7 @@ import {
 } from "@comptoirs/engine";
 import { describe, expect, it } from "vitest";
 import { PlancheHub, type PlancheHubTheme, mondayOf } from "../src/game/planche.js";
+import { duelOut } from "./duelOut.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -193,15 +194,22 @@ describe("the board on line", () => {
     ]);
   });
 
-  it("forces a passage only with a duel the server replays and the thread wins", async () => {
+  it("forces a passage only with a duel the server plays and the thread wins, once a day", async () => {
     const t = theme();
     const hub = new PlancheHub(t, T0);
     await hub.view("ana", "Ana", T0);
-    expect(await hub.force("ana", "strait", [{ at: 4 }], T0)).toBe("duel_lost");
-    expect(await hub.force("ana", "strait", [{ at: 99 }], T0)).toBe("duel_illegal");
-    expect(await hub.force("ana", "nowhere", [], T0)).toBe("planche_unknown");
+    const force = { kind: "force", passage: "strait" } as const;
+    expect(await duelOut(hub, "ana", force, [{ at: 4 }], T0 - 2 * DAY)).toBe("duel_lost");
+    // The try is spent when the duel begins.
+    expect(await duelOut(hub, "ana", force, winningLine(t), T0 - 2 * DAY)).toBe(
+      "planche_force_tried",
+    );
+    expect(await duelOut(hub, "ana", force, [{ at: 99 }], T0 - DAY)).toBe("duel_illegal");
+    expect(await duelOut(hub, "ana", { kind: "force", passage: "nowhere" }, [], T0)).toBe(
+      "planche_unknown",
+    );
     const line = winningLine(t);
-    expect(await hub.force("ana", "strait", line, T0)).toBe("ok");
+    expect(await duelOut(hub, "ana", force, line, T0)).toBe("ok");
     // one seal: the tower is Ana's house, the far town open to all
     const v = await hub.view("ana", "Ana", T0);
     expect(v.state.passages.strait?.holder).toBe("a");
@@ -220,13 +228,23 @@ describe("the board on line", () => {
     await hub.view("ana", "Ana", T0);
     await hub.view("ben", "Ben", T0);
     expect(await hub.guard("ana", "strait", [0], T0)).toBe("planche_not_holder");
-    expect(await hub.force("ana", "strait", winningLine(t), T0)).toBe("ok");
+    expect(
+      await duelOut(hub, "ana", { kind: "force", passage: "strait" }, winningLine(t), T0),
+    ).toBe("ok");
     expect(await hub.guard("ana", "strait", [0, 1], T0)).toBe("planche_guard_many");
     expect(await hub.guard("ana", "strait", [0], T0)).toBe("ok");
     expect(await hub.guard("ana", "strait", [2], T0 + HOUR)).toBe("planche_guard_today");
     expect((await hub.view("ana", "Ana", T0)).state.passages.strait?.guard).toEqual([0]);
     // Ben's duel begins on the link Ana laid: a line found on that board wins it.
-    expect(await hub.force("ben", "strait", winningLine(t, [0]), T0 + HOUR)).toBe("ok");
+    expect(
+      await duelOut(
+        hub,
+        "ben",
+        { kind: "force", passage: "strait" },
+        winningLine(t, [0]),
+        T0 + HOUR,
+      ),
+    ).toBe("ok");
     expect((await hub.view("ben", "Ben", T0 + HOUR)).state.passages.strait?.guard).toBeUndefined();
   });
 
@@ -368,33 +386,70 @@ describe("the sealed orders on line", () => {
     const hub = new PlancheHub(t, T0);
     const me = (await hub.view("ana", "Ana", T0)).me ?? "";
     await hub.view("ben", "Ben", T0);
-    expect(await hub.order("ana", "nowhere", [], T0)).toBe("planche_unknown");
+    const order = (p: string, id: string, moves: PasseMove[]) =>
+      duelOut(hub, p, { kind: "order", order: id }, moves, T0);
+    expect(await order("ana", "nowhere", [])).toBe("planche_unknown");
     // A wrong first piece: the try is spent.
     const wrong = solution()[0]?.at === 0 ? 1 : 0;
-    expect(await hub.order("ben", o.id, [{ at: wrong }], T0)).toBe("duel_lost");
-    expect(await hub.order("ben", o.id, solution(), T0)).toBe("planche_order_tried");
+    expect(await order("ben", o.id, [{ at: wrong }])).toBe("duel_lost");
+    expect(await order("ben", o.id, solution())).toBe("planche_order_tried");
     const before = (await hub.view("ana", "Ana", T0)).state.houses[me]?.ducats ?? 0n;
-    expect(await hub.order("ana", o.id, solution(), T0)).toBe("ok");
+    expect(await order("ana", o.id, solution())).toBe("ok");
     const v = await hub.view("ana", "Ana", T0);
     expect(v.state.orders?.[o.id]?.by).toBe(me);
     expect((v.state.houses[me]?.ducats ?? 0n) - before).toBe(BigInt(o.units * o.price));
     expect(o.price).toBe(8_000);
     expect(v.ok).toBe(true);
-    expect(await hub.order("ben", o.id, solution(), T0)).toBe("planche_order_taken");
+    expect(await order("ben", o.id, solution())).toBe("planche_order_taken");
   });
 
   it("replays the problem of the day: one try a house, and the lagoon's count", async () => {
     const hub = new PlancheHub(ordered(), T0);
     const me = (await hub.view("ana", "Ana", T0)).me ?? "";
     const ben = (await hub.view("ben", "Ben", T0)).me ?? "";
-    expect(await hub.daily("ana", solution(), T0)).toBe("ok");
-    expect(await hub.daily("ana", solution(), T0)).toBe("planche_daily_tried");
+    const daily = (p: string, moves: PasseMove[]) => duelOut(hub, p, { kind: "daily" }, moves, T0);
+    expect(await daily("ana", solution())).toBe("ok");
+    expect(await daily("ana", solution())).toBe("planche_daily_tried");
     const wrong = solution()[0]?.at === 0 ? 1 : 0;
-    expect(await hub.daily("ben", [{ at: wrong }], T0)).toBe("duel_lost");
+    expect(await daily("ben", [{ at: wrong }])).toBe("duel_lost");
     const v = await hub.view("ana", "Ana", T0);
     const day = Math.floor(T0 / DAY);
     expect(v.state.daily?.[day]?.[me]).toEqual({ won: true, moves: 2 });
     expect(v.state.daily?.[day]?.[ben]?.won).toBe(false);
     expect(v.state.houses[me]?.maison?.knots).toBeUndefined();
+  });
+});
+
+// The duels against the computer, played by the server piece by piece (docs/plan-duels.md B1).
+describe("the duel rooms", () => {
+  it("write the try at the start, lose a duel left or idle, and keep one duel a player", async () => {
+    const t = theme();
+    const hub = new PlancheHub(t, T0);
+    hub.useSeeds(() => 7);
+    await hub.view("ana", "Ana", T0);
+    const v = await hub.duelStart("ana", { kind: "force", passage: "strait" }, T0);
+    if (typeof v === "string") throw new Error(v);
+    expect(v).toMatchObject({ side: 1, over: false, won: null, last: -1 });
+    // Asked again (a screen reloaded), the same duel goes on; another is refused.
+    expect(await hub.duelStart("ana", { kind: "force", passage: "strait" }, T0)).toEqual(v);
+    expect(await hub.duelStart("ana", { kind: "daily" }, T0)).toBe("duel_running");
+    expect(await hub.duelPlay("ben", { at: 0 }, T0)).toBe("duel_none");
+    expect(await hub.duelPlay("ana", { at: 99 }, T0)).toBe("duel_illegal");
+    // A piece of the player's, and the computer's answer, at once.
+    const after = await hub.duelPlay("ana", { at: 0 }, T0);
+    if (typeof after === "string") throw new Error(after);
+    if (!after.over) {
+      expect(after.state.turn).toBe(1);
+      expect(after.last).not.toBe(0);
+    }
+    // Ten minutes without a piece: lost, and the room is closed.
+    await hub.sweepDuels(T0 + 11 * 60_000);
+    expect(hub.duelOf("ana")).toBeNull();
+    expect(await hub.duelStart("ana", { kind: "force", passage: "strait" }, T0 + HOUR)).toBe(
+      "planche_force_tried",
+    );
+    expect((await hub.view("ana", "Ana", T0 + HOUR)).state.passages.strait?.holder).toBe(
+      "corsair:Ivo",
+    );
   });
 });

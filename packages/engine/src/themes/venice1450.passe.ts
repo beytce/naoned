@@ -4,6 +4,7 @@
  * In the game these are a world's settings (`worlds.settings`), never constants of the engine.
  */
 import type { PasseSetup } from "../passe/board.js";
+import { venice1450PasseJour } from "./venice1450.passe.jour.js";
 import { venice1450PasseProblems } from "./venice1450.passe.problems.js";
 
 const E = 0;
@@ -125,4 +126,6 @@ export const venice1450Passe = {
     ]),
   },
   problems: venice1450PasseProblems,
+  /** A year of problems of the day, one a day (docs/plan-duels.md B5). */
+  jour: venice1450PasseJour,
 } as const;

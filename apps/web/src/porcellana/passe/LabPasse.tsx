@@ -34,6 +34,8 @@ import { PasseBoard, type PasseMarks } from "./PasseBoard.js";
 import { usePasseRoom } from "./usePasseRoom.js";
 
 const { rules, boards, problems } = venice1450Passe;
+/** Every position a duel of the board may open on: the orders' and the days'. */
+const allProblems = [...problems, ...venice1450Passe.jour];
 type BoardKey = keyof typeof boards;
 /** Who plays: the thread against the opponent, the chain against it, or two on this screen. */
 type Seat = "fil" | "chaine" | "deux";
@@ -45,6 +47,16 @@ const STYLES: { key: PasseStyle | "aucune"; name: string }[] = [
   { key: "meute", name: "Il harcèle" },
 ];
 const FORCES = ["Novice", "Marin", "Capitaine", "Amiral"];
+/** Why a duel on line did not begin or go on. */
+const REMOTE_SAID: Record<string, string> = {
+  planche_force_tried: "Tu as déjà tenté cette tour aujourd'hui : demain, un autre essai.",
+  planche_noir_tried: "Tu as déjà tenté ce détroit aujourd'hui.",
+  planche_daily_tried: "Tu as déjà joué le problème du jour.",
+  planche_order_tried: "Tu as déjà tenté cette commande.",
+  duel_running: "Un autre duel est en cours.",
+  duel_none: "Ce duel est fini.",
+  not_seated: "Tu n'as pas de Maison sur cette planche.",
+};
 const COLS = "ABCDEFGHI";
 
 function setupOf(
@@ -93,9 +105,35 @@ export interface PasseDuel {
   flag?: "corsaire" | "puissance";
   /** The side the player holds: the thread (by default), or the chain (meeting a sortie). */
   side?: 1 | 2;
-  /** Won or not, and the thread's own pieces, for the server to replay the duel. */
-  onEnd: (won: boolean, moves: PasseMove[]) => void;
+  /** Won or not, and the thread's own pieces (for the board played without the server). */
+  onEnd: (won: boolean, moves: PasseMove[], refused?: string) => void;
+  /**
+   * On line, the server holds the game (docs/plan-duels.md B1): the screen lays a piece, the
+   * server answers with the captain's; the try is spent when the duel begins.
+   */
+  remote?: PasseRemote;
 }
+
+/** What the server says of a duel against the computer. */
+export interface PasseRemoteView {
+  state: PasseState;
+  last: number;
+  over: boolean;
+  won: boolean | null;
+}
+
+export interface PasseRemote {
+  start: () => Promise<{ duel?: PasseRemoteView; error?: string }>;
+  play: (move: PasseMove) => Promise<{ duel?: PasseRemoteView; error?: string }>;
+  quit: () => Promise<{ duel?: PasseRemoteView; error?: string }>;
+}
+
+/** The manners, as a captain's card names them. */
+export const MANNER_NAME: Record<PasseStyle, string> = {
+  mur: "Il mure le centre",
+  rives: "Il court les rives",
+  meute: "Il harcèle",
+};
 
 /** A challenge by the thread (docs/plan-hex-commerce.md H5): its room, and the way back to the board. */
 export interface PasseDefi {
@@ -111,7 +149,7 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
   const [depth, setDepth] = useState(duel?.mind?.depth ?? 3);
   const [style, setStyle] = useState<PasseStyle | "aucune">(duel?.mind?.style ?? "aucune");
   const [problem, setProblem] = useState<PasseProblem | null>(
-    () => (duel?.problem && problems.find((p) => p.id === duel.problem)) || null,
+    () => (duel?.problem && allProblems.find((p) => p.id === duel.problem)) || null,
   );
   const [open, setOpen] = useState(false);
   const guardKey = duel?.guard?.join(",") ?? "";
@@ -126,6 +164,36 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
   const game = useRef(0);
   /** The pieces the person at the screen laid, in order (a duel of the board is replayed by the server). */
   const laid = useRef<PasseMove[]>([]);
+  // A duel against the computer on line (docs/plan-duels.md B1): the server's game, ours a copy.
+  const remote = duel?.remote;
+  /** The server's end of the duel: won or lost; null while it runs. */
+  const [remoteEnd, setRemoteEnd] = useState<boolean | null>(null);
+  const [remoteDown, setRemoteDown] = useState("");
+  const takeRemote = useCallback((v: PasseRemoteView) => {
+    setState(v.state);
+    setLast(v.last);
+    setThinking(false);
+    if (v.over) setRemoteEnd(!!v.won);
+  }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, when the duel opens.
+  useEffect(() => {
+    if (!remote) return;
+    let alive = true;
+    setThinking(true);
+    void remote.start().then((r) => {
+      if (!alive) return;
+      if (r.duel) {
+        takeRemote(r.duel);
+        setSaid("Ton essai est engagé : quitter la partie la perd.");
+      } else {
+        setThinking(false);
+        setRemoteDown(r.error ?? "offline");
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
   // A duel on line (P6): the server holds the game; its state replaces ours at each read.
   const net = usePasseRoom();
   const room = net.room;
@@ -166,7 +234,9 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
     setSaid("");
     setThinking(false);
   }, [setup]);
-  useEffect(() => restart(), [restart]);
+  useEffect(() => {
+    if (!remote) restart();
+  }, [restart, remote]);
 
   /** The side the person at the screen plays now (both, when two share it). */
   const mine: PasseSide = room
@@ -184,7 +254,7 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
 
   // The opponent answers, after a breath.
   useEffect(() => {
-    if (!theirTurn || room) return;
+    if (!theirTurn || room || remote) return;
     const id = game.current;
     setThinking(true);
     const timer = window.setTimeout(() => {
@@ -204,7 +274,7 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
       setThinking(false);
     }, 520);
     return () => window.clearTimeout(timer);
-  }, [theirTurn, state, depth, style, problem, room]);
+  }, [theirTurn, state, depth, style, problem, room, remote]);
 
   const legal = useMemo(() => passeLegal(state), [state]);
   const fires = useMemo(
@@ -228,6 +298,23 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
       setFiring(false);
       return;
     }
+    if (remote) {
+      if (thinking || remoteEnd !== null) return;
+      // The piece shows at once; the server's answer replaces the board.
+      setState(passePlay(state, move));
+      setLast(i);
+      setFiring(false);
+      setHint(-1);
+      setThinking(true);
+      void remote.play(move).then((r) => {
+        if (r.duel) takeRemote(r.duel);
+        else {
+          setThinking(false);
+          setRemoteDown(r.error ?? "offline");
+        }
+      });
+      return;
+    }
     if (move.fire)
       setSaid(
         state.turn === 1
@@ -244,8 +331,13 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
 
   const a = passeDistance(state, 1);
   const c = passeDistance(state, 2);
-  const failed = !!problem && !state.winner && state.turn === 1 && state.laid[0] >= problem.moves;
-  const over = !!state.winner || failed;
+  const failed =
+    !!problem &&
+    !state.winner &&
+    (remote ? remoteEnd === false : state.turn === 1 && state.laid[0] >= problem.moves);
+  // A duel the server would not open: nothing played, nothing lost; said, and the way back.
+  const refused = !!remote && !!remoteDown && remoteEnd === null && last === -1;
+  const over = remote ? remoteEnd !== null || refused : !!state.winner || failed;
   const cargo = room ? room.cargo : passeCargo(setup, state);
   // The threat (docs/audit-visuel-2026-11-11): each side's shortest way, and the cell both need.
   const ways = useMemo(() => {
@@ -279,11 +371,13 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
     : room
       ? room.waiting
         ? "En attente de ton adversaire"
-        : room.you === 0
-          ? "Tu regardes"
-          : state.turn === room.you
-            ? `À toi · ${left} s`
-            : `À ${foe} · ${left} s`
+        : room.ready && !room.ready.other && room.last === -1 && room.you !== 0
+          ? "La pendule part quand vous êtes prêts tous deux"
+          : room.you === 0
+            ? "Tu regardes"
+            : state.turn === room.you
+              ? `À toi · ${left} s`
+              : `À ${foe} · ${left} s`
       : thinking
         ? "Il réfléchit…"
         : seat === "deux"
@@ -291,23 +385,25 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
             ? "Au fil de jouer"
             : "À la chaîne de jouer"
           : "À toi";
-  const verdict = failed
-    ? "Ce n'était pas la clef."
-    : state.winner === 1
-      ? problem
-        ? "Passé : c'était la clef."
-        : room && mine === 2
-          ? `Le fil de ${foe} est passé : ta chaîne n'a pas tenu.`
-          : mine === 1 || seat === "deux"
-            ? `Le fil est passé en ${plural(state.laid[0], "barge", "barges")} : ${plural(cargo, "cale sauvée", "cales sauvées")} sur ${setup.cargo.holds}.`
-            : "Le fil est passé : ta chaîne n'a pas tenu."
-      : state.winner === 2
-        ? room && mine === 1
-          ? `La chaîne de ${foe} est tendue d'une rive à l'autre.`
-          : mine === 2 && seat !== "deux"
-            ? "Ta chaîne est tendue d'une rive à l'autre."
-            : "La chaîne est tendue d'une rive à l'autre."
-        : "";
+  const verdict = refused
+    ? (REMOTE_SAID[remoteDown] ?? "Ce duel ne peut pas s'ouvrir maintenant.")
+    : failed
+      ? "Ce n'était pas la clef."
+      : state.winner === 1
+        ? problem
+          ? "Passé : c'était la clef."
+          : room && mine === 2
+            ? `Le fil de ${foe} est passé : ta chaîne n'a pas tenu.`
+            : mine === 1 || seat === "deux"
+              ? `Le fil est passé en ${plural(state.laid[0], "barge", "barges")} : ${plural(cargo, "cale sauvée", "cales sauvées")} sur ${setup.cargo.holds}.`
+              : "Le fil est passé : ta chaîne n'a pas tenu."
+        : state.winner === 2
+          ? room && mine === 1
+            ? `La chaîne de ${foe} est tendue d'une rive à l'autre.`
+            : mine === 2 && seat !== "deux"
+              ? "Ta chaîne est tendue d'une rive à l'autre."
+              : "La chaîne est tendue d'une rive à l'autre."
+          : "";
   const link = room
     ? `${window.location.origin}${window.location.pathname}?lab=passe&salle=${room.code}`
     : "";
@@ -351,6 +447,16 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
                 : ""}
               <span data-passe-turn>{turn}</span>
             </span>
+            {duel?.mind?.style ? (
+              <span className="pc-px-stake" data-passe-manner>
+                {MANNER_NAME[duel.mind.style]}
+              </span>
+            ) : null}
+            {remoteDown ? (
+              <span className="pc-px-stake" data-passe-down>
+                {REMOTE_SAID[remoteDown] ?? "La ligne est coupée : le duel reprendra à ton retour."}
+              </span>
+            ) : null}
             {duel?.stake ? (
               <span className="pc-px-stake" data-passe-stake>
                 {duel.stake}
@@ -504,7 +610,13 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
                   type="button"
                   className="pc-passe-go"
                   data-passe-back
-                  onClick={() => duel.onEnd(state.winner === (duel.side ?? 1), laid.current)}
+                  onClick={() =>
+                    duel.onEnd(
+                      remote ? !!remoteEnd : state.winner === (duel.side ?? 1),
+                      laid.current,
+                      refused ? remoteDown : undefined,
+                    )
+                  }
                 >
                   Revenir à la planche
                 </button>
@@ -602,7 +714,12 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
                 <button
                   type="button"
                   className="pc-passe-quiet"
-                  onClick={() => duel.onEnd(false, laid.current)}
+                  onClick={() => {
+                    // Left, the duel is lost: its try was spent when it began.
+                    if (remote && !remoteDown)
+                      void remote.quit().finally(() => duel.onEnd(false, []));
+                    else duel.onEnd(false, laid.current);
+                  }}
                 >
                   Rompre
                 </button>

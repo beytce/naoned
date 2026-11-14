@@ -16,6 +16,7 @@
     "passe-bench": "tsx src/passe-bench.ts",
     "planche-bench": "tsx src/planche-bench.ts",
     "passe-problems": "tsx src/passe-problems.ts",
+    "passe-jour": "tsx src/passe-jour.ts",
     "lagunes-charge": "tsx src/lagunes-charge.ts",
     "maison-bench": "tsx src/maison-bench.ts",
     "hex-bench": "tsx src/hex-bench.ts",

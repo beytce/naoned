@@ -219,8 +219,49 @@ export function plancheNoirTry(
   const h = s.houses[house] as PlancheHouse;
   const n = Math.floor(cargo.n);
   h.stock[cargo.good] = (h.stock[cargo.good] ?? 0) - n;
-  if (!won) return s;
-  const paid = BigInt(plancheNoirPrice(S, cargo.good)) * BigInt(n);
+  return won ? noirWon(S, s, house, x, cargo.good, n, now) : s;
+}
+
+/**
+ * A black strait won, its cargo already gone when the duel began (docs/plan-duels.md B1): the far
+ * port pays it, a relic falls, the strait's guard hardens.
+ */
+export function plancheNoirWin(
+  S: PlancheSetup,
+  s0: PlancheState,
+  house: string,
+  strait: string,
+  cargo: { good: string; n: number },
+  now: number,
+): PlancheState {
+  const x = straitOf(S, strait);
+  if (!x || !own(s0.houses, house) || plancheNoirPrice(S, cargo.good) <= 0)
+    return fail("planche_unknown");
+  return noirWon(S, structuredClone(s0), house, x, cargo.good, Math.floor(cargo.n), now);
+}
+
+function noirWon(
+  S: PlancheSetup,
+  s: PlancheState,
+  house: string,
+  x: NoirStrait,
+  good: string,
+  n: number,
+  now: number,
+): PlancheState {
+  const strait = x.id;
+  const h = s.houses[house] as PlancheHouse;
+  const monday = plancheMonday(now);
+  const st: NoirState = s.noir ?? {
+    monday,
+    forced: {},
+    feats: [],
+    total: {},
+    day: Math.floor(now / DAY),
+    tries: {},
+  };
+  s.noir = st;
+  const paid = BigInt(plancheNoirPrice(S, good)) * BigInt(n);
   h.delivered += n;
   h.ducats += paid;
   h.earned += paid;

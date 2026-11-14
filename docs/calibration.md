@@ -3500,3 +3500,18 @@ La meilleure flotte, port par port : galères (bois) 18 %, brigantins (chanvre) 
 | `/api/health` (95ᵉ centile) | jusqu'à 19 s | **5 ms** |
 
 **Ce qui a compté**, mesuré pas à pas : la poussée par version regroupée (une par seconde et par lagune) et la relecture de la seule planche (20 % d'un cœur au lieu de 62) ; des caches courts en mémoire pour le siège, le nom, les signes, les saluts et la session d'une lecture (les lectures passent de 335 ms à 6 ms de médiane : PGlite tourne dans le processus du serveur, chaque requête en base y coûtait du temps de la boucle) ; l'étalement des relectures et leur intervalle de trois secondes (13 % → 10 %). En production, PostgreSQL tourne hors du processus : le serveur y dépense moins. Les duels joués dans le pool de workers laissent la boucle libre (deux sorties de 9 × 9 jouées en 5,3 s, la boucle tournant toutes les 10 ms pendant ce temps).
+
+## Les manières des capitaines (14 novembre 2026, docs/plan-duels.md B3)
+
+Banc ad hoc : sur chaque damier de la lagune, quatre parties à graine fixe, le fil sans manière contre la chaîne d'un capitaine (profondeur 2), une manière contre l'absence de manière. Chiffre : les parties gagnées par la chaîne.
+
+| Manière | Avant (bords dans les deux sens) | Après |
+| --- | --- | --- |
+| Sans manière | 10 / 24 | 23 / 36 |
+| Le mur (le milieu) | 10 / 24 | — |
+| Les rives | 5 / 24, puis 17 / 36 (poids 6), 16 / 36 (poids 3) | **26 / 36** (longer les rangs du haut et du bas, loin des colonnes du milieu) |
+| La meute (au contact) | 11 / 24 | — |
+
+- Avec le poids 1, un tiers des pièces (35 %) diffèrent de celles d'un capitaine sans manière : la manière se voit sans faire perdre.
+- Les rives prenaient les bords dans les deux sens et perdaient à tout poids ; tenues le long d'un seul axe, elles gagnent autant que les autres. Le poids reste 1 (`PASSE_MANNER`, variable d'environnement du même nom pour le banc).
+- Un capitaine a désormais **une seule manière**, la sienne (tirée de son nom), dans ses sorties comme à sa tour quand on la force ; elle est nommée sur la fiche.

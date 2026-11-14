@@ -10,6 +10,7 @@ import {
 } from "@comptoirs/engine";
 import { describe, expect, it } from "vitest";
 import { PlancheHub, type PlancheHubTheme } from "../src/game/planche.js";
+import { duelOut } from "./duelOut.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -153,28 +154,32 @@ describe("the black straits on line", () => {
     const me = (await hub.view("ana", "Ana", T0)).me ?? "";
     await hub.view("ben", "Ben", T0);
     const line = winningLine(t, { depth: 3, style: "meute" });
-    expect(await hub.noir("ana", "nowhere", { good: "verre", n: 5 }, line, T0)).toBe(
-      "planche_unknown",
-    );
-    expect(await hub.noir("ana", "turc", { good: "verre", n: 99 }, line, T0)).toBe(
-      "planche_noir_cargo",
-    );
+    expect(
+      await duelOut(hub, "ana", { kind: "noir", strait: "nowhere", good: "verre", n: 5 }, line, T0),
+    ).toBe("planche_unknown");
+    expect(
+      await duelOut(hub, "ana", { kind: "noir", strait: "turc", good: "verre", n: 99 }, line, T0),
+    ).toBe("planche_noir_cargo");
     const v0 = await hub.view("ana", "Ana", T0);
     const stock = v0.state.houses[me]?.stock.verre ?? 0;
     const ducats = v0.state.houses[me]?.ducats ?? 0n;
-    expect(await hub.noir("ana", "turc", { good: "verre", n: 10 }, line, T0)).toBe("ok");
+    expect(
+      await duelOut(hub, "ana", { kind: "noir", strait: "turc", good: "verre", n: 10 }, line, T0),
+    ).toBe("ok");
     const v = await hub.view("ana", "Ana", T0);
     expect(v.state.houses[me]?.stock.verre).toBe(stock - 10);
     expect((v.state.houses[me]?.ducats ?? 0n) - ducats).toBe(15_000n);
     expect(v.state.houses[me]?.relics).toEqual({ turc: 1 });
     // Lost (no piece laid): the cargo sinks, the second try of the day is spent.
-    expect(await hub.noir("ana", "turc", { good: "verre", n: 10 }, [], T0)).toBe("duel_lost");
+    expect(
+      await duelOut(hub, "ana", { kind: "noir", strait: "turc", good: "verre", n: 10 }, [], T0),
+    ).toBe("duel_lost");
     const w = await hub.view("ana", "Ana", T0);
     expect(w.state.houses[me]?.stock.verre).toBe(stock - 20);
     expect(w.state.houses[me]?.relics).toEqual({ turc: 1 });
-    expect(await hub.noir("ana", "turc", { good: "verre", n: 1 }, line, T0)).toBe(
-      "planche_noir_tried",
-    );
+    expect(
+      await duelOut(hub, "ana", { kind: "noir", strait: "turc", good: "verre", n: 1 }, line, T0),
+    ).toBe("planche_noir_tried");
     expect(w.ok).toBe(true);
   });
 });
@@ -194,9 +199,15 @@ describe("the Muda on line", () => {
     // The house of the computer loaded its part.
     expect(loaded.state.muda?.units.c).toBe(5);
     const line = winningLine(t, { depth: 3 });
-    expect(await hub.muda("ana", "zara", line, WED + 7 * HOUR)).toBe("planche_muda_closed");
-    expect(await hub.muda("ben", "zara", [], SAT + 9 * HOUR)).toBe("duel_lost");
-    expect(await hub.muda("ana", "zara", line, SAT + 9 * HOUR)).toBe("ok");
+    expect(await duelOut(hub, "ana", { kind: "muda", strait: "zara" }, line, WED + 7 * HOUR)).toBe(
+      "planche_muda_closed",
+    );
+    expect(await duelOut(hub, "ben", { kind: "muda", strait: "zara" }, [], SAT + 9 * HOUR)).toBe(
+      "duel_lost",
+    );
+    expect(await duelOut(hub, "ana", { kind: "muda", strait: "zara" }, line, SAT + 9 * HOUR)).toBe(
+      "ok",
+    );
     const sat = await hub.view("ana", "Ana", SAT + 9 * HOUR);
     expect(sat.state.muda?.straits.zara?.by).toBe(me);
     const before = sat.state.houses[me]?.ducats ?? 0n;

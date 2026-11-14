@@ -9,6 +9,7 @@ import {
   plancheInit,
   plancheInvariant,
   plancheLaurel,
+  plancheMatch,
   plancheMayChallenge,
   plancheRepelled,
   plancheStanding,
@@ -159,6 +160,42 @@ describe("the rank and its laurels", () => {
     expect(second).toBeGreaterThan(0);
     expect(second).toBeLessThanOrEqual(Math.ceil(first / 2));
     expect(plancheLaurel(S, s, "passe")[0]?.house).toBe("ana");
+  });
+
+  it("moves the cote once a challenge, at the end of its two Passes (docs/plan-duels.md B4)", () => {
+    const S = setup();
+    let s = plancheInit(S, T0);
+    expect(() => plancheMatch(S, s, "ana", "ben", 2)).toThrow("planche_not_person");
+    // 1-1 between equals: nothing moves, but the challenge counts for both.
+    s = plancheMatch(S, s, "ana", "dan", 1);
+    expect(s.houses.ana?.rank.cote).toBe(1_200);
+    expect(s.houses.ana?.rank.defis).toBe(1);
+    expect(s.houses.dan?.rank.defis).toBe(1);
+    expect(plancheMayChallenge(s, "ana", "dan")).toBe("planche_defi_week");
+    // 2-0: one move, the same for both sides.
+    const t = plancheMatch(S, plancheInit(S, T0), "dan", "ana", 2);
+    const up = (t.houses.dan?.rank.cote ?? 0) - 1_200;
+    expect(up).toBe(16);
+    expect(t.houses.ana?.rank.cote).toBe(1_200 - up);
+    // 0-2 is 2-0 the other way.
+    const u = plancheMatch(S, plancheInit(S, T0), "ana", "dan", 0);
+    expect(u.houses.dan?.rank.cote).toBe(1_216);
+  });
+
+  it("keeps the laurel of the Passe for those who played three challenges", () => {
+    const S = setup();
+    const R = S.rank;
+    if (!R) throw new Error("no rank");
+    const T = { ...S, rank: { ...R, defisMin: 3 } };
+    let s = plancheMatch(T, plancheInit(T, T0), "ana", "dan", 2);
+    const row = (h: string) => plancheLaurel(T, s, "passe").find((r) => r.house === h);
+    expect(row("ana")?.ranked).toBe(false);
+    s.rank.duels = {};
+    s = plancheMatch(T, s, "ana", "dan", 1);
+    s.rank.duels = {};
+    s = plancheMatch(T, s, "ana", "dan", 1);
+    expect(row("ana")?.ranked).toBe(true);
+    expect(plancheLaurel(T, s, "passe")[0]?.house).toBe("ana");
   });
 
   it("lets two people challenge each other by the thread once a week (docs/plan-hex-commerce.md H5)", () => {

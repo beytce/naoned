@@ -85,3 +85,28 @@ export function plancheDailyResults(
     best: won.length ? Math.min(...won.map((t) => t.moves)) : null,
   };
 }
+
+/** The day's problem solved, its try written as lost when it began (docs/plan-duels.md B1). */
+export function plancheDailyWin(
+  S: PlancheSetup,
+  s0: PlancheState,
+  house: string,
+  now: number,
+  moves: number,
+): PlancheState {
+  const day = Math.floor(now / DAY);
+  const t = s0.daily?.[day]?.[house];
+  if (!S.daily || !t) return fail("planche_unknown");
+  if (t.won) return s0;
+  const s = structuredClone(s0);
+  (s.daily as Record<number, Record<string, PlancheDailyTry>>)[day] = {
+    ...s.daily?.[day],
+    [house]: { won: true, moves },
+  };
+  const m = s.houses[house]?.maison;
+  if (m) {
+    m.week += S.daily.prestige;
+    m.knots = (m.knots ?? 0) + 1;
+  }
+  return s;
+}

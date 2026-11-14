@@ -12,6 +12,7 @@ import {
   planchePrice,
   plancheRobot,
   plancheRouteOpen,
+  plancheSealsLeft,
   plancheShares,
   plancheSupply,
   plancheThread,
@@ -210,7 +211,8 @@ describe("the passages", () => {
     expect(plancheRouteOpen(S, s, "ana", "raguse", T0)).toBe(false);
     expect(() => plancheThread(S, s, "ana", "raguse", "verre", T0)).toThrow("planche_route_shut");
     const forced = plancheForced(S, s, "ana", "segna", T0);
-    expect(forced.passages.segna?.seals).toBe(1);
+    // One of Ana's own seals broken (docs/plan-duels.md B2).
+    expect(plancheSealsLeft(S, forced, "segna", "ana")).toBe(1);
     expect(forced.passages.segna?.holder).toBe("corsair:ivo");
     expect(plancheRouteOpen(S, forced, "ana", "raguse", T0 + HOUR)).toBe(true);
     expect(plancheRouteOpen(S, forced, "ben", "raguse", T0 + HOUR)).toBe(false);

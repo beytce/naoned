@@ -298,6 +298,8 @@ export const venice1450Planche: PlancheSetup & {
     negoceMinMs: 24 * 3_600_000,
     coteStart: 1_200,
     coteK: 32,
+    // The laurel of the Passe asks three challenges played in the tide (docs/plan-duels.md B4).
+    defisMin: 3,
     repelledHours: 12,
   },
   rules: {

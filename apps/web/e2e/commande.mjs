@@ -9,6 +9,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
+import { stubDuel } from "./duel-stub.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SHOTS = resolve(process.env.SHOTS ?? join(here, "..", "e2e-shots", "commande"));
@@ -134,11 +135,10 @@ try {
       await route.fulfill({ response: res, json: moved(await res.json()) });
     });
     let sent = null;
-    await page.route("**/api/planche/order", async (route) => {
-      sent = route.request().postDataJSON();
-      tried = sent?.order ?? null;
-      // The real server answers « closed » (its clock is not at 10 h): the one a lost try gets is given.
-      await route.fulfill({ status: 409, json: { error: "duel_lost" } });
+    // The real server answers « closed » (its clock is not at 10 h): a duel lost is given.
+    await stubDuel(page, (ask) => {
+      sent = ask;
+      tried = ask?.order ?? null;
     });
     await tap("[data-fonder-go]");
     await page.waitForSelector("[data-planche-fonder]", { state: "detached", timeout: 60_000 });
@@ -186,8 +186,7 @@ try {
       .waitForSelector("[data-planche-card]", { state: "attached", timeout: 60_000 })
       .catch(() => {});
     for (let i = 0; i < 40 && !sent; i++) await page.waitForTimeout(250);
-    if (!sent?.order || !Array.isArray(sent.moves) || !sent.moves.length)
-      fail(`the try sent is ${JSON.stringify(sent)}`);
+    if (sent?.kind !== "order" || !sent.order) fail(`the try sent is ${JSON.stringify(sent)}`);
     // The board read again: the try is spent, the order says so.
     await tap('[data-city][data-sealed="true"]');
     for (let i = 0; i < 120 && !(await page.$("[data-play-order][disabled]")); i++)

@@ -5,22 +5,26 @@
  */
 import { cpus } from "node:os";
 import { Worker } from "node:worker_threads";
-import { type DuelJob, playDuel } from "./duels.js";
+import type { PasseMove } from "@comptoirs/engine";
+import { type DuelJob, type ThinkJob, playDuel, thinkPiece } from "./duels.js";
 
 export interface Duels {
-  run(job: DuelJob): Promise<boolean | null>;
+  run(job: DuelJob): Promise<boolean>;
+  /** The computer's next piece (docs/plan-duels.md B1). */
+  think(job: ThinkJob): Promise<PasseMove>;
   stop(): Promise<void>;
 }
 
 /** Duels played at once, in the caller's loop. */
 export const inlineDuels: Duels = {
   run: (job) => Promise.resolve(playDuel(job)),
+  think: (job) => Promise.resolve(thinkPiece(job)),
   stop: () => Promise.resolve(),
 };
 
 /** A pool of `size` workers (by default, the cores less one, two at most). */
 export function duelPool(size = Math.max(1, Math.min(2, cpus().length - 1))): Duels {
-  type Pending = { resolve: (r: boolean | null) => void; reject: (e: Error) => void };
+  type Pending = { resolve: (r: unknown) => void; reject: (e: Error) => void };
   const workers: { w: Worker; busy: number }[] = [];
   const pending = new Map<number, Pending>();
   let next = 1;
@@ -30,7 +34,7 @@ export function duelPool(size = Math.max(1, Math.min(2, cpus().length - 1))): Du
         execArgv: process.execArgv,
       });
       const slot = { w, busy: 0 };
-      w.on("message", (m: { id: number; result: boolean | null | "error" }) => {
+      w.on("message", (m: { id: number; result: unknown }) => {
         slot.busy -= 1;
         const p = pending.get(m.id);
         pending.delete(m.id);
@@ -46,17 +50,18 @@ export function duelPool(size = Math.max(1, Math.min(2, cpus().length - 1))): Du
     console.error("[duels] no workers, the duels are played at once:", e);
     return inlineDuels;
   }
+  const send = (message: { job?: DuelJob; think?: ThinkJob }) => {
+    const slot = workers.reduce((a, b) => (b.busy < a.busy ? b : a));
+    const id = next++;
+    slot.busy += 1;
+    return new Promise<unknown>((resolve, reject) => {
+      pending.set(id, { resolve, reject });
+      slot.w.postMessage({ id, ...message });
+    });
+  };
   return {
-    run(job) {
-      const slot = workers.reduce((a, b) => (b.busy < a.busy ? b : a));
-      if (!slot) return Promise.resolve(playDuel(job));
-      const id = next++;
-      slot.busy += 1;
-      return new Promise((resolve, reject) => {
-        pending.set(id, { resolve, reject });
-        slot.w.postMessage({ id, job });
-      });
-    },
+    run: (job) => send({ job }) as Promise<boolean>,
+    think: (think) => send({ think }) as Promise<PasseMove>,
     async stop() {
       await Promise.all(workers.map((s) => s.w.terminate()));
     },

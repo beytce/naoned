@@ -34,11 +34,13 @@ const settle = () => new Promise((r) => setTimeout(r, 20));
 
 // The challenge by the thread (docs/plan-hex-commerce.md H5).
 describe("the challenge by the thread", () => {
-  it("is proposed to a player who is there, accepted, played twice, and moves the cote", async () => {
+  it("is proposed to a player who is there, accepted, played twice, and moves the cote once", async () => {
     const { hub, store, ana, ben, passe, defis, told } = await lagoon(() => T0);
     expect(defis.propose(store, "ana", "Ca’ Ana", ben, 0)).toBe("ok");
     expect(told).toEqual([["ben"]]);
     expect(defis.view("ben", 0).incoming).toEqual({ house: ana, name: "Ca’ Ana" });
+    // The cotes, before (docs/plan-duels.md B4).
+    expect(defis.view("ben", 0).cote).toEqual({ you: 1_200, other: 1_200 });
     expect(defis.view("ana", 0).outgoing).toBe(ben);
     expect(defis.propose(store, "ana", "Ca’ Ana", ben, 0)).toBe("planche_defi_busy");
     expect(defis.answer("ben", "Ca’ Ben", true, 1_000)).toBe("ok");
@@ -49,15 +51,18 @@ describe("the challenge by the thread", () => {
     expect(passe.view("ana", code, 1_000)?.you).toBe(1);
     let now = playOut(passe, code, 1_000);
     await settle();
-    expect(hub.current().doc.state.rank.duels[pair(ana, ben)]).toBe(1);
+    // One Passe is not a match: nothing written yet.
+    expect(hub.current().doc.state.rank.duels[pair(ana, ben)]).toBeUndefined();
     passe.again("ana", code, now);
     passe.again("ben", code, now);
     expect(passe.view("ana", code, now)?.you).toBe(2);
     now = playOut(passe, code, now);
     await settle();
     const s = hub.current().doc.state;
-    expect(s.rank.duels[pair(ana, ben)]).toBe(2);
+    expect(s.rank.duels[pair(ana, ben)]).toBe(1);
     expect((s.houses[ana]?.rank.cote ?? 0) + (s.houses[ben]?.rank.cote ?? 0)).toBe(2 * 1_200);
+    expect(s.houses[ana]?.rank.defis).toBe(1);
+    expect(s.houses[ben]?.rank.defis).toBe(1);
     // Over: no room any more, and not again this week.
     expect(defis.view("ana", now).room).toBeUndefined();
     expect(defis.propose(store, "ben", "Ca’ Ben", ana, now)).toBe("planche_defi_week");

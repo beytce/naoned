@@ -17,6 +17,8 @@ interface Duel {
   store: PlancheStore;
   players: [string, string];
   rounds: number;
+  /** The Passes the challenger won. */
+  wins: number;
   at: number;
 }
 
@@ -27,6 +29,8 @@ export interface PlancheDefiView {
   outgoing?: string;
   /** The room of the Passe of this player's challenge under way. */
   room?: string;
+  /** The cotes of the two houses, before (docs/plan-duels.md B4). */
+  cote?: { you: number; other: number };
 }
 
 /**
@@ -109,7 +113,13 @@ export class PlancheDefis {
     const opened = this.passe.open(p.from, p.fromName, this.options.board ?? "chioggia", now);
     if ("error" in opened) return opened.error;
     this.passe.join(player, name, opened.code, now);
-    this.duels.set(opened.code, { store: p.store, players: [p.from, player], rounds: 0, at: now });
+    this.duels.set(opened.code, {
+      store: p.store,
+      players: [p.from, player],
+      rounds: 0,
+      wins: 0,
+      at: now,
+    });
     this.live([p.from, player]);
     return "ok";
   }
@@ -119,20 +129,34 @@ export class PlancheDefis {
     this.sweep(now);
     const v: PlancheDefiView = {};
     const p = this.pending.get(player);
-    if (p) v.incoming = { house: p.fromHouse, name: p.fromName };
+    if (p) {
+      v.incoming = { house: p.fromHouse, name: p.fromName };
+      const st = p.store.hub.current().doc.state;
+      const mine = p.store.hub.houseOf(player);
+      v.cote = {
+        you: (mine && st.houses[mine]?.rank.cote) || 0,
+        other: st.houses[p.fromHouse]?.rank.cote ?? 0,
+      };
+    }
     for (const q of this.pending.values())
       if (q.from === player) v.outgoing = q.store.hub.houseOf(q.to) ?? "";
     for (const [code, d] of this.duels) if (d.players.includes(player)) v.room = code;
     return v;
   }
 
-  /** A Passe of a challenge won: written on the board; after the second, the challenge is over. */
-  private async won(code: string, winner: string, loser: string): Promise<void> {
+  /**
+   * A Passe of a challenge won; after the second, the challenge is one match written on the board
+   * (docs/plan-duels.md B4): the cote moves once, by 2-0, 1-1 or 0-2.
+   */
+  private async won(code: string, winner: string, _loser: string): Promise<void> {
     const d = this.duels.get(code);
     if (!d || d.rounds >= 2) return;
     d.rounds += 1;
-    if (d.rounds >= 2) this.duels.delete(code);
-    await d.store.hub.duel(winner, loser, this.clock()).catch(() => "lost");
+    if (winner === d.players[0]) d.wins += 1;
+    if (d.rounds < 2) return;
+    this.duels.delete(code);
+    const won = Math.min(2, d.wins) as 0 | 1 | 2;
+    await d.store.hub.match(d.players[0], d.players[1], won, this.clock()).catch(() => "lost");
   }
 
   /** Challenges unanswered for too long lapse; rooms that are no more are forgotten. */

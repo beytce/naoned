@@ -12,6 +12,7 @@ import {
 import { PlancheHub, type PlancheHubTheme } from "../src/game/planche.js";
 import { PlancheLagoons } from "../src/game/plancheLagoons.js";
 import { testDatabase } from "./db.js";
+import { duelOut } from "./duelOut.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -119,12 +120,18 @@ describe("the tide on line", () => {
     const [first, second] = [...list].sort((a, b) => a.at - b.at);
     if (!first || !second) throw new Error("no sorties");
     // Met before its hour, the chain laying nothing: the captain passes, a seal is lost.
-    expect(await hub.sortie("ben", first.id, [], first.at - HOUR)).toBe("not_seated");
-    expect(await hub.sortie("ana", first.id, [], first.at - HOUR)).toBe("duel_lost");
+    expect(
+      await duelOut(hub, "ben", { kind: "sortie", sortie: first.id }, [], first.at - HOUR),
+    ).toBe("not_seated");
+    expect(
+      await duelOut(hub, "ana", { kind: "sortie", sortie: first.id }, [], first.at - HOUR),
+    ).toBe("duel_lost");
     const after = await hub.view("ana", "Ana", first.at - HOUR);
     expect(after.state.sorties?.done[first.id]).toMatchObject({ won: true, by: "tenant" });
     expect(after.state.passages.bouche?.seals).toBe(1);
-    expect(await hub.sortie("ana", first.id, [], first.at - HOUR)).toBe("planche_sortie_done");
+    expect(
+      await duelOut(hub, "ana", { kind: "sortie", sortie: first.id }, [], first.at - HOUR),
+    ).toBe("planche_sortie_done");
     // The other is played at its hour against the guard, without the holder: by the timer that
     // settles the sorties, never by a read (docs/plan-socle.md A3).
     const still = await hub.view("ana", "Ana", second.at + HOUR);
