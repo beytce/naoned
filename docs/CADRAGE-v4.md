@@ -27,7 +27,7 @@ Elles remplacent les huit règles du 1er novembre. En cas de conflit, elles prim
 7. **Chacun peut être le meilleur.** Le rang repart de zéro à chaque marée. Les classements mesurent l'adresse, jamais la taille ni l'ancienneté. **(revue)**
 8. **Rien ne s'accumule sans fin, et on ne perd rien en dormant.** Tout a un plafond ; les tours ont une trêve de nuit ; aucune série de connexion, aucune récompense qui expire.
 9. **Court si tu veux, profond si tu restes.** Cinq minutes font une bonne visite, avec au moins une vraie décision.
-10. **Les graphismes sont ceux de Porcellana.** Les tuiles et les bâtiments restent ceux d'aujourd'hui (§ 15).
+10. **Les graphismes sont ceux de Porcellana, en direction Céladon.** La porcelaine reste la base ; le bois blond, le céladon et l'ardoise s'y ajoutent, le rouge reste la seule couleur forte (§ 15, retouché le 14 novembre 2026, `docs/plan-celadon.md`).
 
 ## 3. La planche
 
@@ -373,7 +373,9 @@ En haut : les ducats, les bobines libres, la pastille de rang.
 
 ## 15. La direction artistique
 
-**Condition du porteur : les tuiles et les bâtiments restent ceux d'aujourd'hui.** Porcellana fait foi, sans changement, pour les cases, les bâtiments, les matières, la lumière, la caméra et les animations d'arrivée (`docs/plan-porcellana.md`, kit `apps/web/src/porcellana/`). La maquette en deux dimensions montre un principe, pas un rendu.
+**Retouché le 14 novembre 2026 (`docs/plan-celadon.md`, validé par le porteur) :** les bâtiments sont redessinés avec plus de détail et quatre matières (porcelaine, bois blond, céladon, ardoise), lot par lot, l'île d'abord ; le rouge reste la seule couleur forte. Ce qui n'est pas encore redessiné garde la règle d'avant :
+
+**Condition du porteur (13 novembre) : les tuiles et les bâtiments restent ceux d'aujourd'hui.** Porcellana fait foi, sans changement, pour les cases, les bâtiments, les matières, la lumière, la caméra et les animations d'arrivée (`docs/plan-porcellana.md`, kit `apps/web/src/porcellana/`). La maquette en deux dimensions montre un principe, pas un rendu.
 
 Ce qui s'ajoute, dans la même grammaire :
 
@@ -420,7 +422,7 @@ Ce qui est neuf : toute livraison est une transaction sérialisée par (monde, v
 ## 19. Les questions ouvertes
 
 1. **La taille d'un monde** et celle d'un sestiere. À fixer à l'étape 2.
-2. **L'intérieur des ateliers** (décision du 6 novembre) : gardé pour tous, réservé au métier de la Maison, ou retiré ? *Proposé : réservé au métier.*
+2. **L'intérieur des ateliers** (décision du 6 novembre) : gardé pour tous, réservé au métier de la Maison, ou retiré ? **Tranché le 14 novembre : retiré.** L'atelier se lit de l'extérieur (`docs/plan-celadon.md`).
 3. **Le dernier sceau contre le tenant en personne** : faut-il vraiment un rendez-vous en direct, ou une partie par correspondance (un coup quand on peut, un jour au plus par coup) ? *Proposé : les deux, au choix du tenant.*
 4. **Les ligues** : quelle part monte à chaque marée ? *Proposé : le sixième du haut ; à mesurer.*
 5. **La famille et le personnel** : absents de ce cadrage. *Proposé : y revenir après l'étape 6, comme capitaines de convoi et gardiens de tour.*

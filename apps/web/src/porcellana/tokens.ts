@@ -202,3 +202,63 @@ export const FONTS = {
   display: 'Nunito, "Segoe UI", system-ui, sans-serif',
   ui: 'Manrope, "Segoe UI", system-ui, -apple-system, sans-serif',
 } as const;
+
+/**
+ * The Céladon direction (docs/plan-celadon.md, validated by the owner on 14 November 2026):
+ * porcelain stays the base; blond wood, celadon and slate join it. The accent stays the one strong
+ * colour. The older scenes keep `COL`; what is redone takes its tones from here.
+ */
+export const CELADON = {
+  // the four matters
+  porcelain: "#F5F2EC",
+  blond: "#EBD3A7",
+  celadon: "#A9CBC0",
+  slate: "#55656A",
+  // their shades
+  trim: "#FDFCF9",
+  stone: "#EDEBE5",
+  stone2: "#DAD8D0",
+  roof: "#E4D9C8",
+  blond2: "#D9BB88",
+  celadon2: "#7BA79A",
+  ink: "#2E4842",
+  shade: "#9FA9A4",
+  // what the workshops handle
+  sand: "#F0DFB6",
+  brick: "#E6C2AC",
+  glass: "#BFE3D8",
+  fire: "#F2A548",
+  salt: "#FAFAF7",
+  wheat: "#EAD08C",
+  leaf: "#8DB79F",
+  leaf2: "#A6C9B1",
+  // the lagoon
+  water: "#C3D6DA",
+  waterDeep: "#7D9CA6",
+  sky: "#CBD8DC",
+  // the terrains of an island, and a plot one may buy
+  pre: "#D3E2C8",
+  foret: "#C9DAC3",
+  argile: "#E9C6B2",
+  rive: "#DCE8E6",
+  sable: "#F0E0BC",
+  plot: "#E3E0D6",
+} as const;
+export type CeladonTone = keyof typeof CELADON;
+
+/** An island's quay: a hull, a deck of blond planks with round corners, the tiles laid on it. */
+export const QUAY = {
+  /** The deck beyond the island's tiles, on each side. */
+  margin: 3,
+  corner: 3.4,
+  deck: 0.6,
+  hull: 1.9,
+  /** The thickness of an island's tile on the deck, and the joint between two. */
+  tile: 0.3,
+  joint: 0.07,
+  /** How high the water lies under the deck. */
+  waterY: -3.05,
+  /** The slides between neighbours: their height, the speed of what rides them (tiles a second). */
+  slideY: 0.85,
+  slideSpeed: 0.55,
+} as const;
