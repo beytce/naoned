@@ -1,0 +1,59 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Manrope:wght@500;600;700&display=swap");
+:root { --paper:#FBF8F1; --ink:#243A36; --soft:#6F7F7B; --hair:#E2DCCF; --red:#C23B2E; --cel:#A9CBC0; --cel2:#DDEAE4; --wood:#EBD3A7; }
+body.mono { --ink:#24211E; --soft:#7A736A; --hair:#DDD7CD; --cel:#E4DFD6; --cel2:#F0EDE7; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; font-family: Manrope, system-ui, sans-serif; color: var(--ink); }
+#gl, #pins, #ui { position: absolute; inset: 0; }
+#pins, #ui { pointer-events: none; }
+.pin { position: absolute; transform: translate(-50%, -100%); background: var(--paper); border-radius: 999px; padding: 4px 11px; font: 700 12px Nunito, sans-serif; box-shadow: 0 2px 0 rgba(36,58,54,.12), 0 6px 14px rgba(36,58,54,.10); white-space: nowrap; }
+.pin.mine { background: var(--red); color: #fff; }
+.pin.sel { outline: 2px solid var(--red); outline-offset: 1px; }
+.pin.plot { background: transparent; box-shadow: none; border: 1.5px dashed #9AA6A1; color: var(--soft); font-size: 11px; padding: 2px 9px; }
+.pin i { font: 700 9px Manrope; text-transform: uppercase; letter-spacing: .06em; background: var(--ink); color: #fff; border-radius: 99px; padding: 2px 6px; margin-left: 4px; font-style: normal; }
+.pin.town { border-radius: 10px; padding: 4px 10px 6px; text-align: left; }
+.pin.town b { display: flex; height: 4px; width: 62px; background: var(--hair); border-radius: 9px; margin-top: 3px; overflow: hidden; }
+.pin.town u { display: block; height: 100%; background: var(--ink); } .pin.town u.me { background: var(--red); }
+.pin.lock { width: 20px; height: 20px; padding: 0; background: var(--ink); }
+.pin.lock::after { content: ""; position: absolute; left: 6px; top: 9px; width: 8px; height: 6px; background: #fff; border-radius: 1.5px; }
+.pin.lock::before { content: ""; position: absolute; left: 7px; top: 4.5px; width: 6px; height: 7px; border: 1.6px solid #fff; border-radius: 4px 4px 0 0; box-sizing: border-box; }
+
+.card { position: absolute; background: var(--paper); border-radius: 14px; box-shadow: 0 2px 0 rgba(36,58,54,.10), 0 10px 26px rgba(36,58,54,.12); }
+.pill { position: absolute; background: var(--paper); border-radius: 999px; box-shadow: 0 2px 0 rgba(36,58,54,.10), 0 8px 18px rgba(36,58,54,.10); display: flex; align-items: center; gap: 8px; padding: 8px 14px; font: 800 14px Nunito; }
+h1 { font: 800 20px Nunito; margin: 0; } h2 { font: 800 18px Nunito; margin: 0; }
+.sub { font-size: 11px; color: var(--soft); margin-top: 2px; }
+.title { position: absolute; left: 20px; top: 62px; }
+.back { left: 16px; top: 14px; }
+.purse { right: 16px; top: 14px; } .coin { width: 16px; height: 16px; border-radius: 50%; background: #E3B34A; box-shadow: inset 0 -2px 0 #C28F25; }
+.bob { width: 9px; height: 15px; border-radius: 2px; background: var(--red); box-shadow: 0 -2px 0 #2E2A27, 0 2px 0 #2E2A27; } .bob.free { background: transparent; outline: 1.5px dashed #B6AFA3; outline-offset: -1px; }
+.sep { width: 1px; height: 18px; background: var(--hair); }
+.side { right: 16px; top: 66px; width: 236px; padding: 16px; }
+.io { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 6px; }
+.io > div { text-align: center; flex: 1; } .io small { display: block; font: 700 9px Manrope; letter-spacing: .08em; color: var(--soft); margin-bottom: 8px; }
+.io .arrow { flex: 0; color: var(--soft); font-size: 18px; padding: 14px 4px 0; }
+.good { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10.5px; color: var(--soft); margin: 0 3px; }
+.good span { width: 34px; height: 34px; border-radius: 10px; background: var(--cel2); display: grid; place-items: center; }
+.good em { font: 800 11px Nunito; color: var(--ink); font-style: normal; }
+.rule { height: 1px; background: var(--hair); margin: 12px 0; }
+.line { display: flex; justify-content: space-between; font-size: 11.5px; padding: 3px 0; color: var(--soft); } .line b { color: var(--ink); font-family: Nunito; }
+.line b.up { color: var(--red); }
+.btn { display: block; text-align: center; border-radius: 10px; padding: 9px; font: 800 13px Nunito; border: 1.5px solid var(--hair); background: #fff; }
+.btn.go { background: var(--red); color: #fff; border: 0; box-shadow: 0 3px 0 #8A2A20; }
+.row { display: flex; gap: 8px; margin-top: 10px; } .row .btn { flex: 1; font-size: 11.5px; padding: 7px; }
+.tray { left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; padding: 8px 10px; gap: 2px; }
+.tool { width: 62px; text-align: center; font: 600 10px Manrope; color: var(--ink); padding: 6px 0 5px; border-radius: 10px; }
+.tool.on { background: var(--cel2); box-shadow: inset 0 -2px 0 var(--ink); }
+.tool svg { display: block; margin: 0 auto 4px; }
+.tool.off { opacity: .38; }
+.tsep { width: 1px; background: var(--hair); margin: 6px 6px; }
+.store { left: 16px; bottom: 16px; width: 190px; padding: 12px 14px; }
+.store h3 { font: 800 12px Nunito; margin: 0 0 6px; }
+.bar { display: flex; align-items: center; gap: 8px; font-size: 10.5px; padding: 2.5px 0; } .bar i { flex: 1; height: 5px; border-radius: 9px; background: var(--hair); overflow: hidden; } .bar i u { display: block; height: 100%; background: var(--ink); border-radius: 9px; } .bar span { width: 54px; } .bar b { font: 800 10.5px Nunito; width: 24px; text-align: right; }
+.bar.full i u { background: var(--red); }
+.ladder { left: 16px; top: 50%; transform: translateY(-50%); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+.ladder div { font: 700 10px Manrope; padding: 12px 8px; border-radius: 10px; text-align: center; color: var(--soft); } .ladder .on { background: var(--ink); color: #fff; }
+.news { left: 50%; transform: translateX(-50%); top: 14px; padding: 9px 16px; font: 600 12px Manrope; border-radius: 999px; white-space: nowrap; }
+.news b { font-family: Nunito; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+.sheet { left: 10px; right: 10px; bottom: 10px; padding: 14px 16px 16px; }
+.grab { width: 36px; height: 4px; border-radius: 9px; background: var(--hair); margin: 0 auto 10px; }
+.tray.wide .tool { width: 74px; }
