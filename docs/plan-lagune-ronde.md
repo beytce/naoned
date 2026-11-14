@@ -62,9 +62,9 @@ Aucune règle de jeu nouvelle : mêmes villes, mêmes demandes, mêmes passages,
 
 | Depuis une Maison | Aujourd'hui | Lagune ronde |
 | --- | --- | --- |
-| Sa ville la plus proche | 6 à 13 | à mesurer au banc (ordre de 5 à 13) |
-| Le Rialto | 2 à 30 selon la colonne | 8 à 15 pour tous |
-| Sa bouche | 5 à 15 | ordre de 6 à 18 |
+| Sa ville la plus proche | 6 à 13 | 3 à 11 |
+| Le Rialto | 2 à 30 selon la colonne | 8 à 18 pour tous |
+| Sa bouche | 5 à 15 | 6 à 16 |
 
 - Les **sorties des capitaines** visent la tour « voisine » : le voisinage change avec la carte, à relire au banc marée.
 
