@@ -46,8 +46,14 @@ describe("a room of the Passe", () => {
     expect(hub.open("ana", "Ana", "nulle-part", T0)).toEqual({ error: "no_board" });
   });
 
-  it("starts when the second comes: the host is the thread, the clock runs", () => {
+  it("starts when the second comes: the host is the thread, the clock waits for both screens", () => {
     const { hub, code } = started();
+    // Thirty seconds at most for the screens, then the first piece's fifteen.
+    expect(hub.view("ana", code, T0 + 1_000)?.deadline).toBe(T0 + 1_000 + 45_000);
+    expect(hub.ready("cleo", code, T0 + 1_000)).toBe("not_seated");
+    expect(hub.ready("ana", code, T0 + 1_000)).toBe("ok");
+    expect(hub.view("ben", code, T0 + 1_000)?.ready).toEqual({ you: false, other: true });
+    expect(hub.ready("ben", code, T0 + 1_000)).toBe("ok");
     const a = hub.view("ana", code, T0 + 1_000);
     const b = hub.view("ben", code, T0 + 1_000);
     expect(a?.waiting).toBe(false);
@@ -83,6 +89,8 @@ describe("a room of the Passe", () => {
 
   it("has the lieutenant play for the one who lets the clock run out", () => {
     const { hub, code } = started();
+    hub.ready("ana", code, T0 + 1_000);
+    hub.ready("ben", code, T0 + 1_000);
     // 16 s after the start: Ana's 15 s are over, a piece was laid for her, and it is Ben's turn
     const s = stateOf(hub, "ben", code, T0 + 1_000 + 16_000);
     expect(s.laid).toEqual([1, 0]);
@@ -138,7 +146,7 @@ describe("a room of the Passe", () => {
     expect(v?.names).toEqual({ thread: "Ben", chain: "Ana" });
     expect(v?.state?.winner).toBe(0);
     expect(passeLegal(v?.state as PasseState).length).toBe(9);
-    expect(v?.deadline).toBe(now + 15_000);
+    expect(v?.deadline).toBe(now + 45_000);
   });
 
   it("cannot be asked again while the game runs", () => {

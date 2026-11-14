@@ -103,6 +103,15 @@ export function registerPasseRoutes(app: FastifyInstance, deps: PasseRouteDeps):
     return show(reply, id, room, hub.play(id, room, move, deps.now()));
   });
 
+  // The screen is ready: the clock starts once both are (docs/plan-duels.md B4).
+  app.post("/api/passe/room/:code/ready", deps.perMerchant(30), async (req, reply) => {
+    const p = code.safeParse(req.params);
+    if (!p.success) return reply.code(400).send({ error: "invalid_input" });
+    const id = await player(req, reply);
+    const room = p.data.code.toUpperCase();
+    return show(reply, id, room, hub.ready(id, room, deps.now()));
+  });
+
   app.post("/api/passe/room/:code/again", deps.perMerchant(30), async (req, reply) => {
     const p = code.safeParse(req.params);
     if (!p.success) return reply.code(400).send({ error: "invalid_input" });

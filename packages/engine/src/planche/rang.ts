@@ -40,6 +40,8 @@ export interface PlancheRankRules {
   /** The cote of the Passe at the start of a tide, and its step. */
   coteStart: number;
   coteK: number;
+  /** Challenges played in the tide before one figures in the laurel of the Passe. */
+  defisMin?: number;
   /** What an assault repelled is worth in the Garde, in hours held. */
   repelledHours: number;
 }
@@ -53,6 +55,8 @@ export interface PlancheHouseRank {
   guardMs: number;
   repelled: number;
   cote: number;
+  /** The challenges it played this tide (docs/plan-duels.md B4). */
+  defis?: number;
   /** What it earned this week, town by town. */
   week: Record<string, bigint>;
 }
@@ -141,7 +145,10 @@ export function plancheLaurel(
         score: ranked ? (r.earned * BigInt(HOUR)) / BigInt(r.threadMs) : 0n,
       };
     }
-    if (which === "passe") return { house: id, ranked: true, score: BigInt(r.cote) };
+    if (which === "passe") {
+      const ranked = (r.defis ?? 0) >= (R?.defisMin ?? 0);
+      return { house: id, ranked, score: ranked ? BigInt(r.cote) : 0n };
+    }
     const held = r.guardMs + r.repelled * (R?.repelledHours ?? 0) * HOUR;
     return { house: id, ranked: true, score: BigInt(Math.floor(held / HOUR)) };
   });
@@ -399,6 +406,38 @@ export function plancheDuel(
   );
   w.rank.cote = after[winner] ?? w.rank.cote;
   l.rank.cote = after[loser] ?? l.rank.cote;
+  return s;
+}
+
+/**
+ * A challenge between two people, its two Passes played (docs/plan-duels.md B4): the cote moves
+ * once, by the match (`won`: the Passes `a` won, 0 to 2), the same for both, and less each time
+ * the pair meets again. Each counts one challenge more for the laurel of the Passe.
+ */
+export function plancheMatch(
+  S: PlancheSetup,
+  s0: PlancheState,
+  a: string,
+  b: string,
+  won: 0 | 1 | 2,
+): PlancheState {
+  const a0 = has(s0.houses, a) ? s0.houses[a] : undefined;
+  const b0 = has(s0.houses, b) ? s0.houses[b] : undefined;
+  if (!a0 || !b0 || a === b) return fail("planche_unknown");
+  if (!s0.rank.humans.includes(a) || !s0.rank.humans.includes(b)) return fail("planche_not_person");
+  const s = structuredClone(s0);
+  const key = pair(a, b);
+  const met = s.rank.duels[key] ?? 0;
+  s.rank.duels[key] = met + 1;
+  const A = s.houses[a] as NonNullable<typeof a0>;
+  const B = s.houses[b] as NonNullable<typeof b0>;
+  A.rank.defis = (A.rank.defis ?? 0) + 1;
+  B.rank.defis = (B.rank.defis ?? 0) + 1;
+  const k = Math.floor((S.rank?.coteK ?? 0) / 2 ** met);
+  const expected = 1 / (1 + 10 ** ((B.rank.cote - A.rank.cote) / 400));
+  const d = Math.round(k * (won / 2 - expected));
+  A.rank.cote += d;
+  B.rank.cote -= d;
   return s;
 }
 
