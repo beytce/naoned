@@ -3564,3 +3564,22 @@ Trois ouvrages ordinaires dès la Casa (Fontaine 15 000 ducats, Loggia 25 000, C
 
 - Détroits noirs : un essai par jour (au lieu de deux), cinq reliques un plan (au lieu de trois). `muda-bench` (2 semaines, 4 graines) : 4,9 reliques par Maison qui les tente, soit **1,0 plan en deux semaines** (0,5 par semaine, la cible de l'économiste ; 1,6 avant).
 - Le phare des compagnies : seuils `[0, 2 400, 7 200, 15 000, 27 000]` (au lieu de `[0, 800, 2 400, 5 000, 9 000]`) : pour six membres actifs, le niveau 2 en une semaine, le niveau 4 en six (calcul de l'économiste).
+
+### C6 : l'ordinateur débloqué
+
+L'ordinateur ne laisse plus son Arsenal (ni les ouvrages) bloquer son plan. `arsenal-bench` : le rapport puits / sources monte à **0,75 à 0,82** dès la semaine 3 (0,6 dans le rapport de l'économiste) ; `maison-bench` : le niveau 10 en semaine 5 ou 6 pour toutes les sortes, l'assidu à 6 % de Prestige du régulier.
+
+### C7 : la lagune sur 26 semaines, tout le lot appliqué (`eco-bench 2 26`)
+
+| Semaine | Ducats créés | Dépensés sur l'île (dont ouvrages) | Détenus | Niveau (occasionnel · régulier · assidu) |
+| --- | --- | --- | --- | --- |
+| 4 | 822 632 | 616 599 (168 974) | 760 114 | 8 · 9 · 9 |
+| 8 | 740 809 | 738 246 (122 021) | 1 122 058 | 11 · 12 · 12 |
+| 13 | 824 637 | 936 791 (59 912) | 1 091 312 | 15 · 16 · 16 |
+| 20 | 747 011 | 835 273 (19 970) | 877 592 | 18 · 19 · 19 |
+| 26 | 761 289 | 833 358 (0) | 948 149 | 21 · 22 · 22 |
+
+- **La monnaie tient** : la lagune détient entre 0,85 et 1,1 million de ducats de la semaine 5 à la semaine 26, sans dérive (avant le lot : 3,2 millions dès la semaine 6, et une hausse continue).
+- **La progression couvre l'année** : le niveau 22 en semaine 26, le niveau 30 attendu vers la semaine 40 à 45 ; l'occasionnel reste à un niveau des autres.
+- **Les ouvrages** absorbent jusqu'à 230 000 ducats par semaine les deux premiers mois, puis moins : passé la semaine 16, les joueurs du banc n'en bâtissent plus (les ordinaires sont chers, les grands demandent un plan que ces profils n'assemblent pas) ; les ateliers et les cases prennent le relais.
+- **À suivre (lot D)** : la première semaine de chaque marée, la part du Large remonte à 75 à 85 % pour le régulier et l'assidu, puis redescend vers 45 à 55 %.

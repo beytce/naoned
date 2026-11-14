@@ -86,4 +86,14 @@ Les douze systèmes et le ruban de la semaine (lot D), le premier quart d'heure 
 
 ## 8. État
 
-Validé ; lots à venir.
+Fait le 14 novembre 2026, mesuré dans `docs/calibration.md` (section « L'économie : le lot C ») :
+
+- **C1** : prix du Large × 0,6, plancher 30 %, détour vers le Large à 20 % (`largeDetourBps`) et ouvert à la Casa (palier `detour` des niveaux) ; monnaie créée − 40 %.
+- **C2** : le Prestige crédité à chaque tranche sous le plafond de la semaine (`growFlow`), `perDucats` 15, courbe 28 ; le niveau 2 tombe le premier jour.
+- **C3** : cinq ouvrages (`ouvrage` et `level` des ateliers de l'île) : Fontaine, Loggia, Campanile à la Casa, Scuola Grande et Basilique au niveau 15 avec un plan ; +25 % par ouvrage ; leurs modèles Porcellana. La masse détenue se stabilise vers un million de ducats.
+- **C4** : un essai noir par jour, cinq reliques un plan (0,5 plan par semaine), le phare trois fois plus lent.
+- **C5** : le rendement de chaque fil (`plancheThreadYield`, effacé des fils des autres dans la vue) sous ta part de la ville ; la part d'une ville compte le détour.
+- **C6** : l'ordinateur ne bute plus sur son Arsenal.
+- **C7** : le banc de l'économie `eco-bench` sur 26 semaines.
+
+À suivre : la part du Large la première semaine de chaque marée (lot D) ; l'étiquette du rendement sur le fil lui-même, à la refonte des écrans de la planche (lot D).
