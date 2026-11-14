@@ -177,3 +177,35 @@ export function plancheOrderTry(
   s.minted += paid;
   return s;
 }
+
+/**
+ * A sealed order won, its try written when the duel began (docs/plan-duels.md B1): delivered and
+ * paid, unless another house of the sestiere delivered it meanwhile, or the store fell short.
+ */
+export function plancheOrderWin(
+  S: PlancheSetup,
+  s0: PlancheState,
+  house: string,
+  id: string,
+  _now: number,
+): PlancheState {
+  const o = plancheOrder(S, id);
+  const st = s0.orders?.[id];
+  const h0 = Object.hasOwn(s0.houses, house) ? s0.houses[house] : undefined;
+  if (!o || !st?.tried.includes(house) || !h0) return fail("planche_unknown");
+  if (st.by) return fail("planche_order_taken");
+  if ((h0.stock[o.good] ?? 0) < o.units) return fail("planche_order_short");
+  const s = structuredClone(s0);
+  (s.orders as Record<string, PlancheOrderState>)[id] = { ...st, by: house };
+  const h = s.houses[house] as PlancheHouse;
+  const paid = BigInt(o.price) * BigInt(o.units);
+  h.stock[o.good] = (h.stock[o.good] ?? 0) - o.units;
+  h.delivered += o.units;
+  h.ducats += paid;
+  h.earned += paid;
+  h.book.sold += paid;
+  h.rank.earned += paid;
+  h.rank.week[o.city] = (h.rank.week[o.city] ?? 0n) + paid;
+  s.minted += paid;
+  return s;
+}

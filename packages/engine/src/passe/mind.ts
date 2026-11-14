@@ -78,21 +78,29 @@ function search(s: PasseState, depth: number, alpha: number, beta: number): numb
   return best;
 }
 
-/** A small leaning by manner, never enough to refuse a cell nearer. */
+/** How much a manner weighs against a cell of distance (`CELL`): for the bench to measure. */
+export const PASSE_MANNER = { weight: Number(globalThis.process?.env?.PASSE_MANNER ?? 1) };
+
+/**
+ * A leaning by manner (docs/plan-duels.md B3): the wall keeps to the middle of the strait, the
+ * banks run along its edges, the pack sticks to the other's pieces. Without a manner, a slight
+ * taste for the middle.
+ */
 function leaning(s: PasseState, move: PasseMove, style: PasseStyle | undefined): number {
   const x = move.at % s.width;
   const y = Math.floor(move.at / s.width);
   const cx = Math.abs(x - (s.width - 1) / 2);
   const cy = Math.abs(y - (s.height - 1) / 2);
   const middle = -Math.round((cx + cy) * 2);
-  if (style === "mur") return middle * 6;
-  if (style === "rives") return -middle * 6;
+  const w = PASSE_MANNER.weight;
+  if (style === "mur") return Math.round(middle * 6 * w);
+  if (style === "rives") return Math.round(-middle * 6 * w);
   if (style === "meute") {
     const foe = s.turn === 1 ? [PASSE_CHAIN, PASSE_REEF] : [PASSE_THREAD];
     let near = 0;
     for (const j of passeNeighbours(s.width, s.height)[move.at] ?? [])
       if (foe.includes(s.cells[j] ?? -1)) near++;
-    return near * 14 + middle;
+    return Math.round((near * 14 + middle) * w);
   }
   return middle;
 }

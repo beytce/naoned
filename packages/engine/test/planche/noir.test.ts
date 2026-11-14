@@ -15,6 +15,7 @@ import {
   plancheNoirPhase,
   plancheNoirPrice,
   plancheNoirTry,
+  plancheNoirWin,
   plancheSetLevel,
   plancheShip,
   plancheUpgrade,
@@ -339,5 +340,21 @@ describe("the relics and the plans", () => {
     s = plancheUpgrade(S, s, "ana", "0,1", T0 + 3 * DAY);
     s = plancheShip(S, s, "ana", "escorte", T0 + 3 * DAY);
     expect(s.houses.ana?.plans).toBe(0);
+  });
+});
+
+// The duel played by the server (docs/plan-duels.md B1): its try written lost at the start, then won.
+describe("a black strait begun, then won", () => {
+  it("ends as a strait won at once", () => {
+    const S = setup();
+    const s0 = stocked(S);
+    const begun = plancheNoirTry(S, s0, "ana", "turc", { good: "sel", n: 10 }, false, T0);
+    const won = plancheNoirWin(S, begun, "ana", "turc", { good: "sel", n: 10 }, T0);
+    const once = plancheNoirTry(S, s0, "ana", "turc", { good: "sel", n: 10 }, true, T0);
+    expect(won.houses.ana?.ducats).toBe(once.houses.ana?.ducats);
+    expect(won.houses.ana?.stock).toEqual(once.houses.ana?.stock);
+    expect(won.houses.ana?.relics).toEqual({ turc: 1 });
+    expect(won.noir?.tries).toEqual(once.noir?.tries);
+    expect(plancheInvariant(won)).toBe(true);
   });
 });
