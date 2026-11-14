@@ -104,7 +104,7 @@ export interface PasseDuel {
   /** The side the player holds: the thread (by default), or the chain (meeting a sortie). */
   side?: 1 | 2;
   /** Won or not, and the thread's own pieces (for the board played without the server). */
-  onEnd: (won: boolean, moves: PasseMove[]) => void;
+  onEnd: (won: boolean, moves: PasseMove[], refused?: string) => void;
   /**
    * On line, the server holds the game (docs/plan-duels.md B1): the screen lays a piece, the
    * server answers with the captain's; the try is spent when the duel begins.
@@ -333,7 +333,9 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
     !!problem &&
     !state.winner &&
     (remote ? remoteEnd === false : state.turn === 1 && state.laid[0] >= problem.moves);
-  const over = remote ? remoteEnd !== null : !!state.winner || failed;
+  // A duel the server would not open: nothing played, nothing lost; said, and the way back.
+  const refused = !!remote && !!remoteDown && remoteEnd === null && last === -1;
+  const over = remote ? remoteEnd !== null || refused : !!state.winner || failed;
   const cargo = room ? room.cargo : passeCargo(setup, state);
   // The threat (docs/audit-visuel-2026-11-11): each side's shortest way, and the cell both need.
   const ways = useMemo(() => {
@@ -381,23 +383,25 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
             ? "Au fil de jouer"
             : "À la chaîne de jouer"
           : "À toi";
-  const verdict = failed
-    ? "Ce n'était pas la clef."
-    : state.winner === 1
-      ? problem
-        ? "Passé : c'était la clef."
-        : room && mine === 2
-          ? `Le fil de ${foe} est passé : ta chaîne n'a pas tenu.`
-          : mine === 1 || seat === "deux"
-            ? `Le fil est passé en ${plural(state.laid[0], "barge", "barges")} : ${plural(cargo, "cale sauvée", "cales sauvées")} sur ${setup.cargo.holds}.`
-            : "Le fil est passé : ta chaîne n'a pas tenu."
-      : state.winner === 2
-        ? room && mine === 1
-          ? `La chaîne de ${foe} est tendue d'une rive à l'autre.`
-          : mine === 2 && seat !== "deux"
-            ? "Ta chaîne est tendue d'une rive à l'autre."
-            : "La chaîne est tendue d'une rive à l'autre."
-        : "";
+  const verdict = refused
+    ? (REMOTE_SAID[remoteDown] ?? "Ce duel ne peut pas s'ouvrir maintenant.")
+    : failed
+      ? "Ce n'était pas la clef."
+      : state.winner === 1
+        ? problem
+          ? "Passé : c'était la clef."
+          : room && mine === 2
+            ? `Le fil de ${foe} est passé : ta chaîne n'a pas tenu.`
+            : mine === 1 || seat === "deux"
+              ? `Le fil est passé en ${plural(state.laid[0], "barge", "barges")} : ${plural(cargo, "cale sauvée", "cales sauvées")} sur ${setup.cargo.holds}.`
+              : "Le fil est passé : ta chaîne n'a pas tenu."
+        : state.winner === 2
+          ? room && mine === 1
+            ? `La chaîne de ${foe} est tendue d'une rive à l'autre.`
+            : mine === 2 && seat !== "deux"
+              ? "Ta chaîne est tendue d'une rive à l'autre."
+              : "La chaîne est tendue d'une rive à l'autre."
+          : "";
   const link = room
     ? `${window.location.origin}${window.location.pathname}?lab=passe&salle=${room.code}`
     : "";
@@ -608,6 +612,7 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
                     duel.onEnd(
                       remote ? !!remoteEnd : state.winner === (duel.side ?? 1),
                       laid.current,
+                      refused ? remoteDown : undefined,
                     )
                   }
                 >

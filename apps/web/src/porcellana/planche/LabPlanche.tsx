@@ -158,6 +158,11 @@ const houseName = (id: string, names?: Record<string, string>) =>
 const nameOf = (id: string, names?: Record<string, string>) =>
   plancheIsCorsair(id) ? `le corsaire ${id.slice(8)}` : houseName(id, names);
 const SAID: Record<string, string> = {
+  // The duels against the computer (docs/plan-duels.md B1, B2).
+  planche_force_tried: "Tu as déjà tenté cette tour aujourd'hui : demain, un autre essai.",
+  planche_own_passage: "Cette tour est déjà la tienne.",
+  planche_daily_tried: "Tu as déjà joué le problème du jour.",
+  duel_running: "Un autre duel est en cours : finis-le d'abord.",
   planche_no_bobbin: "Plus de bobine libre : reprends un fil, ou attends qu'une bobine revienne.",
   planche_route_shut: "La route est fermée par un corsaire : force le passage.",
   planche_twice: "Ce fil est déjà tendu.",
@@ -860,7 +865,12 @@ export default function LabPlanche() {
     };
   };
   /** A duel's end: told, and the board read again on line; played here without the server. */
-  const duelDone = (f: () => PlancheState, done: string) => {
+  const duelDone = (f: () => PlancheState, done: string, refused?: string) => {
+    if (refused) {
+      // Not opened: nothing was played, nothing spent.
+      setSaid(SAID[refused] ?? "Ce duel ne peut pas s'ouvrir maintenant.");
+      return;
+    }
     if (online) {
       setSaid(done);
       void call().then(() => readMaison());
@@ -1051,7 +1061,7 @@ export default function LabPlanche() {
             problem: daily.id,
             foe: "le problème du jour",
             remote: duelLine({ kind: "daily" }),
-            onEnd: (won, moves) => {
+            onEnd: (won, moves, refused) => {
               setDailyPlay(false);
               const laid = Math.min(moves.length, daily.moves);
               duelDone(
@@ -1059,6 +1069,7 @@ export default function LabPlanche() {
                 won
                   ? "Problème du jour réussi : un nœud sur ta façade, et du Prestige."
                   : "Ce n'était pas la clef. Un autre problème demain.",
+                refused,
               );
             },
           }}
@@ -1078,12 +1089,12 @@ export default function LabPlanche() {
             problem: o.problem,
             foe: `la commande de ${town}`,
             remote: duelLine({ kind: "order", order: o.id }),
-            onEnd: (won) => {
+            onEnd: (won, _moves, refused) => {
               setSealed(null);
               const said = won
                 ? `Livré : ${o.units} ${S.goods[o.good]?.toLowerCase()} à ${town}, au double du prix.`
                 : (SAID.duel_lost ?? "");
-              duelDone(() => plancheOrderTry(S, state, ME, o.id, state.now, won), said);
+              duelDone(() => plancheOrderTry(S, state, ME, o.id, state.now, won), said, refused);
             },
           }}
         />
@@ -1109,13 +1120,14 @@ export default function LabPlanche() {
               side: 2,
               stake: `${p.name} : un sceau en jeu`,
               remote: duelLine({ kind: "sortie", sortie: id }),
-              onEnd: (held) => {
+              onEnd: (held, _moves, refused) => {
                 setSortieDuel(null);
                 duelDone(
                   () => plancheSortieEnd(S, state, id, !held, "tenant", state.now),
                   held
                     ? `${x.captain} est repoussé : ${p.name} tient, et ta Garde compte un assaut repoussé.`
                     : `${x.captain} est passé : ${p.name} perd un sceau.`,
+                  refused,
                 );
                 setMareeOpen(true);
               },
@@ -1144,13 +1156,14 @@ export default function LabPlanche() {
             flag: "puissance",
             stake: `En jeu : ${what}`,
             remote: duelLine({ kind: "noir", strait, good, n }),
-            onEnd: (won) => {
+            onEnd: (won, _moves, refused) => {
               setNoirDuel(null);
               duelDone(
                 () => plancheNoirTry(S, state, ME, strait, { good, n }, won, state.now),
                 won
                   ? `Forcé ! ${what} vendus à ${x?.port}, et une relique ${POWER_OF[x?.power ?? ""] ?? x?.power}.`
                   : `La chaîne a tenu : ${what} ont coulé.`,
+                refused,
               );
             },
           }}
@@ -1172,13 +1185,14 @@ export default function LabPlanche() {
             foe: `les corsaires de ${x?.name.replace(/^L[ea]s? /, "") ?? "la route"}`,
             stake: "La Muda attend derrière toi",
             remote: duelLine({ kind: "muda", strait }),
-            onEnd: (won) => {
+            onEnd: (won, _moves, refused) => {
               setMudaDuel(null);
               duelDone(
                 () => plancheMudaForce(S, state, ME, strait, won, state.now),
                 won
                   ? `${x?.name} est passé : la Muda continue, et toute la lagune y gagne la moitié en plus.`
                   : "Les corsaires ont tenu : à un autre de forcer ce détroit.",
+                refused,
               );
               setMudaOpen(true);
             },
@@ -1208,12 +1222,13 @@ export default function LabPlanche() {
               : {}),
             stake: "Un essai par jour sur cette tour",
             remote: duelLine({ kind: "force", passage: duel }),
-            onEnd: (won) => {
+            onEnd: (won, _moves, refused) => {
               setDuel(null);
               if (!won) {
                 duelDone(
                   () => state,
                   "La chaîne a tenu : ton essai du jour est passé. Demain, un autre.",
+                  refused,
                 );
                 return;
               }
@@ -1223,6 +1238,7 @@ export default function LabPlanche() {
                 left > 0
                   ? `Passé. Un de tes sceaux brisé : il t'en reste ${left}. Tes fils traversent librement pendant un jour.`
                   : `${p?.name} porte ton pavillon : la route est ouverte, et les autres te paient le péage.`,
+                refused,
               );
             },
           }}
