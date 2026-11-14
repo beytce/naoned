@@ -16,17 +16,37 @@ const HOUR = 3_600_000;
 const T0 = Date.parse("2026-11-16T00:00:00Z");
 const want = (price: number) => ({ price, floorBps: 3_000, cap: 200, regenPerHour: 10 });
 
-/** The fixture's lagoon: three sestieri of four houses, a few towns of each ring. */
+/**
+ * The fixture's lagoon: four sestieri of four houses round a market, the quarter given for the
+ * first (the north-west), a town of the lagoon behind its canal on the northern axis.
+ */
 function params(): LagoonParams {
   return {
     sestieri: [
       { id: "nord", name: "Nord" },
-      { id: "centre", name: "Centre" },
+      { id: "est", name: "Est" },
       { id: "sud", name: "Sud" },
+      { id: "ouest", name: "Ouest" },
     ],
     housesPerSestiere: 4,
-    column: 10,
-    houseNames: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"],
+    half: 12,
+    quarter: {
+      houses: [
+        [-5, -2],
+        [-2, -5],
+        [-7, -4],
+        [-4, -7],
+      ],
+      towns: [
+        [-9, -3],
+        [-3, -9],
+      ],
+      mouth: [-8, -8],
+      strait: [-10, -10],
+      far: [-12, -12],
+    },
+    axes: [{ at: [0, -9], canal: [0, -6] }, { at: [0, 0] }],
+    houseNames: "ABCDEFGHIJKLMNOP".split(""),
     plans: [["kiln"], ["press"]],
     soils: [{ pre: 1 }],
     makes: { verre: 10 },
@@ -36,7 +56,10 @@ function params(): LagoonParams {
         { name: "Bourg", wants: { verre: want(1_000) } },
         { name: "Hameau", wants: { verre: want(900) } },
       ],
-      lagoon: [{ name: "Marché", wants: { verre: want(1_500) } }],
+      lagoon: [
+        { name: "Marché", wants: { verre: want(1_500) } },
+        { name: "Halle", wants: { verre: want(600) } },
+      ],
       large: [{ name: "Loin", wants: { verre: want(4_000) } }],
     },
     passages: { tollBps: 1_000, seals: 2, bouche: "petit", canal: "petit", strait: "grand" },
@@ -61,15 +84,18 @@ function params(): LagoonParams {
   };
 }
 
-// The lagoons of 48 houses (docs/plan-lagunes.md G1): one map, drawn by the engine.
+const SESTIERI = ["nord", "est", "sud", "ouest"];
+type At = { x: number; y: number };
+const steps = (a: At, b: At) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+
+// The round lagoon (docs/plan-lagune-ronde.md L1): one quarter, turned for each sestiere.
 describe("the lagoon's map", () => {
-  it("places every house of every sestiere on a tile of its own, in the water", () => {
+  it("is a square round its middle, every house on a tile of its own, in the water", () => {
     const S = plancheLagoon(params());
-    expect(S.houses).toHaveLength(12);
-    const spots = new Set(S.houses.map((h) => `${h.x},${h.y}`));
-    expect(spots.size).toBe(12);
-    for (const id of ["nord", "centre", "sud"])
-      expect(S.houses.filter((h) => h.sestiere === id)).toHaveLength(4);
+    expect(S.width).toBe(25);
+    expect(S.height).toBe(25);
+    expect(S.houses).toHaveLength(16);
+    for (const id of SESTIERI) expect(S.houses.filter((h) => h.sestiere === id)).toHaveLength(4);
     // Nothing is laid on another thing, nor off the board.
     const all = [...S.houses, ...S.cities, ...S.passages].map((p) => `${p.x},${p.y}`);
     expect(new Set(all).size).toBe(all.length);
@@ -79,29 +105,51 @@ describe("the lagoon's map", () => {
       expect(p.y).toBeGreaterThanOrEqual(0);
       expect(p.y).toBeLessThan(S.height);
     }
+    // A tile of water at least between two islands.
+    for (const a of S.houses)
+      for (const b of S.houses)
+        if (a !== b)
+          expect(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))).toBeGreaterThanOrEqual(2);
   });
 
-  it("gives each sestiere its towns, its mouth, and the same distances as the others", () => {
+  it("turns the quarter a quarter turn for each sestiere, the first as it is given", () => {
     const S = plancheLagoon(params());
-    for (const id of ["nord", "centre", "sud"]) {
-      expect(S.cities.filter((c) => c.sestiere === id)).toHaveLength(2);
-      expect(S.passages.filter((p) => p.id === `bouche-${id}`)).toHaveLength(1);
-    }
-    // The houses of each sestiere stand as far from their towns and their mouth as any other's.
-    const far = (id: string) => {
+    const at = (id: string) => S.houses.find((h) => h.id === id);
+    expect(at("nord-1")).toMatchObject({ x: 7, y: 10 });
+    expect(at("est-1")).toMatchObject({ x: 14, y: 7 });
+    expect(at("sud-1")).toMatchObject({ x: 17, y: 14 });
+    expect(at("ouest-1")).toMatchObject({ x: 10, y: 17 });
+    expect(S.passages.find((p) => p.id === "bouche-est")).toMatchObject({ x: 20, y: 4 });
+    expect(S.cities.find((c) => c.id === "loin-3")).toMatchObject({ x: 24, y: 24 });
+  });
+
+  it("gives each sestiere its towns, its mouth, and exactly the same distances as the others", () => {
+    const S = plancheLagoon(params());
+    const middle = { x: 12, y: 12 };
+    // Every distance that matters from every house: its towns, its passages, its far town, the middle.
+    const far = (id: string, k: number) => {
       const hs = S.houses.filter((h) => h.sestiere === id);
       const near = S.cities.filter((c) => c.sestiere === id);
       const mouth = S.passages.find((p) => p.id === `bouche-${id}`);
-      const d = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-        Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-      const sum = hs.reduce(
-        (n, h) => n + near.reduce((m, c) => m + d(h, c), 0) + (mouth ? d(h, mouth) : 0),
-        0,
-      );
-      return sum;
+      const strait = S.passages.find((p) => p.id === `detroit-${id}`);
+      const town = S.cities.filter((c) => c.ring === "large")[k];
+      if (!mouth || !strait || !town) throw new Error(`no way out of ${id}`);
+      expect(near).toHaveLength(2);
+      expect(town.via).toEqual([mouth.id, strait.id]);
+      return hs
+        .map((h) => [...near, mouth, strait, town, middle].map((p) => steps(h, p)).join(","))
+        .sort();
     };
-    expect(far("centre")).toBe(far("nord"));
-    expect(far("sud")).toBe(far("nord"));
+    const first = far("nord", 0);
+    SESTIERI.forEach((id, k) => expect(far(id, k)).toEqual(first));
+  });
+
+  it("lays the lagoon's towns on its axes, in turn, each behind its canal if it has one", () => {
+    const S = plancheLagoon(params());
+    const market = S.cities.find((c) => c.id === "marche");
+    expect(market).toMatchObject({ x: 12, y: 3, ring: "lagoon", via: ["canal-1"] });
+    expect(S.passages.find((p) => p.id === "canal-1")).toMatchObject({ x: 12, y: 6 });
+    expect(S.cities.find((c) => c.id === "halle")).toMatchObject({ x: 12, y: 12, via: [] });
   });
 
   it("puts the towns in three rings: near ones free, the lagoon's behind a canal, the open sea's behind a strait", () => {
@@ -109,6 +157,7 @@ describe("the lagoon's map", () => {
     const ring = (r: string) => S.cities.filter((c) => c.ring === r);
     expect(ring("sestiere").every((c) => c.via.length === 0)).toBe(true);
     expect(ring("lagoon").length).toBeGreaterThan(0);
+    expect(ring("large")).toHaveLength(4);
     expect(ring("large").every((c) => c.via.some((id) => id.startsWith("detroit-")))).toBe(true);
     // Every passage a town names exists.
     const ids = new Set(S.passages.map((p) => p.id));
@@ -123,20 +172,68 @@ describe("the lagoon's map", () => {
   it("is the same map every time it is drawn", () => {
     expect(JSON.stringify(plancheLagoon(params()))).toBe(JSON.stringify(plancheLagoon(params())));
   });
+
+  it("refuses a quarter that does not fit: too many sestieri, too few tiles, a tile off the board", () => {
+    const five = params();
+    five.sestieri.push({ id: "cinq", name: "Cinq" });
+    expect(() => plancheLagoon(five)).toThrow("lagoon_sestieri");
+    const few = params();
+    few.quarter.houses.pop();
+    expect(() => plancheLagoon(few)).toThrow("lagoon_quarter");
+    const off = params();
+    off.quarter.far = [-13, -12];
+    expect(() => plancheLagoon(off)).toThrow("lagoon_off_board");
+  });
+
+  it("keeps a board's state: what was played on another drawing of the same places reads on this one", () => {
+    const S = plancheLagoon(params());
+    // The same houses, towns and passages, laid elsewhere (the columns of before).
+    const old = {
+      ...S,
+      width: 60,
+      houses: S.houses.map((h, k) => ({ ...h, x: k * 3, y: 6 })),
+      cities: S.cities.map((c, k) => ({ ...c, x: k * 3, y: 1 })),
+      passages: S.passages.map((p, k) => ({ ...p, x: k * 3, y: 17 })),
+    };
+    const h = S.houses[0]?.id ?? "";
+    const town = S.cities.find((c) => c.sestiere === "nord")?.id ?? "";
+    const before = plancheThread(old, plancheInit(old, T0), h, town, "verre", T0);
+    const after = plancheAdvance(S, before, T0 + 5 * HOUR);
+    expect(after.houses[h]?.delivered).toBe(50);
+    expect(plancheInvariant(after)).toBe(true);
+    expect(after).toEqual(plancheAdvance(old, before, T0 + 5 * HOUR));
+  });
 });
 
-// The lagoon's land, for the board's drawing (docs/plan-lagunes.md G5).
+// The lagoon's land, for the board's drawing (docs/plan-lagune-ronde.md L1).
 describe("the lagoon's land", () => {
-  it("bears every town, and no house nor tower; the open sea darkens toward the south", () => {
+  it("bears every town, and no house nor tower; the same land for each sestiere", () => {
     const S = plancheLagoon(params());
     const L = plancheLagoonLand(S);
     for (const c of S.cities) expect(L.land(c.x, c.y)).toBe(true);
     for (const p of [...S.houses, ...S.passages]) expect(L.land(p.x, p.y)).toBe(false);
+    // A shore under each sestiere's towns: land beside them, the middle's water open.
+    expect(L.land(4, 9)).toBe(true);
+    expect(L.land(9, 9)).toBe(false);
+    // Turned a quarter turn, the land is the same (off the axes, where the lagoon's towns lie).
+    for (let y = 0; y < S.height; y++)
+      for (let x = 0; x < S.width; x++)
+        if (Math.abs(x - 12) > 2 && Math.abs(y - 12) > 2)
+          expect(L.land(24 - y, x)).toBe(L.land(x, y));
+  });
+
+  it("is white in the lagoon and darkens away from the middle, the same all round", () => {
+    const S = plancheLagoon(params());
+    const L = plancheLagoonLand(S);
     const h = S.houses[0];
-    const far = S.passages.find((p) => p.id.startsWith("detroit-"));
-    if (!h || !far) throw new Error("no house");
+    const strait = S.passages.find((p) => p.id.startsWith("detroit-"));
+    if (!h || !strait) throw new Error("no house");
     expect(L.peril(h.x, h.y)).toBe(0);
-    expect(L.peril(far.x, far.y)).toBeGreaterThan(0.5);
+    expect(L.peril(12, 12)).toBe(0);
+    expect(L.peril(strait.x, strait.y)).toBeGreaterThan(0.5);
+    expect(L.peril(0, 0)).toBe(1);
+    expect(L.peril(24, 0)).toBe(L.peril(0, 0));
+    expect(L.peril(12, 0)).toBe(L.peril(0, 12));
   });
 });
 

@@ -333,6 +333,8 @@ const own = <T>(o: Record<string, T>, k: string): T | undefined =>
   Object.hasOwn(o, k) ? o[k] : undefined;
 const cityOf = (S: PlancheSetup, id: string) => S.cities.find((c) => c.id === id);
 const houseOf = (S: PlancheSetup, id: string) => S.houses.find((h) => h.id === id);
+/** The board's middle, where the ink never comes: an unknown town's place. */
+const MIDDLE = (S: PlancheSetup) => ({ x: (S.width - 1) / 2, y: (S.height - 1) / 2 });
 export const plancheIsCorsair = (holder: string) => holder.startsWith("corsair:");
 
 /** The terrain of a house's island, drawn from its id and its soil. */
@@ -424,7 +426,7 @@ export function planchePrice(S: PlancheSetup, s: PlancheState, city: string, goo
   if (!w || !g) return 0;
   const bps = w.floorBps + Math.floor(((BPS - w.floorBps) * g.left) / Math.max(1, w.cap));
   // On the ink, a town pays more (docs/plan-maree.md T1).
-  const ink = plancheEncrePriceBps(S, s, cityOf(S, city)?.y ?? 0);
+  const ink = plancheEncrePriceBps(S, s, cityOf(S, city) ?? MIDDLE(S));
   // And the Doge's decree, if it is about this town and this good.
   const decree = plancheDecretPriceBps(s, city, good, s.now);
   const price = Math.floor((Math.floor((w.price * bps) / BPS) * ink) / BPS);
@@ -549,7 +551,7 @@ function slice(S: PlancheSetup, s: PlancheState): void {
         continue;
       }
       // On the ink, a thread loses a share of its load (docs/plan-maree.md T1).
-      const keep = plancheEncreKeepBps(S, s, cityOf(S, th.to)?.y ?? 0);
+      const keep = plancheEncreKeepBps(S, s, cityOf(S, th.to) ?? MIDDLE(S));
       const pace = Math.floor(((BPS + planchePatina(S, th, t)) * keep) / BPS);
       const way = th.detour ? Math.floor((pace * (cityOf(S, th.to)?.detourBps ?? 0)) / BPS) : pace;
       th.carry += S.rules.threadPerHour * way * ms;
