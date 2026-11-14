@@ -3531,3 +3531,18 @@ Banc ad hoc : sur chaque damier de la lagune, quatre parties à graine fixe, le 
 - La monnaie créée baisse de 40 % en régime établi, comme l'économiste l'avait mesuré ; le Large tombe vers 40 % des ventes : il reste la meilleure route, sans écraser les autres.
 - L'occasionnel ne vit plus du seul détour (78 % de ses ventes avant) ; avant le niveau 6, il vend en sestiere et dans la lagune.
 - La masse détenue grossit encore de 200 000 à 400 000 ducats par semaine : c'est ce que le puits (C3) doit absorber.
+
+### C2 : le Prestige au fil de l'eau, `perDucats` 15, courbe 28
+
+| Semaine | Niveau médian (occasionnel · régulier · assidu), C1 seul → C1 et C2 |
+| --- | --- |
+| 1 | 1 · 1 · 1 → **2 · 3 · 4** |
+| 2 | 3 · 4 · 4 → 4 · 6 · 6 |
+| 4 | 6 · 8 · 9 → 8 · 9 · 9 |
+| 6 | 8 · 11 · 11 → 10 · 11 · 11 |
+| 8 | — → 11 · 12 · 12 |
+
+- Le Prestige est crédité à chaque tranche (dix minutes), sous le plafond de la semaine : le niveau 2 tombe le premier jour, et la première semaine monte enfin.
+- Le commerce donne son Prestige sans le Large (`perDucats` 15) : l'occasionnel, qui n'atteint le Large qu'à la Casa, suit le régulier à un ou deux niveaux.
+- La courbe 28 étire le haut : à 500 par semaine, le niveau 30 vers la semaine 47 (calcul de l'économiste).
+- À relever pour la mesure d'ensemble (C7) : à la marée suivante (semaine 7), la part du Large remonte vers 70 à 80 % des ventes.

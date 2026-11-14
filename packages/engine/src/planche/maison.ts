@@ -178,6 +178,8 @@ export interface MaisonState {
   carry: number;
   /** The Prestige of the week so far (its trade), before its victories and the cap. */
   week: number;
+  /** What was credited of the week already, as it was earned (docs/plan-economie.md C2). */
+  paid?: number;
   /** Its sales counted up to the start of `day`. */
   soldAt: bigint;
   day: number;

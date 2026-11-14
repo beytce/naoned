@@ -350,6 +350,7 @@ export function plancheRankTurn(S: PlancheSetup, s: PlancheState): void {
     markNow(S, s);
   }
   if (Math.floor(s.now / DAY) !== s.rank.markDay) markNow(S, s);
+  growFlow(S, s);
 }
 
 /** A house a person takes counts as a person's from then on, and has its rival at once. */
@@ -451,6 +452,43 @@ export function plancheRepelled(S: PlancheSetup, s0: PlancheState, passage: stri
   return s;
 }
 
+/**
+ * The Prestige as it is earned (docs/plan-economie.md C2): the week's trade so far (today's
+ * included), its problems, black straits, Muda and seals, credited at once under the week's cap; a
+ * person's level follows at once. The week's turn adds what only it counts (the rival, the place,
+ * the towers held, the laurels).
+ */
+function growFlow(S: PlancheSetup, s: PlancheState): void {
+  const M = S.maison;
+  if (!M) return;
+  for (const [id, h] of Object.entries(s.houses)) {
+    const m = h.maison;
+    if (!m) continue;
+    const sofar =
+      m.week +
+      maisonCommerce(M, h.book.sold - m.soldAt) +
+      maisonDeeds(M, {
+        rivalBeaten: false,
+        place: Number.MAX_SAFE_INTEGER,
+        seals: m.seals,
+        guardHours: 0,
+        noir: m.noir ?? 0,
+        muda: m.muda ?? 0,
+      });
+    const due = Math.min(sofar, M.weeklyCap + m.carry) - (m.paid ?? 0);
+    if (due <= 0) continue;
+    m.prestige += due;
+    m.paid = (m.paid ?? 0) + due;
+    if (!s.rank.humans.includes(id)) continue;
+    const level = Math.min(M.maxLevel, maisonLevel(M, m.prestige).level);
+    if (level > (h.level ?? 1)) {
+      h.level = level;
+      h.caps = maisonUnlocks(M, level);
+      tell(m.log, { at: s.now, kind: "level", data: level });
+    }
+  }
+}
+
 /** Each new day: what the houses sold the day before, in Prestige (docs/plan-progression-maison.md). */
 function growDay(S: PlancheSetup, s: PlancheState): void {
   const M = S.maison;
@@ -506,9 +544,11 @@ function growWeek(
       muda: m.muda ?? 0,
     });
     const { credited, carry } = maisonWeek(M, m.week + deeds, m.carry);
-    m.prestige += credited;
+    // What was credited as it was earned is not credited twice.
+    m.prestige += Math.max(0, credited - (m.paid ?? 0));
     m.carry = carry;
     m.week = 0;
+    m.paid = 0;
     m.seals = 0;
     m.noir = 0;
     m.muda = 0;

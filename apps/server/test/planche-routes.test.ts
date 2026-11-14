@@ -297,7 +297,10 @@ describe("the house's growth", () => {
     const after = (await ana("GET", "/api/maison")).json().maison;
     expect(after.prestige).toBeGreaterThan(0);
     expect(after.level).toBeGreaterThan(1);
-    expect(after.kept).toBe(after.prestige);
+    // The journal of points keeps the weeks closed; the Prestige counts the week under way too
+    // (docs/plan-economie.md C2).
+    expect(after.kept).toBeGreaterThan(0);
+    expect(after.kept).toBeLessThanOrEqual(after.prestige);
     expect(after.livre.some((e: { kind: string }) => e.kind === "level")).toBe(true);
     expect(after.collection.level).toBeGreaterThan(0);
   });

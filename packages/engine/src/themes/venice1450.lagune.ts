@@ -282,7 +282,8 @@ export const venice1450LaguneParams: LagoonParams = {
     // The growth of the houses (docs/plan-progression-maison.md): 3 bobbins at first, 12 at the
     // top; the worked goods at level 3; a second tower at 6. Titles of the Republic's houses.
     maison: {
-      curve: 20,
+      // The thirtieth level near the 47th week (docs/plan-economie.md C2).
+      curve: 28,
       maxLevel: 30,
       titles: [
         { from: 1, name: "Bottega" },
@@ -310,7 +311,7 @@ export const venice1450LaguneParams: LagoonParams = {
       ],
       weeklyCap: 500,
       catchUpBps: 5_000,
-      commerce: { perDucats: 50, dailyCap: 55 },
+      commerce: { perDucats: 15, dailyCap: 55 },
       gains: {
         rival: 60,
         placeTop: 100,
