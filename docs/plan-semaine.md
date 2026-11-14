@@ -81,4 +81,13 @@ Le premier quart d'heure guidé et la tour d'entraînement (lot E) ; la compagni
 
 ## 8. État
 
-Validé ; lots à venir.
+Fait le 14 novembre 2026 :
+
+- **D1** : `maison.places` (le niveau de chaque lieu) et `plancheOpens` ; le Livre dit chaque ouverture (« Le Port s'ouvre : ta première galère t'attend »). Rien de « pas encore » : ce qui n'est pas ouvert ne se montre pas.
+- **D2** : la semaine (`Semaine.tsx`) remplace les six pilules ; une seule pastille rouge, sur aujourd'hui ; son titre dit la marée et l'ouvre. La compagnie est l'onglet « Les tiens » de la fiche de la Maison. Une fiche ouverte replie la semaine, fait taire la nouvelle, l'échelle et la légende ; l'échelle en bas à gauche à l'ordinateur, revenue au téléphone.
+- **D3** : l'encre au Large ouvre la marée ; le phare de ta compagnie l'ouvre ; le môle ouvre la Muda. Le palais reste au rang de la bourse.
+- **D4** : le Port (ta flotte, tes défenses, la Guerre, le Lido) en quatre onglets, au niveau 6 ; les commandes dans les villes et les tours noires à leur niveau ; la Puissance n'est plus montrée.
+- **D5** : un seul rouge en jetons, et `pnpm lint` refuse un rouge en hex dans les écrans de la planche ; le danger en or ; les étiquettes triées par priorité et regroupées (« +N ») ; aucun texte sous 11 px ; 44 px pour les touches des fiches ; l'encre douce plus foncée.
+- **D6** : la Muda (sa route dessinée), le palais (son podium), la Gazette (une une même vide), la Guerre (sa carte, un port touché), la marée (la planche recule jusqu'à l'encre).
+
+À suivre : les coups de l'assaut joués sur la scène (UX-11) ; le classement des ligues dessiné quand elles reviendront.
