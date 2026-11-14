@@ -123,7 +123,8 @@ export const plancheTheme = (): PlancheHubTheme => ({
     rules: venice1450Passe.rules,
     boards: venice1450Passe.boards,
     lieutenant: 3,
-    problems: venice1450Passe.problems,
+    // The sealed orders' positions and the year of problems of the day (docs/plan-duels.md B5).
+    problems: [...venice1450Passe.problems, ...venice1450Passe.jour],
   },
   visitHours: 8,
   // An account keeps its house for good (docs/plan-compte.md C3).

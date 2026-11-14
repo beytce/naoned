@@ -774,7 +774,9 @@ export default function LabPlanche() {
     orders.find((o) => o.city === cityId && !state.orders?.[o.id]?.by);
   // The problem of the day (docs/plan-hex-commerce.md H3): one for the lagoon, one try.
   const dailyId = plancheDaily(S, today);
-  const daily = dailyId ? venice1450Passe.problems.find((p) => p.id === dailyId) : undefined;
+  const daily = dailyId
+    ? [...venice1450Passe.problems, ...venice1450Passe.jour].find((p) => p.id === dailyId)
+    : undefined;
   const dailyMine = state.daily?.[today]?.[ME];
   const yesterday = plancheDailyResults(state, today - 1);
   // An order that opens is told once, on the thread of news: a touch leads to its town.

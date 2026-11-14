@@ -10,6 +10,7 @@ import type { LagoonParams, LagoonTown } from "../planche/lagune.js";
 import { plancheLagoon } from "../planche/lagune.js";
 import type { NoirStrait } from "../planche/noir.js";
 import type { PlancheCity, PlancheSetup, PlancheWant } from "../planche/planche.js";
+import { venice1450PasseJour } from "./venice1450.passe.jour.js";
 import { venice1450PasseProblems } from "./venice1450.passe.problems.js";
 import { venice1450Planche } from "./venice1450.planche.js";
 
@@ -506,7 +507,7 @@ export const venice1450LaguneParams: LagoonParams = {
       prestige: { contributor: 30, minUnits: 20, volunteer: 5, winner: 25 },
     },
     // The problem of the day (docs/plan-hex-commerce.md H3): the same twenty, 20 of Prestige.
-    daily: { problems: venice1450PasseProblems.map((p) => p.id), prestige: 20 },
+    daily: { problems: venice1450PasseJour.map((p) => p.id), prestige: 20 },
   },
 };
 

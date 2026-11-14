@@ -34,6 +34,8 @@ import { PasseBoard, type PasseMarks } from "./PasseBoard.js";
 import { usePasseRoom } from "./usePasseRoom.js";
 
 const { rules, boards, problems } = venice1450Passe;
+/** Every position a duel of the board may open on: the orders' and the days'. */
+const allProblems = [...problems, ...venice1450Passe.jour];
 type BoardKey = keyof typeof boards;
 /** Who plays: the thread against the opponent, the chain against it, or two on this screen. */
 type Seat = "fil" | "chaine" | "deux";
@@ -147,7 +149,7 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
   const [depth, setDepth] = useState(duel?.mind?.depth ?? 3);
   const [style, setStyle] = useState<PasseStyle | "aucune">(duel?.mind?.style ?? "aucune");
   const [problem, setProblem] = useState<PasseProblem | null>(
-    () => (duel?.problem && problems.find((p) => p.id === duel.problem)) || null,
+    () => (duel?.problem && allProblems.find((p) => p.id === duel.problem)) || null,
   );
   const [open, setOpen] = useState(false);
   const guardKey = duel?.guard?.join(",") ?? "";
