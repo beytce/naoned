@@ -71,6 +71,8 @@ export interface LagoonParams {
   };
   /** What a thread carries by the detour, in points of base of what it would by the passages. */
   detourBps: number;
+  /** The open sea's own share by the detour (docs/plan-economie.md C1); the canals' otherwise. */
+  largeDetourBps?: number;
   /** Everything else of the board: its goods, its time, its rules, its islands, its rank. */
   base: Omit<PlancheSetup, "width" | "height" | "houses" | "cities" | "passages">;
 }
@@ -178,7 +180,7 @@ export function plancheLagoon(P: LagoonParams): PlancheSetup {
         via: [`bouche-${sest.id}`, `detroit-${sest.id}`],
         wants: structuredClone(far.wants),
         ring: "large",
-        detourBps: P.detourBps,
+        detourBps: P.largeDetourBps ?? P.detourBps,
       });
   });
   // On the axes, the towns of the lagoon, in turn; those with a canal behind it.

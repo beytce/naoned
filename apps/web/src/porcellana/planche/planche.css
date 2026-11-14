@@ -398,6 +398,13 @@
 .pc-pl-patina {
   float: right;
 }
+/* What a thread brings an hour (docs/plan-economie.md C5): read under its share. */
+.pc-pl-yield {
+  display: block;
+  margin-top: 2px;
+  font-weight: 700;
+  color: var(--pc-text);
+}
 .pc-pl-also {
   display: flex;
   flex-wrap: wrap;

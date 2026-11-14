@@ -261,6 +261,16 @@ describe("the detour", () => {
     ).toThrow("planche_no_detour");
   });
 
+  it("carries the open sea's own share, apart from a canal's (docs/plan-economie.md C1)", () => {
+    const S = plancheLagoon({ ...params(), largeDetourBps: 2_000 });
+    expect(S.cities.filter((c) => c.ring === "large").every((c) => c.detourBps === 2_000)).toBe(
+      true,
+    );
+    const canal = S.cities.filter((c) => c.ring === "lagoon" && c.via.length);
+    expect(canal.length).toBeGreaterThan(0);
+    expect(canal.every((c) => c.detourBps === 5_000)).toBe(true);
+  });
+
   it("is taken by a house of the computer told to, when it brings more than the open towns", () => {
     const S = plancheLagoon(params());
     const far = S.cities.find((c) => c.ring === "large");

@@ -16,6 +16,7 @@ import {
   plancheShares,
   plancheSupply,
   plancheThread,
+  plancheThreadYield,
   plancheToll,
   plancheUnthread,
   plancheUpgrade,
@@ -418,6 +419,37 @@ describe("the shares of a town's demand", () => {
     expect(plancheShares(S, s, "raguse", "verre", T0).houses.map((h) => h.house)).toEqual(["ana"]);
     // a day later the corsair's chain is up again
     expect(plancheShares(S, s, "raguse", "verre", T0 + 2 * DAY).houses).toEqual([]);
+  });
+});
+
+// What a thread brings, and a town's shares by the detour (docs/plan-economie.md C5).
+describe("what a thread brings", () => {
+  it("is its sales of the last hour or so, smoothed, in deniers an hour; nothing before it sells", () => {
+    const S = setup();
+    let s = plancheThread(S, plancheInit(S, T0), "ana", "padoue", "verre", T0);
+    expect(plancheThreadYield(s, "ana", "padoue", "verre")).toBe(0);
+    s = plancheAdvance(S, s, T0 + 3 * HOUR);
+    const y = plancheThreadYield(s, "ana", "padoue", "verre");
+    // Ten glass an hour, near 1 000 deniers each at first, the price falling as the town tires.
+    expect(y).toBeGreaterThan(5_000);
+    expect(y).toBeLessThan(10_001);
+    // Taken back: no thread, nothing.
+    s = plancheUnthread(S, s, "ana", "padoue", "verre", s.now);
+    expect(plancheThreadYield(s, "ana", "padoue", "verre")).toBe(0);
+  });
+
+  it("counts a house that reaches a town by the detour in that town's shares", () => {
+    const S = setup();
+    const raguse = S.cities.find((c) => c.id === "raguse");
+    if (raguse) raguse.detourBps = 2_000;
+    // A town that does not tire back at once: what is sold shows.
+    const want = raguse?.wants.verre;
+    if (want) want.regenPerHour = 0;
+    let s = plancheThread(S, plancheInit(S, T0), "ana", "raguse", "verre", T0, { detour: true });
+    s = plancheAdvance(S, s, T0 + 2 * HOUR);
+    const r = plancheShares(S, s, "raguse", "verre", s.now);
+    expect(r.houses.map((h) => h.house)).toEqual(["ana"]);
+    expect(r.houses[0]?.bps).toBeGreaterThan(0);
   });
 });
 

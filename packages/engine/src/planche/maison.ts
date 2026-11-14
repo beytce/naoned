@@ -24,6 +24,8 @@ export interface MaisonRules {
     tiles?: number;
     tier?: number;
     towers?: number;
+    /** The detour opened (docs/plan-economie.md C1). */
+    detour?: boolean;
   }[];
   /** Prestige a week at most; what was not earned under it carried to the next, in part. */
   weeklyCap: number;
@@ -84,6 +86,8 @@ export interface MaisonCaps {
   tiles: number;
   tier: number;
   towers: number;
+  /** The way round the passages (docs/plan-economie.md C1): open unless a level opens it. */
+  detour: boolean;
 }
 
 /** The Prestige a level starts at. */
@@ -109,13 +113,20 @@ export function maisonLevel(
 
 /** What a level opens: the last word of each level up to it. */
 export function maisonUnlocks(R: MaisonRules, level: number): MaisonCaps {
-  const caps: MaisonCaps = { bobbins: 0, tiles: 0, tier: 0, towers: 0 };
+  const caps: MaisonCaps = {
+    bobbins: 0,
+    tiles: 0,
+    tier: 0,
+    towers: 0,
+    detour: !R.unlocks.some((u) => u.detour !== undefined),
+  };
   for (const u of [...R.unlocks].sort((a, b) => a.level - b.level)) {
     if (u.level > level) break;
     if (u.bobbins !== undefined) caps.bobbins = u.bobbins;
     if (u.tiles !== undefined) caps.tiles = u.tiles;
     if (u.tier !== undefined) caps.tier = u.tier;
     if (u.towers !== undefined) caps.towers = u.towers;
+    if (u.detour !== undefined) caps.detour = u.detour;
   }
   return caps;
 }
@@ -167,6 +178,8 @@ export interface MaisonState {
   carry: number;
   /** The Prestige of the week so far (its trade), before its victories and the cap. */
   week: number;
+  /** What was credited of the week already, as it was earned (docs/plan-economie.md C2). */
+  paid?: number;
   /** Its sales counted up to the start of `day`. */
   soldAt: bigint;
   day: number;

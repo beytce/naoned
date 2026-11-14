@@ -190,6 +190,8 @@ const CATALOGUE_ROWS = [
   ["~", "ship", "~", "~", "gondola", "~", "~"],
   ["hamlet1", "hamlet2", "town3", "city4", "city5", "venice", "salute"],
   ["plot", "locked", "cart", "mule", "rider", ".", "."],
+  // The works of prestige (docs/plan-economie.md C3).
+  ["fontaine", "loggia", "campanile", ".", "scuola", "basilique", "."],
 ];
 const BY_KEY = new Map(CATALOGUE.map((e, n) => [e.key, { e, n: n + 1 }]));
 

@@ -53,6 +53,7 @@ describe("the board a player sees", () => {
     ben.rusesDay = 3;
     ben.relics = { turc: 2 };
     ben.plans = 1;
+    ben.threads = [{ to: "x", good: "verre", since: T0, carry: 0, yield: 900 }];
     ben.fleet = { ships: [{ id: 1, kind: "galere", level: 1 }], yards: [], next: 2 };
     s.passages.pont = { holder: "ben", tollBps: 1_000, seals: 2, guard: [4], guardDay: 3 };
     const v = plancheVue(s, "ana");
@@ -65,6 +66,8 @@ describe("the board a player sees", () => {
     expect(seen?.stock).toEqual({});
     expect(seen?.ducats).toBe(0n);
     expect(seen?.book.sold).toBe(0n);
+    // Its threads show, not what they bring.
+    expect(seen?.threads).toEqual([{ to: "x", good: "verre", since: T0, carry: 0 }]);
     // What shows on the board stays: its fleet at anchor, its island, its threads.
     expect(seen?.fleet?.ships).toHaveLength(1);
     expect(seen?.ile).toEqual(ben.ile);

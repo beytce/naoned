@@ -24,6 +24,8 @@ function seen(h: PlancheHouse): PlancheHouse {
   return {
     ...shown,
     ducats: 0n,
+    // What its threads bring is its purse's secret (docs/plan-economie.md C5).
+    threads: h.threads.map(({ yield: _yield, ...t }) => t),
     stock: {},
     makeCarry: {},
     book: { ...ZERO_BOOK },

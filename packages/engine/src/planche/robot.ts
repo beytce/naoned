@@ -12,6 +12,7 @@ import {
   planchePortSlots,
   plancheShip,
 } from "./arsenal.js";
+import { maisonUnlocks } from "./maison.js";
 import {
   type PlancheHouse,
   type PlancheSetup,
@@ -48,6 +49,7 @@ function worth(
   const c = S.cities.find((x) => x.id === city);
   if (!hs || !h || !c) return 0;
   if (detour ? !(c.via.length && c.detourBps) : !plancheRouteOpen(S, s, house, city, now)) return 0;
+  if (detour && S.maison && !maisonUnlocks(S.maison, h.level ?? 1).detour) return 0;
   const sameGood = h.threads.filter((t) => t.good === good).length || 1;
   // What it can really load an hour: its output of that good, and a share of what lies in store.
   const supply =
@@ -149,10 +151,14 @@ export function plancheRobotBuild(
   const have = new Map<string, number>();
   for (const [, t] of tiles)
     if (t.building) have.set(t.building.type, (have.get(t.building.type) ?? 0) + 1);
+  // Its Arsenal and the works are not the plan's: they never hold it back (docs/plan-economie.md
+  // C6, audit E7: the Arsenal low stopped the computer's islands for good).
+  const aside = (type: string) =>
+    type === ILE_FONDACO || type === S.arsenal?.workshop || !!R.workshops[type]?.ouvrage;
   // The plan is played round after round: the next round only once every workshop is at its top.
   const top = tiles.every(([, t]) => {
     const b = t.building;
-    if (!b || b.type === ILE_FONDACO) return true;
+    if (!b || aside(b.type)) return true;
     return b.level >= (R.workshops[b.type]?.cost.length ?? 0);
   });
   let next: string | undefined;
@@ -196,7 +202,7 @@ export function plancheRobotBuild(
   }
   // The plan is built: the lowest workshop of the plan is raised, if the purse keeps a reserve after.
   const raise = tiles
-    .filter(([, t]) => t.building && t.building.type !== ILE_FONDACO && t.building.readyAt <= now)
+    .filter(([, t]) => t.building && !aside(t.building.type) && t.building.readyAt <= now)
     .map(([k, t]) => ({ k, b: t.building as NonNullable<typeof t.building> }))
     .filter(({ b }) => b.level < (R.workshops[b.type]?.cost.length ?? 0))
     .sort((a, b) => a.b.level - b.b.level || a.k.localeCompare(b.k))[0];

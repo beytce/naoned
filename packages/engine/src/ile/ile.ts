@@ -29,6 +29,13 @@ export interface IleWorkshop {
   buildMs: number[];
   /** The workshops it is a nuisance to, or that are a nuisance to it. */
   nuisance?: string[];
+  /** The house's level it opens at, besides its tier (docs/plan-economie.md C3). */
+  level?: number;
+  /**
+   * A work of prestige (docs/plan-economie.md C3): it makes nothing and is not raised; each one
+   * already on the island makes the next cost this much more (points of base).
+   */
+  ouvrage?: { growthBps: number };
 }
 
 /** An island's rules, as `worlds.settings` would give them. */
@@ -176,7 +183,19 @@ export function ileBuild(
     readyAt: now + (w.buildMs[0] ?? 0),
     carry: 0,
   };
-  return { ile: { tiles }, cost: BigInt(w.cost[0] ?? 0) };
+  let cost = BigInt(w.cost[0] ?? 0);
+  // A work costs more with each one the island already has.
+  if (w.ouvrage)
+    for (let n = ileOuvrages(R, s).length; n > 0; n--)
+      cost = (cost * BigInt(BPS + w.ouvrage.growthBps)) / BigInt(BPS);
+  return { ile: { tiles }, cost };
+}
+
+/** The works of prestige an island has (docs/plan-economie.md C3), by tile. */
+export function ileOuvrages(R: IleRules, s: IleState): { at: string; type: string }[] {
+  return Object.entries(s.tiles).flatMap(([at, t]) =>
+    t.building && workshopOf(R, t.building.type)?.ouvrage ? [{ at, type: t.building.type }] : [],
+  );
 }
 
 export function ileUpgrade(
