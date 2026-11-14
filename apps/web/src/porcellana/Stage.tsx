@@ -32,6 +32,8 @@ export interface StageProps {
   background?: string;
   /** The world's scale against the kit's (a battle's chart is larger): the shadows reach it all. */
   scale?: number;
+  /** No shadow catcher under the board (an island stands on its own water). */
+  bare?: boolean;
 }
 
 export function Stage({
@@ -40,6 +42,7 @@ export function Stage({
   plain = false,
   background = COL.bg,
   scale = 1,
+  bare = false,
 }: StageProps) {
   const { gl, scene, camera, size } = useThree();
   const sun = useRef<DirectionalLight>(null);
@@ -126,10 +129,12 @@ export function Stage({
         intensity={LIGHT.fill.intensity}
         position={LIGHT.fill.position}
       />
-      <mesh rotation-x={-Math.PI / 2} position-y={LIGHT.catcher.y * scale} receiveShadow>
-        <planeGeometry args={[400 * scale, 400 * scale]} />
-        <shadowMaterial opacity={LIGHT.catcher.opacity} />
-      </mesh>
+      {bare ? null : (
+        <mesh rotation-x={-Math.PI / 2} position-y={LIGHT.catcher.y * scale} receiveShadow>
+          <planeGeometry args={[400 * scale, 400 * scale]} />
+          <shadowMaterial opacity={LIGHT.catcher.opacity} />
+        </mesh>
+      )}
     </>
   );
 }

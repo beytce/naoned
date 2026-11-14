@@ -143,6 +143,30 @@ export function ileBuyTile(
   return { ile: { tiles }, cost };
 }
 
+/**
+ * The pairs of neighbours where one feeds the other, with the good that passes: what the
+ * supplier's bonus rests on, for a board to show it. In the order of the tiles' keys.
+ */
+export function ileSupplies(
+  R: IleRules,
+  s: IleState,
+): { from: string; to: string; good: string }[] {
+  const out: { from: string; to: string; good: string }[] = [];
+  for (const at of Object.keys(s.tiles).sort()) {
+    const b = s.tiles[at]?.building;
+    const w = b && b.type !== ILE_FONDACO ? workshopOf(R, b.type) : undefined;
+    if (!w) continue;
+    for (const n of near(at)) {
+      const other = s.tiles[n]?.building;
+      if (!other || other.type === ILE_FONDACO) continue;
+      const o = workshopOf(R, other.type);
+      const good = o ? Object.keys(w.inputs).find((g) => Object.hasOwn(o.outputs, g)) : undefined;
+      if (good) out.push({ from: n, to: at, good });
+    }
+  }
+  return out;
+}
+
 /** What a workshop would gain on a tile: its terrain, its supplier beside it, a nuisance beside it. */
 export function ileBonusBps(R: IleRules, s: IleState, type: string, at: string): number {
   const w = workshopOf(R, type);

@@ -1,0 +1,236 @@
+/* The island's screen in the Céladon direction (docs/plan-celadon.md C3): the paper warmer, the
+   ink a deep green, the celadon for what is chosen; the accent stays the one strong colour. */
+.pc-ile {
+  --pc-paper: #fbf8f1;
+  --pc-ink: #243a36;
+  --pc-ink-soft: #5f706b;
+  --pc-hair: #e2dccf;
+  --pc-text-2: #45554f;
+  --pc-text-3: #6f7f7b;
+  --pc-foot: rgba(36, 58, 54, 0.12);
+  --pc-celadon: #a9cbc0;
+  --pc-celadon-pale: #ddeae4;
+  color: var(--pc-ink);
+}
+.pc-ile .pc-vignette {
+  background: radial-gradient(120% 90% at 50% 45%, transparent 60%, rgba(60, 90, 96, 0.12) 100%);
+}
+.pc-ile .pc-planche-card {
+  border-radius: 16px;
+  box-shadow: 0 3px 0 var(--pc-foot), 0 14px 34px rgba(36, 58, 54, 0.14);
+}
+.pc-ile .pc-planche-card h2 {
+  font-size: 21px;
+}
+.pc-ile .pc-passe-said {
+  background: var(--pc-ink);
+}
+.pc-ile-store > div > i {
+  background: var(--pc-hair);
+}
+.pc-ile-store > div > i > i {
+  background: var(--pc-ink);
+}
+.pc-ile-store > div > i > i[data-full="true"] {
+  background: var(--pc-accent);
+}
+
+/* « Entrée → sortie »: what a workshop takes and what it gives, as tokens. */
+.pc-ile-io {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+}
+.pc-ile-io > div {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.pc-ile-io small {
+  flex-basis: 100%;
+  text-align: center;
+  font: 700 10px var(--pc-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pc-text-3);
+}
+.pc-ile-io > span {
+  flex: none;
+  align-self: center;
+  padding-top: 12px;
+  font: 800 18px var(--pc-display);
+  color: var(--pc-text-3);
+}
+.pc-ile-good {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 46px;
+  font: 500 11px var(--pc-ui);
+  color: var(--pc-text-3);
+}
+.pc-ile-good > i {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--pc-celadon-pale);
+  display: grid;
+  place-items: center;
+}
+.pc-ile-good > b {
+  font: 800 12px var(--pc-display);
+  color: var(--pc-ink);
+}
+.pc-ile-none {
+  align-self: center;
+  font: 600 12px var(--pc-ui);
+  color: var(--pc-text-3);
+  padding: 12px 0;
+}
+.pc-ile-lines {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--pc-hair);
+  padding-top: 8px;
+}
+.pc-ile-lines > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+  font: 500 12.5px var(--pc-ui);
+  color: var(--pc-text-2);
+}
+.pc-ile-lines b {
+  font: 800 12.5px var(--pc-display);
+  color: var(--pc-ink);
+  white-space: nowrap;
+}
+.pc-ile-lines b[data-tone="up"] {
+  color: var(--pc-accent-soft);
+}
+.pc-ile-acts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pc-ile-acts .pc-passe-go {
+  border-radius: 12px;
+  width: 100%;
+}
+.pc-ile-acts .pc-passe-quiet {
+  border-radius: 12px;
+  min-height: 42px;
+  font-size: 13.5px;
+  box-shadow: none;
+}
+
+/* The tray: every building one may lay, the raw first, then the worked, then the works. */
+.pc-ile-tray {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  max-width: min(100%, 1180px);
+  overflow-x: auto;
+  background: var(--pc-paper);
+  border-radius: 16px;
+  padding: 8px 10px;
+  box-shadow: 0 3px 0 var(--pc-foot), 0 14px 34px rgba(36, 58, 54, 0.14);
+  scrollbar-width: thin;
+}
+.pc-ile-tool {
+  flex: none;
+  width: 60px;
+  min-height: 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--pc-ink);
+  font: 600 10.5px / 1.15 var(--pc-ui);
+  cursor: pointer;
+  padding: 6px 2px 5px;
+}
+.pc-ile-tool:hover:not(:disabled),
+.pc-ile-tool:focus-visible {
+  background: var(--pc-celadon-pale);
+  box-shadow: inset 0 -2px 0 var(--pc-ink);
+  outline: none;
+}
+.pc-ile-tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pc-ile-tool > small {
+  font: 700 10px var(--pc-ui);
+  color: var(--pc-text-3);
+}
+.pc-ile-tray > hr {
+  flex: none;
+  width: 1px;
+  border: 0;
+  margin: 6px 6px;
+  background: var(--pc-hair);
+}
+.pc-ile-tray > .pc-passe-quiet {
+  flex: none;
+  align-self: center;
+  margin-left: 6px;
+  min-height: 42px;
+  box-shadow: none;
+}
+@media (max-width: 640px) {
+  /* A card open takes the lower half: the store and the legend step aside. */
+  .pc-ile[data-busy="true"] .pc-ile-store,
+  .pc-ile[data-busy="true"] .pc-ile-legend {
+    display: none;
+  }
+  .pc-ile-tray {
+    width: 100%;
+    max-width: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-height: 56vh;
+    overflow-y: auto;
+    border-radius: 24px 24px 0 0;
+    padding: 14px 10px calc(18px + env(safe-area-inset-bottom, 0px));
+  }
+  .pc-ile-tray > hr {
+    flex-basis: 100%;
+    width: auto;
+    height: 1px;
+    margin: 4px 10px;
+  }
+  .pc-ile-tool {
+    width: 78px;
+  }
+}
+/* On a wide screen a tile's card stands at the right, as a sheet of paper beside the island. */
+@media (min-width: 900px) {
+  .pc-ile .pc-passe-foot > .pc-planche-card {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    top: calc(72px + env(safe-area-inset-top, 0px));
+    width: 300px;
+    max-height: calc(100vh - 200px);
+  }
+  .pc-ile-store {
+    left: max(16px, env(safe-area-inset-left, 0px));
+    right: auto;
+    top: auto;
+    bottom: calc(116px + env(safe-area-inset-bottom, 0px));
+    width: 190px;
+  }
+  .pc-ile-legend {
+    top: calc(132px + env(safe-area-inset-top, 0px)) !important;
+    bottom: auto !important;
+  }
+}

@@ -10,6 +10,7 @@ import {
   ileMove,
   ileRates,
   ileSlice,
+  ileSupplies,
   ileTileCost,
   ileUpgrade,
 } from "../../src/index.js";
@@ -135,6 +136,16 @@ describe("the island", () => {
     s = ileBuild(R, s, "ferme", "1,1", T0).ile;
     // next to a farm, the sawmill loses a fifth
     expect(ileBonusBps(R, s, "scierie", "0,1")).toBe(5_000 - 2_000);
+  });
+
+  it("tells which neighbour feeds which, the pairs the supplier's bonus rests on", () => {
+    let s = ileInit(R, terrain);
+    expect(ileSupplies(R, s)).toEqual([]);
+    s = ileBuild(R, s, "camp", "1,0", T0).ile;
+    // the Fondaco beside it feeds nothing; no sawmill yet
+    expect(ileSupplies(R, s)).toEqual([]);
+    s = ileBuild(R, s, "scierie", "1,1", T0).ile;
+    expect(ileSupplies(R, s)).toEqual([{ from: "1,0", to: "1,1", good: "bois" }]);
   });
 
   it("builds on a free tile it owns only, for its price, and refuses an unknown workshop", () => {

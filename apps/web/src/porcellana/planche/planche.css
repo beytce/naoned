@@ -647,15 +647,6 @@
   border-radius: 3px;
   box-shadow: inset 0 0 0 1px rgba(42, 39, 37, 0.12);
 }
-.pc-ile-legend i[data-terrain="rive"] {
-  background: linear-gradient(135deg, #f2eee7 55%, #b9c6ca 55%) !important;
-}
-.pc-ile-legend i[data-terrain="argile"] {
-  background: repeating-linear-gradient(90deg, #e6c9ba 0 3px, #ddbba9 3px 6px) !important;
-}
-.pc-ile-legend i[data-terrain="pre"] {
-  background: repeating-linear-gradient(45deg, #eceee3 0 3px, #dce1d1 3px 6px) !important;
-}
 .pc-ile-store {
   position: absolute;
   right: max(14px, env(safe-area-inset-right, 0px));

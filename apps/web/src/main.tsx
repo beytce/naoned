@@ -59,6 +59,8 @@ const PorcellanaLab = lazy(() => import("./porcellana/Lab.js"));
 const PasseLab = lazy(() => import("./porcellana/passe/LabPasse.js"));
 // The shared board and its threads (?lab=planche, docs/plan-planche.md).
 const PlancheLab = lazy(() => import("./porcellana/planche/LabPlanche.js"));
+// The Céladon direction's island, laid out for the eye (?lab=celadon, docs/plan-celadon.md).
+const CeladonLab = lazy(() => import("./porcellana/LabCeladon.js"));
 // The old game (the empire, the Porta, the Terraferme), asleep since the base (docs/plan-socle.md
 // A5): loaded only when one goes there, never by the board's home.
 const App = lazy(() => import("./App.js").then((m) => ({ default: m.App })));
@@ -76,6 +78,10 @@ createRoot(root).render(
     ) : labName === "passe" ? (
       <Suspense fallback={null}>
         <PasseLab />
+      </Suspense>
+    ) : labName === "celadon" ? (
+      <Suspense fallback={null}>
+        <CeladonLab />
       </Suspense>
     ) : board ? (
       <Suspense fallback={null}>
