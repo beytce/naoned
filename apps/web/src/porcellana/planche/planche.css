@@ -2369,3 +2369,11 @@ span.pc-semaine-title {
   position: absolute;
   inset: -6px -2px;
 }
+/* The palace's podium, drawn (docs/plan-semaine.md D6). */
+.pc-rk-podium {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  margin: 2px auto 6px;
+}

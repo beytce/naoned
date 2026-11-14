@@ -4,7 +4,7 @@
  * assault, the assaults one's own port has borne.
  */
 import type { AssautState, IleState } from "@comptoirs/engine";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 export interface GuerrePortView {
   key: string;
@@ -52,13 +52,42 @@ function Seals({ n }: { n: number }) {
  * each port an island with the seals it lost; one's own ringed in red; a port one's company
  * reserved, its flag. The gestures are on the lines below it.
  */
-function Carte({ view }: { view: GuerreViewData }) {
+function Carte({
+  view,
+  focus,
+  onFocus,
+}: {
+  view: GuerreViewData;
+  focus: string | null;
+  onFocus: (key: string) => void;
+}) {
   const row = (ports: GuerrePortView[], y: number, theirs: boolean) =>
     ports.map((p, k) => {
       const x = 30 + k * 58;
       const me = p.key === view.me;
+      // An enemy port is touched on the map to open its card (docs/plan-semaine.md D6).
       return (
-        <g key={p.key} transform={`translate(${x} ${y})`}>
+        <g
+          key={p.key}
+          transform={`translate(${x} ${y})`}
+          {...(theirs
+            ? {
+                "data-guerre-port": p.key,
+                "data-focus": String(p.key === focus),
+                onClick: () => onFocus(p.key),
+                style: { cursor: "pointer" },
+              }
+            : {})}
+        >
+          {theirs && p.key === focus ? (
+            <circle
+              r="26"
+              fill="none"
+              stroke="var(--pc-ink)"
+              strokeWidth="2"
+              strokeDasharray="4 3"
+            />
+          ) : null}
           <path
             d="M-20 4 L0 -6 L20 4 L0 14 Z"
             fill={p.person ? "#fbfaf7" : "#efebe4"}
@@ -100,7 +129,7 @@ function Carte({ view }: { view: GuerreViewData }) {
       className="pc-gu-map"
       viewBox="0 0 350 170"
       role="img"
-      aria-label="La carte de la guerre : les ports adverses en haut, ta flottille en bas"
+      aria-label="La carte de la guerre : les ports adverses en haut, touche-en un ; ta flottille en bas"
       data-guerre-map
     >
       <rect width="350" height="170" rx="14" fill="#cfd8da" />
@@ -132,6 +161,9 @@ export function GuerreSheet({
   onReplay?: (id: number) => void;
 }) {
   const can = view.phase === "assauts" && !view.today && armed;
+  // The port chosen on the map: the first that still holds, until one is touched.
+  const [picked, setPicked] = useState<string | null>(null);
+  const focus = picked ?? view.theirs.find((p) => p.best < 3)?.key ?? view.theirs[0]?.key ?? null;
   const why =
     view.phase !== "assauts"
       ? "Pas aujourd'hui"
@@ -168,58 +200,47 @@ export function GuerreSheet({
               <span>la flottille adverse</span>
             </div>
           </div>
-          <Carte view={view} />
-          <h3 className="pc-mn-h3">Les ports adverses</h3>
+          <Carte view={view} focus={focus} onFocus={setPicked} />
           <ul className="pc-gu-ports">
-            {view.theirs.map((p) => (
-              <li key={p.key} data-guerre-port={p.key}>
-                <div>
-                  <b>{p.name}</b>
-                  <span>
-                    {p.lagoon} · {p.person ? "un joueur" : "l'ordinateur"}
-                  </span>
-                  {view.reserved?.[p.key] ? (
-                    <span className="pc-gu-reserved">pris par {view.reserved[p.key]}</span>
-                  ) : inCompany && onReserve && view.phase !== "dimanche" ? (
-                    <button
-                      type="button"
-                      className="pc-gu-reserve"
-                      data-reserve={p.key}
-                      onClick={() => onReserve(p.key)}
-                    >
-                      Je prends ce port
-                    </button>
-                  ) : null}
-                </div>
-                <Seals n={p.best} />
-                <button
-                  type="button"
-                  className={can ? "pc-passe-go" : "pc-passe-quiet"}
-                  data-assaillir={p.key}
-                  disabled={!can || p.best >= 3}
-                  onClick={() => onAssault(p.key)}
-                >
-                  {p.best >= 3 ? "Tombé" : why || "Assaillir"}
-                </button>
-              </li>
-            ))}
+            {view.theirs
+              .filter((p) => p.key === focus)
+              .map((p) => (
+                <li key={p.key} data-guerre-card={p.key}>
+                  <div>
+                    <b>{p.name}</b>
+                    <span>
+                      {p.lagoon} · {p.person ? "un joueur" : "l'ordinateur"}
+                    </span>
+                    {view.reserved?.[p.key] ? (
+                      <span className="pc-gu-reserved">pris par {view.reserved[p.key]}</span>
+                    ) : inCompany && onReserve && view.phase !== "dimanche" ? (
+                      <button
+                        type="button"
+                        className="pc-gu-reserve"
+                        data-reserve={p.key}
+                        onClick={() => onReserve(p.key)}
+                      >
+                        Je prends ce port
+                      </button>
+                    ) : null}
+                  </div>
+                  <Seals n={p.best} />
+                  <button
+                    type="button"
+                    className={can ? "pc-passe-go" : "pc-passe-quiet"}
+                    data-assaillir={p.key}
+                    disabled={!can || p.best >= 3}
+                    onClick={() => onAssault(p.key)}
+                  >
+                    {p.best >= 3 ? "Tombé" : why || "Assaillir"}
+                  </button>
+                </li>
+              ))}
           </ul>
           <p className="pc-ar-note">
             Sur chaque port, seul le meilleur assaut de ta flottille compte : vise ceux qui tiennent
             encore.
           </p>
-          <h3 className="pc-mn-h3">Ta flottille</h3>
-          <ul className="pc-gu-ports pc-gu-ours">
-            {view.ours.map((p) => (
-              <li key={p.key} data-me={String(p.key === view.me)}>
-                <div>
-                  <b>{p.key === view.me ? `${p.name} (toi)` : p.name}</b>
-                  <span>{p.lagoon}</span>
-                </div>
-                <Seals n={p.best} />
-              </li>
-            ))}
-          </ul>
           {view.made?.length ? (
             <>
               <h3 className="pc-mn-h3">Tes assauts</h3>

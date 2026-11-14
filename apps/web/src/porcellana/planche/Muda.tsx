@@ -121,6 +121,83 @@ const PHASE_SAID: Record<ReturnType<typeof plancheMudaPhase>, string> = {
 };
 
 /** The Muda's sheet (docs/plan-muda.md N6). */
+/**
+ * The road to Alexandria drawn (docs/plan-semaine.md D6): Venice, the straits, Alexandria; the
+ * passed straits inked, the one the convoy waits at ringed in gold, the ship where it is.
+ */
+function Route({
+  names,
+  passed,
+  phase,
+}: {
+  names: string[];
+  passed: number;
+  phase: string;
+}) {
+  const stops = ["Venise", ...names, "Alexandrie"];
+  const W = 320;
+  const x = (k: number) => 20 + (k * (W - 40)) / (stops.length - 1);
+  const y = (k: number) => 34 + (k % 2 ? 14 : 0);
+  // The ship: at Venice before it sails, past the straits it passed, at Alexandria when back.
+  const at = phase === "back" ? stops.length - 1 : phase === "sailing" ? passed + 0.5 : 0;
+  const k0 = Math.floor(at);
+  const shipX = x(k0) + (x(Math.min(stops.length - 1, k0 + 1)) - x(k0)) * (at - k0);
+  const shipY = y(k0) + (y(Math.min(stops.length - 1, k0 + 1)) - y(k0)) * (at - k0);
+  return (
+    <svg
+      className="pc-mu-route"
+      viewBox={`0 0 ${W} 86`}
+      role="img"
+      aria-label={`La route d'Alexandrie : ${passed} détroit${passed > 1 ? "s" : ""} passé${passed > 1 ? "s" : ""} sur ${names.length}`}
+      data-muda-route
+    >
+      <path
+        d={stops.map((_, k) => `${k ? "L" : "M"}${x(k)} ${y(k)}`).join(" ")}
+        stroke="var(--pc-ink)"
+        strokeWidth="2"
+        strokeDasharray="5 5"
+        fill="none"
+      />
+      {stops.map((name, k) => {
+        const strait = k > 0 && k < stops.length - 1;
+        const done = strait && k - 1 < passed;
+        const waits = strait && k - 1 === passed && phase === "sailing";
+        return (
+          <g key={name}>
+            <circle
+              cx={x(k)}
+              cy={y(k)}
+              r={strait ? 8 : 6}
+              fill={done ? "var(--pc-ink)" : "var(--pc-paper)"}
+              stroke={waits ? "var(--pc-gold)" : "var(--pc-ink)"}
+              strokeWidth={waits ? 3 : 2}
+            />
+            <text
+              x={x(k)}
+              y={k % 2 ? 80 : 16}
+              textAnchor="middle"
+              fontSize="11"
+              fontWeight="700"
+              fill="var(--pc-ink)"
+            >
+              {name.replace(/^L[ea]s? (détroit|large|canal) d[eu']s? ?/i, "")}
+            </text>
+          </g>
+        );
+      })}
+      <g transform={`translate(${shipX} ${shipY - 12})`} data-muda-ship>
+        <path d="M-9 4 H9 L6 9 H-6 Z" fill="var(--pc-ink)" />
+        <path
+          d="M0 -8 V4 M0 -7 Q6 -3 0 1"
+          stroke="var(--pc-ink)"
+          strokeWidth="1.6"
+          fill="var(--pc-paper)"
+        />
+      </g>
+    </svg>
+  );
+}
+
 export function MudaSheet({
   setup,
   state,
@@ -182,6 +259,7 @@ export function MudaSheet({
         </p>
       </div>
       <h3 className="pc-mn-h3">La route d'Alexandrie</h3>
+      <Route names={M.straits.map((x) => x.name)} passed={passed} phase={phase} />
       <ol className="pc-mu-straits">
         {M.straits.map((x, k) => {
           const st = ours?.straits[x.id];
@@ -519,15 +597,38 @@ export function GazetteSheet({
   onReplay: (id: number) => void;
 }) {
   if (!gazette)
+    // Even before its first number, the Gazette is a printed page (docs/plan-semaine.md D6).
     return (
       <section className="pc-planche-card pc-pl-card pc-gz" data-gazette="none">
         <div className="pc-pl-head">
           <div>
             <h2>La Gazette</h2>
-            <span>Le premier numéro paraît dimanche matin, au retour de la Muda.</span>
+            <span>{lagoon}</span>
           </div>
           {close}
         </div>
+        <article className="pc-gz-page" data-gazette-blank>
+          <header className="pc-gz-mast">
+            <Emblem size={30} />
+            <div>
+              <b>La Gazette de la lagune</b>
+              <span>Premier numéro dimanche matin</span>
+            </div>
+          </header>
+          <div className="pc-gz-une">
+            <h3>Au retour de la Muda</h3>
+            <p>
+              La une dira la semaine de la lagune : le convoi, les tours prises, les défis, les
+              ouvrages bâtis. Ta Maison y figurera si elle s'y illustre.
+            </p>
+          </div>
+          <div className="pc-gz-blank" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
+        </article>
       </section>
     );
   const g = gazette;

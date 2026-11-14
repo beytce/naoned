@@ -519,6 +519,11 @@ export default function LabPlanche() {
   /** The good the card of a town is about, and the scale of the view. */
   const [focus, setFocus] = useState<string | null>(null);
   const [scale, setScale] = useState<"monde" | "lagune">("lagune");
+  // The tide opens on the board (docs/plan-semaine.md D6): the camera draws back to the whole
+  // lagoon, where the ink of the open sea shows.
+  useEffect(() => {
+    if (mareeOpen) setScale("monde");
+  }, [mareeOpen]);
   const pins = useRef(new Map<string, HTMLElement>()).current;
   const seq = useRef(0);
   const tell = useCallback(

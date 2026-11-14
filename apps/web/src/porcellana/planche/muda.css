@@ -396,3 +396,22 @@
   background: var(--pc-ink);
   color: #f6f4f0;
 }
+/* The road to Alexandria, drawn (docs/plan-semaine.md D6). */
+.pc-mu-route {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 4px 0 8px;
+}
+/* The Gazette before its first number: its columns waiting, ruled (docs/plan-semaine.md D6). */
+.pc-gz-blank {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+.pc-gz-blank i {
+  height: 54px;
+  background: repeating-linear-gradient(var(--pc-hair) 0 2px, transparent 2px 9px);
+  border-radius: 2px;
+}
