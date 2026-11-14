@@ -88,4 +88,15 @@ Les duels honnêtes (lot B), l'économie (lot C), les douze systèmes et la sema
 
 ## 7. État
 
-Validé ; lots à venir.
+| Lot | État |
+| --- | --- |
+| A0 | fait : `CLAUDE.md` réécrit pour la planche (règles d'or de CADRAGE-v4, règles techniques telles qu'elles sont, l'ancien jeu à part) ; CADRAGE-v4 marqué comme faisant foi ; ligues gelées (`ligues` retiré du thème, une seule ligue) et décrets retirés (`decrets` retiré) ; l'échelle des ligues cachée tant qu'il n'y en a qu'une. Les scripts de mesure de l'audit hors du lint. |
+| A1 | fait : `plancheVue` (moteur, `packages/engine/src/planche/vue.ts`) : sa Maison en entier ; des autres, ni ruses, ni garde, ni entrepôt, ni reliques ni plans, ni bourse, ni livre, ni Livre ; de la Muda, sa seule valeur et sa seule part. Le serveur ne renvoie plus que cette vue. 2 tests du moteur ; les tests du grand livre lisent la planche brute. |
+| A2 | fait : la poussée porte la version de la planche, regroupée à une par seconde et par lagune ; le client ne relit que pour une version plus récente, au plus toutes les trois secondes, étalé sur une seconde et demie ; la fiche de la Maison relue après ses propres gestes ; des caches courts en mémoire pour les pavillons des compagnies (5 s, oubliés à la fondation et au départ), le siège, le nom (1 min), les signes et les saluts (5 s, oubliés quand on en pose) et la session d'une lecture (10 s ; un geste la vérifie toujours). |
+| A3 | fait : `duels.ts` (les duels purs : rejeu, problème, sortie, au-devant), `duelPool.ts` et `duelWorker.ts` (un pool de deux workers, ou les duels joués sur place dans les tests) ; tous les duels du hub passent par lui ; les sorties ne se jouent plus pendant une lecture : un minuteur (30 s) les joue et écrit leur fin au journal (`sortieGarde`), plus de double jeu. Mesuré : deux sorties de 9 × 9 en 5,3 s, la boucle libre. |
+| A4 | fait : `Object.hasOwn` dans `take`, `give`, les navires et les défenses ; le don au phare refuse toute clé hors des marchandises du thème ; une liste blanche des marchandises à l'entrée des routes ; les refus de Fastify (JSON qui ne se lit pas, corps trop grand) en 4xx ; le grand livre de la planche comparé aux bourses à l'audit horaire. Tests du moteur et des routes. |
+| A5 | fait : l'application de l'ancien jeu chargée à la demande (le script d'entrée passe de 1,74 Mo à 149 ko) ; son monde, ses robots et ses notifications ne tournent qu'avec `ANCIEN_JEU=on` (par défaut dans les tests, dont ses parcours ont besoin). |
+| A6 | fait en partie : les géométries des objets de la planche reconstruits sont libérées (sauf celles, partagées, du cache du kit). Le rendu à la demande n'est pas fait : les barges et les rubans bougent en continu ; à reprendre avec le lot D (la planche refaite). |
+| A7 | fait : `apps/server/bench/charge.mjs` (`pnpm --filter @comptoirs/server charge`), en CI (24 joueurs, 30 s) ; à 48 joueurs : 10 % d'un cœur, lectures à 5 ms (12 ms au 95ᵉ centile), gestes à 12 ms (`docs/calibration.md` § La charge d'une lagune). |
+
+**Reste du lot, reporté** : une seconde instance (le `PlancheLost` propre à la planche et les files hors de la mémoire : étape 2 de la cible du rapport 09) ; la montée de ligue en deux phases (sans objet tant que les ligues sont gelées) ; le rendu à la demande (A6).
