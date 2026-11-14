@@ -87,7 +87,7 @@ Un commit par lot, tests du moteur écrits d'abord, sur des fixtures.
 | **L3 Le thème et la mesure** | Le quart de Venise ; bancs `planche` (BOARD=lagune), `maree`, `hex`, `muda`, `guerre` ; `docs/calibration.md` § La lagune ronde ; `rewindMsPerTile` retouché seulement si la mesure le demande. | Les bancs dans leurs fourchettes, ou l'écart expliqué. |
 | **L4 Le dessin du sol** | Le sol, l'eau, l'encre, la caméra par niveau, les noms des sestieri ; le quart ajusté à l'œil. | Capture « lagune » entière, en paysage et au téléphone. |
 | **L5 Les fils** | Les fils en courbe, ceux des autres décalés pour ne pas se superposer. | Captures d'un sestiere chargé de fils. |
-| **L6 Les étiquettes et les repères** | Les étiquettes par niveau ; un campanile par sestiere sur son rivage. | Aucune étiquette n'en recouvre une autre aux trois niveaux. |
+| **L6 Les étiquettes et les repères** | Les étiquettes par niveau ; un amer (une tour-repère) par sestiere sur son rivage. | Aucune étiquette n'en recouvre une autre aux trois niveaux. |
 | **L7 Les parcours** | `e2e:planche`, `planche-online`, `semaine`, `maree` relancés, captures refaites ; `plan-lagunes.md` et `CLAUDE.md` mis à jour. | Les parcours passent. |
 
 L1 à L3 peuvent être fusionnés seuls : la carte est jouable avec l'ancien dessin, en moins beau. L4 à L6 font le gain visible.
@@ -102,7 +102,7 @@ L1 à L3 peuvent être fusionnés seuls : la carte est jouable avec l'ancien des
 
 1. **La forme de l'encre.** Ronde, à la distance au Rialto **(recommandé)** : elle épouse la lagune et garde les seuils actuels. Ou carrée, parallèle aux bords : plus simple à dessiner, mais les coins et les axes ne noircissent plus ensemble.
 2. **Les fils en courbe (L5).** Dans cette étape **(recommandé)** : les coudes à angle droit sont une bonne part du désordre. Ou plus tard, pour livrer la carte plus tôt.
-3. **Un campanile par sestiere (L6).** Dans cette étape **(recommandé)**, en dernier, comme simple décor. Ou noté dans `IDEAS.md`.
+3. **Un amer par sestiere (L6).** (Proposé sous le nom de « campanile » ; renommé le 14 novembre, le lot C ayant son Campanile, ouvrage de prestige de l'île.) Dans cette étape **(recommandé)**, en dernier, comme simple décor. Ou noté dans `IDEAS.md`.
 4. **Les lagunes en cours.** Elles passent à la nouvelle carte au déploiement **(recommandé)** : pas de joueurs avant la bêta, les identifiants et l'encre tiennent. Ou une annonce dans les notes de chapitre avant de l'appliquer.
 
 ## 8. État des lots (14 novembre 2026)
@@ -114,7 +114,7 @@ L1 à L3 peuvent être fusionnés seuls : la carte est jouable avec l'ancien des
 | L3 | fait : `docs/calibration.md` § La lagune ronde. Aucun réglage retouché. |
 | L4 | fait : la vue « lagune » cadre toute la planche (largeur et hauteur) ; la vue « sestiere » vise entre sa Maison et le milieu de son quart ; l'encre est un lavis radial et sa ligne un cercle de tirets ; l'eau du Large reste grise, l'encre ne noircit que les coins ; les noms des sestieri entre le premier et le deuxième arc. |
 | L5 | fait : sur la lagune, un fil tourne autour du Rialto en changeant de distance ; il va droit près du centre et coupe à travers la lagune quand il va loin (pas d'anneau) ; les fils des autres sestieri sont estompés, ceux de ses voisins restent nets. La planche de 8 garde ses coudes. |
-| L6 | fait : de loin, une tour n'est nommée que si elle est à soi, menacée par l'encre ou choisie ; de près, celles de son sestiere et les canaux ; les détroits noirs et ceux de la Muda sont une marque de loin ; au téléphone, de loin, les villes des autres sestieri sont une marque ; le môle n'a pas d'étiquette de loin. Un campanile par sestiere sur son rivage, quatre silhouettes. |
+| L6 | fait : de loin, une tour n'est nommée que si elle est à soi, menacée par l'encre ou choisie ; de près, celles de son sestiere et les canaux ; les détroits noirs et ceux de la Muda sont une marque de loin ; au téléphone, de loin, les villes des autres sestieri sont une marque ; le môle n'a pas d'étiquette de loin. Un amer par sestiere sur son rivage (`seamarks` dans `PlancheBoard.tsx`), quatre silhouettes ; ce n'est pas le Campanile du lot C. |
 | L7 | parcours `semaine` et `maree` relancés (voir le compte rendu de la PR) ; captures de la nouvelle carte dans `docs/lagune-ronde-captures/`. |
 
 Les détroits noirs : le Turc au sud, Gênes à l'ouest, Milan au nord. Écart avec le plan : aucun réglage du thème n'a changé hors des cases.

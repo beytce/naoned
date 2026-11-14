@@ -273,11 +273,12 @@ export function PlancheBoard({
     return { root, at };
   }, [setup, land, me]);
 
-  // A campanile on each sestiere's shore, each its own (docs/plan-lagune-ronde.md L6): one knows
+  // A seamark on each sestiere's shore, each its own tower (docs/plan-lagune-ronde.md L6; not the
+  // Campanile a house builds on its island, docs/plan-economie.md C3): one knows
   // one's quarter by its tower, without reading. On the shore between its last town and the
   // channel to its mouth; a decoration, never picked.
   // biome-ignore lint/correctness/useExhaustiveDependencies: built once for a board.
-  const campaniles = useMemo(() => {
+  const seamarks = useMemo(() => {
     const root = new Group();
     const cx = (W - 1) / 2;
     const cy = (H - 1) / 2;
@@ -988,7 +989,7 @@ export function PlancheBoard({
   // What a rebuild leaves behind is freed, not kept in the GPU (docs/plan-socle.md A6).
   useEffect(() => () => disposeBuilt(web.root), [web.root]);
   useEffect(() => () => disposeBuilt(minis), [minis]);
-  useEffect(() => () => disposeBuilt(campaniles), [campaniles]);
+  useEffect(() => () => disposeBuilt(seamarks), [seamarks]);
   useEffect(() => () => disposeBuilt(anchored), [anchored]);
   useEffect(() => () => disposeBuilt(lighthouses), [lighthouses]);
   useEffect(() => () => disposeBuilt(ink), [ink]);
@@ -1012,7 +1013,7 @@ export function PlancheBoard({
       <primitive object={ground} />
       <primitive object={web.root} />
       <primitive object={minis} />
-      <primitive object={campaniles} />
+      <primitive object={seamarks} />
       <primitive object={anchored} />
       <primitive object={lighthouses} />
       <primitive object={ink} />
