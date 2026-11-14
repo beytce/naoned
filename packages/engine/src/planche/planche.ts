@@ -633,6 +633,9 @@ export function plancheThread(
   if (!own(s0.houses, house) || !houseOf(S, house) || !c) return fail("planche_unknown");
   if (!own(c.wants, good)) return fail("planche_not_wanted");
   if (how.detour && !(c.via.length && (c.detourBps ?? 0) > 0)) return fail("planche_no_detour");
+  // The detour opens at its level of the house (docs/plan-economie.md C1).
+  if (how.detour && S.maison && !maisonUnlocks(S.maison, own(s0.houses, house)?.level ?? 1).detour)
+    return fail("planche_detour_level");
   if (!how.detour && !plancheRouteOpen(S, s0, house, city, now)) return fail("planche_route_shut");
   if (plancheFreeBobbins(S, s0, house) < 1) return fail("planche_no_bobbin");
   const s = clone(s0);

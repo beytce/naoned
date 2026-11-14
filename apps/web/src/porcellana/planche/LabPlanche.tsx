@@ -20,6 +20,7 @@ import {
   assautFleetOf,
   maisonLevel,
   maisonThreshold,
+  maisonUnlocks,
   plancheAdvance,
   plancheAssemble,
   plancheBuild,
@@ -158,6 +159,7 @@ const houseName = (id: string, names?: Record<string, string>) =>
 const nameOf = (id: string, names?: Record<string, string>) =>
   plancheIsCorsair(id) ? `le corsaire ${id.slice(8)}` : houseName(id, names);
 const SAID: Record<string, string> = {
+  planche_detour_level: "Le détour s'ouvre à la Casa : monte ta Maison pour le prendre.",
   // The duels against the computer (docs/plan-duels.md B1, B2).
   planche_force_tried: "Tu as déjà tenté cette tour aujourd'hui : demain, un autre essai.",
   planche_own_passage: "Cette tour est déjà la tienne.",
@@ -1283,6 +1285,9 @@ export default function LabPlanche() {
     by.delete(ME);
     return { mine, others: [...by.values()].sort((x, y) => y - x) };
   };
+  // The detour opens at its level of the house (docs/plan-economie.md C1).
+  const detourOpen = !S.maison || maisonUnlocks(S.maison, me?.level ?? 1).detour;
+  const detourLevel = S.maison?.unlocks.find((u) => u.detour)?.level ?? 1;
   const tie = (cityId: string, cityName: string, good: string, detour = false) =>
     act(
       () => plancheThread(S, state, ME, cityId, good, state.now, detour ? { detour: true } : {}),
@@ -1550,12 +1555,14 @@ export default function LabPlanche() {
                   type="button"
                   className="pc-passe-quiet"
                   data-detour={(at ?? another)?.good}
+                  disabled={!detourOpen}
                   onClick={() => {
                     const g = (at ?? another)?.good;
                     if (g) tie(city.id, city.name, g, true);
                   }}
                 >
                   Par le détour · {Math.round(city.detourBps / 100)} %
+                  {detourOpen ? null : <small>à la Casa, niveau {detourLevel}</small>}
                 </button>
               </>
             ) : null}

@@ -12,6 +12,7 @@ import {
   planchePortSlots,
   plancheShip,
 } from "./arsenal.js";
+import { maisonUnlocks } from "./maison.js";
 import {
   type PlancheHouse,
   type PlancheSetup,
@@ -48,6 +49,7 @@ function worth(
   const c = S.cities.find((x) => x.id === city);
   if (!hs || !h || !c) return 0;
   if (detour ? !(c.via.length && c.detourBps) : !plancheRouteOpen(S, s, house, city, now)) return 0;
+  if (detour && S.maison && !maisonUnlocks(S.maison, h.level ?? 1).detour) return 0;
   const sameGood = h.threads.filter((t) => t.good === good).length || 1;
   // What it can really load an hour: its output of that good, and a share of what lies in store.
   const supply =

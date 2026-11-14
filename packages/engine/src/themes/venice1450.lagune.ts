@@ -209,31 +209,32 @@ export const venice1450LaguneParams: LagoonParams = {
         bricks: want(1_100, 180, 9),
       }),
     ],
-    // The open sea's, beyond a mouth and a strait: the richest.
+    // The open sea's, beyond a mouth and a strait: the richest, but no longer by far (docs/plan-economie.md
+    // C1: prices × 0.6, floor 30 %, measured in docs/calibration.md).
     large: [
       town("Raguse", {
-        glass: want(3_800, 200, 9, 5_000),
-        rope: want(3_400, 200, 9, 5_000),
-        bricks: want(3_000, 180, 8, 5_000),
-        planks: want(3_200, 180, 8, 5_000),
+        glass: want(2_280, 200, 9, 3_000),
+        rope: want(2_040, 200, 9, 3_000),
+        bricks: want(1_800, 180, 8, 3_000),
+        planks: want(1_920, 180, 8, 3_000),
       }),
       town("Alexandrie", {
-        glass: want(6_500, 220, 8, 5_000),
-        planks: want(5_500, 220, 8, 5_000),
-        rope: want(6_000, 220, 8, 5_000),
-        flour: want(4_500, 220, 8, 5_000),
+        glass: want(3_900, 220, 8, 3_000),
+        planks: want(3_300, 220, 8, 3_000),
+        rope: want(3_600, 220, 8, 3_000),
+        flour: want(2_700, 220, 8, 3_000),
       }),
       town("Constantinople", {
-        glass: want(5_800, 220, 8, 5_000),
-        bricks: want(4_200, 200, 8, 5_000),
-        salt: want(3_000, 200, 8, 5_000),
-        flour: want(4_000, 220, 8, 5_000),
+        glass: want(3_480, 220, 8, 3_000),
+        bricks: want(2_520, 200, 8, 3_000),
+        salt: want(1_800, 200, 8, 3_000),
+        flour: want(2_400, 220, 8, 3_000),
       }),
       town("Candie", {
-        rope: want(4_200, 200, 8, 5_000),
-        planks: want(4_400, 200, 8, 5_000),
-        salt: want(2_800, 200, 8, 5_000),
-        glass: want(4_800, 200, 8, 5_000),
+        rope: want(2_520, 200, 8, 3_000),
+        planks: want(2_640, 200, 8, 3_000),
+        salt: want(1_680, 200, 8, 3_000),
+        glass: want(2_880, 200, 8, 3_000),
       }),
     ],
   },
@@ -249,6 +250,8 @@ export const venice1450LaguneParams: LagoonParams = {
     corsairs: ["Ivo le Borgne", "Dragut", "Uluç Ali", "Kemal Reis", "Barberousse", "Turgut"],
   },
   detourBps: 6_000,
+  // The open sea by the detour: a fifth of the way by the passages (docs/plan-economie.md C1).
+  largeDetourBps: 2_000,
   base: {
     sliceMs: base.sliceMs,
     goods: base.goods,
@@ -293,7 +296,8 @@ export const venice1450LaguneParams: LagoonParams = {
         { level: 2, bobbins: 4 },
         { level: 3, tier: 2 },
         { level: 4, bobbins: 5, tiles: 16 },
-        { level: 6, towers: 2 },
+        // The Casa reaches the open sea by the detour (docs/plan-economie.md C1).
+        { level: 6, towers: 2, detour: true },
         { level: 8, bobbins: 6, tiles: 20 },
         { level: 11, tiles: 28 },
         { level: 12, bobbins: 7 },

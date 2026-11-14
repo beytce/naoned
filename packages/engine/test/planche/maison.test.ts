@@ -146,9 +146,9 @@ describe("the house's level", () => {
 
   it("opens what each level opens, keeping what the earlier ones opened", () => {
     const R = rules();
-    expect(maisonUnlocks(R, 1)).toEqual({ bobbins: 1, tiles: 5, tier: 1, towers: 1 });
-    expect(maisonUnlocks(R, 3)).toEqual({ bobbins: 2, tiles: 5, tier: 1, towers: 1 });
-    expect(maisonUnlocks(R, 6)).toEqual({ bobbins: 2, tiles: 6, tier: 2, towers: 2 });
+    expect(maisonUnlocks(R, 1)).toEqual({ bobbins: 1, tiles: 5, tier: 1, towers: 1, detour: true });
+    expect(maisonUnlocks(R, 3)).toEqual({ bobbins: 2, tiles: 5, tier: 1, towers: 1, detour: true });
+    expect(maisonUnlocks(R, 6)).toEqual({ bobbins: 2, tiles: 6, tier: 2, towers: 2, detour: true });
   });
 });
 
@@ -214,6 +214,31 @@ describe("the level on the board", () => {
     s = plancheForced(S, s, "ana", "p1", T0);
     expect(s.passages.p1?.holder).toBe("ana");
     expect(s.passages.p2?.holder).toBe("ana");
+  });
+
+  it("opens the detour at its level, where the growth says so (docs/plan-economie.md C1)", () => {
+    const S = setup();
+    const loin = S.cities.find((c) => c.id === "loin");
+    if (!loin) throw new Error("no town");
+    loin.via = ["p1"];
+    loin.detourBps = 2_000;
+    // The fixture's growth names no detour: it is open from the first level.
+    expect(maisonUnlocks(rules(), 1).detour).toBe(true);
+    expect(() =>
+      plancheThread(S, plancheInit(S, T0), "ana", "loin", "verre", T0, { detour: true }),
+    ).not.toThrow();
+    // Opened at level 4: refused before, taken after.
+    const M = S.maison as MaisonRules;
+    M.unlocks = [...M.unlocks, { level: 4, detour: true }];
+    expect(maisonUnlocks(M, 3).detour).toBe(false);
+    const s = plancheInit(S, T0);
+    expect(() => plancheThread(S, s, "ana", "loin", "verre", T0, { detour: true })).toThrow(
+      "planche_detour_level",
+    );
+    const t = plancheSetLevel(S, s, "ana", 4);
+    expect(
+      plancheThread(S, t, "ana", "loin", "verre", T0, { detour: true }).houses.ana?.threads,
+    ).toHaveLength(1);
   });
 
   it("never takes away what a level gave: a lower level asked is refused", () => {

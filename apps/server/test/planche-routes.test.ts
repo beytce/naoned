@@ -113,23 +113,18 @@ describe("the board on line", () => {
     ).toBe("ile_unknown");
   });
 
-  it("stretches a thread by the detour to a town behind a shut tower", async () => {
+  it("keeps the detour to the open sea for the Casa (docs/plan-economie.md C1)", async () => {
     const ana = await player("ana@example.org");
-    const a = (await ana("GET", "/api/planche")).json().planche;
     // Raguse is beyond the mouth and the strait of Cannaregio, both the corsairs'.
     expect(
       (await ana("POST", "/api/planche/thread", { city: "raguse", good: "glass" })).json().error,
     ).toBe("planche_route_shut");
-    const by = await ana("POST", "/api/planche/thread", {
-      city: "raguse",
-      good: "glass",
-      detour: true,
-    });
-    expect(by.statusCode).toBe(200);
-    expect(by.json().planche.state.houses[a.me].threads[0]).toMatchObject({
-      to: "raguse",
-      detour: true,
-    });
+    // A new house is at level 1: the detour opens at level 6 (the engine's tests take it there).
+    expect(
+      (
+        await ana("POST", "/api/planche/thread", { city: "raguse", good: "glass", detour: true })
+      ).json().error,
+    ).toBe("planche_detour_level");
   });
 
   it("refuses what the board refuses, with a code", async () => {

@@ -3515,3 +3515,19 @@ Banc ad hoc : sur chaque damier de la lagune, quatre parties à graine fixe, le 
 - Avec le poids 1, un tiers des pièces (35 %) diffèrent de celles d'un capitaine sans manière : la manière se voit sans faire perdre.
 - Les rives prenaient les bords dans les deux sens et perdaient à tout poids ; tenues le long d'un seul axe, elles gagnent autant que les autres. Le poids reste 1 (`PASSE_MANNER`, variable d'environnement du même nom pour le banc).
 - Un capitaine a désormais **une seule manière**, la sienne (tirée de son nom), dans ses sorties comme à sa tour quand on la force ; elle est nommée sur la fiche.
+
+## L'économie : le lot C (14 novembre 2026, docs/plan-economie.md)
+
+`pnpm --filter @comptoirs/simulator eco-bench [graines] [semaines] [avant]` : la lagune de Venise, 48 Maisons de quatre sortes (12 chacune) : l'ordinateur (toutes les 8 h, sans détour), l'occasionnel (4 soirs par semaine), le régulier (8 h, 13 h, 20 h ; une tour un jour sur deux), l'assidu (toutes les 2 h de 7 h à 23 h ; une tour par jour). Les joueurs prennent le détour là où leur niveau l'ouvre. Problème du jour réussi 6 fois sur 10, tours gagnées 4 fois sur 10. `avant` rejoue la lagune d'avant le lot. Médianes de trois graines.
+
+### C1 : le Large (prix × 0,6, plancher 30 %, détour à 20 % et au niveau 6)
+
+| Semaine | Ducats créés, avant → après | Détenus, avant → après | Part du Large (occasionnel · régulier · assidu), avant → après |
+| --- | --- | --- | --- |
+| 2 | 1 189 069 → 485 811 | 540 954 → 278 806 | 54 · 85 · 86 % → 3 · 32 · 44 % |
+| 4 | 1 223 995 → 783 108 | 1 588 679 → 1 064 998 | 82 · 58 · 61 % → 40 · 46 · 42 % |
+| 6 | 1 230 285 → 717 854 | 3 178 115 → 1 464 704 | 78 · 47 · 54 % → 41 · 41 · 38 % |
+
+- La monnaie créée baisse de 40 % en régime établi, comme l'économiste l'avait mesuré ; le Large tombe vers 40 % des ventes : il reste la meilleure route, sans écraser les autres.
+- L'occasionnel ne vit plus du seul détour (78 % de ses ventes avant) ; avant le niveau 6, il vend en sestiere et dans la lagune.
+- La masse détenue grossit encore de 200 000 à 400 000 ducats par semaine : c'est ce que le puits (C3) doit absorber.
