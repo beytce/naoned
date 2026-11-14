@@ -545,7 +545,7 @@ const MUDA_PIER: PlancheCity = {
   id: "mole-de-san-marco",
   name: "Le môle de San Marco",
   x: HALF,
-  y: HALF + 2,
+  y: HALF + 3,
   via: [],
   ring: "muda",
   wants: Object.fromEntries(

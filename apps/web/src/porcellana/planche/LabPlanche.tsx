@@ -140,14 +140,16 @@ const LAND: PlancheLand = LAGOON
       rialto: venice1450Planche.rialto,
     };
 
-/** The sestieri's names, laid on the water above their houses. */
+/** The sestieri's names, laid on the water among their houses. */
 const SESTIERI = LAGOON
   ? [...new Set(S.houses.map((h) => h.sestiere ?? ""))].map((id) => {
       const hs = S.houses.filter((h) => h.sestiere === id);
-      const x = hs.reduce((n, h) => n + h.x, 0) / hs.length;
-      const y = Math.min(...hs.map((h) => h.y)) - 2;
+      // Between its first arc of islands and its second: four fifths of the way from the Rialto
+      // to the middle of its houses (docs/plan-lagune-ronde.md L4).
+      const x = RIALTO.x + (hs.reduce((n, h) => n + h.x - RIALTO.x, 0) / hs.length) * 0.8;
+      const y = RIALTO.y + (hs.reduce((n, h) => n + h.y - RIALTO.y, 0) / hs.length) * 0.8;
       const name = venice1450LaguneParams.sestieri.find((t) => t.id === id)?.name ?? id;
-      return { key: `sest:${id}`, id, name, x: Math.round(x), y };
+      return { key: `sest:${id}`, id, name, x: Math.round(x), y: Math.round(y) };
     })
   : [];
 
@@ -750,6 +752,8 @@ export default function LabPlanche() {
   // The rank (docs/plan-classement.md): one's place at the Doge's, its trend, the marks, the rival.
   // The place among one's neighbours: one's sestiere in a lagoon (docs/plan-lagunes.md G2).
   const mySestiere = S.houses.find((h) => h.id === ME)?.sestiere;
+  /** The whole lagoon in view: only what matters is named (docs/plan-lagune-ronde.md L6). */
+  const farView = LAGOON && scale === "monde";
   const neighbours = S.houses.filter((h) => h.sestiere === mySestiere).length;
   const rank = useMemo(() => {
     return {
@@ -1922,12 +1926,25 @@ export default function LabPlanche() {
         {S.cities.map((c) => {
           const served = me?.threads.some((t) => t.to === c.id);
           const sh = sharesOf(c.id);
+          // The whole lagoon in view (docs/plan-lagune-ronde.md L6): the Muda's pier is its two
+          // columns beside the Rialto; on a phone, the other sestieri's towns are a mark.
+          const named =
+            !farView ||
+            (chosen?.kind === "city" && chosen.id === c.id) ||
+            (c.ring !== "muda" &&
+              (!phone ||
+                c.ring !== "sestiere" ||
+                c.sestiere === mySestiere ||
+                !!served ||
+                !!orderOf(c.id)));
           return (
             <button
               key={c.id}
               type="button"
               ref={pin(`city:${c.id}`)}
               className="pc-planche-pin pc-pl-city"
+              data-compact={String(!named)}
+              aria-label={named ? undefined : c.name}
               data-city={c.id}
               data-mine={String(!!served)}
               data-chosen={String(chosen?.kind === "city" && chosen.id === c.id)}
@@ -1935,23 +1952,40 @@ export default function LabPlanche() {
               data-sealed={String(!!orderOf(c.id))}
               onClick={() => pick({ kind: "city", id: c.id })}
             >
-              <b>
-                {orderOf(c.id) ? <Sceau size={13} /> : null}
-                {c.name}
-              </b>
-              <ShareBar mine={sh.mine} others={sh.others} />
+              {named ? (
+                <>
+                  <b>
+                    {orderOf(c.id) ? <Sceau size={13} /> : null}
+                    {c.name}
+                  </b>
+                  <ShareBar mine={sh.mine} others={sh.others} />
+                </>
+              ) : (
+                <span className="pc-pl-dot" />
+              )}
             </button>
           );
         })}
         {S.passages.map((p) => {
           const holder = state.passages[p.id]?.holder ?? p.holder;
           const corsair = plancheIsCorsair(holder);
+          // In a lagoon, a tower is named where it matters (docs/plan-lagune-ronde.md L6): one's
+          // own, one the ink threatens, the one chosen; up close, those of one's sestiere and the
+          // canals. The others are their tower and a mark, named at a touch.
+          const named =
+            !LAGOON ||
+            holder === ME ||
+            threatened.has(p.id) ||
+            (chosen?.kind === "passage" && chosen.id === p.id) ||
+            (scale !== "monde" && (p.id.startsWith("canal-") || p.id.endsWith(`-${mySestiere}`)));
           return (
             <button
               key={p.id}
               type="button"
               ref={pin(`passage:${p.id}`)}
               className="pc-planche-pin pc-pl-tower"
+              data-compact={String(!named)}
+              aria-label={named ? undefined : p.name}
               data-passage={p.id}
               data-mine={String(holder === ME)}
               data-dark={String(corsair)}
@@ -1968,12 +2002,18 @@ export default function LabPlanche() {
                     fill="none"
                   />
                 </svg>
+              ) : named ? null : (
+                <Flag tone="player" />
+              )}
+              {named ? (
+                <>
+                  <b>
+                    {p.name}
+                    {corsair ? ` · ${holder.slice(8)}` : ""}
+                  </b>
+                  <Seals left={state.passages[p.id]?.seals ?? 0} light={corsair} />
+                </>
               ) : null}
-              <b>
-                {p.name}
-                {corsair ? ` · ${holder.slice(8)}` : ""}
-              </b>
-              <Seals left={state.passages[p.id]?.seals ?? 0} light={corsair} />
             </button>
           );
         })}
@@ -2005,11 +2045,17 @@ export default function LabPlanche() {
             data-noir-pin={x.id}
             data-dark="true"
             data-black="true"
+            data-compact={String(farView && !(chosen?.kind === "noir" && chosen.id === x.id))}
+            aria-label={x.name}
             onClick={() => pick({ kind: "noir", id: x.id })}
           >
-            <b>
-              {x.name.replace(/^Le détroit d[eu] ?/, "")} · {x.captain}
-            </b>
+            {farView && !(chosen?.kind === "noir" && chosen.id === x.id) ? (
+              <span className="pc-pl-dot" />
+            ) : (
+              <b>
+                {x.name.replace(/^Le détroit d[eu] ?/, "")} · {x.captain}
+              </b>
+            )}
           </button>
         ))}
         {(S.muda?.straits ?? []).map((x) => (
@@ -2020,12 +2066,14 @@ export default function LabPlanche() {
             className="pc-planche-pin pc-pl-tower"
             data-muda-pin={x.id}
             data-dark={String(!state.muda?.straits[x.id]?.by)}
+            data-compact={String(farView)}
+            aria-label={x.name}
             onClick={() => {
               pick(null);
               setMudaOpen(true);
             }}
           >
-            <b>{x.name}</b>
+            {farView ? <span className="pc-pl-dot" /> : <b>{x.name}</b>}
           </button>
         ))}
         {S.houses.map((h) => {

@@ -23,7 +23,9 @@ import { useEffect, useMemo, useRef } from "react";
 import {
   BufferAttribute,
   CanvasTexture,
+  CatmullRomCurve3,
   Color,
+  CurvePath,
   Group,
   InstancedMesh,
   MOUSE,
@@ -140,12 +142,13 @@ export function PlancheBoard({
   const wx = (x: number) => (x - (W - 1) / 2) * S;
   const wz = (y: number) => (y - (H - 1) / 2) * S;
 
-  // The ground (docs/audit-visuel-2026-11-11): the land in the kit's tiles, biscuit, darker toward
-  // the open sea; the houses' islands in porcelain; the water in one piece, without joints, washed
+  // The ground (docs/audit-visuel-2026-11-11): the land in the kit's tiles, biscuit, a little greyer
+  // toward the open sea; the houses' islands in porcelain; the water in one piece, without joints, washed
   // from the lagoon's white to the ink of the open sea, a little stained.
   // biome-ignore lint/correctness/useExhaustiveDependencies: built once for a board.
   const ground = useMemo(() => {
     const root = new Group();
+    const round = setup.houses.some((h) => h.sestiere);
     const isles = new Set<string>(setup.houses.map((h) => `${h.x},${h.y}`));
     const rocks = new Set<string>([
       ...setup.passages.map((p) => `${p.x},${p.y}`),
@@ -168,7 +171,7 @@ export function PlancheBoard({
       m.makeTranslation(wx(x), -BOARD.thick / 2, wz(y));
       mesh.setMatrixAt(k, m);
       if (kind === "isle") c.set(SEA.isle);
-      else c.set(SEA.land).lerp(ink, land.peril(x, y) * 0.72);
+      else c.set(SEA.land).lerp(ink, land.peril(x, y) * 0.3);
       mesh.setColorAt(k, c);
     });
     mesh.receiveShadow = true;
@@ -186,8 +189,11 @@ export function PlancheBoard({
     for (let i = 0; i < pos.count; i++) {
       const gx = pos.getX(i) / S + (W - 1) / 2;
       const gy = pos.getZ(i) / S + (H - 1) / 2;
-      // The ink comes early: the open sea reads dark from the lagoon's edge.
-      const p = Math.min(1, Math.sqrt(land.peril(gx, gy)) * 1.15);
+      // The ink comes early: the open sea reads dark from the lagoon's edge. Round a lagoon of
+      // sestieri it stays a frame: grey past the mouths, ink only toward the corners.
+      const p = round
+        ? land.peril(gx, gy) * 0.85
+        : Math.min(1, Math.sqrt(land.peril(gx, gy)) * 1.15);
       if (p < 0.5) c.copy(lagoon).lerp(mid, p * 2);
       else c.copy(mid).lerp(deep, (p - 0.5) * 2);
       const n = Math.sin(gx * 1.7 + gy * 0.9) * Math.sin(gx * 0.6 - gy * 1.3);
@@ -470,67 +476,63 @@ export function PlancheBoard({
     return { root, ticks };
   }, [setup, mudaPhase, passed, fill]);
 
-  // The ink tide (docs/plan-maree.md T6): the open sea's ink over the rows it covers, a wash of
-  // grey over the three rows before it, and the tide's line drawn on the water in the accent.
+  // The ink tide (docs/plan-maree.md T6, docs/plan-lagune-ronde.md L4): a crown of ink round the
+  // lagoon, from the tide's line to the board's edges, a wash of grey over the three tiles before
+  // it, and the line itself drawn on the water in the accent.
   const inkLine = setup.encre ? plancheEncreLine(setup, state) : null;
   // biome-ignore lint/correctness/useExhaustiveDependencies: rebuilt when the line moves.
   const ink = useMemo(() => {
     const root = new Group();
     if (inkLine === null) return root;
-    const row = inkLine / 100;
-    const top = wz(row) - S / 2;
-    const bottom = wz(H - 1) + S / 2;
-    const left = wx(0) - S / 2;
-    const span = W * S;
-    if (bottom > top) {
-      const deep = new Mesh(
-        new PlaneGeometry(span, bottom - top),
-        new MeshBasicMaterial({
-          color: "#1D1B19",
-          transparent: true,
-          opacity: 0.5,
-          depthWrite: false,
-        }),
-      );
-      deep.rotation.x = -Math.PI / 2;
-      deep.position.set(left + span / 2, 0.08, (top + bottom) / 2);
-      deep.renderOrder = 2;
-      root.add(deep);
-    }
-    // The wash before it, darker as it nears the line.
+    const tiles = inkLine / 100;
+    const side = Math.max(W, H);
+    // One sheet over the board, its ink painted from the middle out.
     const canvas = document.createElement("canvas");
-    canvas.width = 2;
-    canvas.height = 64;
+    canvas.width = 512;
+    canvas.height = 512;
     const g = canvas.getContext("2d");
     if (g) {
-      const grad = g.createLinearGradient(0, 0, 0, 64);
-      grad.addColorStop(0, "rgba(29,27,25,0)");
-      grad.addColorStop(1, "rgba(29,27,25,0.5)");
+      const reach = (side / 2) * Math.SQRT2;
+      const grad = g.createRadialGradient(256, 256, 0, 256, 256, (reach / side) * 512);
+      const stop = (t: number, a: number) =>
+        grad.addColorStop(Math.min(1, Math.max(0, t / reach)), `rgba(29,27,25,${a})`);
+      stop(0, 0);
+      stop(tiles - 3, 0);
+      stop(tiles, 0.5);
+      stop(reach, 0.5);
       g.fillStyle = grad;
-      g.fillRect(0, 0, 2, 64);
+      g.fillRect(0, 0, 512, 512);
     }
-    const wash = new Mesh(
-      new PlaneGeometry(span, 3 * S),
+    const crown = new Mesh(
+      new PlaneGeometry(side * S, side * S),
       new MeshBasicMaterial({
         map: new CanvasTexture(canvas),
         transparent: true,
         depthWrite: false,
       }),
     );
-    wash.rotation.x = -Math.PI / 2;
-    wash.position.set(left + span / 2, 0.08, top - 1.5 * S);
-    wash.renderOrder = 2;
-    root.add(wash);
-    // The line itself, dashed in the accent.
+    crown.rotation.x = -Math.PI / 2;
+    crown.position.y = 0.08;
+    crown.renderOrder = 2;
+    root.add(crown);
+    // The line itself, dashed in the accent, where it lies on the board.
     const dash = new MeshBasicMaterial({ color: P.accentColour, transparent: true, opacity: 0.85 });
-    for (let x = 0; x < span; x += S * 0.8) {
+    const radius = tiles * S;
+    const count = Math.max(8, Math.round((2 * Math.PI * radius) / (S * 0.8)));
+    for (let k = 0; k < count; k++) {
+      const a = (k / count) * 2 * Math.PI;
+      const x = Math.cos(a) * radius;
+      const z = Math.sin(a) * radius;
+      if (Math.abs(x) > (W * S) / 2 || Math.abs(z) > (H * S) / 2) continue;
       const d = new Mesh(new PlaneGeometry(S * 0.45, 0.22), dash);
-      d.rotation.x = -Math.PI / 2;
-      d.position.set(left + x + S * 0.25, 0.1, top);
+      d.rotation.set(-Math.PI / 2, 0, Math.PI / 2 - a);
+      d.position.set(x, 0.1, z);
       d.renderOrder = 3;
       root.add(d);
     }
-    places.at.set("encre", new Vector3(wx(W / 2), 0, top));
+    // Its label: on the line toward the camera, kept on the board.
+    const reach = Math.min(radius / Math.SQRT2, (side * S) / 2 - S);
+    places.at.set("encre", new Vector3(reach, 0, reach));
     return root;
   }, [inkLine, setup, P]);
 
@@ -676,10 +678,20 @@ export function PlancheBoard({
       opacity: 0.85,
       depthWrite: false,
     });
+    // The other sestieri's threads, fainter: one's neighbours are whom one is ahead of or behind.
+    const far = new MeshBasicMaterial({
+      map: dashes,
+      transparent: true,
+      opacity: 0.28,
+      depthWrite: false,
+    });
     const foe = new MeshBasicMaterial({ map: dashes, depthWrite: false });
     const shadow = new MeshStandardMaterial({ color: THREAD.shadow, roughness: 0.8 });
     const sheen = new MeshBasicMaterial({ color: THREAD.sheen, toneMapped: false });
     const seen = new Set<string>();
+    /** A lagoon of sestieri is round: its threads curve. */
+    const round = setup.houses.some((h) => h.sestiere);
+    const home = setup.houses.find((x) => x.id === me)?.sestiere;
     for (const h of setup.houses) {
       const own = h.id === me;
       for (const th of state.houses[h.id]?.threads ?? []) {
@@ -691,6 +703,33 @@ export function PlancheBoard({
         const lift = own ? RIBBON.lift + 0.02 : RIBBON.lift;
         const leg = (x: number, y: number) => {
           const last = pts[pts.length - 1] as Vector3;
+          // On the round lagoon, a thread follows the water round the Rialto: its distance from
+          // the middle and its bearing change together (docs/plan-lagune-ronde.md L5). The others'
+          // turn first and go out after, so that two do not lie on one another.
+          if (round) {
+            const to = new Vector3(wx(x), 0, wz(y));
+            const r1 = Math.hypot(last.x, last.z);
+            const r2 = Math.hypot(to.x, to.z);
+            const a2 = r2 < 0.01 ? Math.atan2(last.z, last.x) : Math.atan2(to.z, to.x);
+            const a1 = r1 < 0.01 ? a2 : Math.atan2(last.z, last.x);
+            // Near the middle there is no going round: straight there.
+            const turn =
+              Math.min(r1, r2) < 5 * S ? 0 : Math.atan2(Math.sin(a2 - a1), Math.cos(a2 - a1));
+            if (!turn) {
+              pts.push(to);
+              return;
+            }
+            const n = Math.max(2, Math.ceil((Math.abs(r2 - r1) + Math.abs(turn) * (r1 + r2)) / S));
+            for (let k = 1; k < n; k++) {
+              const t = k / n;
+              // The further round it goes, the more it cuts across the lagoon: no ring round it.
+              const cut = 1 - (Math.abs(turn) / Math.PI) * 0.75 * Math.sin(Math.PI * t);
+              const r = (r1 + (r2 - r1) * (own ? t : t * t)) * cut;
+              pts.push(new Vector3(Math.cos(a1 + turn * t) * r, 0, Math.sin(a1 + turn * t) * r));
+            }
+            pts.push(to);
+            return;
+          }
           // The others' threads turn the other way round, so that two do not lie on one another.
           if (own) pts.push(new Vector3(wx(x), 0, last.z));
           else pts.push(new Vector3(last.x, 0, wz(y)));
@@ -704,10 +743,11 @@ export function PlancheBoard({
         leg(city.x, city.y);
         for (const p of pts) p.y = lift;
         const clean = pts.filter((p, k) => k === 0 || p.distanceTo(pts[k - 1] as Vector3) > 0.01);
-        const route = roundedPath(clean);
+        const route = round ? new CurvePath<Vector3>() : roundedPath(clean);
+        if (round && clean.length > 1) route.add(new CatmullRomCurve3(clean, false, "centripetal"));
         const ribbon = new Mesh(
           ribbonGeometry(route, own ? THREAD.width : h.id === rival ? THREAD.rival : THREAD.other),
-          own ? accent : h.id === rival ? foe : other,
+          own ? accent : h.id === rival ? foe : round && home && h.sestiere !== home ? far : other,
         );
         ribbon.receiveShadow = own;
         root.add(ribbon);
@@ -802,11 +842,29 @@ export function PlancheBoard({
   useEffect(() => {
     const cam = camera as OrthographicCamera;
     const span = cam.right - cam.left || 110;
-    zoomTo.current = whole ? Math.min(zoom, span / (W * S * 1.08)) : zoom;
+    const tall = cam.top - cam.bottom || 70;
+    // The board seen from its corner: as wide as its two sides, flattened by the camera's height.
+    const wide = ((W + H) * S) / Math.SQRT2;
+    const fit = Math.min(span / wide, tall / (wide * Math.sin(CAMERA.elevation)));
+    zoomTo.current = whole ? Math.min(zoom, fit / 1.06) : zoom;
     const mineAt = setup.houses.find((h) => h.id === me);
+    // One's sestiere: between one's house and the middle of its quarter, so that its towns and
+    // its mouth stay in view (docs/plan-lagune-ronde.md L4).
+    const quarter = [
+      ...setup.houses.filter((h) => mineAt?.sestiere && h.sestiere === mineAt.sestiere),
+      ...setup.cities.filter((c) => mineAt?.sestiere && c.sestiere === mineAt.sestiere),
+    ];
+    const mid = quarter.length
+      ? {
+          x: quarter.reduce((n, q) => n + q.x, 0) / quarter.length,
+          y: quarter.reduce((n, q) => n + q.y, 0) / quarter.length,
+        }
+      : null;
     aimTo.current = whole
       ? new Vector3(0, 0, 0)
-      : new Vector3(wx(mineAt?.x ?? W / 2) - S * 2, 0, wz(mineAt?.y ?? H / 2) + S);
+      : mid && mineAt
+        ? new Vector3(wx((mid.x + mineAt.x) / 2), 0, wz((mid.y + mineAt.y) / 2))
+        : new Vector3(wx(mineAt?.x ?? W / 2) - S * 2, 0, wz(mineAt?.y ?? H / 2) + S);
     // On line one's house is known only once the server has answered: the view goes to it then.
   }, [zoom, whole, me]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the board's size is fixed.
