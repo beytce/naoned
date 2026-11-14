@@ -1,18 +1,28 @@
 /**
- * The island of a house in Porcellana (docs/plan-ile.md I4 and I5): its tiles in the kit's grammar,
- * each with the mark of its terrain, the workshops of the kit on them, a scaffold while one is
- * being built, the « + » plots one may buy around. The tiles turn over when one comes in. Pins
- * follow the scene: a workshop's level, or, while one is laid, what each free tile would give it.
+ * The island of a house (docs/plan-ile.md I4 and I5, redrawn in the Céladon direction,
+ * docs/plan-celadon.md C3): a quay of blond planks on the lagoon, its tiles in the colour of their
+ * terrain, the workshops at work on them, a scaffold while one is being built, the plots one may
+ * buy pale and dashed, and a slide between two neighbours where one feeds the other. The tiles
+ * turn over when one comes in. Pins follow the scene: a workshop's level, or, while one is laid,
+ * what each free tile would give it.
  */
-import { ILE_FONDACO, type IleState, type IleTerrain } from "@comptoirs/engine";
+import {
+  ILE_FONDACO,
+  type IleRules,
+  type IleState,
+  type IleTerrain,
+  ileSupplies,
+} from "@comptoirs/engine";
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import {
   Group,
   MOUSE,
+  Mesh,
   MeshStandardMaterial,
   type Object3D,
   type OrthographicCamera,
+  PlaneGeometry,
   TOUCH,
   Vector3,
 } from "three";
@@ -21,16 +31,21 @@ import { Stage } from "../Stage.js";
 import { palette } from "../TileBoard.js";
 import { easeOutBack } from "../arrival.js";
 import { bake } from "../bake.js";
-import { CATALOGUE } from "../catalogue.js";
+import {
+  type SlideBuilt,
+  ilePlot,
+  ileSlab,
+  ileSlide,
+  quay,
+  scaffold,
+  terrainMark,
+} from "../celadon/ile.js";
+import { WORKSHOPS } from "../celadon/workshops.js";
 import type { Palette } from "../materials.js";
-import { rocks } from "../models/decor.js";
-import { fondaco } from "../models/fondaco.js";
-import { grove, slab } from "../models/ground.js";
-import { box, cyl } from "../shapes.js";
-import { BOARD, CAMERA } from "../tokens.js";
+import { disposeBuilt } from "../shapes.js";
+import { BOARD, CAMERA, CELADON, QUAY } from "../tokens.js";
 
-const S = BOARD.tile + BOARD.gap;
-const BY_KEY = new Map(CATALOGUE.map((e) => [e.key, e]));
+const S = BOARD.tile;
 
 export const TERRAIN_NAMES: Record<IleTerrain, string> = {
   rive: "Rive",
@@ -40,120 +55,52 @@ export const TERRAIN_NAMES: Record<IleTerrain, string> = {
   sable: "Sable",
 };
 
-/** The mark of a terrain on a free tile: what one would expect to find there, in porcelain. */
-function terrainMark(P: Palette, t: IleTerrain, seed: number): Group {
-  const g = new Group();
-  if (t === "foret") g.add(grove(P, seed, 6, ["fir", "cypress"]).group);
-  else if (t === "rive") {
-    // the water's edge along the south side, a little pier
-    box(g, BOARD.tile, 0.12, 1.5, 0, -0.06, 2.25, P.m("water"), 0.05);
-    box(g, 0.5, 0.18, 1.6, 1.6, 0, 1.9, P.m("wood"), 0.03);
-  } else if (t === "sable") {
-    for (const [x, z, r] of [
-      [-1.2, -1, 1.1],
-      [1.1, 0.4, 0.9],
-      [-0.3, 1.4, 0.7],
-    ] as const) {
-      const m = cyl(g, r, r * 1.15, 0.22, x, 0, z, P.m("trim"), 24);
-      m.scale.y = 1;
-    }
-  } else if (t === "argile") {
-    box(g, 2.2, 0.08, 1.6, -0.6, 0, -0.4, P.m("open"), 0.2);
-    g.add(rocks(P, { seed, running: false }).group);
-    g.children[g.children.length - 1]?.scale.setScalar(0.45);
-  } else {
-    // the meadow: furrows of crop
-    for (let k = -2; k <= 2; k++) box(g, 4.2, 0.1, 0.32, 0, 0, k * 0.85, P.m("crop"), 0.05);
-  }
-  return g;
-}
-
-/**
- * The colour of a terrain on the top of its tile (docs/audit-visuel-2026-11-11, « le terrain se
- * voit »): pinkish clay, grainy sand, a greener meadow, the shore and the forest paler.
- */
+/** The colour of a terrain, for the legend and the plots' labels. */
 export const TERRAIN_TINT: Record<IleTerrain, string> = {
-  rive: "#E6ECEB",
-  argile: "#E6C3B2",
-  foret: "#DEDACB",
-  pre: "#DCE3D0",
-  sable: "#F0E3C8",
+  rive: CELADON.rive,
+  argile: CELADON.argile,
+  foret: CELADON.foret,
+  pre: CELADON.pre,
+  sable: CELADON.sable,
 };
-const tints = new Map<string, MeshStandardMaterial>();
-function tint(t: IleTerrain, pale: boolean): MeshStandardMaterial {
-  const key = `${t}|${pale}`;
-  let m = tints.get(key);
-  if (!m) {
-    m = new MeshStandardMaterial({
-      color: TERRAIN_TINT[t],
-      roughness: 0.86,
-      transparent: pale,
-      opacity: pale ? 0.5 : 1,
-    });
-    tints.set(key, m);
-  }
-  return m;
-}
-const dash = new MeshStandardMaterial({ color: "#A89F91", roughness: 0.9 });
 
-/** The top of a tile in the colour of its terrain. */
-function terrainTop(g: Group, t: IleTerrain): void {
-  box(g, BOARD.tile - 0.36, 0.04, BOARD.tile - 0.36, 0, 0, 0, tint(t, false), 0.3);
+interface TileBuilt {
+  group: Group;
+  /** How high its pin stands. */
+  top: number;
+  /** What turns in it while it works. */
+  tick?: (t: number) => void;
 }
 
-/** A plot one may buy: a pale plate of its terrain, dashed round its edge, without relief. */
-function plotOf(t: IleTerrain): Group {
+/** A tile of an island as it stands: its slab, its terrain, what is built on it. */
+function buildTile(P: Palette, tile: IleState["tiles"][string], n: number, now: number): TileBuilt {
   const g = new Group();
-  const w = BOARD.tile - 0.6;
-  box(g, w, 0.22, w, 0, -0.22, 0, tint(t, true), 0.2);
-  const n = 6;
-  const step = w / n;
-  for (let k = 0; k < n; k++) {
-    const at = -w / 2 + step * (k + 0.5);
-    for (const side of [-1, 1]) {
-      box(g, step * 0.55, 0.05, 0.12, at, 0, (side * w) / 2, dash, 0.02);
-      box(g, 0.12, 0.05, step * 0.55, (side * w) / 2, 0, at, dash, 0.02);
-    }
+  const b = tile.building;
+  ileSlab(g, b?.type === ILE_FONDACO ? null : tile.terrain);
+  if (!b) {
+    terrainMark(g, tile.terrain);
+    return { group: g, top: 2.2 };
   }
-  return g;
+  const make = Object.hasOwn(WORKSHOPS, b.type) ? WORKSHOPS[b.type] : undefined;
+  const model = make?.(P, { level: b.level, seed: n * 7 + 3 });
+  if (model) g.add(model.group);
+  const site = b.readyAt > now;
+  if (site) scaffold(g);
+  return {
+    group: g,
+    top: Math.max(site ? 3.6 : 0, (model?.top ?? 2.4) * (model?.group.scale.y ?? 1)) + 0.5,
+    ...(model?.tick && !site ? { tick: model.tick } : {}),
+  };
 }
 
-/** A site under way: four poles, a beam, crates of accent. */
-function scaffold(P: Palette): Group {
-  const g = new Group();
-  for (const [x, z] of [
-    [-1.4, -1.4],
-    [1.4, -1.4],
-    [-1.4, 1.4],
-    [1.4, 1.4],
-  ] as const)
-    box(g, 0.14, 2.6, 0.14, x, 0, z, P.m("wood"), 0.02);
-  box(g, 3.1, 0.14, 0.14, 0, 2.5, -1.4, P.m("wood"), 0.02);
-  box(g, 3.1, 0.14, 0.14, 0, 2.5, 1.4, P.m("wood"), 0.02);
-  box(g, 0.7, 0.5, 0.7, 0.4, 0, 0.3, P.accent, 0.05);
-  return g;
-}
-
-/** A tile of an island as it stands: its slab, its terrain, what is built on it (also for the assault). */
+/** A tile of an island as it stands (also for the assault). */
 export function ileTile(
   P: Palette,
   tile: IleState["tiles"][string],
   n: number,
   now: number,
 ): Group {
-  const g = new Group();
-  g.add(slab(P, false));
-  if (tile.building?.type !== ILE_FONDACO) terrainTop(g, tile.terrain);
-  const b = tile.building;
-  if (!b) g.add(terrainMark(P, tile.terrain, n * 13 + 5));
-  else if (b.type === ILE_FONDACO) g.add(fondaco(P).group);
-  else {
-    const entry = BY_KEY.get(b.type);
-    const model = entry?.make?.(P, { seed: n * 7 + 3, running: true });
-    if (model) g.add(model.group);
-    if (b.readyAt > now) g.add(scaffold(P));
-  }
-  return g;
+  return buildTile(P, tile, n, now).group;
 }
 
 export type IlePick = { kind: "tile"; at: string } | { kind: "plot"; at: string };
@@ -169,6 +116,8 @@ function pickOf(o: Object3D | null): IlePick | null {
 
 export function IleBoard({
   ile,
+  rules,
+  stopped,
   buyable,
   ground,
   now,
@@ -179,6 +128,10 @@ export function IleBoard({
   plain,
 }: {
   ile: IleState;
+  /** The island's rules: which neighbour feeds which (the slides). */
+  rules?: IleRules;
+  /** A workshop that waits (its store full, its matter lacking): nothing moves in it or toward it. */
+  stopped?: (type: string) => boolean;
   buyable: string[];
   /** The terrain of any tile, bought or not. */
   ground: (x: number, y: number) => IleTerrain;
@@ -209,7 +162,20 @@ export function IleBoard({
       ? `${t.terrain}|${b ? `${b.type}:${b.level}:${b.readyAt > now ? 1 : 0}` : ""}`
       : "plot";
   };
-  const built = useRef(new Map<string, { group: Group; sign: string; born: number }>());
+  const built = useRef(
+    new Map<
+      string,
+      {
+        group: Group;
+        sign: string;
+        born: number;
+        top: number;
+        type?: string;
+        tick?: (t: number) => void;
+        spin?: number;
+      }
+    >(),
+  );
   const root = useMemo(() => new Group(), []);
   const clock = useRef(0);
 
@@ -234,12 +200,14 @@ export function IleBoard({
       const g = new Group();
       g.position.set(wx(x), 0, wz(y));
       const tile = ile.tiles[k];
+      let made: TileBuilt | null = null;
       if (!tile) {
         g.userData.pick = { kind: "plot", at: k } satisfies IlePick;
-        g.add(plotOf(ground(x, y)));
+        ilePlot(g, ground(x, y));
       } else {
         g.userData.pick = { kind: "tile", at: k } satisfies IlePick;
-        g.add(ileTile(P, tile, n, now));
+        made = buildTile(P, tile, n, now);
+        g.add(made.group);
       }
       bake(g);
       // A plot is a pale plate: it neither casts nor takes a shadow (no grey patches on it).
@@ -254,12 +222,70 @@ export function IleBoard({
         group: g,
         sign: sg,
         born: had ? clock.current - 0.6 : clock.current + n * 0.04,
+        top: made?.top ?? 0.6,
+        ...(tile?.building ? { type: tile.building.type } : {}),
+        ...(made?.tick ? { tick: made.tick } : {}),
       });
     });
   });
 
+  // The quay under the tiles one owns, rebuilt when their span changes: a plot bought widens it.
+  const own = Object.keys(ile.tiles).map(parse);
+  const ox = [Math.min(...own.map((o) => o[0])), Math.max(...own.map((o) => o[0]))] as const;
+  const oz = [Math.min(...own.map((o) => o[1])), Math.max(...own.map((o) => o[1]))] as const;
+  const nx = Math.max(...xs) - Math.min(...xs) + 1;
+  const nz = Math.max(...ys) - Math.min(...ys) + 1;
+  const [qx, qz] = [ox[1] - ox[0] + 1, oz[1] - oz[0] + 1];
+  const deck = useMemo(() => {
+    const g = quay(P, qx, qz);
+    bake(g);
+    return g;
+  }, [P, qx, qz]);
+  useEffect(() => () => disposeBuilt(deck), [deck]);
+  deck.position.set(wx((ox[0] + ox[1]) / 2), 0, wz((oz[0] + oz[1]) / 2));
+  const water = useMemo(() => {
+    const m = new Mesh(
+      new PlaneGeometry(900, 900),
+      new MeshStandardMaterial({ color: CELADON.water, roughness: 0.38 }),
+    );
+    m.rotation.x = -Math.PI / 2;
+    m.position.y = QUAY.waterY;
+    m.receiveShadow = true;
+    return m;
+  }, []);
+
+  // The slides: one for each pair of neighbours where one feeds the other, both built.
+  const links = useMemo(
+    () =>
+      rules
+        ? ileSupplies(rules, ile).filter(
+            (l) =>
+              (ile.tiles[l.from]?.building?.readyAt ?? Number.POSITIVE_INFINITY) <= now &&
+              (ile.tiles[l.to]?.building?.readyAt ?? Number.POSITIVE_INFINITY) <= now,
+          )
+        : [],
+    [rules, ile, now],
+  );
+  const linkSign = `${links.map((l) => `${l.from}>${l.to}:${l.good}`).join("|")}@${cx},${cy}`;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the sign says all that the slides hang on.
+  const slides = useMemo(() => {
+    const g = new Group();
+    const list: (SlideBuilt & { to: string; clock?: number })[] = [];
+    for (const l of links) {
+      const [ax, ay] = parse(l.from);
+      const [bx2, by] = parse(l.to);
+      const sl = ileSlide([wx(ax), wz(ay)], [wx(bx2), wz(by)], l.good);
+      bake(sl.group);
+      for (const r of sl.riders) bake(r);
+      g.add(sl.group);
+      list.push({ ...sl, to: ile.tiles[l.to]?.building?.type ?? "" });
+    }
+    return { group: g, list };
+  }, [linkSign]);
+  useEffect(() => () => disposeBuilt(slides.group), [slides]);
+
   // The camera: the kit's three quarters, the island in sight above the dock.
-  const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 1;
+  const span = Math.max(nx, nz) + 0.4;
   useEffect(() => {
     const cam = camera as OrthographicCamera;
     const aspect = size.width / size.height;
@@ -313,13 +339,23 @@ export function IleBoard({
       const k2 = f >= 1 ? 1 : easeOutBack(f, 0.9);
       v.group.rotation.x = (1 - k2) * Math.PI;
       // Mid-turn the tile rises; once on its face, the chosen one lifts a little.
-      if (f < 1) v.group.position.y = Math.sin(f * Math.PI) * 2.2;
+      if (f < 1) v.group.position.y = Math.sin(f * Math.PI) * 3.2;
       else v.group.position.y += ((chosen === k ? 0.35 : 0) - v.group.position.y) * 0.15;
+      // What works turns; what waits stands still.
+      if (live && v.tick && f >= 1 && !(v.type && stopped?.(v.type))) {
+        v.spin = (v.spin ?? 0) + dt;
+        v.tick(v.spin);
+      }
     }
+    // What rides the slides goes from the supplier to the workshop it feeds, unless that one waits.
+    slides.list.forEach((sl, n) => {
+      if (live && !stopped?.(sl.to)) sl.clock = (sl.clock ?? n * 0.37) + dt * QUAY.slideSpeed;
+      sl.riders.forEach((r, i) => sl.place(r, ((sl.clock ?? n * 0.37) + i / sl.riders.length) % 1));
+    });
     for (const [k, el] of pins) {
       const v = built.current.get(k);
       if (!v) continue;
-      tmp.set(v.group.position.x, 3.6, v.group.position.z).project(camera);
+      tmp.set(v.group.position.x, v.top, v.group.position.z).project(camera);
       const x = (tmp.x * 0.5 + 0.5) * size.width;
       const y = (-tmp.y * 0.5 + 0.5) * size.height;
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
@@ -336,7 +372,17 @@ export function IleBoard({
 
   return (
     <>
-      <Stage target={controls.target} phone={phone} plain={plain} />
+      <Stage
+        target={controls.target}
+        phone={phone}
+        plain={plain}
+        background={CELADON.sky}
+        scale={Math.max(1, (span * S) / 44)}
+        bare
+      />
+      <primitive object={water} />
+      <primitive object={deck} />
+      <primitive object={slides.group} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: every tile has its pin, a button. */}
       <primitive object={root} onClick={pick} />
     </>

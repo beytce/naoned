@@ -1,8 +1,8 @@
 # Plan : la direction Céladon (les ateliers, l'île, la carte, puis tout le jeu)
 
-*Proposé le 14 novembre 2026, à la demande du porteur (« Je veux que les ateliers ressemblent à ça avec ce niveau de détail et de graphisme […] profite-en pour adapter tout le jeu à ce type de visuel, tout comme la carte : quelque chose de simple, de pas trop lourd visuellement mais complet tout de même »), d'après ses captures d'un jeu d'usine en isométrie douce. **Les quatre choix du § 2 sont tranchés par le porteur le même jour ; le plan par lots (§ 4) attend sa validation avant tout code.***
+*Proposé le 14 novembre 2026, à la demande du porteur (« Je veux que les ateliers ressemblent à ça avec ce niveau de détail et de graphisme […] profite-en pour adapter tout le jeu à ce type de visuel, tout comme la carte : quelque chose de simple, de pas trop lourd visuellement mais complet tout de même »), d'après ses captures d'un jeu d'usine en isométrie douce. **Validé par le porteur le même jour** (« C'est parfait je valide tes propositions tu peux lancer »), avec les quatre choix du § 2. Les lots C0 à C3 sont faits (§ 6).*
 
-Page des propositions (privée, au compte du porteur) : https://claude.ai/artifact/QBRSg7rqUAQdpBt9JpkD5v. Les maquettes sont dans `docs/celadon-maquettes/` ; elles sont rendues avec three.js, aux lumières et à la caméra du kit (`source/`, une étude, pas du code de jeu).
+Page des propositions (privée, au compte du porteur) : https://claude.ai/artifact/QBRSg7rqUAQdpBt9JpkD5v. Les maquettes sont dans `docs/celadon-maquettes/` (rendues avec three.js, aux lumières et à la caméra du kit) ; les captures du jeu dans `docs/celadon-captures/`.
 
 ## 1. Ce qu'on prend des captures, et ce qu'on ne prend pas
 
@@ -31,7 +31,7 @@ On prend le fini, pas le jeu : ni ses règles, ni ses objets.
 | 3 | L'ordre | **L'île et ses ateliers d'abord**, puis la carte, puis le reste. |
 | 4 | Le Large sur la carte | **L'eau fonce vers le bord**, sans noir. |
 
-Proposé au passage : fermer la question ouverte du cadrage v4 sur « l'intérieur des ateliers » (pas de scène intérieure à part, l'atelier se lit de l'extérieur).
+Validé avec le reste : fermer la question ouverte du cadrage v4 sur « l'intérieur des ateliers » (pas de scène intérieure à part, l'atelier se lit de l'extérieur).
 
 ## 3. Les trois propositions
 
@@ -59,3 +59,25 @@ Aucune règle de jeu ne change : ni calibration, ni migration. L'ancien jeu (`/a
 - **Le volume** : le lot C2 est le plus long, dix-huit modèles à refaire à la main.
 - **Le rouge** doit rester seul fort : aucune autre teinte vive, le feu des fours reste petit.
 - Les maquettes sont fixes et ne montrent que quatre ateliers ; la carte est une esquisse (moins de villes et de Maisons que la vraie).
+
+## 6. Ce qui est fait (14 novembre 2026)
+
+| Lot | Contenu | Où |
+| --- | --- | --- |
+| C0 | **La grammaire** : les tons `CELADON` et les mesures du quai `QUAY` à côté de `COL` (les scènes anciennes gardent leur palette) ; un matériau par ton ; la règle d'or 10 et le § 15 du cadrage retouchés ; la question de l'intérieur des ateliers fermée. | `porcellana/tokens.ts`, `celadon/kit.ts`, `CADRAGE-v4.md`, `CLAUDE.md`, `docs/design.md` |
+| C1 | **Les pièces** : tréteau, glissière, caisse, tronc, bac, tonneau, sac, bouteilles, piles de planches et de briques, cordage, bollard, garde-corps, jardinière, sapin, cyprès, barge ; un objet par marchandise pour les glissières. Une boîte coûte ce que sa taille demande (`bx`). | `celadon/pieces.ts`, `celadon/kit.ts` |
+| C2 | **Les bâtiments** : les onze ateliers, le Fondaco, l'Arsenal et les cinq ouvrages. Le niveau ajoute des objets (piles, bacs, étagères) ; la roue de la scierie et les ailes du moulin tournent. Chaque modèle sous 30 000 triangles, testé. | `celadon/workshops.ts` |
+| C3 | **L'île** : le quai de planches sous les cases possédées (une case achetée l'élargit), les terrains teintés, les cases à acheter pâles et pointillées, le chantier ; **les glissières** entre deux voisins dont l'un fournit l'autre, d'après `ileSupplies` (moteur, test d'abord), la marchandise qui avance et s'arrête quand l'atelier attend. L'écran : la fiche « entrée → sortie », terrain, voisins, rendement, une touche rouge ; la barre des bâtiments (toujours là sur ordinateur, ouverte par « Bâtir un atelier » sur téléphone) ; l'entrepôt en encre, rouge quand il va déborder. Un laboratoire : `?lab=celadon` (et `&vue=tout`). | `ile/IleBoard.tsx`, `ile/IleScreen.tsx`, `ile/IleGlyphs.tsx`, `ile/ile.css`, `celadon/ile.ts`, `LabCeladon.tsx`, `packages/engine/src/ile/ile.ts` |
+
+Vérifié : 2 109 tests, typage, lint ; parcours `e2e:ile` (seul), téléphone et ordinateur. Captures : `docs/celadon-captures/` (`ile-pc`, `fiche-pc`, `fiche-tel`, `tout-pc`).
+
+**Écarts aux maquettes, voulus.**
+- Un atelier est dessiné à 78 % de sa case : ses bords restent libres pour les glissières, qui passent au milieu de chaque côté.
+- La glissière va d'un bord à l'autre, sans entrer dans la machine.
+- Le quai ne porte que les cases possédées ; les cases à acheter flottent autour, en fantômes.
+- La case de rive ne porte pas de quai d'embarquement : la barge au fanion est amarrée au quai de l'île.
+
+**Reste, pour les lots suivants.**
+- **C4** la carte, **C5** le reste du jeu (l'assaut montre déjà les nouvelles cases de l'île sur son ancien décor ; les ateliers en petit autour des Maisons de la planche sont encore les anciens), **C6** la tenue.
+- **Pas d'essai sur un vrai téléphone.** En rendu logiciel, l'île avec l'occlusion est lente ; le poids réel se mesure au lot C6.
+- Les cases à acheter qui chevauchent le bord du quai se lisent moins bien que les autres.
