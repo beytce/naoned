@@ -265,8 +265,14 @@ try {
   if (decretSent?.choice !== 1) fail(`the decree sent is ${JSON.stringify(decretSent)}`);
   moves.doge = false;
   await tap("[data-maree-fin-close]");
-  await tap("[data-maree-open]");
-  if (!(await until(page, has, "[data-maree-week]"))) fail("no tide's sheet after its end");
+  // The week's ribbon comes back once the moment is closed (one sheet at a time): wait for it,
+  // and touch the tide again until its sheet opens.
+  let reopened = false;
+  for (let i = 0; i < 30 && !reopened; i++) {
+    await tap("[data-maree-open]");
+    reopened = await until(page, has, "[data-maree-week]", 1_000);
+  }
+  if (!reopened) fail("no tide's sheet after its end");
   const again = await page.getAttribute("[data-maree-week]", "data-maree-week");
   if (again !== "1") fail(`the next tide's week is ${again}, not 1`);
   await shot("6-maree-suivante");
