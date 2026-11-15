@@ -90,3 +90,38 @@ Vérifié : tests, typage, lint ; parcours `e2e:ile` et `e2e:planche` (seul), t�
 - **C6** la tenue.
 - **Pas d'essai sur un vrai téléphone.** En rendu logiciel, l'île avec l'occlusion est lente ; le poids réel se mesure au lot C6.
 - Les cases à acheter qui chevauchent le bord du quai se lisent moins bien que les autres.
+
+## 7. La suite : la lagune simplifiée et les six lieux (proposé le 15 novembre 2026)
+
+*À la demande du porteur (« Le lagune est trop lourd, il y a trop d'éléments, on voit trop d'autres joueurs, on s'y perd : fais une proposition de simplification » ; « tous les autres modes qui n'ont pas encore eu la refonte, fais une proposition visuelle »). Page des propositions (privée) : https://claude.ai/artifact/DLpvnTP1KC1u2WF4cR4vwt ; maquettes dans `docs/celadon-maquettes/suite/`. **Les quatre choix ci-dessous sont tranchés par le porteur ; le plan par lots attend sa validation avant tout code.***
+
+### La lagune : on ne montre que ceux qui comptent pour toi
+
+1. **Quatre Maisons nommées** : toi, ton rival de la semaine, la Maison juste devant toi au rang, celle juste derrière.
+2. **Tes voisins de sestiere en petit**, sans nom ; **les Maisons des autres sestieri en plots**, comptées par sestiere. Toucher un plot donne son nom et sa fiche.
+3. **Le décor des autres disparaît** : petits ateliers, flotte à l'ancre, phare et pierres gravées ne se dessinent que pour toi et ton rival.
+4. **Deux sortes de fils** : les tiens, ceux de ton rival. Toucher une ville montre qui la sert.
+5. **Les passages sans nom** : une tour et un cadenas ; le nom et le capitaine dans la fiche.
+
+Aucune règle de jeu ne change, et rien n'est caché : tout reste à un toucher (règle d'or 5).
+
+### Les six lieux : un gabarit
+
+L'Arsenal, la Muda, la Marée, la Compagnie, la Guerre et le Palais : une scène en tête (l'objet du lieu, en 3D, qui suit l'état du jeu), un titre qui dit où tu en es, entrée → sortie en jetons, **une seule touche rouge**, le reste replié. L'assaut et l'entrée gardent leur écran.
+
+### Les choix du porteur (15 novembre 2026)
+
+| # | Question | Choix |
+| --- | --- | --- |
+| 1 | Maisons nommées | **Quatre** |
+| 2 | Maisons des autres sestieri | **Des plots** |
+| 3 | Consignes des lieux | **Dans le guide de la première ouverture** |
+| 4 | Ordre | **La lagune d'abord** |
+
+### Les lots
+
+| Lot | Contenu | Où |
+| --- | --- | --- |
+| S1 | **La lagune** : les cinq règles d'affichage ; « qui est devant, qui est derrière » lu du moteur (test d'abord) ; les plots et leur fiche au toucher ; les parcours adaptés ; captures aux trois crans. | `planche/PlancheBoard.tsx`, `LabPlanche.tsx`, moteur du rang |
+| S2 | **Le gabarit** : la fiche commune, appliquée d'abord à l'Arsenal. | `planche/`, `celadon/` |
+| S3 | **Les cinq autres lieux**, un par un, chacun avec son parcours rejoué. | `planche/*.tsx` |
