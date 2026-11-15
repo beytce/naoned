@@ -3,6 +3,7 @@ import {
   type PlancheSetup,
   type PlancheState,
   plancheAdvance,
+  plancheAround,
   plancheClaim,
   plancheDuel,
   plancheForced,
@@ -222,6 +223,35 @@ describe("the rank and its laurels", () => {
     expect(standing[0]?.house).toBe("dan");
     expect(standing[0]?.place).toBe(1);
     expect(standing[0]?.places.garde).toBe(1);
+  });
+
+  it("tells who stands just ahead of a house and who just behind", () => {
+    const S = setup();
+    let s = plancheInit(S, T0);
+    // Everyone level: nobody is ahead of anybody.
+    expect(plancheAround(S, s, "ana")).toEqual({});
+    s = thread(S, s, "dan", "padoue");
+    s = thread(S, s, "ana", "trevise");
+    s = plancheAdvance(S, s, T0 + 2 * DAY);
+    const standing = plancheStanding(S, s);
+    const first = standing[0];
+    const next = standing.find((r) => r.place > 1);
+    const last = standing[standing.length - 1];
+    if (!first || !next || !last) throw new Error("no standing");
+    expect(first.place).toBe(1);
+    expect(plancheAround(S, s, first.house)).toEqual({ behind: next.house });
+    const nearest = standing.filter((r) => r.place < next.place).pop();
+    expect(plancheAround(S, s, next.house).ahead).toBe(nearest?.house);
+    expect(plancheAround(S, s, last.house).behind).toBeUndefined();
+    // Never oneself, never a house of the same place.
+    for (const r of standing) {
+      const a = plancheAround(S, s, r.house);
+      for (const o of [a.ahead, a.behind]) {
+        expect(o).not.toBe(r.house);
+        if (o) expect(standing.find((x) => x.house === o)?.place).not.toBe(r.place);
+      }
+    }
+    expect(plancheAround(S, s, "__proto__")).toEqual({});
   });
 
   it("tells the trend since the day began", () => {

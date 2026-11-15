@@ -93,7 +93,7 @@ Vérifié : tests, typage, lint ; parcours `e2e:ile` et `e2e:planche` (seul), t�
 
 ## 7. La suite : la lagune simplifiée et les six lieux (proposé le 15 novembre 2026)
 
-*À la demande du porteur (« Le lagune est trop lourd, il y a trop d'éléments, on voit trop d'autres joueurs, on s'y perd : fais une proposition de simplification » ; « tous les autres modes qui n'ont pas encore eu la refonte, fais une proposition visuelle »). Page des propositions (privée) : https://claude.ai/artifact/DLpvnTP1KC1u2WF4cR4vwt ; maquettes dans `docs/celadon-maquettes/suite/`. **Les quatre choix ci-dessous sont tranchés par le porteur ; le plan par lots attend sa validation avant tout code.***
+*À la demande du porteur (« Le lagune est trop lourd, il y a trop d'éléments, on voit trop d'autres joueurs, on s'y perd : fais une proposition de simplification » ; « tous les autres modes qui n'ont pas encore eu la refonte, fais une proposition visuelle »). Page des propositions (privée) : https://claude.ai/artifact/DLpvnTP1KC1u2WF4cR4vwt ; maquettes dans `docs/celadon-maquettes/suite/`. **Validé par le porteur le 15 novembre 2026** (« Je valide, fusionne et lance S1 »), avec les quatre choix ci-dessous. Le lot S1 est fait.*
 
 ### La lagune : on ne montre que ceux qui comptent pour toi
 
@@ -125,3 +125,17 @@ L'Arsenal, la Muda, la Marée, la Compagnie, la Guerre et le Palais : une scène
 | S1 | **La lagune** : les cinq règles d'affichage ; « qui est devant, qui est derrière » lu du moteur (test d'abord) ; les plots et leur fiche au toucher ; les parcours adaptés ; captures aux trois crans. | `planche/PlancheBoard.tsx`, `LabPlanche.tsx`, moteur du rang |
 | S2 | **Le gabarit** : la fiche commune, appliquée d'abord à l'Arsenal. | `planche/`, `celadon/` |
 | S3 | **Les cinq autres lieux**, un par un, chacun avec son parcours rejoué. | `planche/*.tsx` |
+
+### Ce qui est fait (15 novembre 2026)
+
+| Lot | Contenu | Où |
+| --- | --- | --- |
+| S1 | **La lagune simplifiée.** Moteur : `plancheAround` dit qui te précède et qui te suit au rang (test d'abord). Quatre Maisons nommées (toi, ton rival, devant, derrière, avec leur place) et celle qu'on touche ; tes autres voisins de sestiere en petit, un drapeau pour étiquette ; les Maisons des autres sestieri en plots sur l'eau, sans case ni étiquette, comptées sous le nom du sestiere. Le décor (ateliers en petit, flotte, phare, pierres) pour toi et ton rival seulement. Les fils des autres ne se tracent que pour la ville ou la Maison touchée. Les passages n'ont de nom que tenus par toi, menacés ou touchés. | `planche/PlancheBoard.tsx`, `LabPlanche.tsx`, `planche.css`, `packages/engine/src/planche/rang.ts` |
+
+Vérifié : 2 109 tests, typage, lint ; parcours `e2e:planche`, `e2e:ile`, `e2e:passe` (seul) ; le parcours du compte, en ligne, joué jusqu'au bout. Captures du jeu en ligne : `docs/celadon-captures/lagune-sestiere-pc`, `lagune-entiere-pc`, `lagune-sestiere-tel`, `lagune-entiere-tel`.
+
+**À savoir.**
+- Au premier jour tout le monde est à égalité : personne n'est « devant » ni « derrière », seuls toi et ton rival sont nommés. Les deux autres noms n'ont donc pas été vus en image.
+- Un plot se touche sur la planche elle-même (son étiquette est retirée) : le toucher d'un plot n'a pas été rejoué par un parcours.
+- Le phare d'une autre compagnie n'est plus dessiné : sa feuille s'ouvre par la fiche de la Maison.
+- Les lieux du Large gardent leur nom.

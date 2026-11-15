@@ -192,6 +192,23 @@ export function plancheStanding(
     .sort((a, b) => a.place - b.place || a.house.localeCompare(b.house));
 }
 
+/**
+ * Who stands just ahead of a house among its neighbours, and who just behind (for a board to name
+ * them): the nearest better place and the nearest worse one, never a house level with it.
+ */
+export function plancheAround(
+  S: PlancheSetup,
+  s: PlancheState,
+  house: string,
+): { ahead?: string; behind?: string } {
+  const rows = plancheStanding(S, s, sestiereOf(S, house));
+  const me = rows.find((r) => r.house === house);
+  if (!me) return {};
+  const ahead = rows.filter((r) => r.place < me.place).pop()?.house;
+  const behind = rows.find((r) => r.place > me.place)?.house;
+  return { ...(ahead ? { ahead } : {}), ...(behind ? { behind } : {}) };
+}
+
 /** A house's place among its neighbours: in its sestiere, or on the whole board without sestieri. */
 export function planchePlace(S: PlancheSetup, s: PlancheState, house: string): number | undefined {
   return plancheStanding(S, s, sestiereOf(S, house)).find((r) => r.house === house)?.place;
