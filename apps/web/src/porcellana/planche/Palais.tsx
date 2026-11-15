@@ -1,9 +1,3 @@
-/**
- * The rank on the board (docs/plan-classement.md R3): the trend in the purse, the marks on the
- * houses (the Doge's cap, the laurels, the flags taken), and the Doge's palace, a sheet of paper
- * with the three laurels and one's rival face to face. As on the canvas of the visual audit
- * (docs/audit-visuel-2026-11-11): one red for oneself, ink for the others, a single red key.
- */
 import {
   type PlancheLaurelId,
   type PlancheSetup,
@@ -14,6 +8,14 @@ import {
   plancheWeekDuel,
 } from "@comptoirs/engine";
 import type { ReactNode } from "react";
+/**
+ * The rank on the board (docs/plan-classement.md R3): the trend in the purse, the marks on the
+ * houses (the Doge's cap, the laurels, the flags taken), and the Doge's palace, a sheet of paper
+ * with the three laurels and one's rival face to face. As on the canvas of the visual audit
+ * (docs/audit-visuel-2026-11-11): one red for oneself, ink for the others, a single red key.
+ */
+import { palaisScene } from "../celadon/scenes.js";
+import { LieuHead } from "./Lieu.js";
 import { Flag } from "./PlancheUi.js";
 
 const LAURELS: { id: PlancheLaurelId; name: string; says: string }[] = [
@@ -280,15 +282,14 @@ export function Palais({
   const who = (id: string) => (id === me ? "Toi" : name(id));
   return (
     <section className="pc-planche-card pc-pl-card pc-rk-palace" data-planche-palace>
-      <div className="pc-pl-head">
-        <div>
-          <h2>Le palais du Doge</h2>
-          <span>
-            Marée {s.rank.tide + 1} · semaine {s.rank.week + 1} sur {S.rank?.tideWeeks ?? 6}
-          </span>
-        </div>
-        {close}
-      </div>
+      <LieuHead
+        scene="palais"
+        build={palaisScene}
+        eyebrow="Le palais du Doge"
+        title={mine ? `Tu es ${mine.place}ᵉ sur ${standing.length}` : "Le rang de la lagune"}
+        sub={`Marée ${s.rank.tide + 1} · semaine ${s.rank.week + 1} sur ${S.rank?.tideWeeks ?? 6}`}
+        close={close}
+      />
       <Podium
         top={standing.slice(0, 3).map((r) => ({ id: r.house, place: r.place }))}
         me={me}

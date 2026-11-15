@@ -11,6 +11,7 @@ export function LieuHead({
   eyebrow,
   title,
   sub,
+  subData,
   close,
 }: {
   /** The scene's key: the picture is drawn again only when it changes. */
@@ -21,6 +22,8 @@ export function LieuHead({
   /** Where one stands there. */
   title: string;
   sub?: string;
+  /** Marks on the line under the title (what a walk-through reads). */
+  subData?: Record<string, string | number>;
   close: ReactNode;
 }) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: the key stands for what the scene shows.
@@ -32,7 +35,7 @@ export function LieuHead({
         <div>
           <small className="pc-lieu-eyebrow">{eyebrow}</small>
           <h2>{title}</h2>
-          {sub ? <span>{sub}</span> : null}
+          {sub ? <span {...subData}>{sub}</span> : null}
         </div>
         {close}
       </div>
