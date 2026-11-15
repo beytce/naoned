@@ -409,7 +409,11 @@ export default function LabPasse({ duel, defi }: { duel?: PasseDuel; defi?: Pass
     : "";
 
   return (
-    <div className="porcellana fixed inset-0 pc-passe" data-passe-lab data-winner={state.winner}>
+    <div
+      className="porcellana fixed inset-0 pc-passe pc-celadon"
+      data-passe-lab
+      data-winner={state.winner}
+    >
       <Canvas
         orthographic
         dpr={[1, 2]}
