@@ -144,11 +144,13 @@ try {
       await route.fulfill({ response: res, json });
     });
     let noirSent = null;
-    // The real house is not of level 11: a duel lost is given.
-    await stubDuel(page, (ask) => {
-      noirSent = ask;
-    });
-    pages.push({ name, page, tap, shot, errs, moves, noir: () => noirSent });
+    // The real house is not of level 11: the black strait's duel is given lost. The stub is laid
+    // just before that duel (`stubNoir`), never earlier: it takes the page's next duel, whichever.
+    const stubNoir = () =>
+      stubDuel(page, (ask) => {
+        noirSent = ask;
+      });
+    pages.push({ name, page, tap, shot, errs, moves, stubNoir, noir: () => noirSent });
   }
 
   /** Plays the Passe on screen until its end, laying pieces in order (the duel is lost). */
@@ -293,6 +295,7 @@ try {
     if (!(await until(page, has, "[data-noir-go]:not([disabled])")))
       fail(`${name}: the cargo cannot be risked at level 11`);
     await p.shot("9-samedi-cargaison");
+    await p.stubNoir();
     await tap("[data-noir-go]");
     if (!(await until(page, has, "[data-passe-stake]"))) fail(`${name}: no stake in the duel`);
     await page.waitForTimeout(2000);
@@ -329,6 +332,11 @@ try {
     const une = await page.getAttribute("[data-gazette-une]", "data-gazette-une");
     if (!une) fail(`${name}: the Gazette has no headline`);
     await p.shot("12-dimanche-gazette");
+    // One sheet at a time (docs/plan-semaine.md D2): the week's ribbon comes back once the
+    // Gazette is closed; the level reached on Saturday is told first.
+    await tap("[data-maison-levelup] button");
+    await tap("[data-gazette] .pc-pl-x");
+    if (!(await until(page, has, "[data-muda-open]"))) fail(`${name}: no Muda in the week`);
     await tap("[data-muda-open]");
     if (!(await until(page, has, '[data-muda-phase="back"]')))
       fail(`${name}: the convoy is not back on Sunday`);

@@ -181,6 +181,36 @@ afterEach(async () => {
 
 // The leagues (docs/plan-maree.md T5): the top of a lagoon goes up, its house whole.
 describe("the leagues", () => {
+  it("still tells a tide's end when the leagues are frozen: its laurels, nobody moved", async () => {
+    const [ana] = await database.db
+      .insert(accounts)
+      .values({ email: "eve@example.org", emailCanonical: "eve@example.org", pseudo: "Eve" })
+      .returning();
+    if (!ana) throw new Error("no account");
+    // One league only, as for the beta (decision D2): the board has no leagues at all.
+    const frozen = theme();
+    const { ligues: _ligues, ...board } = frozen.board;
+    const lagoons = await PlancheLagoons.open(database.db, { ...frozen, board }, T0);
+    const { store } = await lagoons.seatOf(ana.id, "Ca’ Eve", T0);
+    expect(lagoons.leagueCount()).toBe(1);
+    await store.hub.view(ana.id, "Ca’ Eve", T0 + 2 * WEEK + HOUR);
+    const final = store.hub.current().doc.state.rank.final;
+    if (!final) throw new Error("the tide has not ended");
+    await lagoons.turnLeagues(T0 + 2 * WEEK + HOUR);
+    // Nobody moved, no lagoon was opened, the house stays where it is.
+    expect(lagoons.all()).toHaveLength(1);
+    expect(store.hub.houseOf(ana.id)).not.toBeNull();
+    // The tide closed is kept, so that the page can tell its end.
+    const tides = await database.db.select().from(plancheTides);
+    const kept = tides.find((x) => x.worldId === store.worldId && x.tide === final.tide);
+    expect(kept?.moves).toMatchObject({ up: [], down: [], lagoon: store.name });
+    expect(kept?.moves).toHaveProperty("laurels");
+    // Once a tide.
+    await lagoons.turnLeagues(T0 + 2 * WEEK + 2 * HOUR);
+    const again = await database.db.select().from(plancheTides);
+    expect(again.filter((x) => x.worldId === store.worldId)).toHaveLength(1);
+  });
+
   it("moves the best player of a lagoon to the next league, its house whole, its purse in the ledger", async () => {
     const [ana] = await database.db
       .insert(accounts)
