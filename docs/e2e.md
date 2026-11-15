@@ -84,7 +84,8 @@ Le travail `e2e` de la CI ne joue que `layout.mjs` (l'ancien jeu). Le travail `p
 
 En cas d'échec, les captures sont gardées quatorze jours (`planche-shots-<ligne>`).
 
-**Laissés hors de la CI, et pourquoi.**
-- `maree` : il attend le mouvement de ligue (`data-ligue-move`), que le gel des ligues (décision D2) n'affiche plus. À réécrire avant de l'ajouter.
+**Laissés hors de la CI, et pourquoi (relevé du 15 novembre 2026).**
+- `maree` : il échoue sur trois attentes que le gel des ligues (décision D2) a rendues fausses : l'échelle des ligues dans la fiche (`data-ligue`, affichée seulement à partir de deux ligues), le mouvement de ligue (`data-ligue-move`), et **le moment de fin de marée lui-même** (`data-maree-fin`). Ce dernier n'apparaît plus du tout : le serveur n'écrit la marée close (`plancheTides`) que dans `turnLeagues`, qui ne fait rien quand il n'y a qu'une ligue ; la vue n'a donc jamais de `last`, et l'écran des lauriers ne s'ouvre pas. À trancher avant de réécrire le parcours (voir `docs/plan-celadon.md` § 7).
+- `semaine` : il échoue sur trois contrôles (un détroit de la Muda joué qui n'est pas dit « tenté » ; un détroit noir dont le duel part comme un détroit de la Muda ; le retour du convoi du dimanche, la fenêtre « Ta Maison grandit » restant devant). **Les mêmes trois échecs se reproduisent sur le code d'avant la direction Céladon** (`e928169`) : ils ne viennent pas de la refonte. Ses premières étapes passent et montrent la fiche de la Muda.
 - `compte` : il mesure un message temps réel à moins de 1 000 ms, seuil dépassé en rendu logiciel sous charge (1 285 ms relevés en local).
-- `semaine`, `planche-online`, `commande`, `defi`, `passe-duel` : pas rejoués depuis la direction Céladon ; à essayer un par un avant de les ajouter.
+- `planche-online`, `commande`, `defi`, `passe-duel` : pas rejoués depuis la direction Céladon ; à essayer un par un avant de les ajouter.
