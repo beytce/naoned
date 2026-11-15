@@ -2469,9 +2469,12 @@ span.pc-semaine-title {
   width: 100%;
 }
 @media (max-width: 640px) {
+  /* On a phone the scene is a band, not half the screen: the sheet's first lines stay in view. */
   .pc-lieu-scene {
     width: calc(100% + 36px);
     margin: -16px -18px 0;
     border-radius: 24px 24px 0 0;
+    aspect-ratio: 780 / 300;
+    object-fit: cover;
   }
 }
