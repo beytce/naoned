@@ -1,6 +1,8 @@
 /**
- * The screen of one's island (docs/plan-ile.md I4): the island in Porcellana, the card of a tile,
- * the workshop in hand with what each free tile would give it, the store, the way back to the board.
+ * The screen of one's island (docs/plan-ile.md I4, redrawn in the Céladon direction,
+ * docs/plan-celadon.md C3): the island on its quay, the card of a tile (what a workshop takes and
+ * gives, drawn), the tray of the buildings, the workshop in hand with what each free tile would
+ * give it, the store, the way back to the board.
  * The gestures are the board's (here or on the server): this screen only asks for them.
  */
 import {
@@ -19,6 +21,8 @@ import { useMemo, useRef, useState } from "react";
 import type { OrthographicCamera } from "three";
 import { DucatCoin } from "../../art/plateau/coins.js";
 import { IleBoard, type IlePick, TERRAIN_NAMES, TERRAIN_TINT } from "./IleBoard.js";
+import { GoodGlyph, WorkshopGlyph } from "./IleGlyphs.js";
+import "./ile.css";
 
 /** A gesture on the island, as the board takes it. */
 export type IleGesture =
@@ -35,6 +39,9 @@ const SAID: Record<string, string> = {
   ile_full: "Ton île a toutes ses cases.",
   ile_not_buyable: "Cette case ne touche pas ton île.",
 };
+/** A building's name as short as a label wants it. */
+const short = (name: string) =>
+  name.replace(/^(Camp de |Champ de |Carrière d')/, "").replace(/^./, (c) => c.toUpperCase());
 const ducats = (d: bigint | number) => Math.round(Number(d) / 100).toLocaleString("fr-FR");
 const pct = (bps: number) =>
   `${bps > 0 ? "+" : bps < 0 ? "−" : "±"}${Math.abs(Math.round(bps / 100))} %`;
@@ -126,31 +133,57 @@ export function IleScreen({
   const ground = useMemo(() => plancheGround(S, house), [S, house]);
   const rates = useMemo(() => (R && ile ? ileRates(R, ile, now) : {}), [R, ile, now]);
   if (!R || !ile || !h) return null;
-  /** A line of the sheet: a workshop or a work, its price now, taken in hand to lay it. */
-  const row = (type: string, x: (typeof R.workshops)[string]) => (
-    <div key={type} className="pc-planche-row" data-ouvrage={x.ouvrage ? type : undefined}>
-      <div>
-        <b>{x.name}</b>
-        <span>
-          {doesOf(x, type)}
-          {x.ouvrage ? "" : ` · aime ${TERRAIN_NAMES[x.terrain].toLowerCase()}`} ·{" "}
-          {ducats(costOf(type))} ducats
-        </span>
-      </div>
-      <button
-        type="button"
-        className="pc-passe-go"
-        data-hand={type}
-        disabled={!free.length || costOf(type) > h.ducats || lockedAt(type) !== null}
-        onClick={() => {
-          setSheet(false);
-          setHand({ type });
-        }}
-      >
-        {lockedAt(type) !== null ? `Niveau ${lockedAt(type)}` : "Prendre"}
-      </button>
-    </div>
+  /** A tool of the tray: a workshop or a work, its price now, taken in hand to lay it. */
+  const tool = (type: string, x: (typeof R.workshops)[string]) => (
+    <button
+      key={type}
+      type="button"
+      className="pc-ile-tool"
+      data-hand={type}
+      data-ouvrage={x.ouvrage ? type : undefined}
+      title={`${x.name} : ${doesOf(x, type)}${
+        x.ouvrage ? "" : ` · aime ${TERRAIN_NAMES[x.terrain].toLowerCase()}`
+      }`}
+      disabled={!free.length || costOf(type) > h.ducats || lockedAt(type) !== null}
+      onClick={() => {
+        setSheet(false);
+        setChosen(null);
+        setHand({ type });
+      }}
+    >
+      <WorkshopGlyph type={type} />
+      {short(x.name)}
+      <small>{lockedAt(type) !== null ? `niv. ${lockedAt(type)}` : ducats(costOf(type))}</small>
+    </button>
   );
+  /** « Entrée → sortie »: what a workshop takes and gives a lot, as tokens. */
+  const io = (x: { inputs: Record<string, number>; outputs: Record<string, number> }) => {
+    const side = (label: string, of: Record<string, number>, none: string) => (
+      <div>
+        <small>{label}</small>
+        {Object.keys(of).length ? (
+          Object.entries(of).map(([g, n]) => (
+            <span key={g} className="pc-ile-good">
+              <i>
+                <GoodGlyph good={g} />
+              </i>
+              <b>{n}</b>
+              {S.goods[g] ?? g}
+            </span>
+          ))
+        ) : (
+          <span className="pc-ile-none">{none}</span>
+        )}
+      </div>
+    );
+    return (
+      <div className="pc-ile-io" data-ile-io>
+        {side("Entrée", x.inputs, "son terrain")}
+        <span aria-hidden="true">→</span>
+        {side("Sortie", x.outputs, "rien")}
+      </div>
+    );
+  };
 
   const play = async (g: IleGesture, done: string) => {
     const res = await onGesture(g);
@@ -190,6 +223,15 @@ export function IleScreen({
       : 0;
   const full = goods.filter(([, n]) => n >= S.rules.store * 0.85);
   const inHand = hand ? R.workshops[hand.type] : undefined;
+  /** A workshop waits when its good is full or its matter lacking: nothing moves in it. */
+  const stopped = (type: string) => {
+    const x = Object.hasOwn(R.workshops, type) ? R.workshops[type] : undefined;
+    if (!x) return false;
+    return (
+      Object.entries(x.outputs).some(([g, n]) => (h.stock[g] ?? 0) + n > S.rules.store) ||
+      Object.entries(x.inputs).some(([g, n]) => (h.stock[g] ?? 0) < n)
+    );
+  };
 
   const tap = (p: IlePick | null) => {
     setSaid("");
@@ -206,7 +248,11 @@ export function IleScreen({
   };
 
   return (
-    <div className="porcellana fixed inset-0 pc-passe pc-planche pc-ile" data-ile-screen>
+    <div
+      className="porcellana fixed inset-0 pc-passe pc-planche pc-ile"
+      data-ile-screen
+      data-busy={String(!!(chosen || hand || sheet))}
+    >
       <Canvas
         orthographic
         dpr={[1, 2]}
@@ -218,6 +264,8 @@ export function IleScreen({
       >
         <IleBoard
           ile={ile}
+          rules={R}
+          stopped={stopped}
           buyable={buyable}
           ground={ground}
           now={now}
@@ -253,6 +301,8 @@ export function IleScreen({
             );
           }
           if (!tb || tb.type === ILE_FONDACO) return null;
+          // On a phone, a card open leaves only the pin of what it tells.
+          if (phone && chosen && chosen.at !== k) return null;
           const busy = tb.readyAt > now;
           return (
             <button
@@ -264,7 +314,8 @@ export function IleScreen({
               onClick={() => tap({ kind: "tile", at: k })}
             >
               <b>
-                {R.workshops[tb.type]?.name} · {tb.level}
+                {short(R.workshops[tb.type]?.name ?? "")}
+                {R.workshops[tb.type]?.ouvrage ? "" : ` · ${tb.level}`}
               </b>
               {busy ? <span>chantier · {duration(tb.readyAt - now)}</span> : null}
             </button>
@@ -273,6 +324,7 @@ export function IleScreen({
         {buyable.map((k) => {
           const v = plotGain(k);
           if (hand && v <= 0) return null;
+          if (phone && chosen && chosen.at !== k) return null;
           return (
             <button
               key={k}
@@ -364,18 +416,13 @@ export function IleScreen({
                   {inHand.name} {hand.from ? "à déplacer" : "en main"}
                 </h2>
                 <span>
-                  {Object.keys(inHand.inputs).length
-                    ? `${Object.keys(inHand.inputs)
-                        .map((g) => S.goods[g] ?? g)
-                        .join(" et ")} → `
-                    : ""}
-                  {Object.keys(inHand.outputs)
-                    .map((g) => S.goods[g] ?? g)
-                    .join(", ")}{" "}
-                  · {inHand.lotsPerHour} par heure au niveau 1
+                  {inHand.ouvrage || !inHand.lotsPerHour
+                    ? doesOf(inHand, hand.type)
+                    : `${inHand.lotsPerHour} lots par heure au niveau 1`}
                 </span>
               </div>
             </div>
+            {inHand.ouvrage || !Object.keys(inHand.outputs).length ? null : io(inHand)}
             <div className="pc-ile-rules">
               <span data-tone="up">
                 <b>+{R.bonus.terrainBps / 100} %</b>
@@ -481,34 +528,88 @@ export function IleScreen({
           </section>
         ) : tile && w && b ? (
           <section className="pc-planche-card" data-planche-card>
-            <h2>
-              {w.name} · niveau {b.level}
-            </h2>
-            <p>
-              {b.readyAt > now
-                ? `En chantier : prêt dans ${duration(b.readyAt - now)}.`
-                : w.ouvrage
-                  ? "Un ouvrage de ta Maison : il ne produit rien, toute la lagune le voit sur ton île."
-                  : S.arsenal && b.type === S.arsenal.workshop
-                    ? `Tes marchandises deviennent des navires : ${S.arsenal.cales[b.level - 1] ?? 0} cales.`
-                    : `${doesOf(w, b.type)} · ${Math.round(rates[b.type] ?? 0)} par heure (tous les ${w.name.toLowerCase()}s de l'île).`}{" "}
-              {w.ouvrage ? null : (
-                <>
-                  Sur {TERRAIN_NAMES[tile.terrain].toLowerCase()} :{" "}
-                  {pct(ileBonusBps(R, ile, b.type, chosen?.at ?? ""))}.
-                </>
-              )}
-            </p>
-            {S.arsenal && b.type === S.arsenal.workshop && onArsenal ? (
-              <button type="button" className="pc-passe-go" data-open-arsenal onClick={onArsenal}>
-                Ouvrir l'Arsenal
-                <small>tes cales, ta flotte, ton port</small>
-              </button>
+            <div className="pc-pl-head">
+              <div>
+                <h2>{w.name}</h2>
+                <span>
+                  {w.ouvrage ? "Ouvrage" : `Niveau ${b.level}`} · sur{" "}
+                  {TERRAIN_NAMES[tile.terrain].toLowerCase()}
+                </span>
+              </div>
+            </div>
+            {b.readyAt > now ? (
+              <p className="pc-planche-do">En chantier : prêt dans {duration(b.readyAt - now)}.</p>
             ) : null}
-            <div className="pc-passe-opts">
+            {w.ouvrage ? (
+              <p>
+                Un ouvrage de ta Maison : il ne produit rien, toute la lagune le voit sur ton île.
+              </p>
+            ) : S.arsenal && b.type === S.arsenal.workshop ? (
+              <p>
+                Tes marchandises deviennent des navires : {S.arsenal.cales[b.level - 1] ?? 0} cales.
+              </p>
+            ) : (
+              <>
+                {io(w)}
+                <div className="pc-ile-lines">
+                  <div>
+                    {tile.terrain === w.terrain
+                      ? `Son terrain (${TERRAIN_NAMES[w.terrain].toLowerCase()})`
+                      : `Il aime ${TERRAIN_NAMES[w.terrain].toLowerCase()}`}
+                    <b data-tone={tile.terrain === w.terrain ? "up" : undefined}>
+                      {pct(tile.terrain === w.terrain ? R.bonus.terrainBps : 0)}
+                    </b>
+                  </div>
+                  <div>
+                    Ses voisins
+                    <b
+                      data-tone={
+                        ileBonusBps(R, ile, b.type, chosen?.at ?? "") >
+                        (tile.terrain === w.terrain ? R.bonus.terrainBps : 0)
+                          ? "up"
+                          : undefined
+                      }
+                    >
+                      {pct(
+                        ileBonusBps(R, ile, b.type, chosen?.at ?? "") -
+                          (tile.terrain === w.terrain ? R.bonus.terrainBps : 0),
+                      )}
+                    </b>
+                  </div>
+                  <div>
+                    Rend, par heure
+                    <b>
+                      {Math.round(rates[b.type] ?? 0)}{" "}
+                      {(S.goods[Object.keys(w.outputs)[0] ?? ""] ?? "").toLowerCase()}
+                    </b>
+                  </div>
+                  {stopped(b.type) && b.readyAt <= now ? (
+                    <div>
+                      <span className="pc-planche-do">
+                        {Object.entries(w.outputs).some(
+                          ([g, n]) => (h.stock[g] ?? 0) + n > S.rules.store,
+                        )
+                          ? "Il attend : l'entrepôt est plein."
+                          : "Il attend : sa matière manque."}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              </>
+            )}
+            <div className="pc-ile-acts">
+              {S.arsenal && b.type === S.arsenal.workshop && onArsenal ? (
+                <button type="button" className="pc-passe-go" data-open-arsenal onClick={onArsenal}>
+                  Ouvrir l'Arsenal
+                  <small>tes cales, ta flotte, ton port</small>
+                </button>
+              ) : null}
               {b.level < w.cost.length ? (
                 <button
                   type="button"
+                  className={
+                    S.arsenal && b.type === S.arsenal.workshop ? "pc-passe-quiet" : "pc-passe-go"
+                  }
                   data-ile-upgrade
                   disabled={b.readyAt > now}
                   onClick={() =>
@@ -518,12 +619,15 @@ export function IleScreen({
                     )
                   }
                 >
-                  Niveau {b.level + 1} · {ducats(w.cost[b.level] ?? 0)} ducats ·{" "}
-                  {duration(w.buildMs[b.level] ?? 0)}
+                  Passer au niveau {b.level + 1}
+                  <small>
+                    {ducats(w.cost[b.level] ?? 0)} ducats · {duration(w.buildMs[b.level] ?? 0)}
+                  </small>
                 </button>
               ) : null}
               <button
                 type="button"
+                className="pc-passe-quiet"
                 disabled={!free.length}
                 onClick={() => setHand({ type: b.type, from: chosen?.at ?? "" })}
               >
@@ -565,27 +669,28 @@ export function IleScreen({
                 </div>
               ))}
           </section>
-        ) : sheet ? (
-          <section className="pc-planche-card" data-ile-sheet>
-            <h2>Bâtir un atelier</h2>
+        ) : sheet || !phone ? (
+          <section className="pc-ile-tray" data-ile-sheet aria-label="Bâtir">
             {Object.entries(R.workshops)
-              .filter(([, x]) => !x.ouvrage)
-              .map(([type, x]) => row(type, x))}
+              .filter(([, x]) => !x.ouvrage && x.tier === 1 && Object.keys(x.outputs).length)
+              .map(([type, x]) => tool(type, x))}
+            <hr />
+            {Object.entries(R.workshops)
+              .filter(([, x]) => !x.ouvrage && (x.tier > 1 || !Object.keys(x.outputs).length))
+              .map(([type, x]) => tool(type, x))}
             {Object.values(R.workshops).some((x) => x.ouvrage) ? (
               <>
-                <h3 data-ouvrages>Les ouvrages</h3>
-                <p className="pc-planche-do">
-                  Ils ne produisent rien : ils disent ta Maison à toute la lagune. Chacun rend le
-                  suivant plus cher.
-                </p>
+                <hr data-ouvrages />
                 {Object.entries(R.workshops)
                   .filter(([, x]) => x.ouvrage)
-                  .map(([type, x]) => row(type, x))}
+                  .map(([type, x]) => tool(type, x))}
               </>
             ) : null}
-            <button type="button" className="pc-passe-quiet" onClick={() => setSheet(false)}>
-              Fermer
-            </button>
+            {phone ? (
+              <button type="button" className="pc-passe-quiet" onClick={() => setSheet(false)}>
+                Fermer
+              </button>
+            ) : null}
           </section>
         ) : (
           <div className="pc-passe-bar">

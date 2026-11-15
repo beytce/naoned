@@ -30,7 +30,7 @@ Elles font foi pour toute mécanique et toute fonctionnalité ; en cas de confli
 7. **Chacun peut être le meilleur.** Le rang repart de zéro à chaque marée ; les classements mesurent l'adresse.
 8. **Rien ne s'accumule sans fin, et on ne perd rien en dormant.** Tout a un plafond ; aucune série de connexion, aucune récompense qui expire.
 9. **Court si tu veux, profond si tu restes.** Cinq minutes font une bonne visite, avec au moins une vraie décision.
-10. **Les graphismes sont ceux de Porcellana**, et **tout se voit** : sur la planche, par des objets, des mouvements ; un chiffre ou une liste accompagnent l'image, jamais ne la remplacent.
+10. **Les graphismes sont ceux de Porcellana, en direction Céladon** (porcelaine, bois blond, céladon, ardoise ; le rouge seul fort), et **tout se voit** : sur la planche, par des objets, des mouvements ; un chiffre ou une liste accompagnent l'image, jamais ne la remplacent.
 
 ## Façon de travailler
 - **Commencer chaque tâche en mode plan, attendre validation avant de coder.** Les questions se posent avec des options et une recommandation.
@@ -47,7 +47,8 @@ Elles font foi pour toute mécanique et toute fonctionnalité ; en cas de confli
 - **Le chemin de l'audit du 11 novembre** (`docs/audit-progression-2026-11-11/`), fait en neuf étapes, chacune avec son plan : `plan-compte`, `plan-lagunes`, `plan-progression-maison`, `plan-hex-commerce`, `plan-arsenal`, `plan-guerre`, `plan-compagnie`, `plan-muda`, `plan-maree` (dans docs/).
 - **La planche** : la racine du site l'ouvre (`apps/web/src/porcellana/planche/LabPlanche.tsx`) ; la Passe `apps/web/src/porcellana/passe/` ; l'île `apps/web/src/porcellana/ile/` ; l'assaut `apps/web/src/porcellana/guerre/`. Serveur : `apps/server/src/game/planche*.ts`, `guerre.ts`.
 - **La carte d'une lagune** : la lagune ronde (`docs/plan-lagune-ronde.md`, 14 novembre) : un carré de 41 cases, le Rialto au centre, un quart donné dans le thème et tourné pour chaque sestiere, l'encre mesurée à la distance au centre (`plancheDepth`).
-- **La direction visuelle** : Porcellana (docs/plan-porcellana.md, kit `apps/web/src/porcellana/`), et la toile de l'audit visuel du 11 novembre (docs/audit-visuel-2026-11-11/00-audit.md, logo `apps/web/brand/`) : tout nouvel écran la suit.
+- **La direction Céladon** (`docs/plan-celadon.md`, validée le 14 novembre) : plus de détail et quatre matières, lots C0 à C6 ; l'île et ses ateliers sont faits (kit `apps/web/src/porcellana/celadon/`, laboratoire `?lab=celadon`), la carte et le reste suivent. Tout nouvel écran la suit ; les tons viennent de `CELADON` (`tokens.ts`), jamais en dur.
+- **La direction visuelle d'avant** : Porcellana (docs/plan-porcellana.md, kit `apps/web/src/porcellana/`), et la toile de l'audit visuel du 11 novembre (docs/audit-visuel-2026-11-11/00-audit.md, logo `apps/web/brand/`) : tout nouvel écran la suit.
 - **Les tutoriels guidés** (décision du 8 novembre) : le début se guide geste par geste, chaque nouveau lieu a son tutoriel court à la première ouverture (lot E pour la planche).
 
 ## L'ancien jeu (endormi)

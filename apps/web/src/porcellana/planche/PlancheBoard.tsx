@@ -48,9 +48,10 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { Stage } from "../Stage.js";
-import { palette } from "../TileBoard.js";
 import { bake } from "../bake.js";
-import { CATALOGUE } from "../catalogue.js";
+import { C, plate, frame as rimFrame } from "../celadon/kit.js";
+import { WORKSHOPS } from "../celadon/workshops.js";
+import { celadonPalette } from "../materials.js";
 import { fondaco } from "../models/fondaco.js";
 import { market } from "../models/market.js";
 import { flagCloth, rocca } from "../models/terra.js";
@@ -58,10 +59,9 @@ import { town } from "../models/towns.js";
 import { type Vehicle, ship } from "../models/vehicles.js";
 import { drawChevron, ribbonGeometry, roundedPath } from "../ribbon.js";
 import { box, crate, cyl, disposeBuilt } from "../shapes.js";
-import { BOARD, CAMERA, COL, RIBBON, SEA, THREAD } from "../tokens.js";
+import { BOARD, CAMERA, CELADON, LAGOON, RIBBON, SEA, THREAD } from "../tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
-const BY_KEY = new Map(CATALOGUE.map((e) => [e.key, e]));
 
 /** What the board is made of beside its houses and towns: where the land lies, how dark each tile is. */
 export interface PlancheLand {
@@ -186,14 +186,15 @@ export function PlancheBoard({
 }) {
   const { camera, gl, size } = useThree();
   const live = useMemo(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, []);
-  const P = palette(false);
+  const P = celadonPalette();
   const { width: W, height: H } = setup;
   const wx = (x: number) => (x - (W - 1) / 2) * S;
   const wz = (y: number) => (y - (H - 1) / 2) * S;
 
-  // The ground (docs/audit-visuel-2026-11-11): the land in the kit's tiles, biscuit, a little greyer
-  // toward the open sea; the houses' islands in porcelain; the water in one piece, without joints, washed
-  // from the lagoon's white to the ink of the open sea, a little stained.
+  // The ground (docs/audit-visuel-2026-11-11, redrawn in the Céladon direction, docs/plan-celadon.md
+  // C4): the land in the kit's tiles, a warm stone, a little greyer toward the open sea; the houses'
+  // islands in porcelain; the water in one piece, without joints, pale at the Rialto and deeper
+  // toward the open sea, never black, a little stained; the whole in a tray with a rim of blond wood.
   // biome-ignore lint/correctness/useExhaustiveDependencies: built once for a board.
   const ground = useMemo(() => {
     const root = new Group();
@@ -212,15 +213,16 @@ export function PlancheBoard({
       }
     const m = new Matrix4();
     const c = new Color();
-    const ink = new Color(COL.ink);
-    const geo = new RoundedBoxGeometry(BOARD.tile, BOARD.thick, BOARD.tile, 3, BOARD.radius);
+    const ink = new Color(LAGOON.far);
+    // The land in one piece but for a thin joint: the tiles touch.
+    const geo = new RoundedBoxGeometry(S - 0.06, BOARD.thick, S - 0.06, 2, 0.08);
     const mat = new MeshStandardMaterial({ color: "#ffffff", roughness: 0.86 });
     const mesh = new InstancedMesh(geo, mat, tiles.length);
     tiles.forEach(([x, y, kind], k) => {
       m.makeTranslation(wx(x), -BOARD.thick / 2, wz(y));
       mesh.setMatrixAt(k, m);
-      if (kind === "isle") c.set(SEA.isle);
-      else c.set(SEA.land).lerp(ink, land.peril(x, y) * 0.3);
+      if (kind === "isle") c.set(LAGOON.isle);
+      else c.set(LAGOON.land).lerp(ink, land.peril(x, y) * 0.22);
       mesh.setColorAt(k, c);
     });
     mesh.receiveShadow = true;
@@ -232,9 +234,9 @@ export function PlancheBoard({
     sheet.rotateX(-Math.PI / 2);
     const pos = sheet.getAttribute("position");
     const col = new Float32Array(pos.count * 3);
-    const lagoon = new Color(SEA.lagoon);
-    const mid = new Color(SEA.mid);
-    const deep = new Color(SEA.deep);
+    const lagoon = new Color(LAGOON.water);
+    const mid = new Color(LAGOON.mid);
+    const deep = new Color(LAGOON.deep);
     for (let i = 0; i < pos.count; i++) {
       const gx = pos.getX(i) / S + (W - 1) / 2;
       const gy = pos.getZ(i) / S + (H - 1) / 2;
@@ -257,13 +259,48 @@ export function PlancheBoard({
     water.position.y = BOARD.waterY;
     water.receiveShadow = true;
     root.add(water);
-    // Its edge: a slab under the sheet, so that the board keeps its thickness.
-    const edge = new Mesh(
-      new RoundedBoxGeometry(W * S, 1.2, H * S, 2, 0.4),
-      new MeshStandardMaterial({ color: SEA.mid, roughness: 0.6 }),
+    // The tray: a hull under the sheet, a rim of blond wood round it, the open water beyond.
+    const tw = W * S + LAGOON.rim * 2;
+    const td = H * S + LAGOON.rim * 2;
+    const top = BOARD.waterY + LAGOON.rimHeight * 0.6;
+    plate(
+      root,
+      tw - 0.6,
+      td - 0.6,
+      LAGOON.corner,
+      LAGOON.hull,
+      top - LAGOON.rimHeight - LAGOON.hull,
+      C("porcelain"),
+      0.2,
     );
-    edge.position.y = BOARD.waterY - 0.61;
-    root.add(edge);
+    plate(
+      root,
+      tw - 1.6,
+      td - 1.6,
+      LAGOON.corner,
+      0.6,
+      top - LAGOON.rimHeight - LAGOON.hull - 0.5,
+      C("stone2"),
+      0.1,
+    );
+    rimFrame(
+      root,
+      tw,
+      td,
+      LAGOON.corner + 0.4,
+      LAGOON.rim + 0.15,
+      LAGOON.rimHeight,
+      top - LAGOON.rimHeight,
+      C("blond"),
+    );
+    const open = new Mesh(
+      new PlaneGeometry(W * S * 8, H * S * 8),
+      new MeshStandardMaterial({ color: CELADON.water, roughness: 0.38 }),
+    );
+    open.rotation.x = -Math.PI / 2;
+    open.position.y = top - LAGOON.rimHeight - LAGOON.hull - 0.3;
+    open.receiveShadow = true;
+    root.add(open);
     return root;
   }, [setup, land]);
 
@@ -400,12 +437,12 @@ export function PlancheBoard({
       const h = setup.houses[k];
       if (!h || !list) return;
       list.split(",").forEach((type, n) => {
-        const entry = BY_KEY.get(type);
-        const model = entry?.make?.(P, { seed: k * 11 + n, running: false });
+        const make = Object.hasOwn(WORKSHOPS, type) ? WORKSHOPS[type] : undefined;
+        const model = make?.(P, { level: 1, seed: k * 11 + n });
         const [cx, cz] = corners[n] ?? [0, 0];
         if (!model) return;
         const g = new Group();
-        model.group.scale.setScalar(0.55);
+        model.group.scale.setScalar(0.36);
         g.add(model.group);
         g.position.set(wx(h.x) + cx, 0, wz(h.y) + cz);
         bake(g);
@@ -492,7 +529,7 @@ export function PlancheBoard({
     phases.split(",").forEach((ph, k) => {
       const x = setup.noir?.straits[k];
       if (!x) return;
-      const cloth = flagCloth(POWER_FLAG[x.power] ?? COL.ink);
+      const cloth = flagCloth(POWER_FLAG[x.power] ?? CELADON.ink);
       const g = new Group();
       g.position.set(wx(x.x), 0, wz(x.y));
       g.userData.pick = { kind: "noir", id: x.id } satisfies PlanchePick;
@@ -598,11 +635,14 @@ export function PlancheBoard({
       const reach = (side / 2) * Math.SQRT2;
       const grad = g.createRadialGradient(256, 256, 0, 256, 256, (reach / side) * 512);
       const stop = (t: number, a: number) =>
-        grad.addColorStop(Math.min(1, Math.max(0, t / reach)), `rgba(29,27,25,${a})`);
+        grad.addColorStop(
+          Math.min(1, Math.max(0, t / reach)),
+          `rgba(${LAGOON.tide[0]},${LAGOON.tide[1]},${LAGOON.tide[2]},${a})`,
+        );
       stop(0, 0);
       stop(tiles - 3, 0);
-      stop(tiles, 0.5);
-      stop(reach, 0.5);
+      stop(tiles, LAGOON.tide[3]);
+      stop(reach, LAGOON.tide[3]);
       g.fillStyle = grad;
       g.fillRect(0, 0, 512, 512);
     }
@@ -711,7 +751,7 @@ export function PlancheBoard({
         holder === me
           ? `#${P.accentColour.getHexString()}`
           : plancheIsCorsair(holder)
-            ? COL.ink
+            ? CELADON.ink
             : "#8A8279";
       const g = new Group();
       g.position.set(wx(p.x), 0, wz(p.y));
@@ -755,7 +795,7 @@ export function PlancheBoard({
     canvas.height = 16;
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      ctx.fillStyle = COL.ink;
+      ctx.fillStyle = CELADON.ink;
       ctx.beginPath();
       ctx.roundRect(2, 2, 36, 12, 6);
       ctx.fill();
@@ -855,6 +895,7 @@ export function PlancheBoard({
           own ? accent : h.id === rival ? foe : round && home && h.sestiere !== home ? far : other,
         );
         ribbon.receiveShadow = own;
+        if (!own && h.id !== rival) ribbon.userData.other = { house: h.id, city: th.to };
         root.add(ribbon);
         if (own) {
           // Its shadow, toward the camera and a little lower: the ribbon has a thickness.
@@ -881,6 +922,19 @@ export function PlancheBoard({
     }
     return { root, mine };
   }, [setup, threads, me, chevrons, dashes, holders, rival]);
+
+  // With the whole lagoon in view, only one's own threads and one's rival's are drawn; the others'
+  // come back in one's sestiere, or for the town or the house one has chosen (docs/plan-celadon.md C4).
+  useEffect(() => {
+    for (const o of web.root.children) {
+      const t = o.userData.other as { house: string; city: string } | undefined;
+      if (!t) continue;
+      o.visible =
+        !whole ||
+        (chosen?.kind === "city" && chosen.id === t.city) ||
+        (chosen?.kind === "house" && chosen.id === t.house);
+    }
+  }, [web, whole, chosen]);
 
   const ring = useMemo(() => {
     const m = new Mesh(
@@ -1067,7 +1121,14 @@ export function PlancheBoard({
 
   return (
     <>
-      <Stage target={controls.target} phone={phone} plain={plain} scale={3} />
+      <Stage
+        target={controls.target}
+        phone={phone}
+        plain={plain}
+        scale={3}
+        background={CELADON.sky}
+        bare
+      />
       <primitive object={ground} />
       <primitive object={web.root} />
       <primitive object={minis} />
