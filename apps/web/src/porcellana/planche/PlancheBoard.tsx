@@ -50,12 +50,11 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import { Stage } from "../Stage.js";
 import { bake } from "../bake.js";
 import { C, plate, frame as rimFrame } from "../celadon/kit.js";
+import { market, rocca, ship, town } from "../celadon/places.js";
 import { WORKSHOPS } from "../celadon/workshops.js";
 import { celadonPalette } from "../materials.js";
-import { market } from "../models/market.js";
-import { flagCloth, rocca } from "../models/terra.js";
-import { town } from "../models/towns.js";
-import { type Vehicle, ship } from "../models/vehicles.js";
+import { flagCloth } from "../models/terra.js";
+import type { Vehicle } from "../models/vehicles.js";
 import { drawChevron, ribbonGeometry, roundedPath } from "../ribbon.js";
 import { box, crate, cyl, disposeBuilt } from "../shapes.js";
 import { BOARD, CAMERA, CELADON, LAGOON, RIBBON, SEA, THREAD } from "../tokens.js";

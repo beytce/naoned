@@ -74,6 +74,8 @@ Aucune règle de jeu ne change : ni calibration, ni migration. L'ancien jeu (`/a
 | C4 (suite, 15 novembre) | **Une étiquette pour tous** : papier et encre ; une tour tenue par un capitaine est cerclée d'encre, une ville fermée plus pâle, plus aucune étiquette sombre. Les Maisons de la planche prennent le Fondaco des îles, en petit. | `planche/planche.css`, `planche/PlancheBoard.tsx` |
 | C5 (en partie, 15 novembre) | **Le reste du jeu aux tons de la direction** : le papier, l'encre et le céladon portés par une classe commune (`pc-celadon`) ; la Passe et l'assaut prennent la palette et le ciel de la direction ; les encres en dur de la Passe, de la Muda et de la Marée passent par les jetons. | `porcellana.css`, `passe/`, `guerre/`, `planche/muda.css`, `planche/maree.css` |
 
+| C4 et C5 (redessin, 15 novembre) | **Ce qui restait de l'ancien kit sur la planche est redessiné** : les villes par taille (hameau et son puits, bourg et son clocher, cité et son dôme), la tour d'un passage (ronde, cerclée de céladon, son treuil), le Rialto (halle à arcades, pont, étals), le navire, et les pièces de la Passe (barge, borne d'encre, rives de planches). L'assaut prend la tour et le navire. | `celadon/places.ts` |
+
 Vérifié : tests, typage, lint ; parcours `e2e:ile` et `e2e:planche` (seul), téléphone et ordinateur ; la CI (tests et parcours) au vert sur C0 à C3. Captures : `docs/celadon-captures/` (`ile-pc`, `fiche-pc`, `fiche-tel`, `tout-pc`, `planche-pc`, `planche-tel`, `lagune-sestiere-pc`, `passe-pc`, `passe-tel`).
 
 **Écarts aux maquettes, voulus.**
@@ -83,8 +85,8 @@ Vérifié : tests, typage, lint ; parcours `e2e:ile` et `e2e:planche` (seul), t�
 - La case de rive ne porte pas de quai d'embarquement : la barge au fanion est amarrée au quai de l'île.
 
 **Reste, pour les lots suivants.**
-- **C4, ce qui manque** : les villes et les tours redessinées au détail des ateliers (elles n'ont que changé de tons) ; une capture de la lagune entière, fils des autres masqués (la règle est codée, pas encore vue en image).
-- **C5, ce qui manque** : les pièces de la Passe et le décor de l'assaut redessinés (ils n'ont que changé de tons) ; l'assaut, l'Arsenal, la Muda, la Marée et la Compagnie n'ont pas été revus en image, leurs parcours demandent le serveur de jeu ; l'entrée.
+- **C4, ce qui manque** : une capture de la lagune entière, fils des autres masqués (la règle est codée, pas encore vue en image).
+- **C5, ce qui manque** : le décor de l'assaut (quais, batteries, bombarde) n'a que changé de tons ; les campaniles, les phares et le môle de la Muda aussi ; l'assaut, l'Arsenal, la Muda, la Marée et la Compagnie n'ont pas été revus en image, leurs parcours demandent le serveur de jeu ; l'entrée.
 - **C6** la tenue.
 - **Pas d'essai sur un vrai téléphone.** En rendu logiciel, l'île avec l'occlusion est lente ; le poids réel se mesure au lot C6.
 - Les cases à acheter qui chevauchent le bord du quai se lisent moins bien que les autres.

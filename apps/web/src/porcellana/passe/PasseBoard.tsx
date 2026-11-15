@@ -30,10 +30,10 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Stage } from "../Stage.js";
 import { easeOutBack, tileDelay, tileDrop } from "../arrival.js";
+import { bank, barge, chainLink, post, threadLink } from "../celadon/places.js";
 import { celadonPalette } from "../materials.js";
 import { rocks } from "../models/decor.js";
 import { slab } from "../models/ground.js";
-import { bank, barge, chainLink, post, threadLink } from "../models/passe.js";
 import { box } from "../shapes.js";
 import { BOARD, CAMERA, CELADON } from "../tokens.js";
 

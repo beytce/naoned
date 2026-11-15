@@ -25,10 +25,11 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Stage } from "../Stage.js";
 import { bake } from "../bake.js";
+import { rocca, ship } from "../celadon/places.js";
 import { ileTile } from "../ile/IleBoard.js";
 import { celadonPalette } from "../materials.js";
-import { bombarda, flagCloth, rocca } from "../models/terra.js";
-import { type Vehicle, ship } from "../models/vehicles.js";
+import { bombarda, flagCloth } from "../models/terra.js";
+import type { Vehicle } from "../models/vehicles.js";
 import { box, cyl } from "../shapes.js";
 import { BOARD, CAMERA, CELADON } from "../tokens.js";
 
