@@ -1,9 +1,3 @@
-/**
- * The tide on the board (docs/plan-maree.md T6 and T7): its sheet (the ink drawn as a gauge of rows
- * with the towers it nears, the week's sorties, the decree in force, one's league and the ladder of
- * the leagues), the tide's end (the laurels, one's stones, one's league, the Doge's decree to
- * choose), and the Sérénissime as all may watch it.
- */
 import {
   type PlancheDecret,
   type PlancheSetup,
@@ -15,6 +9,14 @@ import {
   plancheMonday,
 } from "@comptoirs/engine";
 import type { ReactNode } from "react";
+/**
+ * The tide on the board (docs/plan-maree.md T6 and T7): its sheet (the ink drawn as a gauge of rows
+ * with the towers it nears, the week's sorties, the decree in force, one's league and the ladder of
+ * the leagues), the tide's end (the laurels, one's stones, one's league, the Doge's decree to
+ * choose), and the Sérénissime as all may watch it.
+ */
+import { mareeScene } from "../celadon/scenes.js";
+import { LieuHead } from "./Lieu.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -174,15 +176,15 @@ export function MareeSheet({
   const passName = (id: string) => setup.passages.find((p) => p.id === id)?.name ?? id;
   return (
     <section className="pc-planche-card pc-pl-card pc-mr" data-maree>
-      <div className="pc-pl-head">
-        <div>
-          <h2>La marée {state.rank.tide + 1}</h2>
-          <span data-maree-week={week}>
-            Semaine {week} sur {R?.tideWeeks ?? 6} · close {WHEN.format(ends)}
-          </span>
-        </div>
-        {close}
-      </div>
+      <LieuHead
+        scene="maree"
+        build={mareeScene}
+        eyebrow={`La marée ${state.rank.tide + 1}`}
+        title={`Semaine ${week} sur ${R?.tideWeeks ?? 6}`}
+        sub={`Elle se clôt ${WHEN.format(ends)}`}
+        subData={{ "data-maree-week": week }}
+        close={close}
+      />
       {setup.encre ? (
         <>
           <h3 className="pc-mn-h3">L'encre</h3>

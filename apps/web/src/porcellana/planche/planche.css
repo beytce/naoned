@@ -2442,6 +2442,7 @@ span.pc-semaine-title {
 }
 /* What a place is for, told at the first visit only: a quiet note, never a dark block. */
 .pc-lieu-first,
+.pc-co-guide,
 .pc-ar-first {
   background: var(--pc-celadon-pale);
   color: var(--pc-ink);

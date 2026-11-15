@@ -1,9 +1,3 @@
-/**
- * The Muda, the black straits and the Gazette on the board (docs/plan-muda.md N5 to N7): the
- * convoy's sheet (its hold drawn as a galley filling, its week, its straits), a black strait's sheet
- * (its power, its guard's links, the cargo risked and what the far port pays), the relics and the
- * plans, and the Gazette of Sunday as a page of a journal.
- */
 import {
   type PlancheGazette,
   type PlancheSetup,
@@ -22,6 +16,14 @@ import {
 } from "@comptoirs/engine";
 import { type ReactNode, useState } from "react";
 import { Emblem } from "../../art/logo.js";
+/**
+ * The Muda, the black straits and the Gazette on the board (docs/plan-muda.md N5 to N7): the
+ * convoy's sheet (its hold drawn as a galley filling, its week, its straits), a black strait's sheet
+ * (its power, its guard's links, the cargo risked and what the far port pays), the relics and the
+ * plans, and the Gazette of Sunday as a page of a journal.
+ */
+import { mudaScene } from "../celadon/scenes.js";
+import { LieuHead } from "./Lieu.js";
 
 const DAY = 86_400_000;
 const ducats = (deniers: number | bigint) =>
@@ -240,13 +242,25 @@ export function MudaSheet({
   const today = ours && ours.day === Math.floor(now / DAY) ? (ours.today[me] ?? 0) : 0;
   return (
     <section className="pc-planche-card pc-pl-card pc-mu" data-muda>
-      <div className="pc-pl-head">
-        <div>
-          <h2>La Muda de la semaine</h2>
-          <span data-muda-phase={phase}>{PHASE_SAID[phase]}</span>
-        </div>
-        {close}
-      </div>
+      <LieuHead
+        scene={`muda:${phase}:${Math.round((loaded / Math.max(1, hold)) * 6)}`}
+        build={() => mudaScene(loaded / Math.max(1, hold), phase === "sailing")}
+        eyebrow="La Muda de la semaine"
+        title={
+          phase === "sailing"
+            ? `${passed} détroit${passed > 1 ? "s" : ""} sur ${M.straits.length} passé${passed > 1 ? "s" : ""}`
+            : phase === "back"
+              ? "Le convoi est rentré"
+              : mine > 0
+                ? `${mine} de toi dans la cale`
+                : phase === "before"
+                  ? "Le convoi se prépare"
+                  : "Le convoi charge au môle"
+        }
+        sub={PHASE_SAID[phase]}
+        subData={{ "data-muda-phase": phase }}
+        close={close}
+      />
       <Week setup={setup} now={now} />
       <div className="pc-mu-cale">
         <Hold loaded={loaded} hold={hold} mine={mine} />

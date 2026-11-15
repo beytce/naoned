@@ -1,10 +1,12 @@
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 /**
  * The company (docs/plan-compagnie.md K5, the mock-up's screen 4a): founded with a name and a
  * flag, or joined by a link; its members and their roles; its beacon, fed with goods; its thread,
  * under the old game's rules; the signs it laid this week; the link to invite.
  */
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { compagnieScene } from "../celadon/scenes.js";
 import { CHARGES, FLAG_COLORS, HouseFlag } from "./Entree.js";
+import { LieuHead } from "./Lieu.js";
 
 export interface CompagnieView {
   id: string;
@@ -323,17 +325,18 @@ export function CompagnieSheet({
   const link = c ? `${window.location.origin}/?co=${c.code}` : "";
   return (
     <section className="pc-planche-card pc-pl-card pc-co" data-compagnie>
-      <div className="pc-pl-head">
-        <div>
-          <h2>{c ? c.name : "Une compagnie"}</h2>
-          <span>
-            {c
-              ? `${c.members.length} Maison${c.members.length > 1 ? "s" : ""} sur ${c.max} · ${me?.role === "doge" ? "tu en es le doge" : me?.role === "capitaine" ? "tu en es capitaine" : "tu en es membre"}`
-              : "Tu n'es dans aucune compagnie"}
-          </span>
-        </div>
-        {close}
-      </div>
+      <LieuHead
+        scene={`compagnie:${c?.phare.level ?? 0}`}
+        build={() => compagnieScene(c?.phare.level ?? 0)}
+        eyebrow="Ta compagnie"
+        title={c ? c.name : "Aucune compagnie"}
+        sub={
+          c
+            ? `${c.members.length} Maison${c.members.length > 1 ? "s" : ""} sur ${c.max} · ${me?.role === "doge" ? "tu en es le doge" : me?.role === "capitaine" ? "tu en es capitaine" : "tu en es membre"}`
+            : "Fondes-en une, ou rejoins celle d'un ami par son lien"
+        }
+        close={close}
+      />
       {c === undefined ? null : !c ? (
         <Fonder
           guide={guide >= 0}

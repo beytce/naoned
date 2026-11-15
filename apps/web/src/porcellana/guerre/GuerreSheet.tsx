@@ -1,10 +1,12 @@
+import type { AssautState, IleState } from "@comptoirs/engine";
+import { type ReactNode, useState } from "react";
 /**
  * The War of the week (docs/plan-guerre.md W4, the mock-up's screen 3b): the week's phase, the two
  * flotillas' seals, the ports of the other flotilla and what each has already lost, today's
  * assault, the assaults one's own port has borne.
  */
-import type { AssautState, IleState } from "@comptoirs/engine";
-import { type ReactNode, useState } from "react";
+import { guerreScene } from "../celadon/scenes.js";
+import { LieuHead } from "../planche/Lieu.js";
 
 export interface GuerrePortView {
   key: string;
@@ -174,13 +176,22 @@ export function GuerreSheet({
           : "";
   return (
     <section className="pc-planche-card pc-pl-card pc-gu" data-guerre>
-      <div className="pc-pl-head">
-        <div>
-          <h2>La Guerre de la semaine</h2>
-          <span>{PHASE[view.phase]}</span>
-        </div>
-        {close}
-      </div>
+      <LieuHead
+        scene="guerre"
+        build={guerreScene}
+        eyebrow="La Guerre de la semaine"
+        title={
+          can
+            ? "Un assaut t'attend aujourd'hui"
+            : view.phase === "assauts" && view.today
+              ? "Ton assaut du jour est fait"
+              : view.phase === "assauts"
+                ? "Il te faut un navire"
+                : "Pas d'assaut aujourd'hui"
+        }
+        sub={PHASE[view.phase]}
+        close={close}
+      />
       {view.phase !== "aucune" ? (
         <>
           {view.companies?.us || view.companies?.them ? (
@@ -227,7 +238,8 @@ export function GuerreSheet({
                   <Seals n={p.best} />
                   <button
                     type="button"
-                    className={can ? "pc-passe-go" : "pc-passe-quiet"}
+                    // One red touch: the port in view, the others quiet.
+                    className={can && p.key === focus ? "pc-passe-go" : "pc-passe-quiet"}
                     data-assaillir={p.key}
                     disabled={!can || p.best >= 3}
                     onClick={() => onAssault(p.key)}

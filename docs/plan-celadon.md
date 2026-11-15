@@ -93,7 +93,7 @@ Vérifié : tests, typage, lint ; parcours `e2e:ile` et `e2e:planche` (seul), t�
 
 ## 7. La suite : la lagune simplifiée et les six lieux (proposé le 15 novembre 2026)
 
-*À la demande du porteur (« Le lagune est trop lourd, il y a trop d'éléments, on voit trop d'autres joueurs, on s'y perd : fais une proposition de simplification » ; « tous les autres modes qui n'ont pas encore eu la refonte, fais une proposition visuelle »). Page des propositions (privée) : https://claude.ai/artifact/DLpvnTP1KC1u2WF4cR4vwt ; maquettes dans `docs/celadon-maquettes/suite/`. **Validé par le porteur le 15 novembre 2026** (« Je valide, fusionne et lance S1 »), avec les quatre choix ci-dessous. Les lots S1 et S2 sont faits.*
+*À la demande du porteur (« Le lagune est trop lourd, il y a trop d'éléments, on voit trop d'autres joueurs, on s'y perd : fais une proposition de simplification » ; « tous les autres modes qui n'ont pas encore eu la refonte, fais une proposition visuelle »). Page des propositions (privée) : https://claude.ai/artifact/DLpvnTP1KC1u2WF4cR4vwt ; maquettes dans `docs/celadon-maquettes/suite/`. **Validé par le porteur le 15 novembre 2026** (« Je valide, fusionne et lance S1 »), avec les quatre choix ci-dessous. Les lots S1, S2 et S3 sont faits.*
 
 ### La lagune : on ne montre que ceux qui comptent pour toi
 
@@ -134,6 +134,8 @@ L'Arsenal, la Muda, la Marée, la Compagnie, la Guerre et le Palais : une scène
 
 | S2 | **Le gabarit des lieux, sur l'Arsenal.** La tête d'une fiche (`LieuHead`) : la scène du lieu, dessinée hors écran pour un état puis gardée en image (`vignette`, le contexte rendu aussitôt : un téléphone ne garde qu'un canevas) ; une petite ligne pour le lieu, un titre qui dit où l'on en est (« Galère en cale », « Les cales sont libres »). Une seule touche rouge : le premier navire qu'on peut mettre en chantier ; tous les navires repliés dessous. Les consignes de la première visite en note claire, plus en bloc sombre. | `planche/Lieu.tsx`, `celadon/vignette.ts`, `celadon/scenes.ts`, `planche/Arsenal.tsx` |
 
+| S3 | **Les cinq autres lieux au gabarit** : la Muda (le môle, ce qui y attend selon la cale, le convoi à quai ou en mer), la Marée (une ville, la ligne d'encre, une tour), la Compagnie (le phare et ses anneaux par niveau), la Guerre (ta tour, celle d'en face, la chaîne, tes galères), le Palais (la salle et son campanile). Un titre d'état pour chacun (« 3 de toi dans la cale », « Tu es 4ᵉ sur 12 », « Un assaut t'attend aujourd'hui »). Dans la Guerre, une seule touche rouge : le port en vue. Le guide de la compagnie en note claire. | `celadon/scenes.ts`, `planche/Muda.tsx`, `Maree.tsx`, `Compagnie.tsx`, `Palais.tsx`, `guerre/GuerreSheet.tsx` |
+
 Vérifié : 2 109 tests, typage, lint ; parcours `e2e:planche`, `e2e:ile`, `e2e:passe` (seul) ; le parcours du compte, en ligne, joué jusqu'au bout. Captures du jeu en ligne : `docs/celadon-captures/lagune-sestiere-pc`, `lagune-entiere-pc`, `lagune-sestiere-tel`, `lagune-entiere-tel`.
 
 **À savoir.**
@@ -142,3 +144,5 @@ Vérifié : 2 109 tests, typage, lint ; parcours `e2e:planche`, `e2e:ile`, `e2e:
 - Le phare d'une autre compagnie n'est plus dessiné : sa feuille s'ouvre par la fiche de la Maison.
 - Les lieux du Large gardent leur nom.
 - **S2.** La scène est une image fixe par état, pas une animation. Le parcours `e2e:arsenal`, en ligne, passe ; capture `docs/celadon-captures/arsenal-tel` (prise avant deux retouches : l'article devant le nom du navire, le cadrage de la scène).
+- **S3.** Parcours rejoués en ligne : `e2e:compagnie` (passe) et `e2e:guerre` (passe avec l'horloge du serveur un mercredi, `CLOCK_START` ; un dimanche il échoue faute de flottille, avec ou sans ce lot). Captures `compagnie-tel`, `guerre-tel`. **La Muda, la Marée et le Palais n'ont pas été vus en image** : leurs parcours (`e2e:semaine`, `e2e:maree`, `e2e:rang`) n'ont pas été rejoués. La Compagnie garde plusieurs touches rouges selon son état (fonder, donner, écrire) : non revue.
+- **La CI ne rejoue que le parcours `layout`** (l'ancien jeu) : aucun parcours de la planche n'y tourne. Ce que la CI valide pour ces lots, ce sont les tests, le typage, le lint et le build.
