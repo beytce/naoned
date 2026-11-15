@@ -138,7 +138,9 @@ export class PlancheLagoons {
    */
   turnLeagues(now: number): Promise<void> {
     const L = this.theme.board.ligues;
-    if (!L || L.count < 2) return Promise.resolve();
+    // With the leagues frozen (decision D2 of 13 November 2026) nobody moves, but the tide's end is
+    // still kept, with its laurels: the page tells it from there (docs/plan-celadon.md § 7).
+    const frozen = !L || L.count < 2;
     return this.serial(async () => {
       for (const store of [...this.stores]) {
         const final = store.hub.current().doc.state.rank.final;
@@ -155,10 +157,12 @@ export class PlancheLagoons {
         const players = final.order
           .map((house) => Object.entries(doc.seats).find(([, s]) => s.house === house)?.[0])
           .filter((p): p is string => !!p);
-        if (!players.length) continue;
-        const share = L.shareBps / 10_000;
-        const up = league < L.count ? players.slice(0, Math.ceil(players.length * share)) : [];
-        const bottom = players.slice(players.length - Math.floor(players.length * share));
+        const share = frozen ? 0 : L.shareBps / 10_000;
+        const up =
+          !frozen && league < L.count ? players.slice(0, Math.ceil(players.length * share)) : [];
+        const bottom = frozen
+          ? []
+          : players.slice(players.length - Math.floor(players.length * share));
         const down: string[] = [];
         for (const p of bottom) {
           if (up.includes(p) || league <= 1) continue;
