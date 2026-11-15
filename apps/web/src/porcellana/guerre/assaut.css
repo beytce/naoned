@@ -2,7 +2,7 @@
 .pc-assaut {
   display: flex;
   flex-direction: column;
-  background: #e8e4dc;
+  background: #dfe8e8;
   color: var(--pc-ink);
   overflow-y: auto;
 }

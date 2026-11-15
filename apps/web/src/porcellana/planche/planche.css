@@ -1,10 +1,5 @@
 /* The shared board (docs/plan-planche.md), as on the canvas the owner validated on 11 November
    2026 (docs/audit-visuel-2026-11-11): labels of three sizes, one purse, cards of paper. */
-.pc-planche {
-  --pc-text-2: #4a443e;
-  --pc-text-3: #6b645c;
-  --pc-foot: #d3ccc0;
-}
 .pc-planche-pins {
   position: absolute;
   inset: 0;
@@ -44,9 +39,10 @@
   outline: 3px solid var(--pc-accent);
   box-shadow: 0 2px 0 var(--pc-accent-deep), 0 8px 18px rgba(42, 39, 37, 0.18);
 }
+/* One label for all (docs/plan-celadon.md C4): paper and ink. A town shut is paler, never dark. */
 .pc-pl-city[data-shut="true"] {
-  background: rgba(42, 39, 37, 0.82);
-  color: #f6f4f0;
+  background: rgba(251, 248, 241, 0.78);
+  color: var(--pc-text-3);
 }
 .pc-pl-share {
   display: flex;
@@ -67,7 +63,7 @@
 }
 .pc-pl-city[data-chosen="true"] .pc-pl-share,
 .pc-pl-city[data-shut="true"] .pc-pl-share {
-  background: #6b645c;
+  background: var(--pc-hair);
 }
 .pc-pl-city[data-chosen="true"] .pc-pl-share i {
   background: #d9d2c6;
@@ -87,10 +83,10 @@
   gap: 7px;
   font-size: 13px;
 }
+/* A tower a captain holds: the same paper, ringed in ink. */
 .pc-pl-tower[data-dark="true"] {
-  background: var(--pc-ink);
-  color: #fff;
-  box-shadow: 0 2px 0 #000, 0 8px 18px rgba(42, 39, 37, 0.18);
+  box-shadow: inset 0 0 0 1.5px var(--pc-ink), 0 2px 0 var(--pc-foot), 0 8px 18px
+    rgba(36, 58, 54, 0.08);
 }
 .pc-pl-tower[data-mine="true"] {
   outline: 3px solid var(--pc-accent);
@@ -109,11 +105,11 @@
   background: #d9d2c6;
 }
 .pc-pl-seals[data-light="true"] i {
-  background: #fff;
+  background: var(--pc-ink);
 }
 .pc-pl-seals[data-light="true"] i[data-whole="false"] {
   background: transparent;
-  box-shadow: inset 0 0 0 2px #6b645c;
+  box-shadow: inset 0 0 0 2px var(--pc-text-3);
 }
 /* A house: its flag and its name, small; one's own in a red pill. */
 .pc-planche-house {
@@ -240,7 +236,7 @@
 .pc-planche-speed button[aria-pressed="true"] {
   background: var(--pc-ink);
   color: #fff;
-  box-shadow: 0 2px 0 #000;
+  box-shadow: 0 2px 0 var(--pc-ink-deep);
 }
 .pc-planche-online {
   display: block;
@@ -278,7 +274,7 @@
 .pc-pl-scale button[aria-pressed="true"] {
   background: var(--pc-ink);
   color: #fff;
-  box-shadow: 0 3px 0 #000;
+  box-shadow: 0 3px 0 var(--pc-ink-deep);
 }
 .pc-pl-scale button:disabled {
   opacity: 0.45;
@@ -522,7 +518,7 @@
   width: 140px;
   height: 8px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #cfd8da, #8b9497 50%, #2e3236);
+  background: linear-gradient(90deg, #c3d6da, #a3bcc3 50%, #7d9ca6);
 }
 /* On a computer: the card beside the board, on the right; the news at the bottom left. */
 @media (min-width: 900px) {
@@ -647,15 +643,6 @@
   border-radius: 3px;
   box-shadow: inset 0 0 0 1px rgba(42, 39, 37, 0.12);
 }
-.pc-ile-legend i[data-terrain="rive"] {
-  background: linear-gradient(135deg, #f2eee7 55%, #b9c6ca 55%) !important;
-}
-.pc-ile-legend i[data-terrain="argile"] {
-  background: repeating-linear-gradient(90deg, #e6c9ba 0 3px, #ddbba9 3px 6px) !important;
-}
-.pc-ile-legend i[data-terrain="pre"] {
-  background: repeating-linear-gradient(45deg, #eceee3 0 3px, #dce1d1 3px 6px) !important;
-}
 .pc-ile-store {
   position: absolute;
   right: max(14px, env(safe-area-inset-right, 0px));
@@ -720,7 +707,7 @@
 .pc-ile-gain[data-gain="down"] {
   background: var(--pc-ink);
   color: #fff;
-  box-shadow: 0 2px 0 #000;
+  box-shadow: 0 2px 0 var(--pc-ink-deep);
 }
 .pc-ile-gain[data-gain="even"] {
   background: #e6e1d8;
@@ -1256,6 +1243,25 @@ button.pc-pl-brand {
 .pc-planche-house[data-compact="true"] {
   padding: 4px;
 }
+/* A house of another sestiere is a stud on the board: its pin is there for a touch only
+   (docs/plan-celadon.md § 7, S1). */
+.pc-planche-house[data-far="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+.pc-rk-tag[data-place] {
+  background: var(--pc-celadon-pale);
+  color: var(--pc-ink);
+}
+.pc-pl-sestiere {
+  flex-direction: column;
+  gap: 0;
+}
+.pc-pl-sestiere small {
+  font: 600 11px var(--pc-ui);
+  letter-spacing: 0;
+  text-transform: none;
+}
 /* The round lagoon (docs/plan-lagune-ronde.md L6): a tower not named at this scale is its mark. */
 .pc-pl-tower[data-compact="true"],
 .pc-pl-city[data-compact="true"] {
@@ -1286,7 +1292,7 @@ button.pc-pl-brand {
   font: 900 14px var(--pc-display);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(23, 21, 15, 0.34);
+  color: rgba(36, 58, 54, 0.42);
   white-space: nowrap;
 }
 .pc-pl-sestiere[data-mine="true"] {
@@ -1616,8 +1622,8 @@ button.pc-pl-brand {
   border-radius: 8px;
   border-top: 4px solid var(--pc-accent);
   border-bottom: 4px solid var(--pc-accent);
-  border-left: 4px solid #2a2725;
-  border-right: 4px solid #2a2725;
+  border-left: 4px solid var(--pc-ink);
+  border-right: 4px solid var(--pc-ink);
   background: #f6f4f0;
 }
 .pc-pl-garde-board button {
@@ -1633,7 +1639,7 @@ button.pc-pl-brand {
 }
 .pc-pl-garde-board button[aria-pressed="true"] {
   background: #fff;
-  border: 2px solid #2a2725;
+  border: 2px solid var(--pc-ink);
 }
 .pc-pl-garde-board button[data-reef="true"] {
   background: #6b645c;
@@ -2413,4 +2419,7 @@ span.pc-semaine-title {
   max-width: 320px;
   height: auto;
   margin: 2px auto 6px;
+}
+.pc-planche .pc-vignette {
+  background: radial-gradient(120% 90% at 50% 45%, transparent 60%, rgba(60, 90, 96, 0.12) 100%);
 }

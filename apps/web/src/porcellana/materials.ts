@@ -4,7 +4,28 @@
  * of Rome take theirs in biscuit (D5).
  */
 import { Color, DoubleSide, MeshBasicMaterial, MeshStandardMaterial } from "three";
-import { ACCENTS, BISCUIT, COL, ROUGH, type Tone } from "./tokens.js";
+import { ACCENTS, BISCUIT, CELADON, COL, ROUGH, type Tone } from "./tokens.js";
+
+/**
+ * The older kit's tones in the Céladon direction (docs/plan-celadon.md C4): what is not redrawn
+ * yet (towns, towers, ships) takes the direction's matters all the same.
+ */
+const IN_CELADON: Record<Tone, string> = {
+  ground: CELADON.stone,
+  wall: CELADON.porcelain,
+  wall2: CELADON.stone,
+  roof: CELADON.roof,
+  trim: CELADON.trim,
+  open: CELADON.shade,
+  soil: CELADON.plot,
+  crop: CELADON.leaf2,
+  wood: CELADON.blond,
+  metal: CELADON.celadon,
+  water: CELADON.water,
+  ink: CELADON.ink,
+  leaf: CELADON.leaf,
+  bg: CELADON.sky,
+};
 
 export interface Palette {
   /** The material of a tone (flat-shaded for the facetted: hip roofs, spires, octagons). */
@@ -22,8 +43,11 @@ export interface Palette {
   tones(): MeshStandardMaterial[];
 }
 
-export function createPalette(opts: { biscuit?: boolean; accent?: string } = {}): Palette {
-  const tone = (t: Tone) => (opts.biscuit ? (BISCUIT[t] ?? COL[t]) : COL[t]);
+export function createPalette(
+  opts: { biscuit?: boolean; celadon?: boolean; accent?: string } = {},
+): Palette {
+  const tone = (t: Tone) =>
+    opts.celadon ? IN_CELADON[t] : opts.biscuit ? (BISCUIT[t] ?? COL[t]) : COL[t];
   const cache = new Map<string, MeshStandardMaterial>();
   const accentColour = new Color(opts.accent ?? ACCENTS.rosso);
   const accent = new MeshStandardMaterial({ color: accentColour, roughness: ROUGH.accent });
@@ -32,7 +56,10 @@ export function createPalette(opts: { biscuit?: boolean; accent?: string } = {})
     roughness: ROUGH.accent,
     side: DoubleSide,
   });
-  const ink = new MeshStandardMaterial({ color: COL.ink, roughness: ROUGH.ink });
+  const ink = new MeshStandardMaterial({
+    color: opts.celadon ? CELADON.ink : COL.ink,
+    roughness: ROUGH.ink,
+  });
   const glow = new MeshBasicMaterial({ color: accentColour, toneMapped: false });
   const m = (t: Tone, flat = false) => {
     const k = `${t}${flat ? ":f" : ""}`;
@@ -67,4 +94,11 @@ export function createPalette(opts: { biscuit?: boolean; accent?: string } = {})
         .filter(([k]) => !k.startsWith("ground") && !k.startsWith("water"))
         .map(([, v]) => v),
   };
+}
+
+let celadon: Palette | null = null;
+/** The one palette of the scenes in the Céladon direction. */
+export function celadonPalette(): Palette {
+  celadon ??= createPalette({ celadon: true });
+  return celadon;
 }

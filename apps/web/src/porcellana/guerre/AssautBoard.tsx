@@ -24,13 +24,14 @@ import {
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Stage } from "../Stage.js";
-import { palette } from "../TileBoard.js";
 import { bake } from "../bake.js";
+import { rocca, ship } from "../celadon/places.js";
 import { ileTile } from "../ile/IleBoard.js";
-import { bombarda, flagCloth, rocca } from "../models/terra.js";
-import { type Vehicle, ship } from "../models/vehicles.js";
+import { celadonPalette } from "../materials.js";
+import { bombarda, flagCloth } from "../models/terra.js";
+import type { Vehicle } from "../models/vehicles.js";
 import { box, cyl } from "../shapes.js";
-import { BOARD, CAMERA, COL } from "../tokens.js";
+import { BOARD, CAMERA, CELADON } from "../tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
 /** The passes, west to east; their water lanes run from the island's mouth down to the south. */
@@ -83,7 +84,7 @@ export function AssautBoard({
   plain: boolean;
 }) {
   const { camera, gl, size } = useThree();
-  const P = palette(false);
+  const P = celadonPalette();
   const live = useMemo(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, []);
   const red = `#${P.accentColour.getHexString()}`;
 
@@ -96,7 +97,7 @@ export function AssautBoard({
     const root = new Group();
     const water = new Mesh(
       new PlaneGeometry(140, 120),
-      new MeshStandardMaterial({ color: COL.water, roughness: 0.38 }),
+      new MeshStandardMaterial({ color: CELADON.water, roughness: 0.38 }),
     );
     water.rotation.x = -Math.PI / 2;
     water.position.set(0, -0.32, 0);
@@ -142,7 +143,7 @@ export function AssautBoard({
   // biome-ignore lint/correctness/useExhaustiveDependencies: the defenses' signature stands for them.
   const defenses = useMemo(() => {
     const root = new Group();
-    const cloth = flagCloth(COL.ink);
+    const cloth = flagCloth(CELADON.ink);
     for (const [id, p] of Object.entries(state.passes)) {
       const x = laneX(id);
       const bar = (g: Group, hull: number, max: number, at: [number, number, number]) => {
@@ -310,7 +311,7 @@ export function AssautBoard({
     () => ({
       flash: new MeshBasicMaterial({ color: "#FFE2A8", transparent: true }),
       fire: new MeshBasicMaterial({ color: "#E8743B", transparent: true }),
-      debris: new MeshStandardMaterial({ color: COL.wall, transparent: true }),
+      debris: new MeshStandardMaterial({ color: CELADON.porcelain, transparent: true }),
       ruse: new MeshBasicMaterial({ color: "#6B3A5E", transparent: true }),
     }),
     [],
@@ -424,7 +425,7 @@ export function AssautBoard({
 
   return (
     <>
-      <Stage target={controls.target} phone={phone} plain={plain} />
+      <Stage target={controls.target} phone={phone} plain={plain} background={CELADON.sky} />
       <primitive object={ground} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: every pass has its card, a button. */}
       <primitive object={defenses} onClick={pick} />

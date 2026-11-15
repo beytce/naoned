@@ -48,20 +48,19 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { Stage } from "../Stage.js";
-import { palette } from "../TileBoard.js";
 import { bake } from "../bake.js";
-import { CATALOGUE } from "../catalogue.js";
-import { fondaco } from "../models/fondaco.js";
-import { market } from "../models/market.js";
-import { flagCloth, rocca } from "../models/terra.js";
-import { town } from "../models/towns.js";
-import { type Vehicle, ship } from "../models/vehicles.js";
+import { C, plate, frame as rimFrame } from "../celadon/kit.js";
+import { market, rocca, ship, town } from "../celadon/places.js";
+import { WORKSHOPS } from "../celadon/workshops.js";
+import { celadonPalette } from "../materials.js";
+import { flagCloth } from "../models/terra.js";
+import type { Vehicle } from "../models/vehicles.js";
 import { drawChevron, ribbonGeometry, roundedPath } from "../ribbon.js";
 import { box, crate, cyl, disposeBuilt } from "../shapes.js";
-import { BOARD, CAMERA, COL, RIBBON, SEA, THREAD } from "../tokens.js";
+import { BOARD, CAMERA, CELADON, LAGOON, RIBBON, SEA, THREAD } from "../tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
-const BY_KEY = new Map(CATALOGUE.map((e) => [e.key, e]));
+const NONE: readonly string[] = [];
 
 /** What the board is made of beside its houses and towns: where the land lies, how dark each tile is. */
 export interface PlancheLand {
@@ -162,6 +161,7 @@ export function PlancheBoard({
   plain,
   zoom = 1,
   rival,
+  focus = NONE,
   whole = false,
   marks = [],
 }: {
@@ -179,6 +179,8 @@ export function PlancheBoard({
   zoom?: number;
   /** One's rival of the week: its threads in a bolder ink (docs/plan-classement.md). */
   rival?: string;
+  /** The houses one reads the board by, besides one's own: the rival, who is ahead, who behind. */
+  focus?: readonly string[];
   /** The whole lagoon in view, centred (docs/plan-lagunes.md G5); one's own sestiere otherwise. */
   whole?: boolean;
   /** Labels laid on the board itself (the sestieri's names on the water), by key and tile. */
@@ -186,19 +188,30 @@ export function PlancheBoard({
 }) {
   const { camera, gl, size } = useThree();
   const live = useMemo(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, []);
-  const P = palette(false);
+  const P = celadonPalette();
   const { width: W, height: H } = setup;
   const wx = (x: number) => (x - (W - 1) / 2) * S;
   const wz = (y: number) => (y - (H - 1) / 2) * S;
+  const home = setup.houses.find((h) => h.id === me)?.sestiere;
+  const focusKey = focus.join(",");
+  /** Whose island is dressed on the board (its workshops, its fleet, its beacon, its stones). */
+  const dressed = (id: string) => id === me || id === rival;
 
-  // The ground (docs/audit-visuel-2026-11-11): the land in the kit's tiles, biscuit, a little greyer
-  // toward the open sea; the houses' islands in porcelain; the water in one piece, without joints, washed
-  // from the lagoon's white to the ink of the open sea, a little stained.
+  // The ground (docs/audit-visuel-2026-11-11, redrawn in the Céladon direction, docs/plan-celadon.md
+  // C4): the land in the kit's tiles, a warm stone, a little greyer toward the open sea; the houses'
+  // islands in porcelain; the water in one piece, without joints, pale at the Rialto and deeper
+  // toward the open sea, never black, a little stained; the whole in a tray with a rim of blond wood.
   // biome-ignore lint/correctness/useExhaustiveDependencies: built once for a board.
   const ground = useMemo(() => {
     const root = new Group();
     const round = setup.houses.some((h) => h.sestiere);
-    const isles = new Set<string>(setup.houses.map((h) => `${h.x},${h.y}`));
+    // An island's tile for the houses drawn as houses; a house of another sestiere is a stud on
+    // the water (docs/plan-celadon.md § 7, S1).
+    const isles = new Set<string>(
+      setup.houses
+        .filter((h) => h.sestiere === home || h.id === me || focus.includes(h.id))
+        .map((h) => `${h.x},${h.y}`),
+    );
     const rocks = new Set<string>([
       ...setup.passages.map((p) => `${p.x},${p.y}`),
       `${land.rialto.x},${land.rialto.y}`,
@@ -212,15 +225,16 @@ export function PlancheBoard({
       }
     const m = new Matrix4();
     const c = new Color();
-    const ink = new Color(COL.ink);
-    const geo = new RoundedBoxGeometry(BOARD.tile, BOARD.thick, BOARD.tile, 3, BOARD.radius);
+    const ink = new Color(LAGOON.far);
+    // The land in one piece but for a thin joint: the tiles touch.
+    const geo = new RoundedBoxGeometry(S - 0.06, BOARD.thick, S - 0.06, 2, 0.08);
     const mat = new MeshStandardMaterial({ color: "#ffffff", roughness: 0.86 });
     const mesh = new InstancedMesh(geo, mat, tiles.length);
     tiles.forEach(([x, y, kind], k) => {
       m.makeTranslation(wx(x), -BOARD.thick / 2, wz(y));
       mesh.setMatrixAt(k, m);
-      if (kind === "isle") c.set(SEA.isle);
-      else c.set(SEA.land).lerp(ink, land.peril(x, y) * 0.3);
+      if (kind === "isle") c.set(LAGOON.isle);
+      else c.set(LAGOON.land).lerp(ink, land.peril(x, y) * 0.22);
       mesh.setColorAt(k, c);
     });
     mesh.receiveShadow = true;
@@ -232,9 +246,9 @@ export function PlancheBoard({
     sheet.rotateX(-Math.PI / 2);
     const pos = sheet.getAttribute("position");
     const col = new Float32Array(pos.count * 3);
-    const lagoon = new Color(SEA.lagoon);
-    const mid = new Color(SEA.mid);
-    const deep = new Color(SEA.deep);
+    const lagoon = new Color(LAGOON.water);
+    const mid = new Color(LAGOON.mid);
+    const deep = new Color(LAGOON.deep);
     for (let i = 0; i < pos.count; i++) {
       const gx = pos.getX(i) / S + (W - 1) / 2;
       const gy = pos.getZ(i) / S + (H - 1) / 2;
@@ -257,15 +271,50 @@ export function PlancheBoard({
     water.position.y = BOARD.waterY;
     water.receiveShadow = true;
     root.add(water);
-    // Its edge: a slab under the sheet, so that the board keeps its thickness.
-    const edge = new Mesh(
-      new RoundedBoxGeometry(W * S, 1.2, H * S, 2, 0.4),
-      new MeshStandardMaterial({ color: SEA.mid, roughness: 0.6 }),
+    // The tray: a hull under the sheet, a rim of blond wood round it, the open water beyond.
+    const tw = W * S + LAGOON.rim * 2;
+    const td = H * S + LAGOON.rim * 2;
+    const top = BOARD.waterY + LAGOON.rimHeight * 0.6;
+    plate(
+      root,
+      tw - 0.6,
+      td - 0.6,
+      LAGOON.corner,
+      LAGOON.hull,
+      top - LAGOON.rimHeight - LAGOON.hull,
+      C("porcelain"),
+      0.2,
     );
-    edge.position.y = BOARD.waterY - 0.61;
-    root.add(edge);
+    plate(
+      root,
+      tw - 1.6,
+      td - 1.6,
+      LAGOON.corner,
+      0.6,
+      top - LAGOON.rimHeight - LAGOON.hull - 0.5,
+      C("stone2"),
+      0.1,
+    );
+    rimFrame(
+      root,
+      tw,
+      td,
+      LAGOON.corner + 0.4,
+      LAGOON.rim + 0.15,
+      LAGOON.rimHeight,
+      top - LAGOON.rimHeight,
+      C("blond"),
+    );
+    const open = new Mesh(
+      new PlaneGeometry(W * S * 8, H * S * 8),
+      new MeshStandardMaterial({ color: CELADON.water, roughness: 0.38 }),
+    );
+    open.rotation.x = -Math.PI / 2;
+    open.position.y = top - LAGOON.rimHeight - LAGOON.hull - 0.3;
+    open.receiveShadow = true;
+    root.add(open);
     return root;
-  }, [setup, land]);
+  }, [setup, land, me, focusKey]);
 
   // What stands on the board: the houses, the towns, the Rialto.
   // biome-ignore lint/correctness/useExhaustiveDependencies: built once for a board.
@@ -289,8 +338,18 @@ export function PlancheBoard({
     };
     for (const h of setup.houses)
       put(`house:${h.id}`, { kind: "house", id: h.id }, h.x, h.y, () => {
-        const b = fondaco(P).group;
-        b.scale.setScalar(h.id === me ? 0.55 : 0.42);
+        // Only the houses that matter to one are drawn whole (docs/plan-celadon.md § 7, S1): one's
+        // own Fondaco, larger; one's rival's and one's two neighbours of rank; the others of one's
+        // sestiere in small; a stud for every house of another sestiere.
+        const near = h.id === me || focus.includes(h.id);
+        if (!near && h.sestiere !== home) {
+          const g = new Group();
+          cyl(g, 1.0, 1.15, 0.36, 0, 0, 0, C("trim"), 18);
+          cyl(g, 0.5, 0.5, 0.12, 0, 0.36, 0, C("stone2"), 14);
+          return g;
+        }
+        const b = WORKSHOPS.fondaco?.(P, { level: 1, seed: 0 }).group ?? new Group();
+        b.scale.setScalar(h.id === me ? 0.5 : near ? 0.38 : 0.26);
         return b;
       });
     // A town on the Rialto's tile is the Rialto itself: the market of Venice stands there.
@@ -320,7 +379,7 @@ export function PlancheBoard({
     if (!setup.cities.some((c) => c.x === land.rialto.x && c.y === land.rialto.y))
       put("rialto", null, land.rialto.x, land.rialto.y, () => market(P).group);
     return { root, at };
-  }, [setup, land, me]);
+  }, [setup, land, me, focusKey]);
 
   // A seamark on each sestiere's shore, each its own tower (docs/plan-lagune-ronde.md L6; not the
   // Campanile a house builds on its island, docs/plan-economie.md C3): one knows
@@ -399,14 +458,14 @@ export function PlancheBoard({
     ] as const;
     isles.split("|").forEach((list, k) => {
       const h = setup.houses[k];
-      if (!h || !list) return;
+      if (!h || !list || !dressed(h.id)) return;
       list.split(",").forEach((type, n) => {
-        const entry = BY_KEY.get(type);
-        const model = entry?.make?.(P, { seed: k * 11 + n, running: false });
+        const make = Object.hasOwn(WORKSHOPS, type) ? WORKSHOPS[type] : undefined;
+        const model = make?.(P, { level: 1, seed: k * 11 + n });
         const [cx, cz] = corners[n] ?? [0, 0];
         if (!model) return;
         const g = new Group();
-        model.group.scale.setScalar(0.55);
+        model.group.scale.setScalar(0.36);
         g.add(model.group);
         g.position.set(wx(h.x) + cx, 0, wz(h.y) + cz);
         bake(g);
@@ -414,7 +473,7 @@ export function PlancheBoard({
       });
     });
     return root;
-  }, [isles, setup, P]);
+  }, [isles, setup, P, rival]);
 
   // Each house's fleet at anchor south of its island (docs/plan-arsenal.md): who has armed, and how
   // much, reads from afar. Four hulls at most, the rest told in its card.
@@ -426,7 +485,7 @@ export function PlancheBoard({
     const root = new Group();
     fleets.split(",").forEach((n, k) => {
       const h = setup.houses[k];
-      if (!h) return;
+      if (!h || !dressed(h.id)) return;
       for (let i = 0; i < Number(n); i++) {
         const boat = ship(P, { seed: k * 5 + i, running: false });
         boat.group.scale.setScalar(THREAD.boat * 1.15);
@@ -437,7 +496,7 @@ export function PlancheBoard({
     });
     bake(root);
     return root;
-  }, [fleets, setup, P]);
+  }, [fleets, setup, P, rival]);
 
   // The beacon of each house's company (docs/plan-compagnie.md K4): a small lighthouse at its
   // island's corner, a ring of light for each of its levels.
@@ -458,7 +517,7 @@ export function PlancheBoard({
     beacons.split(",").forEach((n, k) => {
       const level = Number(n);
       const h = setup.houses[k];
-      if (!h || level <= 0) return;
+      if (!h || level <= 0 || !dressed(h.id)) return;
       const g = new Group();
       // A company's beacon opens its sheet (docs/plan-semaine.md D3).
       g.userData.pick = { kind: "phare", id: h.id } satisfies PlanchePick;
@@ -478,7 +537,7 @@ export function PlancheBoard({
     });
     bake(root);
     return root;
-  }, [beacons, setup, P]);
+  }, [beacons, setup, P, rival]);
 
   // The black straits (docs/plan-muda.md N5): towers in the ink of the powers, never held; at
   // their foot, three links of chain that blacken as the week's guard hardens.
@@ -493,7 +552,7 @@ export function PlancheBoard({
     phases.split(",").forEach((ph, k) => {
       const x = setup.noir?.straits[k];
       if (!x) return;
-      const cloth = flagCloth(POWER_FLAG[x.power] ?? COL.ink);
+      const cloth = flagCloth(POWER_FLAG[x.power] ?? CELADON.ink);
       const g = new Group();
       g.position.set(wx(x.x), 0, wz(x.y));
       g.userData.pick = { kind: "noir", id: x.id } satisfies PlanchePick;
@@ -599,11 +658,14 @@ export function PlancheBoard({
       const reach = (side / 2) * Math.SQRT2;
       const grad = g.createRadialGradient(256, 256, 0, 256, 256, (reach / side) * 512);
       const stop = (t: number, a: number) =>
-        grad.addColorStop(Math.min(1, Math.max(0, t / reach)), `rgba(29,27,25,${a})`);
+        grad.addColorStop(
+          Math.min(1, Math.max(0, t / reach)),
+          `rgba(${LAGOON.tide[0]},${LAGOON.tide[1]},${LAGOON.tide[2]},${a})`,
+        );
       stop(0, 0);
       stop(tiles - 3, 0);
-      stop(tiles, 0.5);
-      stop(reach, 0.5);
+      stop(tiles, LAGOON.tide[3]);
+      stop(reach, LAGOON.tide[3]);
       g.fillStyle = grad;
       g.fillRect(0, 0, 512, 512);
     }
@@ -687,7 +749,7 @@ export function PlancheBoard({
     const root = new Group();
     stones.split(",").forEach((n, k) => {
       const h = setup.houses[k];
-      if (!h) return;
+      if (!h || !dressed(h.id)) return;
       for (let i = 0; i < Math.min(5, Number(n)); i++) {
         const g = new Group();
         g.position.set(wx(h.x) - 2.5 + i * 0.7, 0, wz(h.y) - 2.6);
@@ -698,7 +760,7 @@ export function PlancheBoard({
     });
     bake(root);
     return root;
-  }, [stones, setup, P]);
+  }, [stones, setup, P, rival]);
 
   // The towers of the passages: their flag tells who holds them.
   const holders = setup.passages.map((p) => state.passages[p.id]?.holder ?? "").join("|");
@@ -712,7 +774,7 @@ export function PlancheBoard({
         holder === me
           ? `#${P.accentColour.getHexString()}`
           : plancheIsCorsair(holder)
-            ? COL.ink
+            ? CELADON.ink
             : "#8A8279";
       const g = new Group();
       g.position.set(wx(p.x), 0, wz(p.y));
@@ -756,7 +818,7 @@ export function PlancheBoard({
     canvas.height = 16;
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      ctx.fillStyle = COL.ink;
+      ctx.fillStyle = CELADON.ink;
       ctx.beginPath();
       ctx.roundRect(2, 2, 36, 12, 6);
       ctx.fill();
@@ -856,6 +918,7 @@ export function PlancheBoard({
           own ? accent : h.id === rival ? foe : round && home && h.sestiere !== home ? far : other,
         );
         ribbon.receiveShadow = own;
+        if (!own && h.id !== rival) ribbon.userData.other = { house: h.id, city: th.to };
         root.add(ribbon);
         if (own) {
           // Its shadow, toward the camera and a little lower: the ribbon has a thickness.
@@ -882,6 +945,18 @@ export function PlancheBoard({
     }
     return { root, mine };
   }, [setup, threads, me, chevrons, dashes, holders, rival]);
+
+  // Only one's own threads and one's rival's are drawn; the others' come for the town or the house
+  // one has chosen (docs/plan-celadon.md § 7, S1).
+  useEffect(() => {
+    for (const o of web.root.children) {
+      const t = o.userData.other as { house: string; city: string } | undefined;
+      if (!t) continue;
+      o.visible =
+        (chosen?.kind === "city" && chosen.id === t.city) ||
+        (chosen?.kind === "house" && chosen.id === t.house);
+    }
+  }, [web, chosen]);
 
   const ring = useMemo(() => {
     const m = new Mesh(
@@ -1054,6 +1129,7 @@ export function PlancheBoard({
   useEffect(() => () => disposeBuilt(ink), [ink]);
   useEffect(() => () => disposeBuilt(corsairs), [corsairs]);
   useEffect(() => () => disposeBuilt(engraved), [engraved]);
+  useEffect(() => () => disposeBuilt(ground), [ground]);
   useEffect(() => () => disposeBuilt(towers.root), [towers.root]);
   useEffect(() => () => disposeBuilt(darks.root), [darks.root]);
   useEffect(() => () => disposeBuilt(convoy.root), [convoy.root]);
@@ -1068,7 +1144,14 @@ export function PlancheBoard({
 
   return (
     <>
-      <Stage target={controls.target} phone={phone} plain={plain} scale={3} />
+      <Stage
+        target={controls.target}
+        phone={phone}
+        plain={plain}
+        scale={3}
+        background={CELADON.sky}
+        bare
+      />
       <primitive object={ground} />
       <primitive object={web.root} />
       <primitive object={minis} />

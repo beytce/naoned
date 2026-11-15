@@ -2,6 +2,22 @@
 
 Le jeu s'appelle **Fondaco**, du nom des entrepôts où les marchands étrangers logeaient et commerçaient à Venise. Ambiance : Venise au Quattrocento, des ducats, la lagune. L'identité suit le guide « Fondaco — identité & palettes ».
 
+## Direction Céladon (14 novembre 2026) — fait foi pour ce qui est redessiné
+
+Plan et choix du porteur : `docs/plan-celadon.md`. La porcelaine reste la base ; s'y ajoutent trois matières, et le rouge de Venise reste la seule couleur forte (à toi, ton fil, l'action).
+
+| Matière | Ton (`CELADON`, `porcellana/tokens.ts`) | Usages |
+| --- | --- | --- |
+| Porcelaine | `#F5F2EC` | murs, machines, coques |
+| Bois blond | `#EBD3A7` | quais, caisses, charpentes |
+| Céladon | `#A9CBC0` | ferrures, pieds, feuillages |
+| Ardoise | `#55656A` | glissières, ouvertures, encre |
+
+- **Le détail d'usage** : pieds, rivets, rails, poulies ; on comprend comment l'objet marche. Les pièces communes sont dans `celadon/pieces.ts`.
+- **La marchandise se voit passer** : une glissière entre deux ateliers voisins dont l'un fournit l'autre.
+- **L'interface de l'île** (`ile/ile.css`) : papier chaud, encre vert profond, céladon pâle pour ce qui est choisi ; une fiche « entrée → sortie », une barre de bâtiments, un seul bouton rouge.
+- Les scènes qui ne sont pas encore redessinées gardent Porcellana tel quel (ci-dessous).
+
 ## Direction Porcellana (5 novembre 2026) — fait foi
 
 Décision du porteur (« les visuels sont parfaits », « c'est exactement de cette manière que je veux voir apparaître les informations », « même l'animation du début »). Elle remplace, pour tout ce qui est en 3D et pour les surfaces, le Plateau de nuit, Jour et le verre et la Lagune ; ce qui suit garde ses règles là où elles ne parlent ni de couleur ni de matière (le dock, une décision à la fois). Plan, grammaire chiffrée et état : `docs/plan-porcellana.md` ; référence : `docs/direction-artistique-2026-11/porcellana/prototype.html`.

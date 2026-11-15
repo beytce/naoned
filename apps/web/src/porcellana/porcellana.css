@@ -583,3 +583,22 @@
 .pc-terra-front[data-tone="mine"] {
   border-color: var(--pc-accent);
 }
+
+/* The Céladon direction (docs/plan-celadon.md): the paper warmer, the ink a deep green, the celadon
+   for what is chosen; the accent stays the one strong colour. Every screen of the board carries it. */
+.pc-celadon,
+.pc-planche {
+  --pc-paper: #fbf8f1;
+  --pc-ink: #243a36;
+  --pc-ink-deep: #162724;
+  --pc-ink-soft: #5f706b;
+  --pc-hair: #e2dccf;
+  --pc-text-2: #45554f;
+  --pc-text-3: #6f7f7b;
+  --pc-foot: rgba(36, 58, 54, 0.14);
+  --pc-celadon: #a9cbc0;
+  --pc-celadon-pale: #ddeae4;
+}
+.pc-celadon .pc-vignette {
+  background: radial-gradient(120% 90% at 50% 45%, transparent 60%, rgba(60, 90, 96, 0.12) 100%);
+}
