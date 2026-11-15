@@ -1,6 +1,6 @@
 # Plan : la direction Céladon (les ateliers, l'île, la carte, puis tout le jeu)
 
-*Proposé le 14 novembre 2026, à la demande du porteur (« Je veux que les ateliers ressemblent à ça avec ce niveau de détail et de graphisme […] profite-en pour adapter tout le jeu à ce type de visuel, tout comme la carte : quelque chose de simple, de pas trop lourd visuellement mais complet tout de même »), d'après ses captures d'un jeu d'usine en isométrie douce. **Validé par le porteur le même jour** (« C'est parfait je valide tes propositions tu peux lancer »), avec les quatre choix du § 2. Les lots C0 à C3 sont faits (§ 6).*
+*Proposé le 14 novembre 2026, à la demande du porteur (« Je veux que les ateliers ressemblent à ça avec ce niveau de détail et de graphisme […] profite-en pour adapter tout le jeu à ce type de visuel, tout comme la carte : quelque chose de simple, de pas trop lourd visuellement mais complet tout de même »), d'après ses captures d'un jeu d'usine en isométrie douce. **Validé par le porteur le même jour** (« C'est parfait je valide tes propositions tu peux lancer »), avec les quatre choix du § 2. Les lots C0 à C3 sont faits, le lot C4 en partie (§ 6).*
 
 Page des propositions (privée, au compte du porteur) : https://claude.ai/artifact/QBRSg7rqUAQdpBt9JpkD5v. Les maquettes sont dans `docs/celadon-maquettes/` (rendues avec three.js, aux lumières et à la caméra du kit) ; les captures du jeu dans `docs/celadon-captures/`.
 
@@ -69,7 +69,9 @@ Aucune règle de jeu ne change : ni calibration, ni migration. L'ancien jeu (`/a
 | C2 | **Les bâtiments** : les onze ateliers, le Fondaco, l'Arsenal et les cinq ouvrages. Le niveau ajoute des objets (piles, bacs, étagères) ; la roue de la scierie et les ailes du moulin tournent. Chaque modèle sous 30 000 triangles, testé. | `celadon/workshops.ts` |
 | C3 | **L'île** : le quai de planches sous les cases possédées (une case achetée l'élargit), les terrains teintés, les cases à acheter pâles et pointillées, le chantier ; **les glissières** entre deux voisins dont l'un fournit l'autre, d'après `ileSupplies` (moteur, test d'abord), la marchandise qui avance et s'arrête quand l'atelier attend. L'écran : la fiche « entrée → sortie », terrain, voisins, rendement, une touche rouge ; la barre des bâtiments (toujours là sur ordinateur, ouverte par « Bâtir un atelier » sur téléphone) ; l'entrepôt en encre, rouge quand il va déborder. Un laboratoire : `?lab=celadon` (et `&vue=tout`). | `ile/IleBoard.tsx`, `ile/IleScreen.tsx`, `ile/IleGlyphs.tsx`, `ile/ile.css`, `celadon/ile.ts`, `LabCeladon.tsx`, `packages/engine/src/ile/ile.ts` |
 
-Vérifié : 2 109 tests, typage, lint ; parcours `e2e:ile` (seul), téléphone et ordinateur. Captures : `docs/celadon-captures/` (`ile-pc`, `fiche-pc`, `fiche-tel`, `tout-pc`).
+| C4 (en partie) | **La carte** : l'eau pâle au Rialto et plus profonde vers le Large, jamais noire (`LAGOON`) ; les terres en pierre chaude, jointives ; le plateau à bord de bois blond sur l'eau ouverte ; le voile de la marée en encre verte ; les villes, les tours et les navires de l'ancien kit aux tons de la direction (`celadonPalette`) ; les ateliers en petit autour des Maisons pris aux nouveaux modèles ; **la lagune entière en vue, seuls tes fils et ceux de ton rival sont tracés**, ceux des autres reviennent dans ton sestiere ou pour la ville ou la Maison touchée. L'interface de la planche : papier chaud, encre vert profond. | `planche/PlancheBoard.tsx`, `planche.css`, `materials.ts`, `tokens.ts` |
+
+Vérifié : tests, typage, lint ; parcours `e2e:ile` et `e2e:planche` (seul), téléphone et ordinateur ; la CI (tests et parcours) au vert sur C0 à C3. Captures : `docs/celadon-captures/` (`ile-pc`, `fiche-pc`, `fiche-tel`, `tout-pc`, `planche-pc`, `planche-tel`, `lagune-sestiere-pc`).
 
 **Écarts aux maquettes, voulus.**
 - Un atelier est dessiné à 78 % de sa case : ses bords restent libres pour les glissières, qui passent au milieu de chaque côté.
@@ -78,6 +80,7 @@ Vérifié : 2 109 tests, typage, lint ; parcours `e2e:ile` (seul), téléphone e
 - La case de rive ne porte pas de quai d'embarquement : la barge au fanion est amarrée au quai de l'île.
 
 **Reste, pour les lots suivants.**
-- **C4** la carte, **C5** le reste du jeu (l'assaut montre déjà les nouvelles cases de l'île sur son ancien décor ; les ateliers en petit autour des Maisons de la planche sont encore les anciens), **C6** la tenue.
+- **C4, ce qui manque** : l'étiquette unique (ville, passage et Maison gardent leurs trois tailles) ; les villes, les tours et les Maisons redessinées au détail des ateliers (elles n'ont que changé de tons) ; une capture de la lagune entière, fils des autres masqués (la règle est codée, pas encore vue en image).
+- **C5** le reste du jeu (la Passe garde son encre noire ; l'assaut montre les nouvelles cases de l'île sur son ancien décor), **C6** la tenue.
 - **Pas d'essai sur un vrai téléphone.** En rendu logiciel, l'île avec l'occlusion est lente ; le poids réel se mesure au lot C6.
 - Les cases à acheter qui chevauchent le bord du quai se lisent moins bien que les autres.

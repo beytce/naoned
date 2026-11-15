@@ -205,6 +205,32 @@ export function plate(
   return put(p, g, mat, 0, y + bevel, 0);
 }
 
+/** A frame with round corners, `band` wide, its foot at y: the rim of a tray. */
+export function frame(
+  p: Object3D,
+  w: number,
+  d: number,
+  r: number,
+  band: number,
+  h: number,
+  y: number,
+  mat: Material,
+): Mesh {
+  const shape = roundRect(w, d, r);
+  shape.holes.push(roundRect(w - band * 2, d - band * 2, Math.max(0.2, r - band)));
+  const bevel = 0.1;
+  const g: BufferGeometry = new ExtrudeGeometry(shape, {
+    depth: h - bevel * 2,
+    bevelEnabled: true,
+    bevelSize: bevel,
+    bevelThickness: bevel,
+    bevelSegments: 3,
+    curveSegments: 12,
+  });
+  g.rotateX(-Math.PI / 2);
+  return put(p, g, mat, 0, y + bevel, 0);
+}
+
 let planks: MeshStandardMaterial | undefined;
 /** The deck's planks: two blonds and a thin joint, drawn once (no canvas: it is built in tests too). */
 function plankMaterial(): MeshStandardMaterial {

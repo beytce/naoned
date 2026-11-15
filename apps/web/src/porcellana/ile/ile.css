@@ -1,15 +1,6 @@
 /* The island's screen in the Céladon direction (docs/plan-celadon.md C3): the paper warmer, the
    ink a deep green, the celadon for what is chosen; the accent stays the one strong colour. */
 .pc-ile {
-  --pc-paper: #fbf8f1;
-  --pc-ink: #243a36;
-  --pc-ink-soft: #5f706b;
-  --pc-hair: #e2dccf;
-  --pc-text-2: #45554f;
-  --pc-text-3: #6f7f7b;
-  --pc-foot: rgba(36, 58, 54, 0.12);
-  --pc-celadon: #a9cbc0;
-  --pc-celadon-pale: #ddeae4;
   color: var(--pc-ink);
 }
 .pc-ile .pc-vignette {
@@ -192,6 +183,18 @@
   .pc-ile[data-busy="true"] .pc-ile-store,
   .pc-ile[data-busy="true"] .pc-ile-legend {
     display: none;
+  }
+  /* The legend in a row under the title, the store under the purse: the island keeps the middle. */
+  .pc-ile-legend {
+    top: calc(126px + env(safe-area-inset-top, 0px));
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    max-width: 230px;
+    font-size: 11px;
+  }
+  .pc-ile-store {
+    top: calc(70px + env(safe-area-inset-top, 0px));
   }
   .pc-ile-tray {
     width: 100%;

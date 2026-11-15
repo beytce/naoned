@@ -262,3 +262,24 @@ export const QUAY = {
   slideY: 0.85,
   slideSpeed: 0.55,
 } as const;
+
+/**
+ * The shared board in the Céladon direction (docs/plan-celadon.md C4): the water pale at the
+ * Rialto, deeper toward the open sea, never black; the land a warm stone, greyer with the peril;
+ * the board a tray with a rim of blond wood.
+ */
+export const LAGOON = {
+  water: CELADON.water,
+  mid: "#A3BCC3",
+  deep: CELADON.waterDeep,
+  land: "#EFE9DC",
+  isle: CELADON.trim,
+  /** What the land and the tide's veil draw toward. */
+  far: CELADON.slate,
+  /** The tide's veil over the water it has taken: the ink of the direction, at this strength. */
+  tide: [46, 72, 66, 0.46] as readonly [number, number, number, number],
+  rim: 2.6,
+  rimHeight: 0.75,
+  hull: 2.2,
+  corner: 5,
+} as const;
