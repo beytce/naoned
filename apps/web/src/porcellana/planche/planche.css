@@ -2423,3 +2423,54 @@ span.pc-semaine-title {
 .pc-planche .pc-vignette {
   background: radial-gradient(120% 90% at 50% 45%, transparent 60%, rgba(60, 90, 96, 0.12) 100%);
 }
+/* The head of a place's sheet (docs/plan-celadon.md § 7, S2): its scene edge to edge, a small line
+   for the place, a title for where one stands. */
+.pc-lieu-scene {
+  display: block;
+  width: calc(100% + 40px);
+  max-width: none;
+  height: auto;
+  margin: -18px -20px 0;
+  border-radius: 16px 16px 0 0;
+  background: #cbd8dc;
+}
+.pc-lieu-eyebrow {
+  font: 700 11px var(--pc-ui);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pc-text-3);
+}
+/* What a place is for, told at the first visit only: a quiet note, never a dark block. */
+.pc-lieu-first,
+.pc-ar-first {
+  background: var(--pc-celadon-pale);
+  color: var(--pc-ink);
+}
+/* The rest of a place, folded under its one action. */
+.pc-lieu-more > summary {
+  cursor: pointer;
+  list-style: none;
+  border: 1.5px solid var(--pc-hair);
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-align: center;
+  font: 800 13.5px var(--pc-display);
+  color: var(--pc-ink);
+}
+.pc-lieu-more > summary::-webkit-details-marker {
+  display: none;
+}
+.pc-lieu-more[open] > summary {
+  margin-bottom: 10px;
+}
+.pc-lieu-go {
+  border-radius: 12px;
+  width: 100%;
+}
+@media (max-width: 640px) {
+  .pc-lieu-scene {
+    width: calc(100% + 36px);
+    margin: -16px -18px 0;
+    border-radius: 24px 24px 0 0;
+  }
+}

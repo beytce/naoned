@@ -1,8 +1,3 @@
-/**
- * The Arsenal and the port (docs/plan-arsenal.md A4, the mock-up's screens 3a and 3d): the cales
- * and the hull rising on them, the fleet and its places, what each ship asks of the store; the
- * three passes of the port and their defenses. Goods, never ducats.
- */
 import {
   type PlancheSetup,
   type PlancheState,
@@ -12,6 +7,13 @@ import {
   plancheShipStats,
 } from "@comptoirs/engine";
 import { type ReactNode, useState } from "react";
+/**
+ * The Arsenal and the port (docs/plan-arsenal.md A4, the mock-up's screens 3a and 3d): the cales
+ * and the hull rising on them, the fleet and its places, what each ship asks of the store; the
+ * three passes of the port and their defenses. Goods, never ducats.
+ */
+import { arsenalScene } from "../celadon/scenes.js";
+import { LieuHead } from "./Lieu.js";
 
 const PASS_NAMES: Record<string, string> = {
   bouche: "La bouche",
@@ -190,15 +192,45 @@ export function ArsenalSheet({
   const level = h.level ?? 1;
   const cales = ars?.cales ?? 0;
   const full = ships.length + yards.length >= places;
+  const busy = yards[0];
+  const busyShip = busy ? A.ships[busy.kind] : undefined;
+  /** Why a ship cannot be laid now (empty: it can). */
+  const whyNot = (r: (typeof A.ships)[string]) =>
+    level < r.minLevel
+      ? `Niveau ${r.minLevel}`
+      : !ars
+        ? "Pas d'Arsenal"
+        : !ars.ready
+          ? "En chantier"
+          : yards.length >= cales
+            ? "Cales prises"
+            : full
+              ? "Flotte pleine"
+              : recipe(S, r.goods, h.stock).some((g) => g.have < g.n)
+                ? "Pas assez"
+                : "";
+  /** The one action the Arsenal offers now: the first ship one can lay. */
+  const next = Object.entries(A.ships).find(([, r]) => !whyNot(r));
   return (
     <section className="pc-planche-card pc-pl-card pc-ar" data-arsenal>
-      <div className="pc-pl-head">
-        <div>
-          <h2>L'Arsenal{ars ? ` · niveau ${ars.level}` : ""}</h2>
-          <span>Tes navires naissent de tes marchandises, pas de tes ducats</span>
-        </div>
-        {close}
-      </div>
+      <LieuHead
+        scene={`arsenal:${ars?.level ?? 0}:${ships.length}`}
+        build={() => arsenalScene(ars?.level ?? 1, ships.length)}
+        eyebrow={`L'Arsenal${ars ? ` · niveau ${ars.level}` : ""}`}
+        title={
+          !ars
+            ? "Pas encore d'Arsenal"
+            : !ars.ready
+              ? "L'Arsenal est en chantier"
+              : busy && busyShip
+                ? `${busyShip.name} en cale`
+                : "Les cales sont libres"
+        }
+        sub={`${
+          busy && busy.readyAt > now ? `Prête dans ${duration(busy.readyAt - now)} · ` : ""
+        }${ships.length} navire${ships.length > 1 ? "s" : ""} sur ${places} à quai`}
+        close={close}
+      />
       {first ? (
         <ol className="pc-ar-first" data-arsenal-first>
           <li>Tes ateliers font des marchandises : l'Arsenal en fait des navires.</li>
@@ -293,59 +325,60 @@ export function ArsenalSheet({
       ) : (
         <p>Pas encore de navire : mets-en un en chantier.</p>
       )}
-      <h3 className="pc-mn-h3">Mettre en chantier</h3>
-      <div className="pc-ar-kinds">
-        {Object.entries(A.ships).map(([kind, r]) => {
-          const goods = recipe(S, r.goods, h.stock);
-          const lacks = goods.some((g) => g.have < g.n);
-          const locked = level < r.minLevel;
-          const why = locked
-            ? `Niveau ${r.minLevel}`
-            : !ars
-              ? "Pas d'Arsenal"
-              : !ars.ready
-                ? "En chantier"
-                : yards.length >= cales
-                  ? "Cales prises"
-                  : full
-                    ? "Flotte pleine"
-                    : lacks
-                      ? "Pas assez"
-                      : "";
-          return (
-            <div key={kind} className="pc-ar-kind" data-kind={kind} data-locked={String(locked)}>
-              <ShipGlyph kind={kind} ghost={locked} />
-              <div>
-                <b>
-                  {r.name}{" "}
-                  <small>
-                    {r.force} · {r.hull}
-                  </small>
-                </b>
-                <span>{KEYWORDS[r.keyword] ?? r.keyword}</span>
-                <span>
-                  {goods.map((g, k) => (
-                    <em key={g.g} data-short={String(g.have < g.n)}>
-                      {k ? " · " : ""}
-                      {g.n} {g.name.toLowerCase()} ({g.have})
-                    </em>
-                  ))}{" "}
-                  · {duration(r.buildMs)}
-                </span>
+      {next ? (
+        <button
+          type="button"
+          className="pc-passe-go pc-lieu-go"
+          data-lay-next={next[0]}
+          onClick={() => onShip(next[0])}
+        >
+          Mettre {/e$/i.test(next[1].name) ? "une" : "un"} {next[1].name.toLowerCase()} en chantier
+          <small>{duration(next[1].buildMs)}</small>
+        </button>
+      ) : null}
+      <details className="pc-lieu-more" open={!next}>
+        <summary>Tous les navires</summary>
+        <div className="pc-ar-kinds">
+          {Object.entries(A.ships).map(([kind, r]) => {
+            const goods = recipe(S, r.goods, h.stock);
+            const lacks = goods.some((g) => g.have < g.n);
+            const locked = level < r.minLevel;
+            const why = whyNot(r);
+            return (
+              <div key={kind} className="pc-ar-kind" data-kind={kind} data-locked={String(locked)}>
+                <ShipGlyph kind={kind} ghost={locked} />
+                <div>
+                  <b>
+                    {r.name}{" "}
+                    <small>
+                      {r.force} · {r.hull}
+                    </small>
+                  </b>
+                  <span>{KEYWORDS[r.keyword] ?? r.keyword}</span>
+                  <span>
+                    {goods.map((g, k) => (
+                      <em key={g.g} data-short={String(g.have < g.n)}>
+                        {k ? " · " : ""}
+                        {g.n} {g.name.toLowerCase()} ({g.have})
+                      </em>
+                    ))}{" "}
+                    · {duration(r.buildMs)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="pc-passe-quiet"
+                  data-lay-ship={kind}
+                  disabled={!!why}
+                  onClick={() => onShip(kind)}
+                >
+                  {why || "En chantier"}
+                </button>
               </div>
-              <button
-                type="button"
-                className={why ? "pc-passe-quiet" : "pc-passe-go"}
-                data-lay-ship={kind}
-                disabled={!!why}
-                onClick={() => onShip(kind)}
-              >
-                {why || "En chantier"}
-              </button>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </details>
       <div className="pc-pl-acts">
         <button type="button" className="pc-passe-quiet" data-open-port onClick={onPort}>
           Ton port · ses trois passes
