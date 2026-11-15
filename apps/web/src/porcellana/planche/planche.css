@@ -1243,6 +1243,25 @@ button.pc-pl-brand {
 .pc-planche-house[data-compact="true"] {
   padding: 4px;
 }
+/* A house of another sestiere is a stud on the board: its pin is there for a touch only
+   (docs/plan-celadon.md § 7, S1). */
+.pc-planche-house[data-far="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+.pc-rk-tag[data-place] {
+  background: var(--pc-celadon-pale);
+  color: var(--pc-ink);
+}
+.pc-pl-sestiere {
+  flex-direction: column;
+  gap: 0;
+}
+.pc-pl-sestiere small {
+  font: 600 11px var(--pc-ui);
+  letter-spacing: 0;
+  text-transform: none;
+}
 /* The round lagoon (docs/plan-lagune-ronde.md L6): a tower not named at this scale is its mark. */
 .pc-pl-tower[data-compact="true"],
 .pc-pl-city[data-compact="true"] {
@@ -1273,7 +1292,7 @@ button.pc-pl-brand {
   font: 900 14px var(--pc-display);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(23, 21, 15, 0.34);
+  color: rgba(36, 58, 54, 0.42);
   white-space: nowrap;
 }
 .pc-pl-sestiere[data-mine="true"] {

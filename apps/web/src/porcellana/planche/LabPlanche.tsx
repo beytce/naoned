@@ -22,6 +22,7 @@ import {
   maisonThreshold,
   maisonUnlocks,
   plancheAdvance,
+  plancheAround,
   plancheAssemble,
   plancheBuild,
   plancheBuyTile,
@@ -771,6 +772,13 @@ export default function LabPlanche() {
     };
   }, [state, ME]);
   const rival = state.rank.rivals[ME];
+  // The houses one reads the board by (docs/plan-celadon.md § 7, S1): one's rival, and who stands
+  // just ahead and just behind at the Doge's. They alone are named, with oneself.
+  const around = useMemo(() => (ME ? plancheAround(S, state, ME) : {}), [state, ME]);
+  const kept = useMemo(
+    () => [rival, around.ahead, around.behind].filter((x): x is string => !!x),
+    [rival, around.ahead, around.behind],
+  );
   // The sealed orders of one's sestiere open now, not yet delivered (docs/plan-hex-commerce.md H2).
   const today = Math.floor(state.now / (24 * HOUR));
   const orders = useMemo(
@@ -1973,6 +1981,7 @@ export default function LabPlanche() {
           whole={LAGOON && scale === "monde"}
           marks={SESTIERI}
           rival={rival}
+          focus={kept}
         />
       </Canvas>
       <div className="pc-vignette" />
@@ -2028,11 +2037,9 @@ export default function LabPlanche() {
           // own, one the ink threatens, the one chosen; up close, those of one's sestiere and the
           // canals. The others are their tower and a mark, named at a touch.
           const named =
-            !LAGOON ||
             holder === ME ||
             threatened.has(p.id) ||
-            (chosen?.kind === "passage" && chosen.id === p.id) ||
-            (scale !== "monde" && (p.id.startsWith("canal-") || p.id.endsWith(`-${mySestiere}`)));
+            (chosen?.kind === "passage" && chosen.id === p.id);
           return (
             <button
               key={p.id}
@@ -2133,14 +2140,16 @@ export default function LabPlanche() {
         ))}
         {S.houses.map((h) => {
           const robot = online ? !view?.players.includes(h.id) : h.robot;
-          // In a lagoon, names where they are read: one's own sestiere up close; from afar, only
-          // oneself, one's rival and the Doge. The others, a flag (docs/plan-lagunes.md G5).
+          // Four houses are named: oneself, one's rival, who is just ahead, who just behind; and the
+          // one chosen. One's other neighbours are a flag; the houses of another sestiere, a stud
+          // on the board, named at a touch (docs/plan-celadon.md § 7, S1).
           const named =
-            !LAGOON ||
-            h.id === ME ||
-            h.id === rival ||
-            !!rank.marks[h.id]?.doge ||
-            (scale !== "monde" && h.sestiere === mySestiere);
+            h.id === ME || kept.includes(h.id) || (chosen?.kind === "house" && chosen.id === h.id);
+          const far = !named && LAGOON && h.sestiere !== mySestiere;
+          const place =
+            h.id !== rival && (h.id === around.ahead || h.id === around.behind)
+              ? planchePlace(S, state, h.id)
+              : undefined;
           return (
             <button
               key={h.id}
@@ -2148,6 +2157,7 @@ export default function LabPlanche() {
               ref={pin(`house:${h.id}`)}
               className="pc-planche-pin pc-planche-house"
               data-compact={String(!named)}
+              data-far={String(far)}
               aria-label={named ? undefined : short(h.id)}
               data-house={h.id}
               data-mine={String(h.id === ME)}
@@ -2171,7 +2181,13 @@ export default function LabPlanche() {
               )}
               {named ? <b>{h.id === ME ? "Ta Maison" : short(h.id)}</b> : null}
               {h.id === rival ? <small className="pc-rk-tag">rival</small> : null}
-              <Marks m={rank.marks[h.id]} name={short} />
+              {place ? (
+                <small className="pc-rk-tag" data-place>
+                  {place}
+                  <sup>e</sup>
+                </small>
+              ) : null}
+              {named ? <Marks m={rank.marks[h.id]} name={short} /> : null}
             </button>
           );
         })}
@@ -2185,6 +2201,7 @@ export default function LabPlanche() {
                 aria-hidden="true"
               >
                 {m.name}
+                <small>{S.houses.filter((h) => h.sestiere === m.id).length} Maisons</small>
               </span>
             ))
           : null}
