@@ -49,3 +49,48 @@ jobs:
           name: e2e-shots
           path: apps/web/e2e-shots
           retention-days: 14
+
+  # The walk-throughs of the board (docs/e2e.md), which the job above does not play: the solo ones
+  # against the built site, the others each with its own server. Those that hang on the day of the
+  # week start their server on a Wednesday (CLOCK_START). One job each: a failure names its own.
+  planche:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: seul
+            run: |
+              pnpm exec vite preview --port 5173 --strictPort &
+              for i in $(seq 1 30); do curl -sf -o /dev/null http://localhost:5173/ && break; sleep 1; done
+              for t in planche ile passe rang; do MODE=seul node e2e/$t.mjs; done
+          - name: arsenal
+            run: node e2e/arsenal.mjs
+          - name: compagnie
+            run: node e2e/compagnie.mjs
+          - name: guerre
+            run: CLOCK_START=2026-11-11T10:00:00Z node e2e/guerre.mjs
+          - name: assaut
+            run: CLOCK_START=2026-11-11T10:00:00Z node e2e/assaut.mjs
+    name: planche (${{ matrix.name }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @comptoirs/web exec playwright-core install --with-deps chromium
+      - run: pnpm --filter @comptoirs/web build
+      - run: ${{ matrix.run }}
+        working-directory: apps/web
+        shell: bash -eo pipefail {0}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: planche-shots-${{ matrix.name }}
+          path: apps/web/e2e-shots
+          retention-days: 14

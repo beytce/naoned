@@ -69,3 +69,22 @@ des raisons du banc et non du jeu : la limite de 10 liens de connexion par adres
 quart d'heure (exécutions 6 à 8), puis le stock du jour de la Dogana épuisé par les marchands des
 exécutions précédentes (exécution 10, plus de blé à acheter pour le moulin). D'où un serveur par
 exécution, comme en CI.
+
+## Les parcours de la planche en CI (15 novembre 2026)
+
+Le travail `e2e` de la CI ne joue que `layout.mjs` (l'ancien jeu). Le travail `planche` joue les parcours de la planche, un par ligne de matrice, chacun après le build du web :
+
+| Ligne | Parcours | Comment |
+| --- | --- | --- |
+| `seul` | `planche`, `ile`, `passe`, `rang` | en mode seul (`MODE=seul`), contre le site construit servi par `vite preview` sur le port 5173 |
+| `arsenal` | `arsenal` | son propre serveur de jeu |
+| `compagnie` | `compagnie` | son propre serveur de jeu |
+| `guerre` | `guerre` | serveur lancé un mercredi (`CLOCK_START=2026-11-11T10:00:00Z`) : sans flottille le dimanche et le lundi, il échoue |
+| `assaut` | `assaut` | serveur lancé un mercredi, comme la Guerre |
+
+En cas d'échec, les captures sont gardées quatorze jours (`planche-shots-<ligne>`).
+
+**Laissés hors de la CI, et pourquoi.**
+- `maree` : il attend le mouvement de ligue (`data-ligue-move`), que le gel des ligues (décision D2) n'affiche plus. À réécrire avant de l'ajouter.
+- `compte` : il mesure un message temps réel à moins de 1 000 ms, seuil dépassé en rendu logiciel sous charge (1 285 ms relevés en local).
+- `semaine`, `planche-online`, `commande`, `defi`, `passe-duel` : pas rejoués depuis la direction Céladon ; à essayer un par un avant de les ajouter.
