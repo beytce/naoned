@@ -93,7 +93,7 @@ Vérifié : tests, typage, lint ; parcours `e2e:ile` et `e2e:planche` (seul), t�
 
 ## 7. La suite : la lagune simplifiée et les six lieux (proposé le 15 novembre 2026)
 
-*À la demande du porteur (« Le lagune est trop lourd, il y a trop d'éléments, on voit trop d'autres joueurs, on s'y perd : fais une proposition de simplification » ; « tous les autres modes qui n'ont pas encore eu la refonte, fais une proposition visuelle »). Page des propositions (privée) : https://claude.ai/artifact/DLpvnTP1KC1u2WF4cR4vwt ; maquettes dans `docs/celadon-maquettes/suite/`. **Validé par le porteur le 15 novembre 2026** (« Je valide, fusionne et lance S1 »), avec les quatre choix ci-dessous. Le lot S1 est fait.*
+*À la demande du porteur (« Le lagune est trop lourd, il y a trop d'éléments, on voit trop d'autres joueurs, on s'y perd : fais une proposition de simplification » ; « tous les autres modes qui n'ont pas encore eu la refonte, fais une proposition visuelle »). Page des propositions (privée) : https://claude.ai/artifact/DLpvnTP1KC1u2WF4cR4vwt ; maquettes dans `docs/celadon-maquettes/suite/`. **Validé par le porteur le 15 novembre 2026** (« Je valide, fusionne et lance S1 »), avec les quatre choix ci-dessous. Les lots S1 et S2 sont faits.*
 
 ### La lagune : on ne montre que ceux qui comptent pour toi
 
@@ -132,6 +132,8 @@ L'Arsenal, la Muda, la Marée, la Compagnie, la Guerre et le Palais : une scène
 | --- | --- | --- |
 | S1 | **La lagune simplifiée.** Moteur : `plancheAround` dit qui te précède et qui te suit au rang (test d'abord). Quatre Maisons nommées (toi, ton rival, devant, derrière, avec leur place) et celle qu'on touche ; tes autres voisins de sestiere en petit, un drapeau pour étiquette ; les Maisons des autres sestieri en plots sur l'eau, sans case ni étiquette, comptées sous le nom du sestiere. Le décor (ateliers en petit, flotte, phare, pierres) pour toi et ton rival seulement. Les fils des autres ne se tracent que pour la ville ou la Maison touchée. Les passages n'ont de nom que tenus par toi, menacés ou touchés. | `planche/PlancheBoard.tsx`, `LabPlanche.tsx`, `planche.css`, `packages/engine/src/planche/rang.ts` |
 
+| S2 | **Le gabarit des lieux, sur l'Arsenal.** La tête d'une fiche (`LieuHead`) : la scène du lieu, dessinée hors écran pour un état puis gardée en image (`vignette`, le contexte rendu aussitôt : un téléphone ne garde qu'un canevas) ; une petite ligne pour le lieu, un titre qui dit où l'on en est (« Galère en cale », « Les cales sont libres »). Une seule touche rouge : le premier navire qu'on peut mettre en chantier ; tous les navires repliés dessous. Les consignes de la première visite en note claire, plus en bloc sombre. | `planche/Lieu.tsx`, `celadon/vignette.ts`, `celadon/scenes.ts`, `planche/Arsenal.tsx` |
+
 Vérifié : 2 109 tests, typage, lint ; parcours `e2e:planche`, `e2e:ile`, `e2e:passe` (seul) ; le parcours du compte, en ligne, joué jusqu'au bout. Captures du jeu en ligne : `docs/celadon-captures/lagune-sestiere-pc`, `lagune-entiere-pc`, `lagune-sestiere-tel`, `lagune-entiere-tel`.
 
 **À savoir.**
@@ -139,3 +141,4 @@ Vérifié : 2 109 tests, typage, lint ; parcours `e2e:planche`, `e2e:ile`, `e2e:
 - Un plot se touche sur la planche elle-même (son étiquette est retirée) : le toucher d'un plot n'a pas été rejoué par un parcours.
 - Le phare d'une autre compagnie n'est plus dessiné : sa feuille s'ouvre par la fiche de la Maison.
 - Les lieux du Large gardent leur nom.
+- **S2.** La scène est une image fixe par état, pas une animation. Le parcours `e2e:arsenal`, en ligne, passe ; capture `docs/celadon-captures/arsenal-tel` (prise avant deux retouches : l'article devant le nom du navire, le cadrage de la scène).
