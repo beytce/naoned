@@ -56,7 +56,7 @@ jobs:
   planche:
     needs: check
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -74,6 +74,15 @@ jobs:
             run: CLOCK_START=2026-11-11T10:00:00Z node e2e/guerre.mjs
           - name: assaut
             run: CLOCK_START=2026-11-11T10:00:00Z node e2e/assaut.mjs
+          # These two start their server again at the days they need: one view each, they are long.
+          - name: semaine-tel
+            run: ONLY=p node e2e/semaine.mjs
+          - name: semaine-pc
+            run: ONLY=d node e2e/semaine.mjs
+          - name: maree-tel
+            run: ONLY=p node e2e/maree.mjs
+          - name: maree-pc
+            run: ONLY=d node e2e/maree.mjs
     name: planche (${{ matrix.name }})
     steps:
       - uses: actions/checkout@v4
