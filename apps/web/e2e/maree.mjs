@@ -5,9 +5,9 @@
 //  - the third Saturday: the ink nearer; the page's board moved so that the house holds a strait
 //    and a captain's sortie is told against it: the corsair's ship, the tower « menacée », the
 //    sortie met before its hour (the try answered as lost);
-//  - the Monday after the sixth week: the tide is closed: its moment (the laurels; no league's
-//    move and no decree, both withdrawn for the beta by decision D2), then the next tide at its
-//    first week.
+//  - the Monday after the sixth week: the tide is closed: its moment (the laurels, the league the
+//    house went up to, the Doge's decree to choose, the page moved so that the house is the Doge),
+//    and the ladder of the leagues.
 // Needs the web built (pnpm --filter @comptoirs/web build): node e2e/maree.mjs
 // Env: CHROMIUM, SHOTS, ONLY (p or d; the script runs each alone, one lagoon each).
 import { spawn } from "node:child_process";
@@ -253,22 +253,20 @@ try {
   moves.doge = true;
   await page.goto(server.url);
   if (!(await until(page, has, "[data-maree-fin]", 120_000))) fail("no moment of the tide's end");
-  // The leagues are frozen for the beta (decision D2 of the audit of 13 November 2026): one
-  // league, no house moves, so the tide's end tells no move. The moment closes, and the next
-  // tide begins at its first week.
-  const ended = await page.getAttribute("[data-maree-fin]", "data-maree-fin");
-  if (ended !== "1") fail(`the tide closed is ${ended}, not the first`);
-  if (await page.evaluate(has, "[data-ligue-move]"))
-    fail("a league's move is told, the leagues frozen");
+  if (!(await until(page, has, "[data-ligue-move]"))) fail("the league is not told");
+  const move = await page.getAttribute("[data-ligue-move]", "data-ligue-move");
+  if (move !== "up") fail(`the house did not go up a league (${move})`);
+  if (!(await until(page, has, '[data-decret-choice="0"]'))) fail("no decree to choose");
   await shot("5-fin-de-maree");
+  await tap('[data-decret-choice="1"]');
+  for (let i = 0; i < 40 && !decretSent; i++) await page.waitForTimeout(250);
+  if (decretSent?.choice !== 1) fail(`the decree sent is ${JSON.stringify(decretSent)}`);
   moves.doge = false;
   await tap("[data-maree-fin-close]");
-  if (!(await until(page, has, "[data-maree-open]"))) fail("no tide on the board after its end");
   await tap("[data-maree-open]");
-  if (!(await until(page, has, "[data-maree-week]"))) fail("no tide's sheet after its end");
-  const again = await page.getAttribute("[data-maree-week]", "data-maree-week");
-  if (again !== "1") fail(`the next tide's week is ${again}, not 1`);
-  await shot("6-maree-suivante");
+  if (!(await until(page, has, '[data-ligue="2"]'))) fail("the house is not in the second league");
+  await page.evaluate(() => document.querySelector("[data-ligue]")?.scrollIntoView());
+  await shot("6-ligues");
   if (errs.length) fail(`page errors: ${errs.join(" | ")}`);
 } catch (e) {
   fail(e.stack ?? String(e));
