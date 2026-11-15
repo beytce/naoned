@@ -29,13 +29,13 @@ import {
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Stage } from "../Stage.js";
-import { palette } from "../TileBoard.js";
 import { easeOutBack, tileDelay, tileDrop } from "../arrival.js";
+import { celadonPalette } from "../materials.js";
 import { rocks } from "../models/decor.js";
 import { slab } from "../models/ground.js";
 import { bank, barge, chainLink, post, threadLink } from "../models/passe.js";
 import { box } from "../shapes.js";
-import { BOARD, CAMERA, COL } from "../tokens.js";
+import { BOARD, CAMERA, CELADON } from "../tokens.js";
 
 const S = BOARD.tile + BOARD.gap;
 
@@ -79,7 +79,7 @@ export function PasseBoard({
 }) {
   const { camera, gl, size } = useThree();
   const live = useMemo(() => !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, []);
-  const P = palette(false);
+  const P = celadonPalette();
   const { width: W, height: H } = state;
   const wx = (x: number) => (x - (W - 1) / 2) * S;
   const wz = (y: number) => (y - (H - 1) / 2) * S;
@@ -160,14 +160,14 @@ export function PasseBoard({
       tiles,
       banks,
       links,
-      last: ring(COL.ink, 2.45, 2.62),
+      last: ring(CELADON.ink, 2.45, 2.62),
       hover: ring(accent, 2.3, 2.5),
       hint: ring(accent, 2.2, 2.55),
       aims: Array.from({ length: 8 }, () => ring(accent, 2.3, 2.55)),
-      decide: ring(COL.ink, 2.05, 2.4),
+      decide: ring(CELADON.ink, 2.05, 2.4),
       dots: {
         thread: Array.from({ length: W * H }, () => dot(accent)),
-        chain: Array.from({ length: W * H }, () => dot(COL.ink)),
+        chain: Array.from({ length: W * H }, () => dot(CELADON.ink)),
       },
     };
   }, [P, W, H, reefs]);
@@ -311,7 +311,7 @@ export function PasseBoard({
 
   return (
     <>
-      <Stage target={controls.target} phone={phone} plain={plain} />
+      <Stage target={controls.target} phone={phone} plain={plain} background={CELADON.sky} />
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: the keyboard reaches each cell by its button (the hidden grid). */}
       <primitive
         object={board.root}

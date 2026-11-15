@@ -5,7 +5,7 @@
 .pc-pl-tower[data-black="true"] {
   background: #111111;
   color: #f6f4f0;
-  box-shadow: 0 0 0 1.5px var(--pc-gold), 0 3px 0 #000;
+  box-shadow: 0 0 0 1.5px var(--pc-gold), 0 3px 0 var(--pc-ink-deep, #000);
 }
 
 /* The week of the Muda: seven days, the convoy's days marked. */
@@ -143,7 +143,7 @@
   align-items: center;
   padding: 10px 12px;
   border-radius: 16px;
-  background: #2a2725;
+  background: var(--pc-ink);
   color: #f6f4f0;
 }
 .pc-nr-captain > div {
@@ -203,7 +203,7 @@
 .pc-nr-goods button[aria-pressed="true"] {
   background: var(--pc-ink);
   color: #f6f4f0;
-  box-shadow: 0 3px 0 #000;
+  box-shadow: 0 3px 0 var(--pc-ink-deep, #000);
 }
 .pc-nr-n {
   display: flex;
@@ -235,7 +235,7 @@
   color: #f6f4f0;
 }
 .pc-nr-stakes [data-lost] {
-  background: #2a2725;
+  background: var(--pc-ink);
   color: #f6f4f0;
 }
 .pc-nr-relics {

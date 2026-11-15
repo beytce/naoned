@@ -52,7 +52,6 @@ import { bake } from "../bake.js";
 import { C, plate, frame as rimFrame } from "../celadon/kit.js";
 import { WORKSHOPS } from "../celadon/workshops.js";
 import { celadonPalette } from "../materials.js";
-import { fondaco } from "../models/fondaco.js";
 import { market } from "../models/market.js";
 import { flagCloth, rocca } from "../models/terra.js";
 import { town } from "../models/towns.js";
@@ -326,8 +325,9 @@ export function PlancheBoard({
     };
     for (const h of setup.houses)
       put(`house:${h.id}`, { kind: "house", id: h.id }, h.x, h.y, () => {
-        const b = fondaco(P).group;
-        b.scale.setScalar(h.id === me ? 0.55 : 0.42);
+        // The Fondaco of the islands, in small: one's own a little larger.
+        const b = WORKSHOPS.fondaco?.(P, { level: 1, seed: 0 }).group ?? new Group();
+        b.scale.setScalar(h.id === me ? 0.5 : 0.38);
         return b;
       });
     // A town on the Rialto's tile is the Rialto itself: the market of Venice stands there.

@@ -1,19 +1,5 @@
 /* The shared board (docs/plan-planche.md), as on the canvas the owner validated on 11 November
    2026 (docs/audit-visuel-2026-11-11): labels of three sizes, one purse, cards of paper. */
-/* In the Céladon direction (docs/plan-celadon.md C4): the paper warmer, the ink a deep green, the
-   celadon for what is chosen; the accent stays the one strong colour. */
-.pc-planche {
-  --pc-paper: #fbf8f1;
-  --pc-ink: #243a36;
-  --pc-ink-deep: #162724;
-  --pc-ink-soft: #5f706b;
-  --pc-hair: #e2dccf;
-  --pc-text-2: #45554f;
-  --pc-text-3: #6f7f7b;
-  --pc-foot: rgba(36, 58, 54, 0.14);
-  --pc-celadon: #a9cbc0;
-  --pc-celadon-pale: #ddeae4;
-}
 .pc-planche-pins {
   position: absolute;
   inset: 0;
@@ -53,9 +39,10 @@
   outline: 3px solid var(--pc-accent);
   box-shadow: 0 2px 0 var(--pc-accent-deep), 0 8px 18px rgba(42, 39, 37, 0.18);
 }
+/* One label for all (docs/plan-celadon.md C4): paper and ink. A town shut is paler, never dark. */
 .pc-pl-city[data-shut="true"] {
-  background: rgba(42, 39, 37, 0.82);
-  color: #f6f4f0;
+  background: rgba(251, 248, 241, 0.78);
+  color: var(--pc-text-3);
 }
 .pc-pl-share {
   display: flex;
@@ -76,7 +63,7 @@
 }
 .pc-pl-city[data-chosen="true"] .pc-pl-share,
 .pc-pl-city[data-shut="true"] .pc-pl-share {
-  background: #6b645c;
+  background: var(--pc-hair);
 }
 .pc-pl-city[data-chosen="true"] .pc-pl-share i {
   background: #d9d2c6;
@@ -96,10 +83,10 @@
   gap: 7px;
   font-size: 13px;
 }
+/* A tower a captain holds: the same paper, ringed in ink. */
 .pc-pl-tower[data-dark="true"] {
-  background: var(--pc-ink);
-  color: #fff;
-  box-shadow: 0 2px 0 var(--pc-ink-deep), 0 8px 18px rgba(42, 39, 37, 0.18);
+  box-shadow: inset 0 0 0 1.5px var(--pc-ink), 0 2px 0 var(--pc-foot), 0 8px 18px
+    rgba(36, 58, 54, 0.08);
 }
 .pc-pl-tower[data-mine="true"] {
   outline: 3px solid var(--pc-accent);
@@ -118,11 +105,11 @@
   background: #d9d2c6;
 }
 .pc-pl-seals[data-light="true"] i {
-  background: #fff;
+  background: var(--pc-ink);
 }
 .pc-pl-seals[data-light="true"] i[data-whole="false"] {
   background: transparent;
-  box-shadow: inset 0 0 0 2px #6b645c;
+  box-shadow: inset 0 0 0 2px var(--pc-text-3);
 }
 /* A house: its flag and its name, small; one's own in a red pill. */
 .pc-planche-house {

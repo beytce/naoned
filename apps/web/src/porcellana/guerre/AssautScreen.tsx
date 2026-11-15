@@ -271,7 +271,11 @@ export function AssautScreen({
     (step === 5 && key === "go");
 
   return (
-    <div className="porcellana fixed inset-0 pc-assaut" data-assaut data-over={String(over)}>
+    <div
+      className="porcellana fixed inset-0 pc-assaut pc-celadon"
+      data-assaut
+      data-over={String(over)}
+    >
       <header className="pc-as-top">
         <button
           type="button"
